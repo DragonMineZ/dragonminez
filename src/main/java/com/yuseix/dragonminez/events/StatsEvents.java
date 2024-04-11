@@ -3,21 +3,13 @@ package com.yuseix.dragonminez.events;
 import com.yuseix.dragonminez.DragonMineZ;
 import com.yuseix.dragonminez.character.LayerDMZBase;
 import com.yuseix.dragonminez.character.LayerDMZPost;
-import com.yuseix.dragonminez.character.models.ModeloPrueba;
-import com.yuseix.dragonminez.character.renders.RenderPrueba;
 import com.yuseix.dragonminez.config.DMCAttrConfig;
 import com.yuseix.dragonminez.init.MainSounds;
 import com.yuseix.dragonminez.stats.PlayerStatsAttrProvider;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.event.RenderPlayerEvent;
@@ -484,7 +476,6 @@ public class StatsEvents {
 
     }
 
-    /*
     @SubscribeEvent
     public static void changeSizePRE(RenderPlayerEvent.Pre event) {
 
@@ -523,20 +514,10 @@ public class StatsEvents {
 
     }
 
-    */
 
     @SubscribeEvent
-    public static void wa(RenderPlayerEvent.Pre event) {
-
-        event.setCanceled(true);
-
-        Minecraft mc = Minecraft.getInstance();
-
-        RenderPrueba wa = new RenderPrueba(new EntityRendererProvider.Context(mc.getEntityRenderDispatcher(),mc.getItemRenderer(),mc.getBlockRenderer(),mc.getEntityRenderDispatcher().getItemInHandRenderer(), mc.getResourceManager(),mc.getEntityModels(),mc.font));
-
-        wa.render((AbstractClientPlayer) event.getEntity(),event.getEntity().getYRot(),event.getPartialTick(),event.getPoseStack(),event.getMultiBufferSource(),event.getPackedLight());
-
-
+    public static void nose(RenderPlayerEvent.Pre event) {
+        event.getRenderer().addLayer(new LayerDMZBase(event.getRenderer()));
 
     }
 
@@ -545,7 +526,7 @@ public class StatsEvents {
     public static void changeSizePOST(RenderPlayerEvent.Post event) {
 
         event.getPoseStack().popPose();
-        //event.getRenderer().addLayer(new LayerDMZPost(event.getRenderer()));
+        event.getRenderer().addLayer(new LayerDMZPost(event.getRenderer()));
     }
 
     private static double getEnergyToRemove(int level) {

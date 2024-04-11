@@ -32,28 +32,18 @@ public class LayerDMZPost extends RenderLayer<AbstractClientPlayer, PlayerModel<
     @Override
     public void render(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, AbstractClientPlayer abstractClientPlayer, float v, float v1, float v2, float v3, float v4, float v5) {
 
+        VertexConsumer vertexBuilder = multiBufferSource.getBuffer(RenderType.entityTranslucent(OJOS));
+        VertexConsumer ojosblancos = multiBufferSource.getBuffer(RenderType.entityCutoutNoCull(OJOS));
 
-
-        FaceModel eye1 = new FaceModel(FaceModel.createBodyLayer().bakeRoot());
-        FaceModel eye2 = new FaceModel(FaceModel.createBodyLayer().bakeRoot());
+        //VertexConsumer ojo1 = multiBufferSource.getBuffer(RenderType.entityCutoutNoCullZOffset(OJO1));
+        // VertexConsumer ojo2 = multiBufferSource.getBuffer(RenderType.entityCutoutNoCullZOffset(OJO1));
 
         poseStack.pushPose();
 
-        VertexConsumer ojosblancos = multiBufferSource.getBuffer(RenderType.entityCutoutNoCull(OJOS));
-
         this.model.Face.copyFrom(getParentModel().head);
         this.model.renderToBuffer(poseStack, ojosblancos, i, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
-        poseStack.translate(0.0,0.0,0.0);
 
-        VertexConsumer ojo1 = multiBufferSource.getBuffer(RenderType.entityCutoutNoCull(OJO1));
-        eye1.Face.copyFrom(getParentModel().head);
-        eye1.renderToBuffer(poseStack, ojo1, i, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
-        poseStack.translate(0,0.0,-0.001);
-
-        VertexConsumer ojo2 = multiBufferSource.getBuffer(RenderType.entityCutoutNoCull(OJO2));
-        eye2.Face.copyFrom(getParentModel().head);
-        eye2.renderToBuffer(poseStack, ojo2, i, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
-        poseStack.translate(0,0.0,-0.001);
+        // this.getParentModel().head.render(poseStack,ojosblancos,i,OverlayTexture.NO_OVERLAY,1.0f, 1.0f, 1.0f, 1.0f);
 
         poseStack.popPose();
 
