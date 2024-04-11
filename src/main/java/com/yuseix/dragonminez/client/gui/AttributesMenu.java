@@ -6,15 +6,19 @@ import com.yuseix.dragonminez.client.RenderEntityInv;
 import com.yuseix.dragonminez.client.gui.buttons.CustomButtons;
 import com.yuseix.dragonminez.config.DMCAttrConfig;
 import com.yuseix.dragonminez.events.ModEvents;
+import com.yuseix.dragonminez.network.C2S.CharacterC2S;
 import com.yuseix.dragonminez.network.C2S.StatsC2S;
 import com.yuseix.dragonminez.network.C2S.ZPointsC2S;
 import com.yuseix.dragonminez.network.ModMessages;
 import com.yuseix.dragonminez.stats.PlayerStatsAttrProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
@@ -24,18 +28,15 @@ import java.util.List;
 
 public class AttributesMenu extends Screen implements RenderEntityInv {
 
-    private int zpoints;
-
-    {
-        assert Minecraft.getInstance().player != null;
-        zpoints = Minecraft.getInstance().player.getPersistentData().getInt("zpoints");
-    }
 
     private final List<AbstractWidget> botones = new ArrayList<>();
 
     private static final ResourceLocation menu = new ResourceLocation(DragonMineZ.MOD_ID,
-            "textures/gui/menu.png");
-
+            "textures/gui/menugrande.png");
+    private static final ResourceLocation menu2 = new ResourceLocation(DragonMineZ.MOD_ID,
+            "textures/gui/menumedio.png");
+    private static final ResourceLocation menu3 = new ResourceLocation(DragonMineZ.MOD_ID,
+            "textures/gui/menupequeno.png");
 
     public AttributesMenu(Component pGuiScreen) {
         super(pGuiScreen);
@@ -60,6 +61,14 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
                     playerstats.getConstitution() +
                     playerstats.getKiPower() +
                     playerstats.getEnergy() + 6) * DMCAttrConfig.MULTIPLIER_ZPOINTS_COST.get();
+
+
+            botones.add(new CustomButtons(posX - 125, posY + 125, Component.empty(), button -> {
+                ModMessages.sendToServer(new CharacterC2S("BodyType", 1));
+            }));
+            botones.add(new CustomButtons(posX - 105, posY + 125, Component.empty(), button -> {
+                ModMessages.sendToServer(new CharacterC2S("BodyType", 0));
+            }));
 
 
             if (zpoints >= zCost) {
@@ -89,7 +98,6 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
                     ModMessages.sendToServer(new ZPointsC2S(1, zCost));
                 }));
             }
-
 
         });
     }
@@ -135,7 +143,6 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         RenderSystem.setShaderTexture(0, menu);
 
-        assert Minecraft.getInstance().player != null;
         PlayerStatsAttrProvider.getCap(ModEvents.INSTANCE, Minecraft.getInstance().player).ifPresent(playerstats -> {
 
             //PuntosZ
@@ -169,41 +176,41 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
             int MaxEnergy = (int) (energy * 0.5) * DMCAttrConfig.MULTIPLIER_ENERGY.get();
             int MaxStamina = stamina + 3;
 
-            int LTITULO = posX - 80;
-            int RTITULO = posX + 180;
-            int LSUBTITULO = posX - 120;
-            int RSUBTITULO = posX + 160;
-            int LDESC = posX - 60;
-            int RDESC = posX + 245;
+            int LTITULO = posX +195;
+            int RTITULO = posX - 80;
+            int LSUBTITULO = posX + 158;
+            int RSUBTITULO = posX - 158;
+            int LDESC = posX + 245;
+            int RDESC = posX - 30;
 
             //SUBIR STATS
             //Pos cambiada a -140 de -250 por motivos de cambio de resoluciones para adaptar
-            graphics.blit(menu, posX - 140, posY, 0, 0, 152, 256);
-            graphics.drawString(font, ChatFormatting.BOLD + "STATS", LTITULO, posY + 15, 0xFCC3C3, true);
+            graphics.blit(menu, posX - 140, posY, 0, 0, 148, 221);
+            graphics.drawString(this.font.self(), ChatFormatting.BOLD + "STATS", LTITULO, posY + 22, 0xFCC3C3, true);
 
-            graphics.drawString(font, ChatFormatting.BOLD + "ZPoints: ", LSUBTITULO, posY + 30, 0xFFFFFF, true);
-            graphics.drawString(font, String.valueOf(zpoints), posX - 45, posY + 30, 0xFFE800, false);
+            graphics.drawString(Minecraft.getInstance().fontFilterFishy, ChatFormatting.BOLD + "ZPoints: ", LSUBTITULO, posY + 38, 0xFFFFFF, true);
+            graphics.drawString(font, String.valueOf(zpoints), posX - 45, posY + 38, 0xFFE800, false);
 
-            graphics.drawString(font, ChatFormatting.BOLD + "STR: ", LSUBTITULO, posY + 45, 0x320C0C, true);
-            graphics.drawString(font, String.valueOf(str), LDESC, posY + 45, 0xBB1C2A, false);
+            graphics.drawString(font, ChatFormatting.BOLD + "STR: ", LSUBTITULO, posY + 50, 0x320C0C, true);
+            graphics.drawString(font, String.valueOf(str), LDESC, posY + 50, 0xBB1C2A, false);
 
-            graphics.drawString(font, ChatFormatting.BOLD + "DEF: ", LSUBTITULO, posY + 60, 0x320C0C, true);
-            graphics.drawString(font, String.valueOf(def), LDESC, posY + 60, 0xBB1C2A, false);
+            graphics.drawString(font, ChatFormatting.BOLD + "DEF: ", LSUBTITULO, posY + 65, 0x320C0C, true);
+            graphics.drawString(font, String.valueOf(def), LDESC, posY + 65, 0xBB1C2A, false);
 
-            graphics.drawString(font, ChatFormatting.BOLD + "CON: ", LSUBTITULO, posY + 75, 0x320C0C, true);
-            graphics.drawString(font, String.valueOf(con), LDESC, posY + 75, 0xBB1C2A, false);
+            graphics.drawString(font, ChatFormatting.BOLD + "CON: ", LSUBTITULO, posY + 80, 0x320C0C, true);
+            graphics.drawString(font, String.valueOf(con), LDESC, posY + 80, 0xBB1C2A, false);
 
-            graphics.drawString(font, ChatFormatting.BOLD + "POW: ", LSUBTITULO, posY + 90, 0x320C0C, true);
-            graphics.drawString(font, String.valueOf(kipower), LDESC, posY + 90, 0xBB1C2A, false);
+            graphics.drawString(font, ChatFormatting.BOLD + "POW: ", LSUBTITULO, posY + 95, 0x320C0C, true);
+            graphics.drawString(font, String.valueOf(kipower), LDESC, posY + 95, 0xBB1C2A, false);
 
-            graphics.drawString(font, ChatFormatting.BOLD + "ENE: ", LSUBTITULO, posY + 105, 0x320C0C, true);
-            graphics.drawString(font, String.valueOf(energy), LDESC, posY + 105, 0xBB1C2A, false);
+            graphics.drawString(font, ChatFormatting.BOLD + "ENE: ", LSUBTITULO, posY + 110, 0x320C0C, true);
+            graphics.drawString(font, String.valueOf(energy), LDESC, posY + 110, 0xBB1C2A, false);
 
-            graphics.drawString(font, ChatFormatting.BOLD + "ZPCost: ", LSUBTITULO, posY + 120, 0xF0B61E, true);
-            graphics.drawString(font, String.valueOf(zCost), posX - 45, posY + 120, 0xFFE800, false);
+            graphics.drawString(font, ChatFormatting.BOLD + "ZPCost: ", LSUBTITULO, posY + 125, 0xF0B61E, true);
+            graphics.drawString(font, String.valueOf(zCost), posX - 45, posY + 125, 0xFFE800, false);
 
             //STATS
-            graphics.blit(menu, posX + 140, posY, 0, 0, 152, 256);
+            graphics.blit(menu2, posX + 140, posY, 0, 0, 147, 163);
             graphics.drawString(font, ChatFormatting.BOLD + "INFORMATION", RTITULO, posY + 15, 0xF0B61E, true);
 
             graphics.drawString(font, ChatFormatting.BOLD + "Damage: ", RSUBTITULO, posY + 30, 0x830318, true);

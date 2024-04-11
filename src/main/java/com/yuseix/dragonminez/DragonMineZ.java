@@ -2,14 +2,20 @@ package com.yuseix.dragonminez;
 
 import com.mojang.logging.LogUtils;
 import com.yuseix.dragonminez.character.FaceModel;
+import com.yuseix.dragonminez.character.models.ModeloPrueba;
+import com.yuseix.dragonminez.character.renders.RenderPrueba;
 import com.yuseix.dragonminez.config.DMCAttrConfig;
 import com.yuseix.dragonminez.init.*;
 import com.yuseix.dragonminez.init.blocks.entity.MainBlockEntities;
 import com.yuseix.dragonminez.init.blocks.entity.client.*;
 import com.yuseix.dragonminez.init.entity.client.renderer.DinoRenderer;
 import com.yuseix.dragonminez.network.ModMessages;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -29,7 +35,7 @@ import org.slf4j.Logger;
 import software.bernie.geckolib.GeckoLib;
 
 @Mod(DragonMineZ.MOD_ID)
-public class DragonMineZ implements MainBlockEntities, MainItems, MainTabs, MainBlocks, MainSounds, MainEntity {
+public class DragonMineZ {
 
     public static final String MOD_ID = "dragonminez";
 
@@ -42,17 +48,17 @@ public class DragonMineZ implements MainBlockEntities, MainItems, MainTabs, Main
         modEventBus.addListener(this::commonSetup);
 
         //Registramos Items
-        MainItems.ITEM_REGISTER.register(modEventBus);
+        MainItems.register(modEventBus);
         //Registramos Bloques
-        MainBlocks.BLOCK_REGISTER.register(modEventBus);
+        MainBlocks.register(modEventBus);
         //Registramos la nueva TAB del Creativo
-        MainTabs.CREATIVE_TABS_REGISTER.register(modEventBus);
+        MainTabs.register(modEventBus);
         //Registramos las entidades de los bloques
-        MainBlockEntities.BLOCK_ENTITY_TYPES_REGISTER.register(modEventBus);
+        MainBlockEntities.register(modEventBus);
         //Registramos los sonidos
-        MainSounds.SOUND_EVENTS_REGISTER.register(modEventBus);
+        MainSounds.register(modEventBus);
         //Registramos las entidades
-        MainEntity.ENTITY_TYPES_REGISTER.register(modEventBus);
+        MainEntity.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
 
@@ -96,10 +102,12 @@ public class DragonMineZ implements MainBlockEntities, MainItems, MainTabs, Main
 
         }
 
-        @SubscribeEvent
+
+            @SubscribeEvent
         public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions e) {
             e.registerLayerDefinition(FaceModel.LAYER_LOCATION, FaceModel::createBodyLayer);
 
+            e.registerLayerDefinition(ModeloPrueba.LAYER_LOCATION, ModeloPrueba::createBodyLayer);
         }
 
 

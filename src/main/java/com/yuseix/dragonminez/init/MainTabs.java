@@ -5,17 +5,18 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 
 @SuppressWarnings("unused")
-public interface MainTabs {
+public class MainTabs {
 
     //Creative Mode Tabs
-    DeferredRegister<CreativeModeTab> CREATIVE_TABS_REGISTER =
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS_REGISTER =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, DragonMineZ.MOD_ID);
 
-    RegistryObject<CreativeModeTab> BLOQUES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_blocks_tab",
+    public static final RegistryObject<CreativeModeTab> BLOQUES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_blocks_tab",
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(MainBlocks.NAMEK_BLOCK.get()))
 
                     .title(Component.translatable("itemGroup.dragonminez.blocks"))
@@ -38,7 +39,7 @@ public interface MainTabs {
 
                     }).build());
 
-    RegistryObject<CreativeModeTab> ITEMS_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_items_tab",
+    public static final RegistryObject<CreativeModeTab> ITEMS_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_items_tab",
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(MainItems.POTHALA_RIGHT.get()))
 
                     .title(Component.translatable("itemGroup.dragonminez.items"))
@@ -57,4 +58,8 @@ public interface MainTabs {
                         output.accept(MainItems.COMIDA_DINO_COOKED.get());
                         output.accept(MainItems.SENZU_BEAN.get());
                     }).build());
+
+    public static void register(IEventBus bus) {
+        CREATIVE_TABS_REGISTER.register(bus);
+    }
 }

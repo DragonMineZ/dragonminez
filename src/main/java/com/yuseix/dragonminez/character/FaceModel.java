@@ -5,6 +5,7 @@ package com.yuseix.dragonminez.character;// Made with Blockbench 4.9.1
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.yuseix.dragonminez.DragonMineZ;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -14,8 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 
 public class FaceModel extends EntityModel<Player> {
-    // This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
-    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation("modid", "facemodel"), "main");
+    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(DragonMineZ.MOD_ID, "facemodel"), "main");
     public final ModelPart Face;
 
     public FaceModel(ModelPart root) {
@@ -23,6 +23,7 @@ public class FaceModel extends EntityModel<Player> {
     }
 
     public static LayerDefinition createBodyLayer() {
+
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 

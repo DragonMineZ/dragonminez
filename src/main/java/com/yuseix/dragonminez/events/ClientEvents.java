@@ -46,7 +46,7 @@ public class ClientEvents {
 
         @SubscribeEvent
         public static void registerGuiOverlays(RegisterGuiOverlaysEvent e) {
-            e.registerAboveAll("playerhud", PlayerHudOverlay.HUD_PLAYER);
+            //e.registerAboveAll("playerhud", PlayerHudOverlay.HUD_PLAYER);
         }
 
         @SubscribeEvent

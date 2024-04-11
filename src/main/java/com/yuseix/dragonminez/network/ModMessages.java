@@ -1,6 +1,7 @@
 package com.yuseix.dragonminez.network;
 
 import com.yuseix.dragonminez.DragonMineZ;
+import com.yuseix.dragonminez.network.C2S.CharacterC2S;
 import com.yuseix.dragonminez.network.C2S.StatsC2S;
 import com.yuseix.dragonminez.network.C2S.ZPointsC2S;
 import com.yuseix.dragonminez.network.S2C.StatsSyncS2C;
@@ -43,6 +44,11 @@ public class ModMessages {
                 .decoder(ZPointsC2S::new)
                 .encoder(ZPointsC2S::toBytes)
                 .consumerMainThread(ZPointsC2S::handle)
+                .add();
+        net.messageBuilder(CharacterC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(CharacterC2S::new)
+                .encoder(CharacterC2S::toBytes)
+                .consumerMainThread(CharacterC2S::handle)
                 .add();
         //ENVIAR DATOS AL CLIENTE
         net.messageBuilder(ZPointsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
