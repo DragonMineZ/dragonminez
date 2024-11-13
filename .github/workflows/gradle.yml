@@ -37,4 +37,4 @@ jobs:
       - name: PMD report
         uses: pmd/pmd-github-action@v2
         with:
-          rulesets: '.github/pmd/quickstart.xml'
+          rulesets: 'https://raw.githubusercontent.com/pmd/pmd/main/pmd-java/src/main/resources/rulesets/java/quickstart.xml'
