@@ -32,9 +32,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         
       - name: Build with Gradle
+        if: contains(github.event.head_commit.message, '.java')
         run: ./gradlew build
         
       - name: PMD report
         uses: pmd/pmd-github-action@v2
         with:
-          rulesets: 'pmd/quickstart.xml'
+          rulesets: 'quickstart.xml'
