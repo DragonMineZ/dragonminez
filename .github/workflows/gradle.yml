@@ -38,6 +38,6 @@ jobs:
       - name: PMD report
         uses: pmd/pmd-github-action@v2
         with:
-          sourcePath: 'force-app'
+          sourcePath: 'src/main/java/com/yuseix/dragonminez'
+          rulesets: '.github/workflows/pmd/quickstart.xml'
           analyzeModifiedFilesOnly: false
-          rulesets: 'ruleset.xml'
