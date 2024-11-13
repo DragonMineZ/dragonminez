@@ -41,3 +41,6 @@ jobs:
           sourcePath: 'src/main/java/com/yuseix/dragonminez'
           rulesets: '.github/workflows/pmd/quickstart.xml'
           analyzeModifiedFilesOnly: true
+      - name: PMD Violations Check
+        if: steps.pmd.outputs.violations != 0
+        run: exit 1
