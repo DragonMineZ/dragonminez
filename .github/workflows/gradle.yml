@@ -39,4 +39,5 @@ jobs:
         uses: pmd/pmd-github-action@v2
         with:
           sourcePath: 'force-app'
+          analyzeModifiedFilesOnly: false
           rulesets: 'ruleset.xml'
