@@ -38,4 +38,5 @@ jobs:
       - name: PMD report
         uses: pmd/pmd-github-action@v2
         with:
-          rulesets: 'quickstart.xml'
+          sourcePath: 'force-app'
+          rulesets: 'ruleset.xml'
