@@ -41,3 +41,8 @@ jobs:
           sourcePath: 'src/main/java/com/yuseix/dragonminez'
           rulesets: '.github/workflows/pmd/quickstart.xml'
           analyzeModifiedFilesOnly: false
+          
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: pmd-report.sarif
