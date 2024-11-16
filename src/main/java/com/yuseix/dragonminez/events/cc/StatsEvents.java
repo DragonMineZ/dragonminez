@@ -19,7 +19,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -101,12 +100,12 @@ public class StatsEvents {
                 }
 
                 //Tiempo para reclamar una senzu
-                if(Senzu_countdown > 0){
+                if (Senzu_countdown > 0) {
                     playerstats.setDmzSenzuDaily(Senzu_countdown / 20);
                     Senzu_countdown--;
                 }
 
-                if(Senzu_countdown == 0){
+                if (Senzu_countdown == 0) {
                     playerstats.setDmzSenzuDaily(0);
                 }
 
@@ -186,7 +185,7 @@ public class StatsEvents {
                 float danoDefault = event.getAmount(); // Capturamos el daño original
 
                 // Calcular el daño basado en la fuerza del atacante
-                int maxStr = DMZDatos.calcularSTR(raza, statsAtacante.getStrength(), danoDefault, statsAtacante.getDmzState(),statsAtacante.getDmzRelease(), statsAtacante.getDmzClass());
+                int maxStr = DMZDatos.calcularSTR(raza, statsAtacante.getStrength(), danoDefault, statsAtacante.getDmzState(), statsAtacante.getDmzRelease(), statsAtacante.getDmzClass());
                 int staminacost = maxStr / 12;
 
                 if (curStamina >= staminacost) {
@@ -204,14 +203,14 @@ public class StatsEvents {
             // Si la entidad que recibe el daño es un jugador
             if (event.getEntity() instanceof Player objetivo) {
                 DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, objetivo).ifPresent(statsObjetivo -> {
-                    int defObjetivo = DMZDatos.calcularDEF(statsObjetivo.getRace(), statsObjetivo.getDefense(), statsObjetivo.getDmzState(),statsObjetivo.getDmzRelease(),statsObjetivo.getDmzClass());
+                    int defObjetivo = DMZDatos.calcularDEF(statsObjetivo.getRace(), statsObjetivo.getDefense(), statsObjetivo.getDmzState(), statsObjetivo.getDmzRelease(), statsObjetivo.getDmzClass());
                     // Restar la defensa del objetivo al daño
                     float danoFinal = event.getAmount() - defObjetivo;
                     event.setAmount(Math.max(danoFinal, 1)); // Asegurarse de que al menos se haga 1 de daño
                 });
             } else {
                 // Si golpeas a otra entidad (no jugador), aplica el daño máximo basado en la fuerza
-                    event.setAmount(event.getAmount()); // Aplica tu máximo daño
+                event.setAmount(event.getAmount()); // Aplica tu máximo daño
             }
         } else {
             // Aquí manejamos el caso donde el atacante no es un jugador
@@ -255,14 +254,14 @@ public class StatsEvents {
     }
 
     @SubscribeEvent
-    public static void onKeyInputEvent(InputEvent.Key event){
+    public static void onKeyInputEvent(InputEvent.Key event) {
         // Detecta si la tecla KI_CHARGE está presionada o liberada
         if (Keys.KI_CHARGE.isDown()) {
-            ModMessages.sendToServer(new CharacterC2S("isAuraOn",1));
+            ModMessages.sendToServer(new CharacterC2S("isAuraOn", 1));
             ModMessages.sendToServer(new InvocarAuraC2S());
 
         } else {
-            ModMessages.sendToServer(new CharacterC2S("isAuraOn",0));
+            ModMessages.sendToServer(new CharacterC2S("isAuraOn", 0));
             ModMessages.sendToServer(new InvocarAuraC2S());
         }
 
