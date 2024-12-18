@@ -109,7 +109,7 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 
     //Se usa GeckoLib mediante ShadowJar
-    shade fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.4')
+    shade fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.4.9')
     implementation 'com.eliotlash.mclib:mclib:20'
 
     //Corrección a puntos vulnerables de dependencias en Forge:
