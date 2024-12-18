@@ -2,7 +2,7 @@ name: Check Mod Version
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened]
 
 jobs:
   check-version:

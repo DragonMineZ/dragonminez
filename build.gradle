@@ -17,7 +17,7 @@ plugins {
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
     // ShadowJar / JarInJar
-    id 'com.gradleup.shadow' version '8.3.2'
+    id 'com.gradleup.shadow' version '8.3.5'
     id 'java'
     // SpongePowered para GeckoLib
     id 'org.spongepowered.mixin' version '0.7.38'
@@ -113,9 +113,9 @@ dependencies {
     implementation 'com.eliotlash.mclib:mclib:20'
 
     //Corrección a puntos vulnerables de dependencias en Forge:
-    implementation 'com.google.guava:guava:33.0.0-jre'
+    implementation 'com.google.guava:guava:33.4.0-jre'
     implementation 'io.netty:netty-codec:4.1.100.Final'
-    implementation 'io.netty:netty-handler:4.1.100.Final'
+    implementation 'io.netty:netty-handler:4.1.116.Final'
     implementation 'org.apache.commons:commons-compress:1.27.1'
 
     // Just Enough Items (JEI)

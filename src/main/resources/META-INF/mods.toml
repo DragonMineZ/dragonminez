@@ -9,6 +9,7 @@ displayName="${mod_name}"
 displayURL="https://discord.gg/b5MgRNb3D7"
 logoFile="assets/dragonminez/dragonminez.png"
 authors="${mod_authors}"
+credits="Thanks to Toji71_ for helping us with the Builds, and CyaneaCapillata for supporting us on Patreon."
 displayTest="MATCH_VERSION" # Checkea misma version en cliente y servidor
 description='''${mod_description}'''
 
