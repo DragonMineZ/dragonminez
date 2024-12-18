@@ -114,7 +114,7 @@ dependencies {
 
     //Corrección a puntos vulnerables de dependencias en Forge:
     implementation 'com.google.guava:guava:33.4.0-jre'
-    implementation 'io.netty:netty-codec:4.1.100.Final'
+    implementation 'io.netty:netty-codec:4.1.116.Final'
     implementation 'io.netty:netty-handler:4.1.116.Final'
     implementation 'org.apache.commons:commons-compress:1.27.1'
 
