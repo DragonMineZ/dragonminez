@@ -5,6 +5,7 @@ import com.yuseix.dragonminez.init.MainEntity;
 import com.yuseix.dragonminez.init.entity.custom.*;
 import com.yuseix.dragonminez.init.entity.custom.fpcharacters.*;
 import com.yuseix.dragonminez.init.entity.custom.namek.*;
+import com.yuseix.dragonminez.storyline.player.PlayerStorylineProvider;
 import com.yuseix.dragonminez.world.DragonBallGenProvider;
 import com.yuseix.dragonminez.world.NamekDragonBallGenProvider;
 import com.yuseix.dragonminez.world.StructuresCapability;
@@ -57,6 +58,7 @@ public class ModBusEvents {
 		event.register(DragonBallGenProvider.class);
 		event.register(NamekDragonBallGenProvider.class);
 		event.register(StructuresCapability.class);
+		event.register(PlayerStorylineProvider.class);
 	}
 
 }

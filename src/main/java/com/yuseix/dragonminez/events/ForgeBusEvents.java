@@ -6,6 +6,7 @@ import com.yuseix.dragonminez.commands.*;
 import com.yuseix.dragonminez.init.MainBlocks;
 import com.yuseix.dragonminez.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.stats.DMZStatsProvider;
+import com.yuseix.dragonminez.storyline.player.PlayerStorylineProvider;
 import com.yuseix.dragonminez.world.*;
 import com.yuseix.dragonminez.worldgen.dimension.ModDimensions;
 import net.minecraft.core.BlockPos;
@@ -123,8 +124,10 @@ public class ForgeBusEvents {
 			}
 			//System.out.println("Añadiendo capability");
 			final DMZStatsProvider provider = new DMZStatsProvider(player);
+			final PlayerStorylineProvider storylineprovider = new PlayerStorylineProvider();
 
 			event.addCapability(DMZStatsProvider.ID, provider);
+			event.addCapability(PlayerStorylineProvider.ID, storylineprovider);
 
 		}
 	}
@@ -154,6 +157,7 @@ public class ForgeBusEvents {
 		new LocationsCommand(event.getDispatcher());
 		new DMZPermaEffectsCommand(event.getDispatcher());
 		new DMZTempEffectsCommand(event.getDispatcher());
+		new StorylineCommand(event.getDispatcher());
 
 		ConfigCommand.register(event.getDispatcher());
 	}

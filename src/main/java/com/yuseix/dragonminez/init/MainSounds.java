@@ -35,6 +35,8 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> FROG_LAUGH = registerSoundEvent("froglaugh");
 
     public static final RegistryObject<SoundEvent> MENU_MUSIC = registerSoundEvent("menu_music");
+  
+  public static final RegistryObject<SoundEvent> NAVE_ATERRIZANDO = registerSoundEvent("landing_ship");
 
     public static final RegistryObject<SoundEvent> AURA_START = registerSoundEvent("aura_start");
     public static final RegistryObject<SoundEvent> KI_CHARGE_LOOP = registerSoundEvent("ki_charge_loop");

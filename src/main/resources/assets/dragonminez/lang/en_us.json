@@ -13,7 +13,6 @@
   "block.dragonminez.dball5_namek": "\u00A73Namek's \u00A7rDragon Ball (5 Stars)",
   "block.dragonminez.dball6_namek": "\u00A73Namek's \u00A7rDragon Ball (6 Stars)",
   "block.dragonminez.dball7_namek": "\u00A73Namek's \u00A7rDragon Ball (7 Stars)",
-
   "sounds.dragonminez.punch1": "Punch",
   "sounds.dragonminez.punch2": "Punch",
   "sounds.dragonminez.punch3": "Punch",
@@ -34,7 +33,6 @@
   "sounds.dragonminez.aura_start": "Aura Start",
   "sounds.dragonminez.ki_charge_loop": "Ki Charge",
   "sounds.dragonminez.turbo_loop": "Turbo",
-
   "entity.dragonminez.dino": "Dinosaur",
   "entity.dragonminez.namek_frog": "Namekian Frog",
   "entity.dragonminez.yellow_frog": "Yellow Namekian Frog",
@@ -59,7 +57,6 @@
   "entity.dragonminez.soldier02": "Frieza's Soldier",
   "entity.dragonminez.soldier03": "Frieza's Soldier",
   "entity.dragonminez.moro_soldier": "Moro's Soldier",
-
   "stats.dmz.alignment_good": "\u00A7bGood \u00A7f- %1$s",
   "stats.dmz.alignment_neutral": "\u00A7dNeutral \u00A7f- %1$s",
   "stats.dmz.alignment_evil": "\u00A7cEvil \u00A7f- %1$s",
@@ -92,7 +89,6 @@
   "stats.dmz.multi.fruta": "\u00A77Might Tree Fruit: \u00A7cx%1$s",
   "stats.dmz.original": "\u00A77Original: %1$s",
   "stats.dmz.modified": "\u00A77Modified: %1$s",
-
   "item.dragonminez.red_capsule": "Capsule (STR)",
   "item.dragonminez.red_capsule.str.use": "Strength",
   "item.dragonminez.red_capsule.str.full": "You have reached the maximum amount of STR.",
@@ -119,7 +115,6 @@
   "item.dragonminez.blue_capsule.tooltip": "\u00A77Gives you \u00A7a+5 ENE \u00A77stat points.",
   "item.dragonminez.blue_capsule.tooltip2": "\u00A77This capsule is used to increase your energy.",
   "error.dmz.createcharacter": "You must create your charactert first.",
-
   "item.dragonminez.comida_dino_cooked": "Cooked Dino Meat",
   "item.dragonminez.comida_dino_raw": "Raw Dino Meat",
   "item.dragonminez.dinotail_cooked": "Cooked Dino Tail",
@@ -134,7 +129,6 @@
   "item.dragonminez.heart_medicine.use": "You feel your \u00A7cheart \u00A7rstronger...",
   "item.dragonminez.senzu_bean": "Senzu Bean",
   "item.dragonminez.senzu_bean.tooltip": "\u00A77This magical bean will heal you completely.",
-
   "item.dragonminez.green_pothala_left": "Green Pothala (Left)",
   "item.dragonminez.green_pothala_right": "Green Pothala (Right)",
   "item.dragonminez.pothala_left": "Pothala (Left)",
@@ -154,7 +148,6 @@
   "item.dragonminez.t2_radar_chip": "Radar's Chip (Namek)",
   "item.dragonminez.t1_radar_cpu": "Radar's CPU (Earth)",
   "item.dragonminez.t2_radar_cpu": "Radar's CPU (Namek)",
-
   "dmz.weapons.baculo_item": "\u00A7cPower Pole",
   "dmz.weapons.baculo_item.tooltip": "\u00A77This Pole was used by Goku to reach the Kami's Lookout.",
   "dmz.weapons.z_sword": "\u00A73Z Sword",
@@ -163,13 +156,11 @@
   "dmz.weapons.trunks_sword.tooltip": "\u00A77This sword comes from the future, where Trunks fought against the Androids.",
   "dmz.weapons.yajirobe_katana": "\u00A7eYajirobe's Katana",
   "dmz.weapons.yajirobe_katana.tooltip": "\u00A77This katana was used by Yajirobe to cut Vegeta's tail.",
-
   "itemGroup.dragonminez.blocks": "DMZ Blocks",
   "itemGroup.dragonminez.items": "DMZ Items",
   "itemGroup.dragonminez.ores": "DMZ Ores",
   "itemGroup.dragonminez.namek": "DMZ Namek",
   "itemGroup.dragonminez.armors": "DMZ Armors",
-
   "key.category.dragonminez.category": "DragonMine Z",
   "key.categories.dragonminez.main": "DragonMine Z",
   "key.dragonminez.menu_stats": "Menu",
@@ -179,7 +170,6 @@
   "key.dragonminez.function": "Function",
   "key.dragonminez.select_up": "Select Up",
   "key.dragonminez.select_down": "Select Down",
-
   "menu.title.dragonminez.statsmenu": "",
   "dmz.ccreation.genders.male": "Male",
   "dmz.ccreation.genders.female": "Female",
@@ -206,14 +196,12 @@
   "dmz.ccreation.bioandroid.title": "Bio-Android Race",
   "dmz.ccreation.colddemon.title": "Cold Demon Race",
   "dmz.ccreation.majin.title": "Majin Race",
-
   "dmz.ccreation.human.description": "They are a terrestrial race with highly versatile combat skills. While they lack the innate power of other races, they are incredibly resourceful and tenacious. They stand out for their perseverance and courage, able to overcome their limitations through training and discipline.",
   "dmz.ccreation.saiyan.description": "They are a warrior race born for combat. Their innate ability to grow stronger after each battle makes them formidable opponents. They can even transform into powerful Super Saiyans and take their abilities to unimaginable levels.",
   "dmz.ccreation.namek.description": "They are a peaceful yet powerful race, with great regenerative abilities and a natural connection to magic and nature. They are known for their wisdom, energy control, and their ability to fuse with others of their kind, increasing their power.",
   "dmz.ccreation.bioandroid.description": "They are artificially created beings, combining the DNA of the most powerful races. With the ability to absorb other beings and increase their power to unimaginable levels, these creatures are adaptable and dangerous, designed to be invincible.",
   "dmz.ccreation.colddemon.description": "They are a race of intergalactic conquerors with immense power and boundless cruelty. Their ability to transform and increase their power makes them formidable enemies. Despite their fragile appearance, they are some of the deadliest creatures in the universe.",
   "dmz.ccreation.majin.description": "They are a magical and unpredictable race with enormous destructive potential, with a unique ability to regenerate and change form. Though they may seem playful or childish, they are extremely dangerous when they unleash their true power.",
-
   "block.dragonminez.namek_block": "Planet Namek Block",
   "block.dragonminez.namek_dirt": "Namek Dirt",
   "block.dragonminez.namek_grass": "Namek Grass",
@@ -233,7 +221,6 @@
   "block.dragonminez.trillium_flower": "Trillium",
   "block.dragonminez.sacred_trillium_flower": "Sacred Trillium",
   "block.dragonminez.lotus_flower": "Lotus",
-
   "block.dragonminez.namek_ajissa_log": "Ajissa Log",
   "block.dragonminez.namek_stripped_ajissa_log": "Stripped Ajissa Log",
   "block.dragonminez.namek_ajissa_wood": "Ajissa Wood",
@@ -262,7 +249,6 @@
   "block.dragonminez.namek_sacred_button": "Sacred Button",
   "block.dragonminez.namek_sacred_sapling": "Sacred Sapling",
   "block.dragonminez.namek_sacred_leaves": "Sacred Leaves",
-
   "block.dragonminez.namek_stone": "Namek Stone",
   "block.dragonminez.namek_cobblestone": "Namek Cobblestone",
   "block.dragonminez.namek_deepslate": "Namek Deepslate",
@@ -283,10 +269,8 @@
   "block.dragonminez.namek_deepslate_lapis_ore": "Namek Deepslate Lapis Lazuli Ore",
   "block.dragonminez.namek_deepslate_emerald_ore": "Namek Deepslate Emerald Ore",
   "block.dragonminez.namek_deepslate_diamond_ore": "Namek Deepslate Diamond Ore",
-
   "block.dragonminez.time_chamber_portal": "Hyperbolic Time Chamber Portal Block",
   "block.dragonminez.time_chamber_block": "Hyperbolic Time Chamber Block",
-
   "block.dragonminez.gete_debris_ore": "Gete Debris",
   "block.dragonminez.gete_block": "Gete Block",
   "item.dragonminez.gete_scrap": "Gete Scrap",
@@ -300,7 +284,6 @@
   "block.dragonminez.namek_kikono_ore": "Namek Deepslate Kikono Ore",
   "block.dragonminez.kikono_block": "Kikono Block",
   "item.dragonminez.kikono_shard": "Kikono Shard",
-
   "item.dragonminez.armor_crafting_kit": "Armor Crafting Kit",
   "item.dragonminez.kikono_string": "Kikono String",
   "item.dragonminez.kikono_cloth": "Kikono Cloth",
@@ -333,7 +316,6 @@
   "item.dragonminez.pattern_shin": "Kaioshin Pattern (Shin)",
   "item.dragonminez.pattern_pride_troops": "Pride Troops Pattern (U11)",
   "item.dragonminez.pattern_hit": "Assassin Pattern (Hit)",
-
   "block.dragonminez.kikono_armor_station": "Dr. Kikono's Armor Station",
   "item.dragonminez.goku_kid_armor_chestplate": "Red Turtle Hermit School GI Chestplate (\u00A76Goku\u00A7r - Kid)",
   "item.dragonminez.goku_kid_armor_leggings": "Red Turtle Hermit School GI Leggings (\u00A76Goku\u00A7r - Kid)",
@@ -418,7 +400,6 @@
   "item.dragonminez.hit_armor_chestplate": "Assassin Chestplate (\u00A7dHit\u00A7r)",
   "item.dragonminez.hit_armor_leggings": "Assassin Leggings (\u00A7dHit\u00A7r)",
   "item.dragonminez.hit_armor_boots": "Assassin Boots (\u00A7dHit\u00A7r)",
-
   "lines.menu.accept": "Accept",
   "lines.menu.decline": "Decline",
   "lines.alignment.evil": "You became a little more \u00A7cevil\u00A7r.",
@@ -455,7 +436,6 @@
   "lines.porunga.senzu": "Senzu Beans are a Magic Bean that heals you completely. I can give you some of them.",
   "lines.porunga.gete": "Gete... The Big Star left a lot of debris on Namek... What a disaster...",
   "lines.porunga.wish.gete": "Gete Scraps",
-
   "command.dmzlocate.wrong_dimension": "You can't teleport to a Structure that is in another dimension.",
   "command.dmzlocate.unknown_location": "Unknown Location.",
   "command.dmzlocate.kamilookout": "Kami's Lookout",
@@ -498,7 +478,6 @@
   "command.dmzeffects.perma.take.all": "You have \u00A7cremoved \u00A7rall the permanent effects ",
   "command.dmzeffects.temp.take.all": "You have \u00A7cremoved \u00A7rall the temporary effects ",
   "command.dmz.to": "to ",
-
   "ui.dmzradar.range": "Radar Range is",
   "ui.dmzradar.blocks": "blocks.",
   "ui.dmz.spacepod.teleport": "You will be \u00A7bteleported \u00A7rin \u00A7b%s \u00A7rseconds...",
@@ -508,7 +487,6 @@
   "ui.dmz.spacepod.namek": "Namek",
   "ui.dmz.spacepod.namek.arrive": "You have arrived at \u00A73Planet Namek\u00A7r.",
   "ui.dmz.turbo_fail": "You need at least 10% Ki to use the Turbo Boost.",
-
   "advancements.dragonminez.root.title": "DragonMine Z",
   "advancements.dragonminez.root.description": "Thank you for downloading the Mod, hope you enjoy it!",
   "advancements.dragonminez.kamilookout.title": "Kami's Lookout",
@@ -564,5 +542,12 @@
   "advancements.dragonminez.pridetroopsarmor.title": "The Pride Troopers!",
   "advancements.dragonminez.pridetroopsarmor.description": "Craft the Pride Trooper Armor of U11.",
   "advancements.dragonminez.hitarmor.title": "The Infalible Assassin",
-  "advancements.dragonminez.hitarmor.description": "Craft the Assassin Armor of Hit."
+  "advancements.dragonminez.hitarmor.description": "Craft the Assassin Armor of Hit.",
+  "command.dmzstoryline.no_quest": "Quest '{0}' is not active for player '{1}'.",
+  "command.dmzstoryline.quest_completed": "Quest '{0}' has been completed.",
+  "command.dmzstoryline.quest_incompleted": "Quest '{0}' has been marked as incomplete.",
+  "command.dmzstoryline.no_found_quest": "Quest with ID '{0}' has not been found.",
+  "command.dmzstoryline.no_found_saga": "Saga with ID '{0}' not found.",
+  "command.dmzstoryline.saga_info": "Saga: {0} [{1}]",
+  "command.dmzstoryline.quest_info": "- {0}: {1} [{2}]"
 }
