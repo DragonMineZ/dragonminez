@@ -6,6 +6,8 @@ on:
 
 jobs:
   check-version:
+    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'github-actions[bot]' }}
+    permissions: write-all
     runs-on: ubuntu-latest
 
     steps:
