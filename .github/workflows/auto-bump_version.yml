@@ -6,7 +6,12 @@ on:
 
 jobs:
   auto-bump:
-    if: contains(github.event.label.name, 'major') || contains(github.event.label.name, 'minor') || contains(github.event.label.name, 'patch')
+    if: >-
+      (contains(github.event.label.name, 'major') || 
+       contains(github.event.label.name, 'minor') || 
+       contains(github.event.label.name, 'patch')) 
+      && github.actor != 'dependabot[bot]' 
+      && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
