@@ -2,10 +2,12 @@ name: Check Mod Version
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened]
 
 jobs:
   check-version:
+    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'github-actions[bot]' }}
+    permissions: write-all
     runs-on: ubuntu-latest
 
     steps:
