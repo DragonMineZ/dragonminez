@@ -18,10 +18,10 @@ jobs:
 
       - name: Get current mod_version from main branch
         run: |
-          # Fetch the main branch
+          # Fetch the main branch without merging it
           git fetch origin main:main
           # Extract the mod_version from gradle.properties on the main branch
-          main_version=$(grep -E '^mod_version=' gradle.properties | cut -d'=' -f2)
+          main_version=$(git show main:gradle.properties | grep -E '^mod_version=' | cut -d'=' -f2)
           echo "Main branch mod_version: $main_version"
           echo "::set-output name=main_version::$main_version"
         id: get_main_version
