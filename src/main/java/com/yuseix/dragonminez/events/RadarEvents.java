@@ -131,11 +131,13 @@ public class RadarEvents {
 
                 // Dibujar los puntos amarillos para cada posición detectada
                 for (BlockPos pos : closestDballPositions) {
-                    // Calcular la distancia
-                    double distance =  Math.sqrt(player.blockPosition().distSqr(pos));
+                    // Calculate the 2D distance (ignoring Y)
+                    double dx = pos.getX() - player.getX();
+                    double dz = pos.getZ() - player.getZ();
+                    double distance = Math.sqrt(dx * dx + dz * dz); // 2D distance
 
-                    // Calcular el ángulo entre el jugador y el bloque
-                    double angleToBlock = Math.atan2(pos.getZ() - player.getZ(), pos.getX() - player.getX());
+                    // Calculate the angle to the block
+                    double angleToBlock = Math.atan2(dz, dx);
 
                     // Obtener la rotación del jugador (yaw) y ajustarla al ángulo del bloque
                     double playerYaw = Math.toRadians(player.getYRot()); // Convertir el yaw del jugador a radianes
@@ -159,7 +161,7 @@ public class RadarEvents {
         Level world = player.level();
         BlockPos playerPos = player.blockPosition();
         List<BlockPos> dballPositions = new ArrayList<>();
-        int verticalRange = 363; // Rango en el eje Y (±10 bloques)
+        int verticalRange = 363; // Rango en el eje Y (±363 bloques)
 
         for (int x = -range; x <= range; x++) {
             for (int z = -range; z <= range; z++) {
@@ -184,7 +186,7 @@ public class RadarEvents {
         Level world = player.level();
         BlockPos playerPos = player.blockPosition();
         List<BlockPos> dballPositions = new ArrayList<>();
-        int verticalRange = 363; // Rango en el eje Y (±10 bloques)
+        int verticalRange = 363; // Rango en el eje Y (±363 bloques)
 
         for (int x = -range; x <= range; x++) {
             for (int z = -range; z <= range; z++) {
