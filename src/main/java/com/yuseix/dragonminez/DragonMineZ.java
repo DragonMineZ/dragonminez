@@ -31,7 +31,7 @@ public class DragonMineZ {
 
 	public DragonMineZ() {
 
-		ERROR SYNTAX TEST
+		ERROR SYNTAX P2 FORCE DE NUEVO LOL
 
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
