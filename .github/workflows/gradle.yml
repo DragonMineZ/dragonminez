@@ -16,6 +16,7 @@ on:
   workflow_dispatch: #Test workflow manually, comment this line when the repo is public
 
 permissions:
+  pull-requests: read # for PMD to analyze only modified files
   contents: write # for actions/checkout to fetch code and gradle to submit the dependency graph file
   security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
   actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
@@ -52,7 +53,6 @@ jobs:
       - name: Build with Gradle # Runs the build
         run: |
           ./gradlew build --stacktrace | tee build.log
-        continue-on-error: true
 
       - name: Extract Failure Logs
         if: failure()
