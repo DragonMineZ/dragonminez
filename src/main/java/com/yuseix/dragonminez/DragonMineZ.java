@@ -31,6 +31,8 @@ public class DragonMineZ {
 
 	public DragonMineZ() {
 
+		ERROR SYNTAX TEST
+
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
 		if (ModList.get().isLoaded("geckolib")) {
