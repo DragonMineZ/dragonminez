@@ -736,6 +736,17 @@ public class CCustomizationPage extends Screen {
                             this.removeWidget(hairRigthButton);
                             this.removeWidget(hairLeftButton);
                         }));
+                        this.hairRigthButton = (DMZRightButton) this.addRenderableWidget(new DMZRightButton("right", posX, posY + 47, Component.empty(), button -> {
+                            ModMessages.sendToServer(new CharacterC2S("hairID", 7));
+                            this.removeWidget(hairRigthButton);
+                            this.removeWidget(hairLeftButton);
+                        }));
+                    } else if (cap.getHairID() == 7) {
+                        this.hairLeftButton = (DMZRightButton) this.addRenderableWidget(new DMZRightButton("left", posX - 65, posY+47, Component.empty(), button -> {
+                            ModMessages.sendToServer(new CharacterC2S("hairID", 6));
+                            this.removeWidget(hairRigthButton);
+                            this.removeWidget(hairLeftButton);
+                        }));
                     }
 
                     break;
