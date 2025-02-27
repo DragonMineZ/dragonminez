@@ -40,6 +40,7 @@ public class HairsLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<Ab
     private GohanDBSHairModel gohandbshair;
     private GohanTeenHairModel gohanteenhair;
     private TrunksHairModel trunkshair;
+    private UBDynamicHair ubhair;
 
     private EarsNamek earsNamek;
     private TailModel cola;
@@ -54,7 +55,7 @@ public class HairsLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<Ab
         this.gohandbshair = new GohanDBSHairModel(GohanDBSHairModel.createBodyLayer().bakeRoot());
         this.gohanteenhair = new GohanTeenHairModel(GohanTeenHairModel.createBodyLayer().bakeRoot());
         this.trunkshair = new TrunksHairModel(TrunksHairModel.createBodyLayer().bakeRoot());
-
+        this.ubhair = new UBDynamicHair(UBDynamicHair.createBodyLayer().bakeRoot());
     }
 
     @Override
@@ -151,6 +152,11 @@ public class HairsLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<Ab
                             this.trunkshair.setupAnim(abstractClientPlayer, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
                             this.getParentModel().getHead().translateAndRotate(poseStack);
                             this.trunkshair.renderToBuffer(poseStack,trunks, packedLight, OverlayTexture.NO_OVERLAY, colorR,colorG,colorB,1.0f);
+                        } else if(hairId == 7) {
+                            VertexConsumer ubhair = multiBufferSource.getBuffer(RenderType.entityTranslucent(GOKUHAIR_TEXT1));
+                            this.ubhair.setupAnim(abstractClientPlayer, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+                            this.getParentModel().getHead().translateAndRotate(poseStack);
+                            this.ubhair.renderToBuffer(poseStack, ubhair, packedLight, OverlayTexture.NO_OVERLAY, colorR,colorG,colorB,1.0f);
                         }
 
                     } else if(transformation == 1){ //Ozaru osea aqui no hacemos nada

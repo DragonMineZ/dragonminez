@@ -210,6 +210,7 @@ public class ModClientEvents {
 		e.registerLayerDefinition(GohanDBSHairModel.LAYER_LOCATION, GohanDBSHairModel::createBodyLayer);
 		e.registerLayerDefinition(GohanTeenHairModel.LAYER_LOCATION, GohanTeenHairModel::createBodyLayer);
 		e.registerLayerDefinition(TrunksHairModel.LAYER_LOCATION, TrunksHairModel::createBodyLayer);
+		e.registerLayerDefinition(UBDynamicHair.LAYER_LOCATION, UBDynamicHair::createBodyLayer);
 
 		//ARMADURAS
 		e.registerLayerDefinition(ArmorBaseModel.LAYER_LOCATION, ArmorBaseModel::createBodyLayer);
