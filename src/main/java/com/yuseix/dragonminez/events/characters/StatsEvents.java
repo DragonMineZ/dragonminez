@@ -66,8 +66,9 @@ public class StatsEvents {
 	//Teclas
 	private static boolean previousKeyDescendState = false;
 	private static boolean previousKiChargeState = false;
-	private static boolean turboOn = false;
+	private static boolean turboOn = false, hasPressedTurbo = false;
 	private static boolean transformOn = false;
+	private static double previousFov = 1.0;
 
 	//Sonidos
 	private static SimpleSoundInstance kiChargeLoop, turboLoop, oozaruLoop;
@@ -197,35 +198,6 @@ public class StatsEvents {
 			playerstats.setIntValue("senzutimer", senzuContador(playerstats.getIntValue("senzutimer")));
 
 		});
-	}
-
-	@SubscribeEvent
-	public static void onLivingUpdateEvent(LivingEvent.LivingTickEvent event) {
-		if (!(event.getEntity() instanceof Player player)) return;
-
-		if (turboOn) {
-			// Obtener la velocidad actual
-			Vec3 currentMovement = player.getDeltaMovement();
-
-			if (player.onGround()) {
-				// En tierra: Aplicar multiplicador al movimiento horizontal (X y Z)
-				double turboSpeedX = currentMovement.x * 1.5;
-				double turboSpeedZ = currentMovement.z * 1.5;
-
-				// Configurar el nuevo movimiento con el multiplicador
-				player.setDeltaMovement(turboSpeedX, currentMovement.y, turboSpeedZ);
-			} else {
-				// En el aire: Normalizar la velocidad horizontal para evitar acumulación infinita
-				double horizontalSpeed = Math.sqrt(currentMovement.x * currentMovement.x + currentMovement.z * currentMovement.z);
-				if (horizontalSpeed > 0.65) {
-					// Limitar la velocidad horizontal al máximo permitido
-					double scale = 0.65 / horizontalSpeed;
-					double limitedX = currentMovement.x * scale;
-					double limitedZ = currentMovement.z * scale;
-					player.setDeltaMovement(limitedX, currentMovement.y, limitedZ);
-				}
-			}
-		}
 	}
 
 
@@ -461,21 +433,25 @@ public class StatsEvents {
 
 					//Turbo
 					if (isTurboKeypressed) {
+						if (!hasPressedTurbo) {
+							previousFov = Minecraft.getInstance().options.fovEffectScale().get();
+							System.out.println("Previous FOV: " + previousFov);
+							hasPressedTurbo = true;
+						}
 						if (!turboOn && porcentaje > 10) {
+							if (Minecraft.getInstance().options.fovEffectScale().get() != 0.0) Minecraft.getInstance().options.fovEffectScale().set(0.0);
 							// Solo activar Turbo si tiene más del 10% de energía
 							turboOn = true;
 							ModMessages.sendToServer(new CharacterC2S("isTurboOn", 1));
 							ModMessages.sendToServer(new PermaEffC2S("add", "turbo", 1));
 							playSoundOnce(MainSounds.AURA_START.get());
 							startLoopSound(MainSounds.TURBO_LOOP.get(), "turbo");
-							setTurboSpeed(player, true);
 						} else if (turboOn) {
 							// Permitir desactivar Turbo incluso si el porcentaje es menor al 10%
 							turboOn = false;
 							ModMessages.sendToServer(new CharacterC2S("isTurboOn", 0));
 							ModMessages.sendToServer(new PermaEffC2S("remove", "turbo", 1));
 							stopLoopSound("turbo");
-							setTurboSpeed(player, false);
 						} else {
 							player.displayClientMessage(Component.translatable("ui.dmz.turbo_fail"), true);
 						}
@@ -487,7 +463,6 @@ public class StatsEvents {
 						ModMessages.sendToServer(new CharacterC2S("isTurboOn", 0));
 						ModMessages.sendToServer(new PermaEffC2S("remove", "turbo", 1));
 						stopLoopSound("turbo");
-						setTurboSpeed(player, false);
 					}
 
 					// Transformación
@@ -531,6 +506,49 @@ public class StatsEvents {
 
 				}
 			});
+		}
+	}
+
+	@SubscribeEvent
+	public static void onLivingEntityUpdate(LivingEvent.LivingTickEvent event) {
+		if (!(event.getEntity() instanceof Player player)) return;
+
+		if (turboOn) {
+			if (player.isSprinting()) {
+				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75);
+			} else {
+				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.5);
+			}
+
+			// Aumentar la velocidad al volar
+			if (player.getAbilities().flying) {
+				if (player.isSprinting()) {
+					player.getAbilities().setFlyingSpeed(0.25f);
+					player.onUpdateAbilities();
+				} else {
+					player.getAbilities().setFlyingSpeed(0.15f);
+					player.onUpdateAbilities();
+				}
+			}
+		} else {
+			if (player.isSprinting()) {
+				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.11);
+			} else {
+				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.1);
+			}
+
+			// Restaurar la velocidad normal al volar
+			if (player.getAbilities().flying) {
+				if (player.isSprinting()) {
+					player.getAbilities().setFlyingSpeed(0.1f);
+					player.onUpdateAbilities();
+				} else {
+					player.getAbilities().setFlyingSpeed(0.05f);
+					player.onUpdateAbilities();
+				}
+			}
+
+			if (Minecraft.getInstance().options.fovEffectScale().get() != previousFov) Minecraft.getInstance().options.fovEffectScale().set(previousFov);
 		}
 	}
 
@@ -810,17 +828,6 @@ public class StatsEvents {
 				oozaruLoop = null;
 			}
 		});
-	}
-
-	private static void setTurboSpeed(Player player, boolean enable) {
-		AttributeInstance speedAttribute = player.getAttribute(Attributes.MOVEMENT_SPEED);
-		if (speedAttribute == null) return;
-		double originalSpeed = speedAttribute.getBaseValue();
-		if (enable) {
-			speedAttribute.setBaseValue(originalSpeed + 0.06);
-		} else {
-			speedAttribute.setBaseValue(originalSpeed);
-		}
 	}
 
 	private static void sonidosGolpes(Player player) {

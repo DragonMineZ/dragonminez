@@ -61,7 +61,7 @@ public class TickHandler {
 		if (energyRegenCounter >= 20) {
 			int maxEnergy = dmzDatos.calcEnergy(playerStats);
 
-			if (playerStats.getBoolean("turbo")) {
+			if (playerStats.getBoolean("turbo") && !player.isCreative() && !player.isSpectator()) {
 				// Si el turbo está activo, consumo de energía
 				int consumeEnergy = dmzDatos.calcKiRegen(playerStats) * 2;
 				if (consumeEnergy < 2) consumeEnergy = 2;
