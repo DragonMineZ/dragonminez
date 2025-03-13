@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.yuseix.dragonminez.DragonMineZ;
 import com.yuseix.dragonminez.client.character.renders.DmzRenderer;
 import com.yuseix.dragonminez.client.hud.spaceship.SaiyanSpacePodOverlay;
+import com.yuseix.dragonminez.events.characters.StatsEvents;
 import com.yuseix.dragonminez.init.MainParticles;
 import com.yuseix.dragonminez.init.MainSounds;
 import com.yuseix.dragonminez.init.entity.custom.NaveSaiyanEntity;
@@ -32,6 +33,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -40,6 +42,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -240,6 +243,51 @@ public class ClientEvents {
 			}
 		}
 
+
+	}
+
+	@SubscribeEvent
+	public static void onLivingEntityUpdate(LivingEvent.LivingTickEvent event) {
+		if (!(event.getEntity() instanceof Player player)) return;
+		DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
+			if (cap.getBoolean("turbo")) {
+				if (player.isSprinting()) {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75);
+				} else {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.5);
+				}
+
+				// Aumentar la velocidad al volar
+				if (player.getAbilities().flying) {
+					if (player.isSprinting()) {
+						player.getAbilities().setFlyingSpeed(0.25f);
+						player.onUpdateAbilities();
+					} else {
+						player.getAbilities().setFlyingSpeed(0.15f);
+						player.onUpdateAbilities();
+					}
+				}
+			} else {
+				if (player.isSprinting()) {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.11);
+				} else {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.1);
+				}
+
+				// Restaurar la velocidad normal al volar
+				if (player.getAbilities().flying) {
+					if (player.isSprinting()) {
+						player.getAbilities().setFlyingSpeed(0.1f);
+						player.onUpdateAbilities();
+					} else {
+						player.getAbilities().setFlyingSpeed(0.05f);
+						player.onUpdateAbilities();
+					}
+				}
+
+				if (Minecraft.getInstance().options.fovEffectScale().get() != StatsEvents.getPreviousFov()) Minecraft.getInstance().options.fovEffectScale().set(StatsEvents.getPreviousFov());
+			}
+		});
 
 	}
 

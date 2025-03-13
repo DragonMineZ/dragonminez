@@ -509,47 +509,8 @@ public class StatsEvents {
 		}
 	}
 
-	@SubscribeEvent
-	public static void onLivingEntityUpdate(LivingEvent.LivingTickEvent event) {
-		if (!(event.getEntity() instanceof Player player)) return;
-
-		if (turboOn) {
-			if (player.isSprinting()) {
-				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75);
-			} else {
-				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.5);
-			}
-
-			// Aumentar la velocidad al volar
-			if (player.getAbilities().flying) {
-				if (player.isSprinting()) {
-					player.getAbilities().setFlyingSpeed(0.25f);
-					player.onUpdateAbilities();
-				} else {
-					player.getAbilities().setFlyingSpeed(0.15f);
-					player.onUpdateAbilities();
-				}
-			}
-		} else {
-			if (player.isSprinting()) {
-				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.11);
-			} else {
-				player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.1);
-			}
-
-			// Restaurar la velocidad normal al volar
-			if (player.getAbilities().flying) {
-				if (player.isSprinting()) {
-					player.getAbilities().setFlyingSpeed(0.1f);
-					player.onUpdateAbilities();
-				} else {
-					player.getAbilities().setFlyingSpeed(0.05f);
-					player.onUpdateAbilities();
-				}
-			}
-
-			if (Minecraft.getInstance().options.fovEffectScale().get() != previousFov) Minecraft.getInstance().options.fovEffectScale().set(previousFov);
-		}
+	public static double getPreviousFov() {
+		return previousFov;
 	}
 
 	@SubscribeEvent
