@@ -70,11 +70,15 @@ public class DMZItemModelProvider extends ItemModelProvider {
         withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(MainItems.MORO_SOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//        withExistingParent(MainItems.NTRADER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//        withExistingParent(MainItems.NTRADER2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//        withExistingParent(MainItems.NTRADER3_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(MainItems.NWARRIOR1_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(MainItems.NWARRIOR2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(MainItems.SAIBAMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(MainItems.KAIWAREMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(MainItems.KYUKONMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(MainItems.COPYMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(MainItems.TENNENMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(MainItems.JINKOUMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(MainItems.REDRIBBONSOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 
         //Comidas
         simpleItem(MainItems.COMIDA_DINO_RAW);

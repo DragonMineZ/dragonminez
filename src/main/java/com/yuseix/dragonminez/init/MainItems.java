@@ -352,16 +352,24 @@ public final class MainItems {
             new ForgeSpawnEggItem(MainEntity.FRIEZA_SOLDIER03, 0x95F0CB, 0xDABAE6, new Item.Properties()));
     public static final RegistryObject<Item> MORO_SOLDIER_SE = ITEM_REGISTER.register("moro_soldier_spawn_egg", () ->
             new ForgeSpawnEggItem(MainEntity.MORO_SOLDIER, 0x051942, 0xE6E7EB, new Item.Properties()));
-//    public static final RegistryObject<Item> NTRADER_SE = ITEM_REGISTER.register("ntrader1_spawn_egg", () ->
-//            new ForgeSpawnEggItem(MainEntity.NAMEKNPC_TRADER1, 0x47A151, 0x8A1612, new Item.Properties()));
-//    public static final RegistryObject<Item> NTRADER2_SE = ITEM_REGISTER.register("ntrader2_spawn_egg", () ->
-//            new ForgeSpawnEggItem(MainEntity.NAMEKNPC_TRADER2, 0x47A151, 0x12848A, new Item.Properties()));
-//    public static final RegistryObject<Item> NTRADER3_SE = ITEM_REGISTER.register("ntrader3_spawn_egg", () ->
-//            new ForgeSpawnEggItem(MainEntity.NAMEKNPC_TRADER3, 0x47A151, 0x5E331D, new Item.Properties()));
     public static final RegistryObject<Item> NWARRIOR1_SE = ITEM_REGISTER.register("nwarrior1_spawn_egg", () ->
             new ForgeSpawnEggItem(MainEntity.NAMEKNPC_WARRIOR1, 0x246E18, 0x12848A, new Item.Properties()));
     public static final RegistryObject<Item> NWARRIOR2_SE = ITEM_REGISTER.register("nwarrior2_spawn_egg", () ->
             new ForgeSpawnEggItem(MainEntity.NAMEKNPC_WARRIOR2, 0x246E18, 0x6ED610, new Item.Properties()));
+    public static final RegistryObject<Item> SAIBAMAN_SE = ITEM_REGISTER.register("saibaman_spawn_egg", () ->
+            new ForgeSpawnEggItem(MainEntity.SAIBAMAN, 0x6ED610, 0x2A6E18, new Item.Properties()));
+    public static final RegistryObject<Item> KAIWAREMAN_SE = ITEM_REGISTER.register("kaiwareman_spawn_egg", () ->
+            new ForgeSpawnEggItem(MainEntity.KAIWAREMAN, 0x54e8b2, 0x298ba3, new Item.Properties()));
+    public static final RegistryObject<Item> KYUKONMAN_SE = ITEM_REGISTER.register("kyukonman_spawn_egg", () ->
+            new ForgeSpawnEggItem(MainEntity.KYUKONMAN, 0xe6d575, 0x6b5e12, new Item.Properties()));
+    public static final RegistryObject<Item> COPYMAN_SE = ITEM_REGISTER.register("copyman_spawn_egg", () ->
+            new ForgeSpawnEggItem(MainEntity.COPYMAN, 0x47463d, 0x242321, new Item.Properties()));
+    public static final RegistryObject<Item> TENNENMAN_SE = ITEM_REGISTER.register("tennenman_spawn_egg", () ->
+            new ForgeSpawnEggItem(MainEntity.TENNENMAN, 0xb971d1, 0x298ba3, new Item.Properties()));
+    public static final RegistryObject<Item> JINKOUMAN_SE = ITEM_REGISTER.register("jinkouman_spawn_egg", () ->
+            new ForgeSpawnEggItem(MainEntity.JINKOUMAN, 0xb3acb5, 0x242321, new Item.Properties()));
+    public static final RegistryObject<Item> REDRIBBONSOLDIER_SE = ITEM_REGISTER.register("redribbon_soldier_spawn_egg", () ->
+            new ForgeSpawnEggItem(MainEntity.REDRIBBON_SOLDIER, 0xe6975e, 0xe63c29, new Item.Properties()));
 
     // I AM THE STORM THAT IS APPROACHING, PROVOKING DARK CLOUDS IN ISOLATION
     public static RegistryObject<Item> regItem(String name) {

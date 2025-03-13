@@ -603,18 +603,18 @@ public class SkillMenu extends Screen {
         if(infoMenu){
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
                 var race = cap.getIntValue("race");
-                int humanPassive = DMZHumanConfig.KICHARGE_REGEN_BOOST.get();
-                int zenkaiCant = DMZSaiyanConfig.ZENKAI_CANT.get() - cap.getIntValue("zenkaicount");
-                int zenkaiHeal = DMZSaiyanConfig.ZENKAI_HEALTH_REGEN.get();
-                int zenkaiBoost = DMZSaiyanConfig.ZENKAI_STAT_BOOST.get();
+                int humanPassive = DMZClientConfig.getHumanPassive();
+                int zenkaiCant = DMZClientConfig.getSaiyanPassive("cant") - cap.getIntValue("zenkaicount");
+                int zenkaiHeal = DMZClientConfig.getSaiyanPassive("heal");
+                int zenkaiBoost = DMZClientConfig.getSaiyanPassive("boost");
                 int remainingTicks = cap.getIntValue("zenkaitimer");
                 int remainingMinutes = (remainingTicks / 1200); // 1200 ticks = 1 minuto
                 int remainingSeconds = (remainingTicks / 20) % 60; // Convertimos a segundos y obtenemos los restantes
-                int namekPassive = DMZNamekConfig.PASSIVE_REGEN.get();
-                double colddemonPassive = DMZColdDemonConfig.TP_MULTIPLER_PASSIVE.get();
-                int bioPassive1 = DMZBioAndroidConfig.HALF_HEALTH_LIFESTEAL.get();
-                int bioPassive2 = DMZBioAndroidConfig.QUARTER_HEALTH_LIFESTEAL.get();
-                double majinPassive = DMZMajinConfig.PASSIVE_HEALTH_REGEN.get();
+                int namekPassive = DMZClientConfig.getNamekPassive();
+                double colddemonPassive = DMZClientConfig.getColdPassive();
+                int bioPassive1 = DMZClientConfig.getBioPassive("half");
+                int bioPassive2 = DMZClientConfig.getBioPassive("quarter");
+                double majinPassive = DMZClientConfig.getMajinPassive();
 
                 int startY = (this.height - 168) / 2 + 18;
                 int startX = (this.width - 250) / 2 + 160;

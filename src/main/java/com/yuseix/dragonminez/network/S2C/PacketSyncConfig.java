@@ -711,6 +711,36 @@ public class PacketSyncConfig {
                 case "majin_mult_regen_spiritualist":
                     DMZClientConfig.setClassMult(5, "spiritualist", "regen", stat);
                     break;
+                case "human_passive":
+                    DMZClientConfig.setHumanPassive((int) stat);
+                    break;
+                case "zenkai_timer":
+                    DMZClientConfig.setSaiyanPassive("timer", (int) stat);
+                    break;
+                case "zenkai_heal":
+                    DMZClientConfig.setSaiyanPassive("heal", (int) stat);
+                    break;
+                case "zenkai_boost":
+                    DMZClientConfig.setSaiyanPassive("boost", (int) stat);
+                    break;
+                case "zenkai_cant":
+                    DMZClientConfig.setSaiyanPassive("cant", (int) stat);
+                    break;
+                case "namek_passive":
+                    DMZClientConfig.setNamekPassive((int) stat);
+                    break;
+                case "bio_passive_half":
+                    DMZClientConfig.setBioPassive("half", (int) stat);
+                    break;
+                case "bio_passive_quarter":
+                    DMZClientConfig.setBioPassive("quarter", (int) stat);
+                    break;
+                case "cold_passive":
+                    DMZClientConfig.setColdPassive(stat);
+                    break;
+                case "majin_passive":
+                    DMZClientConfig.setMajinPassive(stat);
+                    break;
             }
         });
         ctx.get().setPacketHandled(true);

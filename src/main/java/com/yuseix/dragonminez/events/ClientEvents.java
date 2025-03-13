@@ -72,7 +72,7 @@ public class ClientEvents {
 			"ezShokkoh",
 			"ImYuseix",
 			"Toji71_",
-			"InmortalPix",
+			"InmortalPx",
 			"LecuTheAnimator",
 			"Baby_Poop12311",
 			"SpaceCarp",
@@ -267,26 +267,26 @@ public class ClientEvents {
 									player.getZ() + (Math.random() - 0.5) * 3.5,
 									0, 0.1, 0);
 						}
-
-
 					}
 
 				});
 			}
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
 				if (cap.getBoolean("aura") || cap.getBoolean("turbo")) {
+					String particleValue = Minecraft.getInstance().options.particles().get().toString();
 					if (player.onGround()) {
-						for (int i = 0; i < 5; i++) {
-							double angle = i * ((2 * Math.PI) / 3);
-							double x = player.getX() + 1.5 * Math.cos(angle);
-							double z = player.getZ() + 1.5 * Math.sin(angle);
-
+						int particleCount = 3;
+						switch (particleValue) {
+							case "DECREASED" -> particleCount = 2;
+							case "MINIMAL" -> particleCount = 1;
+						}
+						for (int i = 0; i < particleCount; i++) {
 							double y = player.getY() + 0.2;
 
 							double xSpeed = (Math.random() - 0.5) * 0.02;
 							double zSpeed = (Math.random() - 0.5) * 0.02;
 
-							level.addParticle(MainParticles.DUST_PARTICLE.get(), x, y, z, xSpeed, 0, zSpeed);
+							level.addParticle(MainParticles.DUST_PARTICLE.get(), player.getX(), y, player.getZ(), xSpeed, 0, zSpeed);
 						}
 					}
 				}

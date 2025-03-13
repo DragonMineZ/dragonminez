@@ -313,7 +313,7 @@ public class PorungaMenu extends Screen {
 				}));
 				// Revivir a otros
 				this.reviveother = (GlowButton) this.addRenderableWidget(new GlowButton((this.width / 2) - 105, (this.height - 23),
-						Component.translatable("lines.porunga.revive_other"), wa -> {
+						Component.translatable("lines.shenron.wish.revive_other"), wa -> {
 					PageOption = "revive_other";
 				}));
 			}

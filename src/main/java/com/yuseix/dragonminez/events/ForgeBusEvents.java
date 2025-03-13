@@ -122,6 +122,19 @@ public class ForgeBusEvents {
 	}
 
 	@SubscribeEvent
+	public void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
+		Player player = event.getEntity();
+		DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(stats -> {
+			if (stats.getBoolean("transform")) stats.setBoolean("transform", false);
+			if (stats.getBoolean("turbo")) stats.setBoolean("turbo", false);
+			if (stats.getBoolean("aura")) stats.setBoolean("aura", false);
+			if (stats.getBoolean("porungarevive")) stats.setBoolean("porungarevive", false);
+			if (stats.getBoolean("shenronrevive")) stats.setBoolean("shenronrevive", false);
+			if (stats.getBoolean("descend")) stats.setBoolean("descend", false);
+		});
+	}
+
+	@SubscribeEvent
 	public void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			sendDragonBallData(player, "both");

@@ -35,6 +35,7 @@ public class DMZGeneralConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_KAMEHOUSE_SPAWN;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_ELDERGURU_SPAWN;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_DBALLEVENTS_ACTIVE;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_DRAGON_SPAWN;
 
     public static final ForgeConfigSpec.ConfigValue<Integer> DBALL_SPAWN_RANGE;
     public static final ForgeConfigSpec.ConfigValue<Integer> SENZU_SHENRON_WISH;
@@ -72,6 +73,7 @@ public class DMZGeneralConfig {
 
         SAVE_INVENTORY = BUILDER.comment("Save Player Inventory on Death (Default: true)")
                 .comment("This function is currently disabled due to a big bug. It will reworked an re enabled in v1.3.0.")
+                .comment("Either you put it True or False, it will not work.")
                 .define("Save Inventory: ", true);
 
         BUILDER.pop();
@@ -153,6 +155,9 @@ public class DMZGeneralConfig {
                 .comment("Disabling this will allow Multiple Sets of DragonBalls to be placed.")
                 .comment("But it will also make conflicts with the Dragon Radar, due to it only tracking the first set of Dragon Balls.")
                 .define("DBall Events Active: ", true);
+
+        SHOULD_DRAGON_SPAWN = BUILDER.comment("Should Shenron and Porunga Spawn when Interacting with DragonBalls? (Default: true)")
+                .define("Dragon Spawn: ", true);
 
         BUILDER.push("Shenron / Porunga Wishes");
 
