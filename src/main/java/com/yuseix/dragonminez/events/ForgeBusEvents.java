@@ -139,13 +139,13 @@ public class ForgeBusEvents {
 				if (stats.getBoolean("porungarevive")) stats.setBoolean("porungarevive", false);
 				if (stats.getBoolean("shenronrevive")) stats.setBoolean("shenronrevive", false);
 				if (stats.getBoolean("descend")) stats.setBoolean("descend", false);
+
 				if (DMZGeneralConfig.SAVE_INVENTORY.get()) {
 					PlayerInventoryManager inventoryManager = PlayerInventoryManager.get(level);
-					if (level.dimension() == ModDimensions.OTHERWORLD_DIM_LEVEL_KEY) {
-						ListTag otherworldInventory = inventoryManager.getOtherworldInventory(player.getUUID());
-						player.getInventory().load(otherworldInventory);
-					} else {
+					if (event.getFrom() == ModDimensions.OTHERWORLD_DIM_LEVEL_KEY) {
 						ListTag mainInventory = inventoryManager.getMainInventory(player.getUUID());
+						player.getInventory().save(mainInventory);
+						inventoryManager.setMainInventory(player.getUUID(), mainInventory);
 						player.getInventory().load(mainInventory);
 					}
 					player.inventoryMenu.broadcastChanges();
