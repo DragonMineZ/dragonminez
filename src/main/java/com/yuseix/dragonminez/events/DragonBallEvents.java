@@ -29,7 +29,7 @@ public class DragonBallEvents {
 	@SubscribeEvent
 	public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
 		if (!(event.getEntity() instanceof ServerPlayer player)) return;
-		if (DMZGeneralConfig.SHOULD_DBALL_SPAWN.get()) return;
+		if (!DMZGeneralConfig.SHOULD_DBALLEVENTS_ACTIVE.get()) return;
 
 		Level level = player.level();
 		BlockPos pos = event.getPos();
