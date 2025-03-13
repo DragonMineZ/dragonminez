@@ -247,51 +247,6 @@ public class ClientEvents {
 	}
 
 	@SubscribeEvent
-	public static void onLivingEntityUpdate(LivingEvent.LivingTickEvent event) {
-		if (!(event.getEntity() instanceof Player player)) return;
-		DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
-			if (cap.getBoolean("turbo")) {
-				if (player.isSprinting()) {
-					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75);
-				} else {
-					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.5);
-				}
-
-				// Aumentar la velocidad al volar
-				if (player.getAbilities().flying) {
-					if (player.isSprinting()) {
-						player.getAbilities().setFlyingSpeed(0.25f);
-						player.onUpdateAbilities();
-					} else {
-						player.getAbilities().setFlyingSpeed(0.15f);
-						player.onUpdateAbilities();
-					}
-				}
-			} else {
-				if (player.isSprinting()) {
-					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.11);
-				} else {
-					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.1);
-				}
-
-				// Restaurar la velocidad normal al volar
-				if (player.getAbilities().flying) {
-					if (player.isSprinting()) {
-						player.getAbilities().setFlyingSpeed(0.1f);
-						player.onUpdateAbilities();
-					} else {
-						player.getAbilities().setFlyingSpeed(0.05f);
-						player.onUpdateAbilities();
-					}
-				}
-
-				if (Minecraft.getInstance().options.fovEffectScale().get() != StatsEvents.getPreviousFov()) Minecraft.getInstance().options.fovEffectScale().set(StatsEvents.getPreviousFov());
-			}
-		});
-
-	}
-
-	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
 		Minecraft mc = Minecraft.getInstance();
 		Level level = mc.level;
@@ -450,7 +405,28 @@ public class ClientEvents {
 				// La vel de vuelo aumenta un 20% por nivel
 				float baseSpeed = 0.05F;
 				float flySpeed = baseSpeed * (1.0F + (0.20F * flyLevel));
-				player.getAbilities().setFlyingSpeed(flySpeed);
+
+				if (cap.getBoolean("turbo")) {
+					if (player.getAbilities().flying) {
+						if (player.isSprinting()) {
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.06f);
+							player.onUpdateAbilities();
+						} else {
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.03f);
+							player.onUpdateAbilities();
+						}
+					}
+				} else {
+					if (player.getAbilities().flying) {
+						if (player.isSprinting()) {
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.03f);
+							player.onUpdateAbilities();
+						} else {
+							player.getAbilities().setFlyingSpeed(flySpeed);
+							player.onUpdateAbilities();
+						}
+					}
+				}
 
 				Vec3 motion = player.getDeltaMovement();
 				double yVelocity = motion.y;
@@ -472,6 +448,22 @@ public class ClientEvents {
 
 				player.setDeltaMovement(motion.x, yVelocity, motion.z);
 				player.onUpdateAbilities();
+			}
+
+			if (cap.getBoolean("turbo")) {
+				if (player.isSprinting()) {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75);
+				} else {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.5);
+				}
+			} else {
+				if (player.isSprinting()) {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.11);
+				} else {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.1);
+				}
+
+				if (Minecraft.getInstance().options.fovEffectScale().get() != StatsEvents.getPreviousFov()) Minecraft.getInstance().options.fovEffectScale().set(StatsEvents.getPreviousFov());
 			}
 
 			if (cap.getBoolean("kaioplanet")) {
