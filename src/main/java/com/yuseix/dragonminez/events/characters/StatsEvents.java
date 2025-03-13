@@ -879,44 +879,24 @@ public class StatsEvents {
 
 		// Lógica de transformación para Bioandroides
 		if (race == 3 && groupForm.equals("")) {
-			if (superFormLvl >= 2 && dmzForm.equals("base")) {
-				return "semi_perfect";
-			}
-			if (superFormLvl >= 4 && dmzForm.equals("semi_perfect")) {
-				return "perfect";
-			}
+			if (superFormLvl >= 2 && dmzForm.equals("base")) return "semi_perfect";
+			if (superFormLvl >= 4 && dmzForm.equals("semi_perfect")) return "perfect";
 		}
 
 		// Lógica de transformación para Cold Demons
 		if (race == 4 && groupForm.equals("")) {
-			if (superFormLvl >= 2 && dmzForm.equals("base")) {
-				return "second_form";
-			}
-			if (superFormLvl >= 4 && dmzForm.equals("second_form")) {
-				return "third_form";
-			}
-			if (superFormLvl >= 6 && dmzForm.equals("third_form")) {
-				return "final_form";
-			}
-			if (superFormLvl >= 8 && dmzForm.equals("final_form")) {
-				return "full_power";
-			}
+			if (superFormLvl >= 2 && dmzForm.equals("base")) return "second_form";
+			if (superFormLvl >= 4 && dmzForm.equals("second_form")) return "third_form";
+			if (superFormLvl >= 6 && dmzForm.equals("third_form")) return "final_form";
+			if (superFormLvl >= 8 && dmzForm.equals("final_form")) return "full_power";
 		}
 
 		// Lógica de transformación para Majins
 		if (race == 5 && groupForm.equals("")) {
-			if (superFormLvl >= 2 && dmzForm.equals("base")) {
-				return "evil";
-			}
-			if (superFormLvl >= 4 && dmzForm.equals("evil")) {
-				return "kid";
-			}
-			if (superFormLvl >= 6 && dmzForm.equals("kid")) {
-				return "super";
-			}
-			if (superFormLvl >= 8 && dmzForm.equals("super")) {
-				return "ultra";
-			}
+			if (superFormLvl >= 2 && dmzForm.equals("base")) return "evil";
+			if (superFormLvl >= 4 && dmzForm.equals("evil")) return "kid";
+			if (superFormLvl >= 6 && dmzForm.equals("kid")) return "super";
+			if (superFormLvl >= 8 && dmzForm.equals("super")) return "ultra";
 		}
 
 		return null; // No hay transformación disponible

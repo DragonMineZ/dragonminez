@@ -35,8 +35,8 @@ public class DMZTrNamekConfig {
         // FORMA BASE
         BUILDER.push(" Base Form");
 
-        MULTIPLIER_BASE = BUILDER.comment("Multiplier for Base Form! (Min: 1.0 / Max: 200.0 / Default: 1.0)")
-                .defineInRange("Multiplier: ", 1.0, 1.0, 200.0);
+        MULTIPLIER_BASE = BUILDER.comment("Multiplier for Base Form! (Min: 0.1 / Max: 200.0 / Default: 1.0)")
+                .defineInRange("Multiplier: ", 1.0, 0.1, 200.0);
 
         BASE_FORM_KI_COST = BUILDER.comment("Ki Cost for Base Form! (Min: 0 / Max: 20000 / Default: 0)")
                 .defineInRange("Ki Cost: ", 0, 0, 20000);
@@ -47,13 +47,13 @@ public class DMZTrNamekConfig {
         BUILDER.push(" Giant Form");
 
         MULTIPLIER_GIANT_FORM_STR = BUILDER.comment("Multiplier for Giant Form STR! (Min: 1.0 / Max: 200.0 / Default: 1.5)")
-                .defineInRange("Multiplier STR: ", 1.5, 1.0, 200.0);
+                .defineInRange("Multiplier STR: ", 1.5, 0.1, 200.0);
 
         MULTIPLIER_GIANT_FORM_DEF = BUILDER.comment("Multiplier for Giant Form DEF! (Min: 1.0 / Max: 200.0 / Default: 1.5)")
-                .defineInRange("Multiplier DEF: ", 1.5, 1.0, 200.0);
+                .defineInRange("Multiplier DEF: ", 1.5, 0.1, 200.0);
 
         MULTIPLIER_GIANT_FORM_PWR = BUILDER.comment("Multiplier for Giant Form PWR! (Min: 1.0 / Max: 200.0 / Default: 1.5)")
-                .defineInRange("Multiplier PWR: ", 1.5, 1.0, 200.0);
+                .defineInRange("Multiplier PWR: ", 1.5, 0.1, 200.0);
 
         GIANT_FORM_KI_COST = BUILDER.comment("Ki Cost for Giant Form! (Min: 0 / Max: 20000 / Default: 300)")
                 .defineInRange("Ki Cost: ", 300, 0, 20000);
@@ -64,13 +64,13 @@ public class DMZTrNamekConfig {
         BUILDER.push(" Full Power Form");
 
         MULTIPLIER_FP_FORM_STR = BUILDER.comment("Multiplier for Full Power Form STR! (Min: 1.0 / Max: 200.0 / Default: 2.25)")
-                .defineInRange("Multiplier STR: ", 2.25, 1.0, 200.0);
+                .defineInRange("Multiplier STR: ", 2.25, 0.1, 200.0);
 
         MULTIPLIER_FP_FORM_DEF = BUILDER.comment("Multiplier for Full Power Form DEF! (Min: 1.0 / Max: 200.0 / Default: 2.25)")
-                .defineInRange("Multiplier DEF: ", 2.25, 1.0, 200.0);
+                .defineInRange("Multiplier DEF: ", 2.25, 0.1, 200.0);
 
         MULTIPLIER_FP_FORM_PWR = BUILDER.comment("Multiplier for Full Power Form PWR! (Min: 1.0 / Max: 200.0 / Default: 2.25)")
-                .defineInRange("Multiplier PWR: ", 2.25, 1.0, 200.0);
+                .defineInRange("Multiplier PWR: ", 2.25, 0.1, 200.0);
 
         FP_FORM_KI_COST = BUILDER.comment("Ki Cost for Full Power Form! (Min: 0 / Max: 20000 / Default: 250)")
                 .defineInRange("Ki Cost: ", 250, 0, 20000);
@@ -80,17 +80,17 @@ public class DMZTrNamekConfig {
         // FORMA SUPER NAMEK
         BUILDER.push(" Super Namek Form");
 
-        MULTIPLIER_SUPER_NAMEK_FORM_STR = BUILDER.comment("Multiplier for Super Namek Form STR! (Min: 1.0 / Max: 200.0 / Default: 3.25)")
-                .defineInRange("Multiplier STR: ", 3.25, 1.0, 200.0);
+        MULTIPLIER_SUPER_NAMEK_FORM_STR = BUILDER.comment("Multiplier for Super Namek Form STR! (Min: 1.0 / Max: 200.0 / Default: 3.0)")
+                .defineInRange("Multiplier STR: ", 3.0, 0.1, 200.0);
 
-        MULTIPLIER_SUPER_NAMEK_FORM_DEF = BUILDER.comment("Multiplier for Super Namek Form DEF! (Min: 1.0 / Max: 200.0 / Default: 3.25)")
-                .defineInRange("Multiplier DEF: ", 3.25, 1.0, 200.0);
+        MULTIPLIER_SUPER_NAMEK_FORM_DEF = BUILDER.comment("Multiplier for Super Namek Form DEF! (Min: 1.0 / Max: 200.0 / Default: 3.0)")
+                .defineInRange("Multiplier DEF: ", 3.0, 0.1, 200.0);
 
-        MULTIPLIER_SUPER_NAMEK_FORM_PWR = BUILDER.comment("Multiplier for Super Namek Form PWR! (Min: 1.0 / Max: 200.0 / Default: 3.25)")
-                .defineInRange("Multiplier PWR: ", 3.25, 1.0, 200.0);
+        MULTIPLIER_SUPER_NAMEK_FORM_PWR = BUILDER.comment("Multiplier for Super Namek Form PWR! (Min: 1.0 / Max: 200.0 / Default: 3.0)")
+                .defineInRange("Multiplier PWR: ", 3.0, 0.1, 200.0);
 
-        SUPER_NAMEK_FORM_KI_COST = BUILDER.comment("Ki Cost for Super Namek Form! (Min: 0 / Max: 20000 / Default: 400)")
-                .defineInRange("Ki Cost: ", 400, 0, 20000);
+        SUPER_NAMEK_FORM_KI_COST = BUILDER.comment("Ki Cost for Super Namek Form! (Min: 0 / Max: 20000 / Default: 350)")
+                .defineInRange("Ki Cost: ", 350, 0, 20000);
 
         BUILDER.pop();
 

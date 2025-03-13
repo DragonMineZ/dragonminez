@@ -34,6 +34,7 @@ public class DMZGeneralConfig {
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_GOKUHOUSE_SPAWN;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_KAMEHOUSE_SPAWN;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_ELDERGURU_SPAWN;
+    public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_DBALLEVENTS_ACTIVE;
 
     public static final ForgeConfigSpec.ConfigValue<Integer> DBALL_SPAWN_RANGE;
     public static final ForgeConfigSpec.ConfigValue<Integer> SENZU_SHENRON_WISH;
@@ -66,10 +67,11 @@ public class DMZGeneralConfig {
         TRANSFORMATIONS_WITH_TP = BUILDER.comment("Allow Transformations to be buyable with TP instead of Obtainable via Storyline (Default: false)")
                 .define("Transformations: ", true);
 
-        TPCOST_TRANSFORMATIONS = BUILDER.comment("ZPoints Cost for Buying Transformations (Min: 1 / Max: 1000000000 / Default: 50000)")
-                .defineInRange("Transformations Cost: ", 50000, 1, 1000000000);
+        TPCOST_TRANSFORMATIONS = BUILDER.comment("ZPoints Cost for Buying Transformations (Min: 1 / Max: 1000000000 / Default: 40000)")
+                .defineInRange("Transformations Cost: ", 40000, 1, 1000000000);
 
         SAVE_INVENTORY = BUILDER.comment("Save Player Inventory on Death (Default: true)")
+                .comment("This function is currently disabled due to a big bug. It will reworked an re enabled in v1.3.0.")
                 .define("Save Inventory: ", true);
 
         BUILDER.pop();
@@ -79,8 +81,8 @@ public class DMZGeneralConfig {
         PERHIT_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Hit (Min: 1 / Max: 100 / Default: 2)")
                 .defineInRange("ZPoints per Hit: ", 2, 1, 100);
 
-        PERKILL_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Kill based on Enemy max Health (Min: 0.1 / Max: 1.0 / Default: 0.6)")
-                .defineInRange("ZPoints per Kill percentage: ", 0.6, 0.1, 1);
+        PERKILL_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Kill based on Enemy max Health (Min: 0.1 / Max: 1.0 / Default: 0.45)")
+                .defineInRange("ZPoints per Kill percentage: ", 0.45, 0.1, 1);
 
         MULTIPLIER_ZPOINTS_COST = BUILDER.comment("Multiplier for ZPoints Cost (Min: 1.0 / Max: 20.0 / Default: 1.2)")
                 .defineInRange("ZPoints Cost: ", 1.2, 1.0, 20.0);
@@ -115,11 +117,11 @@ public class DMZGeneralConfig {
         MULTIPLIER_MAJIN = BUILDER.comment("Multiplier for the Majin Mark Effect (Min: 1.0 / Max: 20.0 / Default: 1.5)")
                 .defineInRange("Majin Multiplier: ", 1.5, 1.0, 20.0);
 
-        BABA_COOLDOWN = BUILDER.comment("Cooldown for Baba's Temporal Revive in Minutes (Min: 1 / Max: 600 / Default: 30)")
+        BABA_COOLDOWN = BUILDER.comment("Cooldown for Baba's Temporal Revive in Minutes (Min: 1 / Max: 600 / Default: 20)")
                 .defineInRange("Baba Cooldown: ", 20, 1, 600);
 
-        BABA_DURATION = BUILDER.comment("Duration for Baba's Temporal Revive in Minutes (Min: 1 / Max: 60 / Default: 10)")
-                .defineInRange("Baba Duration: ", 10, 1, 60);
+        BABA_DURATION = BUILDER.comment("Duration for Baba's Temporal Revive in Minutes (Min: 1 / Max: 60 / Default: 15)")
+                .defineInRange("Baba Duration: ", 15, 1, 60);
 
         BUILDER.pop();
 
@@ -145,6 +147,12 @@ public class DMZGeneralConfig {
 
         SHOULD_ELDERGURU_SPAWN = BUILDER.comment("Should Elder Guru's House Spawn in the World when it is first generated? (Default: true)")
                 .define("Elder Guru Spawn: ", true);
+
+        SHOULD_DBALLEVENTS_ACTIVE = BUILDER.comment("Should Dragon Ball Events be Active? (Default: true)")
+                .comment("DragonBall Events made Old Dragon Balls disappear when a new one is placed.")
+                .comment("Disabling this will allow Multiple Sets of DragonBalls to be placed.")
+                .comment("But it will also make conflicts with the Dragon Radar, due to it only tracking the first set of Dragon Balls.")
+                .define("DBall Events Active: ", true);
 
         BUILDER.push("Shenron / Porunga Wishes");
 

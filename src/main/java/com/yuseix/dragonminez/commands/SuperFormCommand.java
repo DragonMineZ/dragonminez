@@ -155,13 +155,13 @@ public class SuperFormCommand {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
 
 				int maxLevel = switch (playerstats.getIntValue("race")) {
-					case 0 -> 3;
+					case 0 -> 4;
 					case 1 -> 4;
 					case 2 -> 4;
 					case 3 -> 4;
 					case 4 -> 6;
 					case 5 -> 6;
-					default -> 6;
+					default -> 4;
 				};
 
 				int finalLevel = Math.max(1, Math.min(level, maxLevel));

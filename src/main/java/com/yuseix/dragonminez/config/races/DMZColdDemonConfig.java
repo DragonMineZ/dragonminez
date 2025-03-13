@@ -48,8 +48,8 @@ public class DMZColdDemonConfig {
         //Pasiva
         BUILDER.push(" COLD DEMON PASSIVE SKILL:");
 
-        TP_MULTIPLER_PASSIVE = BUILDER.comment("Passive Training Points Gain Multiplier! (Min: 1.0 / Max: 3.0 / Default: 1.2)")
-                .defineInRange("TP Gain Multiplier: ", 1.2, 1.0, 3.0);
+        TP_MULTIPLER_PASSIVE = BUILDER.comment("Passive Training Points Gain Multiplier! (Min: 1.0 / Max: 3.0 / Default: 1.35)")
+                .defineInRange("TP Gain Multiplier: ", 1.35, 1.0, 3.0);
 
         BUILDER.pop();
 
