@@ -64,6 +64,7 @@ public class ClientEvents {
 	private static int planetaObjetivo = 0;  // 0: Overworld, 1: Namek, 2: Kaio
 
 	private static final Set<String> jugadoresConAura = new HashSet<>(Set.of(
+			// Staffs y Patreons
 			"Dev",
 			"ezShokkoh",
 			"ImYuseix",
@@ -73,7 +74,9 @@ public class ClientEvents {
 			"prolazorbema10",
 			"iLalox",
 			"Robberto10",
-			"Athrizel"
+			"Athrizel",
+			"InmortalPix",
+			"LecuTheAnimator"
 	));
 	@SubscribeEvent
 	public static void onRenderTick(TickEvent.RenderTickEvent event) {

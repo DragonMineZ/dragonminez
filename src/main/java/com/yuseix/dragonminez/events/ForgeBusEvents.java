@@ -75,6 +75,8 @@ public class ForgeBusEvents {
 			"MrBrunoh",
 			"Toji71",
 			"Umino10",
+			"InmortalPx",
+			"LecuTheAnimator",
 			// Testers
 			"Ducco123",
 			"Rev_zy", //Mazu
@@ -82,8 +84,6 @@ public class ForgeBusEvents {
 			"TheWildBoss",
 			"EsePibe01",
 			"Pokimons123",
-			"LecuTheAnimator",
-			"InmortalPx",
 			// Patreon
 			"Baby_Poop12311", // Cyanea capillata
 			"SpaceCarp",
