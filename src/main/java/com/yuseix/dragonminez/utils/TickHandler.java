@@ -63,7 +63,7 @@ public class TickHandler {
 
 			if (playerStats.getBoolean("turbo") && !player.isCreative() && !player.isSpectator()) {
 				// Si el turbo está activo, consumo de energía
-				int consumeEnergy = dmzDatos.calcKiRegen(playerStats) * 2;
+				int consumeEnergy = (int) (dmzDatos.calcKiRegen(playerStats) * 1.5);
 				if (consumeEnergy < 2) consumeEnergy = 2;
 				if (meditation != null) {
 					// Reduce 5% del consumo por nivel de meditación
@@ -103,11 +103,12 @@ public class TickHandler {
 				int consumeEnergy = dmzDatos.calcKiConsume(playerStats);
 				if (playerStats.getIntValue("curenergy") < consumeEnergy) {
 					playerStats.setStringValue("form", "base");
-					energyConsumeCounter = 0;
 				} else {
-					playerStats.removeIntValue("curenergy", (consumeEnergy / 4));
-					energyConsumeCounter = 0;
+					playerStats.removeIntValue("curenergy", (int) (consumeEnergy / 2.25));
+					if (!playerStats.getStringValue("form").equals("base")) {
+					}
 				}
+				energyConsumeCounter = 0;
 			}
 		}
 	}
@@ -190,7 +191,7 @@ public class TickHandler {
 						if ((flySkill != null && flySkill.isActive() && flySkill.getLevel() <= 7) || playerstats.getBoolean("transform")) {
 							// No hacer nada
 						} else {
-							int kiRegen = dmzdatos.calcKiCharge(playerstats);
+							int kiRegen = dmzdatos.calcKiCharge(playerstats) / 2;
 							if (kiRegen < 1) kiRegen = 3;
 							if (meditation != null) {
 								kiRegen += (int) Math.ceil(kiRegen * 0.10 * meditationLevel);
