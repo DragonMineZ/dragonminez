@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.yuseix.dragonminez.DragonMineZ;
 import com.yuseix.dragonminez.client.character.renders.DmzRenderer;
 import com.yuseix.dragonminez.client.hud.spaceship.SaiyanSpacePodOverlay;
+import com.yuseix.dragonminez.events.characters.StatsEvents;
 import com.yuseix.dragonminez.init.MainParticles;
 import com.yuseix.dragonminez.init.MainSounds;
 import com.yuseix.dragonminez.init.entity.custom.NaveSaiyanEntity;
@@ -32,6 +33,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -40,6 +42,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -55,7 +58,7 @@ public class ClientEvents {
 	private static final String MOD_VERSION = System.getProperty("mod_version", "unknown");
 
 	private static final Random RANDOM = new Random();
-	private static final String title = "DragonMine Z v" + "1.2.1 - StoryMode and Skills!";
+	private static final String title = "DragonMine Z v" + "1.2.3 - StoryMode and Skills!";
 	private static boolean isDescending = false;
 
 	private static final int teleportTime = 5; // Segundos
@@ -64,10 +67,13 @@ public class ClientEvents {
 	private static int planetaObjetivo = 0;  // 0: Overworld, 1: Namek, 2: Kaio
 
 	private static final Set<String> jugadoresConAura = new HashSet<>(Set.of(
+			// Staffs y Patreons
 			"Dev",
 			"ezShokkoh",
 			"ImYuseix",
 			"Toji71_",
+			"InmortalPx",
+			"LecuTheAnimator",
 			"Baby_Poop12311",
 			"SpaceCarp",
 			"prolazorbema10",
@@ -261,30 +267,30 @@ public class ClientEvents {
 									player.getZ() + (Math.random() - 0.5) * 3.5,
 									0, 0.1, 0);
 						}
-
-
 					}
 
 				});
 			}
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
 				if (cap.getBoolean("aura") || cap.getBoolean("turbo")) {
+					String particleValue = Minecraft.getInstance().options.particles().get().toString();
 					if (player.onGround()) {
-						for (int i = 0; i < 5; i++) {
-							double angle = i * ((2 * Math.PI) / 3);
-							double x = player.getX() + 1.5 * Math.cos(angle);
-							double z = player.getZ() + 1.5 * Math.sin(angle);
-
+						int particleCount = 3;
+						switch (particleValue) {
+							case "DECREASED" -> particleCount = 2;
+							case "MINIMAL" -> particleCount = 1;
+						}
+						for (int i = 0; i < particleCount; i++) {
 							double y = player.getY() + 0.2;
 
 							double xSpeed = (Math.random() - 0.5) * 0.02;
 							double zSpeed = (Math.random() - 0.5) * 0.02;
 
-							level.addParticle(MainParticles.DUST_PARTICLE.get(), x, y, z, xSpeed, 0, zSpeed);
+							level.addParticle(MainParticles.DUST_PARTICLE.get(), player.getX(), y, player.getZ(), xSpeed, 0, zSpeed);
 						}
 					}
 				}
-				if (cap.getBoolean("transform")) {
+				if (cap.getBoolean("transform") || (!cap.getStringValue("form").equals("base") && (cap.getBoolean("aura") || cap.getBoolean("turbo")))) {
 					if (player.onGround()) {
 						for (int i = 0; i < 1; i++) {
 							double xSpeed = (Math.random() - 0.5) * 0.02;
@@ -399,7 +405,28 @@ public class ClientEvents {
 				// La vel de vuelo aumenta un 20% por nivel
 				float baseSpeed = 0.05F;
 				float flySpeed = baseSpeed * (1.0F + (0.20F * flyLevel));
-				player.getAbilities().setFlyingSpeed(flySpeed);
+
+				if (cap.getBoolean("turbo")) {
+					if (player.getAbilities().flying) {
+						if (player.isSprinting()) {
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.06f);
+							player.onUpdateAbilities();
+						} else {
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.03f);
+							player.onUpdateAbilities();
+						}
+					}
+				} else {
+					if (player.getAbilities().flying) {
+						if (player.isSprinting()) {
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.03f);
+							player.onUpdateAbilities();
+						} else {
+							player.getAbilities().setFlyingSpeed(flySpeed);
+							player.onUpdateAbilities();
+						}
+					}
+				}
 
 				Vec3 motion = player.getDeltaMovement();
 				double yVelocity = motion.y;
@@ -421,6 +448,22 @@ public class ClientEvents {
 
 				player.setDeltaMovement(motion.x, yVelocity, motion.z);
 				player.onUpdateAbilities();
+			}
+
+			if (cap.getBoolean("turbo")) {
+				if (player.isSprinting()) {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75);
+				} else {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.5);
+				}
+			} else {
+				if (player.isSprinting()) {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.11);
+				} else {
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.1);
+				}
+
+				if (Minecraft.getInstance().options.fovEffectScale().get() != StatsEvents.getPreviousFov()) Minecraft.getInstance().options.fovEffectScale().set(StatsEvents.getPreviousFov());
 			}
 
 			if (cap.getBoolean("kaioplanet")) {

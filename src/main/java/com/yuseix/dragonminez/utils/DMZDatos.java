@@ -61,7 +61,7 @@ public class DMZDatos implements IDMZDatos{
         double multRaza = getRaceStats(stats.getIntValue("race"), stats.getStringValue("class"), "ENE");
 
         // Fórmula = Math.round(3 * StatENE * ConfigRaza + 40 * 3)
-        return (int) Math.round(3 * stats.getStat("ENE") * multRaza + 40 * 3);
+        return (int) Math.round(4.5 * stats.getStat("ENE") * multRaza + 40 * 40);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class DMZDatos implements IDMZDatos{
         double multRaza = getRaceStats(stats.getIntValue("race"), stats.getStringValue("class"), "REGEN");
 
         // Fórmula = Math.ceil(EnergiaTotal * ConfigRaza)
-        return (int) Math.ceil(stats.getStat("ENE") * multRaza);
+        return (int) Math.ceil(stats.getIntValue("maxenergy") * multRaza);
     }
 
     @Override
@@ -130,8 +130,8 @@ public class DMZDatos implements IDMZDatos{
     @Override
     public int calcKiCharge(DMZStatsAttributes stats) {
 		return switch (stats.getStringValue("class")) {
-			case "Warrior" -> (int) Math.ceil((stats.getIntValue("maxenergy") * 0.08));
-			case "Spiritualist" -> (int) Math.ceil((stats.getIntValue("maxenergy") * 0.12));
+			case "warrior" -> (int) Math.ceil((stats.getIntValue("maxenergy") * 0.02));
+			case "spiritualist" -> (int) Math.ceil((stats.getIntValue("maxenergy") * 0.03));
 			default -> 0;
 		};
     }

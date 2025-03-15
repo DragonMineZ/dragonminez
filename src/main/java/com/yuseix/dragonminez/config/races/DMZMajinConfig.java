@@ -48,8 +48,8 @@ public class DMZMajinConfig {
         //Pasiva
         BUILDER.push(" MAJIN PASSIVE SKILL:");
 
-        PASSIVE_HEALTH_REGEN = BUILDER.comment("Passive Health Regeneration per second! (Min: 1.0 / Max: 10.0 / Default: 1.0)")
-                .defineInRange("Health Regen in percentage: ", 1.0, 1.0, 10.0);
+        PASSIVE_HEALTH_REGEN = BUILDER.comment("Passive Health Regeneration per second! (Min: 0.1 / Max: 20.0 / Default: 2.5)")
+                .defineInRange("Health Regen in percentage: ", 2.5, 0.1, 20.0);
 
         BUILDER.pop();
 

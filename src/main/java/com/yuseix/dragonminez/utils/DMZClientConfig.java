@@ -11,6 +11,13 @@ public class DMZClientConfig {
     private static int babaCooldown = 15, babaDuration = 10;
     private static int jumpLevels = 250, flyLevels = 750, meditationLevels = 150, potUnlockLevels = 1300, kiManipLevels = 5000, kiControlLevels = 100;
 
+    private static int humanPassive = 35;
+    private static int zenkaiTimer = 50, zenkaiHeal = 30, zenkaiBoost = 15, zenkaiCant = 3;
+    private static int namekPassive = 60;
+    private static int bioPassiveHalf = 8, bioPassiveQuarter = 4;
+    private static double coldPassive = 1.35;
+    private static double majinPassive = 2.5;
+
     private static double baseMult0 = 1, baseMult1 = 1, baseMult2 = 1, baseMult3 = 1, baseMult4 = 1, baseMult5 = 1;
     private static double buffed_human_str = 1, buffed_human_def = 1, buffed_human_pwr = 1, buffed_human_cost = 1;
     private static double full_power_human_str = 1, full_power_human_def = 1, full_power_human_pwr = 1, full_power_human_cost = 1;
@@ -1190,5 +1197,71 @@ public class DMZClientConfig {
             };
             default -> 1;
         };
+    }
+
+    public static void setHumanPassive(int stat) {
+        DMZClientConfig.humanPassive = stat;
+    }
+
+    public static int getHumanPassive() {
+        return DMZClientConfig.humanPassive;
+    }
+
+    public static void setSaiyanPassive(String stat, int value) {
+        switch (stat) {
+            case "timer" -> DMZClientConfig.zenkaiTimer = value;
+            case "heal" -> DMZClientConfig.zenkaiHeal = value;
+            case "boost" -> DMZClientConfig.zenkaiBoost = value;
+            case "cant" -> DMZClientConfig.zenkaiCant = value;
+        }
+    }
+
+    public static int getSaiyanPassive(String stat) {
+        return switch (stat) {
+            case "timer" -> DMZClientConfig.zenkaiTimer;
+            case "heal" -> DMZClientConfig.zenkaiHeal;
+            case "boost" -> DMZClientConfig.zenkaiBoost;
+            case "cant" -> DMZClientConfig.zenkaiCant;
+            default -> 1;
+        };
+    }
+
+    public static void setNamekPassive(int stat) {
+        DMZClientConfig.namekPassive = stat;
+    }
+
+    public static int getNamekPassive() {
+        return DMZClientConfig.namekPassive;
+    }
+
+    public static void setBioPassive(String stat, int value) {
+        switch (stat) {
+            case "half" -> DMZClientConfig.bioPassiveHalf = value;
+            case "quarter" -> DMZClientConfig.bioPassiveQuarter = value;
+        }
+    }
+
+    public static int getBioPassive(String stat) {
+        return switch (stat) {
+            case "half" -> DMZClientConfig.bioPassiveHalf;
+            case "quarter" -> DMZClientConfig.bioPassiveQuarter;
+            default -> 1;
+        };
+    }
+
+    public static void setColdPassive(double value) {
+        DMZClientConfig.coldPassive = value;
+    }
+
+    public static double getColdPassive() {
+        return DMZClientConfig.coldPassive;
+    }
+
+    public static void setMajinPassive(double value) {
+        DMZClientConfig.majinPassive = value;
+    }
+
+    public static double getMajinPassive() {
+        return DMZClientConfig.majinPassive;
     }
 }

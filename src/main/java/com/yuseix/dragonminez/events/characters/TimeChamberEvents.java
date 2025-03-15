@@ -58,11 +58,11 @@ public class TimeChamberEvents {
 			double foodMultiplier = 1.0;
 
 			// Penalizaciones basadas según stats al 15% o 25% del máximo xd
-			if (level < (maxStats * 0.15)) {
+			if (level < (maxStats * 0.10)) {
 				speedMultiplier = 0.5; // Reducir velocidad un 50%
 				jumpMultiplier = 0.5;  // Reducir salto un 50%
 				foodMultiplier = penaltyLow; // Aumentar consumo de comida
-			} else if (level < (maxStats * 0.25)) {
+			} else if (level < (maxStats * 0.20)) {
 				speedMultiplier = 0.75; // 25%
 				jumpMultiplier = 0.75; // 25%
 				foodMultiplier = penaltyHigh;

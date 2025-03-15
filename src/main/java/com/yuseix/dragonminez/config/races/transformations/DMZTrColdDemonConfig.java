@@ -60,7 +60,7 @@ public class DMZTrColdDemonConfig {
         MULTIPLIER_SECOND_FORM_PWR = BUILDER.comment("Multiplier for Second Form PWR! (Min: 0.1 / Max: 200.0 / Default: 1.15)")
                 .defineInRange("Multiplier PWR: ", 1.15, 0.1, 200.0);
 
-        SECOND_FORM_KI_COST = BUILDER.comment("Ki Cost for Second Form! (Min: 0 / Max: 20000 / Default: 50)")
+        SECOND_FORM_KI_COST = BUILDER.comment("Ki Cost for Second Form! (Min: 0 / Max: 20000 / Default: 0)")
                 .defineInRange("Ki Cost: ", 0, 0, 20000);
 
         BUILDER.pop();
@@ -77,7 +77,7 @@ public class DMZTrColdDemonConfig {
         MULTIPLIER_THIRD_FORM_PWR = BUILDER.comment("Multiplier for Third Form PWR! (Min: 0.1 / Max: 200.0 / Default: 1.5)")
                 .defineInRange("Multiplier PWR: ", 1.5, 0.1, 200.0);
 
-        THIRD_FORM_KI_COST = BUILDER.comment("Ki Cost for Third Form! (Min: 0 / Max: 20000 / Default: 100)")
+        THIRD_FORM_KI_COST = BUILDER.comment("Ki Cost for Third Form! (Min: 0 / Max: 20000 / Default: 0)")
                 .defineInRange("Ki Cost: ", 0, 0, 20000);
 
         BUILDER.pop();
@@ -85,16 +85,16 @@ public class DMZTrColdDemonConfig {
         // FORMA BASE
         BUILDER.push(" Base Form");
 
-        MULTIPLIER_FOURTH_FORM_STR = BUILDER.comment("Multiplier for Base Form STR! (Min: 0.1 / Max: 200.0 / Default: 2.25)")
-                .defineInRange("Multiplier STR: ", 2.25, 0.1, 200.0);
+        MULTIPLIER_FOURTH_FORM_STR = BUILDER.comment("Multiplier for Base Form STR! (Min: 0.1 / Max: 200.0 / Default: 2.5)")
+                .defineInRange("Multiplier STR: ", 2.5, 0.1, 200.0);
 
-        MULTIPLIER_FOURTH_FORM_DEF = BUILDER.comment("Multiplier for Base Form DEF! (Min: 0.1 / Max: 200.0 / Default: 2.25)")
-                .defineInRange("Multiplier DEF: ", 2.25, 0.1, 200.0);
+        MULTIPLIER_FOURTH_FORM_DEF = BUILDER.comment("Multiplier for Base Form DEF! (Min: 0.1 / Max: 200.0 / Default: 2.5)")
+                .defineInRange("Multiplier DEF: ", 2.5, 0.1, 200.0);
 
-        MULTIPLIER_FOURTH_FORM_PWR = BUILDER.comment("Multiplier for Base Form PWR! (Min: 0.1 / Max: 200.0 / Default: 2.25)")
-                .defineInRange("Multiplier PWR: ", 2.25, 0.1, 200.0);
+        MULTIPLIER_FOURTH_FORM_PWR = BUILDER.comment("Multiplier for Base Form PWR! (Min: 0.1 / Max: 200.0 / Default: 2.5)")
+                .defineInRange("Multiplier PWR: ", 2.5, 0.1, 200.0);
 
-        FOURTH_FORM_KI_COST = BUILDER.comment("Ki Cost for Base Form! (Min: 0 / Max: 20000 / Default: 200)")
+        FOURTH_FORM_KI_COST = BUILDER.comment("Ki Cost for Base Form! (Min: 0 / Max: 20000 / Default: 0)")
                 .defineInRange("Ki Cost: ", 0, 0, 20000);
 
         BUILDER.pop();
@@ -102,14 +102,14 @@ public class DMZTrColdDemonConfig {
         // FORMA FULL POWER
         BUILDER.push(" Full Power Form");
 
-        MULTIPLIER_FULL_POWER_FORM_STR = BUILDER.comment("Multiplier for Full Power Form STR! (Min: 1.0 / Max: 200.0 / Default: 3.25)")
-                .defineInRange("Multiplier STR: ", 3.25, 1.0, 200.0);
+        MULTIPLIER_FULL_POWER_FORM_STR = BUILDER.comment("Multiplier for Full Power Form STR! (Min: 0.1 / Max: 200.0 / Default: 3.25)")
+                .defineInRange("Multiplier STR: ", 3.25, 0.1, 200.0);
 
-        MULTIPLIER_FULL_POWER_FORM_DEF = BUILDER.comment("Multiplier for Full Power Form DEF! (Min: 1.0 / Max: 200.0 / Default: 3.25)")
-                .defineInRange("Multiplier DEF: ", 3.25, 1.0, 200.0);
+        MULTIPLIER_FULL_POWER_FORM_DEF = BUILDER.comment("Multiplier for Full Power Form DEF! (Min: 0.1 / Max: 200.0 / Default: 3.25)")
+                .defineInRange("Multiplier DEF: ", 3.25, 0.1, 200.0);
 
-        MULTIPLIER_FULL_POWER_FORM_PWR = BUILDER.comment("Multiplier for Full Power Form PWR! (Min: 1.0 / Max: 200.0 / Default: 3.25)")
-                .defineInRange("Multiplier PWR: ", 3.25, 1.0, 200.0);
+        MULTIPLIER_FULL_POWER_FORM_PWR = BUILDER.comment("Multiplier for Full Power Form PWR! (Min: 0.1 / Max: 200.0 / Default: 3.25)")
+                .defineInRange("Multiplier PWR: ", 3.25, 0.1, 200.0);
 
         FULL_POWER_FORM_KI_COST = BUILDER.comment("Ki Cost for Full Power Form! (Min: 0 / Max: 20000 / Default: 450)")
                 .defineInRange("Ki Cost: ", 450, 0, 20000);

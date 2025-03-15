@@ -117,14 +117,20 @@ public class TransfMenu extends Screen {
 											case 5 -> maxLevel = 6;
 										}
 
+										int nextLevel = currentLevel + 1;
+
 										Map<Integer, Integer> levelCosts = Map.of(
 												1, (int) (formsCost * mult),
-												2, (int) (formsCost * mult * 2),
-												3, (int) (formsCost * mult * 3),
-												4, (int) (formsCost * mult * 4),
-												5, (int) (formsCost * mult * 5)
+												2, (int) (formsCost * mult * nextLevel),
+												3, (int) (formsCost * mult * nextLevel),
+												4, (int) (formsCost * mult * nextLevel),
+												5, (int) (formsCost * mult * nextLevel),
+												6, (int) (formsCost * mult * nextLevel),
+												7, (int) (formsCost * mult * nextLevel),
+												8, (int) (formsCost * mult * nextLevel),
+												9, (int) (formsCost * mult * nextLevel),
+												10, (int) (formsCost * mult * nextLevel)
 										);
-										int nextLevel = currentLevel + 1;
 
 										if (buyableTP) {
 											if (currentLevel < maxLevel) {
@@ -412,7 +418,14 @@ public class TransfMenu extends Screen {
 				for (Map.Entry<String, FormsData> entry : forms.entrySet()) {
 					FormsData form = entry.getValue();
 					int currentLevel = form.getLevel();
-					int maxLevel = 5;
+					int maxLevel = 6;
+					switch (raza) {
+						case 0 -> maxLevel = 4;
+						case 2 -> maxLevel = 4;
+						case 3 -> maxLevel = 4;
+						case 4 -> maxLevel = 6;
+						case 5 -> maxLevel = 6;
+					}
 
 					if (this.groupId.equals("superform")) {
 						switch (raza) {
@@ -484,9 +497,9 @@ public class TransfMenu extends Screen {
 								}
 								break;
 							case 4:
-								double multColdSecond = dmzDatos.transfMultMenu(cap,"second");
-								double multColdThird = dmzDatos.transfMultMenu(cap,"third");
-								double multColdFourth = dmzDatos.transfMultMenu(cap,"final");
+								double multColdSecond = dmzDatos.transfMultMenu(cap,"second_form");
+								double multColdThird = dmzDatos.transfMultMenu(cap,"third_form");
+								double multColdFourth = dmzDatos.transfMultMenu(cap,"final_form");
 								double multColdFullPower = dmzDatos.transfMultMenu(cap,"full_power");
 
 								//Nombre de la habilidad

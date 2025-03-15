@@ -214,28 +214,25 @@ public class ShenlongEntity extends Mob implements GeoEntity {
 		Random random = new Random();
 		int range = DMZGeneralConfig.DBALL_SPAWN_RANGE.get();
 
-		BlockPos posicionValida = new BlockPos(0, 0, 0); // Posición válida inicializada a 0, 0, 0
+		BlockPos posicionValida; // Posición válida inicializada a 0, 0, 0
 
-		while (posicionValida.equals(new BlockPos(0, 0, 0))) {
-			// Generar posición aleatoria dentro de un rango de Xk bloques desde el spawn
-			int x = spawnPos.getX() + random.nextInt(range * 2) - range;
-			int z = spawnPos.getZ() + random.nextInt(range * 2) - range;
+		// Generar posición aleatoria dentro de un rango de Xk bloques desde el spawn
+		int x = spawnPos.getX() + random.nextInt(range * 2) - range;
+		int z = spawnPos.getZ() + random.nextInt(range * 2) - range;
 
-			serverWorld.getChunk(x >> 4, z >> 4); // Cargar el chunk
+		serverWorld.getChunk(x >> 4, z >> 4); // Cargar el chunk
 
-			// Obtener la altura del terreno en esa posición
-			int y = serverWorld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-			BlockPos posiblePos = new BlockPos(x, y, z);
+		// Obtener la altura del terreno en esa posición
+		int y = serverWorld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+		BlockPos posiblePos = new BlockPos(x, y, z);
 
-			BlockState belowBlockState = serverWorld.getBlockState(posiblePos.below()); // Bloque debajo de la posición
-			BlockState belowBelowBlockState = serverWorld.getBlockState(posiblePos.below().below()); // Bloque debajo del bloque anterior
+		BlockState belowBlockState = serverWorld.getBlockState(posiblePos.below()); // Bloque debajo de la posición
+		BlockPos belowPos = posiblePos.below();
 
-			// Validar que la posición no esté en agua ni aire
-			if (!belowBlockState.isAir() && !(belowBlockState.getBlock() == Blocks.WATER) &&
-					!belowBelowBlockState.isAir() && !(belowBelowBlockState.getBlock() == Blocks.WATER)) {
-				posicionValida = posiblePos; // Si es válida, asignamos la posición
-			}
+		if (belowBlockState.isAir() || (belowBlockState.getBlock() == Blocks.WATER)) {
+			serverWorld.setBlock(belowPos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
 		}
+		posicionValida = posiblePos;
 
 		// Place a Dragon Ball block at the generated position
 		serverWorld.setBlock(posicionValida, dragonBall, 2);

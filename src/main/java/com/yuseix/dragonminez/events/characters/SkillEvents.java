@@ -28,6 +28,10 @@ public class SkillEvents {
                     player.setDeltaMovement(player.getDeltaMovement().add(0, jumpBoost, 0));
                 }
             }
+
+            if (cap.getBoolean("turbo")) {
+                player.setDeltaMovement(player.getDeltaMovement().add(0, 0.6, 0));
+            }
         });
     }
 }

@@ -48,8 +48,8 @@ public class DMZHumanConfig {
         //PASIVA
         BUILDER.push(" HUMAN PASSIVE SKILL:");
 
-        KICHARGE_REGEN_BOOST = BUILDER.comment("Ki Charge Regeneration Boost in percentage! (Min: 1 / Max: 100 / Default: 25)")
-                .defineInRange("Ki Charge Regen Boost: ", 25, 1, 100);
+        KICHARGE_REGEN_BOOST = BUILDER.comment("Ki Charge Regeneration Boost in percentage! (Min: 1 / Max: 100 / Default: 35)")
+                .defineInRange("Ki Charge Regen Boost: ", 35, 1, 100);
 
         BUILDER.pop();
 

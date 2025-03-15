@@ -436,10 +436,11 @@ public class StructuresCapability {
                 level.setBlock(posicionFinal.offset(47, 4, 2), Blocks.AIR.defaultBlockState(), 3);
             }
             BlockPos posicionFinal = new BlockPos(posicionValida.getX(), 200, posicionValida.getZ());
+            BlockPos db4pos = new BlockPos(posicionValida.getX() - 18, 287, posicionValida.getZ() + 30);
 
-            BlockPos spawnPosition = new BlockPos(posicionFinal.getX() + 32, posicionFinal.getY() + 5, posicionFinal.getZ() - 13);
+            BlockPos spawnPosition = new BlockPos(posicionFinal.getX() + 32, posicionFinal.getY() + 85, posicionFinal.getZ() - 13);
             // Marcar como generada y guardar la posición
-            setDB4Position(posicionValida.offset(-18, 7, 30));
+            setDB4Position(db4pos);
             setHasGokuHouse(true);
             setGokuHousePosition(spawnPosition);
             LOGGER.info("[DMZ-Generation] Goku House generated in {}", spawnPosition);

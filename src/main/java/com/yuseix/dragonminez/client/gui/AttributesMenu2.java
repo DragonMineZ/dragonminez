@@ -340,15 +340,10 @@ public class AttributesMenu2 extends Screen implements RenderEntityInv {
                     anchoTexto = (this.width/2)-95;
                 }
 
-                if (statKey.equals("Level")) {
-                    Component statComponent = Component.translatable("gui.dmz.stats.level")
-                            .setStyle(Style.EMPTY.withColor(TextColor.fromRgb(colores)).withBold(true));
-                    graphics.drawString(font, statComponent, anchoTexto, yOffset, colores);
-                } else {
-                    Component statComponent = Component.literal(statKey + ":")
-                            .setStyle(Style.EMPTY.withColor(TextColor.fromRgb(colores)).withBold(true));
-                    graphics.drawString(font, statComponent, anchoTexto, yOffset, colores);
-                }
+                String statLang = statKey.toLowerCase(Locale.ROOT);
+                Component statComponent = Component.translatable("gui.dmz.stats." + statLang)
+                        .setStyle(Style.EMPTY.withColor(TextColor.fromRgb(colores)).withBold(true));
+                graphics.drawString(font, statComponent, anchoTexto, yOffset, colores);
 
                 if (mouseX >= anchoTexto - 10 && mouseX <= anchoTexto + 25 && mouseY >= yOffset && mouseY <= yOffset + font.lineHeight) {
                     List<FormattedCharSequence> descriptionLines = new ArrayList<>();

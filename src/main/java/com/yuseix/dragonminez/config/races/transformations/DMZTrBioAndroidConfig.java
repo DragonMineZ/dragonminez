@@ -31,8 +31,8 @@ public class DMZTrBioAndroidConfig {
 
 		BUILDER.push(" Imperfect Form");
 
-		MULTIPLIER_BASE = BUILDER.comment("Multiplier for Imperfect Form! (Min: 1.0 / Max: 200.0 / Default: 1.0)")
-				.defineInRange("Multiplier: ", 1.0, 1.0, 200.0);
+		MULTIPLIER_BASE = BUILDER.comment("Multiplier for Imperfect Form! (Min: 0.1 / Max: 200.0 / Default: 1.25)")
+				.defineInRange("Multiplier: ", 1.25, 0.1, 200.0);
 
 		BASE_FORM_KI_COST = BUILDER.comment("Ki Cost for Imperfect Form! (Min: 0 / Max: 20000 / Default: 0)")
 				.defineInRange("Ki Cost: ", 0, 0, 20000);
@@ -41,14 +41,14 @@ public class DMZTrBioAndroidConfig {
 
 		BUILDER.push(" Semi-Perfect Form");
 
-		MULTIPLIER_SEMIPERFECT_FORM_STR = BUILDER.comment("Multiplier for Semi-Perfect Form STR! (Min: 1.0 / Max: 200.0 / Default: 1.75)")
-				.defineInRange("Multiplier STR: ", 1.75, 1.0, 200.0);
+		MULTIPLIER_SEMIPERFECT_FORM_STR = BUILDER.comment("Multiplier for Semi-Perfect Form STR! (Min: 0.1 / Max: 200.0 / Default: 2.0)")
+				.defineInRange("Multiplier STR: ", 2.0, 0.1, 200.0);
 
-		MULTIPLIER_SEMIPERFECT_FORM_DEF = BUILDER.comment("Multiplier for Semi-Perfect Form DEF! (Min: 1.0 / Max: 200.0 / Default: 1.75)")
-				.defineInRange("Multiplier DEF: ", 1.75, 1.0, 200.0);
+		MULTIPLIER_SEMIPERFECT_FORM_DEF = BUILDER.comment("Multiplier for Semi-Perfect Form DEF! (Min: 0.1 / Max: 200.0 / Default: 2.0)")
+				.defineInRange("Multiplier DEF: ", 2.0, 0.1, 200.0);
 
-		MULTIPLIER_SEMIPERFECT_FORM_PWR = BUILDER.comment("Multiplier for Semi-Perfect Form PWR! (Min: 1.0 / Max: 200.0 / Default: 1.75)")
-				.defineInRange("Multiplier PWR: ", 1.75, 1.0, 200.0);
+		MULTIPLIER_SEMIPERFECT_FORM_PWR = BUILDER.comment("Multiplier for Semi-Perfect Form PWR! (Min: 0.1 / Max: 200.0 / Default: 2.0)")
+				.defineInRange("Multiplier PWR: ", 2.0, 0.1, 200.0);
 
 		SEMIPERFECT_FORM_KI_COST = BUILDER.comment("Ki Cost for Semi-Perfect Form! (Min: 0 / Max: 20000 / Default: 0)")
 				.defineInRange("Ki Cost: ", 0, 0, 20000);
@@ -57,14 +57,14 @@ public class DMZTrBioAndroidConfig {
 
 		BUILDER.push(" Perfect Form");
 
-		MULTIPLIER_PERFECT_FORM_STR = BUILDER.comment("Multiplier for Perfect Form STR! (Min: 1.0 / Max: 200.0 / Default: 2.5)")
-				.defineInRange("Multiplier STR: ", 2.5, 1.0, 200.0);
+		MULTIPLIER_PERFECT_FORM_STR = BUILDER.comment("Multiplier for Perfect Form STR! (Min: 0.1 / Max: 200.0 / Default: 3.0)")
+				.defineInRange("Multiplier STR: ", 3.0, 0.1, 200.0);
 
-		MULTIPLIER_PERFECT_FORM_DEF = BUILDER.comment("Multiplier for Perfect Form DEF! (Min: 1.0 / Max: 200.0 / Default: 2.5)")
-				.defineInRange("Multiplier DEF: ", 2.5, 1.0, 200.0);
+		MULTIPLIER_PERFECT_FORM_DEF = BUILDER.comment("Multiplier for Perfect Form DEF! (Min: 0.1 / Max: 200.0 / Default: 3.0)")
+				.defineInRange("Multiplier DEF: ", 3.0, 0.1, 200.0);
 
-		MULTIPLIER_PERFECT_FORM_PWR = BUILDER.comment("Multiplier for Perfect Form PWR! (Min: 1.0 / Max: 200.0 / Default: 2.5)")
-				.defineInRange("Multiplier PWR: ", 2.5, 1.0, 200.0);
+		MULTIPLIER_PERFECT_FORM_PWR = BUILDER.comment("Multiplier for Perfect Form PWR! (Min: 0.1 / Max: 200.0 / Default: 3.0)")
+				.defineInRange("Multiplier PWR: ", 3.0, 0.1, 200.0);
 
 		PERFECT_FORM_KI_COST = BUILDER.comment("Ki Cost for Perfect Form! (Min: 0 / Max: 20000 / Default: 0)")
 				.defineInRange("Ki Cost: ", 0, 0, 20000);

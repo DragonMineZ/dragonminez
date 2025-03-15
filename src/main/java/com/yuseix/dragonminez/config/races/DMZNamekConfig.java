@@ -48,8 +48,8 @@ public class DMZNamekConfig {
         //Pasiva
         BUILDER.push(" NAMEK PASSIVE SKILL:");
 
-        PASSIVE_REGEN = BUILDER.comment("Ki Passive Regeneration Boost! (Min: 1 / Max: 100 / Default: 40)")
-                .defineInRange("Ki Passive Regen Boost: ", 40, 1, 100);
+        PASSIVE_REGEN = BUILDER.comment("Ki Passive Regeneration Boost! (Min: 1 / Max: 100 / Default: 60)")
+                .defineInRange("Ki Passive Regen Boost: ", 60, 1, 100);
 
         BUILDER.pop();
 

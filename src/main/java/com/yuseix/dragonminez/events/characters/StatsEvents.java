@@ -66,8 +66,10 @@ public class StatsEvents {
 	//Teclas
 	private static boolean previousKeyDescendState = false;
 	private static boolean previousKiChargeState = false;
-	private static boolean turboOn = false;
+	private static boolean turboOn = false, hasPressedTurbo = false;
 	private static boolean transformOn = false;
+	private static double previousFov = 1.0;
+	private static boolean hasHealed = false;
 
 	//Sonidos
 	private static SimpleSoundInstance kiChargeLoop, turboLoop, oozaruLoop;
@@ -105,6 +107,10 @@ public class StatsEvents {
 				}
 				if (serverPlayer.getAttribute(Attributes.MAX_HEALTH).getBaseValue() != dmzdatos.calcConstitution(playerstats)) {
 					serverPlayer.getAttribute(Attributes.MAX_HEALTH).setBaseValue(dmzdatos.calcConstitution(playerstats));
+					if (!hasHealed) {
+						serverPlayer.setHealth(dmzdatos.calcConstitution(playerstats));
+						hasHealed = true;
+					}
 				}
 				// Tickhandler
 				tickHandler.tickRegenConsume(playerstats, dmzdatos, serverPlayer);
@@ -197,35 +203,6 @@ public class StatsEvents {
 			playerstats.setIntValue("senzutimer", senzuContador(playerstats.getIntValue("senzutimer")));
 
 		});
-	}
-
-	@SubscribeEvent
-	public static void onLivingUpdateEvent(LivingEvent.LivingTickEvent event) {
-		if (!(event.getEntity() instanceof Player player)) return;
-
-		if (turboOn) {
-			// Obtener la velocidad actual
-			Vec3 currentMovement = player.getDeltaMovement();
-
-			if (player.onGround()) {
-				// En tierra: Aplicar multiplicador al movimiento horizontal (X y Z)
-				double turboSpeedX = currentMovement.x * 1.5;
-				double turboSpeedZ = currentMovement.z * 1.5;
-
-				// Configurar el nuevo movimiento con el multiplicador
-				player.setDeltaMovement(turboSpeedX, currentMovement.y, turboSpeedZ);
-			} else {
-				// En el aire: Normalizar la velocidad horizontal para evitar acumulación infinita
-				double horizontalSpeed = Math.sqrt(currentMovement.x * currentMovement.x + currentMovement.z * currentMovement.z);
-				if (horizontalSpeed > 0.65) {
-					// Limitar la velocidad horizontal al máximo permitido
-					double scale = 0.65 / horizontalSpeed;
-					double limitedX = currentMovement.x * scale;
-					double limitedZ = currentMovement.z * scale;
-					player.setDeltaMovement(limitedX, currentMovement.y, limitedZ);
-				}
-			}
-		}
 	}
 
 
@@ -396,7 +373,7 @@ public class StatsEvents {
 					DMZSkill jump = stats.getDMZSkills().get("jump");
 					DMZSkill fly = stats.getDMZSkills().get("fly");
 
-					if (jump != null && jump.isActive() || fly != null && fly.isActive()) {
+					if (jump != null && jump.isActive() || fly != null && fly.isActive() || stats.getBoolean("turbo")) {
 						event.setCanceled(true);
 					} else {
 						int maxEnergy = dmzdatos.calcEnergy(stats);
@@ -461,21 +438,25 @@ public class StatsEvents {
 
 					//Turbo
 					if (isTurboKeypressed) {
+						if (!hasPressedTurbo) {
+							previousFov = Minecraft.getInstance().options.fovEffectScale().get();
+							System.out.println("Previous FOV: " + previousFov);
+							hasPressedTurbo = true;
+						}
 						if (!turboOn && porcentaje > 10) {
+							if (Minecraft.getInstance().options.fovEffectScale().get() != 0.0) Minecraft.getInstance().options.fovEffectScale().set(0.0);
 							// Solo activar Turbo si tiene más del 10% de energía
 							turboOn = true;
 							ModMessages.sendToServer(new CharacterC2S("isTurboOn", 1));
 							ModMessages.sendToServer(new PermaEffC2S("add", "turbo", 1));
 							playSoundOnce(MainSounds.AURA_START.get());
 							startLoopSound(MainSounds.TURBO_LOOP.get(), "turbo");
-							setTurboSpeed(player, true);
 						} else if (turboOn) {
 							// Permitir desactivar Turbo incluso si el porcentaje es menor al 10%
 							turboOn = false;
 							ModMessages.sendToServer(new CharacterC2S("isTurboOn", 0));
 							ModMessages.sendToServer(new PermaEffC2S("remove", "turbo", 1));
 							stopLoopSound("turbo");
-							setTurboSpeed(player, false);
 						} else {
 							player.displayClientMessage(Component.translatable("ui.dmz.turbo_fail"), true);
 						}
@@ -487,7 +468,6 @@ public class StatsEvents {
 						ModMessages.sendToServer(new CharacterC2S("isTurboOn", 0));
 						ModMessages.sendToServer(new PermaEffC2S("remove", "turbo", 1));
 						stopLoopSound("turbo");
-						setTurboSpeed(player, false);
 					}
 
 					// Transformación
@@ -532,6 +512,10 @@ public class StatsEvents {
 				}
 			});
 		}
+	}
+
+	public static double getPreviousFov() {
+		return previousFov;
 	}
 
 	@SubscribeEvent
@@ -812,17 +796,6 @@ public class StatsEvents {
 		});
 	}
 
-	private static void setTurboSpeed(Player player, boolean enable) {
-		AttributeInstance speedAttribute = player.getAttribute(Attributes.MOVEMENT_SPEED);
-		if (speedAttribute == null) return;
-		double originalSpeed = speedAttribute.getBaseValue();
-		if (enable) {
-			speedAttribute.setBaseValue(originalSpeed + 0.06);
-		} else {
-			speedAttribute.setBaseValue(originalSpeed);
-		}
-	}
-
 	private static void sonidosGolpes(Player player) {
 
 		SoundEvent[] golpeSounds = {
@@ -911,44 +884,24 @@ public class StatsEvents {
 
 		// Lógica de transformación para Bioandroides
 		if (race == 3 && groupForm.equals("")) {
-			if (superFormLvl >= 2 && dmzForm.equals("base")) {
-				return "semi_perfect";
-			}
-			if (superFormLvl >= 4 && dmzForm.equals("semi_perfect")) {
-				return "perfect";
-			}
+			if (superFormLvl >= 2 && dmzForm.equals("base")) return "semi_perfect";
+			if (superFormLvl >= 4 && dmzForm.equals("semi_perfect")) return "perfect";
 		}
 
 		// Lógica de transformación para Cold Demons
 		if (race == 4 && groupForm.equals("")) {
-			if (superFormLvl >= 2 && dmzForm.equals("base")) {
-				return "second_form";
-			}
-			if (superFormLvl >= 4 && dmzForm.equals("second_form")) {
-				return "third_form";
-			}
-			if (superFormLvl >= 6 && dmzForm.equals("third_form")) {
-				return "final_form";
-			}
-			if (superFormLvl >= 8 && dmzForm.equals("final_form")) {
-				return "full_power";
-			}
+			if (superFormLvl >= 2 && dmzForm.equals("base")) return "second_form";
+			if (superFormLvl >= 4 && dmzForm.equals("second_form")) return "third_form";
+			if (superFormLvl >= 6 && dmzForm.equals("third_form")) return "final_form";
+			if (superFormLvl >= 8 && dmzForm.equals("final_form")) return "full_power";
 		}
 
 		// Lógica de transformación para Majins
 		if (race == 5 && groupForm.equals("")) {
-			if (superFormLvl >= 2 && dmzForm.equals("base")) {
-				return "evil";
-			}
-			if (superFormLvl >= 4 && dmzForm.equals("evil")) {
-				return "kid";
-			}
-			if (superFormLvl >= 6 && dmzForm.equals("kid")) {
-				return "super";
-			}
-			if (superFormLvl >= 8 && dmzForm.equals("super")) {
-				return "ultra";
-			}
+			if (superFormLvl >= 2 && dmzForm.equals("base")) return "evil";
+			if (superFormLvl >= 4 && dmzForm.equals("evil")) return "kid";
+			if (superFormLvl >= 6 && dmzForm.equals("kid")) return "super";
+			if (superFormLvl >= 8 && dmzForm.equals("super")) return "ultra";
 		}
 
 		return null; // No hay transformación disponible

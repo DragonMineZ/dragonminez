@@ -1,6 +1,7 @@
 package com.yuseix.dragonminez.init.blocks.custom.dballs;
 
 import com.google.common.collect.ImmutableMap;
+import com.yuseix.dragonminez.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.init.MainEntity;
 import com.yuseix.dragonminez.init.MainSounds;
 import com.yuseix.dragonminez.init.blocks.entity.Dball7BlockEntity;
@@ -93,7 +94,7 @@ public class Dball7Block extends BaseEntityBlock {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.dimension() == Level.OVERWORLD) {
-            if (areAllDballBlocksNearby(pLevel, pPos)) {
+            if (areAllDballBlocksNearby(pLevel, pPos) && DMZGeneralConfig.SHOULD_DRAGON_SPAWN.get()) {
                 // Elimina los bloques
                 removeAllDballBlocks(pLevel, pPos);
 
