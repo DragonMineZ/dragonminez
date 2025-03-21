@@ -119,12 +119,12 @@ public class MasterMenu extends Screen {
 		anchoTexto = (this.width / 2) + 25;
 		Player player = this.minecraft.player;
 
-		int flyCost = DMZClientConfig.getFlyLevels();
-		int kiControlCost = DMZClientConfig.getKiControlLevels();
-		int kiManipulationCost = DMZClientConfig.getKiManipLevels();
-		int jumpCost = DMZClientConfig.getJumpLevels();
-		int meditationCost = DMZClientConfig.getMeditationLevels();
-		int potUnlockCost = DMZClientConfig.getPotUnlockLevels();
+		int flyCost = DMZClientConfig.getFlyMaster();
+		int kiControlCost = DMZClientConfig.getKiControlMaster();
+		int kiManipulationCost = DMZClientConfig.getKiManipMaster();
+		int jumpCost = DMZClientConfig.getJumpMaster();
+		int meditationCost = DMZClientConfig.getMeditationMaster();
+		int potUnlockCost = DMZClientConfig.getPotUnlockMaster();
 		//int kaioKenCost = DMZGeneralConfig.KAIOKEN_TP_COST_MASTER.get();
 
 		DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {

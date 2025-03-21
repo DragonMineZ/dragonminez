@@ -10,6 +10,15 @@ import net.minecraft.world.entity.player.Player;
 
 public class DMZDatos implements IDMZDatos{
 
+    public int getBaseStrength(DMZStatsAttributes stats) {
+        double multRaza = getRaceStats(stats.getIntValue("race"), stats.getStringValue("class"), "STR");
+        double multTransf = getTransformationStats(stats.getIntValue("race"), "base", "STR");
+
+        // Fórmula = ((((1 + (StatSTR / 10)) * ConfigRaza) * (Transf * Efectos)) * (Porcentaje / 10))
+        return (int) Math.ceil((((1 + ((double) stats.getStat("STR") / 10)) * multRaza) * (multTransf * getEffectsMult(stats))) * ((double)stats.getIntValue("release")/10));
+
+    }
+
     @Override
     public int calcStrength(DMZStatsAttributes stats) {
         double multRaza = getRaceStats(stats.getIntValue("race"), stats.getStringValue("class"), "STR");
@@ -22,7 +31,7 @@ public class DMZDatos implements IDMZDatos{
     @Override
     public int calcDefense(DMZStatsAttributes stats, Player player) {
         int DefensaArmor = player.getArmorValue(); int DurezaArmor = Mth.floor(player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
-        int armorTotal = (DefensaArmor + DurezaArmor) * 3;
+        int armorTotal = (DefensaArmor + DurezaArmor) * 2;
 
         double multRaza = getRaceStats(stats.getIntValue("race"), stats.getStringValue("class"), "DEF");
         double multTransf = getTransformationStats(stats.getIntValue("race"), stats.getStringValue("form"), "DEF");
@@ -42,9 +51,10 @@ public class DMZDatos implements IDMZDatos{
     @Override
     public int calcStamina(DMZStatsAttributes stats) {
         double multRaza = getRaceStats(stats.getIntValue("race"), stats.getStringValue("class"), "STM");
+        int maxHP = calcConstitution(stats);
 
         // Fórmula = Math.round((MaxCON * 0.85) * multRaza)
-        return (int) Math.round((stats.getIntValue("maxhealth") * 0.20) * multRaza);
+        return (int) ((int) Math.round((maxHP) * 0.20) * multRaza);
     }
 
     @Override

@@ -57,7 +57,24 @@ public class DMZGeneralConfig {
     public static final ForgeConfigSpec.ConfigValue<Integer> KI_MANIPULATION_TP_COST_MASTER;
     public static final ForgeConfigSpec.ConfigValue<Integer> KI_MANIPULATION_TP_COST_LEVELS;
 
-
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_TAIL_RAW_HEALTHREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_TAIL_RAW_KIREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_TAIL_RAW_STAMREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_TAIL_COOKED_HEALTHREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_TAIL_COOKED_KIREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_TAIL_COOKED_STAMREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_MEAT_RAW_HEALTHREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_MEAT_RAW_KIREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_MEAT_RAW_STAMREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_MEAT_COOKED_HEALTHREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_MEAT_COOKED_KIREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> DINO_MEAT_COOKED_STAMREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> FROG_LEGS_RAW_HEALTHREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> FROG_LEGS_RAW_KIREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> FROG_LEGS_RAW_STAMREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> FROG_LEGS_COOKED_HEALTHREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> FROG_LEGS_COOKED_KIREGEN;
+    public static final ForgeConfigSpec.ConfigValue<Double> FROG_LEGS_COOKED_STAMREGEN;
 
     static {
         BUILDER.push("Configs for Attributes of DragonMineZ");
@@ -68,8 +85,8 @@ public class DMZGeneralConfig {
         TRANSFORMATIONS_WITH_TP = BUILDER.comment("Allow Transformations to be buyable with TP instead of Obtainable via Storyline (Default: false)")
                 .define("Transformations: ", true);
 
-        TPCOST_TRANSFORMATIONS = BUILDER.comment("ZPoints Cost for Buying Transformations (Min: 1 / Max: 1000000000 / Default: 40000)")
-                .defineInRange("Transformations Cost: ", 40000, 1, 1000000000);
+        TPCOST_TRANSFORMATIONS = BUILDER.comment("ZPoints Cost for Buying Transformations (Min: 0 / Max: 1000000000 / Default: 40000)")
+                .defineInRange("Transformations Cost: ", 40000, 0, 1000000000);
 
         SAVE_INVENTORY = BUILDER.comment("Save Player Inventory on Death (Default: true)")
                 .comment("This function is currently disabled due to a big bug. It will reworked an re enabled in v1.3.0.")
@@ -80,20 +97,20 @@ public class DMZGeneralConfig {
 
         BUILDER.push("ZPoints Configs");
 
-        PERHIT_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Hit (Min: 1 / Max: 100 / Default: 2)")
-                .defineInRange("ZPoints per Hit: ", 2, 1, 100);
+        PERHIT_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Hit (Min: 0 / Max: 100 / Default: 2)")
+                .defineInRange("ZPoints per Hit: ", 2, 0, 100);
 
-        PERKILL_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Kill based on Enemy max Health (Min: 0.1 / Max: 1.0 / Default: 0.45)")
-                .defineInRange("ZPoints per Kill percentage: ", 0.45, 0.1, 1);
+        PERKILL_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Kill based on Enemy max Health (Min: 0.0 / Max: 1.0 / Default: 0.45)")
+                .defineInRange("ZPoints per Kill percentage: ", 0.45, 0.0, 1);
 
-        MULTIPLIER_ZPOINTS_COST = BUILDER.comment("Multiplier for ZPoints Cost (Min: 1.0 / Max: 20.0 / Default: 1.2)")
-                .defineInRange("ZPoints Cost: ", 1.2, 1.0, 20.0);
+        MULTIPLIER_ZPOINTS_COST = BUILDER.comment("Multiplier for ZPoints Cost (Min: 0.0 / Max: 20.0 / Default: 1.2)")
+                .defineInRange("ZPoints Cost: ", 1.2, 0.0, 20.0);
 
-        MULTIPLIER_ZPOINTS_GAIN = BUILDER.comment("Multiplier for ZPoints Gain (Min: 1.0 / Max: 20.0 / Default: 1.2)")
-                .defineInRange("ZPoints Gain: ", 1.2, 1.0, 20.0);
+        MULTIPLIER_ZPOINTS_GAIN = BUILDER.comment("Multiplier for ZPoints Gain (Min: 0.0 / Max: 20.0 / Default: 1.2)")
+                .defineInRange("ZPoints Gain: ", 1.2, 0.0, 20.0);
 
-        MULTIPLIER_ZPOINTS_HTC = BUILDER.comment("Multiplier for ZPoints in the Hyperbolic Time Chamber (Min: 1.0 / Max: 20.0 / Default: 3.0)")
-                .defineInRange("ZPoints (HTC): ", 3.0, 1.0, 60.0);
+        MULTIPLIER_ZPOINTS_HTC = BUILDER.comment("Multiplier for ZPoints in the Hyperbolic Time Chamber (Min: 0.0 / Max: 20.0 / Default: 3.0)")
+                .defineInRange("ZPoints (HTC): ", 3.0, 0.0, 60.0);
 
 
         BUILDER.pop();
@@ -101,11 +118,11 @@ public class DMZGeneralConfig {
 
         BUILDER.push("General Configs");
 
-        MULTIPLIER_FALLDMG = BUILDER.comment("Fall Damage Multiplier Percentage (Min: 0.01 / Max: 1.00 / Default: 0.05)")
-                .defineInRange("FallDmg: ", 0.05, 0.01, 1.00);
+        MULTIPLIER_FALLDMG = BUILDER.comment("Fall Damage Multiplier Percentage (Min: 0.00 / Max: 1.00 / Default: 0.05)")
+                .defineInRange("FallDmg: ", 0.05, 0.00, 1.00);
 
-        SENZU_COOLDOWN = BUILDER.comment("Cooldown for Senzu Beans (Min: 1 / Max: 60 / Default: 10)")
-                .defineInRange("Seconds: ", 10, 1, 60);
+        SENZU_COOLDOWN = BUILDER.comment("Cooldown for Senzu Beans (Min: 0 / Max: 60 / Default: 10)")
+                .defineInRange("Seconds: ", 10, 0, 60);
 
         SENZU_GIVE = BUILDER.comment("Number of Senzu Beans the Master Korin will give (Min: 1 / Max: 10 / Default: 5)")
                 .defineInRange("Number: ", 5, 1, 10);
@@ -119,11 +136,11 @@ public class DMZGeneralConfig {
         MULTIPLIER_MAJIN = BUILDER.comment("Multiplier for the Majin Mark Effect (Min: 1.0 / Max: 20.0 / Default: 1.5)")
                 .defineInRange("Majin Multiplier: ", 1.5, 1.0, 20.0);
 
-        BABA_COOLDOWN = BUILDER.comment("Cooldown for Baba's Temporal Revive in Minutes (Min: 1 / Max: 600 / Default: 20)")
-                .defineInRange("Baba Cooldown: ", 20, 1, 600);
+        BABA_COOLDOWN = BUILDER.comment("Cooldown for Baba's Temporal Revive in Minutes (Min: 0 / Max: 600 / Default: 20)")
+                .defineInRange("Baba Cooldown: ", 20, 0, 600);
 
-        BABA_DURATION = BUILDER.comment("Duration for Baba's Temporal Revive in Minutes (Min: 1 / Max: 60 / Default: 15)")
-                .defineInRange("Baba Duration: ", 15, 1, 60);
+        BABA_DURATION = BUILDER.comment("Duration for Baba's Temporal Revive in Minutes (Min: 0 / Max: 60 / Default: 15)")
+                .defineInRange("Baba Duration: ", 15, 0, 60);
 
         BUILDER.pop();
 
@@ -218,6 +235,64 @@ public class DMZGeneralConfig {
 
         KI_MANIPULATION_TP_COST_LEVELS = BUILDER.comment("ZPoints Cost for Leveling Up the Ki Manipulation Skill (Min: 1 / Max: 1000000000 / Default: 5000) (Formula: Cost * Level * ZPointsCostMultiplier)")
                 .defineInRange("Ki Manipulation Levels: ", 5000, 1, 1000000000);
+
+        BUILDER.pop();
+
+        BUILDER.push("Foods Configs");
+
+        DINO_TAIL_RAW_HEALTHREGEN = BUILDER.comment("Health Regeneration for Raw Dino Tail (Min: 0.0 / Max: 1.0 / Default: 0.09)")
+                .defineInRange("Raw Dino Tail Health Regen: ", 0.09, 0.0, 1.0);
+
+        DINO_TAIL_RAW_KIREGEN = BUILDER.comment("Ki Regeneration for Raw Dino Tail (Min: 0.0 / Max: 1.0 / Default: 0.06)")
+                .defineInRange("Raw Dino Tail Ki Regen: ", 0.06, 0.0, 1.0);
+
+        DINO_TAIL_RAW_STAMREGEN = BUILDER.comment("Stamina Regeneration for Raw Dino Tail (Min: 0.0 / Max: 1.0 / Default: 0.06)")
+                .defineInRange("Raw Dino Tail Stamina Regen: ", 0.06, 0.0, 1.0);
+
+        DINO_TAIL_COOKED_HEALTHREGEN = BUILDER.comment("Health Regeneration for Cooked Dino Tail (Min: 0.0 / Max: 1.0 / Default: 0.18)")
+                .defineInRange("Cooked Dino Tail Health Regen: ", 0.18, 0, 100);
+
+        DINO_TAIL_COOKED_KIREGEN = BUILDER.comment("Ki Regeneration for Cooked Dino Tail (Min: 0.0 / Max: 1.0 / Default: 0.12)")
+                .defineInRange("Cooked Dino Tail Ki Regen: ", 0.12, 0.0, 1.0);
+
+        DINO_TAIL_COOKED_STAMREGEN = BUILDER.comment("Stamina Regeneration for Cooked Dino Tail (Min: 0.0 / Max: 1.0 / Default: 0.12)")
+                .defineInRange("Cooked Dino Tail Stamina Regen: ", 0.12, 0.0, 1.0);
+
+        DINO_MEAT_RAW_HEALTHREGEN = BUILDER.comment("Health Regeneration for Raw Dino Meat (Min: 0.0 / Max: 1.0 / Default: 0.04)")
+                .defineInRange("Raw Dino Meat Health Regen: ", 0.04, 0.0, 1.0);
+
+        DINO_MEAT_RAW_KIREGEN = BUILDER.comment("Ki Regeneration for Raw Dino Meat (Min: 0.0 / Max: 1.0 / Default: 0.02)")
+                .defineInRange("Raw Dino Meat Ki Regen: ", 0.02, 0.0, 1.0);
+
+        DINO_MEAT_RAW_STAMREGEN = BUILDER.comment("Stamina Regeneration for Raw Dino Meat (Min: 0.0 / Max: 1.0 / Default: 0.02)")
+                .defineInRange("Raw Dino Meat Stamina Regen: ", 0.02, 0.0, 1.0);
+
+        DINO_MEAT_COOKED_HEALTHREGEN = BUILDER.comment("Health Regeneration for Cooked Dino Meat (Min: 0.0 / Max: 1.0 / Default: 0.1)")
+                .defineInRange("Cooked Dino Meat Health Regen: ", 0.1, 0.0, 1.0);
+
+        DINO_MEAT_COOKED_KIREGEN = BUILDER.comment("Ki Regeneration for Cooked Dino Meat (Min: 0.0 / Max: 1.0 / Default: 0.02)")
+                .defineInRange("Cooked Dino Meat Ki Regen: ", 0.075, 0.0, 1.0);
+
+        DINO_MEAT_COOKED_STAMREGEN = BUILDER.comment("Stamina Regeneration for Cooked Dino Meat (Min: 0.0 / Max: 1.0 / Default: 0.02)")
+                .defineInRange("Cooked Dino Meat Stamina Regen: ", 0.075, 0.0, 1.0);
+
+        FROG_LEGS_RAW_HEALTHREGEN = BUILDER.comment("Health Regeneration for Raw Frog Legs (Min: 0.0 / Max: 1.0 / Default: 0.02)")
+                .defineInRange("Raw Frog Legs Health Regen: ", 0.02, 0.0, 1.0);
+
+        FROG_LEGS_RAW_KIREGEN = BUILDER.comment("Ki Regeneration for Raw Frog Legs (Min: 0.0 / Max: 1.0 / Default: 0.02)")
+                .defineInRange("Raw Frog Legs Ki Regen: ", 0.01, 0.0, 1.0);
+
+        FROG_LEGS_RAW_STAMREGEN = BUILDER.comment("Stamina Regeneration for Raw Frog Legs (Min: 0.0 / Max: 1.0 / Default: 0.02)")
+                .defineInRange("Raw Frog Legs Stamina Regen: ", 0.01, 0.0, 1.0);
+
+        FROG_LEGS_COOKED_HEALTHREGEN = BUILDER.comment("Health Regeneration for Cooked Frog Legs (Min: 0.0 / Max: 1.0 / Default: 0.07)")
+                .defineInRange("Cooked Frog Legs Health Regen: ", 0.07, 0.0, 1.0);
+
+        FROG_LEGS_COOKED_KIREGEN = BUILDER.comment("Ki Regeneration for Cooked Frog Legs (Min: 0.0 / Max: 1.0 / Default: 0.04)")
+                .defineInRange("Cooked Frog Legs Ki Regen: ", 0.04, 0.0, 1.0);
+
+        FROG_LEGS_COOKED_STAMREGEN = BUILDER.comment("Stamina Regeneration for Cooked Frog Legs (Min: 0.0 / Max: 1.0 / Default: 0.04)")
+                .defineInRange("Cooked Frog Legs Stamina Regen: ", 0.04, 0.0, 1.0);
 
         SPEC = BUILDER.build();
     }

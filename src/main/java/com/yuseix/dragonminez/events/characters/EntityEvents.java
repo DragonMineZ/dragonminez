@@ -99,23 +99,25 @@ public class EntityEvents {
 			if (event.getSource().getEntity() instanceof Player) {
 				Player player = (Player) event.getSource().getEntity();
 				var vidaTps = (int) (event.getEntity().getMaxHealth() * DMZGeneralConfig.PERKILL_ZPOINTS_GAIN.get());
-				var calculoTps = (int) Math.round((10 + vidaTps) * DMZGeneralConfig.MULTIPLIER_ZPOINTS_GAIN.get());
+				if (vidaTps >= 0.01) {
+					var calculoTps = (int) Math.round((10 + vidaTps) * DMZGeneralConfig.MULTIPLIER_ZPOINTS_GAIN.get());
 
-				// multiplicar si está en la hab del tiempo pes
-				if (player.level().dimension().equals(ModDimensions.TIME_CHAMBER_DIM_LEVEL_KEY)) {
-					calculoTps *= DMZGeneralConfig.MULTIPLIER_ZPOINTS_HTC.get();
+					// multiplicar si está en la hab del tiempo pes
+					if (player.level().dimension().equals(ModDimensions.TIME_CHAMBER_DIM_LEVEL_KEY)) {
+						calculoTps *= DMZGeneralConfig.MULTIPLIER_ZPOINTS_HTC.get();
+					}
+
+					int finalCalculoTps = calculoTps;
+
+					DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
+						boolean isDmzUser = cap.getBoolean("dmzuser");
+						int finalTps = Math.round(finalCalculoTps);
+
+						if (cap.getIntValue("race") == 4)  finalTps *= DMZColdDemonConfig.TP_MULTIPLER_PASSIVE.get();
+
+						if (isDmzUser) cap.addIntValue("tps", finalTps);
+					});
 				}
-
-				int finalCalculoTps = calculoTps;
-
-				DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
-					boolean isDmzUser = cap.getBoolean("dmzuser");
-					int finalTps = Math.round(finalCalculoTps);
-
-					if (cap.getIntValue("race") == 4)  finalTps *= DMZColdDemonConfig.TP_MULTIPLER_PASSIVE.get();
-
-					if (isDmzUser) cap.addIntValue("tps", finalTps);
-				});
 			}
 		}
 
@@ -146,20 +148,21 @@ public class EntityEvents {
 			Player player = (Player) event.getSource().getEntity();
 
 			double baseTps = DMZGeneralConfig.PERHIT_ZPOINTS_GAIN.get() * DMZGeneralConfig.MULTIPLIER_ZPOINTS_GAIN.get();
+			if (baseTps >= 1) {
+				// multiplicar si está en la hab del tiempo pes
+				if (player.level().dimension().equals(ModDimensions.TIME_CHAMBER_DIM_LEVEL_KEY)) {
+					baseTps *= DMZGeneralConfig.MULTIPLIER_ZPOINTS_HTC.get();
+				}
 
-			// multiplicar si está en la hab del tiempo pes
-			if (player.level().dimension().equals(ModDimensions.TIME_CHAMBER_DIM_LEVEL_KEY)) {
-				baseTps *= DMZGeneralConfig.MULTIPLIER_ZPOINTS_HTC.get();
+				double finalBaseTps = baseTps;
+
+				DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
+					boolean isDmzUser = cap.getBoolean("dmzuser");
+					int finalTps = (int) Math.round(finalBaseTps);
+					if (cap.getIntValue("race") == 4) finalTps = (int) (finalTps * DMZColdDemonConfig.TP_MULTIPLER_PASSIVE.get());
+					if (isDmzUser) cap.addIntValue("tps", finalTps);
+				});
 			}
-
-			double finalBaseTps = baseTps;
-
-			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
-				boolean isDmzUser = cap.getBoolean("dmzuser");
-				int finalTps = (int) Math.round(finalBaseTps);
-				if (cap.getIntValue("race") == 4) finalTps = (int) (finalTps * DMZColdDemonConfig.TP_MULTIPLER_PASSIVE.get());
-				if (isDmzUser) cap.addIntValue("tps", finalTps);
-			});
 		}
 	}
 

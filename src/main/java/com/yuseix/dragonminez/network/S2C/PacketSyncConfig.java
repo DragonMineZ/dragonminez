@@ -71,6 +71,24 @@ public class PacketSyncConfig {
                 case "kiControlLevels":
                     DMZClientConfig.setKiControlLevels((int) stat);
                     break;
+                case "jumpMaster":
+                    DMZClientConfig.setJumpMaster((int) stat);
+                    break;
+                case "flyMaster":
+                    DMZClientConfig.setFlyMaster((int) stat);
+                    break;
+                case "meditationMaster":
+                    DMZClientConfig.setMeditationMaster((int) stat);
+                    break;
+                case "potUnlockMaster":
+                    DMZClientConfig.setPotUnlockMaster((int) stat);
+                    break;
+                case "kiManipMaster":
+                    DMZClientConfig.setKiManipMaster((int) stat);
+                    break;
+                case "kiControlMaster":
+                    DMZClientConfig.setKiControlMaster((int) stat);
+                    break;
 
                 case "ini_str_human_warrior":
                     DMZClientConfig.setInit_StrStat("human", "warrior",(int) stat);

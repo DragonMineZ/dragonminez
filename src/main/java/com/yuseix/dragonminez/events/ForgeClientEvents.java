@@ -1,6 +1,7 @@
 package com.yuseix.dragonminez.events;
 
 import com.yuseix.dragonminez.DragonMineZ;
+import com.yuseix.dragonminez.network.C2S.ConfigValuesC2S;
 import com.yuseix.dragonminez.network.C2S.MenuC2S;
 import com.yuseix.dragonminez.network.ModMessages;
 import com.yuseix.dragonminez.stats.DMZStatsCapabilities;
@@ -32,6 +33,36 @@ public class ForgeClientEvents {
 		}
 		if (Keys.UTILITY_PANEL.consumeClick()) {
 			ModMessages.sendToServer(new MenuC2S("utility"));
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		Player player = event.getEntity();
+		if (player instanceof LocalPlayer) {
+			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
+				ModMessages.sendToServer(new ConfigValuesC2S());
+			});
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
+		Player player = event.getEntity();
+		if (player instanceof LocalPlayer) {
+			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
+				ModMessages.sendToServer(new ConfigValuesC2S());
+			});
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+		Player player = event.getEntity();
+		if (player instanceof LocalPlayer) {
+			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
+				ModMessages.sendToServer(new ConfigValuesC2S());
+			});
 		}
 	}
 

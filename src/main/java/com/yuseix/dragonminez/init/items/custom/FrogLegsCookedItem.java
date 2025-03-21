@@ -1,5 +1,6 @@
 package com.yuseix.dragonminez.init.items.custom;
 
+import com.yuseix.dragonminez.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.stats.DMZStatsProvider;
 import net.minecraft.network.chat.Component;
@@ -12,8 +13,6 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 public class FrogLegsCookedItem extends Item {
-    private static final double HP_RESTORE_PERCENTAGE = 0.07; // 7%
-    private static final double KI_RESTORE_PERCENTAGE = 0.04; // 4%
     private static final int HUNGER = 5;
     private static final float SATURATION = 6;
     public FrogLegsCookedItem() {
@@ -37,12 +36,15 @@ public class FrogLegsCookedItem extends Item {
         if (!pLevel.isClientSide && pLivingEntity instanceof ServerPlayer player) {
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(stats -> {
                 int maxHp = stats.getIntValue("maxhealth");
-                int curarVida = (int) (maxHp * HP_RESTORE_PERCENTAGE);
+                int curarVida = (int) (maxHp * DMZGeneralConfig.FROG_LEGS_COOKED_HEALTHREGEN.get());
                 int maxKi = stats.getIntValue("maxenergy");
-                int curarKi = (int) (maxKi * KI_RESTORE_PERCENTAGE);
+                int curarKi = (int) (maxKi * DMZGeneralConfig.FROG_LEGS_COOKED_KIREGEN.get());
+                int maxStm = stats.getIntValue("maxstam");
+                int curarStm = (int) (maxStm * DMZGeneralConfig.FROG_LEGS_COOKED_STAMREGEN.get());
 
                 player.heal(curarVida);
                 stats.addIntValue("curenergy", curarKi);
+                stats.addIntValue("curstam", curarStm);
             });
             player.getFoodData().eat(HUNGER, SATURATION);
         }

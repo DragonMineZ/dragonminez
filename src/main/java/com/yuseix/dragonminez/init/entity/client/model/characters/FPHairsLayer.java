@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.yuseix.dragonminez.DragonMineZ;
 import com.yuseix.dragonminez.client.character.layer.HairsLayer;
 import com.yuseix.dragonminez.client.character.models.hair.*;
+import com.yuseix.dragonminez.init.MainItems;
 import com.yuseix.dragonminez.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.stats.DMZStatsProvider;
 import net.minecraft.client.Minecraft;
@@ -68,7 +69,8 @@ public class FPHairsLayer<T extends LivingEntity, M extends PlayerModel<T>> exte
             // Si el jugador tiene invisibilidad, no renderizamos nada.
             if (Minecraft.getInstance().player.hasEffect(MobEffects.INVISIBILITY)) return;
             // Si el jugador tiene un casco, no renderizamos nada.
-            if (!(Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.HEAD).isEmpty())) return;
+            if (!(Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) &&
+                    !Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.HEAD).is(MainItems.INVENCIBLE_ARMOR_HELMET.get())) return;
 
             switch (raza){
                 case 0: //Humano

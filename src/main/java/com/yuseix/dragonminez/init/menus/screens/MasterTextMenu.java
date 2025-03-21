@@ -10,6 +10,8 @@ import com.yuseix.dragonminez.client.gui.buttons.DMZButton;
 import com.yuseix.dragonminez.client.gui.buttons.DMZRightButton;
 import com.yuseix.dragonminez.client.gui.buttons.GlowButton;
 import com.yuseix.dragonminez.client.gui.MasterMenu;
+import com.yuseix.dragonminez.network.C2S.ConfigValuesC2S;
+import com.yuseix.dragonminez.network.ModMessages;
 import com.yuseix.dragonminez.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.stats.DMZStatsProvider;
 import net.minecraft.ChatFormatting;
@@ -162,6 +164,7 @@ public class MasterTextMenu extends Screen {
 
 			if (this.minecraft.level.isClientSide()) {
 				DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, minecraft.player).ifPresent(cap -> {
+					ModMessages.sendToServer(new ConfigValuesC2S());
 					if (cap.getBoolean("dmzuser")) {
 						this.master = (GlowButton) this.addRenderableWidget(new GlowButton((this.width / 2) - 105, (this.height - 23), Component.translatable(finalBotonMaestro), wa -> {
 							this.minecraft.setScreen(finalScreen);

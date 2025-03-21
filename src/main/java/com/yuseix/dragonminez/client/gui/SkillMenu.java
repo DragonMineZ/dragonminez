@@ -228,7 +228,7 @@ public class SkillMenu extends Screen {
                                         Map.entry(8, (int) (pUnlockCost * 8 * mult)),
                                         Map.entry(9, (int) (pUnlockCost * 9 * mult)),
                                         Map.entry(10, (int) (pUnlockCost * 10 * mult)),
-                                        Map.entry(11, (int) (pUnlockCost * 1000000 * mult)), // Gran Patriarca
+                                        Map.entry(11, (int) (pUnlockCost * 9999999 * mult)), // Gran Patriarca
                                         Map.entry(12, (int) (pUnlockCost * 15 * mult)),
                                         Map.entry(13, (int) (pUnlockCost * 20 * mult))
                                 );
@@ -251,7 +251,7 @@ public class SkillMenu extends Screen {
                                                 this.removeWidget(upgradeButton);
                                             }));
                                         }
-                                    } else {
+                                    } else if (currentLevel != 10) {
                                         drawStringWithBorder2(guiGraphics, this.font, Component.translatable("dmz.skills.upgrade", cost), startX + 210, positionY + 85, 0xff0000);
                                     }
                                 }

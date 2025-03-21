@@ -52,17 +52,17 @@ public class DMZSaiyanConfig {
         //Pasiva
         BUILDER.push(" SAIYAN PASSIVE SKILL:");
 
-        ZENKAI_CANT = BUILDER.comment("Quantity of Zenkai Activations! (Min: 1 / Max: 10 / Default: 3)")
-                .defineInRange("Zenkai Activations: ", 3, 1, 10);
+        ZENKAI_CANT = BUILDER.comment("Quantity of Zenkai Activations! (Min: 0 / Max: 10 / Default: 3)")
+                .defineInRange("Zenkai Activations: ", 3, 0, 10);
 
-        ZENKAI_HEALTH_REGEN = BUILDER.comment("Health Regen for Zenkais in percentage! (Min: 1 / Max: 100 / Default: 30)")
-                .defineInRange("Zenkai Health Regen: ", 30, 1, 100);
+        ZENKAI_HEALTH_REGEN = BUILDER.comment("Health Regen for Zenkais in percentage! (Min: 0 / Max: 100 / Default: 30)")
+                .defineInRange("Zenkai Health Regen: ", 30, 0, 100);
 
-        ZENKAI_STAT_BOOST = BUILDER.comment("Stat Boost for Zenkais in percentage! (Min: 1 / Max: 30 / Default: 15)")
-                .defineInRange("Zenkai Stat Boost: ", 15, 1, 30);
+        ZENKAI_STAT_BOOST = BUILDER.comment("Stat Boost for Zenkais in percentage! (Min: 0 / Max: 30 / Default: 15)")
+                .defineInRange("Zenkai Stat Boost: ", 15, 0, 30);
 
-        ZENKAI_COOLDOWN = BUILDER.comment("Cooldown for Zenkai in minutes! (Min: 1 / Max: 600 / Default: 50)")
-                .defineInRange("Zenkai Cooldown: ", 50, 1, 600);
+        ZENKAI_COOLDOWN = BUILDER.comment("Cooldown for Zenkai in minutes! (Min: 0 / Max: 600 / Default: 50)")
+                .defineInRange("Zenkai Cooldown: ", 50, 0, 600);
 
         BUILDER.pop();
 

@@ -137,6 +137,11 @@ public class ModMessages {
 				.encoder(SummonQuestC2S::encode)
 				.consumerMainThread(SummonQuestC2S::handle)
 				.add();
+		net.messageBuilder(ConfigValuesC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ConfigValuesC2S::new)
+				.encoder(ConfigValuesC2S::toBytes)
+				.consumerMainThread(ConfigValuesC2S::handle)
+				.add();
 
 		//ENVIAR DATOS AL CLIENTE
 		net.messageBuilder(ZPointsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
