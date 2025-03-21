@@ -198,6 +198,7 @@ public class DMZStatsAttributes {
             case "babaalivetimer" -> result = babaAliveTimer;
             case "maxhealth" -> result = dmzdatos.calcConstitution(this);
             case "maxenergy" -> result = dmzdatos.calcEnergy(this);
+            case "maxstam" -> result = dmzdatos.calcStamina(this);
             case "curstam" -> result = curStam;
             case "curenergy" -> result = currentEnergy;
             default -> System.out.println("The INT value " + value + "could not be found");

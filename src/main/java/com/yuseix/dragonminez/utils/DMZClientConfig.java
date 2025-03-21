@@ -10,6 +10,7 @@ public class DMZClientConfig {
     private static int transfTPCost = 50000;
     private static int babaCooldown = 15, babaDuration = 10;
     private static int jumpLevels = 250, flyLevels = 750, meditationLevels = 150, potUnlockLevels = 1300, kiManipLevels = 5000, kiControlLevels = 100;
+    private static int jumpMaster = 1000, flyMaster = 3000, meditationMaster = 600, potUnlockMaster = 5200, kiManipMaster = 20000, kiControlMaster = 400;
 
     private static int humanPassive = 35;
     private static int zenkaiTimer = 50, zenkaiHeal = 30, zenkaiBoost = 15, zenkaiCant = 3;
@@ -1264,4 +1265,52 @@ public class DMZClientConfig {
     public static double getMajinPassive() {
         return DMZClientConfig.majinPassive;
     }
+
+	public static int getJumpMaster() {
+		return jumpMaster;
+	}
+
+	public static void setJumpMaster(int jumpMaster) {
+		DMZClientConfig.jumpMaster = jumpMaster;
+	}
+
+	public static int getFlyMaster() {
+		return flyMaster;
+	}
+
+	public static void setFlyMaster(int flyMaster) {
+		DMZClientConfig.flyMaster = flyMaster;
+	}
+
+	public static int getMeditationMaster() {
+		return meditationMaster;
+	}
+
+	public static void setMeditationMaster(int meditationMaster) {
+		DMZClientConfig.meditationMaster = meditationMaster;
+	}
+
+	public static int getPotUnlockMaster() {
+		return potUnlockMaster;
+	}
+
+	public static void setPotUnlockMaster(int potUnlockMaster) {
+		DMZClientConfig.potUnlockMaster = potUnlockMaster;
+	}
+
+	public static int getKiManipMaster() {
+		return kiManipMaster;
+	}
+
+	public static void setKiManipMaster(int kiManipMaster) {
+		DMZClientConfig.kiManipMaster = kiManipMaster;
+	}
+
+	public static int getKiControlMaster() {
+		return kiControlMaster;
+	}
+
+	public static void setKiControlMaster(int kiControlMaster) {
+		DMZClientConfig.kiControlMaster = kiControlMaster;
+	}
 }

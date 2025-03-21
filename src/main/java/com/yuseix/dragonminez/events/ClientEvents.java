@@ -409,17 +409,17 @@ public class ClientEvents {
 				if (cap.getBoolean("turbo")) {
 					if (player.getAbilities().flying) {
 						if (player.isSprinting()) {
-							player.getAbilities().setFlyingSpeed(flySpeed + 0.06f);
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.03f);
 							player.onUpdateAbilities();
 						} else {
-							player.getAbilities().setFlyingSpeed(flySpeed + 0.03f);
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.015f);
 							player.onUpdateAbilities();
 						}
 					}
 				} else {
 					if (player.getAbilities().flying) {
 						if (player.isSprinting()) {
-							player.getAbilities().setFlyingSpeed(flySpeed + 0.03f);
+							player.getAbilities().setFlyingSpeed(flySpeed + 0.01f);
 							player.onUpdateAbilities();
 						} else {
 							player.getAbilities().setFlyingSpeed(flySpeed);
@@ -452,9 +452,9 @@ public class ClientEvents {
 
 			if (cap.getBoolean("turbo")) {
 				if (player.isSprinting()) {
-					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75);
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.30);
 				} else {
-					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.5);
+					player.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.24);
 				}
 			} else {
 				if (player.isSprinting()) {

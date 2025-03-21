@@ -156,8 +156,6 @@ public class TransfMenu extends Screen {
 													ModMessages.sendToServer(new ZPointsC2S(1, cost));
 													this.removeWidget(upgradeButton);
 												}));
-											} else {
-												drawStringWithBorder2(guiGraphics, this.font, Component.translatable("dmz.skills.upgrade", cost), startX + 210, startY + 85, 0xffc134);
 											}
 										}
 									}
@@ -203,10 +201,7 @@ public class TransfMenu extends Screen {
 													ModMessages.sendToServer(new ZPointsC2S(1, cost));
 													this.removeWidget(upgradeButton);
 												}));
-											} else {
-												drawStringWithBorder2(guiGraphics, this.font, Component.translatable("dmz.skills.upgrade", cost), startX + 210, startY + 85, 0xffc134);
 											}
-
 										}
 									}
 									break;
