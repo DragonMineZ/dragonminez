@@ -63,8 +63,6 @@ public class ResetCharacterCommand {
                 } else {
                     double factor = (porcentaje) / 100.0;
                     playerstats.setStat("STR", (int) (playerstats.getStat("STR") * factor));
-                    System.out.println("STR FACTOR: " + (int) (playerstats.getStat("STR") * factor));
-                    System.out.println("STR: " + playerstats.getStat("STR"));
                     playerstats.setStat("DEF", (int) (playerstats.getStat("DEF") * factor));
                     playerstats.setStat("CON", (int) (playerstats.getStat("CON") * factor));
                     playerstats.setStat("PWR", (int) (playerstats.getStat("PWR") * factor));
