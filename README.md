@@ -69,6 +69,12 @@ Copyright © 2024 GeckoThePecko. See the `THIRD_PARTY_LICENSES` file for details
 
 - CyaneaCapillata
 - Robberto10
+- SpaceCarp
+- iLalox
+- Athrizel
+- Dssccat
+- Eren Jeager
+- Slut4GhostFace
 
 ## License
 
