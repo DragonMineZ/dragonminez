@@ -30,7 +30,8 @@ public class ReviveCommand {
 				cap.setIntValue("babacooldown", 0);
 				cap.setIntValue("babaalivetimer", 0);
 				player.sendSystemMessage(Component.translatable("command.dmzrevive.revived", source.getPlayer().getName()));
-				source.sendSystemMessage(Component.translatable("command.dmzrevive.success", player.getName()));
+				if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+					source.sendSystemMessage(Component.translatable("command.dmzrevive.success", player.getName()));
 			});
 		}
 

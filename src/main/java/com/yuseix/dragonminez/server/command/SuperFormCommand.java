@@ -38,19 +38,22 @@ public class SuperFormCommand {
 								.executes(commandContext -> giveSkill(
 										Collections.singleton(commandContext.getSource().getPlayerOrException()),
 										StringArgumentType.getString(commandContext, "form_id"),
-										1 // Nivel por defecto
+										1, // Nivel por defecto
+										commandContext.getSource()
 								))
 								.then(Commands.argument("level", IntegerArgumentType.integer(1))
 										.executes(commandContext -> giveSkill(
 												Collections.singleton(commandContext.getSource().getPlayerOrException()),
 												StringArgumentType.getString(commandContext, "form_id"),
-												IntegerArgumentType.getInteger(commandContext, "level")
+												IntegerArgumentType.getInteger(commandContext, "level"),
+												commandContext.getSource()
 										))
 										.then(Commands.argument("player", EntityArgument.players())
 												.executes(commandContext -> giveSkill(
 														EntityArgument.getPlayers(commandContext, "player"),
 														StringArgumentType.getString(commandContext, "form_id"),
-														IntegerArgumentType.getInteger(commandContext, "level")
+														IntegerArgumentType.getInteger(commandContext, "level"),
+														commandContext.getSource()
 												))
 										)
 								)
@@ -68,13 +71,15 @@ public class SuperFormCommand {
 										.executes(commandContext -> setSkill(
 												Collections.singleton(commandContext.getSource().getPlayerOrException()),
 												StringArgumentType.getString(commandContext, "form_id"),
-												IntegerArgumentType.getInteger(commandContext, "level")
+												IntegerArgumentType.getInteger(commandContext, "level"),
+												commandContext.getSource()
 										))
 										.then(Commands.argument("player", EntityArgument.players())
 												.executes(commandContext -> setSkill(
 														EntityArgument.getPlayers(commandContext, "player"),
 														StringArgumentType.getString(commandContext, "form_id"),
-														IntegerArgumentType.getInteger(commandContext, "level")
+														IntegerArgumentType.getInteger(commandContext, "level"),
+														commandContext.getSource()
 												))
 										)
 								)
@@ -90,12 +95,14 @@ public class SuperFormCommand {
 								})
 								.executes(commandContext -> takeSkill(
 										Collections.singleton(commandContext.getSource().getPlayerOrException()),
-										StringArgumentType.getString(commandContext, "form_id")
+										StringArgumentType.getString(commandContext, "form_id"),
+										commandContext.getSource()
 								))
 								.then(Commands.argument("player", EntityArgument.players())
 										.executes(commandContext -> takeSkill(
 												EntityArgument.getPlayers(commandContext, "player"),
-												StringArgumentType.getString(commandContext, "form_id")
+												StringArgumentType.getString(commandContext, "form_id"),
+												commandContext.getSource()
 										))
 								)
 						)
@@ -104,11 +111,12 @@ public class SuperFormCommand {
 	}
 
 	// Comando para dar habilidades
-	private static int giveSkill(Collection<ServerPlayer> players, String skillName, int level) {
+	private static int giveSkill(Collection<ServerPlayer> players, String skillName, int level, CommandSourceStack source) {
 		if (!VALID_FORMS_LIST.containsKey(skillName)) {
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzforms.invalid_skill").append(skillName).append("\n")
-						.append(Component.translatable("command.dmzforms.valid_skills").append(String.join(", ", VALID_FORMS_LIST.keySet()))));
+				if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+					player.sendSystemMessage(Component.translatable("command.dmzforms.invalid_skill").append(skillName).append("\n")
+							.append(Component.translatable("command.dmzforms.valid_skills").append(String.join(", ", VALID_FORMS_LIST.keySet()))));
 			}
 			return 0;
 		}
@@ -132,21 +140,25 @@ public class SuperFormCommand {
 						finalLevel);
 
 				playerstats.addFormSkill(skillName, skill);
+				Component skillNameLang = Component.translatable(skill.getName());
 
-				player.sendSystemMessage(Component.translatable("command.dmzforms.give")
-						.append(Component.translatable(skill.getName())).append(" ") // Solo muestra el nombre de la habilidad
-						.append(Component.translatable("command.dmz.to")).append(player.getName()));
+				if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+					source.sendSystemMessage(Component.translatable("command.dmzforms.give")
+							.append(Component.translatable(skill.getName())).append(" ") // Solo muestra el nombre de la habilidad
+							.append(Component.translatable("command.dmz.to")).append(player.getName()));
+				player.sendSystemMessage(Component.translatable("command.dmzforms.set.target", skillNameLang, finalLevel));
 			});
 		}
 		return players.size();
 	}
 
 	// Comando para establecer nivel de habilidades
-	private static int setSkill(Collection<ServerPlayer> players, String skillName, int level) {
+	private static int setSkill(Collection<ServerPlayer> players, String skillName, int level, CommandSourceStack source) {
 		if (!VALID_FORMS_LIST.containsKey(skillName)) {
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzforms.invalid_skill").append(skillName).append("\n")
-						.append(Component.translatable("command.dmzforms.valid_skills").append(String.join(", ", VALID_FORMS_LIST.keySet()))));
+				if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+					source.sendSystemMessage(Component.translatable("command.dmzforms.invalid_skill").append(skillName).append("\n")
+							.append(Component.translatable("command.dmzforms.valid_skills").append(String.join(", ", VALID_FORMS_LIST.keySet()))));
 			}
 			return 0;
 		}
@@ -169,10 +181,14 @@ public class SuperFormCommand {
 				FormsData skill = playerstats.getFormSkill(skillName);
 				if (skill != null) {
 					skill.setLevel(finalLevel);
-					player.sendSystemMessage(Component.translatable("command.dmzforms.set")
-							.append(Component.translatable(skill.getName()))
-							.append(" (Lv ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
-							.append(Component.translatable("command.dmz.to")).append(player.getName()));
+					Component skillNameLang = Component.translatable(skill.getName());
+					if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+						source.sendSystemMessage(Component.translatable("command.dmzforms.set")
+								.append(Component.translatable(skill.getName()))
+								.append(" (Lv ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
+								.append(Component.translatable("command.dmz.to")).append(player.getName()));
+
+					player.sendSystemMessage(Component.translatable("command.dmzforms.set.target", skillNameLang, finalLevel));
 				} else {
 					// Si la habilidad no existe, la creamos y le asignamos el nivel
 					skill = new FormsData(
@@ -180,11 +196,15 @@ public class SuperFormCommand {
 							finalLevel);
 
 					playerstats.addFormSkill(skillName, skill);
+					Component skillNameLang = Component.translatable(skill.getName());
 
-					player.sendSystemMessage(Component.translatable("command.dmzforms.give")
-							.append(Component.translatable(skill.getName())) // Solo muestra el nombre
-							.append(" (Lv ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
-							.append(Component.translatable("command.dmz.to")).append(player.getName())); // Incluye la descripción de la habilidad
+					if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+						source.sendSystemMessage(Component.translatable("command.dmzforms.give")
+								.append(Component.translatable(skill.getName())) // Solo muestra el nombre
+								.append(" (Lv ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
+								.append(Component.translatable("command.dmz.to")).append(player.getName()));
+
+					player.sendSystemMessage(Component.translatable("command.dmzforms.set.target", skillNameLang, finalLevel));
 				}
 			});
 		}
@@ -192,11 +212,12 @@ public class SuperFormCommand {
 	}
 
 	// Comando para quitar habilidades
-	private static int takeSkill(Collection<ServerPlayer> players, String skillName) {
+	private static int takeSkill(Collection<ServerPlayer> players, String skillName, CommandSourceStack source) {
 		if (!VALID_FORMS_LIST.containsKey(skillName)) {
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzforms.invalid_skill").append(skillName).append("\n")
-						.append(Component.translatable("command.dmzforms.valid_skills").append(String.join(", ", VALID_FORMS_LIST.keySet()))));
+				if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+					player.sendSystemMessage(Component.translatable("command.dmzforms.invalid_skill").append(skillName).append("\n")
+							.append(Component.translatable("command.dmzforms.valid_skills").append(String.join(", ", VALID_FORMS_LIST.keySet()))));
 			}
 			return 0;
 		}
@@ -204,13 +225,17 @@ public class SuperFormCommand {
 		for (ServerPlayer player : players) {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
 				FormsData skill = playerstats.getFormSkill(skillName);
+				Component skillNameLang = Component.translatable("dmz.dmzforms." + skillName + ".name");
 				if (skill != null) {
-					player.sendSystemMessage(Component.translatable("command.dmzskills.take")
-							.append(skill.getName()).append(" ") // Solo muestra el nombre de la habilidad
-							.append(Component.translatable("command.dmz.to")).append(player.getName()));
+					if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+						source.sendSystemMessage(Component.translatable("command.dmzskills.take")
+								.append(skill.getName()).append(" ") // Solo muestra el nombre de la habilidad
+								.append(Component.translatable("command.dmz.to")).append(player.getName()));
+					player.sendSystemMessage(Component.translatable("command.dmzskills.take.target", skillNameLang));
 					playerstats.removeFormSkill(skillName);
 				} else {
-					player.sendSystemMessage(Component.translatable("command.dmzskills.not_found").append(skillName));
+					if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+						source.sendSystemMessage(Component.translatable("command.dmzskills.not_found").append(skillName));
 				}
 			});
 		}

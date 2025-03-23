@@ -107,6 +107,7 @@ public class TempEffectsCommand {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
 				playerstats.addDMZTemporalEffect(effectName, newSeconds);
 			});
+			player.sendSystemMessage(Component.translatable("command.dmzeffects.receivedtemp", effectName, String.valueOf(newSeconds)));
 		}
 
 		if (isTargetAll) {
@@ -144,6 +145,7 @@ public class TempEffectsCommand {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
 				playerstats.removeTemporalEffect(effectName);
 			});
+			player.sendSystemMessage(Component.translatable("command.dmzeffects.removed", effectName));
 		}
 
 		if (isTargetAll) {

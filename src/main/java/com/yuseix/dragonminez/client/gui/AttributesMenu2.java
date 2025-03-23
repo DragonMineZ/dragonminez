@@ -446,12 +446,12 @@ public class AttributesMenu2 extends Screen implements RenderEntityInv {
             //Datos
             var transf = playerstats.getStringValue("form");
 
-            var strMax = dmzdatos.calcStrength(playerstats);
-            var defMax = dmzdatos.calcDefense(playerstats, Minecraft.getInstance().player);
-            var conMax = dmzdatos.calcConstitution(playerstats);
-            var stmMax = dmzdatos.calcStamina(playerstats);
-            var KPWMax = dmzdatos.calcKiPower(playerstats);
-            var enrMax = dmzdatos.calcEnergy(playerstats);
+            var strMax = dmzdatos.calcMenuStrength(playerstats);
+            var defMax = dmzdatos.calcMenuDefense(playerstats, Minecraft.getInstance().player);
+            var conMax = dmzdatos.calcMenuConstitution(playerstats);
+            var stmMax = dmzdatos.calcMenuStamina(playerstats);
+            var KPWMax = dmzdatos.calcMenuKiPower(playerstats);
+            var enrMax = dmzdatos.calcMenuEnergy(playerstats);
 
             var colorEnForma = majinOn || frutaOn || !Objects.equals(transf, "base") || playerstats.getIntValue("race") == 4 ? 0xfebc0d : 0xFFD7AB;
 

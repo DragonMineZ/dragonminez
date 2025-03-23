@@ -25,9 +25,11 @@ public class ForgeClientEvents {
 	public static void onKeyInput(InputEvent.Key event) {
 		if (Keys.STATS_MENU.consumeClick()) {
 			ModMessages.sendToServer(new MenuC2S("stats"));
+			ModMessages.sendToServer(new ConfigValuesC2S());
 		}
 		if (Keys.UTILITY_PANEL.consumeClick()) {
 			ModMessages.sendToServer(new MenuC2S("utility"));
+			ModMessages.sendToServer(new ConfigValuesC2S());
 		}
 	}
 

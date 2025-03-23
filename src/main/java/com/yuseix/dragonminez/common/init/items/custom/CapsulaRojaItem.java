@@ -1,5 +1,6 @@
 package com.yuseix.dragonminez.common.init.items.custom;
 
+import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
 import com.yuseix.dragonminez.client.config.DMZClientConfig;
@@ -45,7 +46,7 @@ public class CapsulaRojaItem extends Item {
                 boolean isDmzUser = stats.getBoolean("dmzuser");
                 if (isDmzUser) {
                     int strength = stats.getStat("STR");
-                    int maxStrength = DMZClientConfig.getMaxStats();
+                    int maxStrength = DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get();
 
                     if (strength < maxStrength) {
                         int increment = Math.min(5, maxStrength - strength);

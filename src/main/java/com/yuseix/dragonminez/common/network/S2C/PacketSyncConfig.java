@@ -729,6 +729,78 @@ public class PacketSyncConfig {
                 case "majin_mult_regen_spiritualist":
                     DMZClientConfig.setClassMult(5, "spiritualist", "regen", stat);
                     break;
+                case "human_mult_con_warrior":
+                    DMZClientConfig.setClassMult(0, "warrior", "con", stat);
+                    break;
+                case "human_mult_ene_warrior":
+                    DMZClientConfig.setClassMult(0, "warrior", "ene", stat);
+                    break;
+                case "human_mult_con_spiritualist":
+                    DMZClientConfig.setClassMult(0, "spiritualist", "con", stat);
+                    break;
+                case "human_mult_ene_spiritualist":
+                    DMZClientConfig.setClassMult(0, "spiritualist", "ene", stat);
+                    break;
+                case "saiyan_mult_con_warrior":
+                    DMZClientConfig.setClassMult(1, "warrior", "con", stat);
+                    break;
+                case "saiyan_mult_ene_warrior":
+                    DMZClientConfig.setClassMult(1, "warrior", "ene", stat);
+                    break;
+                case "saiyan_mult_con_spiritualist":
+                    DMZClientConfig.setClassMult(1, "spiritualist", "con", stat);
+                    break;
+                case "saiyan_mult_ene_spiritualist":
+                    DMZClientConfig.setClassMult(1, "spiritualist", "ene", stat);
+                    break;
+                case "namek_mult_con_warrior":
+                    DMZClientConfig.setClassMult(2, "warrior", "con", stat);
+                    break;
+                case "namek_mult_ene_warrior":
+                    DMZClientConfig.setClassMult(2, "warrior", "ene", stat);
+                    break;
+                case "namek_mult_con_spiritualist":
+                    DMZClientConfig.setClassMult(2, "spiritualist", "con", stat);
+                    break;
+                case "namek_mult_ene_spiritualist":
+                    DMZClientConfig.setClassMult(2, "spiritualist", "ene", stat);
+                    break;
+                case "bio_mult_con_warrior":
+                    DMZClientConfig.setClassMult(3, "warrior", "con", stat);
+                    break;
+                case "bio_mult_ene_warrior":
+                    DMZClientConfig.setClassMult(3, "warrior", "ene", stat);
+                    break;
+                case "bio_mult_con_spiritualist":
+                    DMZClientConfig.setClassMult(3, "spiritualist", "con", stat);
+                    break;
+                case "bio_mult_ene_spiritualist":
+                    DMZClientConfig.setClassMult(3, "spiritualist", "ene", stat);
+                    break;
+                case "cold_mult_con_warrior":
+                    DMZClientConfig.setClassMult(4, "warrior", "con", stat);
+                    break;
+                case "cold_mult_ene_warrior":
+                    DMZClientConfig.setClassMult(4, "warrior", "ene", stat);
+                    break;
+                case "cold_mult_con_spiritualist":
+                    DMZClientConfig.setClassMult(4, "spiritualist", "con", stat);
+                    break;
+                case "cold_mult_ene_spiritualist":
+                    DMZClientConfig.setClassMult(4, "spiritualist", "ene", stat);
+                    break;
+                case "majin_mult_con_warrior":
+                    DMZClientConfig.setClassMult(5, "warrior", "con", stat);
+                    break;
+                case "majin_mult_ene_warrior":
+                    DMZClientConfig.setClassMult(5, "warrior", "ene", stat);
+                    break;
+                case "majin_mult_con_spiritualist":
+                    DMZClientConfig.setClassMult(5, "spiritualist", "con", stat);
+                    break;
+                case "majin_mult_ene_spiritualist":
+                    DMZClientConfig.setClassMult(5, "spiritualist", "ene", stat);
+                    break;
                 case "human_passive":
                     DMZClientConfig.setHumanPassive((int) stat);
                     break;

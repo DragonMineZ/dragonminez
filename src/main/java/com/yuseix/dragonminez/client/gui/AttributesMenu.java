@@ -5,6 +5,7 @@ import com.yuseix.dragonminez.client.RenderEntityInv;
 import com.yuseix.dragonminez.client.gui.buttons.CustomButtons;
 import com.yuseix.dragonminez.client.gui.buttons.DMZGuiButtons;
 import com.yuseix.dragonminez.common.Reference;
+import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.network.C2S.StatsC2S;
 import com.yuseix.dragonminez.common.network.C2S.ZPointsC2S;
 import com.yuseix.dragonminez.common.network.ModMessages;
@@ -470,12 +471,12 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
             //Datos
             var transf = playerstats.getStringValue("form");
 
-            var strMax = dmzdatos.calcStrength(playerstats);
-            var defMax = dmzdatos.calcDefense(playerstats, Minecraft.getInstance().player);
-            var conMax = dmzdatos.calcConstitution(playerstats);
-            var stmMax = dmzdatos.calcStamina(playerstats);
-            var KPWMax = dmzdatos.calcKiPower(playerstats);
-            var enrMax = dmzdatos.calcEnergy(playerstats);
+            var strMax = dmzdatos.calcMenuStrength(playerstats);
+            var defMax = dmzdatos.calcMenuDefense(playerstats, Minecraft.getInstance().player);
+            var conMax = dmzdatos.calcMenuConstitution(playerstats);
+            var stmMax = dmzdatos.calcMenuStamina(playerstats);
+            var KPWMax = dmzdatos.calcMenuKiPower(playerstats);
+            var enrMax = dmzdatos.calcMenuEnergy(playerstats);
 
             var colorEnForma = majinOn || frutaOn || !Objects.equals(transf, "base") || playerstats.getIntValue("race") == 4 ? 0xfebc0d : 0xFFD7AB;
 

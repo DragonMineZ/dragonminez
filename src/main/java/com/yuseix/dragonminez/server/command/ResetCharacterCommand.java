@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
 import com.yuseix.dragonminez.common.util.DMZDatos;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -21,30 +22,33 @@ public class ResetCharacterCommand {
         dispatcher.register(Commands.literal("dmzrestart")
                 .requires(commandSourceStack -> commandSourceStack.hasPermission(2))
                 .executes(commandContext -> reiniciarJugador(
-                        Collections.singleton(commandContext.getSource().getPlayerOrException()), 0))
+                        Collections.singleton(commandContext.getSource().getPlayerOrException()), 0, commandContext.getSource()))
                 .then(Commands.argument("player", EntityArgument.players())
                         .executes(commandContext -> reiniciarJugador(
-                                EntityArgument.getPlayers(commandContext, "player"), 0))
+                                EntityArgument.getPlayers(commandContext, "player"), 0, commandContext.getSource()))
                         .then(Commands.argument("keepPercentage", IntegerArgumentType.integer(0, 100))
                                 .executes(commandContext -> reiniciarJugador(
                                         EntityArgument.getPlayers(commandContext, "player"),
-                                        IntegerArgumentType.getInteger(commandContext, "keepPercentage")))
+                                        IntegerArgumentType.getInteger(commandContext, "keepPercentage"),
+                                        commandContext.getSource()))
                         )
                 )
         );
     }
 
-    private static int reiniciarJugador(Collection<ServerPlayer> pPlayers, int porcentaje) {
+    private static int reiniciarJugador(Collection<ServerPlayer> pPlayers, int porcentaje, CommandSourceStack source) {
         for (ServerPlayer player : pPlayers) {
-            DMZDatos dmzdatos = new DMZDatos();
 
-            player.sendSystemMessage(
-                    Component.translatable("command.dmzrestart.character")
-                            .append(" ")
-                            .append(player.getName())
-                            .append(" ")
-                            .append(Component.translatable("command.dmzrestart.character_restarted"))
-            );
+            if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+                source.sendSystemMessage(
+                        Component.translatable("command.dmzrestart.character")
+                                .append(" ")
+                                .append(player.getName()).withStyle(ChatFormatting.GREEN)
+                                .append(" ")
+                                .append(Component.translatable("command.dmzrestart.character_restarted"))
+                );
+
+            player.sendSystemMessage(Component.translatable("command.dmzrestart.target"));
 
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
                 // Reiniciar vida y atributos básicos
