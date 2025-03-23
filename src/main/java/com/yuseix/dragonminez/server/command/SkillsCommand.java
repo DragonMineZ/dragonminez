@@ -43,19 +43,22 @@ public class SkillsCommand {
 								.executes(commandContext -> giveSkill(
 										Collections.singleton(commandContext.getSource().getPlayerOrException()),
 										StringArgumentType.getString(commandContext, "skill"),
-										1 // Nivel por defecto
+										1, // Nivel por defecto
+										commandContext.getSource()
 								))
 								.then(Commands.argument("level", IntegerArgumentType.integer(1))
 										.executes(commandContext -> giveSkill(
 												Collections.singleton(commandContext.getSource().getPlayerOrException()),
 												StringArgumentType.getString(commandContext, "skill"),
-												IntegerArgumentType.getInteger(commandContext, "level")
+												IntegerArgumentType.getInteger(commandContext, "level"),
+												commandContext.getSource()
 										))
 										.then(Commands.argument("player", EntityArgument.players())
 												.executes(commandContext -> giveSkill(
 														EntityArgument.getPlayers(commandContext, "player"),
 														StringArgumentType.getString(commandContext, "skill"),
-														IntegerArgumentType.getInteger(commandContext, "level")
+														IntegerArgumentType.getInteger(commandContext, "level"),
+														commandContext.getSource()
 												))
 										)
 								)
@@ -73,13 +76,15 @@ public class SkillsCommand {
 										.executes(commandContext -> setSkill(
 												Collections.singleton(commandContext.getSource().getPlayerOrException()),
 												StringArgumentType.getString(commandContext, "skill"),
-												IntegerArgumentType.getInteger(commandContext, "level")
+												IntegerArgumentType.getInteger(commandContext, "level"),
+												commandContext.getSource()
 										))
 										.then(Commands.argument("player", EntityArgument.players())
 												.executes(commandContext -> setSkill(
 														EntityArgument.getPlayers(commandContext, "player"),
 														StringArgumentType.getString(commandContext, "skill"),
-														IntegerArgumentType.getInteger(commandContext, "level")
+														IntegerArgumentType.getInteger(commandContext, "level"),
+														commandContext.getSource()
 												))
 										)
 								)
@@ -95,12 +100,14 @@ public class SkillsCommand {
 								})
 								.executes(commandContext -> takeSkill(
 										Collections.singleton(commandContext.getSource().getPlayerOrException()),
-										StringArgumentType.getString(commandContext, "skill")
+										StringArgumentType.getString(commandContext, "skill"),
+										commandContext.getSource()
 								))
 								.then(Commands.argument("player", EntityArgument.players())
 										.executes(commandContext -> takeSkill(
 												EntityArgument.getPlayers(commandContext, "player"),
-												StringArgumentType.getString(commandContext, "skill")
+												StringArgumentType.getString(commandContext, "skill"),
+												commandContext.getSource()
 										))
 								)
 						)
@@ -109,11 +116,12 @@ public class SkillsCommand {
 	}
 
 	// Comando para dar habilidades
-	private static int giveSkill(Collection<ServerPlayer> players, String skillName, int level) {
+	private static int giveSkill(Collection<ServerPlayer> players, String skillName, int level, CommandSourceStack source) {
 		if (!VALID_SKILLS_LIST.containsKey(skillName)) {
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzskills.invalid_skill").append(skillName).append("\n")
-						.append(Component.translatable("command.dmzskills.valid_skills").append(String.join(", ", VALID_SKILLS_LIST.keySet()))));
+				if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+					source.sendSystemMessage(Component.translatable("command.dmzskills.invalid_skill").append(skillName).append("\n")
+							.append(Component.translatable("command.dmzskills.valid_skills").append(String.join(", ", VALID_SKILLS_LIST.keySet()))));
 			}
 			return 0;
 		}
@@ -129,21 +137,24 @@ public class SkillsCommand {
 						finalLevel, true);
 
 				playerstats.addSkill(skillName, skill);
-
-				player.sendSystemMessage(Component.translatable("command.dmzskills.give")
+				if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+					source.sendSystemMessage(Component.translatable("command.dmzskills.give")
 						.append(Component.translatable(skill.getName())).append(" ") // Solo muestra el nombre de la habilidad
 						.append(Component.translatable("command.dmz.to")).append(player.getName()));
+				player.sendSystemMessage(Component.translatable("command.dmzskills.give.target", (Component.translatable(skill.getName())), finalLevel, (Component.translatable(skill.getDesc()))));
+
 			});
 		}
 		return players.size();
 	}
 
 	// Comando para establecer nivel de habilidades
-	private static int setSkill(Collection<ServerPlayer> players, String skillName, int level) {
+	private static int setSkill(Collection<ServerPlayer> players, String skillName, int level, CommandSourceStack source) {
 		if (!VALID_SKILLS_LIST.containsKey(skillName)) {
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzskills.invalid_skill").append(skillName).append("\n")
-						.append(Component.translatable("command.dmzskills.valid_skills").append(String.join(", ", VALID_SKILLS_LIST.keySet()))));
+				if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+					source.sendSystemMessage(Component.translatable("command.dmzskills.invalid_skill").append(skillName).append("\n")
+							.append(Component.translatable("command.dmzskills.valid_skills").append(String.join(", ", VALID_SKILLS_LIST.keySet()))));
 			}
 			return 0;
 		}
@@ -158,10 +169,12 @@ public class SkillsCommand {
 				DMZSkill skill = playerstats.getSkill(skillName);
 				if (skill != null) {
 					skill.setLevel(finalLevel);
-					player.sendSystemMessage(Component.translatable("command.dmzskills.set")
-							.append(Component.translatable(skill.getName()))
-							.append(" (Nivel ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
-							.append(Component.translatable("command.dmz.to")).append(player.getName()));
+					if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+						source.sendSystemMessage(Component.translatable("command.dmzskills.set")
+								.append(Component.translatable(skill.getName()))
+								.append(" (Nivel ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
+								.append(Component.translatable("command.dmz.to")).append(player.getName()));
+					player.sendSystemMessage(Component.translatable("command.dmzskills.set.target", (Component.translatable(skill.getName())), finalLevel, (Component.translatable(skill.getDesc()))));
 				} else {
 					// Si la habilidad no existe, la creamos y le asignamos el nivel
 					skill = new DMZSkill(
@@ -171,11 +184,13 @@ public class SkillsCommand {
 
 					playerstats.addSkill(skillName, skill);
 
-					player.sendSystemMessage(Component.translatable("command.dmzskills.give")
-							.append(Component.translatable(skill.getName())) // Solo muestra el nombre
-							.append(" (Nivel ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
-							.append(Component.translatable("command.dmz.to")).append(player.getName())
-							.append(": ").append(Component.translatable(skill.getDesc()))); // Incluye la descripción de la habilidad
+					if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+						source.sendSystemMessage(Component.translatable("command.dmzskills.give")
+								.append(Component.translatable(skill.getName())) // Solo muestra el nombre
+								.append(" (Nivel ").append(Component.literal(String.valueOf(finalLevel))).append(") ") // Muestra el nivel
+								.append(Component.translatable("command.dmz.to")).append(player.getName()));
+
+					player.sendSystemMessage(Component.translatable("command.dmzskills.give.target", (Component.translatable(skill.getName())), finalLevel, (Component.translatable(skill.getDesc()))));
 				}
 			});
 		}
@@ -183,11 +198,12 @@ public class SkillsCommand {
 	}
 
 	// Comando para quitar habilidades
-	private static int takeSkill(Collection<ServerPlayer> players, String skillName) {
+	private static int takeSkill(Collection<ServerPlayer> players, String skillName, CommandSourceStack source) {
 		if (!VALID_SKILLS_LIST.containsKey(skillName)) {
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzskills.invalid_skill").append(skillName).append("\n")
-						.append(Component.translatable("command.dmzskills.valid_skills").append(String.join(", ", VALID_SKILLS_LIST.keySet()))));
+				if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+					source.sendSystemMessage(Component.translatable("command.dmzskills.invalid_skill").append(skillName).append("\n")
+							.append(Component.translatable("command.dmzskills.valid_skills").append(String.join(", ", VALID_SKILLS_LIST.keySet()))));
 			}
 			return 0;
 		}
@@ -196,12 +212,14 @@ public class SkillsCommand {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
 				DMZSkill skill = playerstats.getSkill(skillName);
 				if (skill != null) {
-					player.sendSystemMessage(Component.translatable("command.dmzskills.take")
-							.append(Component.translatable(skill.getName())).append(" ") // Solo muestra el nombre de la habilidad
-							.append(Component.translatable("command.dmz.to")).append(player.getName()));
+					if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+						source.sendSystemMessage(Component.translatable("command.dmzskills.take")
+								.append(Component.translatable(skill.getName())).append(" ") // Solo muestra el nombre de la habilidad
+								.append(Component.translatable("command.dmz.to")).append(player.getName()));
 					playerstats.removeSkill(skillName);
+					player.sendSystemMessage(Component.translatable("command.dmzskills.take.target", skill.getName()));
 				} else {
-					player.sendSystemMessage(Component.translatable("command.dmzskills.not_found").append(skillName));
+					source.sendSystemMessage(Component.translatable("command.dmzskills.not_found").append(skillName));
 				}
 			});
 		}

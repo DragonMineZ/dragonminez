@@ -22,7 +22,7 @@ import java.util.Random;
 import java.util.function.Consumer;
 
 @Mixin(ItemStack.class)
-public class ItemStackMixin {
+public class ArmorsMixin {
 
 	@Shadow public boolean hurt(int pAmount, RandomSource pRandom, @Nullable ServerPlayer pUser) {
 		if (!((ItemStack) (Object) this).isDamageableItem()) {

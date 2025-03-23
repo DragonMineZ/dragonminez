@@ -88,8 +88,9 @@ public class PermaEffectsCommand {
 		if (!VALID_PERMA_EFFECTS.contains(effectName)) {
 			// Si el efecto no es válido, muestra un mensaje de error con los efectos válidos
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzeffects.invalid_effect").append(effectName).append("\n")
-						.append(Component.translatable("command.dmzeffects.valid_effects").append(String.join(", ", VALID_PERMA_EFFECTS))));
+				if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+					player.sendSystemMessage(Component.translatable("command.dmzeffects.invalid_effect").append(effectName).append("\n")
+							.append(Component.translatable("command.dmzeffects.valid_effects").append(String.join(", ", VALID_PERMA_EFFECTS))));
 			}
 			return 0; // No ejecuta la acción
 		}
@@ -98,9 +99,8 @@ public class PermaEffectsCommand {
 		for (ServerPlayer player : players) {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
 				playerstats.addDMZPermanentEffect(effectName, true);
-				if (effectName.equals("majin")) {
-					playerstats.setIntValue("alignment", 0);
-				}
+				if (effectName.equals("majin")) playerstats.setIntValue("alignment", 0);
+				player.sendSystemMessage(Component.translatable("command.dmzeffects.received", effectName));
 			});
 		}
 
@@ -122,8 +122,9 @@ public class PermaEffectsCommand {
 		if (!VALID_PERMA_EFFECTS.contains(effectName)) {
 			// Si el efecto no es válido, muestra un mensaje de error con los efectos válidos
 			for (ServerPlayer player : players) {
-				player.sendSystemMessage(Component.translatable("command.dmzeffects.invalid_effect").append(effectName).append("\n")
-						.append(Component.translatable("command.dmzeffects.valid_effects").append(String.join(", ", VALID_PERMA_EFFECTS))));
+				if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
+					player.sendSystemMessage(Component.translatable("command.dmzeffects.invalid_effect").append(effectName).append("\n")
+							.append(Component.translatable("command.dmzeffects.valid_effects").append(String.join(", ", VALID_PERMA_EFFECTS))));
 			}
 			return 0; // No ejecuta la acción
 		}
@@ -131,6 +132,7 @@ public class PermaEffectsCommand {
 		boolean isTargetAll = players.size() > 1;
 		for (ServerPlayer player : players) {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.removePermanentEffect(effectName));
+			player.sendSystemMessage(Component.translatable("command.dmzeffects.removed", effectName));
 		}
 
 		if (isTargetAll) {
@@ -150,9 +152,8 @@ public class PermaEffectsCommand {
 		boolean isTargetAll = players.size() > 1;
 		for (ServerPlayer player : players) {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
-				for (String effectName : VALID_PERMA_EFFECTS) {
-					playerstats.removePermanentEffect(effectName);
-				}
+				for (String effectName : VALID_PERMA_EFFECTS) playerstats.removePermanentEffect(effectName);
+				player.sendSystemMessage(Component.translatable("command.dmzeffects.removed_all"));
 			});
 		}
 

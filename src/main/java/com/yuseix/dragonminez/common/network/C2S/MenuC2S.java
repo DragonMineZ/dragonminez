@@ -37,7 +37,6 @@ public class MenuC2S {
 					boolean compactMenu = playerstats.getBoolean("compactmenu");
 
 					ModMessages.sendToPlayer(new MenuS2C(packet.tipo, isDmzUser, compactMenu), player);
-					ModMessages.sendToServer(new ConfigValuesC2S());
 				});
 			}
 

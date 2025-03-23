@@ -53,12 +53,12 @@ public class PlayerHudOverlay implements RenderEntityInv {
                 var maxVIDA = 0.0; int vidawa = ((190 * vidarestante) / VidaMaxima); int vida = Math.min(vidawa, 190);
                 int StaminaMax = 0;
 
-                maxVIDA = dmzdatos.calcConstitution(playerstats);
-                StaminaMax = dmzdatos.calcStamina(playerstats);
+                maxVIDA = dmzdatos.calcMenuConstitution(playerstats);
+                StaminaMax = dmzdatos.calcMenuStamina(playerstats);
 
                 int curStamina = playerstats.getIntValue("curstam"); int energiaMax = 0;
 
-                energiaMax = dmzdatos.calcEnergy(playerstats);
+                energiaMax = dmzdatos.calcMenuEnergy(playerstats);
 
                 int curEnergia = playerstats.getIntValue("curenergy");
                 int TransfActual = playerstats.getIntValue("formrelease");

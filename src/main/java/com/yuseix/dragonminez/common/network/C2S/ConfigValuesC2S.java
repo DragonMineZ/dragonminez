@@ -304,6 +304,13 @@ public class ConfigValuesC2S {
                     ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_con_warrior", DMZMajinConfig.MULTIPLIER_CON_WARRIOR.get()), player);
                     ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_pwr_warrior", DMZMajinConfig.MULTIPLIER_KIPOWER_WARRIOR.get()), player);
                     ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_ene_warrior", DMZMajinConfig.MULTIPLIER_ENERGY_WARRIOR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_regen_warrior", DMZMajinConfig.KI_REGEN_WARRIOR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_str_spiritualist", DMZMajinConfig.MULTIPLIER_STR_SPIRITUALIST.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_def_spiritualist", DMZMajinConfig.MULTIPLIER_DEF_SPIRITUALIST.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_con_spiritualist", DMZMajinConfig.MULTIPLIER_CON_SPIRITUALIST.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_pwr_spiritualist", DMZMajinConfig.MULTIPLIER_KIPOWER_SPIRITUALIST.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_ene_spiritualist", DMZMajinConfig.MULTIPLIER_ENERGY_SPIRITUALIST.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("majin_mult_regen_spiritualist", DMZMajinConfig.KI_REGEN_SPIRITUALIST.get()), player);
 
                     // Pasivas
                     ModMessages.sendToPlayer(new PacketSyncConfig("human_passive", DMZHumanConfig.KICHARGE_REGEN_BOOST.get()), player);

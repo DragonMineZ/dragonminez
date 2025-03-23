@@ -62,6 +62,7 @@ Copyright © 2024 GeckoThePecko. See the `THIRD_PARTY_LICENSES` file for details
 
 ### Contributors
 
+- [KyoSleep](https://github.com/KyoSleep1) | *Programmer*
 - [Bati2ra](https://github.com/Bati2ra) | *Programmer*
 - Toji71_ | Builder
 
@@ -69,6 +70,12 @@ Copyright © 2024 GeckoThePecko. See the `THIRD_PARTY_LICENSES` file for details
 
 - CyaneaCapillata
 - Robberto10
+- SpaceCarp
+- iLalox
+- Athrizel
+- Dssccat
+- Eren Jeager
+- Slut4GhostFace
 
 ## License
 

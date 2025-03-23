@@ -23,11 +23,13 @@ public class AlignmentCommand {
                         .then(Commands.argument("points", IntegerArgumentType.integer())
                                 .executes(commandContext -> setPuntos(
                                         Collections.singleton(commandContext.getSource().getPlayerOrException()),
-                                        IntegerArgumentType.getInteger(commandContext, "points")))
+                                        IntegerArgumentType.getInteger(commandContext, "points"),
+                                        commandContext.getSource()))
                                 .then(Commands.argument("player", EntityArgument.players())
                                         .executes(commandContext -> setPuntos(
                                                 EntityArgument.getPlayers(commandContext, "player"),
-                                                IntegerArgumentType.getInteger(commandContext, "points")))
+                                                IntegerArgumentType.getInteger(commandContext, "points"),
+                                                commandContext.getSource()))
                                 )
 
                         ))
@@ -35,11 +37,13 @@ public class AlignmentCommand {
                         .then(Commands.argument("points", IntegerArgumentType.integer())
                                 .executes(commandContext -> darPuntos(
                                         Collections.singleton(commandContext.getSource().getPlayerOrException()),
-                                        IntegerArgumentType.getInteger(commandContext, "points")))
+                                        IntegerArgumentType.getInteger(commandContext, "points"),
+                                        commandContext.getSource()))
                                 .then(Commands.argument("player", EntityArgument.players())
                                         .executes(commandContext -> darPuntos(
                                                 EntityArgument.getPlayers(commandContext, "player"),
-                                                IntegerArgumentType.getInteger(commandContext, "points")))
+                                                IntegerArgumentType.getInteger(commandContext, "points"),
+                                                commandContext.getSource()))
                                 )
 
                         ))
@@ -47,11 +51,13 @@ public class AlignmentCommand {
                         .then(Commands.argument("points", IntegerArgumentType.integer())
                                 .executes(commandContext -> removePuntos(
                                         Collections.singleton(commandContext.getSource().getPlayerOrException()),
-                                        IntegerArgumentType.getInteger(commandContext, "points")))
+                                        IntegerArgumentType.getInteger(commandContext, "points"),
+                                        commandContext.getSource()))
                                 .then(Commands.argument("player", EntityArgument.players())
                                         .executes(commandContext -> removePuntos(
                                                 EntityArgument.getPlayers(commandContext, "player"),
-                                                IntegerArgumentType.getInteger(commandContext, "points")))
+                                                IntegerArgumentType.getInteger(commandContext, "points"),
+                                                commandContext.getSource()))
                                 )
 
                         ))
@@ -60,62 +66,37 @@ public class AlignmentCommand {
 
     }
 
-    private static int setPuntos(Collection<ServerPlayer> pPlayers, int puntos) {
+    private static int setPuntos(Collection<ServerPlayer> pPlayers, int puntos, CommandSourceStack source) {
         for (ServerPlayer player : pPlayers) {
-
-            if (puntos > 100) {
-                player.sendSystemMessage(
-                        Component.translatable("command.dmzpoints.set", player.getName(), 100)
-                );
-                DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.setIntValue("alignment", 100));
-            } else {
-                if (puntos < 0) puntos = 0;
-                player.sendSystemMessage(
-                        Component.translatable("command.dmzpoints.set", player.getName(), puntos)
-                );
-                int finalPuntos = puntos;
-                DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.setIntValue("alignment", finalPuntos));
-            }
-
-
+            if (puntos >= 100) puntos = 100;
+            int finalPuntos = puntos;
+            DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.setIntValue("alignment", finalPuntos));
+            if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+                source.sendSystemMessage(Component.translatable("command.dmzalignment.set", player.getName(), puntos));
+            player.sendSystemMessage(Component.translatable("command.dmzalignment.set.target", puntos));
         }
         return pPlayers.size();
     }
-    private static int darPuntos(Collection<ServerPlayer> pPlayers, int puntos) {
+    private static int darPuntos(Collection<ServerPlayer> pPlayers, int puntos, CommandSourceStack source) {
         for (ServerPlayer player : pPlayers) {
-
-            if (puntos > 100) {
-                player.sendSystemMessage(
-                        Component.translatable("command.dmzpoints.add", player.getName(), 100)
-                );
-                DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.addIntValue("alignment", 100));
-            } else {
-                player.sendSystemMessage(
-                        Component.translatable("command.dmzpoints.add", player.getName(), puntos)
-                );
-                DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.addIntValue("alignment", puntos));
-            }
-
-
+            if (puntos >= 100) puntos = 100;
+            int finalPuntos = puntos;
+            DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.addIntValue("alignment", finalPuntos));
+            if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+                source.sendSystemMessage(Component.translatable("command.dmzalignment.add", player.getName(), puntos));
+            player.sendSystemMessage(Component.translatable("command.dmzalignment.add.target", puntos));
         }
         return pPlayers.size();
     }
-    private static int removePuntos(Collection<ServerPlayer> pPlayers, int puntos) {
+    private static int removePuntos(Collection<ServerPlayer> pPlayers, int puntos, CommandSourceStack source) {
         for (ServerPlayer player : pPlayers) {
+            if (puntos >= 100) puntos = 100;
+            int finalPuntos = puntos;
+            DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.removeIntValue("alignment", finalPuntos));
 
-            if (puntos > 100) {
-                player.sendSystemMessage(
-                        Component.translatable("command.dmzpoints.remove", player.getName(), 100)
-                );
-                DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.removeIntValue("alignment", 100));
-            } else {
-                player.sendSystemMessage(
-                        Component.translatable("command.dmzpoints.remove", player.getName(), puntos)
-                );
-                DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> playerstats.removeIntValue("alignment", puntos));
-            }
-
-
+            if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer())
+                source.sendSystemMessage(Component.translatable("command.dmzalignment.remove", player.getName(), puntos));
+            player.sendSystemMessage(Component.translatable("command.dmzalignment.remove.target", puntos));
         }
         return pPlayers.size();
     }

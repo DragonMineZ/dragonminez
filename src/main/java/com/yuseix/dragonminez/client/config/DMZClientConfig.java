@@ -1,5 +1,7 @@
 package com.yuseix.dragonminez.client.config;
 
+import java.util.Locale;
+
 public class DMZClientConfig {
 
     private static int maxStats = 5000;
@@ -735,7 +737,7 @@ public class DMZClientConfig {
 
     public static double getDMZStat(int race, String form, String stat) {
         return switch (race) {
-            case 0 -> switch (stat) {
+            case 0 -> switch (stat.toUpperCase(Locale.ROOT)) {
                 case "STR" -> switch (form) {
                     case "base" -> getBaseStats(0);
                     case "buffed" -> DMZClientConfig.buffed_human_str;
@@ -766,7 +768,7 @@ public class DMZClientConfig {
                 };
                 default -> 1;
             };
-            case 1 -> switch (stat) {
+            case 1 -> switch (stat.toUpperCase(Locale.ROOT)) {
                 case "STR" -> switch (form) {
                     case "base" -> getBaseStats(1);
                     case "oozaru" -> DMZClientConfig.oozaru_saiyan_str;
@@ -817,7 +819,7 @@ public class DMZClientConfig {
                 };
                 default -> 1;
             };
-            case 2 -> switch (stat) {
+            case 2 -> switch (stat.toUpperCase(Locale.ROOT)) {
                 case "STR" -> switch (form) {
                     case "base" -> getBaseStats(2);
                     case "giant" -> DMZClientConfig.giant_namek_str;
@@ -848,7 +850,7 @@ public class DMZClientConfig {
                 };
                 default -> 1;
             };
-            case 3 -> switch (stat) {
+            case 3 -> switch (stat.toUpperCase(Locale.ROOT)) {
                 case "STR" -> switch (form) {
                     case "base" -> getBaseStats(3);
                     case "semi_perfect" -> DMZClientConfig.semi_perfect_bio_str;
@@ -875,7 +877,7 @@ public class DMZClientConfig {
                 };
                 default -> 1;
             };
-            case 4 -> switch (stat) {
+            case 4 -> switch (stat.toUpperCase(Locale.ROOT)) {
                 case "STR" -> switch (form) {
                     case "base" -> getBaseStats(4);
                     case "second_form" -> DMZClientConfig.second_form_cold_str;
@@ -910,7 +912,7 @@ public class DMZClientConfig {
                 };
                 default -> 1;
             };
-            case 5 -> switch (stat) {
+            case 5 -> switch (stat.toUpperCase(Locale.ROOT)) {
                 case "STR" -> switch (form) {
                     case "base" -> getBaseStats(5);
                     case "evil" -> DMZClientConfig.evil_majin_str;
@@ -954,7 +956,7 @@ public class DMZClientConfig {
             case "warrior":
                 switch (race) {
                     case 0 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_human_warrior = value;
                             case "DEF" -> DMZClientConfig.mult_def_human_warrior = value;
                             case "CON" -> DMZClientConfig.mult_con_human_warrior = value;
@@ -964,7 +966,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 1 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_saiyan_warrior = value;
                             case "DEF" -> DMZClientConfig.mult_def_saiyan_warrior = value;
                             case "CON" -> DMZClientConfig.mult_con_saiyan_warrior = value;
@@ -974,7 +976,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 2 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_namek_warrior = value;
                             case "DEF" -> DMZClientConfig.mult_def_namek_warrior = value;
                             case "CON" -> DMZClientConfig.mult_con_namek_warrior = value;
@@ -984,7 +986,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 3 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_bio_warrior = value;
                             case "DEF" -> DMZClientConfig.mult_def_bio_warrior = value;
                             case "CON" -> DMZClientConfig.mult_con_bio_warrior = value;
@@ -994,7 +996,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 4 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_cold_warrior = value;
                             case "DEF" -> DMZClientConfig.mult_def_cold_warrior = value;
                             case "CON" -> DMZClientConfig.mult_con_cold_warrior = value;
@@ -1004,7 +1006,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 5 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_majin_warrior = value;
                             case "DEF" -> DMZClientConfig.mult_def_majin_warrior = value;
                             case "CON" -> DMZClientConfig.mult_con_majin_warrior = value;
@@ -1017,7 +1019,7 @@ public class DMZClientConfig {
             case "spiritualist":
                 switch (race) {
                     case 0 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_human_spiritualist = value;
                             case "DEF" -> DMZClientConfig.mult_def_human_spiritualist = value;
                             case "CON" -> DMZClientConfig.mult_con_human_spiritualist = value;
@@ -1027,7 +1029,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 1 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_saiyan_spiritualist = value;
                             case "DEF" -> DMZClientConfig.mult_def_saiyan_spiritualist = value;
                             case "CON" -> DMZClientConfig.mult_con_saiyan_spiritualist = value;
@@ -1037,7 +1039,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 2 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_namek_spiritualist = value;
                             case "DEF" -> DMZClientConfig.mult_def_namek_spiritualist = value;
                             case "CON" -> DMZClientConfig.mult_con_namek_spiritualist = value;
@@ -1047,7 +1049,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 3 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_bio_spiritualist = value;
                             case "DEF" -> DMZClientConfig.mult_def_bio_spiritualist = value;
                             case "CON" -> DMZClientConfig.mult_con_bio_spiritualist = value;
@@ -1057,7 +1059,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 4 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_cold_spiritualist = value;
                             case "DEF" -> DMZClientConfig.mult_def_cold_spiritualist = value;
                             case "CON" -> DMZClientConfig.mult_con_cold_spiritualist = value;
@@ -1067,7 +1069,7 @@ public class DMZClientConfig {
                         }
                     }
                     case 5 -> {
-                        switch (stat) {
+                        switch (stat.toUpperCase(Locale.ROOT)) {
                             case "STR" -> DMZClientConfig.mult_str_majin_spiritualist = value;
                             case "DEF" -> DMZClientConfig.mult_def_majin_spiritualist = value;
                             case "CON" -> DMZClientConfig.mult_con_majin_spiritualist = value;
@@ -1083,7 +1085,7 @@ public class DMZClientConfig {
     public static double getClassMult(int race, String clase, String stat) {
         return switch (clase) {
             case "warrior" -> switch (race) {
-                case 0 -> switch (stat) {
+                case 0 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_human_warrior;
                     case "DEF" -> DMZClientConfig.mult_def_human_warrior;
                     case "CON" -> DMZClientConfig.mult_con_human_warrior;
@@ -1092,7 +1094,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_human_warrior;
                     default -> 1;
                 };
-                case 1 -> switch (stat) {
+                case 1 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_saiyan_warrior;
                     case "DEF" -> DMZClientConfig.mult_def_saiyan_warrior;
                     case "CON" -> DMZClientConfig.mult_con_saiyan_warrior;
@@ -1101,7 +1103,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_saiyan_warrior;
                     default -> 1;
                 };
-                case 2 -> switch (stat) {
+                case 2 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_namek_warrior;
                     case "DEF" -> DMZClientConfig.mult_def_namek_warrior;
                     case "CON" -> DMZClientConfig.mult_con_namek_warrior;
@@ -1110,7 +1112,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_namek_warrior;
                     default -> 1;
                 };
-                case 3 -> switch (stat) {
+                case 3 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_bio_warrior;
                     case "DEF" -> DMZClientConfig.mult_def_bio_warrior;
                     case "CON" -> DMZClientConfig.mult_con_bio_warrior;
@@ -1119,7 +1121,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_bio_warrior;
                     default -> 1;
                 };
-                case 4 -> switch (stat) {
+                case 4 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_cold_warrior;
                     case "DEF" -> DMZClientConfig.mult_def_cold_warrior;
                     case "CON" -> DMZClientConfig.mult_con_cold_warrior;
@@ -1128,7 +1130,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_cold_warrior;
                     default -> 1;
                 };
-                case 5 -> switch (stat) {
+                case 5 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_majin_warrior;
                     case "DEF" -> DMZClientConfig.mult_def_majin_warrior;
                     case "CON" -> DMZClientConfig.mult_con_majin_warrior;
@@ -1140,7 +1142,7 @@ public class DMZClientConfig {
                 default -> 1;
             };
             case "spiritualist" -> switch (race) {
-                case 0 -> switch (stat) {
+                case 0 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_human_spiritualist;
                     case "DEF" -> DMZClientConfig.mult_def_human_spiritualist;
                     case "CON" -> DMZClientConfig.mult_con_human_spiritualist;
@@ -1149,7 +1151,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_human_spiritualist;
                     default -> 1;
                 };
-                case 1 -> switch (stat) {
+                case 1 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_saiyan_spiritualist;
                     case "DEF" -> DMZClientConfig.mult_def_saiyan_spiritualist;
                     case "CON" -> DMZClientConfig.mult_con_saiyan_spiritualist;
@@ -1158,7 +1160,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_saiyan_spiritualist;
                     default -> 1;
                 };
-                case 2 -> switch (stat) {
+                case 2 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_namek_spiritualist;
                     case "DEF" -> DMZClientConfig.mult_def_namek_spiritualist;
                     case "CON" -> DMZClientConfig.mult_con_namek_spiritualist;
@@ -1167,7 +1169,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_namek_spiritualist;
                     default -> 1;
                 };
-                case 3 -> switch (stat) {
+                case 3 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_bio_spiritualist;
                     case "DEF" -> DMZClientConfig.mult_def_bio_spiritualist;
                     case "CON" -> DMZClientConfig.mult_con_bio_spiritualist;
@@ -1176,7 +1178,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_bio_spiritualist;
                     default -> 1;
                 };
-                case 4 -> switch (stat) {
+                case 4 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_cold_spiritualist;
                     case "DEF" -> DMZClientConfig.mult_def_cold_spiritualist;
                     case "CON" -> DMZClientConfig.mult_con_cold_spiritualist;
@@ -1185,7 +1187,7 @@ public class DMZClientConfig {
                     case "REGEN" -> DMZClientConfig.mult_regen_cold_spiritualist;
                     default -> 1;
                 };
-                case 5 -> switch (stat) {
+                case 5 -> switch (stat.toUpperCase(Locale.ROOT)) {
                     case "STR" -> DMZClientConfig.mult_str_majin_spiritualist;
                     case "DEF" -> DMZClientConfig.mult_def_majin_spiritualist;
                     case "CON" -> DMZClientConfig.mult_con_majin_spiritualist;
@@ -1209,7 +1211,7 @@ public class DMZClientConfig {
     }
 
     public static void setSaiyanPassive(String stat, int value) {
-        switch (stat) {
+        switch (stat.toLowerCase(Locale.ROOT)) {
             case "timer" -> DMZClientConfig.zenkaiTimer = value;
             case "heal" -> DMZClientConfig.zenkaiHeal = value;
             case "boost" -> DMZClientConfig.zenkaiBoost = value;
@@ -1218,7 +1220,7 @@ public class DMZClientConfig {
     }
 
     public static int getSaiyanPassive(String stat) {
-        return switch (stat) {
+        return switch (stat.toLowerCase(Locale.ROOT)) {
             case "timer" -> DMZClientConfig.zenkaiTimer;
             case "heal" -> DMZClientConfig.zenkaiHeal;
             case "boost" -> DMZClientConfig.zenkaiBoost;
@@ -1236,14 +1238,14 @@ public class DMZClientConfig {
     }
 
     public static void setBioPassive(String stat, int value) {
-        switch (stat) {
+        switch (stat.toLowerCase(Locale.ROOT)) {
             case "half" -> DMZClientConfig.bioPassiveHalf = value;
             case "quarter" -> DMZClientConfig.bioPassiveQuarter = value;
         }
     }
 
     public static int getBioPassive(String stat) {
-        return switch (stat) {
+        return switch (stat.toLowerCase(Locale.ROOT)) {
             case "half" -> DMZClientConfig.bioPassiveHalf;
             case "quarter" -> DMZClientConfig.bioPassiveQuarter;
             default -> 1;
