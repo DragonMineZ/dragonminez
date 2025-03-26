@@ -1,8 +1,8 @@
 package com.yuseix.dragonminez.common.events.characters;
 
 import com.yuseix.dragonminez.common.Reference;
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
-import com.yuseix.dragonminez.common.config.races.DMZBioAndroidConfig;
+import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
+import com.yuseix.dragonminez.common.config.old.races.DMZBioAndroidConfig;
 import com.yuseix.dragonminez.common.init.MainSounds;
 import com.yuseix.dragonminez.common.network.C2S.CharacterC2S;
 import com.yuseix.dragonminez.common.network.C2S.DescendFormC2S;
@@ -31,14 +31,12 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;

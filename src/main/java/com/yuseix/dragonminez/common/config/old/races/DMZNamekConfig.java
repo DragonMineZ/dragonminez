@@ -1,11 +1,11 @@
-package com.yuseix.dragonminez.common.config.races;
+package com.yuseix.dragonminez.common.config.old.races;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 
-public class DMZMajinConfig {
+public class DMZNamekConfig {
 
     //PASIVA
-    public static final ForgeConfigSpec.ConfigValue<Double> PASSIVE_HEALTH_REGEN;
+    public static final ForgeConfigSpec.ConfigValue<Integer> PASSIVE_REGEN;
 
     //WARRIOR
     public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_STR_WARRIOR;
@@ -43,13 +43,13 @@ public class DMZMajinConfig {
 
     static {
 
-        BUILDER.comment(" DRAGONMINEZ - MAJIN CLASS CONFIG ");
+        BUILDER.comment(" DRAGONMINEZ - NAMEK CLASS CONFIG ");
 
         //Pasiva
-        BUILDER.push(" MAJIN PASSIVE SKILL:");
+        BUILDER.push(" NAMEK PASSIVE SKILL:");
 
-        PASSIVE_HEALTH_REGEN = BUILDER.comment("Passive Health Regeneration per second! (Min: 0.0 / Max: 20.0 / Default: 2.5)")
-                .defineInRange("Health Regen in percentage: ", 2.5, 0.0, 20.0);
+        PASSIVE_REGEN = BUILDER.comment("Ki Passive Regeneration Boost! (Min: 1 / Max: 100 / Default: 60)")
+                .defineInRange("Ki Passive Regen Boost: ", 60, 1, 100);
 
         BUILDER.pop();
 
@@ -135,7 +135,7 @@ public class DMZMajinConfig {
         INITIAL_KIPWR_SPIRITUALIST= BUILDER.comment("Initial Ki Power Spiritualist STAT! (Min: 1 / Max: 200 / Default: 5)")
                 .defineInRange("PWR: ", 15, 1, 200);
 
-        INITIAL_ENE_SPIRITUALIST = BUILDER.comment("Initial Energy Spiritualist STAT! (Min: 1 / Max: 200 / Default: 20)")
+        INITIAL_ENE_SPIRITUALIST = BUILDER.comment("Initial Energy Spiritualist STAT! (Min: 1 / Max: 200 / Default: 5)")
                 .defineInRange("ENE: ", 20, 1, 200);
 
         BUILDER.pop();
@@ -146,6 +146,7 @@ public class DMZMajinConfig {
                 .defineInRange("Percentage: ", 0.01, 0.00, 1.00);
 
         BUILDER.pop();
+
 
         SPEC = BUILDER.build();
     }

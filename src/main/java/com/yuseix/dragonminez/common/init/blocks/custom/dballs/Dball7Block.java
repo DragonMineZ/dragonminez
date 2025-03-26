@@ -1,7 +1,7 @@
 package com.yuseix.dragonminez.common.init.blocks.custom.dballs;
 
 import com.google.common.collect.ImmutableMap;
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
+import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.init.MainEntity;
 import com.yuseix.dragonminez.common.init.MainSounds;
 import com.yuseix.dragonminez.common.init.blocks.entity.Dball7BlockEntity;

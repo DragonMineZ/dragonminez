@@ -5,7 +5,6 @@ import com.yuseix.dragonminez.client.RenderEntityInv;
 import com.yuseix.dragonminez.client.gui.buttons.CustomButtons;
 import com.yuseix.dragonminez.client.gui.buttons.DMZGuiButtons;
 import com.yuseix.dragonminez.common.Reference;
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.network.C2S.StatsC2S;
 import com.yuseix.dragonminez.common.network.C2S.ZPointsC2S;
 import com.yuseix.dragonminez.common.network.ModMessages;

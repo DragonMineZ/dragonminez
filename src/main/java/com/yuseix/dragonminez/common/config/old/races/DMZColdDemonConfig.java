@@ -1,11 +1,11 @@
-package com.yuseix.dragonminez.common.config.races;
+package com.yuseix.dragonminez.common.config.old.races;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 
-public class DMZHumanConfig {
+public class DMZColdDemonConfig {
 
     //PASIVA
-    public static final ForgeConfigSpec.ConfigValue<Integer> KICHARGE_REGEN_BOOST;
+    public static final ForgeConfigSpec.ConfigValue<Double> TP_MULTIPLER_PASSIVE;
 
     //WARRIOR
     public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_STR_WARRIOR;
@@ -33,23 +33,23 @@ public class DMZHumanConfig {
     public static final ForgeConfigSpec.ConfigValue<Integer> INITIAL_CON_SPIRITUALIST;
     public static final ForgeConfigSpec.ConfigValue<Integer> INITIAL_KIPWR_SPIRITUALIST;
     public static final ForgeConfigSpec.ConfigValue<Integer> INITIAL_ENE_SPIRITUALIST;
-
     //Regeneracion de ki por clase
     public static final ForgeConfigSpec.ConfigValue<Double> KI_REGEN_WARRIOR;
     public static final ForgeConfigSpec.ConfigValue<Double> KI_REGEN_SPIRITUALIST;
+
 
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
     static {
 
-        BUILDER.comment(" DRAGONMINEZ - HUMAN CLASS CONFIG ");
+        BUILDER.comment(" DRAGONMINEZ - COLD DEMON CLASS CONFIG ");
 
-        //PASIVA
-        BUILDER.push(" HUMAN PASSIVE SKILL:");
+        //Pasiva
+        BUILDER.push(" COLD DEMON PASSIVE SKILL:");
 
-        KICHARGE_REGEN_BOOST = BUILDER.comment("Ki Charge Regeneration Boost in percentage! (Min: 1 / Max: 100 / Default: 35)")
-                .defineInRange("Ki Charge Regen Boost: ", 35, 1, 100);
+        TP_MULTIPLER_PASSIVE = BUILDER.comment("Passive Training Points Gain Multiplier! (Min: 1.0 / Max: 3.0 / Default: 1.35)")
+                .defineInRange("TP Gain Multiplier: ", 1.35, 1.0, 3.0);
 
         BUILDER.pop();
 
@@ -142,7 +142,7 @@ public class DMZHumanConfig {
 
         BUILDER.push(" SPIRITUALIST CLASS KI REGENERATION");
 
-        KI_REGEN_SPIRITUALIST = BUILDER.comment("Ki Regeneration for Spiritualist Class IN PERCENTAGE! (Min: 0.0 / Max: 1.0)")
+        KI_REGEN_SPIRITUALIST = BUILDER.comment("Ki Regeneration for Spiritualist Class IN PERCENTAGE! (Min: 0.0 / Max: 1.0 / Default: 0.01)")
                 .defineInRange("Percentage: ", 0.01, 0.00, 1.00);
 
         BUILDER.pop();

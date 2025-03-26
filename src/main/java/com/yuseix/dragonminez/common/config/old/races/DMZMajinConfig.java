@@ -1,14 +1,11 @@
-package com.yuseix.dragonminez.common.config.races;
+package com.yuseix.dragonminez.common.config.old.races;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 
-public class DMZSaiyanConfig {
+public class DMZMajinConfig {
 
     //PASIVA
-    public static final ForgeConfigSpec.ConfigValue<Integer> ZENKAI_CANT;
-    public static final ForgeConfigSpec.ConfigValue<Integer> ZENKAI_HEALTH_REGEN;
-    public static final ForgeConfigSpec.ConfigValue<Integer> ZENKAI_STAT_BOOST;
-    public static final ForgeConfigSpec.ConfigValue<Integer> ZENKAI_COOLDOWN;
+    public static final ForgeConfigSpec.ConfigValue<Double> PASSIVE_HEALTH_REGEN;
 
     //WARRIOR
     public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_STR_WARRIOR;
@@ -41,28 +38,18 @@ public class DMZSaiyanConfig {
     public static final ForgeConfigSpec.ConfigValue<Double> KI_REGEN_WARRIOR;
     public static final ForgeConfigSpec.ConfigValue<Double> KI_REGEN_SPIRITUALIST;
 
-
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
     static {
 
-        BUILDER.comment(" DRAGONMINEZ - SAIYAN CLASS CONFIG ");
+        BUILDER.comment(" DRAGONMINEZ - MAJIN CLASS CONFIG ");
 
         //Pasiva
-        BUILDER.push(" SAIYAN PASSIVE SKILL:");
+        BUILDER.push(" MAJIN PASSIVE SKILL:");
 
-        ZENKAI_CANT = BUILDER.comment("Quantity of Zenkai Activations! (Min: 0 / Max: 10 / Default: 3)")
-                .defineInRange("Zenkai Activations: ", 3, 0, 10);
-
-        ZENKAI_HEALTH_REGEN = BUILDER.comment("Health Regen for Zenkais in percentage! (Min: 0 / Max: 100 / Default: 30)")
-                .defineInRange("Zenkai Health Regen: ", 30, 0, 100);
-
-        ZENKAI_STAT_BOOST = BUILDER.comment("Stat Boost for Zenkais in percentage! (Min: 0 / Max: 30 / Default: 15)")
-                .defineInRange("Zenkai Stat Boost: ", 15, 0, 30);
-
-        ZENKAI_COOLDOWN = BUILDER.comment("Cooldown for Zenkai in minutes! (Min: 0 / Max: 600 / Default: 50)")
-                .defineInRange("Zenkai Cooldown: ", 50, 0, 600);
+        PASSIVE_HEALTH_REGEN = BUILDER.comment("Passive Health Regeneration per second! (Min: 0.0 / Max: 20.0 / Default: 2.5)")
+                .defineInRange("Health Regen in percentage: ", 2.5, 0.0, 20.0);
 
         BUILDER.pop();
 
@@ -100,7 +87,7 @@ public class DMZSaiyanConfig {
         INITIAL_KIPWR_WARRIOR = BUILDER.comment("Initial Ki Power Warrior STAT! (Min: 1 / Max: 200 / Default: 5)")
                 .defineInRange("PWR: ", 5, 1, 200);
 
-        INITIAL_ENE_WARRIOR = BUILDER.comment("Initial Energy Warrior STAT! (Min: 1 / Max: 200 / Default: 20)")
+        INITIAL_ENE_WARRIOR = BUILDER.comment("Initial Energy Warrior STAT! (Min: 1 / Max: 200 / Default: 5)")
                 .defineInRange("ENE: ", 5, 1, 200);
 
         BUILDER.pop();
@@ -145,7 +132,7 @@ public class DMZSaiyanConfig {
         INITIAL_CON_SPIRITUALIST = BUILDER.comment("Initial Constitution Spiritualist STAT! (Min: 1 / Max: 200 / Default: 5)")
                 .defineInRange("CON: ", 5, 1, 200);
 
-        INITIAL_KIPWR_SPIRITUALIST= BUILDER.comment("Initial Ki Power Spiritualist STAT! (Min: 1 / Max: 200 / Default: 15)")
+        INITIAL_KIPWR_SPIRITUALIST= BUILDER.comment("Initial Ki Power Spiritualist STAT! (Min: 1 / Max: 200 / Default: 5)")
                 .defineInRange("PWR: ", 15, 1, 200);
 
         INITIAL_ENE_SPIRITUALIST = BUILDER.comment("Initial Energy Spiritualist STAT! (Min: 1 / Max: 200 / Default: 20)")
@@ -159,7 +146,6 @@ public class DMZSaiyanConfig {
                 .defineInRange("Percentage: ", 0.01, 0.00, 1.00);
 
         BUILDER.pop();
-
 
         SPEC = BUILDER.build();
     }

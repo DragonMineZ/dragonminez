@@ -1,9 +1,8 @@
 package com.yuseix.dragonminez.common.init.items.custom;
 
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
+import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
-import com.yuseix.dragonminez.client.config.DMZClientConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;

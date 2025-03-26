@@ -1,4 +1,4 @@
-package com.yuseix.dragonminez.common.config.races.transformations;
+package com.yuseix.dragonminez.common.config.old.races.transformations;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 

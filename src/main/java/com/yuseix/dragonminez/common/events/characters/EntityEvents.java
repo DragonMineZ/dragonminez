@@ -2,8 +2,8 @@ package com.yuseix.dragonminez.common.events.characters;
 
 import com.yuseix.dragonminez.common.Reference;
 import com.yuseix.dragonminez.common.world.cap.provider.StructuresProvider;
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
-import com.yuseix.dragonminez.common.config.races.DMZColdDemonConfig;
+import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
+import com.yuseix.dragonminez.common.config.old.races.DMZColdDemonConfig;
 import com.yuseix.dragonminez.common.events.StoryEvents;
 import com.yuseix.dragonminez.common.init.MainFluids;
 import com.yuseix.dragonminez.common.init.entity.custom.namek.NamekianEntity;

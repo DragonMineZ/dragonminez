@@ -1,6 +1,6 @@
 package com.yuseix.dragonminez.common.network.C2S;
 
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
+import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.init.MainEntity;
 import com.yuseix.dragonminez.common.init.MainItems;
 import com.yuseix.dragonminez.common.init.entity.custom.ShenlongEntity;

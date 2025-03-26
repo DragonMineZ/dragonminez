@@ -1,9 +1,9 @@
 package com.yuseix.dragonminez.common.util;
 
-import com.yuseix.dragonminez.common.config.races.DMZHumanConfig;
-import com.yuseix.dragonminez.common.config.races.DMZMajinConfig;
-import com.yuseix.dragonminez.common.config.races.DMZNamekConfig;
-import com.yuseix.dragonminez.common.config.races.DMZSaiyanConfig;
+import com.yuseix.dragonminez.common.config.old.races.DMZHumanConfig;
+import com.yuseix.dragonminez.common.config.old.races.DMZMajinConfig;
+import com.yuseix.dragonminez.common.config.old.races.DMZNamekConfig;
+import com.yuseix.dragonminez.common.config.old.races.DMZSaiyanConfig;
 import com.yuseix.dragonminez.common.events.characters.StatsEvents;
 import com.yuseix.dragonminez.common.stats.DMZStatsAttributes;
 import com.yuseix.dragonminez.common.stats.skills.DMZSkill;

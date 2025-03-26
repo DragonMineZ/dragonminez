@@ -1,6 +1,6 @@
 package com.yuseix.dragonminez.common.init.items.custom;
 
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
+import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.init.MainSounds;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
