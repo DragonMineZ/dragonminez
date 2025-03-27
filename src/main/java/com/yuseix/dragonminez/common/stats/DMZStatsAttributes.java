@@ -1,6 +1,5 @@
 package com.yuseix.dragonminez.common.stats;
 
-import com.yuseix.dragonminez.client.config.DMZClientConfig;
 import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.stats.forms.FormsData;
 import com.yuseix.dragonminez.common.stats.skills.DMZSkill;

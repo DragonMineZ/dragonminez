@@ -52,7 +52,7 @@ public class MasterSkillsC2S {
 				case "meditation":
 					tpCost = DMZGeneralConfig.MEDITATION_TP_COST_MASTER.get();
 					break;
-				case "potunlock":
+				case "potential_unlock":
 					tpCost = DMZGeneralConfig.POTUNLOCK_TP_COST_MASTER.get();
 					break;
 				case "kaioken":
