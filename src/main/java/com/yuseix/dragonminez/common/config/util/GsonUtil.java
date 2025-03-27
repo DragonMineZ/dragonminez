@@ -9,6 +9,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Utility class for handling JSON file operations using Gson.
@@ -42,6 +43,18 @@ public class GsonUtil {
             LogUtil.info("Directory created at {}", filePath);
         }
         return directory;
+    }
+
+    public static <T> void loadJsonFromStream(Class<T> clazz, InputStream inputStream, Consumer<T> onFetched) {
+        try (Reader reader = new InputStreamReader(inputStream)) {
+            // Parse the JSON using Gson
+            final T data = GsonUtil.GSON.fromJson(reader, clazz);
+
+            // Trigger the consumer with the fetched data
+            onFetched.accept(data);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load JSON data from InputStream", e);
+        }
     }
 
     /**
