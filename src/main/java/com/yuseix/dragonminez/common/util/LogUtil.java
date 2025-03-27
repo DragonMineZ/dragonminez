@@ -46,6 +46,17 @@ public final class LogUtil {
     }
 
     /**
+     * Logs an informational message with one parameter.
+     *
+     * @param message The message to log.
+     * @param p0      The first parameter to include in the message.
+     * @param p1      The second parameter to include in the message.
+     */
+    public static void info(String message, Object p0, Object p1) {
+        LOGGER.info(message, p0, p1);
+    }
+
+    /**
      * Logs a warning message.
      *
      * @param message The warning message to log.
@@ -59,7 +70,7 @@ public final class LogUtil {
      * Logs a warning message.
      *
      * @param message The warning message to log.
-     * @param p0     The parameter to include in the message.
+     * @param p0      The parameter to include in the message.
      */
     public static void warn(String message, Object p0) {
         LOGGER.warn(message, p0);
@@ -78,8 +89,18 @@ public final class LogUtil {
      * Logs an error message.
      *
      * @param message The error message to log.
-     * @param p0     The parameter to include in the message.
-     * @param e     The exception that caused the error.
+     * @param p0      The parameter to include in the message.
+     */
+    public static void error(String message, Object p0) {
+        LOGGER.error(message, p0);
+    }
+
+    /**
+     * Logs an error message.
+     *
+     * @param message The error message to log.
+     * @param p0      The parameter to include in the message.
+     * @param e       The exception that caused the error.
      */
     public static void error(String message, String p0, Exception e) {
         LOGGER.error(message, p0, e);
@@ -132,5 +153,6 @@ public final class LogUtil {
     }
 
     // Private constructor to prevent instantiation
-    private LogUtil() {}
+    private LogUtil() {
+    }
 }
