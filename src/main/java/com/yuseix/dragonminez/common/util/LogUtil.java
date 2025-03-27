@@ -50,9 +50,19 @@ public final class LogUtil {
      *
      * @param message The warning message to log.
      */
-    public static void warn(String message) {
+    public static void warnMod(String message) {
         LOGGER.warn(message);
         logModWarning(message);
+    }
+
+    /**
+     * Logs a warning message.
+     *
+     * @param message The warning message to log.
+     * @param p0     The parameter to include in the message.
+     */
+    public static void warn(String message, Object p0) {
+        LOGGER.warn(message, p0);
     }
 
     /**
@@ -62,6 +72,17 @@ public final class LogUtil {
      */
     public static void error(String message) {
         LOGGER.error(message);
+    }
+
+    /**
+     * Logs an error message.
+     *
+     * @param message The error message to log.
+     * @param p0     The parameter to include in the message.
+     * @param e     The exception that caused the error.
+     */
+    public static void error(String message, String p0, Exception e) {
+        LOGGER.error(message, p0, e);
     }
 
     /**
