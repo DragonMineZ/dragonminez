@@ -2,20 +2,32 @@ package com.yuseix.dragonminez.common.config.util;
 
 import com.yuseix.dragonminez.common.Reference;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.forgespi.language.IModFileInfo;
 import net.minecraftforge.forgespi.language.IModInfo;
+import net.minecraftforge.forgespi.locating.IModFile;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class ModLoadUtil {
 
-    public static void forEachMod(Consumer<IModInfo> onFetch) {
+    public static void forEachMod(BiConsumer<ModList, IModInfo> onFetch) {
         final ModList list = ModList.get();
         final List<IModInfo> mods = ModLoadUtil.sortModList(list.getMods());
         for (IModInfo mod : mods) {
-            onFetch.accept(mod);
+            onFetch.accept(list, mod);
         }
+    }
+
+    public static Path getModPath(ModList mods, String modIdentifier) {
+        final IModFileInfo modFileInfo = mods.getModFileById(modIdentifier);
+        if (modFileInfo == null) {
+            return null;
+        }
+        final IModFile modFile = modFileInfo.getFile();
+        return modFile.getFilePath();
     }
 
     private static List<IModInfo> sortModList(List<IModInfo> mods) {
