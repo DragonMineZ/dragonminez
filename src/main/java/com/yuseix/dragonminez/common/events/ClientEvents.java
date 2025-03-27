@@ -13,6 +13,7 @@ import com.yuseix.dragonminez.common.init.entity.custom.NaveSaiyanEntity;
 import com.yuseix.dragonminez.common.init.particles.particleoptions.AjissaLeavesParticleOptions;
 import com.yuseix.dragonminez.common.init.particles.particleoptions.KiStarParticleOptions;
 import com.yuseix.dragonminez.common.init.particles.particleoptions.SacredLeavesParticleOptions;
+import com.yuseix.dragonminez.common.network.C2S.ConfigValuesC2S;
 import com.yuseix.dragonminez.common.network.C2S.FlyToggleC2S;
 import com.yuseix.dragonminez.common.network.C2S.PermaEffC2S;
 import com.yuseix.dragonminez.common.network.C2S.SpacePodC2S;
@@ -59,8 +60,9 @@ public class ClientEvents {
     private static final String title = "DragonMine Z v" + "1.2.4 - StoryMode and Skills!";
     private static boolean isDescending = false;
 
-    private static final int teleportTime = 5; // Segundos
-    private static boolean isTeleporting = false;
+    private static final int teleportTime = 5;
+	private static int timerCf = 0; // Segundos
+    private static boolean isTeleporting = false, updatedConfig = false;
     private static int teleportCountdown = teleportTime;
     private static int planetaObjetivo = 0;  // 0: Overworld, 1: Namek, 2: Kaio
 
@@ -388,6 +390,14 @@ public class ClientEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase == TickEvent.Phase.START) return;
         if (!(event.player instanceof LocalPlayer player)) return;
+
+        if (!updatedConfig) {
+            timerCf++;
+            if (timerCf == 30) {
+                ModMessages.sendToServer(new ConfigValuesC2S());
+                updatedConfig = true;
+            }
+        }
 
         AtomicBoolean isKaioAvailable = new AtomicBoolean(false);
         DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(cap -> {
