@@ -1,6 +1,8 @@
 package com.yuseix.dragonminez.common.config.model;
 
 import com.yuseix.dragonminez.common.Reference;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.File;
@@ -57,15 +59,6 @@ public interface IConfigHandler<T> {
     void onLoaded(String key, T data);
 
     /**
-     * Gets the default configuration instance if available.
-     *
-     * @return The default configuration instance, or {@code null} if not available.
-     */
-    default IConfigHandler<T> getDefault() {
-        return null;
-    }
-
-    /**
      * Gets the directory path where configuration files are stored.
      *
      * @return The absolute path of the configuration directory.
@@ -73,5 +66,16 @@ public interface IConfigHandler<T> {
     default String getDataDir() {
         return new File(FMLPaths.CONFIGDIR.get().toString() + File.separator + Reference.MOD_ID)
                 .getAbsolutePath();
+    }
+
+    /**
+     * Used to determine if the configuration is loaded on the correct side.
+     *
+     * @return True if the configuration is loaded on the correct side, false otherwise.
+     */
+    default boolean isCorrectSide() {
+        final Dist currentDist = FMLEnvironment.dist;
+        final ConfigDist currentConfigDist = ConfigDist.valueOf(currentDist.name());
+        return currentConfigDist == this.getDist();
     }
 }
