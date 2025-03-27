@@ -45,6 +45,13 @@ public class GsonUtil {
         return directory;
     }
 
+    /**
+     * Loads JSON data from an InputStream and triggers a callback with the parsed object.
+     *
+     * @param clazz The class type of the object to parse.
+     * @param inputStream The InputStream containing the JSON data.
+     * @param onFetched A Consumer that will be called with the parsed object.
+     */
     public static <T> void loadJsonFromStream(Class<T> clazz, InputStream inputStream, Consumer<T> onFetched) {
         try (Reader reader = new InputStreamReader(inputStream)) {
             // Parse the JSON using Gson
@@ -54,6 +61,25 @@ public class GsonUtil {
             onFetched.accept(data);
         } catch (Exception e) {
             throw new RuntimeException("Failed to load JSON data from InputStream", e);
+        }
+    }
+
+    /**
+     * Loads JSON data from a file and triggers a callback with the parsed object.
+     *
+     * @param clazz The class type of the object to parse.
+     * @param file The File containing the JSON data.
+     * @param onFetched A Consumer that will be called with the parsed object.
+     */
+    public static <T> void loadJsonFromFile(Class<T> clazz, File file, Consumer<T> onFetched) {
+        try (FileReader reader = new FileReader(file)) {
+            // Parse the JSON using Gson
+            final T data = GsonUtil.GSON.fromJson(reader, clazz);
+
+            // Trigger the consumer with the fetched data
+            onFetched.accept(data);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load JSON data from file", e);
         }
     }
 
