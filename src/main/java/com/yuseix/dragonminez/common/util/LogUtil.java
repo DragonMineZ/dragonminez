@@ -138,11 +138,11 @@ public final class LogUtil {
      * </p>
      *
      * @param errorMessage The message to include in the crash report.
+     * @param exception   The exception that caused the crash.
      */
-    public static void crash(String errorMessage) {
-
+    public static void crash(String errorMessage, Throwable exception) {
         // Create a custom crash report
-        final CrashReport crashReport = new CrashReport("Critical Mod Error", new Throwable(errorMessage));
+        final CrashReport crashReport = new CrashReport("Critical Mod Error", exception);
         final CrashReportCategory category = crashReport.addCategory("Mod Information");
         category.setDetail("Mod ID", Reference.MOD_ID);
         category.setDetail("Cause", errorMessage + ". Please report this issue via ticket with " +
@@ -150,6 +150,19 @@ public final class LogUtil {
 
         // Terminate the game
         throw new ReportedException(crashReport);
+    }
+
+    /**
+     * Creates a custom crash report and terminates the game.
+     * <p>
+     * This method generates a detailed crash report with mod-specific information
+     * and forces the game to close.
+     * </p>
+     *
+     * @param errorMessage The message to include in the crash report.
+     */
+    public static void crash(String errorMessage) {
+        LogUtil.crash(errorMessage, new Throwable(errorMessage));
     }
 
     // Private constructor to prevent instantiation
