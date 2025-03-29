@@ -10,6 +10,7 @@ import com.yuseix.dragonminez.common.util.LogUtil;
 import net.minecraftforge.common.MinecraftForge;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -175,6 +176,79 @@ public class ConfigManager {
     private <T> void processFile(IConfigHandler<T> handler, File file) {
         final String identifier = file.getName().replaceFirst("[.][^.]+$", "");
         GsonUtil.loadJsonFromFile(handler.getClazz(), file, object -> handler.onLoaded(identifier, object));
+    }
+
+    /**
+     * Saves runtime configuration data to a file.
+     *
+     * @param handlerID  The identifier of the configuration handler.
+     * @param identifier The identifier for the configuration data.
+     * @param data       The data to save.
+     * @param log       Whether to log the save operation.
+     */
+    public <T> void saveRuntime(String handlerID, String identifier, T data, boolean log) {
+        final IConfigHandler<?> handler = this.handler(handlerID);
+        if (handler == null) {
+            LogUtil.crash("Configuration Handler with identifier " + handlerID + " does not exist. " +
+                    "Cannot be saved.");
+            return;
+        }
+
+        if (handler.getType() != ConfigType.RUNTIME) {
+            LogUtil.crash("Cannot save static configuration data for " + handlerID + " with identifier "
+                    + identifier);
+            return;
+        }
+
+        try {
+            final String dataDir = handler.getDataDir();
+            GsonUtil.saveJson(data, handler.getDataDir(), identifier);
+            if (log) {
+                LogUtil.info("Saved data for {} in {}!", identifier, dataDir);
+            }
+        } catch (IOException e) {
+            LogUtil.error("Could not save data for {}!", identifier);
+            e.printStackTrace(System.out);
+        }
+    }
+
+    /**
+     * Saves runtime configuration data to a file.
+     *
+     * @param handlerID  The identifier of the configuration handler.
+     * @param identifier The identifier for the configuration data.
+     * @param data       The data to save.
+     */
+    public <T> void saveRuntime(String handlerID, String identifier, T data) {
+        ConfigManager.INSTANCE.saveRuntime(handlerID, identifier, data, true);
+    }
+
+    /**
+     * Deletes runtime configuration data from a file.
+     *
+     * @param handlerID  The identifier of the configuration handler.
+     * @param identifier The identifier for the configuration data to delete.
+     * @param log        Whether to log the deletion.
+     */
+    public void deleteRuntime(String handlerID, String identifier, boolean log) {
+        final IConfigHandler<?> handler = this.handler(handlerID);
+        if (handler == null) {
+            LogUtil.crash("Configuration Handler with identifier " + handlerID + " does not exist. " +
+                    "Cannot be deleted.");
+            return;
+        }
+
+        if (handler.getType() != ConfigType.RUNTIME) {
+            LogUtil.crash("Cannot delete static configuration data for " + handlerID + " with identifier "
+                    + identifier);
+            return;
+        }
+
+        final String dataDir = handler.getDataDir();
+        GsonUtil.deleteJson(dataDir, identifier);
+        if (log) {
+            LogUtil.info("Deleted data for {} in {}!", identifier, dataDir);
+        }
     }
 
     /**
