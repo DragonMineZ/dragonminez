@@ -171,6 +171,10 @@ public final class ConfigManager {
         this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
             final String dataIdentifier = path.getFileName().toString().replace(GsonUtil.FILE_EXTENSION, "");
             final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + GsonUtil.FILE_EXTENSION).toString();
+            if (Files.exists(Paths.get(destinationPath))) {
+                LogUtil.info("Skipping default config '" + path + "' as it already exists in '" + destinationPath + "'");
+                return;
+            }
             try (InputStream stream = Files.newInputStream(path)) {
                 GsonUtil.copyStreamToFile(stream, destinationPath);
                 LogUtil.info("Copied default config '" + path + "' to '" + destinationPath + "'");
