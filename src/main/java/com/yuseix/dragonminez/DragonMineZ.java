@@ -40,9 +40,15 @@ public class DragonMineZ {
 
 	public DragonMineZ() {
 		final IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+		// Initialize GeckoLib dependency.
 		GeckoLib.initialize();
-		ConfigManager.INSTANCE.init();
+
+		// Initialize the ConfigRegistry (This should be done before the system is initialized)
 		ConfigRegistry.init();
+
+		// Initialize the ConfigManager system.
+		ConfigManager.INSTANCE.init();
 
 		//Registramos Items
 		MainItems.register(modEventBus);
