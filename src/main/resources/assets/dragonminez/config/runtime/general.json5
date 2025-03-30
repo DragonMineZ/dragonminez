@@ -1,23 +1,21 @@
 {
-  Attributes: {
-    maxAttributes: 5000,  // Maximum number of attributes a player can reach (Min: 100 / Max: 100000 / Default: 5000)
-    fallDamageMultiplier: 0.05,  // Fall Damage Multiplier Percentage (Min: 0.00 / Max: 1.00 / Default: 0.05)
+  "ATTRIBUTES": {
+    "maxAttributes": 5000,  // Maximum number of attributes a player can reach (Min: 100 / Max: 100000 / Default: 5000)
+    "fallDamageMultiplier": 0.05  // Fall Damage Multiplier Percentage (Min: 0.00 / Max: 1.00 / Default: 0.05)
   },
-
-  Training: {
-    enableDynamicGain: true,  // Should player win ZPoints doing gameplay activities? (Default: true)
-    perhitGain: 1,  // ZPoints obtained per Hit (Min: 0 / Max: 100 / Default: 2)
-    perkillGain: 0.45,  // ZPoints obtained per Kill based on Enemy max Health (Min: 0.0 / Max: 1.0 / Default: 0.45)
-    costMultiplier: 1.2,  // Multiplier for ZPoints Cost (Min: 0.0 / Max: 20.0 / Default: 1.2)
-    gainMultiplier: 1.2,  // Multiplier for ZPoints Gain (Min: 0.0 / Max: 20.0 / Default: 1.2)
+  "TRAINING": {
+    "enableDynamicGain": true,  // Should player win ZPoints doing gameplay activities? (Default: true)
+    "perhitGain": 1,  // ZPoints obtained per Hit (Min: 0 / Max: 100 / Default: 2)
+    "perkillGain": 0.45,  // ZPoints obtained per Kill based on Enemy max Health (Min: 0.0 / Max: 1.0 / Default: 0.45)
+    "costMultiplier": 1.2,  // Multiplier for ZPoints Cost (Min: 0.0 / Max: 20.0 / Default: 1.2)
+    "gainMultiplier": 1.2  // Multiplier for ZPoints Gain (Min: 0.0 / Max: 20.0 / Default: 1.2)
   },
-
-  WorldGen: {
-    enableOtherworld: true,  // Should Otherworld Dimension be Enabled? (Default: true)
-    enableNamek: true,  // Should Namek Dimension be Enabled? (Default: true)
-    enableKamilookout: true,  // Should Kami's Lookout Spawn in the World? (Default: true)
-    enableGokuHouse: true,  // Should Goku's House Spawn in the World? (Default: true)
-    enableKamehouse: true,  // Should Kame House Spawn in the World? (Default: true)
-    enableElderGuru: true  // Should the Elder Guru's House Spawn in the World? (Default: true)
+  "WORLD_GEN": {
+    "enableOtherworld": true,  // Should Otherworld Dimension be Enabled? (Default: true)
+    "enableNamek": true,  // Should Namek Dimension be Enabled? (Default: true)
+    "enableKamilookout": true,  // Should Kami's Lookout Spawn in the World? (Default: true)
+    "enableGokuHouse": true,  // Should Goku's House Spawn in the World? (Default: true)
+    "enableKamehouse": true,  // Should Kame House Spawn in the World? (Default: true)
+    "enableElderGuru": true  // Should the Elder Guru's House Spawn in the World? (Default: true)
   }
 }
