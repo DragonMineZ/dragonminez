@@ -37,6 +37,11 @@ public class GeneralConfigHandler implements IConfigHandler<GeneralConfig> {
     }
 
     @Override
+    public String getStaticDataDir() {
+        return "";
+    }
+
+    @Override
     public void onLoaded(String key, GeneralConfig data) {
         GeneralConfig.INSTANCE = data;
     }
