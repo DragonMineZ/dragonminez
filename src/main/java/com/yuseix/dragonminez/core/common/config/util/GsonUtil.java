@@ -74,7 +74,7 @@ public class GsonUtil {
      * @param fileName The name of the file (without ".json" extension).
      * @throws IOException If an error occurs while writing the file.
      */
-    public static void saveJson(Object object, String filePath, String fileName) throws IOException {
+    public static <T> void saveJson(T object, String filePath, String fileName) throws IOException {
         final File file = new File(filePath, fileName + ".json");
         try (FileWriter writer = new FileWriter(file)) {
             final String hjson = JsonValue.readJSON(GSON.toJson(object)).toString(Stringify.HJSON);
@@ -98,6 +98,25 @@ public class GsonUtil {
             throw new RuntimeException("Failed to read JSON file", e);
         }
     }
+
+    /**
+     * Copies the content of an InputStream to a file at the specified path.
+     *
+     * @param inputStream The InputStream containing the data to copy.
+     * @param filePath The path to the file where the data will be saved.
+     * @throws IOException If an error occurs while writing the file.
+     */
+    public static void copyStreamToFile(InputStream inputStream, String filePath) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             FileWriter writer = new FileWriter(filePath)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.write(System.lineSeparator());
+            }
+        }
+    }
+
 
     /**
      * Retrieves a list of files from a specified directory with an optional file extension filter.

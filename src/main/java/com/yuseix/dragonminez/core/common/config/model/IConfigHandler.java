@@ -51,6 +51,17 @@ public interface IConfigHandler<T> {
     ConfigType getType();
 
     /**
+     * <b>Determines whether the mod should search for a default configuration file</b>
+     * inside the <b>assets folder</b>.
+     * <p>
+     * <u>Use this with caution!</u> This process can be <b>resource-intensive</b>
+     * and may impact <b>performance</b> if used improperly.
+     * <p>
+     * <i><b>This method is for runtime configurations only.</b></i>
+     */
+    boolean hasDefault();
+
+    /**
      * Called when the configuration is loaded.
      *
      * @param key  The key associated with the configuration.
@@ -61,11 +72,23 @@ public interface IConfigHandler<T> {
     /**
      * Gets the directory path where configuration files are stored.
      *
-     * @return The absolute path of the configuration directory.
+     * @return The path of the configuration file.
      */
     default String getDataDir() {
+        if (this.getType() == ConfigType.RUNTIME) {
+            return this.getStaticDataDir();
+        }
         return new File(FMLPaths.CONFIGDIR.get().toString() + File.separator + Reference.MOD_ID)
                 .getAbsolutePath();
+    }
+
+    /**
+     * Build the static directory path where configuration files are stored.
+     *
+     * @return The static directory path.
+     */
+    default String getStaticDataDir() {
+        return this.identifier();
     }
 
     /**

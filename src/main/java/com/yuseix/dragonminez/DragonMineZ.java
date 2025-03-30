@@ -9,6 +9,7 @@ import com.yuseix.dragonminez.common.events.ModBusEvents;
 import com.yuseix.dragonminez.common.events.StoryEvents;
 import com.yuseix.dragonminez.common.init.*;
 import com.yuseix.dragonminez.common.network.ModMessages;
+import com.yuseix.dragonminez.core.common.config.ConfigManager;
 import com.yuseix.dragonminez.server.recipes.DMZRecipes;
 import com.yuseix.dragonminez.common.stats.DMZGenericAttributes;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
@@ -37,8 +38,9 @@ import terrablender.api.SurfaceRuleManager;
 public class DragonMineZ {
 
 	public DragonMineZ() {
-		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+		final IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		GeckoLib.initialize();
+		ConfigManager.INSTANCE.init();
 
 		//Registramos Items
 		MainItems.register(modEventBus);

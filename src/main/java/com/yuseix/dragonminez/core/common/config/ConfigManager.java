@@ -12,26 +12,34 @@ import net.minecraftforge.common.MinecraftForge;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
  * Manages configuration handlers for static and runtime configurations.
  * Responsible for loading configurations from mod assets and runtime config folders.
  */
-public class ConfigManager {
+public final class ConfigManager {
 
     /**
-     * Singleton instance of ConfigManager
+     * Singleton instance of ConfigManager.
      */
-    public static ConfigManager INSTANCE = new ConfigManager();
+    public static final ConfigManager INSTANCE = new ConfigManager();
+
+    /**
+     * Directory path for static configurations.
+     */
+    public static final String STATIC_CONFIG_DIR = "assets/" + Reference.MOD_ID + "/config";
+
+    /**
+     * Directory path for the default runtime configuration files.
+     */
+    public static final String RUNTIME_STATIC_CONFIG_DIR = "assets/" + Reference.MOD_ID + "config/runtime";
 
     /**
      * Map storing registered configuration handlers by their identifier.
@@ -56,7 +64,7 @@ public class ConfigManager {
     /**
      * Registers a configuration handler.
      *
-     * @param handler The configuration handler to register.
+     * @param handler the configuration handler to register.
      */
     public void register(IConfigHandler<?> handler) {
         if (this.handlers.containsKey(handler.identifier())) {
@@ -77,82 +85,135 @@ public class ConfigManager {
             LogUtil.info("Scanning mod " + modId + " for static DMZ configurations.");
 
             final Path modPath = ModLoadUtil.getModPath(mods, modId);
-            if (modPath == null) return;
+            if (modPath == null) {
+                return;
+            }
 
+            // Process default configs for runtime handlers with defaults.
+            this.handlers(handler -> handler.getType() == ConfigType.RUNTIME && handler.hasDefault())
+                    .forEach((IConfigHandler<?> handler) ->
+                            this.fetchModFolder(handler, modPath, handler.getStaticDataDir(), RUNTIME_STATIC_CONFIG_DIR,
+                                    this::processRuntimeHandlerDefaultFiles)
+                    );
+            // Process static configs.
             this.handlers(handler -> handler.getType() == ConfigType.STATIC)
-                    .forEach(handler -> this.handleModFolder(handler, modId, modPath,
-                            handler.getDataDir()));
+                    .forEach((IConfigHandler<?> handler) ->
+                            this.fetchModFolder(handler, modPath, handler.getDataDir(), STATIC_CONFIG_DIR,
+                                    this::processStaticHandlerFiles)
+                    );
         });
     }
 
     /**
-     * Processes a mod folder to load static configurations.
+     * Generic method to get a mod folder and process JSON files within.
      *
-     * @param handler The configuration handler.
-     * @param modID   The mod that is currently being loaded.
-     * @param modPath The path to the mod files.
-     * @param dataDir The data directory inside the mod.
+     * @param handler      the configuration handler.
+     * @param modPath      the mod file system path.
+     * @param dataDir      the data directory inside the mod.
+     * @param baseDir      the base configuration directory (static or default).
+     * @param fileConsumer the consumer that processes each JSON file.
+     * @param <T>          the type of configuration object.
      */
-    private void handleModFolder(IConfigHandler<?> handler, String modID, Path modPath, String dataDir) {
-        Path folder = null;
+    private <T> void fetchModFolder(IConfigHandler<T> handler, Path modPath, String dataDir,
+                                    String baseDir, FileProcessor<T> fileConsumer) {
+        Path folder;
         if (!modPath.toString().endsWith("jar")) {
-            folder = modPath.resolve("assets/" + Reference.MOD_ID).resolve(dataDir);
+            folder = modPath.resolve(baseDir).resolve(dataDir);
         } else {
+            Path tempFolder = null;
             try (FileSystem fileSystem = FileSystems.newFileSystem(modPath, new HashMap<>())) {
-                folder = fileSystem.getPath("/assets/" + Reference.MOD_ID).resolve(dataDir);
+                tempFolder = fileSystem.getPath(baseDir + File.pathSeparator).resolve(dataDir);
             } catch (Exception exception) {
-                LogUtil.crash("Error processing JAR file: %s".formatted(modPath));
+                LogUtil.crash("Error processing JAR file: " + modPath, exception);
             }
+            folder = tempFolder;
         }
-        this.processFolder(handler, modID, folder, dataDir);
+        if (folder != null) {
+            fileConsumer.process(handler, folder, dataDir);
+        }
     }
 
     /**
-     * Processes JSON configuration files from a given folder.
+     * Processes JSON files for runtime handler default configurations by copying them to the runtime folder.
      *
-     * @param handler The configuration handler.
-     * @param modID   The mod that is currently being loaded.
-     * @param folder  The folder containing configuration files.
-     * @param dataDir The configuration data directory.
+     * @param handler the configuration handler.
+     * @param folder  the folder containing JSON files.
+     * @param dataDir the data directory identifier.
+     * @param <T>     the type of configuration object.
      */
-    private <T> void processFolder(IConfigHandler<T> handler, String modID, Path folder, String dataDir) {
+    private <T> void processRuntimeHandlerDefaultFiles(IConfigHandler<T> handler, Path folder,
+                                                       String dataDir) {
+        this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
+            final String dataIdentifier = path.getFileName().toString().replace(".json", "");
+            final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + ".json").toString();
+            try (InputStream stream = Files.newInputStream(path)) {
+                GsonUtil.copyStreamToFile(stream, destinationPath);
+            } catch (IOException e) {
+                LogUtil.crash("Error copying default config '" + path + "'. " +
+                        "Did you add the file on the assets folder?", e);
+            }
+        });
+    }
+
+    /**
+     * Processes JSON files for static handler configurations by loading their content.
+     * It avoids duplicate loading for the main mod.
+     *
+     * @param handler the configuration handler.
+     * @param folder  the folder containing JSON files.
+     * @param dataDir the data directory identifier.
+     * @param <T>     the type of configuration object.
+     */
+    private <T> void processStaticHandlerFiles(IConfigHandler<T> handler, Path folder, String dataDir) {
+        final List<String> visitedConfigs = new ArrayList<>();
+        this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
+            final String dataIdentifier = path.getFileName().toString().replace(".json", "");
+            if (visitedConfigs.contains(dataIdentifier) && Reference.MOD_ID.equals(handler.identifier())) {
+                LogUtil.info("Skipping " + Reference.MOD_ID + " static config '" + dataIdentifier +
+                        "' as it has already been loaded by another mod.");
+                return;
+            }
+            try (InputStream inputStream = Files.newInputStream(path)) {
+                GsonUtil.loadJsonFromStream(handler.getClazz(), inputStream, (object) -> {
+                    visitedConfigs.add(dataIdentifier);
+                    handler.onLoaded(dataIdentifier, object);
+                });
+            } catch (IOException e) {
+                LogUtil.crash("Error loading static config: " + path, e);
+            }
+        });
+    }
+
+    /**
+     * Processes JSON configuration files in a folder using a provided file consumer.
+     *
+     * @param handler      the configuration handler.
+     * @param folder       the folder containing JSON configuration files.
+     * @param dataDir      the data directory identifier.
+     * @param fileConsumer a consumer that processes each JSON file.
+     * @param <T>          the type of configuration object.
+     */
+    private <T> void processJsonFiles(IConfigHandler<T> handler, Path folder, String dataDir,
+                                      Consumer<Path> fileConsumer) {
         try {
             if (Files.exists(folder) && Files.isDirectory(folder)) {
                 try (var paths = Files.walk(folder, 1)) {
-                    List<Path> jsonPaths = paths
-                            .filter(Files::isRegularFile)
-                            .filter(path -> path.toString().endsWith(".json"))
+                    List<Path> jsonPaths = paths.filter(Files::isRegularFile)
+                            .filter((Path path) -> path.toString().endsWith(".json"))
                             .toList();
-
                     if (jsonPaths.isEmpty()) {
                         return;
                     }
-
                     if (dataDir.isEmpty()) {
                         jsonPaths = jsonPaths.stream()
-                                .filter(path -> path.toString().contains(handler.identifier()))
+                                .filter((Path path) -> path.toString().contains(handler.identifier()))
                                 .toList();
                     }
-
-                    final List<String> visitedConfigs = new ArrayList<>();
-                    for (Path path : jsonPaths) {
-                        final String dataIdentifier = path.getFileName().toString().replace(".json", "");
-                        if (visitedConfigs.contains(dataIdentifier) && modID.equals(Reference.MOD_ID)) {
-                            LogUtil.info("Skipping " + Reference.MOD_ID + " static config '" + dataIdentifier + "' " +
-                                    "as it has already been loaded by another mod.");
-                            continue;
-                        }
-                        try (InputStream inputStream = Files.newInputStream(path)) {
-                            GsonUtil.loadJsonFromStream(handler.getClazz(), inputStream, object -> {
-                                visitedConfigs.add(dataIdentifier);
-                                handler.onLoaded(dataIdentifier, object);
-                            });
-                        }
-                    }
+                    jsonPaths.forEach(fileConsumer);
                 }
             }
         } catch (Exception exception) {
-            LogUtil.crash("Error processing folder: %s".formatted(folder.toString()), exception);
+            LogUtil.crash("Error processing folder: " + folder, exception);
         }
     }
 
@@ -163,46 +224,46 @@ public class ConfigManager {
         LogUtil.info("Scanning config folder for runtime DMZ configurations...");
         this.fireDispatcher(ConfigType.RUNTIME);
         this.handlers(handler -> handler.getType() == ConfigType.RUNTIME)
-                .forEach(handler -> GsonUtil.getFilesInDirectory(handler.getDataDir(), ".json")
-                        .forEach(file -> this.processFile(handler, file)));
+                .forEach((IConfigHandler<?> handler) ->
+                        GsonUtil.getFilesInDirectory(handler.getDataDir(), ".json")
+                                .forEach((File file) -> this.processRuntimeFile(handler, file))
+                );
     }
 
     /**
-     * Processes a single configuration file.
+     * Processes a single runtime configuration file.
      *
-     * @param handler The configuration handler.
-     * @param file    The file to process.
+     * @param handler the configuration handler.
+     * @param file    the configuration file.
+     * @param <T>     the type of configuration object.
      */
-    private <T> void processFile(IConfigHandler<T> handler, File file) {
+    private <T> void processRuntimeFile(IConfigHandler<T> handler, File file) {
         final String identifier = file.getName().replaceFirst("[.][^.]+$", "");
-        GsonUtil.loadJsonFromFile(handler.getClazz(), file, object -> handler.onLoaded(identifier, object));
+        GsonUtil.loadJsonFromFile(handler.getClazz(), file, (object) -> handler.onLoaded(identifier, object));
     }
 
     /**
      * Saves runtime configuration data to a file.
      *
-     * @param handlerID  The identifier of the configuration handler.
-     * @param identifier The identifier for the configuration data.
-     * @param data       The data to save.
-     * @param log       Whether to log the save operation.
+     * @param handlerID  the identifier of the configuration handler.
+     * @param identifier the identifier for the configuration data.
+     * @param data       the data to save.
+     * @param log        whether to log the save operation.
+     * @param <T>        the type of configuration object.
      */
     public <T> void saveRuntime(String handlerID, String identifier, T data, boolean log) {
         final IConfigHandler<?> handler = this.handler(handlerID);
         if (handler == null) {
-            LogUtil.crash("Configuration Handler with identifier " + handlerID + " does not exist. " +
-                    "Cannot be saved.");
+            LogUtil.crash("Configuration Handler with identifier " + handlerID + " does not exist. Cannot be saved.");
             return;
         }
-
         if (handler.getType() != ConfigType.RUNTIME) {
-            LogUtil.crash("Cannot save static configuration data for " + handlerID + " with identifier "
-                    + identifier);
+            LogUtil.crash("Cannot save static configuration data for " + handlerID + " with identifier " + identifier);
             return;
         }
-
         try {
             final String dataDir = handler.getDataDir();
-            GsonUtil.saveJson(data, handler.getDataDir(), identifier);
+            GsonUtil.saveJson(data, dataDir, identifier);
             if (log) {
                 LogUtil.info("Saved data for {} in {}!", identifier, dataDir);
             }
@@ -213,37 +274,34 @@ public class ConfigManager {
     }
 
     /**
-     * Saves runtime configuration data to a file.
+     * Saves runtime configuration data to a file (with logging enabled by default).
      *
-     * @param handlerID  The identifier of the configuration handler.
-     * @param identifier The identifier for the configuration data.
-     * @param data       The data to save.
+     * @param handlerID  the identifier of the configuration handler.
+     * @param identifier the identifier for the configuration data.
+     * @param data       the data to save.
+     * @param <T>        the type of configuration object.
      */
     public <T> void saveRuntime(String handlerID, String identifier, T data) {
-        ConfigManager.INSTANCE.saveRuntime(handlerID, identifier, data, true);
+        this.saveRuntime(handlerID, identifier, data, true);
     }
 
     /**
      * Deletes runtime configuration data from a file.
      *
-     * @param handlerID  The identifier of the configuration handler.
-     * @param identifier The identifier for the configuration data to delete.
-     * @param log        Whether to log the deletion.
+     * @param handlerID  the identifier of the configuration handler.
+     * @param identifier the identifier for the configuration data to delete.
+     * @param log        whether to log the deletion.
      */
     public void deleteRuntime(String handlerID, String identifier, boolean log) {
         final IConfigHandler<?> handler = this.handler(handlerID);
         if (handler == null) {
-            LogUtil.crash("Configuration Handler with identifier " + handlerID + " does not exist. " +
-                    "Cannot be deleted.");
+            LogUtil.crash("Configuration Handler with identifier " + handlerID + " does not exist. Cannot be deleted.");
             return;
         }
-
         if (handler.getType() != ConfigType.RUNTIME) {
-            LogUtil.crash("Cannot delete static configuration data for " + handlerID + " with identifier "
-                    + identifier);
+            LogUtil.crash("Cannot delete static configuration data for " + handlerID + " with identifier " + identifier);
             return;
         }
-
         final String dataDir = handler.getDataDir();
         if (log) {
             final boolean result = GsonUtil.deleteJson(dataDir, identifier);
@@ -258,7 +316,7 @@ public class ConfigManager {
     /**
      * Fires an event to register configuration handlers.
      *
-     * @param type The type of configuration (STATIC or RUNTIME).
+     * @param type the type of configuration (STATIC or RUNTIME).
      */
     private void fireDispatcher(ConfigType type) {
         MinecraftForge.EVENT_BUS.start();
@@ -266,30 +324,38 @@ public class ConfigManager {
     }
 
     /**
-     * Returns a list of handlers filtered by a given predicate.
+     * Returns a list of configuration handlers filtered by a given predicate.
      *
-     * @param predicate The filter condition.
-     * @return A sorted list of configuration handlers.
+     * @param predicate the filter condition.
+     * @return a sorted list of configuration handlers.
      */
     public List<IConfigHandler<?>> handlers(Predicate<IConfigHandler<?>> predicate) {
-        List<IConfigHandler<?>> handlers = new ArrayList<>(this.handlers.values().stream()
+        final List<IConfigHandler<?>> list = new ArrayList<>(this.handlers.values().stream()
                 .filter(predicate)
                 .filter(IConfigHandler::isCorrectSide)
                 .toList());
-        handlers.sort(Comparator.comparingInt(IConfigHandler::getPriority));
-        return handlers;
+        list.sort(Comparator.comparingInt(IConfigHandler::getPriority));
+        return list;
     }
 
     /**
      * Retrieves a configuration handler by its identifier.
      *
-     * @param identifier The handler identifier.
-     * @return The corresponding handler or null if not found.
+     * @param identifier the handler identifier.
+     * @return the corresponding configuration handler or null if not found.
      */
     public IConfigHandler<?> handler(String identifier) {
         return this.handlers(handler -> handler.identifier().equals(identifier))
-                .stream()
-                .findFirst()
-                .orElse(null);
+                .stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Functional interface for processing JSON configuration files.
+     *
+     * @param <T> the type of configuration object.
+     */
+    @FunctionalInterface
+    private interface FileProcessor<T> {
+        void process(IConfigHandler<T> handler, Path folder, String dataDir);
     }
 }
