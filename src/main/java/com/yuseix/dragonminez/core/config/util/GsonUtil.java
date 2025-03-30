@@ -1,4 +1,4 @@
-package com.yuseix.dragonminez.common.config.util;
+package com.yuseix.dragonminez.core.config.util;
 
 import com.google.gson.*;
 import com.yuseix.dragonminez.common.util.LogUtil;

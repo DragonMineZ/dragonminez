@@ -1,7 +1,7 @@
-package com.yuseix.dragonminez.common.config.event;
+package com.yuseix.dragonminez.core.config.event;
 
-import com.yuseix.dragonminez.common.config.ConfigManager;
-import com.yuseix.dragonminez.common.config.model.ConfigType;
+import com.yuseix.dragonminez.core.config.ConfigManager;
+import com.yuseix.dragonminez.core.config.model.ConfigType;
 import net.minecraftforge.eventbus.api.Event;
 
 /**

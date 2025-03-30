@@ -1,4 +1,4 @@
-package com.yuseix.dragonminez.common.config.model;
+package com.yuseix.dragonminez.core.config.model;
 
 public enum ConfigDist {
     CLIENT,

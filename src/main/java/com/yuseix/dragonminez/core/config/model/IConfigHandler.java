@@ -1,4 +1,4 @@
-package com.yuseix.dragonminez.common.config.model;
+package com.yuseix.dragonminez.core.config.model;
 
 import com.yuseix.dragonminez.common.Reference;
 import net.minecraftforge.api.distmarker.Dist;
