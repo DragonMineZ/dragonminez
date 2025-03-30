@@ -5,11 +5,24 @@ import com.yuseix.dragonminez.core.common.config.model.ConfigType;
 import net.minecraftforge.eventbus.api.Event;
 
 /**
- * Event triggered to register configuration handlers in the {@link ConfigManager}.
- * This event carries information about the configuration type being registered.
+ * Event triggered to register configuration handlers within the {@link ConfigManager}.
+ * This event provides information about the configuration type being registered.
+ *
  * <p>
- * This event is posted during the mod loading process to allow mods to register their
- * configuration handlers dynamically, based on the configuration type (STATIC or RUNTIME).
+ * This event is posted during the mod loading process to enable mods to dynamically register
+ * their configuration handlers. The registration is based on the configuration type, which can be either
+ * STATIC or RUNTIME.
+ * </p>
+ *
+ * <b>Important:</b>
+ * <p>
+ * Automatic event bus detection is not applicable in this case. You must manually register the event listener
+ * using the following code:
+ * </p>
+ * <pre>
+ * MinecraftForge.EVENT_BUS.addListener(YourClass::yourListenerFunction);
+ * </pre>
+ * This workaround is required due to specific implementation constraints.
  * </p>
  */
 public class RegisterConfigHandlerEvent extends Event {
