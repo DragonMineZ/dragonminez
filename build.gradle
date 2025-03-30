@@ -27,6 +27,10 @@ base {
     archivesName = mod_id
 }
 
+java {
+    withSourcesJar()
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 //Some info that gets printed in the console when the game is launched.
@@ -46,6 +50,16 @@ mixin {
             debug = true
         }
     }
+}
+
+//Make the result of jarJar the default.
+tasks.jarJar.configure {
+    it.archiveClassifier.set("")
+    finalizedBy("reobfJarJar")
+}
+
+tasks.jar.configure {
+    it.archiveClassifier.set("slim")
 }
 
 //La diferencia de esto con el buildScript, es que este pone los repositorios como librerías + los de build.gradle
@@ -70,6 +84,7 @@ repositories {
 }
 
 minecraft {
+    jarJar.enable()
     mappings channel: mapping_channel, version: mapping_version
     copyIdeResources = true
 
@@ -121,7 +136,6 @@ dependencies {
     implementation 'io.netty:netty-codec:4.1.119.Final'
     implementation 'io.netty:netty-handler:4.1.119.Final'
     implementation 'org.apache.commons:commons-compress:1.27.1'
-    implementation "org.hjson:hjson:3.1.0"
 
     // Just Enough Items (JEI)
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"))
@@ -167,7 +181,5 @@ jar {
                 'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
-
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     finalizedBy 'reobfJar'
 }
