@@ -75,8 +75,8 @@ public interface IConfigHandler<T> {
      * @return The path of the configuration file.
      */
     default String getDataDir() {
-        if (this.getType() == ConfigType.RUNTIME) {
-            return this.getStaticDataDir();
+        if (this.getType() == ConfigType.STATIC) {
+            return "config/" + this.getStaticDataDir();
         }
         return new File(FMLPaths.CONFIGDIR.get().toString() + File.separator + Reference.MOD_ID)
                 .getAbsolutePath();
@@ -99,6 +99,7 @@ public interface IConfigHandler<T> {
     default boolean isCorrectSide() {
         final Dist currentDist = FMLEnvironment.dist;
         final ConfigDist currentConfigDist = ConfigDist.valueOf(currentDist.name());
+        if (this.getDist() == ConfigDist.BOTH) return true;
         return currentConfigDist == this.getDist();
     }
 }

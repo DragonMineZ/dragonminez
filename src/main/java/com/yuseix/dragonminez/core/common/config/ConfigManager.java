@@ -34,19 +34,25 @@ public final class ConfigManager {
     /**
      * Directory path for static configurations.
      */
-    public static final String STATIC_CONFIG_DIR = "assets/" + Reference.MOD_ID + "/config";
+    public static final String STATIC_CONFIG_DIR = "assets" + File.separator + Reference.MOD_ID
+            + File.separator + "config";
 
     /**
      * Directory path for the default runtime configuration files.
      */
-    public static final String RUNTIME_STATIC_CONFIG_DIR = "assets/" + Reference.MOD_ID + "config/runtime";
-
-
+    public static final String RUNTIME_STATIC_CONFIG_DIR = "assets" + File.separator + Reference.MOD_ID
+            + File.separator + "config" + File.separator + "runtime";
 
     /**
      * Map storing registered configuration handlers by their identifier.
      */
     private final HashMap<String, IConfigHandler<?>> handlers = new HashMap<>();
+
+    /**
+     * List of paths that do not exist.
+     * This is used to avoid duplicate loading of static configurations.
+     */
+    private final List<String> pathsToSkip = new ArrayList<>();
 
     /**
      * Private constructor to enforce singleton pattern.
@@ -58,9 +64,10 @@ public final class ConfigManager {
      * Initializes the configuration manager by clearing handlers and loading configurations.
      */
     public void init() {
-        this.handlers.clear();
+        this.fireDispatcher();
         this.loadStaticConfigs();
         this.loadRuntimeConfigs();
+        this.pathsToSkip.clear();
     }
 
     /**
@@ -81,7 +88,6 @@ public final class ConfigManager {
      */
     private void loadStaticConfigs() {
         LogUtil.info("Scanning all mods for static DMZ configurations...");
-        this.fireDispatcher(ConfigType.STATIC);
         ModLoadUtil.forEachMod((mods, mod) -> {
             final String modId = mod.getModId();
             LogUtil.info("Scanning mod " + modId + " for static DMZ configurations.");
@@ -118,22 +124,39 @@ public final class ConfigManager {
      */
     private <T> void fetchModFolder(IConfigHandler<T> handler, Path modPath, String dataDir,
                                     String baseDir, FileProcessor<T> fileConsumer) {
-        Path folder;
         if (!modPath.toString().endsWith("jar")) {
-            folder = modPath.resolve(baseDir).resolve(dataDir);
+            final Path folder = modPath.resolve(baseDir);
+            if (this.pathsToSkip.contains(folder.toString())) {
+                return;
+            }
+            if (Files.exists(folder) && Files.isDirectory(folder)) {
+                fileConsumer.process(handler, folder, dataDir);
+            } else {
+                if (!this.pathsToSkip.contains(folder.toString())) {
+                    this.pathsToSkip.add(folder.toString());
+                }
+                LogUtil.error("Folder doesn't exist: " + folder);
+            }
         } else {
-            Path tempFolder = null;
             try (FileSystem fileSystem = FileSystems.newFileSystem(modPath, new HashMap<>())) {
-                tempFolder = fileSystem.getPath(baseDir + File.pathSeparator).resolve(dataDir);
+                final Path folder = fileSystem.getPath(baseDir);
+                if (this.pathsToSkip.contains(folder.toString())) {
+                    return;
+                }
+                if (Files.exists(folder) && Files.isDirectory(folder)) {
+                    fileConsumer.process(handler, folder, dataDir);
+                } else {
+                    if (!this.pathsToSkip.contains(folder.toString())) {
+                        this.pathsToSkip.add(folder.toString());
+                    }
+                    LogUtil.error("Folder '%s' doesn't exist in JAR. This is normal on DEV ENV.".formatted(folder));
+                }
             } catch (Exception exception) {
                 LogUtil.crash("Error processing JAR file: " + modPath, exception);
             }
-            folder = tempFolder;
-        }
-        if (folder != null) {
-            fileConsumer.process(handler, folder, dataDir);
         }
     }
+
 
     /**
      * Processes JSON files for runtime handler default configurations by copying them to the runtime folder.
@@ -146,10 +169,11 @@ public final class ConfigManager {
     private <T> void processRuntimeHandlerDefaultFiles(IConfigHandler<T> handler, Path folder,
                                                        String dataDir) {
         this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
-            final String dataIdentifier = path.getFileName().toString().replace(".json5", "");
-            final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + ".json5").toString();
+            final String dataIdentifier = path.getFileName().toString().replace(GsonUtil.FILE_EXTENSION, "");
+            final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + GsonUtil.FILE_EXTENSION).toString();
             try (InputStream stream = Files.newInputStream(path)) {
                 GsonUtil.copyStreamToFile(stream, destinationPath);
+                LogUtil.info("Copied default config '" + path + "' to '" + destinationPath + "'");
             } catch (IOException e) {
                 LogUtil.crash("Error copying default config '" + path + "'. " +
                         "Did you add the file on the assets folder?", e);
@@ -169,7 +193,7 @@ public final class ConfigManager {
     private <T> void processStaticHandlerFiles(IConfigHandler<T> handler, Path folder, String dataDir) {
         final List<String> visitedConfigs = new ArrayList<>();
         this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
-            final String dataIdentifier = path.getFileName().toString().replace(".json5", "");
+            final String dataIdentifier = path.getFileName().toString().replace(GsonUtil.FILE_EXTENSION, "");
             if (visitedConfigs.contains(dataIdentifier) && Reference.MOD_ID.equals(handler.identifier())) {
                 LogUtil.info("Skipping " + Reference.MOD_ID + " static config '" + dataIdentifier +
                         "' as it has already been loaded by another mod.");
@@ -224,7 +248,6 @@ public final class ConfigManager {
      */
     private void loadRuntimeConfigs() {
         LogUtil.info("Scanning config folder for runtime DMZ configurations...");
-        this.fireDispatcher(ConfigType.RUNTIME);
         this.handlers(handler -> handler.getType() == ConfigType.RUNTIME)
                 .forEach((IConfigHandler<?> handler) ->
                         GsonUtil.getFilesInDirectory(handler.getDataDir(), GsonUtil.FILE_EXTENSION)
@@ -241,7 +264,10 @@ public final class ConfigManager {
      */
     private <T> void processRuntimeFile(IConfigHandler<T> handler, File file) {
         final String identifier = file.getName().replaceFirst("[.][^.]+$", "");
-        GsonUtil.loadJsonFromFile(handler.getClazz(), file, (object) -> handler.onLoaded(identifier, object));
+        GsonUtil.loadJsonFromFile(handler.getClazz(), file, (object) -> {
+            handler.onLoaded(identifier, object);
+            LogUtil.info("Loaded runtime config '" + identifier + "' from file '" + file.getAbsolutePath() + "'");
+        });
     }
 
     /**
@@ -317,12 +343,10 @@ public final class ConfigManager {
 
     /**
      * Fires an event to register configuration handlers.
-     *
-     * @param type the type of configuration (STATIC or RUNTIME).
      */
-    private void fireDispatcher(ConfigType type) {
+    private void fireDispatcher() {
         MinecraftForge.EVENT_BUS.start();
-        MinecraftForge.EVENT_BUS.post(new RegisterConfigHandlerEvent(this, type));
+        MinecraftForge.EVENT_BUS.post(new RegisterConfigHandlerEvent(this));
     }
 
     /**
