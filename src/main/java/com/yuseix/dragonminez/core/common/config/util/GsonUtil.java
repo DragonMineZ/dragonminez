@@ -31,6 +31,11 @@ public class GsonUtil {
             .create();
 
     /**
+     * The file extension used for JSON configuration files.
+     */
+    public static final String FILE_EXTENSION = ".json5";
+
+    /**
      * Loads JSON data from an InputStream and triggers a callback with the parsed object.
      *
      * @param clazz The class type of the object to parse.
@@ -71,11 +76,11 @@ public class GsonUtil {
      *
      * @param object The object to serialize.
      * @param filePath The directory where the file will be saved.
-     * @param fileName The name of the file (without ".json" extension).
+     * @param fileName The name of the file (without {@link GsonUtil#FILE_EXTENSION} extension).
      * @throws IOException If an error occurs while writing the file.
      */
     public static <T> void saveJson(T object, String filePath, String fileName) throws IOException {
-        final File file = new File(filePath, fileName + ".json");
+        final File file = new File(filePath, fileName + GsonUtil.FILE_EXTENSION);
         try (FileWriter writer = new FileWriter(file)) {
             final String hjson = JsonValue.readJSON(GSON.toJson(object)).toString(Stringify.HJSON);
             writer.write(hjson);
@@ -87,11 +92,11 @@ public class GsonUtil {
      *
      * @param clazz The class of the object to deserialize.
      * @param filePath The directory where the JSON file is located.
-     * @param fileName The name of the JSON file (without ".json" extension).
+     * @param fileName The name of the JSON file (without {@link GsonUtil#FILE_EXTENSION} extension).
      * @return The deserialized object.
      */
     public static <T> T readJson(Class<T> clazz, String filePath, String fileName) {
-        try (FileReader reader = new FileReader(filePath + File.separator + fileName + ".json")) {
+        try (FileReader reader = new FileReader(filePath + File.separator + fileName + GsonUtil.FILE_EXTENSION)) {
             final String json = GsonUtil.readHjson(reader);
             return GSON.fromJson(json, clazz);
         } catch (IOException e) {
@@ -117,12 +122,11 @@ public class GsonUtil {
         }
     }
 
-
     /**
      * Retrieves a list of files from a specified directory with an optional file extension filter.
      *
      * @param folderPath The directory to search.
-     * @param extension The file extension filter (e.g., "json"). Null or empty retrieves all files.
+     * @param extension The file extension filter (e.g., {@link GsonUtil#FILE_EXTENSION}). Null or empty retrieves all files.
      * @return A list of matching files.
      */
     public static List<File> getFilesInDirectory(String folderPath, String extension) {
@@ -141,11 +145,11 @@ public class GsonUtil {
      * Deletes a JSON file.
      *
      * @param dataDir The directory where the file is located.
-     * @param identifier The name of the file (without ".json" extension).
+     * @param identifier The name of the file (without {@link GsonUtil#FILE_EXTENSION} extension).
      * @return True if the file was deleted, false otherwise.
      */
     public static boolean deleteJson(String dataDir, String identifier) {
-        final File file = new File(dataDir + File.separator + identifier + ".json");
+        final File file = new File(dataDir + File.separator + identifier + GsonUtil.FILE_EXTENSION);
         if (file.exists()) {
             return file.delete();
         }

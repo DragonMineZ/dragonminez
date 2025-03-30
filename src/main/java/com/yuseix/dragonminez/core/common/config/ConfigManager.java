@@ -41,6 +41,8 @@ public final class ConfigManager {
      */
     public static final String RUNTIME_STATIC_CONFIG_DIR = "assets/" + Reference.MOD_ID + "config/runtime";
 
+
+
     /**
      * Map storing registered configuration handlers by their identifier.
      */
@@ -144,8 +146,8 @@ public final class ConfigManager {
     private <T> void processRuntimeHandlerDefaultFiles(IConfigHandler<T> handler, Path folder,
                                                        String dataDir) {
         this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
-            final String dataIdentifier = path.getFileName().toString().replace(".json", "");
-            final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + ".json").toString();
+            final String dataIdentifier = path.getFileName().toString().replace(".json5", "");
+            final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + ".json5").toString();
             try (InputStream stream = Files.newInputStream(path)) {
                 GsonUtil.copyStreamToFile(stream, destinationPath);
             } catch (IOException e) {
@@ -167,7 +169,7 @@ public final class ConfigManager {
     private <T> void processStaticHandlerFiles(IConfigHandler<T> handler, Path folder, String dataDir) {
         final List<String> visitedConfigs = new ArrayList<>();
         this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
-            final String dataIdentifier = path.getFileName().toString().replace(".json", "");
+            final String dataIdentifier = path.getFileName().toString().replace(".json5", "");
             if (visitedConfigs.contains(dataIdentifier) && Reference.MOD_ID.equals(handler.identifier())) {
                 LogUtil.info("Skipping " + Reference.MOD_ID + " static config '" + dataIdentifier +
                         "' as it has already been loaded by another mod.");
@@ -199,7 +201,7 @@ public final class ConfigManager {
             if (Files.exists(folder) && Files.isDirectory(folder)) {
                 try (var paths = Files.walk(folder, 1)) {
                     List<Path> jsonPaths = paths.filter(Files::isRegularFile)
-                            .filter((Path path) -> path.toString().endsWith(".json"))
+                            .filter((Path path) -> path.toString().endsWith(GsonUtil.FILE_EXTENSION))
                             .toList();
                     if (jsonPaths.isEmpty()) {
                         return;
@@ -225,7 +227,7 @@ public final class ConfigManager {
         this.fireDispatcher(ConfigType.RUNTIME);
         this.handlers(handler -> handler.getType() == ConfigType.RUNTIME)
                 .forEach((IConfigHandler<?> handler) ->
-                        GsonUtil.getFilesInDirectory(handler.getDataDir(), ".json")
+                        GsonUtil.getFilesInDirectory(handler.getDataDir(), GsonUtil.FILE_EXTENSION)
                                 .forEach((File file) -> this.processRuntimeFile(handler, file))
                 );
     }
