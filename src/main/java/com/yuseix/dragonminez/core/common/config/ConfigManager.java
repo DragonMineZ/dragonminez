@@ -4,7 +4,7 @@ import com.yuseix.dragonminez.common.Reference;
 import com.yuseix.dragonminez.core.common.config.event.RegisterConfigHandlerEvent;
 import com.yuseix.dragonminez.core.common.config.model.ConfigType;
 import com.yuseix.dragonminez.core.common.config.model.IConfigHandler;
-import com.yuseix.dragonminez.core.common.config.util.GsonUtil;
+import com.yuseix.dragonminez.core.common.config.util.JacksonUtil;
 import com.yuseix.dragonminez.core.common.config.util.ModLoadUtil;
 import com.yuseix.dragonminez.common.util.LogUtil;
 import net.minecraftforge.common.MinecraftForge;
@@ -169,14 +169,16 @@ public final class ConfigManager {
     private <T> void processRuntimeHandlerDefaultFiles(IConfigHandler<T> handler, Path folder,
                                                        String dataDir) {
         this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
-            final String dataIdentifier = path.getFileName().toString().replace(GsonUtil.FILE_EXTENSION, "");
-            final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + GsonUtil.FILE_EXTENSION).toString();
+            final String dataIdentifier = path.getFileName().toString().replace(JacksonUtil.FILE_EXTENSION, "");
+            final String destinationPath = Paths.get(handler.getDataDir(), dataIdentifier + JacksonUtil.FILE_EXTENSION).toString();
+
             if (Files.exists(Paths.get(destinationPath))) {
                 LogUtil.info("Skipping default config '" + path + "' as it already exists in '" + destinationPath + "'");
                 return;
             }
+
             try (InputStream stream = Files.newInputStream(path)) {
-                GsonUtil.copyStreamToFile(stream, destinationPath);
+                JacksonUtil.copyStreamToFile(stream, destinationPath);
                 LogUtil.info("Copied default config '" + path + "' to '" + destinationPath + "'");
             } catch (IOException e) {
                 LogUtil.crash("Error copying default config '" + path + "'. " +
@@ -197,14 +199,14 @@ public final class ConfigManager {
     private <T> void processStaticHandlerFiles(IConfigHandler<T> handler, Path folder, String dataDir) {
         final List<String> visitedConfigs = new ArrayList<>();
         this.processJsonFiles(handler, folder, dataDir, (Path path) -> {
-            final String dataIdentifier = path.getFileName().toString().replace(GsonUtil.FILE_EXTENSION, "");
+            final String dataIdentifier = path.getFileName().toString().replace(JacksonUtil.FILE_EXTENSION, "");
             if (visitedConfigs.contains(dataIdentifier) && Reference.MOD_ID.equals(handler.identifier())) {
                 LogUtil.info("Skipping " + Reference.MOD_ID + " static config '" + dataIdentifier +
                         "' as it has already been loaded by another mod.");
                 return;
             }
             try (InputStream inputStream = Files.newInputStream(path)) {
-                GsonUtil.loadJsonFromStream(handler.getClazz(), inputStream, (object) -> {
+                JacksonUtil.loadJsonFromStream(handler.getClazz(), inputStream, (object) -> {
                     visitedConfigs.add(dataIdentifier);
                     handler.onLoaded(dataIdentifier, object);
                 });
@@ -229,7 +231,7 @@ public final class ConfigManager {
             if (Files.exists(folder) && Files.isDirectory(folder)) {
                 try (var paths = Files.walk(folder, 1)) {
                     List<Path> jsonPaths = paths.filter(Files::isRegularFile)
-                            .filter((Path path) -> path.toString().endsWith(GsonUtil.FILE_EXTENSION))
+                            .filter((Path path) -> path.toString().endsWith(JacksonUtil.FILE_EXTENSION))
                             .toList();
                     if (jsonPaths.isEmpty()) {
                         return;
@@ -254,7 +256,7 @@ public final class ConfigManager {
         LogUtil.info("Scanning config folder for runtime DMZ configurations...");
         this.handlers(handler -> handler.getType() == ConfigType.RUNTIME)
                 .forEach((IConfigHandler<?> handler) ->
-                        GsonUtil.getFilesInDirectory(handler.getDataDir(), GsonUtil.FILE_EXTENSION)
+                        JacksonUtil.getFilesInDirectory(handler.getDataDir(), JacksonUtil.FILE_EXTENSION)
                                 .forEach((File file) -> this.processRuntimeFile(handler, file))
                 );
     }
@@ -268,7 +270,7 @@ public final class ConfigManager {
      */
     private <T> void processRuntimeFile(IConfigHandler<T> handler, File file) {
         final String identifier = file.getName().replaceFirst("[.][^.]+$", "");
-        GsonUtil.loadJsonFromFile(handler.getClazz(), file, (object) -> {
+        JacksonUtil.loadJsonFromFile(handler.getClazz(), file, (object) -> {
             handler.onLoaded(identifier, object);
             LogUtil.info("Loaded runtime config '" + identifier + "' from file '" + file.getAbsolutePath() + "'");
         });
@@ -295,7 +297,7 @@ public final class ConfigManager {
         }
         try {
             final String dataDir = handler.getDataDir();
-            GsonUtil.saveJson(data, dataDir, identifier);
+            JacksonUtil.saveJson(data, dataDir, identifier);
             if (log) {
                 LogUtil.info("Saved data for {} in {}!", identifier, dataDir);
             }
@@ -336,7 +338,7 @@ public final class ConfigManager {
         }
         final String dataDir = handler.getDataDir();
         if (log) {
-            final boolean result = GsonUtil.deleteJson(dataDir, identifier);
+            final boolean result = JacksonUtil.deleteJson(dataDir, identifier);
             if (!result) {
                 LogUtil.error("Could not delete data for {} in {}!", identifier, dataDir);
             } else {
