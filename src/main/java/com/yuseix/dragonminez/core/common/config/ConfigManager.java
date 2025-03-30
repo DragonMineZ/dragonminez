@@ -1,11 +1,11 @@
-package com.yuseix.dragonminez.core.config;
+package com.yuseix.dragonminez.core.common.config;
 
 import com.yuseix.dragonminez.common.Reference;
-import com.yuseix.dragonminez.core.config.event.RegisterConfigHandlerEvent;
-import com.yuseix.dragonminez.core.config.model.ConfigType;
-import com.yuseix.dragonminez.core.config.model.IConfigHandler;
-import com.yuseix.dragonminez.core.config.util.GsonUtil;
-import com.yuseix.dragonminez.core.config.util.ModLoadUtil;
+import com.yuseix.dragonminez.core.common.config.event.RegisterConfigHandlerEvent;
+import com.yuseix.dragonminez.core.common.config.model.ConfigType;
+import com.yuseix.dragonminez.core.common.config.model.IConfigHandler;
+import com.yuseix.dragonminez.core.common.config.util.GsonUtil;
+import com.yuseix.dragonminez.core.common.config.util.ModLoadUtil;
 import com.yuseix.dragonminez.common.util.LogUtil;
 import net.minecraftforge.common.MinecraftForge;
 
