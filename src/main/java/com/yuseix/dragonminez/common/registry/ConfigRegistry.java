@@ -4,7 +4,6 @@ import com.yuseix.dragonminez.common.Reference;
 import com.yuseix.dragonminez.common.config.GeneralConfigHandler;
 import com.yuseix.dragonminez.core.common.config.ConfigManager;
 import com.yuseix.dragonminez.core.common.config.event.RegisterConfigHandlerEvent;
-import com.yuseix.dragonminez.core.common.config.model.ConfigType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -20,11 +19,8 @@ public class ConfigRegistry {
 
     @SubscribeEvent
     public static void onRegisterEvent(RegisterConfigHandlerEvent event) {
-        if (event.type() == ConfigType.STATIC) {
-            ConfigRegistry.registerStatic();
-        } else if (event.type() == ConfigType.RUNTIME) {
-            ConfigRegistry.registerDynamic();
-        }
+        ConfigRegistry.registerStatic();
+        ConfigRegistry.registerDynamic();
     }
 
     private static void registerStatic() {

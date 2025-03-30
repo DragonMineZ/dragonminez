@@ -28,18 +28,14 @@ import net.minecraftforge.eventbus.api.Event;
 public class RegisterConfigHandlerEvent extends Event {
 
     private final ConfigManager dispatcher; // The instance of the ConfigManager handling the registration
-    private final ConfigType type; // The configuration type (STATIC or RUNTIME) being registered
 
     /**
      * Constructor for the RegisterConfigHandlerEvent.
      *
      * @param dispatcher The {@link ConfigManager} instance responsible for handling configurations.
-     * @param type The {@link ConfigType} (STATIC or RUNTIME) indicating which type of configuration
-     *             handlers are being registered.
      */
-    public RegisterConfigHandlerEvent(ConfigManager dispatcher, ConfigType type) {
+    public RegisterConfigHandlerEvent(ConfigManager dispatcher) {
         this.dispatcher = dispatcher;
-        this.type = type;
     }
 
     /**
@@ -49,15 +45,5 @@ public class RegisterConfigHandlerEvent extends Event {
      */
     public ConfigManager dispatcher() {
         return dispatcher;
-    }
-
-    /**
-     * Retrieves the {@link ConfigType} associated with this event, indicating which configuration
-     * type is being registered (STATIC or RUNTIME).
-     *
-     * @return The ConfigType (STATIC or RUNTIME).
-     */
-    public ConfigType type() {
-        return type;
     }
 }
