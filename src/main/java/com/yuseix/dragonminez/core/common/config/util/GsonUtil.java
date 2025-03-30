@@ -1,8 +1,6 @@
 package com.yuseix.dragonminez.core.common.config.util;
 
 import com.google.gson.*;
-import org.hjson.JsonValue;
-import org.hjson.Stringify;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,9 +8,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Utility class for handling JSON and HJSON file operations using Gson and Hjson.
- * Provides methods for creating directories, reading/writing JSON files,
- * listing JSON resources, and serializing/deserializing objects.
+ * Utility class for handling JSON5 file operations using Gson.
+ * Provides methods for creating directories, reading/writing JSON5 files,
+ * listing JSON5 resources, and serializing/deserializing objects.
  */
 public class GsonUtil {
 
@@ -31,48 +29,48 @@ public class GsonUtil {
             .create();
 
     /**
-     * The file extension used for JSON configuration files.
+     * The file extension used for JSON5 configuration files.
      */
     public static final String FILE_EXTENSION = ".json5";
 
     /**
-     * Loads JSON data from an InputStream and triggers a callback with the parsed object.
+     * Loads JSON5 data from an InputStream and triggers a callback with the parsed object.
      *
      * @param clazz The class type of the object to parse.
-     * @param inputStream The InputStream containing the JSON data.
+     * @param inputStream The InputStream containing the JSON5 data.
      * @param onFetched A Consumer that will be called with the parsed object.
      * @param <T> The type of the object to deserialize.
      */
     public static <T> void loadJsonFromStream(Class<T> clazz, InputStream inputStream, Consumer<T> onFetched) {
         try (Reader reader = new InputStreamReader(inputStream)) {
-            final String json = GsonUtil.readHjson(reader);
+            final String json = GsonUtil.readJson5(reader);
             final T data = GSON.fromJson(json, clazz);
             onFetched.accept(data);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to load JSON data from InputStream", e);
+            throw new RuntimeException("Failed to load JSON5 data from InputStream", e);
         }
     }
 
     /**
-     * Loads JSON data from a file and triggers a callback with the parsed object.
+     * Loads JSON5 data from a file and triggers a callback with the parsed object.
      *
      * @param clazz The class type of the object to parse.
-     * @param file The File containing the JSON data.
+     * @param file The File containing the JSON5 data.
      * @param onFetched A Consumer that will be called with the parsed object.
      * @param <T> The type of the object to deserialize.
      */
     public static <T> void loadJsonFromFile(Class<T> clazz, File file, Consumer<T> onFetched) {
         try (FileReader reader = new FileReader(file)) {
-            final String json = GsonUtil.readHjson(reader);
+            final String json = GsonUtil.readJson5(reader);
             final T data = GSON.fromJson(json, clazz);
             onFetched.accept(data);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to load JSON data from file", e);
+            throw new RuntimeException("Failed to load JSON5 data from file", e);
         }
     }
 
     /**
-     * Saves an object as an HJSON file.
+     * Saves an object as a JSON5 file.
      *
      * @param object The object to serialize.
      * @param filePath The directory where the file will be saved.
@@ -82,25 +80,25 @@ public class GsonUtil {
     public static <T> void saveJson(T object, String filePath, String fileName) throws IOException {
         final File file = new File(filePath, fileName + GsonUtil.FILE_EXTENSION);
         try (FileWriter writer = new FileWriter(file)) {
-            final String hjson = JsonValue.readJSON(GSON.toJson(object)).toString(Stringify.HJSON);
-            writer.write(hjson);
+            final String json = GSON.toJson(object);
+            writer.write(json);
         }
     }
 
     /**
-     * Reads a JSON file and deserializes it into an object of the specified type.
+     * Reads a JSON5 file and deserializes it into an object of the specified type.
      *
      * @param clazz The class of the object to deserialize.
-     * @param filePath The directory where the JSON file is located.
-     * @param fileName The name of the JSON file (without {@link GsonUtil#FILE_EXTENSION} extension).
+     * @param filePath The directory where the JSON5 file is located.
+     * @param fileName The name of the JSON5 file (without {@link GsonUtil#FILE_EXTENSION} extension).
      * @return The deserialized object.
      */
     public static <T> T readJson(Class<T> clazz, String filePath, String fileName) {
         try (FileReader reader = new FileReader(filePath + File.separator + fileName + GsonUtil.FILE_EXTENSION)) {
-            final String json = GsonUtil.readHjson(reader);
+            final String json = GsonUtil.readJson5(reader);
             return GSON.fromJson(json, clazz);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read JSON file", e);
+            throw new RuntimeException("Failed to read JSON5 file", e);
         }
     }
 
@@ -137,12 +135,12 @@ public class GsonUtil {
         final File[] rawFiles = directory.listFiles();
         return rawFiles == null ? new ArrayList<>() : Arrays.stream(rawFiles)
                 .filter(File::isFile)
-                .filter(file -> extension == null || extension.isEmpty() || file.getName().endsWith("." + extension))
+                .filter(file -> extension == null || extension.isEmpty() || file.getName().endsWith(extension))
                 .toList();
     }
 
     /**
-     * Deletes a JSON file.
+     * Deletes a JSON5 file.
      *
      * @param dataDir The directory where the file is located.
      * @param identifier The name of the file (without {@link GsonUtil#FILE_EXTENSION} extension).
@@ -157,19 +155,30 @@ public class GsonUtil {
     }
 
     /**
-     * Reads an HJSON string from a Reader and converts it to standard JSON.
+     * Reads a JSON5 string from a Reader, removes comments and trailing commas, and converts it to standard JSON.
      *
-     * @param reader The input reader containing HJSON.
+     * @param reader The input reader containing JSON5.
      * @return The converted JSON string.
      * @throws IOException If an error occurs while reading the input.
      */
-    private static String readHjson(Reader reader) throws IOException {
+    private static String readJson5(Reader reader) throws IOException {
         final StringBuilder sb = new StringBuilder();
         final BufferedReader br = new BufferedReader(reader);
         String line;
         while ((line = br.readLine()) != null) {
             sb.append(line).append("\n");
         }
-        return JsonValue.readHjson(sb.toString()).toString();
+
+        // Remove single-line comments (//)
+        String json5 = sb.toString().replaceAll("//.*", "");
+
+        // Remove multi-line comments (/*...*/)
+        json5 = json5.replaceAll("/\\*.*?\\*/", "");
+
+        // Trim trailing commas (e.g., "key1": "value",, -> "key1": "value")
+        json5 = json5.replaceAll(",\\s*}", "}");
+        json5 = json5.replaceAll(",\\s*\\]", "]");
+
+        return json5;
     }
 }
