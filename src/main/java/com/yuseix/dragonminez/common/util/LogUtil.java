@@ -107,6 +107,17 @@ public final class LogUtil {
     }
 
     /**
+     * Logs an error message.
+     *
+     * @param message The error message to log.
+     * @param p0      The parameter to include in the message.
+     * @param p1      The second parameter to include in the message.
+     */
+    public static void error(String message, String p0, String p1) {
+        LOGGER.error(message, p0, p1);
+    }
+
+    /**
      * Logs a debug message (only appears if debug logging is enabled).
      *
      * @param message The debug message to log.

@@ -245,9 +245,13 @@ public class ConfigManager {
         }
 
         final String dataDir = handler.getDataDir();
-        GsonUtil.deleteJson(dataDir, identifier);
         if (log) {
-            LogUtil.info("Deleted data for {} in {}!", identifier, dataDir);
+            final boolean result = GsonUtil.deleteJson(dataDir, identifier);
+            if (!result) {
+                LogUtil.error("Could not delete data for {} in {}!", identifier, dataDir);
+            } else {
+                LogUtil.info("Deleted data for {} in {}!", identifier, dataDir);
+            }
         }
     }
 
