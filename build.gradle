@@ -66,6 +66,7 @@ repositories {
     maven {
         url = "https://cursemaven.com"
     }
+    mavenCentral()
 }
 
 minecraft {
@@ -120,6 +121,7 @@ dependencies {
     implementation 'io.netty:netty-codec:4.1.119.Final'
     implementation 'io.netty:netty-handler:4.1.119.Final'
     implementation 'org.apache.commons:commons-compress:1.27.1'
+    implementation "org.hjson:hjson:3.1.0"
 
     // Just Enough Items (JEI)
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"))
