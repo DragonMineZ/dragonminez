@@ -1,5 +1,6 @@
 package com.yuseix.dragonminez.common.network.C2S;
 
+import com.yuseix.dragonminez.common.config.GeneralConfig;
 import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.config.old.races.*;
 import com.yuseix.dragonminez.common.config.old.races.transformations.*;
@@ -32,8 +33,8 @@ public class ConfigValuesC2S {
 
             if (player != null) {
                 DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
-                    ModMessages.sendToPlayer(new PacketSyncConfig("maxattributes", DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get()), player);
-                    ModMessages.sendToPlayer(new PacketSyncConfig("zpoints_cost", DMZGeneralConfig.MULTIPLIER_ZPOINTS_COST.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("maxattributes", GeneralConfig.attributes().maxAttributes), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("zpoints_cost", GeneralConfig.training().costMultiplier), player);
                     ModMessages.sendToPlayer(new PacketSyncConfig("majin_multiplier", DMZGeneralConfig.MULTIPLIER_MAJIN.get()), player);
                     ModMessages.sendToPlayer(new PacketSyncConfig("tree_might_multiplier", DMZGeneralConfig.MULTIPLIER_TREE_MIGHT.get()), player);
                     ModMessages.sendToPlayer(new PacketSyncConfig("transfTPCost", DMZGeneralConfig.TPCOST_TRANSFORMATIONS.get()), player);

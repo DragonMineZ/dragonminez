@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.yuseix.dragonminez.common.config.GeneralConfig;
 import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
@@ -102,7 +103,7 @@ public class StatsCommand {
             DMZDatos dmzdatos = new DMZDatos();
 
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(stats -> {
-                int cantidadFinal = Math.min(cantidad, DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get());
+                int cantidadFinal = Math.min(cantidad, GeneralConfig.attributes().maxAttributes);
 
                 switch (stat) {
                     case "strength":
@@ -180,7 +181,7 @@ public class StatsCommand {
             DMZDatos dmzdatos = new DMZDatos();
 
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(stats -> {
-                int cantidadFinal = Math.min(cantidad, DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get());
+                int cantidadFinal = Math.min(cantidad, GeneralConfig.attributes().maxAttributes);
 
                 switch (stat) {
                     case "strength":
@@ -256,7 +257,8 @@ public class StatsCommand {
 
     private int setStat(CommandContext<CommandSourceStack> context, String stat, String cantidad, Collection<ServerPlayer> players) {
         CommandSourceStack source = context.getSource();
-        int cant = cantidad.equalsIgnoreCase("max") ? DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get() : Integer.parseInt(cantidad);
+        int cant = cantidad.equalsIgnoreCase("max") ? GeneralConfig.attributes().maxAttributes
+                : Integer.parseInt(cantidad);
         if (cant < 5) cant = 5; // Mínimo de stats
 
         for (ServerPlayer player : players) {

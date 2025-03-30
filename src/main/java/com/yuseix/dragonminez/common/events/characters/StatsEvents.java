@@ -1,6 +1,7 @@
 package com.yuseix.dragonminez.common.events.characters;
 
 import com.yuseix.dragonminez.common.Reference;
+import com.yuseix.dragonminez.common.config.GeneralConfig;
 import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.config.old.races.DMZBioAndroidConfig;
 import com.yuseix.dragonminez.common.init.MainSounds;
@@ -144,7 +145,7 @@ public class StatsEvents {
                     }
                 }
 
-                if (DMZGeneralConfig.OTHERWORLD_ENABLED.get()) {
+                if (GeneralConfig.worldGen().enableOtherworld) {
                     if (!playerstats.getBoolean("alive") && hasHealed) hasHealed = false;
                     if (!playerstats.getBoolean("alive") && playerstats.getIntValue("babaalivetimer") <= 0) {
                         if (serverPlayer.level().dimension() != ModDimensions.OTHERWORLD_DIM_LEVEL_KEY) {
@@ -372,7 +373,7 @@ public class StatsEvents {
                         int maxEnergy = dmzdatos.calcEnergy(stats);
 
                         // drenaje de config
-                        int baseEnergyDrain = (int) Math.ceil(maxEnergy * DMZGeneralConfig.MULTIPLIER_FALLDMG.get());
+                        int baseEnergyDrain = (int) Math.ceil(maxEnergy * GeneralConfig.attributes().fallDamageMultiplier);
 
                         // Incrementar el drenaje por altura
                         int extraEnergyDrain = (int) ((fallDistance - 4.5f) * baseEnergyDrain / 4.5f);

@@ -6,18 +6,12 @@ public class DMZGeneralConfig {
     public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     public static final ForgeConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.ConfigValue<Integer> MAX_ATTRIBUTE_VALUE;
     public static final ForgeConfigSpec.ConfigValue<Boolean> TRANSFORMATIONS_WITH_TP;
     public static final ForgeConfigSpec.ConfigValue<Integer> TPCOST_TRANSFORMATIONS;
-    public static final ForgeConfigSpec.ConfigValue<Boolean> SAVE_INVENTORY;
 
     //CONFIGS GENERALES
-    public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_FALLDMG;
-    public static final ForgeConfigSpec.ConfigValue<Integer> PERHIT_ZPOINTS_GAIN;
-    public static final ForgeConfigSpec.ConfigValue<Double> PERKILL_ZPOINTS_GAIN;
-    public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_ZPOINTS_COST;
-    public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_ZPOINTS_GAIN;
     public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_ZPOINTS_HTC;
+
     public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_TREE_MIGHT;
     public static final ForgeConfigSpec.ConfigValue<Double> MULTIPLIER_MAJIN;
     public static final ForgeConfigSpec.ConfigValue<Integer> BABA_COOLDOWN;
@@ -27,13 +21,8 @@ public class DMZGeneralConfig {
     public static final ForgeConfigSpec.ConfigValue<Integer> SENZU_GIVE;
     public static final ForgeConfigSpec.ConfigValue<Integer> SENZU_DAILY_COOLDOWN;
 
-    public static final ForgeConfigSpec.ConfigValue<Boolean> OTHERWORLD_ENABLED;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_DBALL_SPAWN;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_DBALL_DRAGON_SPAWN;
-    public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_KAMILOOKOUT_SPAWN;
-    public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_GOKUHOUSE_SPAWN;
-    public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_KAMEHOUSE_SPAWN;
-    public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_ELDERGURU_SPAWN;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_DBALLEVENTS_ACTIVE;
     public static final ForgeConfigSpec.ConfigValue<Boolean> SHOULD_DRAGON_SPAWN;
 
@@ -79,35 +68,15 @@ public class DMZGeneralConfig {
     static {
         BUILDER.push("Configs for Attributes of DragonMineZ");
 
-        MAX_ATTRIBUTE_VALUE = BUILDER.comment("Max Attributes! (Min: 100 / Max: 100000 / Default: 5000)")
-                .defineInRange("Attributes: ", 5000, 100, 100000);
-
         TRANSFORMATIONS_WITH_TP = BUILDER.comment("Allow Transformations to be buyable with TP instead of Obtainable via Storyline (Default: false)")
                 .define("Transformations: ", true);
 
         TPCOST_TRANSFORMATIONS = BUILDER.comment("ZPoints Cost for Buying Transformations (Min: 0 / Max: 1000000000 / Default: 40000)")
                 .defineInRange("Transformations Cost: ", 40000, 0, 1000000000);
 
-        SAVE_INVENTORY = BUILDER.comment("Save Player Inventory on Death (Default: true)")
-                .comment("This function is currently disabled due to a big bug. It will reworked an re enabled in v1.3.0.")
-                .comment("Either you put it True or False, it will not work.")
-                .define("Save Inventory: ", true);
-
         BUILDER.pop();
 
         BUILDER.push("ZPoints Configs");
-
-        PERHIT_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Hit (Min: 0 / Max: 100 / Default: 2)")
-                .defineInRange("ZPoints per Hit: ", 2, 0, 100);
-
-        PERKILL_ZPOINTS_GAIN = BUILDER.comment("ZPoints Obtained per Kill based on Enemy max Health (Min: 0.0 / Max: 1.0 / Default: 0.45)")
-                .defineInRange("ZPoints per Kill percentage: ", 0.45, 0.0, 1);
-
-        MULTIPLIER_ZPOINTS_COST = BUILDER.comment("Multiplier for ZPoints Cost (Min: 0.0 / Max: 20.0 / Default: 1.2)")
-                .defineInRange("ZPoints Cost: ", 1.2, 0.0, 20.0);
-
-        MULTIPLIER_ZPOINTS_GAIN = BUILDER.comment("Multiplier for ZPoints Gain (Min: 0.0 / Max: 20.0 / Default: 1.2)")
-                .defineInRange("ZPoints Gain: ", 1.2, 0.0, 20.0);
 
         MULTIPLIER_ZPOINTS_HTC = BUILDER.comment("Multiplier for ZPoints in the Hyperbolic Time Chamber (Min: 0.0 / Max: 20.0 / Default: 3.0)")
                 .defineInRange("ZPoints (HTC): ", 3.0, 0.0, 60.0);
@@ -117,9 +86,6 @@ public class DMZGeneralConfig {
 
 
         BUILDER.push("General Configs");
-
-        MULTIPLIER_FALLDMG = BUILDER.comment("Fall Damage Multiplier Percentage (Min: 0.00 / Max: 1.00 / Default: 0.05)")
-                .defineInRange("FallDmg: ", 0.05, 0.00, 1.00);
 
         SENZU_COOLDOWN = BUILDER.comment("Cooldown for Senzu Beans (Min: 0 / Max: 60 / Default: 10)")
                 .defineInRange("Seconds: ", 10, 0, 60);
@@ -146,26 +112,11 @@ public class DMZGeneralConfig {
 
         BUILDER.push("World Generations Configs");
 
-        OTHERWORLD_ENABLED = BUILDER.comment("Should Otherworld Dimension be Enabled? (Default: true)")
-                .define("Otherworld Enabled: ", true);
-
         SHOULD_DBALL_SPAWN = BUILDER.comment("Should Dragon Balls Spawn in the World when it is first generated? (Default: true)")
                 .define("First Spawn: ", true);
 
         SHOULD_DBALL_DRAGON_SPAWN = BUILDER.comment("Should Dragon Balls Spread in the World when Shenron/Porunga despawns? (Default: true)")
                 .define("Spread on Despawn: ", true);
-
-        SHOULD_KAMILOOKOUT_SPAWN = BUILDER.comment("Should Kami's Lookout Spawn in the World when it is first generated? (Default: true)")
-                .define("Kami Lookout Spawn: ", true);
-
-        SHOULD_GOKUHOUSE_SPAWN = BUILDER.comment("Should Goku's House Spawn in the World when it is first generated? (Default: true)")
-                .define("Goku House Spawn: ", true);
-
-        SHOULD_KAMEHOUSE_SPAWN = BUILDER.comment("Should Kame House Spawn in the World when it is first generated? (Default: true)")
-                .define("Kame House Spawn: ", true);
-
-        SHOULD_ELDERGURU_SPAWN = BUILDER.comment("Should Elder Guru's House Spawn in the World when it is first generated? (Default: true)")
-                .define("Elder Guru Spawn: ", true);
 
         SHOULD_DBALLEVENTS_ACTIVE = BUILDER.comment("Should Dragon Ball Events be Active? (Default: true)")
                 .comment("DragonBall Events made Old Dragon Balls disappear when a new one is placed.")

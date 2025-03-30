@@ -1,5 +1,6 @@
 package com.yuseix.dragonminez.common.init.items.custom;
 
+import com.yuseix.dragonminez.common.config.GeneralConfig;
 import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
@@ -48,7 +49,7 @@ public class CapsulaNaranjaItem extends Item {
                 boolean isDmzUser = stats.getBoolean("dmzuser");
                 if (isDmzUser) {
                     int kipwr = stats.getStat("PWR");
-                    int maxKipwr = DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get();
+                    int maxKipwr = GeneralConfig.attributes().maxAttributes;
 
                     if (kipwr < maxKipwr) {
                         int increment = Math.min(5, maxKipwr - kipwr);

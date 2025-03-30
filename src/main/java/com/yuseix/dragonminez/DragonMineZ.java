@@ -9,6 +9,7 @@ import com.yuseix.dragonminez.common.events.ModBusEvents;
 import com.yuseix.dragonminez.common.events.StoryEvents;
 import com.yuseix.dragonminez.common.init.*;
 import com.yuseix.dragonminez.common.network.ModMessages;
+import com.yuseix.dragonminez.common.registry.ConfigRegistry;
 import com.yuseix.dragonminez.core.common.config.ConfigManager;
 import com.yuseix.dragonminez.server.recipes.DMZRecipes;
 import com.yuseix.dragonminez.common.stats.DMZGenericAttributes;
@@ -41,6 +42,7 @@ public class DragonMineZ {
 		final IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		GeckoLib.initialize();
 		ConfigManager.INSTANCE.init();
+		ConfigRegistry.init();
 
 		//Registramos Items
 		MainItems.register(modEventBus);

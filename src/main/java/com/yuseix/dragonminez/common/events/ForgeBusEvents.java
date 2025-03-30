@@ -2,6 +2,7 @@ package com.yuseix.dragonminez.common.events;
 
 import com.mojang.logging.LogUtils;
 import com.yuseix.dragonminez.common.Reference;
+import com.yuseix.dragonminez.common.config.GeneralConfig;
 import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.init.MainBlocks;
 import com.yuseix.dragonminez.common.init.MainEntity;
@@ -306,9 +307,9 @@ public class ForgeBusEvents {
 			if (serverLevel.dimension() == Level.OVERWORLD) {
 				LazyOptional<StructuresCapability> capability = serverLevel.getCapability(StructuresProvider.CAPABILITY);
 				capability.ifPresent(cap -> {
-					if (DMZGeneralConfig.SHOULD_KAMILOOKOUT_SPAWN.get()) cap.generateKamisamaStructure(serverLevel);
-					if (DMZGeneralConfig.SHOULD_GOKUHOUSE_SPAWN.get()) cap.generateGokuHouseStructure(serverLevel);
-					if (DMZGeneralConfig.SHOULD_KAMEHOUSE_SPAWN.get()) cap.generateRoshiHouseStructure(serverLevel);
+					if (GeneralConfig.worldGen().enableKamilookout) cap.generateKamisamaStructure(serverLevel);
+					if (GeneralConfig.worldGen().enableGokuHouse) cap.generateGokuHouseStructure(serverLevel);
+					if (GeneralConfig.worldGen().enableKamehouse) cap.generateRoshiHouseStructure(serverLevel);
 				});
 
 				serverLevel.getCapability(DragonBallGenProvider.CAPABILITY).ifPresent(cap -> cap.loadFromSavedData(serverLevel));
@@ -316,7 +317,7 @@ public class ForgeBusEvents {
 			if (serverLevel.dimension() == ModDimensions.NAMEK_DIM_LEVEL_KEY) {
 				LazyOptional<StructuresCapability> capability = serverLevel.getCapability(StructuresProvider.CAPABILITY);
 				capability.ifPresent(cap -> {
-					if (DMZGeneralConfig.SHOULD_ELDERGURU_SPAWN.get()) cap.generateElderGuru(serverLevel);
+					if (GeneralConfig.worldGen().enableElderGuru) cap.generateElderGuru(serverLevel);
 				});
 
 				serverLevel.getCapability(NamekDragonBallGenProvider.CAPABILITY).ifPresent(cap -> cap.loadFromSavedData(serverLevel));
@@ -331,7 +332,7 @@ public class ForgeBusEvents {
 				LazyOptional<StructuresCapability> capability = serverLevel.getCapability(StructuresProvider.CAPABILITY);
 				capability.ifPresent(cap -> {
 					serverLevel.getServer().tell(new TickTask(serverLevel.getServer().getTickCount() + 40, () -> {
-						if (DMZGeneralConfig.SHOULD_ELDERGURU_SPAWN.get()) cap.generateElderGuru(serverLevel);
+						if (GeneralConfig.worldGen().enableElderGuru) cap.generateElderGuru(serverLevel);
 					}));
 				});
 
@@ -340,7 +341,7 @@ public class ForgeBusEvents {
 			if (serverLevel.dimension() == ModDimensions.OTHERWORLD_DIM_LEVEL_KEY) {
 				LazyOptional<StructuresCapability> capability = serverLevel.getCapability(StructuresProvider.CAPABILITY);
 				capability.ifPresent(cap -> {
-					if (DMZGeneralConfig.OTHERWORLD_ENABLED.get()) cap.generatePalacioEnma(serverLevel);
+					if (GeneralConfig.worldGen().enableOtherworld) cap.generatePalacioEnma(serverLevel);
 				});
 			}
 		}
@@ -349,7 +350,7 @@ public class ForgeBusEvents {
 	@SubscribeEvent
 	public void onPlayerDeath(LivingDeathEvent event) {
 		if (!(event.getEntity() instanceof ServerPlayer player)) return;
-		if (!DMZGeneralConfig.OTHERWORLD_ENABLED.get()) return;
+		if (!GeneralConfig.worldGen().enableOtherworld) return;
 
 		ServerLevel level = player.serverLevel();
 		if (level.dimension() != ModDimensions.OTHERWORLD_DIM_LEVEL_KEY) {
@@ -368,7 +369,7 @@ public class ForgeBusEvents {
 
 	@SubscribeEvent
 	public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-		if (!DMZGeneralConfig.OTHERWORLD_ENABLED.get()) return;
+		if (!GeneralConfig.worldGen().enableOtherworld) return;
 		if (event.getEntity() instanceof ServerPlayer player) {
 			ServerLevel otherWorld = player.server.getLevel(ModDimensions.OTHERWORLD_DIM_LEVEL_KEY);
 

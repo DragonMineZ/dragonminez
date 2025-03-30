@@ -1,6 +1,7 @@
 package com.yuseix.dragonminez.common.events.characters;
 
 import com.yuseix.dragonminez.common.Reference;
+import com.yuseix.dragonminez.common.config.GeneralConfig;
 import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
@@ -51,7 +52,7 @@ public class TimeChamberEvents {
 			if (!isDmzUser) return;
 
 			int level = (str + def + con + pwr + ene) / 5; // Calcula la suma de las estadísticas
-			int maxStats = DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get();
+			int maxStats = GeneralConfig.attributes().maxAttributes;
 
 			double speedMultiplier = 1.0;
 			double jumpMultiplier = 1.0;

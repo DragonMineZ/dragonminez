@@ -1,6 +1,7 @@
 package com.yuseix.dragonminez.common.events.characters;
 
 import com.yuseix.dragonminez.common.Reference;
+import com.yuseix.dragonminez.common.config.GeneralConfig;
 import com.yuseix.dragonminez.common.world.cap.provider.StructuresProvider;
 import com.yuseix.dragonminez.common.config.old.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.config.old.races.DMZColdDemonConfig;
@@ -78,9 +79,9 @@ public class EntityEvents {
 		if (esEnemigo(event.getEntity())) {
 			if (event.getSource().getEntity() instanceof Player) {
 				Player player = (Player) event.getSource().getEntity();
-				var vidaTps = (int) (event.getEntity().getMaxHealth() * DMZGeneralConfig.PERKILL_ZPOINTS_GAIN.get());
+				var vidaTps = (int) (event.getEntity().getMaxHealth() * GeneralConfig.training().perkillGain);
 				if (vidaTps >= 0.01) {
-					var calculoTps = (int) Math.round((10 + vidaTps) * DMZGeneralConfig.MULTIPLIER_ZPOINTS_GAIN.get());
+					var calculoTps = (int) Math.round((10 + vidaTps) * GeneralConfig.training().gainMultiplier);
 
 					// multiplicar si está en la hab del tiempo pes
 					if (player.level().dimension().equals(ModDimensions.TIME_CHAMBER_DIM_LEVEL_KEY)) {
@@ -127,7 +128,7 @@ public class EntityEvents {
 		if (event.getSource().getEntity() instanceof Player) {
 			Player player = (Player) event.getSource().getEntity();
 
-			double baseTps = DMZGeneralConfig.PERHIT_ZPOINTS_GAIN.get() * DMZGeneralConfig.MULTIPLIER_ZPOINTS_GAIN.get();
+			double baseTps = GeneralConfig.training().perhitGain * GeneralConfig.training().gainMultiplier;
 			if (baseTps >= 1) {
 				// multiplicar si está en la hab del tiempo pes
 				if (player.level().dimension().equals(ModDimensions.TIME_CHAMBER_DIM_LEVEL_KEY)) {
