@@ -63,7 +63,7 @@ public class BlockStateProvider extends net.minecraftforge.client.model.generato
         blockWithItem(MainBlocks.NAMEK_DEEPSLATE_COPPER);
 
         //BlockEntities
-        blockWithItem(MainBlocks.GETE_FURNACE);
+        //blockWithItem(MainBlocks.GETE_FURNACE);
 
 
         // Variantes de bloques convencionales

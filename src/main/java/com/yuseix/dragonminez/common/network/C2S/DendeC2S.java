@@ -49,12 +49,12 @@ public class DendeC2S {
 
     public static void resetPlayerStats(ServerPlayer player, DMZStatsAttributes playerstats) {
         player.displayClientMessage(Component.translatable("lines.dende.reset.success"), true);
-
+        player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
         player.setHealth(20);
+        playerstats.setBoolean("dmzuser", false);
         player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
         player.setHealth(20);
 
-        playerstats.setBoolean("dmzuser", false);
         //Luego cambiar cuando decidamos las stats
         playerstats.setStat("STR", 5);
         playerstats.setStat("DEF", 5);
@@ -80,8 +80,9 @@ public class DendeC2S {
         playerstats.setIntValue("curenergy", 0);
 
         // NOTA: Lo de la vida se hace dos veces, pq a veces se buguea la primera vez xd
-
+        player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
         player.setHealth(20);
+        playerstats.setBoolean("dmzuser", false);
         player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
         player.setHealth(20);
     }

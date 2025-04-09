@@ -147,16 +147,6 @@ public class TransfMenu extends Screen {
 												}
 											}
 
-										} else if (currentLevel >= 1 && currentLevel < maxLevel) {
-											int cost = levelCosts.getOrDefault(nextLevel, Integer.MAX_VALUE);
-
-											if (tps >= cost) {
-												upgradeButton = (TextButton) this.addRenderableWidget(new TextButton(startX + 195, startY + 85, Component.translatable("dmz.skills.upgrade", cost), wa -> {
-													ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel));
-													ModMessages.sendToServer(new ZPointsC2S(1, cost));
-													this.removeWidget(upgradeButton);
-												}));
-											}
 										}
 									}
 									break;
@@ -192,16 +182,6 @@ public class TransfMenu extends Screen {
 												}
 											}
 
-										} else if (currentLevel >= 1 && currentLevel < maxLevel) {
-											int cost = levelCosts.getOrDefault(nextLevel, Integer.MAX_VALUE);
-
-											if (tps >= cost) {
-												upgradeButton = (TextButton) this.addRenderableWidget(new TextButton(startX + 195, startY + 85, Component.translatable("dmz.skills.upgrade", cost), wa -> {
-													ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel));
-													ModMessages.sendToServer(new ZPointsC2S(1, cost));
-													this.removeWidget(upgradeButton);
-												}));
-											}
 										}
 									}
 									break;

@@ -104,71 +104,75 @@ public class StatsCommand {
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(stats -> {
                 int cantidadFinal = Math.min(cantidad, DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get());
 
-                switch (stat) {
-                    case "strength":
-                        stats.removeStat("STR", cantidadFinal);
-                        break;
-                    case "defense":
-                        stats.removeStat("DEF", cantidadFinal);
-                        break;
-                    case "constitution":
-                        stats.removeStat("CON", cantidadFinal);
-                        stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
-                        int nuevaMaxVida = dmzdatos.calcConstitution(stats);
-                        player.setHealth((float) nuevaMaxVida);
-                        break;
-                    case "kipower":
-                        stats.removeStat("PWR", cantidadFinal);
-                        break;
-                    case "energy":
-                        stats.removeStat("ENE", cantidadFinal);
-                        stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
-                        break;
-                    case "all":
-                        stats.removeStat("STR", cantidadFinal);
-                        stats.removeStat("DEF", cantidadFinal);
-                        stats.removeStat("CON", cantidadFinal);
-                        stats.removeStat("PWR", cantidadFinal);
-                        stats.removeStat("ENE", cantidadFinal);
+                if (stats.getBoolean("dmzuser")) {
 
-                        stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
-                        nuevaMaxVida = dmzdatos.calcConstitution(stats);
-                        player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
-                        player.setHealth((float) nuevaMaxVida);
+                    switch (stat) {
+                        case "strength":
+                            stats.removeStat("STR", cantidadFinal);
+                            break;
+                        case "defense":
+                            stats.removeStat("DEF", cantidadFinal);
+                            break;
+                        case "constitution":
+                            stats.removeStat("CON", cantidadFinal);
+                            stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
+                            int nuevaMaxVida = dmzdatos.calcConstitution(stats);
+                            player.setHealth((float) nuevaMaxVida);
+                            break;
+                        case "kipower":
+                            stats.removeStat("PWR", cantidadFinal);
+                            break;
+                        case "energy":
+                            stats.removeStat("ENE", cantidadFinal);
+                            stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
+                            break;
+                        case "all":
+                            stats.removeStat("STR", cantidadFinal);
+                            stats.removeStat("DEF", cantidadFinal);
+                            stats.removeStat("CON", cantidadFinal);
+                            stats.removeStat("PWR", cantidadFinal);
+                            stats.removeStat("ENE", cantidadFinal);
 
-                        stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
-                        break;
-                    default:
-                        source.sendSystemMessage(Component.translatable("command.dmzstats.error").withStyle(ChatFormatting.RED));
-                        return;
-                }
+                            stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
+                            nuevaMaxVida = dmzdatos.calcConstitution(stats);
+                            player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
+                            player.setHealth((float) nuevaMaxVida);
 
-                // Mensaje para el que ejecuta el comando
-                if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer()) {
+                            stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
+                            break;
+                        default:
+                            source.sendSystemMessage(Component.translatable("command.dmzstats.error").withStyle(ChatFormatting.RED));
+                            return;
+                    }
+
+                    // Mensaje para el que ejecuta el comando
+                    if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer()) {
+                        if (!stat.equals("all")) {
+                            source.sendSystemMessage(
+                                    Component.translatable("command.dmzstats.done").append(" ")
+                                            .append(Component.translatable("command.dmzstats." + stat)).append(" ")
+                                            .append(player.getName()).append(" ")
+                                            .append(Component.translatable("command.dmzstats.decreased")).append(" ")
+                                            .append(String.valueOf(cantidadFinal)).append(Component.literal("."))
+                            );
+                        } else source.sendSystemMessage(Component.translatable("command.dmzstats.done").append(" ")
+                                .append(Component.translatable("command.dmzstats.removeall", player.getName(), cantidadFinal)));
+                    }
+                    String statName = "";
+                    switch (stat) {
+                        case "strength" -> statName = "STR";
+                        case "defense" -> statName = "DEF";
+                        case "constitution" -> statName = "CON";
+                        case "kipower" -> statName = "PWR";
+                        case "energy" -> statName = "ENE";
+                    }
+
+                    // Mensaje para el jugador que recibe los puntos
                     if (!stat.equals("all")) {
-                        source.sendSystemMessage(
-                                Component.translatable("command.dmzstats.done").append(" ")
-                                        .append(Component.translatable("command.dmzstats." + stat)).append(" ")
-                                        .append(player.getName()).append(" ")
-                                        .append(Component.translatable("command.dmzstats.decreased")).append(" ")
-                                        .append(String.valueOf(cantidadFinal)).append(Component.literal("."))
-                        );
-                    } else source.sendSystemMessage(Component.translatable("command.dmzstats.done").append(" ")
-                            .append(Component.translatable("command.dmzstats.removeall", player.getName(), cantidadFinal)));
-                }
-                String statName = "";
-                switch (stat) {
-                    case "strength" -> statName = "STR";
-                    case "defense" -> statName = "DEF";
-                    case "constitution" -> statName = "CON";
-                    case "kipower" -> statName = "PWR";
-                    case "energy" -> statName = "ENE";
+                        player.sendSystemMessage(Component.translatable("command.dmzstats.remove.target", statName, cantidadFinal));
+                    } else player.sendSystemMessage(Component.translatable("command.dmzstats.removeall.target", cantidadFinal));
                 }
 
-                // Mensaje para el jugador que recibe los puntos
-                if (!stat.equals("all")) {
-                    player.sendSystemMessage(Component.translatable("command.dmzstats.remove.target", statName, cantidadFinal));
-                } else player.sendSystemMessage(Component.translatable("command.dmzstats.removeall.target", cantidadFinal));
             });
         }
         return players.size();
@@ -182,73 +186,76 @@ public class StatsCommand {
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(stats -> {
                 int cantidadFinal = Math.min(cantidad, DMZGeneralConfig.MAX_ATTRIBUTE_VALUE.get());
 
-                switch (stat) {
-                    case "strength":
-                        stats.addStat("STR", cantidadFinal);
-                        break;
-                    case "defense":
-                        stats.addStat("DEF", cantidadFinal);
-                        break;
-                    case "constitution":
-                        stats.addStat("CON", cantidadFinal);
-                        stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
-                        int nuevaMaxVida = dmzdatos.calcConstitution(stats);
-                        player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
-                        player.setHealth((float) nuevaMaxVida);
-                        break;
-                    case "kipower":
-                        stats.addStat("PWR", cantidadFinal);
-                        break;
-                    case "energy":
-                        stats.addStat("ENE", cantidadFinal);
-                        stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
-                        break;
-                    case "all":
-                        stats.addStat("STR", cantidadFinal);
-                        stats.addStat("DEF", cantidadFinal);
-                        stats.addStat("CON", cantidadFinal);
-                        stats.addStat("PWR", cantidadFinal);
-                        stats.addStat("ENE", cantidadFinal);
+                if (stats.getBoolean("dmzuser")) {
 
-                        stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
-                        nuevaMaxVida = dmzdatos.calcConstitution(stats);
-                        player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
-                        player.setHealth((float) nuevaMaxVida);
+                    switch (stat) {
+                        case "strength":
+                            stats.addStat("STR", cantidadFinal);
+                            break;
+                        case "defense":
+                            stats.addStat("DEF", cantidadFinal);
+                            break;
+                        case "constitution":
+                            stats.addStat("CON", cantidadFinal);
+                            stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
+                            int nuevaMaxVida = dmzdatos.calcConstitution(stats);
+                            player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
+                            player.setHealth((float) nuevaMaxVida);
+                            break;
+                        case "kipower":
+                            stats.addStat("PWR", cantidadFinal);
+                            break;
+                        case "energy":
+                            stats.addStat("ENE", cantidadFinal);
+                            stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
+                            break;
+                        case "all":
+                            stats.addStat("STR", cantidadFinal);
+                            stats.addStat("DEF", cantidadFinal);
+                            stats.addStat("CON", cantidadFinal);
+                            stats.addStat("PWR", cantidadFinal);
+                            stats.addStat("ENE", cantidadFinal);
 
-                        stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
-                        break;
-                    default:
-                        source.sendSystemMessage(Component.translatable("command.dmzstats.error").withStyle(ChatFormatting.RED));
-                        return;
-                }
+                            stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
+                            nuevaMaxVida = dmzdatos.calcConstitution(stats);
+                            player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
+                            player.setHealth((float) nuevaMaxVida);
 
-                // Mensaje para el que ejecuta el comando
-                if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer()) {
+                            stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
+                            break;
+                        default:
+                            source.sendSystemMessage(Component.translatable("command.dmzstats.error").withStyle(ChatFormatting.RED));
+                            return;
+                    }
+
+                    // Mensaje para el que ejecuta el comando
+                    if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer()) {
+                        if (!stat.equals("all")) {
+                            source.sendSystemMessage(
+                                    Component.translatable("command.dmzstats.done").append(" ")
+                                            .append(Component.translatable("command.dmzstats." + stat)).append(" ")
+                                            .append(player.getName()).append(" ")
+                                            .append(Component.translatable("command.dmzstats.increased")).append(" ")
+                                            .append(String.valueOf(cantidadFinal)).append(Component.literal("."))
+                            );
+                        } else source.sendSystemMessage(Component.translatable("command.dmzstats.done").append(" ")
+                                .append(Component.translatable("command.dmzstats.addall", player.getName(), cantidadFinal)));
+                    }
+
+                    String statName = "";
+                    switch (stat) {
+                        case "strength" -> statName = "STR";
+                        case "defense" -> statName = "DEF";
+                        case "constitution" -> statName = "CON";
+                        case "kipower" -> statName = "PWR";
+                        case "energy" -> statName = "ENE";
+                    }
+
+                    // Mensaje para el jugador que recibe los puntos
                     if (!stat.equals("all")) {
-                        source.sendSystemMessage(
-                                Component.translatable("command.dmzstats.done").append(" ")
-                                        .append(Component.translatable("command.dmzstats." + stat)).append(" ")
-                                        .append(player.getName()).append(" ")
-                                        .append(Component.translatable("command.dmzstats.increased")).append(" ")
-                                        .append(String.valueOf(cantidadFinal)).append(Component.literal("."))
-                        );
-                    } else source.sendSystemMessage(Component.translatable("command.dmzstats.done").append(" ")
-                            .append(Component.translatable("command.dmzstats.addall", player.getName(), cantidadFinal)));
+                        player.sendSystemMessage(Component.translatable("command.dmzstats.add.target", statName, cantidadFinal));
+                    } else player.sendSystemMessage(Component.translatable("command.dmzstats.addall.target", cantidadFinal));
                 }
-
-                String statName = "";
-                switch (stat) {
-                    case "strength" -> statName = "STR";
-                    case "defense" -> statName = "DEF";
-                    case "constitution" -> statName = "CON";
-                    case "kipower" -> statName = "PWR";
-                    case "energy" -> statName = "ENE";
-                }
-
-                // Mensaje para el jugador que recibe los puntos
-                if (!stat.equals("all")) {
-                    player.sendSystemMessage(Component.translatable("command.dmzstats.add.target", statName, cantidadFinal));
-                } else player.sendSystemMessage(Component.translatable("command.dmzstats.addall.target", cantidadFinal));
             });
         }
         return players.size();
@@ -264,72 +271,74 @@ public class StatsCommand {
             int cantidadFinal = cant;
 
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(stats -> {
-                switch (stat) {
-                    case "strength":
-                        stats.setStat("STR", cantidadFinal);
-                        break;
-                    case "defense":
-                        stats.setStat("DEF", cantidadFinal);
-                        break;
-                    case "constitution":
-                        stats.setStat("CON", cantidadFinal);
-                        stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
-                        int nuevaMaxVida = dmzdatos.calcConstitution(stats);
-                        player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
-                        player.setHealth((float) nuevaMaxVida);
-                        break;
-                    case "kipower":
-                        stats.setStat("PWR", cantidadFinal);
-                        break;
-                    case "energy":
-                        stats.setStat("ENE", cantidadFinal);
-                        stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
-                        break;
-                    case "all":
-                        stats.setStat("STR", cantidadFinal);
-                        stats.setStat("DEF", cantidadFinal);
-                        stats.setStat("CON", cantidadFinal);
-                        stats.setStat("PWR", cantidadFinal);
-                        stats.setStat("ENE", cantidadFinal);
+                if (stats.getBoolean("dmzuser")) {
+                    switch (stat) {
+                        case "strength":
+                            stats.setStat("STR", cantidadFinal);
+                            break;
+                        case "defense":
+                            stats.setStat("DEF", cantidadFinal);
+                            break;
+                        case "constitution":
+                            stats.setStat("CON", cantidadFinal);
+                            stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
+                            int nuevaMaxVida = dmzdatos.calcConstitution(stats);
+                            player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
+                            player.setHealth((float) nuevaMaxVida);
+                            break;
+                        case "kipower":
+                            stats.setStat("PWR", cantidadFinal);
+                            break;
+                        case "energy":
+                            stats.setStat("ENE", cantidadFinal);
+                            stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
+                            break;
+                        case "all":
+                            stats.setStat("STR", cantidadFinal);
+                            stats.setStat("DEF", cantidadFinal);
+                            stats.setStat("CON", cantidadFinal);
+                            stats.setStat("PWR", cantidadFinal);
+                            stats.setStat("ENE", cantidadFinal);
 
-                        stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
-                        nuevaMaxVida = dmzdatos.calcConstitution(stats);
-                        player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
-                        player.setHealth((float) nuevaMaxVida);
+                            stats.setIntValue("curstam", dmzdatos.calcStamina(stats));
+                            nuevaMaxVida = dmzdatos.calcConstitution(stats);
+                            player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(nuevaMaxVida);
+                            player.setHealth((float) nuevaMaxVida);
 
-                        stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
-                        break;
-                    default:
-                        source.sendSystemMessage(Component.translatable("command.dmzstats.error").withStyle(ChatFormatting.RED));
-                        return;
-                }
+                            stats.setIntValue("curenergy", dmzdatos.calcEnergy(stats));
+                            break;
+                        default:
+                            source.sendSystemMessage(Component.translatable("command.dmzstats.error").withStyle(ChatFormatting.RED));
+                            return;
+                    }
 
-                // Mensaje para el que ejecuta el comando
-                if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer()) {
+                    // Mensaje para el que ejecuta el comando
+                    if ((source.isPlayer() && source.getPlayer() != player) || !source.isPlayer()) {
+                        if (!stat.equals("all")) {
+                            source.sendSystemMessage(
+                                    Component.translatable("command.dmzstats.done").append(" ")
+                                            .append(Component.translatable("command.dmzstats." + stat)).append(" ")
+                                            .append(player.getName()).append(" ")
+                                            .append(Component.translatable("command.dmzstats.nowis")).append(" ")
+                                            .append(String.valueOf(cantidadFinal)).append(Component.literal("."))
+                            );
+                        } else source.sendSystemMessage(Component.translatable("command.dmzstats.done").append(" ")
+                                .append(Component.translatable("command.dmzstats.setall", player.getName(), cantidadFinal)));
+                    }
+                    String statName = "";
+                    switch (stat) {
+                        case "strength" -> statName = "STR";
+                        case "defense" -> statName = "DEF";
+                        case "constitution" -> statName = "CON";
+                        case "kipower" -> statName = "PWR";
+                        case "energy" -> statName = "ENE";
+                    }
+
                     if (!stat.equals("all")) {
-                        source.sendSystemMessage(
-                                Component.translatable("command.dmzstats.done").append(" ")
-                                        .append(Component.translatable("command.dmzstats." + stat)).append(" ")
-                                        .append(player.getName()).append(" ")
-                                        .append(Component.translatable("command.dmzstats.nowis")).append(" ")
-                                        .append(String.valueOf(cantidadFinal)).append(Component.literal("."))
-                        );
-                    } else source.sendSystemMessage(Component.translatable("command.dmzstats.done").append(" ")
-                            .append(Component.translatable("command.dmzstats.setall", player.getName(), cantidadFinal)));
+                        // Mensaje para el jugador que recibe los puntos
+                        player.sendSystemMessage(Component.translatable("command.dmzstats.set.target", statName, cantidadFinal));
+                    } else player.sendSystemMessage(Component.translatable("command.dmzstats.setall.target", cantidadFinal));
                 }
-                String statName = "";
-                switch (stat) {
-                    case "strength" -> statName = "STR";
-                    case "defense" -> statName = "DEF";
-                    case "constitution" -> statName = "CON";
-                    case "kipower" -> statName = "PWR";
-                    case "energy" -> statName = "ENE";
-                }
-
-                if (!stat.equals("all")) {
-                    // Mensaje para el jugador que recibe los puntos
-                    player.sendSystemMessage(Component.translatable("command.dmzstats.set.target", statName, cantidadFinal));
-                } else player.sendSystemMessage(Component.translatable("command.dmzstats.setall.target", cantidadFinal));
             });
         }
         return players.size();

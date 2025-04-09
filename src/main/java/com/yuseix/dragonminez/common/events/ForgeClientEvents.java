@@ -68,8 +68,7 @@ public class ForgeClientEvents {
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
 			DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, Minecraft.getInstance().player).ifPresent(playerstats -> {
-				boolean isDmzUser = playerstats.getBoolean("dmzuser");
-				if (isDmzUser) {
+				if (Minecraft.getInstance().player.getMaxHealth() > 40) {
 					if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
 						event.setCanceled(true);
 					}

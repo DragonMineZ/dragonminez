@@ -1,5 +1,6 @@
 package com.yuseix.dragonminez.common.events.characters;
 
+import com.yuseix.dragonminez.client.config.DMZClientConfig;
 import com.yuseix.dragonminez.common.Reference;
 import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.config.races.DMZBioAndroidConfig;
@@ -89,7 +90,10 @@ public class StatsEvents {
             int maxenergia = dmzdatos.calcEnergy(playerstats);
 
             // Verificar que haya creado su personaje antes de comenzar a hacer cosas referentes a las stats
-            if (isDmzUser) {
+            if (!isDmzUser) {
+                if (hasHealed) hasHealed = false;
+                if (serverPlayer.getAttribute(Attributes.MAX_HEALTH).getBaseValue() != 20) serverPlayer.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
+            } else {
                 if (!playerstats.hasFormSkill("super_form")) {
                     FormsData skill = new FormsData("dmz.dmzforms.super_form.name", 0);
                     playerstats.addFormSkill("super_form", skill);
@@ -189,14 +193,10 @@ public class StatsEvents {
                     }
                 }
 
-            } else {
-                if (hasHealed) hasHealed = false;
-                if (serverPlayer.getAttribute(Attributes.MAX_HEALTH).getBaseValue() != 20) serverPlayer.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
             }
 
             //Tiempo para reclamar una senzu
-            playerstats.setIntValue("senzutimer", senzuContador(playerstats.getIntValue("senzutimer")));
-
+            if (playerstats.getIntValue("senzutimer") > 0) playerstats.setIntValue("senzutimer", senzuContador(playerstats.getIntValue("senzutimer")));
         });
     }
 

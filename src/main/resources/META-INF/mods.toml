@@ -24,7 +24,7 @@ side = "BOTH"
 [[dependencies.dragonminez]]
 modId = "minecraft"
 mandatory = true
-versionRange = "${minecraft_version_range}"
+versionRange = "${dmz_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
