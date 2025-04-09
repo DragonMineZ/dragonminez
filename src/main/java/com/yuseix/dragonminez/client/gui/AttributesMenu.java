@@ -298,7 +298,7 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
 
             var strdefault = playerstats.getStat("STR"); var defdefault = playerstats.getStat("DEF"); var condefault = playerstats.getStat("CON");
             var kipowerdefault = playerstats.getStat("PWR"); var energydefault = playerstats.getStat("ENE");
-            var transf = playerstats.getStringValue("form");
+            var transf = playerstats.getStringValue("form"); var raza = playerstats.getIntValue("race");
 
             //Efectos
             var majinOn = playerstats.hasDMZPermaEffect("majin"); var frutaOn = playerstats.hasDMZTemporalEffect("mightfruit");
@@ -314,7 +314,7 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
             var KIPOWERMulti = Math.round((dmzdatos.calcStatMultiplier(playerstats, "PWR")) * 100) / 100.0;
             var multiTotal = dmzdatos.calcTotalMultiplier(playerstats);
 
-            var isMultiOn = majinOn || frutaOn || !Objects.equals(transf, "base") || playerstats.getIntValue("race") == 4;
+            boolean isMultiOn = dmzdatos.calcTotalMultiplier(playerstats) != 1;
             var colorEnForma = isMultiOn ? 0xfebc0d : 0xFFD7AB;
             //WA
             Component STRReal = Component.empty()
@@ -391,7 +391,7 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
             //STATS CAPABILITY
             alturaTexto = (this.height / 2) + 2; anchoTexto = 70;
 
-            if(isMultiOn || playerstats.getIntValue("race") == 4){ //Si alguna forma, estado esta activo.
+            if(isMultiOn) { //Si alguna forma, estado esta activo.
                 drawStringWithBorder2(graphics, font, STRReal, anchoTexto, alturaTexto, colorEnForma);
                 drawStringWithBorder2(graphics, font, DEFReal, anchoTexto, alturaTexto + 12, colorEnForma);
                 drawStringWithBorder2(graphics, font, Component.literal(numberFormatter.format(condefault)), anchoTexto, alturaTexto + 24, 0xFFD7AB);
@@ -461,8 +461,6 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
             anchoTexto = (this.width - 55);
             //Efectos
             var majinOn = playerstats.hasDMZPermaEffect("majin"); var frutaOn = playerstats.hasDMZTemporalEffect("mightfruit");
-            //Datos
-            var transf = playerstats.getStringValue("form");
 
             var strMax = dmzdatos.calcMenuStrength(playerstats);
             var defMax = dmzdatos.calcMenuDefense(playerstats, Minecraft.getInstance().player);
@@ -471,7 +469,7 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
             var KPWMax = dmzdatos.calcMenuKiPower(playerstats);
             var enrMax = dmzdatos.calcMenuEnergy(playerstats);
 
-            var colorEnForma = majinOn || frutaOn || !Objects.equals(transf, "base") || playerstats.getIntValue("race") == 4 ? 0xfebc0d : 0xFFD7AB;
+            var colorEnForma = (dmzdatos.calcTotalMultiplier(playerstats) != 1) ? 0xfebc0d : 0xFFD7AB;
 
             drawStringWithBorder(graphics, font, Component.literal(numberFormatter.format(strMax)), anchoTexto+15, alturaTexto, colorEnForma);
             drawStringWithBorder(graphics, font, Component.literal(numberFormatter.format(defMax)), anchoTexto+15, alturaTexto + 12, colorEnForma);

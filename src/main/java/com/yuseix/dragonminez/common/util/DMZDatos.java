@@ -17,7 +17,6 @@ public class DMZDatos implements IDMZDatos{
 
         // Fórmula = ((((1 + (StatSTR / 10)) * ConfigRaza) * (Transf * Efectos)) * (Porcentaje / 10))
         return (int) Math.ceil((((1 + ((double) stats.getStat("STR") / 10)) * multRaza) * (multTransf * getEffectsMult(stats))) * ((double)stats.getIntValue("release")/10));
-
     }
 
     public int calcLevelIncrease(DMZStatsAttributes stats, int multTP, String statString, int maxStats) {

@@ -285,7 +285,7 @@ public class AttributesMenu2 extends Screen implements RenderEntityInv {
             var KIPOWERMulti = Math.round((dmzdatos.calcStatMultiplier(playerstats, "PWR")) * 100) / 100.0;
             var multiTotal = dmzdatos.calcTotalMultiplier(playerstats);
 
-            var isMultiOn = majinOn || frutaOn || !Objects.equals(transf, "base") || playerstats.getIntValue("race") == 4;
+            boolean isMultiOn = dmzdatos.calcTotalMultiplier(playerstats) != 1;
             var colorEnForma = isMultiOn ? 0xfebc0d : 0xFFD7AB;
 
 
@@ -366,7 +366,7 @@ public class AttributesMenu2 extends Screen implements RenderEntityInv {
             //STATS CAPABILITY
             alturaTexto = (this.height / 2) -14; anchoTexto = (this.width/2)-65;
 
-            if(isMultiOn || playerstats.getIntValue("race") == 4){ //Si alguna forma, estado esta activo.
+            if(isMultiOn){ //Si alguna forma, estado esta activo.
                 drawStringWithBorder2(graphics, font, STRReal, anchoTexto, alturaTexto, colorEnForma);
                 drawStringWithBorder2(graphics, font, DEFReal, anchoTexto, alturaTexto + 12, colorEnForma);
                 drawStringWithBorder2(graphics, font, Component.literal(numberFormatter.format(condefault)), anchoTexto, alturaTexto + 24, 0xFFD7AB);
@@ -448,7 +448,7 @@ public class AttributesMenu2 extends Screen implements RenderEntityInv {
             var KPWMax = dmzdatos.calcMenuKiPower(playerstats);
             var enrMax = dmzdatos.calcMenuEnergy(playerstats);
 
-            var colorEnForma = majinOn || frutaOn || !Objects.equals(transf, "base") || playerstats.getIntValue("race") == 4 ? 0xfebc0d : 0xFFD7AB;
+            var colorEnForma = (dmzdatos.calcTotalMultiplier(playerstats) != 1) ? 0xfebc0d : 0xFFD7AB;
 
             drawStringWithBorder(graphics, font, Component.literal(numberFormatter.format(strMax)), anchoTexto+8, alturaTexto, colorEnForma);
             drawStringWithBorder(graphics, font, Component.literal(numberFormatter.format(defMax)), anchoTexto+8, alturaTexto + 12, colorEnForma);

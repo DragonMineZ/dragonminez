@@ -143,11 +143,6 @@ public abstract class PlayerMixin {
 						if (j > 0) {
 							pTarget.setSecondsOnFire(j * 4);
 						}
-
-						if (((Player) (Object) this).level() instanceof ServerLevel && f5 > 2.0F && f5 < 15.0F) {
-							int k = (int) ((double) f5 * 0.5D);
-							((ServerLevel) ((Player) (Object) this).level()).sendParticles(ParticleTypes.DAMAGE_INDICATOR, pTarget.getX(), pTarget.getY(0.5D), pTarget.getZ(), k, 0.1D, 0.0D, 0.1D, 0.2D);
-						}
 					}
 
 					((Player) (Object) this).causeFoodExhaustion(0.1F);
