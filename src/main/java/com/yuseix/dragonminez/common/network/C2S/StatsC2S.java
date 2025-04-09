@@ -60,7 +60,7 @@ public class StatsC2S {
                             incrementoStats = Math.min(packet.cantidad, maxStats - playerstats.getStat("CON"));
                             playerstats.addStat("CON", incrementoStats);
 
-                            playerstats.setIntValue("curstam", dmzdatos.calcStamina(playerstats));
+                            //playerstats.setIntValue("curstam", dmzdatos.calcStamina(playerstats));
                             player.refreshDimensions();
                             break;
                         case 3:
