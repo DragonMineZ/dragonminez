@@ -82,7 +82,7 @@ public class DMZDatos implements IDMZDatos{
     @Override
     public int calcDefense(DMZStatsAttributes stats, Player player) {
         int DefensaArmor = player.getArmorValue(); int DurezaArmor = Mth.floor(player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
-        int armorTotal = (DefensaArmor + DurezaArmor) * 2;
+        int armorTotal = (int) ((DefensaArmor + DurezaArmor) * 1.5);
 
         double multRaza = getRaceStats(stats.getIntValue("race"), stats.getStringValue("class"), "DEF");
         double multTransf = getTransformationStats(stats.getIntValue("race"), stats.getStringValue("form"), "DEF");
