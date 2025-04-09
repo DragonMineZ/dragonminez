@@ -12,7 +12,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class GeteFurnaceBlockEntity extends AbstractFurnaceBlockEntity {
     public GeteFurnaceBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(MainBlockEntities.GETE_FURNACE_BLOCK_ENTITY.get(), pPos, pBlockState, RecipeType.SMELTING);
+        //super(MainBlockEntities.GETE_FURNACE_BLOCK_ENTITY.get(), pPos, pBlockState, RecipeType.SMELTING);
+        super(MainBlockEntities.KIKONO_ARMOR_STATION_BE.get(), pPos, pBlockState, RecipeType.SMELTING);
     }
 
     protected Component getDefaultName() {return Component.translatable("container.dragonminez.gete_furnace");

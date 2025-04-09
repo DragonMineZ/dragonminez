@@ -393,29 +393,6 @@ public class StatsEvents {
         }
     }
 
-    public static int calcularCostoRecursivo(int nivel, int nivelesAumentar, int baseCost, int maxStats) {
-        int costoTotal = 0;
-        for (int i = 0; i < nivelesAumentar; i++) {
-            if (nivel + i >= maxStats) break;
-            costoTotal += baseCost + (int) Math.round(DMZClientConfig.getMultiplierZPoints() * (nivel + i));
-        }
-        return costoTotal;
-    }
-
-    public static int calcularNivelesAumentar(int nivel, int multTP, int statActual, int tps, int baseCost, int maxStats) {
-        int nivelesAumentar = 0;
-        int costoAcumulado = 0;
-
-        while (nivelesAumentar < multTP && statActual + nivelesAumentar < maxStats) {
-            int costoNivel = baseCost + (int) Math.round(DMZClientConfig.getMultiplierZPoints() * (nivel + nivelesAumentar));
-            if (costoAcumulado + costoNivel > tps) break;
-            costoAcumulado += costoNivel;
-            nivelesAumentar++;
-        }
-
-        return nivelesAumentar;
-    }
-
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public static void onKeyInputEvent(InputEvent.Key event) {

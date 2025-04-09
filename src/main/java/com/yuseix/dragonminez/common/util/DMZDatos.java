@@ -20,6 +20,41 @@ public class DMZDatos implements IDMZDatos{
 
     }
 
+    public int calcLevelIncrease(DMZStatsAttributes stats, int multTP, String statString, int maxStats) {
+        int nivel = stats.getIntValue("level");
+        int statActual = stats.getStat(statString);
+        int tps = stats.getIntValue("tps");
+
+        int baseCost = (int) Math.round((nivel * DMZClientConfig.getMultiplierZPoints())
+                * DMZClientConfig.getMultiplierZPoints() * 1.5);
+
+        int nivelesAumentar = 0;
+        int costoAcumulado = 0;
+
+        while (nivelesAumentar < multTP && statActual + nivelesAumentar < maxStats) {
+            int costoNivel = baseCost + (int) Math.round(DMZClientConfig.getMultiplierZPoints() * (nivel + nivelesAumentar));
+            if (costoAcumulado + costoNivel > tps) break;
+            costoAcumulado += costoNivel;
+            nivelesAumentar++;
+        }
+
+        return nivelesAumentar;
+    }
+
+    public int calcRecursiveCost(DMZStatsAttributes stats, int levelIncrease, int maxStats) {
+        int nivel = stats.getIntValue("level");
+
+        int baseCost = (int) Math.round((nivel * DMZClientConfig.getMultiplierZPoints())
+                * DMZClientConfig.getMultiplierZPoints() * 1.5);
+
+        int costoTotal = 0;
+        for (int i = 0; i < levelIncrease; i++) {
+            if (nivel + i >= maxStats) break;
+            costoTotal += baseCost + (int) Math.round(DMZClientConfig.getMultiplierZPoints() * (nivel + i));
+        }
+        return costoTotal;
+    }
+
     public int calcMenuStrength(DMZStatsAttributes stats) {
         double multRaza = DMZClientConfig.getClassMult(stats.getIntValue("race"), stats.getStringValue("class"), "STR");
         double multTransf = DMZClientConfig.getDMZStat(stats.getIntValue("race"), stats.getStringValue("form"), "STR");
@@ -31,7 +66,7 @@ public class DMZDatos implements IDMZDatos{
     public int calcMenuDefense(DMZStatsAttributes stats, Player player) {
         int DefensaArmor = player.getArmorValue();
         int DurezaArmor = Mth.floor(player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
-        int armorTotal = (DefensaArmor + DurezaArmor) * 2;
+        int armorTotal = (int) ((DefensaArmor + DurezaArmor) * 1.5);
 
         double multRaza = DMZClientConfig.getClassMult(stats.getIntValue("race"), stats.getStringValue("class"), "DEF");
         double multTransf = DMZClientConfig.getDMZStat(stats.getIntValue("race"), stats.getStringValue("form"), "DEF");

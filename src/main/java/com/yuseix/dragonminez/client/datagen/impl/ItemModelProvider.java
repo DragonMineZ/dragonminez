@@ -294,7 +294,7 @@ public class ItemModelProvider extends net.minecraftforge.client.model.generator
         simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COAL);
         simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_EMERALD);
         simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COPPER);
-        simpleBlockItem(MainBlocks.GETE_FURNACE);
+        //simpleBlockItem(MainBlocks.GETE_FURNACE);
         simpleBlockItem(MainBlocks.TIME_CHAMBER_PORTAL);
         simpleBlockItem(MainBlocks.OTHERWORLD_CLOUD);
 

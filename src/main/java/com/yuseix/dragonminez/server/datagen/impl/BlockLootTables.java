@@ -95,7 +95,7 @@ public class BlockLootTables extends BlockLootSubProvider {
         this.dropSelf(MainBlocks.ROCKY_COBBLESTONE_STAIRS.get());
         this.dropSelf(MainBlocks.ROCKY_COBBLESTONE_SLAB.get());
         this.dropSelf(MainBlocks.ROCKY_COBBLESTONE_WALL.get());
-        this.dropSelf(MainBlocks.GETE_FURNACE.get());
+        //this.dropSelf(MainBlocks.GETE_FURNACE.get());
         this.dropSelf(MainBlocks.GETE_ORE.get());
         this.dropSelf(MainBlocks.TIME_CHAMBER_BLOCK.get());
         this.dropSelf(MainBlocks.KIKONO_ARMOR_STATION.get());

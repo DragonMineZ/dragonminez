@@ -176,6 +176,7 @@ public class DMZStatsAttributes {
     public int getIntValue(String value) {
         int result = 0;
         switch (value.toLowerCase(Locale.ROOT)) {
+            case "level" -> result = (getStat("STR") + getStat("DEF") + getStat("CON") + getStat("PWR") + getStat("ENE")) / 5;
             case "race" -> result = races;
             case "formrelease" -> result = FormRelease;
             case "senzutimer" -> result = dmzSenzuDaily;
