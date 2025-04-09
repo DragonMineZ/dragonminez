@@ -118,7 +118,7 @@ dependencies {
     //Corrección a puntos vulnerables de dependencias en Forge:
     implementation 'com.google.guava:guava:33.4.0-jre'
     implementation 'io.netty:netty-codec:4.1.119.Final'
-    implementation 'io.netty:netty-handler:4.1.119.Final'
+    implementation 'io.netty:netty-handler:4.2.0.Final'
     implementation 'org.apache.commons:commons-compress:1.27.1'
 
     // Just Enough Items (JEI)
