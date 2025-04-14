@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: "actions/checkout@v4"
       - name: "Run todo-to-issue Action"
-        uses: "alstr/todo-to-issue-action@v5.1.11"
+        uses: "alstr/todo-to-issue-action@v5.1.12"
         with:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLOSE_ISSUES: true
