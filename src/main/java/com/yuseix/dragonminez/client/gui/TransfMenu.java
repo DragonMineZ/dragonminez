@@ -6,7 +6,6 @@ import com.yuseix.dragonminez.client.gui.buttons.DMZGuiButtons;
 import com.yuseix.dragonminez.client.gui.buttons.TextButton;
 import com.yuseix.dragonminez.common.Reference;
 import com.yuseix.dragonminez.common.network.C2S.SuperFormsC2S;
-import com.yuseix.dragonminez.common.network.C2S.ZPointsC2S;
 import com.yuseix.dragonminez.common.network.ModMessages;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
@@ -138,8 +137,8 @@ public class TransfMenu extends Screen {
 
 												if (tps >= cost) {
 													upgradeButton = (TextButton) this.addRenderableWidget(new TextButton(startX + 195, startY + 85, Component.translatable("dmz.skills.upgrade", cost), wa -> {
-														ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel));
-														ModMessages.sendToServer(new ZPointsC2S(1, cost));
+														ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel, cost));
+														//ModMessages.sendToServer(new ZPointsC2S(1, cost));
 														this.removeWidget(upgradeButton);
 													}));
 												} else {
@@ -152,8 +151,8 @@ public class TransfMenu extends Screen {
 
 											if (tps >= cost) {
 												upgradeButton = (TextButton) this.addRenderableWidget(new TextButton(startX + 195, startY + 85, Component.translatable("dmz.skills.upgrade", cost), wa -> {
-													ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel));
-													ModMessages.sendToServer(new ZPointsC2S(1, cost));
+													ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel, cost));
+													//ModMessages.sendToServer(new ZPointsC2S(1, cost));
 													this.removeWidget(upgradeButton);
 												}));
 											}
@@ -183,8 +182,8 @@ public class TransfMenu extends Screen {
 
 												if (tps >= cost) {
 													upgradeButton = (TextButton) this.addRenderableWidget(new TextButton(startX + 195, startY + 85, Component.translatable("dmz.skills.upgrade", cost), wa -> {
-														ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel));
-														ModMessages.sendToServer(new ZPointsC2S(1, cost));
+														ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel, cost));
+														//ModMessages.sendToServer(new ZPointsC2S(1, cost));
 														this.removeWidget(upgradeButton);
 													}));
 												} else {
@@ -197,8 +196,8 @@ public class TransfMenu extends Screen {
 
 											if (tps >= cost) {
 												upgradeButton = (TextButton) this.addRenderableWidget(new TextButton(startX + 195, startY + 85, Component.translatable("dmz.skills.upgrade", cost), wa -> {
-													ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel));
-													ModMessages.sendToServer(new ZPointsC2S(1, cost));
+													ModMessages.sendToServer(new SuperFormsC2S("super_form", nextLevel, cost));
+													//ModMessages.sendToServer(new ZPointsC2S(1, cost));
 													this.removeWidget(upgradeButton);
 												}));
 											}

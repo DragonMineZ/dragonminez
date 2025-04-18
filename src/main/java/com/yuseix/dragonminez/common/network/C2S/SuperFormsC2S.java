@@ -13,20 +13,24 @@ import java.util.function.Supplier;
 public class SuperFormsC2S {
 	private String skill;
 	private int value;
+	private int cost;
 
-	public SuperFormsC2S(String skill, int value) {
+	public SuperFormsC2S(String skill, int value, int cost) {
 		this.skill = skill;
 		this.value = value;
+		this.cost = cost;
 	}
 
 	public SuperFormsC2S(FriendlyByteBuf buf) {
 		skill = buf.readUtf();
 		value = buf.readInt();
+		cost = buf.readInt();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
 		buf.writeUtf(skill);
 		buf.writeInt(value);
+		buf.writeInt(cost);
 	}
 
 	public static void handle(SuperFormsC2S packet, Supplier<NetworkEvent.Context> crx) {
@@ -39,6 +43,7 @@ public class SuperFormsC2S {
 					switch (packet.skill.toLowerCase(Locale.ROOT)) {
 						case "super_form":
 							cap.setFormSkillLvl("super_form", packet.value);
+							cap.removeIntValue("tps", packet.cost);
 							break;
 						// Más superforms luego.
 					}

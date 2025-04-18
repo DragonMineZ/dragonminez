@@ -5,10 +5,8 @@ import com.yuseix.dragonminez.client.RenderEntityInv;
 import com.yuseix.dragonminez.client.gui.buttons.CustomButtons;
 import com.yuseix.dragonminez.client.gui.buttons.DMZGuiButtons;
 import com.yuseix.dragonminez.common.Reference;
-import com.yuseix.dragonminez.common.config.DMZGeneralConfig;
 import com.yuseix.dragonminez.common.events.characters.StatsEvents;
 import com.yuseix.dragonminez.common.network.C2S.StatsC2S;
-import com.yuseix.dragonminez.common.network.C2S.ZPointsC2S;
 import com.yuseix.dragonminez.common.network.ModMessages;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
@@ -161,8 +159,8 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
                     int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualStr, actualTps, baseCost, maxStats);
                     int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
                     if (actualTps >= actualCost && actualStr < maxStats) {
-                        ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(0, actualUpgrade));
+                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
+                        ModMessages.sendToServer(new StatsC2S(0, actualUpgrade, actualCost));
                     }
                 }));
             }
@@ -173,8 +171,8 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
                     int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualDef, actualTps, baseCost, maxStats);
                     int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
                     if (actualTps >= actualCost && actualDef < maxStats) {
-                        ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(1, actualUpgrade));
+                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
+                        ModMessages.sendToServer(new StatsC2S(1, actualUpgrade, actualCost));
                     }
                 }));
             }
@@ -185,8 +183,8 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
                     int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualCon, actualTps, baseCost, maxStats);
                     int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
                     if (actualTps >= actualCost && actualCon < maxStats) {
-                        ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(2, actualUpgrade));
+                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
+                        ModMessages.sendToServer(new StatsC2S(2, actualUpgrade, actualCost));
                     }
                 }));
             }
@@ -197,8 +195,8 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
                     int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualPwr, actualTps, baseCost, maxStats);
                     int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
                     if (actualTps >= actualCost && actualPwr < maxStats) {
-                        ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(3, actualUpgrade));
+                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
+                        ModMessages.sendToServer(new StatsC2S(3, actualUpgrade, actualCost));
                     }
                 }));
             }
@@ -209,8 +207,8 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
                     int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualEne, actualTps, baseCost, maxStats);
                     int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
                     if (actualTps >= actualCost && actualEne < maxStats) {
-                        ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(4, actualUpgrade));
+                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
+                        ModMessages.sendToServer(new StatsC2S(4, actualUpgrade, actualCost));
                     }
                 }));
             }

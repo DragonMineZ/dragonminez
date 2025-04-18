@@ -37,11 +37,6 @@ public class ModMessages {
 				.encoder(StatsC2S::toBytes)
 				.consumerMainThread(StatsC2S::handle)
 				.add();
-		net.messageBuilder(ZPointsC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(ZPointsC2S::new)
-				.encoder(ZPointsC2S::toBytes)
-				.consumerMainThread(ZPointsC2S::handle)
-				.add();
 		net.messageBuilder(CharacterC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(CharacterC2S::new)
 				.encoder(CharacterC2S::toBytes)

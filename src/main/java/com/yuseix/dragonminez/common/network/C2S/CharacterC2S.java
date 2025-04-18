@@ -13,7 +13,6 @@ public class CharacterC2S {
     private String tipo;
     private int cantidad;
 
-
     public CharacterC2S(String tipo, int cantidad) {
         this.tipo = tipo;
         this.cantidad = cantidad;
