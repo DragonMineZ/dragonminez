@@ -92,6 +92,7 @@ public class ResetCharacterCommand {
                 playerstats.removePermanentEffect("majin");
                 playerstats.removeFormSkill("super_form");
                 playerstats.setIntValue("curenergy", 0);
+                playerstats.setIntValue("curstam", 2);
 
                 // NOTA: Lo de la vida se hace dos veces, pq a veces se buguea la primera vez xd
                 player.setHealth(20);
