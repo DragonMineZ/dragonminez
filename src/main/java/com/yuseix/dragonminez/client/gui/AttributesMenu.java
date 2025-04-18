@@ -154,62 +154,27 @@ public class AttributesMenu extends Screen implements RenderEntityInv {
             if (tps >= finalCostSTR && str < maxStats) {
                 this.strBoton = (CustomButtons) this.addRenderableWidget(new CustomButtons("stat", anchoTexto, alturaTexto, Component.empty(), wa -> {
                     // Se comprueba nuevamente con cada click del botón
-                    int actualTps = playerstats.getIntValue("tps");
-                    int actualStr = playerstats.getStat("STR");
-                    int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualStr, actualTps, baseCost, maxStats);
-                    int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
-                    if (actualTps >= actualCost && actualStr < maxStats) {
-                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(0, actualUpgrade, actualCost));
-                    }
+                    ModMessages.sendToServer(new StatsC2S(0, 0, multiplicadorTP));
                 }));
             }
             if (tps >= finalCostDEF && def < maxStats) {
                 this.defBoton = (CustomButtons) this.addRenderableWidget(new CustomButtons("stat", anchoTexto, alturaTexto + 12, Component.empty(), wa -> {
-                    int actualTps = playerstats.getIntValue("tps");
-                    int actualDef = playerstats.getStat("DEF");
-                    int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualDef, actualTps, baseCost, maxStats);
-                    int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
-                    if (actualTps >= actualCost && actualDef < maxStats) {
-                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(1, actualUpgrade, actualCost));
-                    }
+                    ModMessages.sendToServer(new StatsC2S(1, 0, multiplicadorTP));
                 }));
             }
             if (tps >= finalCostCON && con < maxStats) {
                 this.conBoton = (CustomButtons) this.addRenderableWidget(new CustomButtons("stat", anchoTexto, alturaTexto + 24, Component.empty(), wa -> {
-                    int actualTps = playerstats.getIntValue("tps");
-                    int actualCon = playerstats.getStat("CON");
-                    int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualCon, actualTps, baseCost, maxStats);
-                    int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
-                    if (actualTps >= actualCost && actualCon < maxStats) {
-                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(2, actualUpgrade, actualCost));
-                    }
+                    ModMessages.sendToServer(new StatsC2S(2, 0, multiplicadorTP));
                 }));
             }
             if (tps >= finalCostPWR && kipower < maxStats) {
                 this.pwrBoton = (CustomButtons) this.addRenderableWidget(new CustomButtons("stat", anchoTexto, alturaTexto + 36, Component.empty(), wa -> {
-                    int actualTps = playerstats.getIntValue("tps");
-                    int actualPwr = playerstats.getStat("PWR");
-                    int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualPwr, actualTps, baseCost, maxStats);
-                    int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
-                    if (actualTps >= actualCost && actualPwr < maxStats) {
-                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(3, actualUpgrade, actualCost));
-                    }
+                    ModMessages.sendToServer(new StatsC2S(3, 0, multiplicadorTP));
                 }));
             }
             if (tps >= finalCostENE && energy < maxStats) {
                 this.eneBoton = (CustomButtons) this.addRenderableWidget(new CustomButtons("stat", anchoTexto, alturaTexto + 48, Component.empty(), wa -> {
-                    int actualTps = playerstats.getIntValue("tps");
-                    int actualEne = playerstats.getStat("ENE");
-                    int actualUpgrade = StatsEvents.calcularNivelesAumentar(nivel, multiplicadorTP, actualEne, actualTps, baseCost, maxStats);
-                    int actualCost = StatsEvents.calcularCostoRecursivo(nivel, actualUpgrade, baseCost, maxStats);
-                    if (actualTps >= actualCost && actualEne < maxStats) {
-                        //ModMessages.sendToServer(new ZPointsC2S(1, actualCost));
-                        ModMessages.sendToServer(new StatsC2S(4, actualUpgrade, actualCost));
-                    }
+                    ModMessages.sendToServer(new StatsC2S(4, 0, multiplicadorTP));
                 }));
             }
         });

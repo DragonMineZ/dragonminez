@@ -54,6 +54,7 @@ public class DendeC2S {
         player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
         player.setHealth(20);
 
+
         playerstats.setBoolean("dmzuser", false);
         //Luego cambiar cuando decidamos las stats
         playerstats.setStat("STR", 5);
@@ -62,6 +63,7 @@ public class DendeC2S {
         playerstats.setStat("PWR", 5);
         playerstats.setStat("ENE", 5);
         playerstats.setIntValue("tps", 0);
+        playerstats.setIntValue("curstam", 5);
         playerstats.removeAllSkills();
         playerstats.setStringValue("form", "base");
         playerstats.setStringValue("groupform", "");
