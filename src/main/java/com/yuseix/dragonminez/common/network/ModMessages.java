@@ -139,11 +139,6 @@ public class ModMessages {
 				.add();
 
 		//ENVIAR DATOS AL CLIENTE
-		net.messageBuilder(ZPointsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-				.decoder(ZPointsS2C::new)
-				.encoder(ZPointsS2C::toBytes)
-				.consumerMainThread(ZPointsS2C::handle)
-				.add();
 		net.messageBuilder(StatsSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(StatsSyncS2C::new)
 				.encoder(StatsSyncS2C::toBytes)

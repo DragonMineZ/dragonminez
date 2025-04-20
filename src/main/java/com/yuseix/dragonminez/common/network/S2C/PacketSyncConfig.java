@@ -831,6 +831,242 @@ public class PacketSyncConfig {
                 case "majin_passive":
                     DMZClientConfig.setMajinPassive(stat);
                     break;
+// Humanos
+                case "trhuman_buffed_str":
+                    DMZClientConfig.setTrHumanMulti("buffed", "str", stat);
+                    break;
+                case "trhuman_buffed_def":
+                    DMZClientConfig.setTrHumanMulti("buffed", "def", stat);
+                    break;
+                case "trhuman_buffed_pwr":
+                    DMZClientConfig.setTrHumanMulti("buffed", "pwr", stat);
+                    break;
+                case "trhuman_full_power_str":
+                    DMZClientConfig.setTrHumanMulti("full_power", "str", stat);
+                    break;
+                case "trhuman_full_power_def":
+                    DMZClientConfig.setTrHumanMulti("full_power", "def", stat);
+                    break;
+                case "trhuman_full_power_pwr":
+                    DMZClientConfig.setTrHumanMulti("full_power", "pwr", stat);
+                    break;
+                case "trhuman_potential_unleashed_str":
+                    DMZClientConfig.setTrHumanMulti("potential_unleashed", "str", stat);
+                    break;
+                case "trhuman_potential_unleashed_def":
+                    DMZClientConfig.setTrHumanMulti("potential_unleashed", "def", stat);
+                    break;
+                case "trhuman_potential_unleashed_pwr":
+                    DMZClientConfig.setTrHumanMulti("potential_unleashed", "pwr", stat);
+                    break;
+
+// Saiyans
+                case "trsaiyan_oozaru_str":
+                    DMZClientConfig.setTrSaiyanMulti("oozaru", "str", stat);
+                    break;
+                case "trsaiyan_oozaru_def":
+                    DMZClientConfig.setTrSaiyanMulti("oozaru", "def", stat);
+                    break;
+                case "trsaiyan_oozaru_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("oozaru", "pwr", stat);
+                    break;
+                case "trsaiyan_ssj1_str":
+                    DMZClientConfig.setTrSaiyanMulti("ssj1", "str", stat);
+                    break;
+                case "trsaiyan_ssj1_def":
+                    DMZClientConfig.setTrSaiyanMulti("ssj1", "def", stat);
+                    break;
+                case "trsaiyan_ssj1_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("ssj1", "pwr", stat);
+                    break;
+                case "trsaiyan_ssgrade2_str":
+                    DMZClientConfig.setTrSaiyanMulti("ssgrade2", "str", stat);
+                    break;
+                case "trsaiyan_ssgrade2_def":
+                    DMZClientConfig.setTrSaiyanMulti("ssgrade2", "def", stat);
+                    break;
+                case "trsaiyan_ssgrade2_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("ssgrade2", "pwr", stat);
+                    break;
+                case "trsaiyan_ssgrade3_str":
+                    DMZClientConfig.setTrSaiyanMulti("ssgrade3", "str", stat);
+                    break;
+                case "trsaiyan_ssgrade3_def":
+                    DMZClientConfig.setTrSaiyanMulti("ssgrade3", "def", stat);
+                    break;
+                case "trsaiyan_ssgrade3_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("ssgrade3", "pwr", stat);
+                    break;
+                case "trsaiyan_mssj_str":
+                    DMZClientConfig.setTrSaiyanMulti("mssj", "str", stat);
+                    break;
+                case "trsaiyan_mssj_def":
+                    DMZClientConfig.setTrSaiyanMulti("mssj", "def", stat);
+                    break;
+                case "trsaiyan_mssj_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("mssj", "pwr", stat);
+                    break;
+                case "trsaiyan_ssj2_str":
+                    DMZClientConfig.setTrSaiyanMulti("ssj2", "str", stat);
+                    break;
+                case "trsaiyan_ssj2_def":
+                    DMZClientConfig.setTrSaiyanMulti("ssj2", "def", stat);
+                    break;
+                case "trsaiyan_ssj2_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("ssj2", "pwr", stat);
+                    break;
+                case "trsaiyan_ssj3_str":
+                    DMZClientConfig.setTrSaiyanMulti("ssj3", "str", stat);
+                    break;
+                case "trsaiyan_ssj3_def":
+                    DMZClientConfig.setTrSaiyanMulti("ssj3", "def", stat);
+                    break;
+                case "trsaiyan_ssj3_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("ssj3", "pwr", stat);
+                    break;
+                case "trsaiyan_golden_oozaru_str":
+                    DMZClientConfig.setTrSaiyanMulti("golden_oozaru", "str", stat);
+                    break;
+                case "trsaiyan_golden_oozaru_def":
+                    DMZClientConfig.setTrSaiyanMulti("golden_oozaru", "def", stat);
+                    break;
+                case "trsaiyan_golden_oozaru_pwr":
+                    DMZClientConfig.setTrSaiyanMulti("golden_oozaru", "pwr", stat);
+                    break;
+
+// Namekianos
+                case "trnamek_giant_str":
+                    DMZClientConfig.setTrNamekMulti("giant", "str", stat);
+                    break;
+                case "trnamek_giant_def":
+                    DMZClientConfig.setTrNamekMulti("giant", "def", stat);
+                    break;
+                case "trnamek_giant_pwr":
+                    DMZClientConfig.setTrNamekMulti("giant", "pwr", stat);
+                    break;
+                case "trnamek_full_power_str":
+                    DMZClientConfig.setTrNamekMulti("full_power", "str", stat);
+                    break;
+                case "trnamek_full_power_def":
+                    DMZClientConfig.setTrNamekMulti("full_power", "def", stat);
+                    break;
+                case "trnamek_full_power_pwr":
+                    DMZClientConfig.setTrNamekMulti("full_power", "pwr", stat);
+                    break;
+                case "trnamek_super_namek_str":
+                    DMZClientConfig.setTrNamekMulti("super_namek", "str", stat);
+                    break;
+                case "trnamek_super_namek_def":
+                    DMZClientConfig.setTrNamekMulti("super_namek", "def", stat);
+                    break;
+                case "trnamek_super_namek_pwr":
+                    DMZClientConfig.setTrNamekMulti("super_namek", "pwr", stat);
+                    break;
+
+// Bioandroides
+                case "trbioandroid_semi_perfect_str":
+                    DMZClientConfig.setTrBioAndroidMulti("semi_perfect", "str", stat);
+                    break;
+                case "trbioandroid_semi_perfect_def":
+                    DMZClientConfig.setTrBioAndroidMulti("semi_perfect", "def", stat);
+                    break;
+                case "trbioandroid_semi_perfect_pwr":
+                    DMZClientConfig.setTrBioAndroidMulti("semi_perfect", "pwr", stat);
+                    break;
+                case "trbioandroid_perfect_str":
+                    DMZClientConfig.setTrBioAndroidMulti("perfect", "str", stat);
+                    break;
+                case "trbioandroid_perfect_def":
+                    DMZClientConfig.setTrBioAndroidMulti("perfect", "def", stat);
+                    break;
+                case "trbioandroid_perfect_pwr":
+                    DMZClientConfig.setTrBioAndroidMulti("perfect", "pwr", stat);
+                    break;
+
+// Cold Demons
+                case "trcolddemon_second_form_str":
+                    DMZClientConfig.setTrColdDemonMulti("second_form", "str", stat);
+                    break;
+                case "trcolddemon_second_form_def":
+                    DMZClientConfig.setTrColdDemonMulti("second_form", "def", stat);
+                    break;
+                case "trcolddemon_second_form_pwr":
+                    DMZClientConfig.setTrColdDemonMulti("second_form", "pwr", stat);
+                    break;
+                case "trcolddemon_third_form_str":
+                    DMZClientConfig.setTrColdDemonMulti("third_form", "str", stat);
+                    break;
+                case "trcolddemon_third_form_def":
+                    DMZClientConfig.setTrColdDemonMulti("third_form", "def", stat);
+                    break;
+                case "trcolddemon_third_form_pwr":
+                    DMZClientConfig.setTrColdDemonMulti("third_form", "pwr", stat);
+                    break;
+                case "trcolddemon_final_form_str":
+                    DMZClientConfig.setTrColdDemonMulti("final_form", "str", stat);
+                    break;
+                case "trcolddemon_final_form_def":
+                    DMZClientConfig.setTrColdDemonMulti("final_form", "def", stat);
+                    break;
+                case "trcolddemon_final_form_pwr":
+                    DMZClientConfig.setTrColdDemonMulti("final_form", "pwr", stat);
+                    break;
+                case "trcolddemon_full_power_str":
+                    DMZClientConfig.setTrColdDemonMulti("full_power", "str", stat);
+                    break;
+                case "trcolddemon_full_power_def":
+                    DMZClientConfig.setTrColdDemonMulti("full_power", "def", stat);
+                    break;
+                case "trcolddemon_full_power_pwr":
+                    DMZClientConfig.setTrColdDemonMulti("full_power", "pwr", stat);
+                    break;
+
+// Majin
+                case "trmajin_base_str":
+                    DMZClientConfig.setTrMajinMulti("base", "str", stat);
+                    break;
+                case "trmajin_base_def":
+                    DMZClientConfig.setTrMajinMulti("base", "def", stat);
+                    break;
+                case "trmajin_base_pwr":
+                    DMZClientConfig.setTrMajinMulti("base", "pwr", stat);
+                    break;
+                case "trmajin_evil_str":
+                    DMZClientConfig.setTrMajinMulti("evil", "str", stat);
+                    break;
+                case "trmajin_evil_def":
+                    DMZClientConfig.setTrMajinMulti("evil", "def", stat);
+                    break;
+                case "trmajin_evil_pwr":
+                    DMZClientConfig.setTrMajinMulti("evil", "pwr", stat);
+                    break;
+                case "trmajin_kid_str":
+                    DMZClientConfig.setTrMajinMulti("kid", "str", stat);
+                    break;
+                case "trmajin_kid_def":
+                    DMZClientConfig.setTrMajinMulti("kid", "def", stat);
+                    break;
+                case "trmajin_kid_pwr":
+                    DMZClientConfig.setTrMajinMulti("kid", "pwr", stat);
+                    break;
+                case "trmajin_super_str":
+                    DMZClientConfig.setTrMajinMulti("super", "str", stat);
+                    break;
+                case "trmajin_super_def":
+                    DMZClientConfig.setTrMajinMulti("super", "def", stat);
+                    break;
+                case "trmajin_super_pwr":
+                    DMZClientConfig.setTrMajinMulti("super", "pwr", stat);
+                    break;
+                case "trmajin_ultra_str":
+                    DMZClientConfig.setTrMajinMulti("ultra", "str", stat);
+                    break;
+                case "trmajin_ultra_def":
+                    DMZClientConfig.setTrMajinMulti("ultra", "def", stat);
+                    break;
+                case "trmajin_ultra_pwr":
+                    DMZClientConfig.setTrMajinMulti("ultra", "pwr", stat);
+                    break;
             }
         });
         ctx.get().setPacketHandled(true);

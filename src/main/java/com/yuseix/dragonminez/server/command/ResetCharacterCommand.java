@@ -1,6 +1,7 @@
 package com.yuseix.dragonminez.server.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.yuseix.dragonminez.common.stats.DMZStatsCapabilities;
 import com.yuseix.dragonminez.common.stats.DMZStatsProvider;
@@ -22,21 +23,34 @@ public class ResetCharacterCommand {
         dispatcher.register(Commands.literal("dmzrestart")
                 .requires(commandSourceStack -> commandSourceStack.hasPermission(2))
                 .executes(commandContext -> reiniciarJugador(
-                        Collections.singleton(commandContext.getSource().getPlayerOrException()), 0, commandContext.getSource()))
+                        Collections.singleton(commandContext.getSource().getPlayerOrException()), 0, false, commandContext.getSource()))
                 .then(Commands.argument("player", EntityArgument.players())
                         .executes(commandContext -> reiniciarJugador(
-                                EntityArgument.getPlayers(commandContext, "player"), 0, commandContext.getSource()))
+                                EntityArgument.getPlayers(commandContext, "player"), 0, false, commandContext.getSource()))
                         .then(Commands.argument("keepPercentage", IntegerArgumentType.integer(0, 100))
                                 .executes(commandContext -> reiniciarJugador(
                                         EntityArgument.getPlayers(commandContext, "player"),
                                         IntegerArgumentType.getInteger(commandContext, "keepPercentage"),
+                                        false,
                                         commandContext.getSource()))
+                                .then(Commands.argument("keepSkills", BoolArgumentType.bool())
+                                        .suggests((commandContext, suggestionsBuilder) -> {
+                                            suggestionsBuilder.suggest("true");
+                                            suggestionsBuilder.suggest("false");
+                                            return suggestionsBuilder.buildFuture();
+                                        })
+                                        .executes(commandContext -> reiniciarJugador(
+                                                EntityArgument.getPlayers(commandContext, "player"),
+                                                IntegerArgumentType.getInteger(commandContext, "keepPercentage"),
+                                                BoolArgumentType.getBool(commandContext, "keepSkills"),
+                                                commandContext.getSource()))
+                                )
                         )
                 )
         );
     }
 
-    private static int reiniciarJugador(Collection<ServerPlayer> pPlayers, int porcentaje, CommandSourceStack source) {
+    private static int reiniciarJugador(Collection<ServerPlayer> pPlayers, int porcentaje, boolean keepSkills, CommandSourceStack source) {
         for (ServerPlayer player : pPlayers) {
 
             if ((source.isPlayer() && player != source.getPlayer()) || !source.isPlayer())
@@ -53,6 +67,9 @@ public class ResetCharacterCommand {
             DMZStatsProvider.getCap(DMZStatsCapabilities.INSTANCE, player).ifPresent(playerstats -> {
                 // Reiniciar vida y atributos básicos
                 player.setHealth(20);
+                player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
+                player.setHealth(20);
+                playerstats.setBoolean("dmzuser", false);
                 player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
                 player.setHealth(20);
 
@@ -74,9 +91,6 @@ public class ResetCharacterCommand {
                 }
 
                 // Reiniciar otros datos (independientemente del porcentaje)
-                playerstats.setBoolean("dmzuser", false);
-                playerstats.setIntValue("tps", 0);
-                playerstats.removeAllSkills();
                 playerstats.setStringValue("form", "base");
                 playerstats.setStringValue("groupform", "");
                 playerstats.setBoolean("turbo", false);
@@ -86,16 +100,22 @@ public class ResetCharacterCommand {
                 playerstats.setIntValue("babacooldown", 0);
                 playerstats.setIntValue("zenkaitimer", 0);
                 playerstats.setIntValue("zenkaicount", 0);
-                playerstats.setStringValue("form", "base");
                 playerstats.setIntValue("release", 0);
                 playerstats.removeTemporalEffect("mightfruit");
                 playerstats.removePermanentEffect("majin");
-                playerstats.removeFormSkill("super_form");
                 playerstats.setIntValue("curenergy", 0);
-                playerstats.setIntValue("curstam", 2);
+
+                if (!keepSkills) {
+                    playerstats.setIntValue("tps", 0);
+                    playerstats.removeAllSkills();
+                    playerstats.removeFormSkill("super_form");
+                }
 
                 // NOTA: Lo de la vida se hace dos veces, pq a veces se buguea la primera vez xd
                 player.setHealth(20);
+                player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
+                player.setHealth(20);
+                playerstats.setBoolean("dmzuser", false);
                 player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20);
                 player.setHealth(20);
             });

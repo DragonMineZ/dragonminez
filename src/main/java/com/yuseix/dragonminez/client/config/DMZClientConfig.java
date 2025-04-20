@@ -1,5 +1,8 @@
 package com.yuseix.dragonminez.client.config;
 
+import com.yuseix.dragonminez.common.config.races.transformations.*;
+import com.yuseix.dragonminez.common.stats.DMZStatsAttributes;
+
 import java.util.Locale;
 
 public class DMZClientConfig {
@@ -125,6 +128,57 @@ public class DMZClientConfig {
     private static double mult_ene_majin_warrior = 1, mult_ene_majin_spiritualist = 1;
     private static double mult_regen_majin_warrior = 1, mult_regen_majin_spiritualist = 1;
 
+    //trhuman
+    private static double mult_trhuman_base_str = 1, mult_trhuman_buffed_str = 1,
+            mult_trhuman_full_power_str = 1, mult_trhuman_potential_unleashed_str = 1;
+    private static double mult_trhuman_base_def = 1, mult_trhuman_buffed_def = 1,
+            mult_trhuman_full_power_def = 1, mult_trhuman_potential_unleashed_def = 1;
+    private static double mult_trhuman_base_pwr = 1, mult_trhuman_buffed_pwr = 1,
+            mult_trhuman_full_power_pwr = 1, mult_trhuman_potential_unleashed_pwr = 1;
+    //trsaiyan
+    private static double mult_trsaiyan_base_str = 1, mult_trsaiyan_oozaru_str = 1,
+            mult_trsaiyan_ssj1_str = 1, mult_trsaiyan_ssgrade2_str = 1, mult_trsaiyan_ssgrade3_str = 1,
+            mult_trsaiyan_mssj_str = 1, mult_trsaiyan_ssj2_str = 1, mult_trsaiyan_ssj3_str = 1,
+            mult_trsaiyan_golden_oozaru_str = 1;
+    private static double mult_trsaiyan_base_def = 1, mult_trsaiyan_oozaru_def = 1,
+            mult_trsaiyan_ssj1_def = 1, mult_trsaiyan_ssgrade2_def = 1, mult_trsaiyan_ssgrade3_def = 1,
+            mult_trsaiyan_mssj_def = 1, mult_trsaiyan_ssj2_def = 1, mult_trsaiyan_ssj3_def = 1,
+            mult_trsaiyan_golden_oozaru_def = 1;
+    private static double mult_trsaiyan_base_pwr = 1, mult_trsaiyan_oozaru_pwr = 1,
+            mult_trsaiyan_ssj1_pwr = 1, mult_trsaiyan_ssgrade2_pwr = 1, mult_trsaiyan_ssgrade3_pwr = 1,
+            mult_trsaiyan_mssj_pwr = 1, mult_trsaiyan_ssj2_pwr = 1, mult_trsaiyan_ssj3_pwr = 1,
+            mult_trsaiyan_golden_oozaru_pwr = 1;
+    //trnamek
+    private static double mult_trnamek_base_str = 1, mult_trnamek_giant_str = 1,
+            mult_trnamek_full_power_str = 1, mult_trnamek_super_namek_str = 1;
+    private static double mult_trnamek_base_def = 1, mult_trnamek_giant_def = 1,
+            mult_trnamek_full_power_def = 1, mult_trnamek_super_namek_def = 1;
+    private static double mult_trnamek_base_pwr = 1, mult_trnamek_giant_pwr = 1,
+            mult_trnamek_full_power_pwr = 1, mult_trnamek_super_namek_pwr = 1;
+    //trbio
+    private static double mult_trbioandroid_base_str = 1, mult_trbioandroid_semi_perfect_str = 1,
+            mult_trbioandroid_perfect_str = 1;
+    private static double mult_trbioandroid_base_def = 1, mult_trbioandroid_semi_perfect_def = 1,
+            mult_trbioandroid_perfect_def = 1;
+    private static double mult_trbioandroid_base_pwr = 1, mult_trbioandroid_semi_perfect_pwr = 1,
+            mult_trbioandroid_perfect_pwr = 1;
+    //trcolddemon
+    private static double mult_trcolddemon_base_str = 1, mult_trcolddemon_second_form_str = 1,
+            mult_trcolddemon_third_form_str = 1, mult_trcolddemon_final_form_str = 1,
+            mult_trcolddemon_full_power_str = 1;
+    private static double mult_trcolddemon_base_def = 1, mult_trcolddemon_second_form_def = 1,
+            mult_trcolddemon_third_form_def = 1, mult_trcolddemon_final_form_def = 1,
+            mult_trcolddemon_full_power_def = 1;
+    private static double mult_trcolddemon_base_pwr = 1, mult_trcolddemon_second_form_pwr = 1,
+            mult_trcolddemon_third_form_pwr = 1, mult_trcolddemon_final_form_pwr = 1,
+            mult_trcolddemon_full_power_pwr = 1;
+    //trmajin
+    private static double mult_trmajin_base_str = 1, mult_trmajin_evil_str = 1,
+            mult_trmajin_kid_str = 1, mult_trmajin_super_str = 1, mult_trmajin_ultra_str = 1;
+    private static double mult_trmajin_base_def = 1, mult_trmajin_evil_def = 1,
+            mult_trmajin_kid_def = 1, mult_trmajin_super_def = 1, mult_trmajin_ultra_def = 1;
+    private static double mult_trmajin_base_pwr = 1, mult_trmajin_evil_pwr = 1,
+            mult_trmajin_kid_pwr = 1, mult_trmajin_super_pwr = 1, mult_trmajin_ultra_pwr = 1;
 
     public static int getInit_StrStat(String race, String clase) {
         int initStat = 0;
@@ -287,7 +341,6 @@ public class DMZClientConfig {
         }
 
     }
-
     public static void setInit_DefStat(String race, String clase, int value) {
         switch (clase){
             case "warrior":
@@ -391,115 +444,87 @@ public class DMZClientConfig {
     public static double getMajin_multi() {
         return majin_multi;
     }
-
     public static void setMajin_multi(double majin_multi) {
         DMZClientConfig.majin_multi = majin_multi;
     }
-
     public static double getTree_might_multi() {
         return tree_might_multi;
     }
-
     public static void setTree_might_multi(double tree_might_multi) {
         DMZClientConfig.tree_might_multi = tree_might_multi;
     }
-
     public static int getMaxStats() {
         return maxStats;
     }
-
     public static void setMaxStats(int value) {
         maxStats = value;
     }
-
     public static double getMultiplierZPoints() {
         return multiplierZPoints;
     }
-
     public static void setMultiplierZPoints(double value) {
         multiplierZPoints = value;
     }
-
     public static int getTransfTPCost() {
         return transfTPCost;
     }
-
     public static void setTransfTPCost(int value) {
         transfTPCost = value;
     }
-
     public static int getBuyableTP() {
         return buyableTP;
     }
-
     public static void setBuyableTP(int value) {
         buyableTP = value;
     }
-
     public static int getBabaCooldown() {
         return babaCooldown;
     }
-
     public static void setBabaCooldown(int babaCooldown) {
         DMZClientConfig.babaCooldown = babaCooldown;
     }
-
     public static int getBabaDuration() {
         return babaDuration;
     }
-
     public static void setBabaDuration(int babaDuration) {
         DMZClientConfig.babaDuration = babaDuration;
     }
-
     public static int getJumpLevels() {
         return jumpLevels;
     }
-
     public static void setJumpLevels(int jumpLevels) {
         DMZClientConfig.jumpLevels = jumpLevels;
     }
-
     public static int getFlyLevels() {
         return flyLevels;
     }
-
     public static void setFlyLevels(int flyLevels) {
         DMZClientConfig.flyLevels = flyLevels;
     }
-
     public static int getMeditationLevels() {
         return meditationLevels;
     }
-
     public static void setMeditationLevels(int meditationLevels) {
         DMZClientConfig.meditationLevels = meditationLevels;
     }
-
     public static int getPotUnlockLevels() {
         return potUnlockLevels;
     }
-
     public static void setPotUnlockLevels(int potUnlockLevels) {
         DMZClientConfig.potUnlockLevels = potUnlockLevels;
     }
-
     public static int getKiManipLevels() {
         return kiManipLevels;
     }
-
     public static void setKiManipLevels(int kiManipLevels) {
         DMZClientConfig.kiManipLevels = kiManipLevels;
     }
-
     public static int getKiControlLevels() {
         return kiControlLevels;
     }
-
     public static void setKiControlLevels(int kiControlLevels) {
         DMZClientConfig.kiControlLevels = kiControlLevels;
     }
-
     public static void setBaseStats(int race, double stat) {
         switch (race) {
             case 0 -> DMZClientConfig.baseMult0 = stat;
@@ -510,7 +535,6 @@ public class DMZClientConfig {
             case 5 -> DMZClientConfig.baseMult5 = stat;
         }
     }
-
     public static double getBaseStats(int race) {
         return switch (race) {
             case 0 -> DMZClientConfig.baseMult0;
@@ -522,7 +546,6 @@ public class DMZClientConfig {
             default -> DMZClientConfig.baseMult0;
         };
     }
-
     public static void setSTRStat(int race, String form, double stat) {
         switch (race) {
             case 0 -> {
@@ -575,7 +598,6 @@ public class DMZClientConfig {
             }
         }
     }
-
     public static void setDEFStat(int race, String form, double stat) {
         switch (race) {
             case 0 -> {
@@ -628,7 +650,6 @@ public class DMZClientConfig {
             }
         }
     }
-
     public static void setPWRStat(int race, String form, double stat) {
         switch (race) {
             case 0 -> {
@@ -681,7 +702,6 @@ public class DMZClientConfig {
             }
         }
     }
-
     public static void setCostForm(int race, String form, double stat) {
         switch (race) {
             case 0 -> {
@@ -734,7 +754,6 @@ public class DMZClientConfig {
             }
         }
     }
-
     public static double getDMZStat(int race, String form, String stat) {
         return switch (race) {
             case 0 -> switch (stat.toUpperCase(Locale.ROOT)) {
@@ -950,7 +969,6 @@ public class DMZClientConfig {
             default -> 1;
         };
     }
-
     public static void setClassMult(int race, String clase, String stat, double value) {
         switch (clase) {
             case "warrior":
@@ -1081,7 +1099,6 @@ public class DMZClientConfig {
                 }
         }
     }
-
     public static double getClassMult(int race, String clase, String stat) {
         return switch (clase) {
             case "warrior" -> switch (race) {
@@ -1201,15 +1218,12 @@ public class DMZClientConfig {
             default -> 1;
         };
     }
-
     public static void setHumanPassive(int stat) {
         DMZClientConfig.humanPassive = stat;
     }
-
     public static int getHumanPassive() {
         return DMZClientConfig.humanPassive;
     }
-
     public static void setSaiyanPassive(String stat, int value) {
         switch (stat.toLowerCase(Locale.ROOT)) {
             case "timer" -> DMZClientConfig.zenkaiTimer = value;
@@ -1218,7 +1232,6 @@ public class DMZClientConfig {
             case "cant" -> DMZClientConfig.zenkaiCant = value;
         }
     }
-
     public static int getSaiyanPassive(String stat) {
         return switch (stat.toLowerCase(Locale.ROOT)) {
             case "timer" -> DMZClientConfig.zenkaiTimer;
@@ -1228,27 +1241,443 @@ public class DMZClientConfig {
             default -> 1;
         };
     }
-
     public static void setNamekPassive(int stat) {
         DMZClientConfig.namekPassive = stat;
     }
-
     public static int getNamekPassive() {
         return DMZClientConfig.namekPassive;
     }
-
     public static void setBioPassive(String stat, int value) {
         switch (stat.toLowerCase(Locale.ROOT)) {
             case "half" -> DMZClientConfig.bioPassiveHalf = value;
             case "quarter" -> DMZClientConfig.bioPassiveQuarter = value;
         }
     }
-
     public static int getBioPassive(String stat) {
         return switch (stat.toLowerCase(Locale.ROOT)) {
             case "half" -> DMZClientConfig.bioPassiveHalf;
             case "quarter" -> DMZClientConfig.bioPassiveQuarter;
             default -> 1;
+        };
+    }
+    public static void setTrHumanMulti(String form, String stat, double value) {
+        switch (form.toLowerCase(Locale.ROOT)){
+            case "buffed":
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_buffed_str = value;
+                    case "def" -> DMZClientConfig.mult_trhuman_buffed_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_buffed_pwr = value;
+                }
+                break;
+            case "full_power":
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_full_power_str = value;
+                    case "def" -> DMZClientConfig.mult_trhuman_full_power_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_full_power_pwr = value;
+                }
+                break;
+            case "potential_unleashed":
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_potential_unleashed_str = value;
+                    case "def" -> DMZClientConfig.mult_trhuman_potential_unleashed_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_potential_unleashed_pwr = value;
+                }
+                break;
+            default:
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_base_str = value;
+                    case "def" -> DMZClientConfig.mult_trhuman_base_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_base_pwr = value;
+                }
+                break;
+        }
+    }
+    public static void setTrSaiyanMulti(String form, String stat, double value) {
+        switch (form.toLowerCase(Locale.ROOT)) {
+            case "oozaru" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_oozaru_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_oozaru_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_oozaru_pwr = value;
+                }
+            }
+            case "ssj1" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_ssj1_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_ssj1_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_ssj1_pwr = value;
+                }
+            }
+            case "ssgrade2" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_ssgrade2_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_ssgrade2_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_ssgrade2_pwr = value;
+                }
+            }
+            case "ssgrade3" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_ssgrade3_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_ssgrade3_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_ssgrade3_pwr = value;
+                }
+            }
+            case "mssj" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_mssj_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_mssj_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_mssj_pwr = value;
+                }
+            }
+            case "ssj2" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_ssj2_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_ssj2_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_ssj2_pwr = value;
+                }
+            }
+            case "ssj3" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_ssj3_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_ssj3_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_ssj3_pwr = value;
+                }
+            }
+            case "golden_oozaru" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_golden_oozaru_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_golden_oozaru_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_golden_oozaru_pwr = value;
+                }
+            }
+            default -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trsaiyan_base_str = value;
+                    case "def" -> DMZClientConfig.mult_trsaiyan_base_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trsaiyan_base_pwr = value;
+                }
+            }
+        }
+    }
+    public static void setTrNamekMulti(String form, String stat, double value) {
+        switch (form.toLowerCase(Locale.ROOT)) {
+            case "giant" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trnamek_giant_str = value;
+                    case "def" -> DMZClientConfig.mult_trnamek_giant_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trnamek_giant_pwr = value;
+                }
+            }
+            case "full_power" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trnamek_full_power_str = value;
+                    case "def" -> DMZClientConfig.mult_trnamek_full_power_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trnamek_full_power_pwr = value;
+                }
+            }
+            case "super_namek" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trnamek_super_namek_str = value;
+                    case "def" -> DMZClientConfig.mult_trnamek_super_namek_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trnamek_super_namek_pwr = value;
+                }
+            }
+            default -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trnamek_base_str = value;
+                    case "def" -> DMZClientConfig.mult_trnamek_base_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trnamek_base_pwr = value;
+                }
+            }
+        }
+    }
+    public static void setTrBioAndroidMulti(String form, String stat, double value) {
+        switch (form.toLowerCase(Locale.ROOT)) {
+            case "semi_perfect" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trbioandroid_semi_perfect_str = value;
+                    case "def" -> DMZClientConfig.mult_trbioandroid_semi_perfect_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trbioandroid_semi_perfect_pwr = value;
+                }
+            }
+            case "perfect" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trbioandroid_perfect_str = value;
+                    case "def" -> DMZClientConfig.mult_trbioandroid_perfect_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trbioandroid_perfect_pwr = value;
+                }
+            }
+            default -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trbioandroid_base_str = value;
+                    case "def" -> DMZClientConfig.mult_trbioandroid_base_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trbioandroid_base_pwr = value;
+                }
+            }
+        }
+    }
+    public static void setTrColdDemonMulti(String form, String stat, double value) {
+        switch (form.toLowerCase(Locale.ROOT)) {
+            case "second_form" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trcolddemon_second_form_str = value;
+                    case "def" -> DMZClientConfig.mult_trcolddemon_second_form_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trcolddemon_second_form_pwr = value;
+                }
+            }
+            case "third_form" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trcolddemon_third_form_str = value;
+                    case "def" -> DMZClientConfig.mult_trcolddemon_third_form_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trcolddemon_third_form_pwr = value;
+                }
+            }
+            case "final_form" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trcolddemon_final_form_str = value;
+                    case "def" -> DMZClientConfig.mult_trcolddemon_final_form_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trcolddemon_final_form_pwr = value;
+                }
+            }
+            case "full_power" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trcolddemon_full_power_str = value;
+                    case "def" -> DMZClientConfig.mult_trcolddemon_full_power_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trcolddemon_full_power_pwr = value;
+                }
+            }
+            default -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trcolddemon_base_str = value;
+                    case "def" -> DMZClientConfig.mult_trcolddemon_base_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trcolddemon_base_pwr = value;
+                }
+            }
+        }
+    }
+    public static void setTrMajinMulti(String form, String stat, double value) {
+        switch (form.toLowerCase(Locale.ROOT)) {
+            case "evil" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trmajin_evil_str = value;
+                    case "def" -> DMZClientConfig.mult_trmajin_evil_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trmajin_evil_pwr = value;
+                }
+            }
+            case "kid" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trmajin_kid_str = value;
+                    case "def" -> DMZClientConfig.mult_trmajin_kid_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trmajin_kid_pwr = value;
+                }
+            }
+            case "super" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trmajin_super_str = value;
+                    case "def" -> DMZClientConfig.mult_trmajin_super_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trmajin_super_pwr = value;
+                }
+            }
+            case "ultra" -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trmajin_ultra_str = value;
+                    case "def" -> DMZClientConfig.mult_trmajin_ultra_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trmajin_ultra_pwr = value;
+                }
+            }
+            default -> {
+                switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trmajin_base_str = value;
+                    case "def" -> DMZClientConfig.mult_trmajin_base_def = value;
+                    case "pwr" -> DMZClientConfig.mult_trmajin_base_pwr = value;
+                }
+            }
+        }
+    }
+
+    public static double getTrHumanMulti(String form, String stat) {
+        switch (form.toLowerCase(Locale.ROOT)) {
+            case "buffed" -> {
+                return switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_buffed_str;
+                    case "def" -> DMZClientConfig.mult_trhuman_buffed_def;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_buffed_pwr;
+                    default -> 1.0;
+                };
+            }
+            case "full_power" -> {
+                return switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_full_power_str;
+                    case "def" -> DMZClientConfig.mult_trhuman_full_power_def;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_full_power_pwr;
+                    default -> 1.0;
+                };
+            }
+            case "potential_unleashed" -> {
+                return switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_potential_unleashed_str;
+                    case "def" -> DMZClientConfig.mult_trhuman_potential_unleashed_def;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_potential_unleashed_pwr;
+                    default -> 1.0;
+                };
+            }
+            default -> {
+                return switch (stat.toLowerCase(Locale.ROOT)) {
+                    case "str" -> DMZClientConfig.mult_trhuman_base_str;
+                    case "def" -> DMZClientConfig.mult_trhuman_base_def;
+                    case "pwr" -> DMZClientConfig.mult_trhuman_base_pwr;
+                    default -> 1.0;
+                };
+            }
+        }
+    }
+
+    public static double transfMultMenu(DMZStatsAttributes stats, String transformation) {
+        double str = getTransformationStats(stats.getIntValue("race"), transformation, "STR");
+        double def = getTransformationStats(stats.getIntValue("race"), transformation, "DEF");
+        double pwr = getTransformationStats(stats.getIntValue("race"), transformation, "PWR");
+
+        return (str + def + pwr) / 3;
+    }
+
+    public static double getTransformationStats(int raza, String transformation, String stat) {
+        return switch (stat) {
+            case "STR" -> switch (raza) {
+                case 0 -> switch (transformation) { // Humanos
+                    case "buffed" -> mult_trhuman_buffed_str;
+                    case "full_power" -> mult_trhuman_full_power_str;
+                    case "potential_unleashed" -> mult_trhuman_potential_unleashed_str;
+                    default -> mult_trhuman_base_str;
+                };
+                case 1 -> switch (transformation) { // Saiyans
+                    case "oozaru" -> mult_trsaiyan_oozaru_str;
+                    case "ssj1" -> mult_trsaiyan_ssj1_str;
+                    case "ssgrade2" -> mult_trsaiyan_ssgrade2_str;
+                    case "ssgrade3" -> mult_trsaiyan_ssgrade3_str;
+                    case "mssj" -> mult_trsaiyan_mssj_str;
+                    case "ssj2" -> mult_trsaiyan_ssj2_str;
+                    case "ssj3" -> mult_trsaiyan_ssj3_str;
+                    case "golden_oozaru" -> mult_trsaiyan_golden_oozaru_str;
+                    default -> mult_trsaiyan_base_str;
+                };
+                case 2 -> switch (transformation) { // Namekianos
+                    case "giant" -> mult_trnamek_giant_str;
+                    case "full_power" -> mult_trnamek_full_power_str;
+                    case "super_namek" -> mult_trnamek_super_namek_str;
+                    default -> mult_trnamek_base_str;
+                };
+                case 3 -> switch (transformation) { // Bioandroides
+                    case "semi_perfect" -> mult_trbioandroid_semi_perfect_str;
+                    case "perfect" -> mult_trbioandroid_perfect_str;
+                    default -> mult_trbioandroid_base_str;
+                };
+                case 4 -> switch (transformation) { // Cold Demons
+                    case "second_form" -> mult_trcolddemon_second_form_str;
+                    case "third_form" -> mult_trcolddemon_third_form_str;
+                    case "final_form" -> mult_trcolddemon_final_form_str;
+                    case "full_power" -> mult_trcolddemon_full_power_str;
+                    default -> mult_trcolddemon_base_str;
+                };
+                case 5 -> switch (transformation) { // Majin
+                    case "evil" -> mult_trmajin_evil_str;
+                    case "kid" -> mult_trmajin_kid_str;
+                    case "super" -> mult_trmajin_super_str;
+                    case "ultra" -> mult_trmajin_ultra_str;
+                    default -> mult_trmajin_base_str;
+                };
+                default -> 1.0;
+            };
+            case "DEF" -> switch (raza) {
+                case 0 -> switch (transformation) { // Humanos
+                    case "buffed" -> mult_trhuman_buffed_def;
+                    case "full_power" -> mult_trhuman_full_power_def;
+                    case "potential_unleashed" -> mult_trhuman_potential_unleashed_def;
+                    default -> mult_trhuman_base_def;
+                };
+                case 1 -> switch (transformation) { // Saiyans
+                    case "oozaru" -> mult_trsaiyan_oozaru_def;
+                    case "ssj1" -> mult_trsaiyan_ssj1_def;
+                    case "ssgrade2" -> mult_trsaiyan_ssgrade2_def;
+                    case "ssgrade3" -> mult_trsaiyan_ssgrade3_def;
+                    case "mssj" -> mult_trsaiyan_mssj_def;
+                    case "ssj2" -> mult_trsaiyan_ssj2_def;
+                    case "ssj3" -> mult_trsaiyan_ssj3_def;
+                    case "golden_oozaru" -> mult_trsaiyan_golden_oozaru_def;
+                    default -> mult_trsaiyan_base_def;
+                };
+                case 2 -> switch (transformation) { // Namekianos
+                    case "giant" -> mult_trnamek_giant_def;
+                    case "full_power" -> mult_trnamek_full_power_def;
+                    case "super_namek" -> mult_trnamek_super_namek_def;
+                    default -> mult_trnamek_base_def;
+                };
+                case 3 -> switch (transformation) { // Bioandroides
+                    case "semi_perfect" -> mult_trbioandroid_semi_perfect_def;
+                    case "perfect" -> mult_trbioandroid_perfect_def;
+                    default -> mult_trbioandroid_base_def;
+                };
+                case 4 -> switch (transformation) { // Cold Demons
+                    case "second_form" -> mult_trcolddemon_second_form_def;
+                    case "third_form" -> mult_trcolddemon_third_form_def;
+                    case "final_form" -> mult_trcolddemon_final_form_def;
+                    case "full_power" -> mult_trcolddemon_full_power_def;
+                    default -> mult_trcolddemon_base_def;
+                };
+                case 5 -> switch (transformation) { // Majin
+                    case "evil" -> mult_trmajin_evil_def;
+                    case "kid" -> mult_trmajin_kid_def;
+                    case "super" -> mult_trmajin_super_def;
+                    case "ultra" -> mult_trmajin_ultra_def;
+                    default -> mult_trmajin_base_def;
+                };
+                default -> 1.0;
+            };
+            case "PWR" -> switch (raza) {
+                case 0 -> switch (transformation) { // Humanos
+                    case "buffed" -> mult_trhuman_buffed_pwr;
+                    case "full_power" -> mult_trhuman_full_power_pwr;
+                    case "potential_unleashed" -> mult_trhuman_potential_unleashed_pwr;
+                    default -> mult_trhuman_base_pwr;
+                };
+                case 1 -> switch (transformation) { // Saiyans
+                    case "oozaru" -> mult_trsaiyan_oozaru_pwr;
+                    case "ssj1" -> mult_trsaiyan_ssj1_pwr;
+                    case "ssgrade2" -> mult_trsaiyan_ssgrade2_pwr;
+                    case "ssgrade3" -> mult_trsaiyan_ssgrade3_pwr;
+                    case "mssj" -> mult_trsaiyan_mssj_pwr;
+                    case "ssj2" -> mult_trsaiyan_ssj2_pwr;
+                    case "ssj3" -> mult_trsaiyan_ssj3_pwr;
+                    case "golden_oozaru" -> mult_trsaiyan_golden_oozaru_pwr;
+                    default -> mult_trsaiyan_base_pwr;
+                };
+                case 2 -> switch (transformation) { // Namekianos
+                    case "giant" -> mult_trnamek_giant_pwr;
+                    case "full_power" -> mult_trnamek_full_power_pwr;
+                    case "super_namek" -> mult_trnamek_super_namek_pwr;
+                    default -> mult_trnamek_base_pwr;
+                };
+                case 3 -> switch (transformation) { // Bioandroides
+                    case "semi_perfect" -> mult_trbioandroid_semi_perfect_pwr;
+                    case "perfect" -> mult_trbioandroid_perfect_pwr;
+                    default -> mult_trbioandroid_base_pwr;
+                };
+                case 4 -> switch (transformation) { // Cold Demons
+                    case "second_form" -> mult_trcolddemon_second_form_pwr;
+                    case "third_form" -> mult_trcolddemon_third_form_pwr;
+                    case "final_form" -> mult_trcolddemon_final_form_pwr;
+                    case "full_power" -> mult_trcolddemon_full_power_pwr;
+                    default -> mult_trcolddemon_base_pwr;
+                };
+                case 5 -> switch (transformation) { // Majin
+                    case "evil" -> mult_trmajin_evil_pwr;
+                    case "kid" -> mult_trmajin_kid_pwr;
+                    case "super" -> mult_trmajin_super_pwr;
+                    case "ultra" -> mult_trmajin_ultra_pwr;
+                    default -> mult_trmajin_base_pwr;
+                };
+                default -> 1.0;
+            };
+            default -> 1.0;
         };
     }
 

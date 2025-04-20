@@ -323,6 +323,90 @@ public class ConfigValuesC2S {
                     ModMessages.sendToPlayer(new PacketSyncConfig("bio_passive_quarter", DMZBioAndroidConfig.QUARTER_HEALTH_LIFESTEAL.get()), player);
                     ModMessages.sendToPlayer(new PacketSyncConfig("cold_passive", DMZColdDemonConfig.TP_MULTIPLER_PASSIVE.get()), player);
                     ModMessages.sendToPlayer(new PacketSyncConfig("majin_passive", DMZMajinConfig.PASSIVE_HEALTH_REGEN.get()), player);
+
+                    // Formas
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_buffed_str", DMZTrHumanConfig.MULTIPLIER_BUFFED_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_buffed_def", DMZTrHumanConfig.MULTIPLIER_BUFFED_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_buffed_pwr", DMZTrHumanConfig.MULTIPLIER_BUFFED_FORM_PWR.get()), player);
+
+                    // Formas
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_buffed_str", DMZTrHumanConfig.MULTIPLIER_BUFFED_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_buffed_def", DMZTrHumanConfig.MULTIPLIER_BUFFED_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_buffed_pwr", DMZTrHumanConfig.MULTIPLIER_BUFFED_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_full_power_str", DMZTrHumanConfig.MULTIPLIER_FP_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_full_power_def", DMZTrHumanConfig.MULTIPLIER_FP_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_full_power_pwr", DMZTrHumanConfig.MULTIPLIER_FP_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_potential_unleashed_str", DMZTrHumanConfig.MULTIPLIER_PU_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_potential_unleashed_def", DMZTrHumanConfig.MULTIPLIER_PU_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trhuman_potential_unleashed_pwr", DMZTrHumanConfig.MULTIPLIER_PU_FORM_PWR.get()), player);
+
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_oozaru_str", DMZTrSaiyanConfig.MULTIPLIER_OOZARU_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_oozaru_def", DMZTrSaiyanConfig.MULTIPLIER_OOZARU_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_oozaru_pwr", DMZTrSaiyanConfig.MULTIPLIER_OOZARU_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj1_str", DMZTrSaiyanConfig.MULTIPLIER_SSJ_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj1_def", DMZTrSaiyanConfig.MULTIPLIER_SSJ_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj1_pwr", DMZTrSaiyanConfig.MULTIPLIER_SSJ_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssgrade2_str", DMZTrSaiyanConfig.MULTIPLIER_SSGRADE2_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssgrade2_def", DMZTrSaiyanConfig.MULTIPLIER_SSGRADE2_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssgrade2_pwr", DMZTrSaiyanConfig.MULTIPLIER_SSGRADE2_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssgrade3_str", DMZTrSaiyanConfig.MULTIPLIER_SSGRADE3_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssgrade3_def", DMZTrSaiyanConfig.MULTIPLIER_SSGRADE3_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssgrade3_pwr", DMZTrSaiyanConfig.MULTIPLIER_SSGRADE3_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_mssj_str", DMZTrSaiyanConfig.MULTIPLIER_MSSJ_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_mssj_def", DMZTrSaiyanConfig.MULTIPLIER_MSSJ_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_mssj_pwr", DMZTrSaiyanConfig.MULTIPLIER_MSSJ_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj2_str", DMZTrSaiyanConfig.MULTIPLIER_SSJ2_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj2_def", DMZTrSaiyanConfig.MULTIPLIER_SSJ2_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj2_pwr", DMZTrSaiyanConfig.MULTIPLIER_SSJ2_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj3_str", DMZTrSaiyanConfig.MULTIPLIER_SSJ3_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj3_def", DMZTrSaiyanConfig.MULTIPLIER_SSJ3_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_ssj3_pwr", DMZTrSaiyanConfig.MULTIPLIER_SSJ3_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_golden_oozaru_str", DMZTrSaiyanConfig.MULTIPLIER_GOLDENOOZARU_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_golden_oozaru_def", DMZTrSaiyanConfig.MULTIPLIER_GOLDENOOZARU_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trsaiyan_golden_oozaru_pwr", DMZTrSaiyanConfig.MULTIPLIER_GOLDENOOZARU_FORM_PWR.get()), player);
+
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_giant_str", DMZTrNamekConfig.MULTIPLIER_GIANT_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_giant_def", DMZTrNamekConfig.MULTIPLIER_GIANT_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_giant_pwr", DMZTrNamekConfig.MULTIPLIER_GIANT_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_full_power_str", DMZTrNamekConfig.MULTIPLIER_FP_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_full_power_def", DMZTrNamekConfig.MULTIPLIER_FP_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_full_power_pwr", DMZTrNamekConfig.MULTIPLIER_FP_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_super_namek_str", DMZTrNamekConfig.MULTIPLIER_SUPER_NAMEK_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_super_namek_def", DMZTrNamekConfig.MULTIPLIER_SUPER_NAMEK_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trnamek_super_namek_pwr", DMZTrNamekConfig.MULTIPLIER_SUPER_NAMEK_FORM_PWR.get()), player);
+
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trbioandroid_semi_perfect_str", DMZTrBioAndroidConfig.MULTIPLIER_SEMIPERFECT_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trbioandroid_semi_perfect_def", DMZTrBioAndroidConfig.MULTIPLIER_SEMIPERFECT_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trbioandroid_semi_perfect_pwr", DMZTrBioAndroidConfig.MULTIPLIER_SEMIPERFECT_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trbioandroid_perfect_str", DMZTrBioAndroidConfig.MULTIPLIER_PERFECT_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trbioandroid_perfect_def", DMZTrBioAndroidConfig.MULTIPLIER_PERFECT_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trbioandroid_perfect_pwr", DMZTrBioAndroidConfig.MULTIPLIER_PERFECT_FORM_PWR.get()), player);
+
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_second_form_str", DMZTrColdDemonConfig.MULTIPLIER_SECOND_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_second_form_def", DMZTrColdDemonConfig.MULTIPLIER_SECOND_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_second_form_pwr", DMZTrColdDemonConfig.MULTIPLIER_SECOND_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_third_form_str", DMZTrColdDemonConfig.MULTIPLIER_THIRD_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_third_form_def", DMZTrColdDemonConfig.MULTIPLIER_THIRD_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_third_form_pwr", DMZTrColdDemonConfig.MULTIPLIER_THIRD_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_final_form_str", DMZTrColdDemonConfig.MULTIPLIER_FOURTH_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_final_form_def", DMZTrColdDemonConfig.MULTIPLIER_FOURTH_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_final_form_pwr", DMZTrColdDemonConfig.MULTIPLIER_FOURTH_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_full_power_str", DMZTrColdDemonConfig.MULTIPLIER_FULL_POWER_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_full_power_def", DMZTrColdDemonConfig.MULTIPLIER_FULL_POWER_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trcolddemon_full_power_pwr", DMZTrColdDemonConfig.MULTIPLIER_FULL_POWER_FORM_PWR.get()), player);
+
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_evil_str", DMZTrMajinConfig.MULTIPLIER_EVIL_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_evil_def", DMZTrMajinConfig.MULTIPLIER_EVIL_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_evil_pwr", DMZTrMajinConfig.MULTIPLIER_EVIL_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_kid_str", DMZTrMajinConfig.MULTIPLIER_KID_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_kid_def", DMZTrMajinConfig.MULTIPLIER_KID_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_kid_pwr", DMZTrMajinConfig.MULTIPLIER_KID_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_super_str", DMZTrMajinConfig.MULTIPLIER_SUPER_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_super_def", DMZTrMajinConfig.MULTIPLIER_SUPER_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_super_pwr", DMZTrMajinConfig.MULTIPLIER_SUPER_FORM_PWR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_ultra_str", DMZTrMajinConfig.MULTIPLIER_ULTRA_FORM_STR.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_ultra_def", DMZTrMajinConfig.MULTIPLIER_ULTRA_FORM_DEF.get()), player);
+                    ModMessages.sendToPlayer(new PacketSyncConfig("trmajin_ultra_pwr", DMZTrMajinConfig.MULTIPLIER_ULTRA_FORM_PWR.get()), player);
                 });
             }
 

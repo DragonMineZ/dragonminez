@@ -424,9 +424,9 @@ public class TransfMenu extends Screen {
 					if (this.groupId.equals("superform")) {
 						switch (raza) {
 							case 0:
-								double multHumanBuffed = dmzDatos.transfMultMenu(cap,"buffed");
-								double multHumanFP = dmzDatos.transfMultMenu(cap,"full_power");
-								double multHumanPU = dmzDatos.transfMultMenu(cap,"potential_unleashed");
+								double multHumanBuffed = DMZClientConfig.transfMultMenu(cap,"buffed");
+								double multHumanFP = DMZClientConfig.transfMultMenu(cap,"full_power");
+								double multHumanPU = DMZClientConfig.transfMultMenu(cap,"potential_unleashed");
 
 								//Nombre de la habilidad
 								drawStringWithBorder(guiGraphics, this.font, Component.translatable("groupforms.dmz.general.superform"), startX + 93, startY, 0x20e0ff);
@@ -447,9 +447,9 @@ public class TransfMenu extends Screen {
 								}
 								break;
 							case 2:
-								double multNamekGiant = dmzDatos.transfMultMenu(cap,"giant");
-								double multNamekFP = dmzDatos.transfMultMenu(cap,"full_power");
-								double multNamekSuperNamek = dmzDatos.transfMultMenu(cap,"super_namek");
+								double multNamekGiant = DMZClientConfig.transfMultMenu(cap,"giant");
+								double multNamekFP = DMZClientConfig.transfMultMenu(cap,"full_power");
+								double multNamekSuperNamek = DMZClientConfig.transfMultMenu(cap,"super_namek");
 
 								//Nombre de la habilidad
 								drawStringWithBorder(guiGraphics, this.font, Component.translatable("groupforms.dmz.general.superform"), startX + 93, startY, 0x20e0ff);
@@ -470,8 +470,8 @@ public class TransfMenu extends Screen {
 								}
 								break;
 							case 3:
-								double multBioSemiPerfect = dmzDatos.transfMultMenu(cap,"semi_perfect");
-								double multBioPerfect = dmzDatos.transfMultMenu(cap,"perfect");
+								double multBioSemiPerfect = DMZClientConfig.transfMultMenu(cap,"semi_perfect");
+								double multBioPerfect = DMZClientConfig.transfMultMenu(cap,"perfect");
 
 								//Nombre de la habilidad
 								drawStringWithBorder(guiGraphics, this.font, Component.translatable("groupforms.dmz.bio.evolutionforms"), startX + 93, startY, 0x20e0ff);
@@ -491,10 +491,10 @@ public class TransfMenu extends Screen {
 								}
 								break;
 							case 4:
-								double multColdSecond = dmzDatos.transfMultMenu(cap,"second_form");
-								double multColdThird = dmzDatos.transfMultMenu(cap,"third_form");
-								double multColdFourth = dmzDatos.transfMultMenu(cap,"final_form");
-								double multColdFullPower = dmzDatos.transfMultMenu(cap,"full_power");
+								double multColdSecond = DMZClientConfig.transfMultMenu(cap,"second_form");
+								double multColdThird = DMZClientConfig.transfMultMenu(cap,"third_form");
+								double multColdFourth = DMZClientConfig.transfMultMenu(cap,"final_form");
+								double multColdFullPower = DMZClientConfig.transfMultMenu(cap,"full_power");
 
 								//Nombre de la habilidad
 								drawStringWithBorder(guiGraphics, this.font, Component.translatable("groupforms.dmz.colddemon.involutionforms"), startX + 93, startY, 0x20e0ff);
@@ -516,10 +516,10 @@ public class TransfMenu extends Screen {
 								}
 								break;
 							case 5:
-								double multMajinEvil = dmzDatos.transfMultMenu(cap,"evil");
-								double multMajinKid = dmzDatos.transfMultMenu(cap,"kid");
-								double multMajinSuper = dmzDatos.transfMultMenu(cap,"super");
-								double multMajinUltra = dmzDatos.transfMultMenu(cap,"ultra");
+								double multMajinEvil = DMZClientConfig.transfMultMenu(cap,"evil");
+								double multMajinKid = DMZClientConfig.transfMultMenu(cap,"kid");
+								double multMajinSuper = DMZClientConfig.transfMultMenu(cap,"super");
+								double multMajinUltra = DMZClientConfig.transfMultMenu(cap,"ultra");
 
 								//Nombre de la habilidad
 								drawStringWithBorder(guiGraphics, this.font, Component.translatable("groupforms.dmz.majin.majinforms"), startX + 93, startY, 0x20e0ff);
@@ -547,14 +547,14 @@ public class TransfMenu extends Screen {
 								break;
 						}
 					} else if (this.groupId.equals("oozarus") || this.groupId.equals("ssgrades") || this.groupId.equals("ssj")) {
-						double multSaiyanOozaru = dmzDatos.transfMultMenu(cap, "oozaru");
-						double multSaiyanGoldenOozaru = dmzDatos.transfMultMenu(cap, "golden_oozaru");
-						double multSaiyanSSJ = dmzDatos.transfMultMenu(cap, "ssj1");
-						double multSaiyanSSG2 = dmzDatos.transfMultMenu(cap, "ssgrade2");
-						double multSaiyanSSG3 = dmzDatos.transfMultMenu(cap, "ssgrade3");
-						double multSaiyanMSSJ = dmzDatos.transfMultMenu(cap, "mssj");
-						double multSaiyanSSJ2 = dmzDatos.transfMultMenu(cap, "ssj2");
-						double multSaiyanSSJ3 = dmzDatos.transfMultMenu(cap, "ssj3");
+						double multSaiyanOozaru = DMZClientConfig.transfMultMenu(cap, "oozaru");
+						double multSaiyanGoldenOozaru = DMZClientConfig.transfMultMenu(cap, "golden_oozaru");
+						double multSaiyanSSJ = DMZClientConfig.transfMultMenu(cap, "ssj1");
+						double multSaiyanSSG2 = DMZClientConfig.transfMultMenu(cap, "ssgrade2");
+						double multSaiyanSSG3 = DMZClientConfig.transfMultMenu(cap, "ssgrade3");
+						double multSaiyanMSSJ = DMZClientConfig.transfMultMenu(cap, "mssj");
+						double multSaiyanSSJ2 = DMZClientConfig.transfMultMenu(cap, "ssj2");
+						double multSaiyanSSJ3 = DMZClientConfig.transfMultMenu(cap, "ssj3");
 
 						maxLevel = 8;
 
