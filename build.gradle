@@ -136,7 +136,7 @@ dependencies {
     implementation 'io.netty:netty-codec:4.2.0.Final'
     implementation 'io.netty:netty-handler:4.2.0.Final'
     implementation 'org.apache.commons:commons-compress:1.27.1'
-    minecraftLibrary jarJar("com.fasterxml.jackson.core:jackson-databind:2.18.3"), {
+    minecraftLibrary jarJar("com.fasterxml.jackson.core:jackson-databind:2.19.0"), {
         jarJar.ranged(it, "[2.18.3,)")
     }
 
