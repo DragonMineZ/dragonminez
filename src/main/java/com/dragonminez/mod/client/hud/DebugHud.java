@@ -1,7 +1,7 @@
 package com.dragonminez.mod.client.hud;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.Reference.CapType;
+import com.dragonminez.mod.common.registry.CapabilityRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +47,7 @@ public class DebugHud {
     if (currentTick != lastUpdateTick) {
       lastUpdateTick = currentTick;
       nbtCache.clear();
-      CapType.holders().forEach((location, manager) ->
+      CapabilityRegistry.holders().forEach((location, manager) ->
           manager.retrieveStatData(player, holder -> {
             Tag tag = holder.serializeNBT();
             String pretty = prettyPrintNBT(tag);
