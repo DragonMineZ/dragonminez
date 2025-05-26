@@ -16,26 +16,43 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+/**
+ * Handles registration and attachment of custom player capabilities.
+ * This class maps capability IDs to their respective managers, and ensures
+ * they are attached to player entities when appropriate.
+ */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CapabilityRegistry {
 
+  // Stores a mapping between capability IDs and their corresponding managers.
   private static final HashMap<ResourceLocation, CapDataManager<?>> HOLDERS = new HashMap<>();
 
+  // Static initializer to register all capability types.
   static {
     HOLDERS.put(GeneticDataType.ID, GeneticDataManager.INSTANCE);
     HOLDERS.put(StatDataType.ID, StatDataManager.INSTANCE);
     HOLDERS.put(CombatDataType.ID, CombatDataManager.INSTANCE);
   }
 
+  /**
+   * Event handler that attaches capabilities to entities.
+   * Only attaches capabilities to player entities.
+   */
   @SubscribeEvent
   public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
     if (!(event.getObject() instanceof Player)) {
       return;
     }
+
+    // Attach each capability to the player entity.
     CapabilityRegistry.holders().forEach(event::addCapability);
   }
 
-
+  /**
+   * Returns the registered capability holders.
+   *
+   * @return a map of capability IDs to their data managers
+   */
   public static HashMap<ResourceLocation, CapDataManager<?>> holders() {
     return HOLDERS;
   }
