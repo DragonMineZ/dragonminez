@@ -1,8 +1,5 @@
 package com.dragonminez.mod.common;
 
-import com.dragonminez.mod.common.player.stat.model.StatType;
-import net.minecraft.resources.ResourceLocation;
-
 /**
  * The {@code Reference} class stores static constants used throughout the mod.
  * <p>
@@ -44,11 +41,5 @@ public final class Reference {
 
   // Private constructor to prevent instantiation
   private Reference() {
-  }
-
-  public static class Stat {
-
-    public static final ResourceLocation CAP_ID = new ResourceLocation("dragonminez:stat");
-    public static final StatType[] STATS = StatType.values();
   }
 }
