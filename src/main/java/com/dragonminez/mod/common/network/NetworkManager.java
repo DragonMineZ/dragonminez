@@ -29,25 +29,40 @@ public class NetworkManager {
   }
 
   public <MSG> void sendToServer(MSG message) {
+    if (message == null) {
+      return;
+    }
     this.retrieveChannel(simpleChannel -> simpleChannel.sendToServer(message));
   }
 
   public <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
+    if (message == null) {
+      return;
+    }
     this.retrieveChannel(simpleChannel -> simpleChannel.send(PacketDistributor.PLAYER.with(()
         -> player), message));
   }
 
   public <MSG> void sendToAll(MSG message) {
+    if (message == null) {
+      return;
+    }
     this.retrieveChannel(
         simpleChannel -> simpleChannel.send(PacketDistributor.ALL.noArg(), message));
   }
 
   public <MSG> void sendToTracking(ServerPlayer player, MSG message) {
+    if (message == null) {
+      return;
+    }
     this.retrieveChannel(simpleChannel ->
         simpleChannel.send(PacketDistributor.TRACKING_ENTITY.with(() -> player), message));
   }
 
   public <MSG> void sendToTrackingAndSelf(ServerPlayer player, MSG message) {
+    if (message == null) {
+      return;
+    }
     this.retrieveChannel(simpleChannel ->
         simpleChannel.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), message));
   }
