@@ -5,10 +5,10 @@ import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
 /**
- * Central manager for accessing and updating {@link StatData} on players via Forge's capability
+ * Central manager for accessing {@link StatData} on players via Forge's capability
  * system.
  * <p>
- * Serves as a common superclass for both client- and server-specific stat managers. Intended to be
+ * Serves as a common superclass for both client- and server-specific stat manager. Intended to be
  * accessed statically via {@link StatDataManager#INSTANCE}.
  */
 public class StatDataManager extends CapDataManager<StatData> {
