@@ -22,12 +22,26 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Debug HUD for displaying serialized capability NBT data of the player in the in-game GUI.
+ * <p>
+ * This class listens to Forge's RenderGuiOverlayEvent and renders player capability data
+ * when the game is running in a non-production environment.
+ * It caches the pretty-printed NBT strings once per player tick to optimize performance.
+ */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class DebugHud {
 
+  /** Cache storing pretty-printed NBT data keyed by capability identifier */
   private static final Map<String, String> nbtCache = new HashMap<>();
+
+  /** Last game tick when the NBT cache was updated */
   private static int lastUpdateTick = -1;
 
+  /**
+   * Event handler for the GUI rendering event.
+   * Skips rendering in production environment and calls the method to render debug info.
+   */
   @SubscribeEvent
   public static void onRenderGameOverlay(RenderGuiOverlayEvent.Pre event) {
     if (FMLEnvironment.production) {
@@ -36,6 +50,10 @@ public class DebugHud {
     renderDebugInformation(event.getGuiGraphics());
   }
 
+  /**
+   * Renders the debug information on the screen.
+   * Updates the cache every tick to avoid unnecessary recomputation.
+   */
   private static void renderDebugInformation(GuiGraphics graphics) {
     final Minecraft mc = Minecraft.getInstance();
     final LocalPlayer player = mc.player;
@@ -47,6 +65,7 @@ public class DebugHud {
     if (currentTick != lastUpdateTick) {
       lastUpdateTick = currentTick;
       nbtCache.clear();
+
       CapabilityRegistry.holders().forEach((location, manager) ->
           manager.retrieveStatData(player, holder -> {
             Tag tag = holder.serializeNBT();
@@ -79,6 +98,13 @@ public class DebugHud {
     pose.popPose();
   }
 
+  /**
+   * Recursively pretty-prints the NBT tag content into a human-readable string.
+   * Uses indentation to represent nested compound and list tags.
+   *
+   * @param tag the NBT tag to serialize as string
+   * @return a pretty-printed multiline string representation of the tag
+   */
   private static String prettyPrintNBT(Tag tag) {
     StringBuilder sb = new StringBuilder();
     tag.accept(new StringTagVisitor() {
