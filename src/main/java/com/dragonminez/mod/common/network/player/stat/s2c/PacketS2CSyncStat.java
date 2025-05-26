@@ -1,17 +1,16 @@
 package com.dragonminez.mod.common.network.player.stat.s2c;
 
-import com.dragonminez.mod.common.player.stat.StatData;
+import com.dragonminez.mod.common.player.cap.stat.StatData;
 import com.dragonminez.mod.core.common.network.IPacket;
 import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * Full stat synchronization packet sent from server to client.
  * <p>
- * This includes private {@link StatData} like strength, strike power, energy, etc. Unlike
- * {@link PacketS2CSyncPublicStat}, this packet is only sent to the owning client and not to nearby
- * players.
+ * This includes values from {@link StatData}. This packet is
+ * only sent to the owning client and not to nearby players.
  */
-public class PacketS2CSyncStat extends PacketS2CSyncPublicStat implements IPacket {
+public class PacketS2CSyncStat implements IPacket {
 
   private final int strength;
   private final int strikePower;
@@ -21,7 +20,6 @@ public class PacketS2CSyncStat extends PacketS2CSyncPublicStat implements IPacke
   private final int kiPower;
 
   public PacketS2CSyncStat(StatData data) {
-    super(data, null);
     this.strength = data.getStrength();
     this.strikePower = data.getStrikePower();
     this.energy = data.getEnergy();
@@ -31,7 +29,6 @@ public class PacketS2CSyncStat extends PacketS2CSyncPublicStat implements IPacke
   }
 
   public PacketS2CSyncStat(FriendlyByteBuf buf) {
-    super(buf);
     this.strength = buf.readInt();
     this.strikePower = buf.readInt();
     this.energy = buf.readInt();
@@ -42,7 +39,6 @@ public class PacketS2CSyncStat extends PacketS2CSyncPublicStat implements IPacke
 
   @Override
   public void encode(FriendlyByteBuf buf) {
-    super.encode(buf);
     buf.writeInt(this.strength);
     buf.writeInt(this.strikePower);
     buf.writeInt(this.energy);
@@ -51,9 +47,8 @@ public class PacketS2CSyncStat extends PacketS2CSyncPublicStat implements IPacke
     buf.writeInt(this.kiPower);
   }
 
-  @Override
   public StatData compactedData() {
-    final StatData data = super.compactedData();
+    final StatData data = new StatData();
     data.setStrength(this.strength);
     data.setStrikePower(this.strikePower);
     data.setEnergy(this.energy);
@@ -61,10 +56,5 @@ public class PacketS2CSyncStat extends PacketS2CSyncPublicStat implements IPacke
     data.setResistance(this.resistance);
     data.setKiPower(this.kiPower);
     return data;
-  }
-
-  @Override
-  public boolean serializeId() {
-    return false;
   }
 }
