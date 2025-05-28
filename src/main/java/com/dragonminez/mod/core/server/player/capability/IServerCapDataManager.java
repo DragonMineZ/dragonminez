@@ -1,8 +1,8 @@
 package com.dragonminez.mod.core.server.player.capability;
 
-import com.dragonminez.mod.common.network.NetworkManager;
 import com.dragonminez.mod.common.util.LogUtil;
-import com.dragonminez.mod.core.common.network.IPacket;
+import com.dragonminez.mod.common.util.NetUtil;
+import com.dragonminez.mod.core.common.network.Packet;
 import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
 import com.dragonminez.mod.core.common.player.capability.CapDataManager;
 import com.dragonminez.mod.core.common.player.capability.CapDataType;
@@ -64,10 +64,10 @@ public interface IServerCapDataManager<M extends CapDataManager<D>, D extends Ca
    */
   default void sendUpdate(ServerPlayer player, D data, boolean isPublic) {
     if (isPublic) {
-      NetworkManager.INSTANCE.sendToTracking(player,
+      NetUtil.sendToTracking(player,
           this.buildSyncPacket(player, data, true));
     }
-    NetworkManager.INSTANCE.sendToPlayer(this.buildSyncPacket(player, data, false), player);
+    NetUtil.sendToPlayer(this.buildSyncPacket(player, data, false), player);
   }
 
   /**
@@ -76,9 +76,9 @@ public interface IServerCapDataManager<M extends CapDataManager<D>, D extends Ca
    * @param player    The player whose data is being synced
    * @param data      The capability data to send
    * @param isPublic  Whether the data is visible to others
-   * @return An {@link IPacket} ready to send to the client
+   * @return An {@link Packet} ready to send to the client
    */
-  default IPacket buildSyncPacket(Player player, D data, boolean isPublic) {
+  default Packet buildSyncPacket(Player player, D data, boolean isPublic) {
     return null;
   }
 }

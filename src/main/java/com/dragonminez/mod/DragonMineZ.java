@@ -2,8 +2,8 @@ package com.dragonminez.mod;
 
 import com.dragonminez.mod.client.registry.KeybindRegistry;
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.network.NetworkManager;
 import com.dragonminez.mod.common.registry.ConfigRegistry;
+import com.dragonminez.mod.common.registry.NetworkRegistry;
 import com.dragonminez.mod.core.common.config.ConfigManager;
 import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.GeckoLib;
@@ -28,10 +28,18 @@ import software.bernie.geckolib.GeckoLib;
 public class DragonMineZ {
 
   public DragonMineZ() {
+    this.registry();
+    this.manager();
+    GeckoLib.initialize();
+  }
+
+  private void registry() {
     ConfigRegistry.init();
     KeybindRegistry.init();
+    NetworkRegistry.init();
+  }
+
+  private void manager() {
     ConfigManager.INSTANCE.init();
-    NetworkManager.INSTANCE.init();
-    GeckoLib.initialize();
   }
 }
