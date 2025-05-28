@@ -1,10 +1,4 @@
-/*
- * This file uses GeckoLib, licensed under the MIT License.
- * Copyright © 2024 GeckoThePecko.
- */
-
 buildscript {
-    //Lo de acá adentro solo sirve para cosas de build.gradle y solo para el script.
     repositories {
         mavenCentral()
     }
@@ -13,10 +7,8 @@ buildscript {
 plugins {
     id 'java'
     id 'idea'
-    //ForgeGradle
     id 'net.minecraftforge.gradle' version '6.0.30'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
-    // Mixins
     id 'org.spongepowered.mixin' version '0.7.38'
 }
 
@@ -33,18 +25,15 @@ java {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-//Some info that gets printed in the console when the game is launched.
 println "Java: ${System.getProperty 'java.version'}, " +
         "JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), " +
         "Arch: ${System.getProperty 'os.arch'}"
 
 mixin {
-    // MixinGradle Settings
     add sourceSets.main, 'mixins.dragonminez.refmap.json'
     config 'dragonminez.mixins.json'
-    debug = false // Default to false
+    debug = false
 
-    // Enable debug only for runClient task in IntelliJ debug mode
     gradle.taskGraph.whenReady { taskGraph ->
         if (taskGraph.hasTask(':runClient') && System.getProperty('idea.active') != null) {
             debug = true
@@ -52,7 +41,6 @@ mixin {
     }
 }
 
-//Make the result of jarJar the default.
 tasks.jarJar.configure {
     it.archiveClassifier.set("")
     finalizedBy("reobfJarJar")
@@ -62,8 +50,6 @@ tasks.jar.configure {
     it.archiveClassifier.set("slim")
 }
 
-//La diferencia de esto con el buildScript, es que este pone los repositorios como librerías + los de build.gradle
-// + cuando se hace el jar, estas cosas se incluyen.
 repositories {
     maven {
         name = 'GeckoLib'
@@ -75,7 +61,7 @@ repositories {
     }
     maven {
         name = "Jared's maven"
-        url = "https://maven.blamejared.com/" // Integración para el JEI, NO ES DEPENDENCIA, ES COMPATIBILIDAD.
+        url = "https://maven.blamejared.com/"
     }
     maven {
         url = "https://cursemaven.com"
@@ -96,7 +82,7 @@ minecraft {
             property 'fml.earlyprogresswindow', 'false'
             mods {
                 "${mod_id}" {
-                    source sourceSets.main //False-positive in IntelliJ IDEA
+                    source sourceSets.main
                 }
             }
         }
@@ -120,18 +106,11 @@ minecraft {
 }
 
 dependencies {
-    // Minecraft + Mixin
+    // Minecraft Libraries
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 
-    //Se usa GeckoLib
-    implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1.2')
-    implementation 'com.eliotlash.mclib:mclib:20'
-
-    //Terrablender
-    implementation fg.deobf('com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.7')
-
-    //Corrección a puntos vulnerables de dependencias en Forge:
+    // Corrects vulnerable libraries on Forge's core.
     implementation 'com.google.guava:guava:33.4.8-jre'
     implementation 'io.netty:netty-codec:4.2.0.Final'
     implementation 'io.netty:netty-handler:4.2.0.Final'
@@ -140,17 +119,19 @@ dependencies {
         jarJar.ranged(it, "[2.18.3,)")
     }
 
-    // Just Enough Items (JEI)
+    // Development Libraries
+    implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1.2')
+    implementation 'com.eliotlash.mclib:mclib:20'
+    implementation fg.deobf('com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.7')
+
+    // Dev-Env only mods
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"))
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"))
     compileOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
-    // Este es solo para el runClient, no es necesario para el jar
     runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}"))
     runtimeOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
-
-    // Mods (Solo en runClient) que aportan cosas útiles para el desarrollo.
-    runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218")) // WorldEdit, nada más que decir xd
-    runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405")) // Cyanide es un mod para saber exactamente qué y dónde está fallando un archivo Json (Muy util en worldgen)
+    runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
+    runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources/' }
