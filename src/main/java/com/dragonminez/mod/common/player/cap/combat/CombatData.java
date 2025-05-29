@@ -24,15 +24,14 @@ public class CombatData extends CapDataHolder {
   }
 
   @Override
-  public CompoundTag serializeNBT() {
-    final CompoundTag nbt = new CompoundTag();
-    nbt.putBoolean(CombatDataType.COMBAT_MODE.id(), this.isInCombatMode);
-    nbt.putBoolean(CombatDataType.BLOCKING.id(), this.isBlocking);
-    return nbt;
+  public CompoundTag serialize(CompoundTag tag) {
+    tag.putBoolean(CombatDataType.COMBAT_MODE.id(), this.isInCombatMode);
+    tag.putBoolean(CombatDataType.BLOCKING.id(), this.isBlocking);
+    return tag;
   }
 
   @Override
-  public void deserializeNBT(CompoundTag nbt) {
+  public void deserialize(CompoundTag nbt) {
     this.isInCombatMode = nbt.getBoolean(CombatDataType.COMBAT_MODE.id());
     this.isBlocking = nbt.getBoolean(CombatDataType.BLOCKING.id());
   }

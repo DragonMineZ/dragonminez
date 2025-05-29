@@ -22,7 +22,8 @@ public class CombatDataManager extends CapDataManager<CombatData> {
    * Registers the capability using Forge's {@link CapabilityManager} with a generic {@link CapabilityToken}.
    */
   protected CombatDataManager() {
-    super(CapabilityManager.get(new CapabilityToken<CombatData>() {}));
+    super(CapabilityManager.get(new CapabilityToken<>() {
+    }));
   }
 
   /**

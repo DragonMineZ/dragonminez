@@ -7,12 +7,11 @@ import net.minecraftforge.common.util.INBTSerializable;
 /**
  * Abstract base class for capability data holders.
  * <p>
- * Each capability that stores data should extend this class and implement
- * serialization logic using the {@link INBTSerializable} interface.
- * This class also provides a unique identifier used for capability registration
- * and retrieval.
+ * Each capability that stores data should extend this class and implement serialization logic using
+ * the {@link INBTSerializable} interface. This class also provides a unique identifier used for
+ * capability registration and retrieval.
  */
-public abstract class CapDataHolder implements INBTSerializable<CompoundTag> {
+public abstract class CapDataHolder {
 
   /**
    * The unique identifier for this capability.
@@ -35,5 +34,12 @@ public abstract class CapDataHolder implements INBTSerializable<CompoundTag> {
    */
   public ResourceLocation identifier() {
     return identifier;
+  }
+
+  public CompoundTag serialize(CompoundTag nbt) {
+    return nbt;
+  }
+
+  public void deserialize(CompoundTag nbt) {
   }
 }

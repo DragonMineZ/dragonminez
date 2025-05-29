@@ -2,6 +2,7 @@ package com.dragonminez.mod.core.common.player.capability;
 
 import java.util.function.Consumer;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -51,7 +52,7 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
    */
   public void update(Player player, D newData) {
     this.retrieveStatData(player, oldData ->
-        oldData.deserializeNBT(newData.serializeNBT()));
+        oldData.deserialize(newData.serialize(new CompoundTag())));
   }
 
   /**

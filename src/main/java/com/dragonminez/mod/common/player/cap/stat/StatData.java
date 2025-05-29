@@ -36,8 +36,7 @@ public class StatData extends CapDataHolder {
   }
 
   @Override
-  public CompoundTag serializeNBT() {
-    final CompoundTag nbt = new CompoundTag();
+  public CompoundTag serialize(CompoundTag nbt) {
     nbt.putInt(StatDataType.STRENGTH.id(), this.strength);
     nbt.putInt(StatDataType.STRIKE_POWER.id(), this.strikePower);
     nbt.putInt(StatDataType.ENERGY.id(), this.energy);
@@ -49,7 +48,7 @@ public class StatData extends CapDataHolder {
   }
 
   @Override
-  public void deserializeNBT(CompoundTag nbt) {
+  public void deserialize(CompoundTag nbt) {
     this.strength = nbt.getInt(StatDataType.STRENGTH.id());
     this.strikePower = nbt.getInt(StatDataType.STRIKE_POWER.id());
     this.energy = nbt.getInt(StatDataType.ENERGY.id());

@@ -24,15 +24,14 @@ public class GeneticData extends CapDataHolder {
   }
 
   @Override
-  public CompoundTag serializeNBT() {
-    final CompoundTag nbt = new CompoundTag();
+  public CompoundTag serialize(CompoundTag nbt) {
     nbt.putString(GeneticDataType.RACE.id(), this.race);
     nbt.putString(GeneticDataType.FORM.id(), this.form);
     return nbt;
   }
 
   @Override
-  public void deserializeNBT(CompoundTag nbt) {
+  public void deserialize(CompoundTag nbt) {
     this.race = nbt.getString(GeneticDataType.RACE.id());
     this.form = nbt.getString(GeneticDataType.FORM.id());
   }

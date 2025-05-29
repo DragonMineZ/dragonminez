@@ -1,6 +1,6 @@
 package com.dragonminez.mod.client.network.player.stat.handler;
 
-import com.dragonminez.mod.common.network.player.stat.s2c.PacketS2CSyncStat;
+import com.dragonminez.mod.common.network.player.cap.stat.s2c.PacketS2CSyncStat;
 import com.dragonminez.mod.common.player.cap.stat.StatDataManager;
 import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
@@ -19,7 +19,7 @@ public class PacketHandlerS2CSyncStat {
       }
 
       final Player player = Minecraft.getInstance().player;
-      StatDataManager.INSTANCE.update(player, packet.compactedData());
+      StatDataManager.INSTANCE.update(player, packet.data());
     });
     context.setPacketHandled(true);
   }
