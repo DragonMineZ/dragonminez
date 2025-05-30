@@ -13,9 +13,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Generic manager class for player capability data.
  * <p>
- * Handles the creation, update, and retrieval of a specific capability type {@code D},
- * which must extend {@link CapDataHolder}. This class also implements {@link ICapabilityProvider}
- * so it can be registered and attached to player entities.
+ * Handles the creation, update, and retrieval of a specific capability type {@code D}, which must
+ * extend {@link CapDataHolder}. This class also implements {@link ICapabilityProvider} so it can be
+ * registered and attached to player entities.
  *
  * @param <D> the type of capability data this manager handles
  */
@@ -36,8 +36,8 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
   }
 
   /**
-   * Constructs and returns a new instance of the capability data.
-   * This is used when attaching the capability to a player.
+   * Constructs and returns a new instance of the capability data. This is used when attaching the
+   * capability to a player.
    *
    * @return a new instance of the capability data
    */
@@ -51,7 +51,7 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
    * @param newData the new data to apply to the player
    */
   public void update(Player player, D newData) {
-    this.retrieveStatData(player, oldData ->
+    this.retrieveData(player, oldData ->
         oldData.deserialize(newData.serialize(new CompoundTag())));
   }
 
@@ -61,9 +61,23 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
    * @param player   the player whose data is being accessed
    * @param consumer the logic to apply to the capability if found
    */
-  public void retrieveStatData(Player player, Consumer<D> consumer) {
+  public void retrieveData(Player player, Consumer<D> consumer) {
     player.getCapability(this.capability)
         .ifPresent(consumer::accept);
+  }
+
+  /**
+   * Retrieves the capability data from the player.
+   * <p>
+   * If the capability is not present, returns {@code null}.
+   *
+   * @param player the player whose data is being accessed
+   * @return the capability data if present, otherwise {@code null}
+   */
+  @SuppressWarnings("all")
+  public D retrieveData(Player player) {
+    return player.getCapability(this.capability)
+        .orElse(null);
   }
 
   /**

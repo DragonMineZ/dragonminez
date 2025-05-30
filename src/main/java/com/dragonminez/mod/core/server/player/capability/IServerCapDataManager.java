@@ -51,7 +51,7 @@ public interface IServerCapDataManager<M extends CapDataManager<D>, D extends Ca
    * @param consumer The modification logic to apply to the data
    */
   default void modifyStat(M manager, ServerPlayer player, CapDataType type, Consumer<D> consumer) {
-    manager.retrieveStatData(player, consumer);
+    manager.retrieveData(player, consumer);
     consumer.andThen(data -> this.sendUpdate(player, data, type.isPublic()));
   }
 
