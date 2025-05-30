@@ -1,6 +1,8 @@
 package com.dragonminez.mod.common.player.cap.stat;
 
 import com.dragonminez.mod.common.Reference;
+import com.dragonminez.mod.common.config.GeneralConfig;
+import com.dragonminez.mod.common.util.MathUtil;
 import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
 import com.dragonminez.mod.core.common.player.capability.CapDataType;
 import net.minecraft.nbt.CompoundTag;
@@ -58,60 +60,61 @@ public class StatData extends CapDataHolder {
     this.alignment = nbt.getInt(StatDataType.ALIGNMENT.id());
   }
 
+  public void setStrength(int strength) {
+    this.strength = MathUtil.rangeValue(strength, 1, GeneralConfig.attributes().maxAttributes);
+  }
+
   public int getStrength() {
     return strength;
   }
 
-  public void setStrength(int strength) {
-    this.strength = strength;
+  public void setStrikePower(int strikePower) {
+    this.strikePower = MathUtil.rangeValue(strikePower, 1,
+        GeneralConfig.attributes().maxAttributes);
   }
 
   public int getStrikePower() {
     return strikePower;
   }
 
-  public void setStrikePower(int strikePower) {
-    this.strikePower = strikePower;
+  public void setEnergy(int energy) {
+    this.energy = MathUtil.rangeValue(energy, 1, GeneralConfig.attributes().maxAttributes);
   }
 
   public int getEnergy() {
     return energy;
   }
 
-  public void setEnergy(int energy) {
-    this.energy = energy;
+  public void setVitality(int vitality) {
+    this.vitality = MathUtil.rangeValue(vitality, 1, GeneralConfig.attributes().maxAttributes);
   }
 
   public int getVitality() {
     return vitality;
   }
 
-  public void setVitality(int vitality) {
-    this.vitality = vitality;
+  public void setResistance(int resistance) {
+    this.resistance = MathUtil.rangeValue(resistance, 1, GeneralConfig.attributes().maxAttributes);
   }
 
   public int getResistance() {
     return resistance;
   }
 
-  public void setResistance(int resistance) {
-    this.resistance = resistance;
+  public void setKiPower(int kiPower) {
+    this.kiPower = MathUtil.rangeValue(kiPower, 1, GeneralConfig.attributes().maxAttributes);
   }
 
   public int getKiPower() {
     return kiPower;
   }
 
-  public void setKiPower(int kiPower) {
-    this.kiPower = kiPower;
+  public void setAlignment(int alignment) {
+    this.alignment = MathUtil.rangeValue(alignment, 0, 100);
   }
 
   public int getAlignment() {
     return alignment;
-  }
-
-  public void setAlignment(int alignment) {
-    this.alignment = alignment;
   }
 
   public static class StatDataType {
