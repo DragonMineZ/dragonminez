@@ -67,7 +67,7 @@ public class DebugHud {
       nbtCache.clear();
 
       CapabilityRegistry.holders().forEach((location, manager) ->
-          manager.retrieveStatData(player, holder -> {
+          manager.retrieveData(player, holder -> {
             Tag tag = holder.serialize(new CompoundTag());
             String pretty = prettyPrintNBT(tag);
             nbtCache.put(holder.identifier().toString(), pretty);
