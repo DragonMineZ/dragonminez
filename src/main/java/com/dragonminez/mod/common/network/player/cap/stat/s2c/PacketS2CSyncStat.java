@@ -1,7 +1,7 @@
 package com.dragonminez.mod.common.network.player.cap.stat.s2c;
 
 import com.dragonminez.mod.common.player.cap.stat.StatData;
-import com.dragonminez.mod.core.common.network.capability.CapSyncPacket;
+import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import net.minecraft.network.FriendlyByteBuf;
 
 /**
@@ -10,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
  * This includes values from {@link StatData}. This packet is
  * only sent to the owning client and not to nearby players.
  */
-public class PacketS2CSyncStat extends CapSyncPacket<StatData> {
+public class PacketS2CSyncStat extends PacketS2CCapSync<StatData> {
   public PacketS2CSyncStat(StatData data) {
     super(data);
   }
@@ -20,7 +20,7 @@ public class PacketS2CSyncStat extends CapSyncPacket<StatData> {
   }
 
   @Override
-  public StatData createInstance() {
+  public StatData createDataInstance() {
     return new StatData();
   }
 

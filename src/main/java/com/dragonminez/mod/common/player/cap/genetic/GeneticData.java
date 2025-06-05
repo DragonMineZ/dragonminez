@@ -31,7 +31,7 @@ public class GeneticData extends CapDataHolder {
   }
 
   @Override
-  public void deserialize(CompoundTag nbt) {
+  public void deserialize(CompoundTag nbt, boolean cloned) {
     this.race = nbt.getString(GeneticDataType.RACE.id());
     this.form = nbt.getString(GeneticDataType.FORM.id());
   }

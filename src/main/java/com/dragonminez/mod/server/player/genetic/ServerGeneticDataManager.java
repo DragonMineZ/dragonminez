@@ -1,18 +1,22 @@
 package com.dragonminez.mod.server.player.genetic;
 
+import com.dragonminez.mod.common.network.player.cap.genetic.s2c.PacketS2CSyncGenetic;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData.GeneticDataType;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticDataManager;
+import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.server.player.capability.IServerCapDataManager;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Server-side manager for {@link GeneticData}, handling updates and synchronization
- * of genetic traits such as race and form for players.
+ * Server-side manager for {@link GeneticData}, handling updates and synchronization of genetic
+ * traits such as race and form for players.
  * <p>
- * This class extends {@link GeneticDataManager} to provide mutation and retrieval functionality
- * and implements {@link IServerCapDataManager} to support synchronization with connected clients.
- * It includes logging support for mutation changes.
+ * This class extends {@link GeneticDataManager} to provide mutation and retrieval functionality and
+ * implements {@link IServerCapDataManager} to support synchronization with connected clients. It
+ * includes logging support for mutation changes.
  */
 public class ServerGeneticDataManager extends GeneticDataManager implements
     IServerCapDataManager<GeneticDataManager, GeneticData> {
@@ -34,7 +38,7 @@ public class ServerGeneticDataManager extends GeneticDataManager implements
    * @param log    Whether to log the change.
    */
   public void setRace(ServerPlayer player, String race, boolean log) {
-    this.setStatInternal(this, player, GeneticDataType.RACE, race,
+    this.setStatInternal(player, GeneticDataType.RACE, race,
         data -> data.setRace(race), log);
   }
 
@@ -46,7 +50,18 @@ public class ServerGeneticDataManager extends GeneticDataManager implements
    * @param log    Whether to log the change.
    */
   public void setForm(ServerPlayer player, String form, boolean log) {
-    this.setStatInternal(this, player, GeneticDataType.RACE, form,
+    this.setStatInternal(player, GeneticDataType.RACE, form,
         data -> data.setForm(form), log);
+  }
+
+  @Override
+  public GeneticDataManager manager() {
+    return this;
+  }
+
+  @Override
+  public PacketS2CCapSync<GeneticData> buildSyncPacket(@Nullable Player player,
+      @Nullable GeneticData data, @Nullable Boolean isPublic) {
+    return new PacketS2CSyncGenetic(data, player == null ? null : player.getUUID());
   }
 }

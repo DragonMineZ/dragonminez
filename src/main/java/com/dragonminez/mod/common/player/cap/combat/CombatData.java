@@ -31,7 +31,10 @@ public class CombatData extends CapDataHolder {
   }
 
   @Override
-  public void deserialize(CompoundTag nbt) {
+  public void deserialize(CompoundTag nbt, boolean cloned) {
+    if (cloned) {
+      return;
+    }
     this.isInCombatMode = nbt.getBoolean(CombatDataType.COMBAT_MODE.id());
     this.isBlocking = nbt.getBoolean(CombatDataType.BLOCKING.id());
   }

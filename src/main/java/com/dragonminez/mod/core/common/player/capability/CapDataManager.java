@@ -49,10 +49,36 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
    *
    * @param player  the player whose data should be updated
    * @param newData the new data to apply to the player
+   * @param clonned whether the data is a cloned instance or not
+   */
+  public void update(Player player, D newData, boolean cloned) {
+    this.retrieveData(player, oldData ->
+        oldData.deserialize(newData.serialize(new CompoundTag()), cloned));
+  }
+
+  /**
+   * Replaces the existing capability data on a player with the data from another instance.
+   * Typically used for syncing or loading saved data.
+   *
+   * @param player  the player whose data should be updated
+   * @param newData the new data to apply to the player
    */
   public void update(Player player, D newData) {
     this.retrieveData(player, oldData ->
-        oldData.deserialize(newData.serialize(new CompoundTag())));
+        oldData.deserialize(newData.serialize(new CompoundTag()), false));
+  }
+
+  /**
+   * Copies data from a reference player to a target player.
+   *
+   * @param reference The player whose data is copied
+   * @param target    The player receiving the data
+   */
+  public void update(Player reference, Player target) {
+    final D data = this.retrieveData(reference);
+    if (data != null) {
+      this.update(target, data, true);
+    }
   }
 
   /**

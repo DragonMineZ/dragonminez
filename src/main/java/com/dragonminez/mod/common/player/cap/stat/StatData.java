@@ -50,7 +50,7 @@ public class StatData extends CapDataHolder {
   }
 
   @Override
-  public void deserialize(CompoundTag nbt) {
+  public void deserialize(CompoundTag nbt, boolean cloned) {
     this.strength = nbt.getInt(StatDataType.STRENGTH.id());
     this.strikePower = nbt.getInt(StatDataType.STRIKE_POWER.id());
     this.energy = nbt.getInt(StatDataType.ENERGY.id());

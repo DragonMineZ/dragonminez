@@ -1,12 +1,13 @@
 package com.dragonminez.mod.common.network.player.cap.combat.s2c;
 
 import com.dragonminez.mod.common.player.cap.combat.CombatData;
-import com.dragonminez.mod.core.common.network.capability.CapSyncPacket;
+import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
+import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 
-public class PacketS2CSyncCombatData extends CapSyncPacket<CombatData> {
+public class PacketS2CSyncCombatData extends PacketS2CCapSync<CombatData> {
 
-  public PacketS2CSyncCombatData(CombatData rawValue, int playerId) {
+  public PacketS2CSyncCombatData(CombatData rawValue, UUID playerId) {
     super(rawValue, playerId);
   }
 
@@ -15,7 +16,7 @@ public class PacketS2CSyncCombatData extends CapSyncPacket<CombatData> {
   }
 
   @Override
-  public CombatData createInstance() {
+  public CombatData createDataInstance() {
     return new CombatData();
   }
 

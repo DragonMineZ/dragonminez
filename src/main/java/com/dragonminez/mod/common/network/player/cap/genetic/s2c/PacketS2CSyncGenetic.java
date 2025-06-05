@@ -1,11 +1,12 @@
 package com.dragonminez.mod.common.network.player.cap.genetic.s2c;
 
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData;
-import com.dragonminez.mod.core.common.network.capability.CapSyncPacket;
+import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
+import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 
-public class PacketS2CSyncGenetic extends CapSyncPacket<GeneticData> {
-  public PacketS2CSyncGenetic(GeneticData rawValue, int playerId) {
+public class PacketS2CSyncGenetic extends PacketS2CCapSync<GeneticData> {
+  public PacketS2CSyncGenetic(GeneticData rawValue, UUID playerId) {
     super(rawValue, playerId);
   }
 
@@ -14,7 +15,7 @@ public class PacketS2CSyncGenetic extends CapSyncPacket<GeneticData> {
   }
 
   @Override
-  public GeneticData createInstance() {
+  public GeneticData createDataInstance() {
     return new GeneticData();
   }
 
