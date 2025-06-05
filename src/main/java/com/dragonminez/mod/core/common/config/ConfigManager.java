@@ -243,18 +243,21 @@ public final class ConfigManager {
   private <T> void processJsonFiles(IConfigHandler<T> handler, Path folder, String dataDir,
       Consumer<Path> fileConsumer) {
     try {
+      if(!dataDir.isEmpty()){
+        folder = folder.resolve(dataDir);
+      }
       if (Files.exists(folder) && Files.isDirectory(folder)) {
         try (var paths = Files.walk(folder, 1)) {
           List<Path> jsonPaths = paths.filter(Files::isRegularFile)
               .filter((Path path) -> path.toString().endsWith(JacksonUtil.FILE_EXTENSION))
               .toList();
-          if (jsonPaths.isEmpty()) {
-            return;
-          }
           if (dataDir.isEmpty()) {
             jsonPaths = jsonPaths.stream()
                 .filter((Path path) -> path.toString().contains(handler.identifier()))
                 .toList();
+          }
+          if (jsonPaths.isEmpty()) {
+            return;
           }
           jsonPaths.forEach(fileConsumer);
         }

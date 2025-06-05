@@ -77,7 +77,7 @@ public interface IConfigHandler<T> {
     if (this.getType() == ConfigType.STATIC) {
       return "config/" + this.getStaticDataDir();
     }
-    return new File(FMLPaths.CONFIGDIR.get().toString() + File.separator + Reference.MOD_ID)
+    return new File(FMLPaths.CONFIGDIR.get().toString() + File.separator + Reference.MOD_ID + File.separator + this.getStaticDataDir())
         .getAbsolutePath();
   }
 
@@ -97,7 +97,8 @@ public interface IConfigHandler<T> {
    */
   default boolean isCorrectSide() {
     final Dist currentDist = FMLEnvironment.dist;
-    final ConfigDist currentConfigDist = ConfigDist.valueOf(currentDist.name());
+    final ConfigDist currentConfigDist = ConfigDist.valueOf(
+        currentDist == Dist.DEDICATED_SERVER ? "SERVER" : currentDist.name());
     if (this.getDist() == ConfigDist.BOTH) {
       return true;
     }
