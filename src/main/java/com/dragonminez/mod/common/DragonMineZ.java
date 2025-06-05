@@ -1,11 +1,12 @@
-package com.dragonminez.mod;
+package com.dragonminez.mod.common;
 
-import com.dragonminez.mod.client.registry.KeybindRegistry;
-import com.dragonminez.mod.common.Reference;
+import com.dragonminez.mod.client.DragonMineClient;
 import com.dragonminez.mod.common.registry.ConfigRegistry;
-import com.dragonminez.mod.common.registry.NetworkRegistry;
+import com.dragonminez.mod.core.common.network.NetworkManager;
 import com.dragonminez.mod.core.common.config.ConfigManager;
+import com.dragonminez.mod.server.DragonMineServer;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import software.bernie.geckolib.GeckoLib;
 
 /**
@@ -28,18 +29,25 @@ import software.bernie.geckolib.GeckoLib;
 public class DragonMineZ {
 
   public DragonMineZ() {
+    this.instance();
     this.registry();
     this.manager();
     GeckoLib.initialize();
   }
 
+  private void instance() {
+    if (FMLEnvironment.dist.isClient()) {
+      DragonMineClient.init();
+    }
+    DragonMineServer.init();
+  }
+
   private void registry() {
     ConfigRegistry.init();
-    KeybindRegistry.init();
-    NetworkRegistry.init();
   }
 
   private void manager() {
+    NetworkManager.INSTANCE.init();
     ConfigManager.INSTANCE.init();
   }
 }
