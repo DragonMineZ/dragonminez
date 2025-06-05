@@ -74,7 +74,7 @@ public final class CapDataType {
    * @param id the raw ID to convert
    * @return the legible form of the ID
    */
-  private static String toLegible(String id) {
+  public static String toLegible(String id) {
     final StringBuilder result = new StringBuilder();
     boolean capitalizeNext = true;
 

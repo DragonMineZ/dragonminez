@@ -1,6 +1,7 @@
 package com.dragonminez.mod.client.hud;
 
 import com.dragonminez.mod.common.Reference;
+import com.dragonminez.mod.core.common.player.capability.CapDataType;
 import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ public class DebugHud {
           manager.retrieveData(player, holder -> {
             Tag tag = holder.serialize(new CompoundTag());
             String pretty = prettyPrintNBT(tag);
-            nbtCache.put(holder.identifier().toString(), pretty);
+            nbtCache.put(CapDataType.toLegible(holder.identifier().getPath()), pretty);
           }));
     }
 
