@@ -1,7 +1,7 @@
 package com.dragonminez.mod.client.hud;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.registry.CapabilityRegistry;
+import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +16,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.StringTagVisitor;
 import net.minecraft.nbt.Tag;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -29,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
  * when the game is running in a non-production environment.
  * It caches the pretty-printed NBT strings once per player tick to optimize performance.
  */
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class DebugHud {
 
   /** Cache storing pretty-printed NBT data keyed by capability identifier */
@@ -66,7 +67,7 @@ public class DebugHud {
       lastUpdateTick = currentTick;
       nbtCache.clear();
 
-      CapabilityRegistry.holders().forEach((location, manager) ->
+      CapManagerRegistry.holders().forEach((location, manager) ->
           manager.retrieveData(player, holder -> {
             Tag tag = holder.serialize(new CompoundTag());
             String pretty = prettyPrintNBT(tag);
@@ -84,7 +85,7 @@ public class DebugHud {
     final AtomicInteger y = new AtomicInteger(50);
 
     nbtCache.forEach((label, pretty) -> {
-      graphics.drawString(font, label + ":", labelX, y.get(), 0xffffff, true);
+      graphics.drawString(font, label, labelX, y.get(), 0xffffff, true);
       y.addAndGet(10);
       for (String line : pretty.split("\n")) {
         if (!line.isEmpty()) {
