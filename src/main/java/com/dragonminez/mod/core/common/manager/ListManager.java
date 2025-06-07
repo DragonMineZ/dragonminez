@@ -23,7 +23,7 @@ public abstract class ListManager<K, V> {
    * @param key   The key to add
    * @param value The value to associate with the key
    */
-  public void add(K key, V value) {
+  public void register(K key, V value) {
     if (this.uniqueKeys() && this.map.containsKey(key)) {
       LogUtil.error("Duplicated key %s on manager %s".formatted(key, this.identifier()));
       return;

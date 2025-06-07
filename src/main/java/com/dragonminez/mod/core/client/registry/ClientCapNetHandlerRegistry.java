@@ -47,34 +47,34 @@ public class ClientCapNetHandlerRegistry {
     }
 
     final SimpleChannel channel = event.channel();
-    CapManagerRegistry.managers(Dist.CLIENT).forEach((location,
-        capDataManager) -> {
-      // Try to register private sync packet
-      final PacketS2CCapSync<?> privatePacket = capDataManager.buildMockSyncPacket(false);
-      if (privatePacket != null) {
-        register(channel, location, (Class<PacketS2CCapSync<?>>) privatePacket.getClass(),
-            privatePacket);
-        return;
-      }
+    CapManagerRegistry.INSTANCE.values(Dist.CLIENT)
+        .forEach((capDataManager) -> {
+          // Try to register private sync packet
+          final PacketS2CCapSync<?> privatePacket = capDataManager.buildMockSyncPacket(false);
+          if (privatePacket != null) {
+            register(channel, capDataManager.id(), (Class<PacketS2CCapSync<?>>) privatePacket.getClass(),
+                privatePacket);
+            return;
+          }
 
-      // Fallback to public sync packet
-      final PacketS2CCapSync<?> publicPacket = capDataManager.buildMockSyncPacket(true);
-      if (publicPacket != null) {
-        register(channel, location, (Class<PacketS2CCapSync<?>>) publicPacket.getClass(),
-            publicPacket);
-        return;
-      }
+          // Fallback to public sync packet
+          final PacketS2CCapSync<?> publicPacket = capDataManager.buildMockSyncPacket(true);
+          if (publicPacket != null) {
+            register(channel, capDataManager.id(), (Class<PacketS2CCapSync<?>>) publicPacket.getClass(),
+                publicPacket);
+            return;
+          }
 
-      LogUtil.debug("Skipping network registration for {} as it has no sync packet",
-          location.toString());
-    });
+          LogUtil.debug("Skipping network registration for {} as it has no sync packet",
+              capDataManager.id().toString());
+        });
   }
 
   /**
    * Registers a sync packet handler to the given network channel.
    *
    * @param channel  the channel to register to
-   * @param id  the manager id associated with the packet
+   * @param id       the manager id associated with the packet
    * @param clazz    the packet class
    * @param instance an instance of the packet used for decoding
    */

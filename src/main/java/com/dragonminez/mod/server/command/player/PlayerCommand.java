@@ -3,6 +3,7 @@ package com.dragonminez.mod.server.command.player;
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.core.common.player.capability.CapData;
 import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
+import com.dragonminez.mod.core.common.player.capability.CapDataManager;
 import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
 import com.dragonminez.mod.core.common.player.capability.ICap;
 import com.dragonminez.mod.core.common.util.JavaUtil;
@@ -15,16 +16,15 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.resources.ResourceLocation;
-
-import java.util.List;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 
 /**
@@ -61,10 +61,12 @@ public class PlayerCommand {
    */
   private static final SuggestionProvider<CommandSourceStack> CAP_ID_SUGGEST =
       (ctx, builder) ->
-          SharedSuggestionProvider.suggest(CapManagerRegistry.managers(Dist.DEDICATED_SERVER)
-                  .keySet().stream()
-                  .filter(loc -> loc.getNamespace().equals(Reference.MOD_ID))
-                  .map(ResourceLocation::getPath),
+          SharedSuggestionProvider.suggest(CapManagerRegistry.INSTANCE
+                  .values(Dist.DEDICATED_SERVER)
+                  .stream()
+                  .filter(manager -> manager.id().getNamespace()
+                      .equals(Reference.MOD_ID))
+                  .map(capDataManager -> capDataManager.id().getPath()),
               builder
           );
 
@@ -74,8 +76,8 @@ public class PlayerCommand {
   private static final SuggestionProvider<CommandSourceStack> CAP_KEY_SUGGEST =
       (ctx, builder) -> {
         final String category = StringArgumentType.getString(ctx, "category");
-        final var manager = CapManagerRegistry.manager(
-            new ResourceLocation(Reference.MOD_ID, category), Dist.DEDICATED_SERVER);
+        final var manager = CapManagerRegistry.INSTANCE.get(
+            Dist.DEDICATED_SERVER, new ResourceLocation(Reference.MOD_ID, category));
         if (manager == null) {
           return Suggestions.empty();
         }
@@ -95,8 +97,8 @@ public class PlayerCommand {
         final String category = StringArgumentType.getString(ctx, "category");
         final String key = StringArgumentType.getString(ctx, "key");
 
-        final var manager = CapManagerRegistry.manager(
-            new ResourceLocation(Reference.MOD_ID, category), Dist.DEDICATED_SERVER);
+        final var manager = CapManagerRegistry.INSTANCE.get(
+            Dist.DEDICATED_SERVER, new ResourceLocation(Reference.MOD_ID, category));
         if (manager == null) {
           return Suggestions.empty();
         }
@@ -166,7 +168,7 @@ public class PlayerCommand {
     final String key = StringArgumentType.getString(ctx, "key");
 
     final ResourceLocation id = new ResourceLocation(Reference.MOD_ID, category);
-    final var manager = CapManagerRegistry.manager(id, Dist.DEDICATED_SERVER);
+    final var manager = CapManagerRegistry.INSTANCE.get(Dist.DEDICATED_SERVER, id);
     if (manager == null) {
       return PlayerCommand.error(ctx, "§cUnknown category §4" + category);
     }
@@ -225,7 +227,7 @@ public class PlayerCommand {
     final String key = StringArgumentType.getString(ctx, "key");
 
     final ResourceLocation id = new ResourceLocation(Reference.MOD_ID, category);
-    final var manager = CapManagerRegistry.manager(id, Dist.DEDICATED_SERVER);
+    final var manager = CapManagerRegistry.INSTANCE.get(Dist.DEDICATED_SERVER, id);
     if (manager == null) {
       return PlayerCommand.error(ctx, "§cUnknown category §4" + category);
     }
@@ -257,8 +259,8 @@ public class PlayerCommand {
     final ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
     final ServerPlayer source = EntityArgument.getPlayer(ctx, "source");
 
-    for (ResourceLocation id : CapManagerRegistry.managers(Dist.DEDICATED_SERVER).keySet()) {
-      final var manager = CapManagerRegistry.manager(id, Dist.DEDICATED_SERVER);
+    for (CapDataManager<?> value : CapManagerRegistry.INSTANCE.values(Dist.DEDICATED_SERVER)) {
+      final var manager = CapManagerRegistry.INSTANCE.get(Dist.DEDICATED_SERVER, value.id());
       if (manager == null) {
         continue;
       }

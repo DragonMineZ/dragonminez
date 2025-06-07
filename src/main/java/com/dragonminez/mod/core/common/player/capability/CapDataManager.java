@@ -9,6 +9,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.common.util.NonNullConsumer;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -198,7 +199,8 @@ public abstract class CapDataManager<C extends ICap> {
     @Override
     public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> cap,
         @Nullable Direction side) {
-      final CapDataManager<?> manager = CapManagerRegistry.manager(this.managerId);
+      final CapDataManager<?> manager = CapManagerRegistry.INSTANCE.get(FMLEnvironment.dist,
+          this.managerId);
       if (manager == null) {
         return LazyOptional.empty();
       }

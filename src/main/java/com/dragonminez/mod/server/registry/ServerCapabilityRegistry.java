@@ -12,11 +12,11 @@ import net.minecraftforge.api.distmarker.Dist;
 public class ServerCapabilityRegistry {
 
   public static void init() {
-    CapManagerRegistry.register(Dist.DEDICATED_SERVER, GeneticDataHolder.ID,
+    CapManagerRegistry.INSTANCE.register(Dist.DEDICATED_SERVER, GeneticDataHolder.ID,
         ServerGeneticDataManager.INSTANCE);
-    CapManagerRegistry.register(Dist.DEDICATED_SERVER, StatDataHolder.ID,
+    CapManagerRegistry.INSTANCE.register(Dist.DEDICATED_SERVER, StatDataHolder.ID,
         ServerStatDataManager.INSTANCE);
-    CapManagerRegistry.register(Dist.DEDICATED_SERVER, CombatDataHolder.ID,
+    CapManagerRegistry.INSTANCE.register(Dist.DEDICATED_SERVER, CombatDataHolder.ID,
         ServerCombatDataManager.INSTANCE);
   }
 }

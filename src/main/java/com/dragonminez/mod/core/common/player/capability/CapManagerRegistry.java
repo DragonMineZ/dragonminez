@@ -2,9 +2,9 @@ package com.dragonminez.mod.core.common.player.capability;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.core.client.registry.ClientCapNetHandlerRegistry;
+import com.dragonminez.mod.core.common.manager.DistListManager;
 import com.dragonminez.mod.core.common.player.capability.CapDataManager.CapInstanceProvider;
 import com.google.common.collect.HashBasedTable;
-import java.util.HashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -31,38 +31,14 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
  * @see AttachCapabilitiesEvent
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CapManagerRegistry {
+public class CapManagerRegistry extends DistListManager<ResourceLocation, CapDataManager<?>> {
 
-  /**
-   * Holds capability managers for each side (client or server) mapped by their unique capability
-   * ID.
-   * <p>
-   * The outer map is keyed by {@link Dist}, and the inner map by the {@link ResourceLocation} of
-   * the capability. This allows separate registration of client/server-only capabilities when
-   * needed.
-   */
-  private static final HashBasedTable<Dist, ResourceLocation, CapDataManager<?>> MANAGERS =
-      HashBasedTable.create();
+  public static final CapManagerRegistry INSTANCE = new CapManagerRegistry();
 
   static {
     if (FMLEnvironment.dist == Dist.CLIENT) {
       ClientCapNetHandlerRegistry.init();
     }
-  }
-
-  /**
-   * Registers a capability manager for the specified distribution (client or server).
-   * <p>
-   * On the client side, it also triggers the initialization of client capability networking (only
-   * once).
-   *
-   * @param dist    the distribution (client or server)
-   * @param id      the unique ID of the capability
-   * @param manager the capability data manager instance
-   */
-  public static void register(Dist dist, ResourceLocation id, CapDataManager<?> manager) {
-
-    MANAGERS.put(dist, id, manager);
   }
 
   /**
@@ -81,53 +57,25 @@ public class CapManagerRegistry {
     }
 
     final boolean isClientSide = player.level().isClientSide;
-    MANAGERS.row(isClientSide ? Dist.CLIENT : Dist.DEDICATED_SERVER)
-        .forEach((location, capDataManager) -> {
-          final CapInstanceProvider<?> provider = new CapInstanceProvider<>(capDataManager);
-          event.addCapability(location, provider);
-        });
+    for (CapDataManager<?> value :
+        INSTANCE.values(isClientSide ? Dist.CLIENT : Dist.DEDICATED_SERVER)) {
+      final CapInstanceProvider<?> provider = new CapInstanceProvider<>(value);
+      event.addCapability(value.id(), provider);
+    }
   }
 
-  /**
-   * Retrieves a capability manager for the current distribution (client/server) by its ID.
-   *
-   * @param id the capability ID
-   * @return the corresponding {@link CapDataManager} instance, or {@code null} if not found
-   */
-  public static CapDataManager<?> manager(ResourceLocation id) {
-    return manager(id, FMLEnvironment.dist);
+  @Override
+  public String identifier() {
+    return "capability";
   }
 
-  /**
-   * Retrieves a capability manager for the given distribution (client/server) by its ID.
-   *
-   * @param id   the capability ID
-   * @param dist the distribution (client or server)
-   * @return the corresponding {@link CapDataManager} instance, or {@code null} if not found
-   */
-  public static CapDataManager<?> manager(ResourceLocation id, Dist dist) {
-    return MANAGERS.get(dist, id);
+  @Override
+  public boolean uniqueKeys() {
+    return true;
   }
 
-  /**
-   * Returns all capability managers registered for the current distribution.
-   * <p>
-   * This returns a shallow copy to avoid exposing the internal mutable structure.
-   *
-   * @return a map of capability IDs to their respective managers for the current distribution
-   */
-  public static HashMap<ResourceLocation, CapDataManager<?>> managers(Dist dist) {
-    return new HashMap<>(MANAGERS.row(dist));
-  }
-
-  /**
-   * Returns all capability managers registered for the current distribution.
-   * <p>
-   * This returns a shallow copy to avoid exposing the internal mutable structure.
-   *
-   * @return a map of capability IDs to their respective managers for the current distribution
-   */
-  public static HashMap<ResourceLocation, CapDataManager<?>> managers() {
-    return new HashMap<>(MANAGERS.row(FMLEnvironment.dist));
+  @Override
+  public LogMode logMode() {
+    return LogMode.LOG_ALL;
   }
 }

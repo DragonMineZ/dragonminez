@@ -72,8 +72,8 @@ public class DebugHud {
       lastUpdateTick = currentTick;
       nbtCache.clear();
 
-      CapManagerRegistry.managers(Dist.CLIENT)
-          .forEach((location, manager) ->
+      CapManagerRegistry.INSTANCE.values(Dist.CLIENT)
+          .forEach((manager) ->
               manager.retrieveData(player, cap -> {
                 final Tag tag = cap.serialize(new CompoundTag());
                 final String prettyData = prettyPrintNBT(tag);

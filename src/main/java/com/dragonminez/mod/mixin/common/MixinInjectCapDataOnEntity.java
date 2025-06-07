@@ -13,28 +13,31 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * MixinInjectCapDataOnEntity
  * <p>
- * This mixin injects into {@link Entity#saveWithoutId(CompoundTag)} and {@link Entity#load(CompoundTag)}
- * to directly handle the serialization and deserialization of custom player capability data.
+ * This mixin injects into {@link Entity#saveWithoutId(CompoundTag)} and
+ * {@link Entity#load(CompoundTag)} to directly handle the serialization and deserialization of
+ * custom player capability data.
  *
  * <p><strong>Why this exists:</strong>
- * The default Forge capability persistence system is rigid, verbose, and too entangled with
- * Forge's internal lifecycle hooks (AttachCapabilitiesEvent, RegisterCapabilitiesEvent, etc).
- * When designing a clean and centralized capability management layer ({@link CapManagerRegistry}),
- * it becomes unreasonably complex and error-prone to rely on Forge’s event-based saving and loading
- * if you're aiming for clarity, scalability, and less boilerplate.
+ * The default Forge capability persistence system is rigid, verbose, and too entangled with Forge's
+ * internal lifecycle hooks (AttachCapabilitiesEvent, RegisterCapabilitiesEvent, etc). When
+ * designing a clean and centralized capability management layer ({@link CapManagerRegistry}), it
+ * becomes unreasonably complex and error-prone to rely on Forge’s event-based saving and loading if
+ * you're aiming for clarity, scalability, and less boilerplate.
  *
  * <p>Instead of cluttering the codebase with scattered capability save/load handlers or relying on
- * Forge's clunky NBT tagging via capability providers, this mixin enables precise control over where and
- * how player data is stored — directly within the core `Entity` save/load flow.
+ * Forge's clunky NBT tagging via capability providers, this mixin enables precise control over
+ * where and how player data is stored — directly within the core `Entity` save/load flow.
  *
  * <p><strong>Scope:</strong>
- * This is intentionally limited to `Player` entities to avoid unintended side effects on other entities.
- * All capability managers registered in {@link CapManagerRegistry} are automatically serialized and
- * deserialized with the player's main NBT, keeping data logically grouped and reducing redundancy.
+ * This is intentionally limited to `Player` entities to avoid unintended side effects on other
+ * entities. All capability managers registered in {@link CapManagerRegistry} are automatically
+ * serialized and deserialized with the player's main NBT, keeping data logically grouped and
+ * reducing redundancy.
  *
  * <p><strong>Note:</strong>
- * This is a workaround by necessity — not due to ignorance of Forge’s systems, but due to a conscious
- * choice to preserve code maintainability and flexibility in a large, modular capability-based mod architecture.
+ * This is a workaround by necessity — not due to ignorance of Forge’s systems, but due to a
+ * conscious choice to preserve code maintainability and flexibility in a large, modular
+ * capability-based mod architecture.
  */
 @Mixin(Entity.class)
 public class MixinInjectCapDataOnEntity {
@@ -47,8 +50,8 @@ public class MixinInjectCapDataOnEntity {
     if (!(thisEntity instanceof Player player)) {
       return;
     }
-    CapManagerRegistry.managers()
-        .forEach((location, manager) ->
+    CapManagerRegistry.INSTANCE.values()
+        .forEach((manager) ->
             manager.retrieveData(player)
                 .serialize(pCompound));
   }
@@ -61,8 +64,8 @@ public class MixinInjectCapDataOnEntity {
     if (!(thisEntity instanceof Player player)) {
       return;
     }
-    CapManagerRegistry.managers()
-        .forEach((location, manager) ->
+    CapManagerRegistry.INSTANCE.values()
+        .forEach((manager) ->
             manager.retrieveData(player)
                 .deserialize(pCompound, true));
   }

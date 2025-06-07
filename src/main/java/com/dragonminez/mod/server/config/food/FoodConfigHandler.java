@@ -44,6 +44,6 @@ public class FoodConfigHandler implements IConfigHandler<FoodConfig> {
 
   @Override
   public void onLoaded(String key, FoodConfig data) {
-    FoodConfigManager.INSTANCE.add(key, data);
+    FoodConfigManager.INSTANCE.register(key, data);
   }
 }

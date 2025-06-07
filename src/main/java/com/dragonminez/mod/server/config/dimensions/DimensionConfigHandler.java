@@ -44,6 +44,6 @@ public class DimensionConfigHandler implements IConfigHandler<DimensionConfig> {
 
   @Override
   public void onLoaded(String key, DimensionConfig data) {
-    DimensionsConfigManager.INSTANCE.add(key, data);
+    DimensionsConfigManager.INSTANCE.register(key, data);
   }
 }

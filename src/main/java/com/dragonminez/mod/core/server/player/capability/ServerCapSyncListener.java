@@ -80,11 +80,11 @@ public class ServerCapSyncListener {
    */
   private static void updateEachManager(ServerPlayer receiver, ServerPlayer reference,
       BiConsumer<ResourceLocation, IServerCapDataManager<?, ?>> consumer) {
-    CapManagerRegistry.managers(Dist.DEDICATED_SERVER)
-        .forEach((id, manager) -> {
+    CapManagerRegistry.INSTANCE.values(Dist.DEDICATED_SERVER)
+        .forEach((manager) -> {
           if (manager instanceof IServerCapDataManager<?, ?> serverManager) {
             serverManager.sendUpdate(receiver, reference);
-            consumer.accept(id, serverManager);
+            consumer.accept(manager.id(), serverManager);
           }
         });
   }

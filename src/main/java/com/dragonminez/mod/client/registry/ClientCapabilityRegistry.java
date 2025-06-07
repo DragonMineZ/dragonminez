@@ -12,8 +12,11 @@ import net.minecraftforge.api.distmarker.Dist;
 public class ClientCapabilityRegistry {
 
   public static void init() {
-    CapManagerRegistry.register(Dist.CLIENT, GeneticDataHolder.ID, ClientGeneticDataManager.INSTANCE);
-    CapManagerRegistry.register(Dist.CLIENT, StatDataHolder.ID, ClientStatDataManager.INSTANCE);
-    CapManagerRegistry.register(Dist.CLIENT, CombatDataHolder.ID, ClientCombatDataManager.INSTANCE);
+    CapManagerRegistry.INSTANCE.register(Dist.CLIENT, GeneticDataHolder.ID,
+        ClientGeneticDataManager.INSTANCE);
+    CapManagerRegistry.INSTANCE.register(Dist.CLIENT, StatDataHolder.ID,
+        ClientStatDataManager.INSTANCE);
+    CapManagerRegistry.INSTANCE.register(Dist.CLIENT, CombatDataHolder.ID,
+        ClientCombatDataManager.INSTANCE);
   }
 }

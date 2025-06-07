@@ -1,6 +1,5 @@
 package com.dragonminez.mod.core.client.network.capability;
 
-import com.dragonminez.mod.common.player.cap.stat.StatData.StatDataHolder;
 import com.dragonminez.mod.common.util.LogUtil;
 import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.common.player.capability.CapDataManager;
@@ -52,7 +51,7 @@ public class PacketHandlerS2CCapSync {
         return;
       }
 
-      final CapDataManager<?> manager = CapManagerRegistry.manager(id, Dist.CLIENT);
+      final CapDataManager<?> manager = CapManagerRegistry.INSTANCE.get(Dist.CLIENT, id);
       if (manager == null) {
         LogUtil.warn("Could not find manager with id %s. Discarding update.".formatted(id.toString()));
         return;
