@@ -2,6 +2,7 @@ package com.dragonminez.mod.core.common.network.capability;
 
 import com.dragonminez.mod.core.common.network.Packet;
 import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
+import com.dragonminez.mod.core.common.player.capability.ICap;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,7 +15,7 @@ import net.minecraft.network.FriendlyByteBuf;
  *
  * @param <V> the type of {@link CapDataHolder} being synchronized
  */
-public abstract class PacketS2CCapSync<V extends CapDataHolder> extends Packet {
+public abstract class PacketS2CCapSync<V extends ICap> extends Packet {
 
   private CompoundTag encodedValue;
   private UUID playerId;

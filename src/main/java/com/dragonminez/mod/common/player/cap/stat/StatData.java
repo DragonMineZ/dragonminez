@@ -4,13 +4,16 @@ import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.common.config.GeneralConfig;
 import com.dragonminez.mod.common.util.MathUtil;
 import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
-import com.dragonminez.mod.core.common.player.capability.CapDataType;
+import com.dragonminez.mod.core.common.player.capability.CapData;
+import com.dragonminez.mod.core.common.player.capability.ICap;
+import com.dragonminez.mod.core.common.util.JavaUtil.DataType;
+import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 
 @AutoRegisterCapability
-public class StatData extends CapDataHolder {
+public class StatData implements ICap {
 
   private int strength = 5;
   private int strikePower = 5;
@@ -21,43 +24,35 @@ public class StatData extends CapDataHolder {
   private int alignment = 100;
 
   public StatData() {
-    super(StatDataType.ID);
-  }
-
-  public StatData(int strength, int strikePower, int energy, int vitality,
-      int resistance,
-      int kiPower, int alignment) {
-    super(StatDataType.ID);
-    this.strength = strength;
-    this.strikePower = strikePower;
-    this.energy = energy;
-    this.vitality = vitality;
-    this.resistance = resistance;
-    this.kiPower = kiPower;
-    this.alignment = alignment;
+    super();
   }
 
   @Override
-  public CompoundTag serialize(CompoundTag nbt) {
-    nbt.putInt(StatDataType.STRENGTH.id(), this.strength);
-    nbt.putInt(StatDataType.STRIKE_POWER.id(), this.strikePower);
-    nbt.putInt(StatDataType.ENERGY.id(), this.energy);
-    nbt.putInt(StatDataType.VITALITY.id(), this.vitality);
-    nbt.putInt(StatDataType.RESISTANCE.id(), this.resistance);
-    nbt.putInt(StatDataType.KI_POWER.id(), this.kiPower);
-    nbt.putInt(StatDataType.ALIGNMENT.id(), this.alignment);
-    return nbt;
+  public CompoundTag serialize(CompoundTag tag) {
+    tag.putInt(StatDataHolder.STRENGTH.id(), this.strength);
+    tag.putInt(StatDataHolder.STRIKE_POWER.id(), this.strikePower);
+    tag.putInt(StatDataHolder.ENERGY.id(), this.energy);
+    tag.putInt(StatDataHolder.VITALITY.id(), this.vitality);
+    tag.putInt(StatDataHolder.RESISTANCE.id(), this.resistance);
+    tag.putInt(StatDataHolder.KI_POWER.id(), this.kiPower);
+    tag.putInt(StatDataHolder.ALIGNMENT.id(), this.alignment);
+    return tag;
   }
 
   @Override
   public void deserialize(CompoundTag nbt, boolean cloned) {
-    this.strength = nbt.getInt(StatDataType.STRENGTH.id());
-    this.strikePower = nbt.getInt(StatDataType.STRIKE_POWER.id());
-    this.energy = nbt.getInt(StatDataType.ENERGY.id());
-    this.vitality = nbt.getInt(StatDataType.VITALITY.id());
-    this.resistance = nbt.getInt(StatDataType.RESISTANCE.id());
-    this.kiPower = nbt.getInt(StatDataType.KI_POWER.id());
-    this.alignment = nbt.getInt(StatDataType.ALIGNMENT.id());
+    this.strength = nbt.getInt(StatDataHolder.STRENGTH.id());
+    this.strikePower = nbt.getInt(StatDataHolder.STRIKE_POWER.id());
+    this.energy = nbt.getInt(StatDataHolder.ENERGY.id());
+    this.vitality = nbt.getInt(StatDataHolder.VITALITY.id());
+    this.resistance = nbt.getInt(StatDataHolder.RESISTANCE.id());
+    this.kiPower = nbt.getInt(StatDataHolder.KI_POWER.id());
+    this.alignment = nbt.getInt(StatDataHolder.ALIGNMENT.id());
+  }
+
+  @Override
+  public CapDataHolder holder() {
+    return StatDataHolder.INSTANCE;
   }
 
   public void setStrength(int strength) {
@@ -69,8 +64,7 @@ public class StatData extends CapDataHolder {
   }
 
   public void setStrikePower(int strikePower) {
-    this.strikePower = MathUtil.rangeValue(strikePower, 1,
-        GeneralConfig.attributes().maxAttributes);
+    this.strikePower = MathUtil.rangeValue(strikePower, 1, GeneralConfig.attributes().maxAttributes);
   }
 
   public int getStrikePower() {
@@ -117,22 +111,54 @@ public class StatData extends CapDataHolder {
     return alignment;
   }
 
-  public static class StatDataType {
+  public static class StatDataHolder extends CapDataHolder {
 
     public static final ResourceLocation ID = new ResourceLocation(Reference.MOD_ID, "stat");
-    public static final CapDataType STRENGTH = CapDataType.of("strength", "STR",
-        false);
-    public static final CapDataType STRIKE_POWER = CapDataType.of("strike_power", "SKP",
-        false);
-    public static final CapDataType ENERGY = CapDataType.of("energy", "ENE",
-        false);
-    public static final CapDataType VITALITY = CapDataType.of("vitality", "VIT",
-        false);
-    public static final CapDataType RESISTANCE = CapDataType.of("resistance", "RES",
-        false);
-    public static final CapDataType KI_POWER = CapDataType.of("ki_power", "PWR",
-        false);
-    public static final CapDataType ALIGNMENT = CapDataType.of("alignment", false);
+    public static final StatDataHolder INSTANCE = new StatDataHolder();
 
+    public static final CapData<StatData, Integer> STRENGTH = CapData.of(
+        "strength", DataType.INTEGER, "STR", StatData::setStrength,
+        StatData::getStrength, false);
+
+    public static final CapData<StatData, Integer> STRIKE_POWER = CapData.of(
+        "strike_power", DataType.INTEGER, "SKP", StatData::setStrikePower,
+        StatData::getStrikePower, false);
+
+    public static final CapData<StatData, Integer> ENERGY = CapData.of(
+        "energy", DataType.INTEGER, "ENE", StatData::setEnergy,
+        StatData::getEnergy, false);
+
+    public static final CapData<StatData, Integer> VITALITY = CapData.of(
+        "vitality", DataType.INTEGER, "VIT", StatData::setVitality,
+        StatData::getVitality, false);
+
+    public static final CapData<StatData, Integer> RESISTANCE = CapData.of(
+        "resistance", DataType.INTEGER, "RES", StatData::setResistance,
+        StatData::getResistance, false);
+
+    public static final CapData<StatData, Integer> KI_POWER = CapData.of(
+        "ki_power", DataType.INTEGER, "PWR", StatData::setKiPower,
+        StatData::getKiPower, false);
+
+    public static final CapData<StatData, Integer> ALIGNMENT = CapData.of(
+        "alignment", DataType.INTEGER, StatData::setAlignment,
+        StatData::getAlignment, false);
+
+    public StatDataHolder() {
+      super(ID);
+    }
+
+    @Override
+    public List<CapData<?, ?>> acceptedData() {
+      return List.of(
+          STRENGTH,
+          STRIKE_POWER,
+          ENERGY,
+          VITALITY,
+          RESISTANCE,
+          KI_POWER,
+          ALIGNMENT
+      );
+    }
   }
 }

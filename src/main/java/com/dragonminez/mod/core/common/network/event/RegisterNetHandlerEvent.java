@@ -57,6 +57,6 @@ public class RegisterNetHandlerEvent extends Event {
    * Indicates the phase of the network registration lifecycle.
    */
   public enum Phase {
-    START, END;
+    START, END
   }
 }

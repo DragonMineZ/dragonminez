@@ -1,8 +1,8 @@
 package com.dragonminez.mod.client.hud;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.core.common.player.capability.CapDataType;
 import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
+import com.dragonminez.mod.core.common.util.JavaUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,22 +27,26 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Debug HUD for displaying serialized capability NBT data of the player in the in-game GUI.
  * <p>
- * This class listens to Forge's RenderGuiOverlayEvent and renders player capability data
- * when the game is running in a non-production environment.
- * It caches the pretty-printed NBT strings once per player tick to optimize performance.
+ * This class listens to Forge's RenderGuiOverlayEvent and renders player capability data when the
+ * game is running in a non-production environment. It caches the pretty-printed NBT strings once
+ * per player tick to optimize performance.
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class DebugHud {
 
-  /** Cache storing pretty-printed NBT data keyed by capability identifier */
+  /**
+   * Cache storing pretty-printed NBT data keyed by capability identifier
+   */
   private static final Map<String, String> nbtCache = new HashMap<>();
 
-  /** Last game tick when the NBT cache was updated */
+  /**
+   * Last game tick when the NBT cache was updated
+   */
   private static int lastUpdateTick = -1;
 
   /**
-   * Event handler for the GUI rendering event.
-   * Skips rendering in production environment and calls the method to render debug info.
+   * Event handler for the GUI rendering event. Skips rendering in production environment and calls
+   * the method to render debug info.
    */
   @SubscribeEvent
   public static void onRenderGameOverlay(RenderGuiOverlayEvent.Pre event) {
@@ -53,8 +57,8 @@ public class DebugHud {
   }
 
   /**
-   * Renders the debug information on the screen.
-   * Updates the cache every tick to avoid unnecessary recomputation.
+   * Renders the debug information on the screen. Updates the cache every tick to avoid unnecessary
+   * recomputation.
    */
   private static void renderDebugInformation(GuiGraphics graphics) {
     final Minecraft mc = Minecraft.getInstance();
@@ -68,12 +72,13 @@ public class DebugHud {
       lastUpdateTick = currentTick;
       nbtCache.clear();
 
-      CapManagerRegistry.holders().forEach((location, manager) ->
-          manager.retrieveData(player, holder -> {
-            Tag tag = holder.serialize(new CompoundTag());
-            String pretty = prettyPrintNBT(tag);
-            nbtCache.put(CapDataType.toLegible(holder.identifier().getPath()), pretty);
-          }));
+      CapManagerRegistry.managers(Dist.CLIENT)
+          .forEach((location, manager) ->
+              manager.retrieveData(player, cap -> {
+                final Tag tag = cap.serialize(new CompoundTag());
+                final String prettyData = prettyPrintNBT(tag);
+                nbtCache.put(JavaUtil.toLegible(cap.holder().identifier().getPath()), prettyData);
+              }));
     }
 
     final Font font = mc.font;
@@ -101,8 +106,8 @@ public class DebugHud {
   }
 
   /**
-   * Recursively pretty-prints the NBT tag content into a human-readable string.
-   * Uses indentation to represent nested compound and list tags.
+   * Recursively pretty-prints the NBT tag content into a human-readable string. Uses indentation to
+   * represent nested compound and list tags.
    *
    * @param tag the NBT tag to serialize as string
    * @return a pretty-printed multiline string representation of the tag

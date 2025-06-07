@@ -2,6 +2,7 @@ package com.dragonminez.mod.server.registry;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.mod.server.command.player.PlayerCommand;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
@@ -32,6 +33,7 @@ public class ServerCommandRegistry {
    * @param root the root literal argument builder for the /dmz command
    */
   public static void init(LiteralArgumentBuilder<CommandSourceStack> root) {
+    root.then(PlayerCommand.init());
   }
 
   /**

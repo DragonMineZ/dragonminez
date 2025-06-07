@@ -1,5 +1,6 @@
 package com.dragonminez.mod.core.common.player.capability;
 
+import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -11,45 +12,59 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Generic manager class for player capability data.
+ * Generic manager for a player capability of type {@code D}.
  * <p>
- * Handles the creation, update, and retrieval of a specific capability type {@code D}, which must
- * extend {@link CapDataHolder}. This class also implements {@link ICapabilityProvider} so it can be
- * registered and attached to player entities.
+ * Provides methods to create, retrieve, update, and serialize capability data attached to players.
  *
- * @param <D> the type of capability data this manager handles
+ * @param <D> the capability data type, extending {@link ICap}
  */
-public abstract class CapDataManager<D extends CapDataHolder> implements ICapabilityProvider {
+public abstract class CapDataManager<D extends ICap> implements ICapabilityProvider {
 
-  /**
-   * The capability reference registered through Forge's capability system.
-   */
   protected final Capability<D> capability;
 
   /**
-   * Constructs a new data manager for the given capability type.
+   * Creates a manager for the given capability.
    *
-   * @param capability the capability being managed
+   * @param capability the Forge capability instance managed by this class
    */
   protected CapDataManager(Capability<D> capability) {
     this.capability = capability;
   }
 
   /**
-   * Constructs and returns a new instance of the capability data. This is used when attaching the
-   * capability to a player.
+   * Creates a new instance of the capability data.
    *
-   * @return a new instance of the capability data
+   * @return a new capability data instance
    */
   public abstract D buildCap();
 
   /**
-   * Replaces the existing capability data on a player with the data from another instance.
-   * Typically used for syncing or loading saved data.
+   * Builds a sync packet containing capability data to send to clients.
    *
-   * @param player  the player whose data should be updated
-   * @param newData the new data to apply to the player
-   * @param clonned whether the data is a cloned instance or not
+   * @param player   the player whose data is being synced, or null
+   * @param data     the capability data to send, or null
+   * @param isPublic whether the data should be visible to other players
+   * @return a capability sync packet, or null if unavailable
+   */
+  public abstract PacketS2CCapSync<D> buildSyncPacket(@Nullable Player player, @Nullable D data,
+      @Nullable Boolean isPublic);
+
+  /**
+   * Builds a mock sync packet with null data for network registration.
+   *
+   * @param isPublic visibility flag for the mock packet
+   * @return a mock capability sync packet, or null
+   */
+  public PacketS2CCapSync<D> buildMockSyncPacket(boolean isPublic) {
+    return this.buildSyncPacket(null, null, isPublic);
+  }
+
+  /**
+   * Updates the capability data of a player by copying from another instance.
+   *
+   * @param player  the player whose data to update
+   * @param newData the new capability data to apply
+   * @param cloned  whether {@code newData} is cloned (affects deserialization)
    */
   public void update(Player player, D newData, boolean cloned) {
     this.retrieveData(player, oldData ->
@@ -57,22 +72,21 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
   }
 
   /**
-   * Replaces the existing capability data on a player with the data from another instance.
-   * Typically used for syncing or loading saved data.
+   * Updates the capability data of a player by copying from another instance. Assumes
+   * {@code newData} is not cloned.
    *
-   * @param player  the player whose data should be updated
-   * @param newData the new data to apply to the player
+   * @param player  the player whose data to update
+   * @param newData the new capability data to apply
    */
-  public void update(Player player, D newData) {
-    this.retrieveData(player, oldData ->
-        oldData.deserialize(newData.serialize(new CompoundTag()), false));
+  public void update(Player player, ICap newData) {
+    this.update(player, (D) newData, false);
   }
 
   /**
-   * Copies data from a reference player to a target player.
+   * Copies capability data from one player to another.
    *
-   * @param reference The player whose data is copied
-   * @param target    The player receiving the data
+   * @param reference player to copy data from
+   * @param target    player to copy data to
    */
   public void update(Player reference, Player target) {
     final D data = this.retrieveData(reference);
@@ -82,10 +96,33 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
   }
 
   /**
-   * Retrieves the capability data from the player and applies the given consumer if present.
+   * Retrieves a value by key from the player's capability data.
    *
-   * @param player   the player whose data is being accessed
-   * @param consumer the logic to apply to the capability if found
+   * @param player the player whose data to read
+   * @param key    the data key
+   * @return the value associated with the key, or {@code null} if not found
+   */
+  public Object get(Player player, String key) {
+    final D cap = this.retrieveData(player);
+    if (cap == null) {
+      return null;
+    }
+    final CapDataHolder holder = cap.holder();
+    if (holder == null) {
+      return null;
+    }
+    final CapData<?, ?> data = holder.datas().get(key);
+    if (data == null) {
+      return null;
+    }
+    return data.get(cap);
+  }
+
+  /**
+   * Executes a consumer with the player's capability data if present.
+   *
+   * @param player   the player whose capability to access
+   * @param consumer the consumer to apply on the capability data
    */
   public void retrieveData(Player player, Consumer<D> consumer) {
     player.getCapability(this.capability)
@@ -93,12 +130,10 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
   }
 
   /**
-   * Retrieves the capability data from the player.
-   * <p>
-   * If the capability is not present, returns {@code null}.
+   * Retrieves the capability data from the player, or {@code null} if not present.
    *
-   * @param player the player whose data is being accessed
-   * @return the capability data if present, otherwise {@code null}
+   * @param player the player whose capability to retrieve
+   * @return the capability data or {@code null}
    */
   @SuppressWarnings("all")
   public D retrieveData(Player player) {
@@ -107,14 +142,12 @@ public abstract class CapDataManager<D extends CapDataHolder> implements ICapabi
   }
 
   /**
-   * Provides access to the capability instance.
-   * <p>
-   * Called by Forge when another system requests the capability from this provider.
+   * Provides the capability instance to other systems.
    *
-   * @param cap  the capability being requested
-   * @param side the direction the capability is being requested from (usually null for players)
-   * @param <T>  the type of the requested capability
-   * @return a {@link LazyOptional} containing the capability if it matches, otherwise empty
+   * @param cap  the capability requested
+   * @param side the direction (usually {@code null} for players)
+   * @param <T>  the capability type
+   * @return a {@link LazyOptional} containing the capability if matched, else empty
    */
   @Override
   public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap,

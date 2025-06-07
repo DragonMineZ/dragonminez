@@ -1,10 +1,14 @@
 package com.dragonminez.mod.common.player.cap.genetic;
 
 import com.dragonminez.mod.common.Reference;
+import com.dragonminez.mod.common.network.player.cap.genetic.s2c.PacketS2CSyncGenetic;
+import com.dragonminez.mod.common.player.cap.genetic.GeneticData.GeneticDataHolder;
+import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.common.player.capability.CapDataManager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Central manager for accessing and updating {@link GeneticData} on players via Forge's capability
@@ -39,8 +43,10 @@ public class GeneticDataManager extends CapDataManager<GeneticData> {
    * @return The player's genetic data, or null if not found.
    */
   public String getRace(Player player) {
-    final GeneticData geneticData = this.retrieveData(player);
-    return geneticData != null ? geneticData.getRace() : Reference.EMPTY;
+    if (!(this.get(player, GeneticDataHolder.RACE.id()) instanceof String race)) {
+      return Reference.EMPTY;
+    }
+    return race;
   }
 
   /**
@@ -50,8 +56,16 @@ public class GeneticDataManager extends CapDataManager<GeneticData> {
    * @return The genetic form of the player, or an empty string if not set.
    */
   public String getForm(Player player) {
-    final GeneticData geneticData = this.retrieveData(player);
-    return geneticData != null ? geneticData.getForm() : Reference.EMPTY;
+    if (!(this.get(player, GeneticDataHolder.FORM.id()) instanceof String form)) {
+      return Reference.EMPTY;
+    }
+    return form;
+  }
+
+  @Override
+  public PacketS2CCapSync<GeneticData> buildSyncPacket(@Nullable Player player,
+      @Nullable GeneticData data, @Nullable Boolean isPublic) {
+    return new PacketS2CSyncGenetic(data, player == null ? null : player.getUUID());
   }
 
   /**

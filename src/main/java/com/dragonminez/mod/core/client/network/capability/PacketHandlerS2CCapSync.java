@@ -1,12 +1,16 @@
 package com.dragonminez.mod.core.client.network.capability;
 
+import com.dragonminez.mod.common.player.cap.stat.StatData.StatDataHolder;
 import com.dragonminez.mod.common.util.LogUtil;
 import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.common.player.capability.CapDataManager;
+import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
 import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkEvent.Context;
 
@@ -21,12 +25,12 @@ public class PacketHandlerS2CCapSync {
   /**
    * Processes a server-to-client capability sync packet.
    *
-   * @param manager the capability data manager responsible for applying updates
-   * @param packet  the packet containing the serialized capability data
-   * @param ctx     the context supplier for network threading
+   * @param id     the capability data manager responsible for applying updates
+   * @param packet the packet containing the serialized capability data
+   * @param ctx    the context supplier for network threading
    */
   @SuppressWarnings("all")
-  public static void handle(CapDataManager manager, PacketS2CCapSync<?> packet,
+  public static void handle(ResourceLocation id, PacketS2CCapSync<?> packet,
       Supplier<Context> ctx) {
     final NetworkEvent.Context context = ctx.get();
     context.enqueueWork(() -> {
@@ -48,7 +52,11 @@ public class PacketHandlerS2CCapSync {
         return;
       }
 
-      // Apply the capability data to the player
+      final CapDataManager<?> manager = CapManagerRegistry.manager(id, Dist.CLIENT);
+      if (manager == null) {
+        LogUtil.warn("Could not find manager with id %s. Discarding update.".formatted(id.toString()));
+        return;
+      }
       manager.update(player, packet.data());
     });
     context.setPacketHandled(true);

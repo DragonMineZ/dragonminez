@@ -1,9 +1,13 @@
 package com.dragonminez.mod.common.player.cap.combat;
 
+import com.dragonminez.mod.common.network.player.cap.combat.s2c.PacketS2CSyncCombatData;
+import com.dragonminez.mod.common.player.cap.combat.CombatData.CombatDataHolder;
+import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.common.player.capability.CapDataManager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Central manager for accessing and updating {@link CombatData} on players via Forge's capability
@@ -35,8 +39,10 @@ public class CombatDataManager extends CapDataManager<CombatData> {
    * @return true if the player is in combat mode, false otherwise.
    */
   public boolean isInCombatMode(Player player) {
-    final CombatData combatData = this.retrieveData(player);
-    return combatData != null && combatData.isInCombatMode();
+    if (!(this.get(player, CombatDataHolder.COMBAT_MODE.id()) instanceof Boolean combatMode)) {
+      return false;
+    }
+    return combatMode;
   }
 
   /**
@@ -46,8 +52,16 @@ public class CombatDataManager extends CapDataManager<CombatData> {
    * @return true if the player is blocking, false otherwise.
    */
   public boolean isBlocking(Player player) {
-    final CombatData combatData = this.retrieveData(player);
-    return combatData != null && combatData.isBlocking();
+    if (!(this.get(player, CombatDataHolder.BLOCKING.id()) instanceof Boolean blocking)) {
+      return false;
+    }
+    return blocking;
+  }
+
+  @Override
+  public PacketS2CCapSync<CombatData> buildSyncPacket(@Nullable Player player,
+      @Nullable CombatData data, @Nullable Boolean isPublic) {
+    return new PacketS2CSyncCombatData(data, player == null ? null : player.getUUID());
   }
 
   /**

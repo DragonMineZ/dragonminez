@@ -1,14 +1,10 @@
 package com.dragonminez.mod.server.player.stat;
 
-import com.dragonminez.mod.common.network.player.cap.stat.s2c.PacketS2CSyncStat;
 import com.dragonminez.mod.common.player.cap.stat.StatData;
-import com.dragonminez.mod.common.player.cap.stat.StatData.StatDataType;
+import com.dragonminez.mod.common.player.cap.stat.StatData.StatDataHolder;
 import com.dragonminez.mod.common.player.cap.stat.StatDataManager;
-import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.server.player.capability.IServerCapDataManager;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Server-side manager for player {@link StatData}, providing methods to update and sync individual
@@ -37,8 +33,7 @@ public class ServerStatDataManager extends StatDataManager implements
    * @param log      Whether to log this change on the server.
    */
   public void setStrength(ServerPlayer player, int strength, boolean log) {
-    this.setStatInternal(player, StatDataType.STRENGTH, strength,
-        data -> data.setStrength(strength), log);
+    this.set(player, StatDataHolder.STRENGTH.id(), strength, log);
   }
 
   /**
@@ -49,8 +44,7 @@ public class ServerStatDataManager extends StatDataManager implements
    * @param log         Whether to log this change on the server.
    */
   public void setStrikePower(ServerPlayer player, int strikePower, boolean log) {
-    this.setStatInternal(player, StatDataType.STRIKE_POWER, strikePower,
-        data -> data.setStrikePower(strikePower), log);
+    this.set(player, StatDataHolder.STRIKE_POWER.id(), strikePower, log);
   }
 
   /**
@@ -61,8 +55,7 @@ public class ServerStatDataManager extends StatDataManager implements
    * @param log    Whether to log this change on the server.
    */
   public void setEnergy(ServerPlayer player, int energy, boolean log) {
-    this.setStatInternal(player, StatDataType.ENERGY, energy,
-        data -> data.setEnergy(energy), log);
+    this.set(player, StatDataHolder.ENERGY.id(), energy, log);
   }
 
   /**
@@ -73,8 +66,7 @@ public class ServerStatDataManager extends StatDataManager implements
    * @param log      Whether to log this change on the server.
    */
   public void setVitality(ServerPlayer player, int vitality, boolean log) {
-    this.setStatInternal(player, StatDataType.VITALITY, vitality,
-        data -> data.setVitality(vitality), log);
+    this.set(player, StatDataHolder.VITALITY.id(), vitality, log);
   }
 
   /**
@@ -85,8 +77,7 @@ public class ServerStatDataManager extends StatDataManager implements
    * @param log        Whether to log this change on the server.
    */
   public void setResistance(ServerPlayer player, int resistance, boolean log) {
-    this.setStatInternal(player, StatDataType.RESISTANCE, resistance,
-        data -> data.setResistance(resistance), log);
+    this.set(player, StatDataHolder.RESISTANCE.id(), resistance, log);
   }
 
   /**
@@ -97,8 +88,7 @@ public class ServerStatDataManager extends StatDataManager implements
    * @param log     Whether to log this change on the server.
    */
   public void setKiPower(ServerPlayer player, int kiPower, boolean log) {
-    this.setStatInternal(player, StatDataType.KI_POWER, kiPower,
-        data -> data.setKiPower(kiPower), log);
+    this.set(player, StatDataHolder.KI_POWER.id(), kiPower, log);
   }
 
   /**
@@ -109,18 +99,11 @@ public class ServerStatDataManager extends StatDataManager implements
    * @param log       Whether to log this change on the server.
    */
   public void setAlignment(ServerPlayer player, int alignment, boolean log) {
-    this.setStatInternal(player, StatDataType.ALIGNMENT, alignment,
-        data -> data.setAlignment(alignment), log);
+    this.set(player, StatDataHolder.ALIGNMENT.id(), alignment, log);
   }
 
   @Override
   public StatDataManager manager() {
     return this;
-  }
-
-  @Override
-  public PacketS2CCapSync<StatData> buildSyncPacket(@Nullable Player player,
-      @Nullable StatData data, @Nullable Boolean isPublic) {
-    return new PacketS2CSyncStat(data);
   }
 }

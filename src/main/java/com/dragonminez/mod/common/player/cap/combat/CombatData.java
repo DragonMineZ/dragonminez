@@ -2,31 +2,28 @@ package com.dragonminez.mod.common.player.cap.combat;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
-import com.dragonminez.mod.core.common.player.capability.CapDataType;
+import com.dragonminez.mod.core.common.player.capability.CapData;
+import com.dragonminez.mod.core.common.player.capability.ICap;
+import com.dragonminez.mod.core.common.util.JavaUtil.DataType;
+import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 
 @AutoRegisterCapability
-public class CombatData extends CapDataHolder {
+public class CombatData implements ICap {
 
   private boolean isInCombatMode = false;
   private boolean isBlocking = false;
 
   public CombatData() {
-    super(CombatDataType.ID);
-  }
-
-  public CombatData(boolean isInCombatMode, boolean isBlocking) {
-    super(CombatDataType.ID);
-    this.isInCombatMode = isInCombatMode;
-    this.isBlocking = isBlocking;
+    super();
   }
 
   @Override
   public CompoundTag serialize(CompoundTag tag) {
-    tag.putBoolean(CombatDataType.COMBAT_MODE.id(), this.isInCombatMode);
-    tag.putBoolean(CombatDataType.BLOCKING.id(), this.isBlocking);
+    tag.putBoolean(CombatDataHolder.COMBAT_MODE.id(), this.isInCombatMode);
+    tag.putBoolean(CombatDataHolder.BLOCKING.id(), this.isBlocking);
     return tag;
   }
 
@@ -35,8 +32,13 @@ public class CombatData extends CapDataHolder {
     if (cloned) {
       return;
     }
-    this.isInCombatMode = nbt.getBoolean(CombatDataType.COMBAT_MODE.id());
-    this.isBlocking = nbt.getBoolean(CombatDataType.BLOCKING.id());
+    this.isInCombatMode = nbt.getBoolean(CombatDataHolder.COMBAT_MODE.id());
+    this.isBlocking = nbt.getBoolean(CombatDataHolder.BLOCKING.id());
+  }
+
+  @Override
+  public CapDataHolder holder() {
+    return CombatDataHolder.INSTANCE;
   }
 
   public boolean isInCombatMode() {
@@ -55,11 +57,27 @@ public class CombatData extends CapDataHolder {
     isBlocking = blocking;
   }
 
-  public static class CombatDataType {
+  public static class CombatDataHolder extends CapDataHolder {
 
     public static final ResourceLocation ID = new ResourceLocation(Reference.MOD_ID, "combat");
-    public static final CapDataType COMBAT_MODE = CapDataType.of("combat_mode", true);
-    public static final CapDataType BLOCKING = CapDataType.of("blocking", true);
+    public static final CombatDataHolder INSTANCE = new CombatDataHolder();
 
+    public static final CapData<CombatData, Boolean> COMBAT_MODE = CapData.of("combat_mode",
+        DataType.BOOLEAN, CombatData::setCombatMode,
+        CombatData::isInCombatMode, true
+    );
+
+    public static final CapData<CombatData, Boolean> BLOCKING = CapData.of("blocking",
+        DataType.BOOLEAN, CombatData::setBlocking, CombatData::isBlocking, true
+    );
+
+    public CombatDataHolder() {
+      super(ID);
+    }
+
+    @Override
+    public List<CapData<?, ?>> acceptedData() {
+      return List.of(CombatDataHolder.COMBAT_MODE, CombatDataHolder.BLOCKING);
+    }
   }
 }

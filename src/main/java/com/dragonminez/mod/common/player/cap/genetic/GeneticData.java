@@ -2,38 +2,40 @@ package com.dragonminez.mod.common.player.cap.genetic;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
-import com.dragonminez.mod.core.common.player.capability.CapDataType;
+import com.dragonminez.mod.core.common.player.capability.CapData;
+import com.dragonminez.mod.core.common.player.capability.ICap;
+import com.dragonminez.mod.core.common.util.JavaUtil.DataType;
+import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 
 @AutoRegisterCapability
-public class GeneticData extends CapDataHolder {
+public class GeneticData implements ICap {
 
   private String race = Reference.EMPTY;
   private String form = Reference.EMPTY;
 
   public GeneticData() {
-    super(GeneticDataType.ID);
-  }
-
-  public GeneticData(String race, String form) {
-    super(GeneticDataType.ID);
-    this.race = race;
-    this.form = form;
+    super();
   }
 
   @Override
-  public CompoundTag serialize(CompoundTag nbt) {
-    nbt.putString(GeneticDataType.RACE.id(), this.race);
-    nbt.putString(GeneticDataType.FORM.id(), this.form);
-    return nbt;
+  public CompoundTag serialize(CompoundTag tag) {
+    tag.putString(GeneticDataHolder.RACE.id(), this.race);
+    tag.putString(GeneticDataHolder.FORM.id(), this.form);
+    return tag;
   }
 
   @Override
   public void deserialize(CompoundTag nbt, boolean cloned) {
-    this.race = nbt.getString(GeneticDataType.RACE.id());
-    this.form = nbt.getString(GeneticDataType.FORM.id());
+    this.race = nbt.getString(GeneticDataHolder.RACE.id());
+    this.form = nbt.getString(GeneticDataHolder.FORM.id());
+  }
+
+  @Override
+  public CapDataHolder holder() {
+    return GeneticDataHolder.INSTANCE;
   }
 
   public String getRace() {
@@ -52,11 +54,24 @@ public class GeneticData extends CapDataHolder {
     this.form = form;
   }
 
-  public static class GeneticDataType {
+  public static class GeneticDataHolder extends CapDataHolder {
 
-    public final static ResourceLocation ID = new ResourceLocation(Reference.MOD_ID, "genetic");
-    public static final CapDataType RACE = CapDataType.of("race", true);
-    public static final CapDataType FORM = CapDataType.of("form", true);
+    public static final ResourceLocation ID = new ResourceLocation(Reference.MOD_ID, "genetic");
+    public static final GeneticDataHolder INSTANCE = new GeneticDataHolder();
 
+    public static final CapData<GeneticData, String> RACE = CapData.of("race", DataType.STRING,
+        GeneticData::setRace, GeneticData::getRace, true);
+
+    public static final CapData<GeneticData, String> FORM = CapData.of("form", DataType.STRING,
+        GeneticData::setForm, GeneticData::getForm, true);
+
+    public GeneticDataHolder() {
+      super(ID);
+    }
+
+    @Override
+    public List<CapData<?, ?>> acceptedData() {
+      return List.of(RACE, FORM);
+    }
   }
 }

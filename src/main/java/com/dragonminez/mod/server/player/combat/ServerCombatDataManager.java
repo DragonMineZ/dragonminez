@@ -1,16 +1,12 @@
 package com.dragonminez.mod.server.player.combat;
 
-import com.dragonminez.mod.common.network.player.cap.combat.s2c.PacketS2CSyncCombatData;
 import com.dragonminez.mod.common.player.cap.combat.CombatData;
-import com.dragonminez.mod.common.player.cap.combat.CombatData.CombatDataType;
+import com.dragonminez.mod.common.player.cap.combat.CombatData.CombatDataHolder;
 import com.dragonminez.mod.common.player.cap.combat.CombatDataManager;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticDataManager;
-import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.server.player.capability.IServerCapDataManager;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Server-side manager for {@link GeneticData}, handling updates and synchronization
@@ -40,8 +36,7 @@ public class ServerCombatDataManager extends CombatDataManager implements
    * @param log    Whether to log the change.
    */
   public void setCombatMode(ServerPlayer player, boolean combat, boolean log) {
-    this.setStatInternal(player, CombatDataType.COMBAT_MODE, combat,
-        data -> data.setCombatMode(combat), log);
+    this.set(player, CombatDataHolder.COMBAT_MODE.id(), combat, log);
   }
 
   /**
@@ -52,18 +47,11 @@ public class ServerCombatDataManager extends CombatDataManager implements
    * @param log      Whether to log the change.
    */
   public void setBlocking(ServerPlayer player, boolean blocking, boolean log) {
-    this.setStatInternal(player, CombatDataType.BLOCKING, blocking,
-        data -> data.setBlocking(blocking), log);
+    this.set(player, CombatDataHolder.BLOCKING.id(), blocking, log);
   }
 
   @Override
   public CombatDataManager manager() {
     return this;
-  }
-
-  @Override
-  public PacketS2CCapSync<CombatData> buildSyncPacket(@Nullable Player player,
-      @Nullable CombatData data, @Nullable Boolean isPublic) {
-    return new PacketS2CSyncCombatData(data, player == null ? null : player.getUUID());
   }
 }

@@ -6,9 +6,9 @@ import com.dragonminez.mod.core.client.network.capability.PacketHandlerS2CCapSyn
 import com.dragonminez.mod.core.common.network.NetworkManager;
 import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.mod.core.common.network.event.RegisterNetHandlerEvent;
-import com.dragonminez.mod.core.common.player.capability.CapDataManager;
 import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
-import com.dragonminez.mod.core.server.player.capability.IServerCapDataManager;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -47,23 +47,20 @@ public class ClientCapNetHandlerRegistry {
     }
 
     final SimpleChannel channel = event.channel();
-    CapManagerRegistry.holders().forEach((location, capDataManager) -> {
-      if (!(capDataManager instanceof IServerCapDataManager<?, ?> serverManager)) {
-        return;
-      }
-
+    CapManagerRegistry.managers(Dist.CLIENT).forEach((location,
+        capDataManager) -> {
       // Try to register private sync packet
-      final PacketS2CCapSync<?> privatePacket = serverManager.buildMockSyncPacket(false);
+      final PacketS2CCapSync<?> privatePacket = capDataManager.buildMockSyncPacket(false);
       if (privatePacket != null) {
-        register(channel, capDataManager, (Class<PacketS2CCapSync<?>>) privatePacket.getClass(),
+        register(channel, location, (Class<PacketS2CCapSync<?>>) privatePacket.getClass(),
             privatePacket);
         return;
       }
 
       // Fallback to public sync packet
-      final PacketS2CCapSync<?> publicPacket = serverManager.buildMockSyncPacket(true);
+      final PacketS2CCapSync<?> publicPacket = capDataManager.buildMockSyncPacket(true);
       if (publicPacket != null) {
-        register(channel, capDataManager, (Class<PacketS2CCapSync<?>>) publicPacket.getClass(),
+        register(channel, location, (Class<PacketS2CCapSync<?>>) publicPacket.getClass(),
             publicPacket);
         return;
       }
@@ -77,12 +74,12 @@ public class ClientCapNetHandlerRegistry {
    * Registers a sync packet handler to the given network channel.
    *
    * @param channel  the channel to register to
-   * @param manager  the capability manager associated with the packet
+   * @param id  the manager id associated with the packet
    * @param clazz    the packet class
    * @param instance an instance of the packet used for decoding
    */
   public static void register(SimpleChannel channel,
-      CapDataManager<?> manager,
+      ResourceLocation id,
       Class<PacketS2CCapSync<?>> clazz,
       PacketS2CCapSync<?> instance) {
     channel.messageBuilder(clazz, NetworkManager.INSTANCE.assignId(),
@@ -90,7 +87,7 @@ public class ClientCapNetHandlerRegistry {
         .decoder(instance::decodeAndReturn)
         .encoder(PacketS2CCapSync::encode)
         .consumerMainThread((packetS2CCapSync, contextSupplier) ->
-            PacketHandlerS2CCapSync.handle(manager, packetS2CCapSync, contextSupplier))
+            PacketHandlerS2CCapSync.handle(id, packetS2CCapSync, contextSupplier))
         .add();
 
     LogUtil.info("Registered capability network handler {}", clazz.getSimpleName());

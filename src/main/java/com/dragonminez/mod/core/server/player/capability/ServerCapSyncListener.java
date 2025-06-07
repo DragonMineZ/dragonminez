@@ -4,6 +4,7 @@ import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -11,8 +12,8 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.function.BiConsumer;
 
 /**
- * Handles server-side capability synchronization for {@link ServerPlayer} entities.
- * This listener ensures all registered capabilities are kept in sync during key lifecycle events.
+ * Handles server-side capability synchronization for {@link ServerPlayer} entities. This listener
+ * ensures all registered capabilities are kept in sync during key lifecycle events.
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ServerCapSyncListener {
@@ -58,8 +59,8 @@ public class ServerCapSyncListener {
   }
 
   /**
-   * Syncs all capability data from one player to another.
-   * Used for login, respawn, and dimension change events.
+   * Syncs all capability data from one player to another. Used for login, respawn, and dimension
+   * change events.
    */
   private static void syncSelf(ServerPlayer from, ServerPlayer to) {
     updateEachManager(to, from, (id, manager)
@@ -70,7 +71,8 @@ public class ServerCapSyncListener {
    * Sends public capability data from one player to another during tracking.
    */
   private static void syncOthers(ServerPlayer target, ServerPlayer tracker) {
-    updateEachManager(tracker, target, (id, manager) -> {});
+    updateEachManager(tracker, target, (id, manager) -> {
+    });
   }
 
   /**
@@ -78,11 +80,12 @@ public class ServerCapSyncListener {
    */
   private static void updateEachManager(ServerPlayer receiver, ServerPlayer reference,
       BiConsumer<ResourceLocation, IServerCapDataManager<?, ?>> consumer) {
-    CapManagerRegistry.holders().forEach((id, manager) -> {
-      if (manager instanceof IServerCapDataManager<?, ?> serverManager) {
-        serverManager.sendUpdate(receiver, reference);
-        consumer.accept(id, serverManager);
-      }
-    });
+    CapManagerRegistry.managers(Dist.DEDICATED_SERVER)
+        .forEach((id, manager) -> {
+          if (manager instanceof IServerCapDataManager<?, ?> serverManager) {
+            serverManager.sendUpdate(receiver, reference);
+            consumer.accept(id, serverManager);
+          }
+        });
   }
 }
