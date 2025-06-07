@@ -1,157 +1,215 @@
 package com.dragonminez.mod.core.common.player.capability;
 
 import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
-import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.common.util.NonNullConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Generic manager for a player capability of type {@code D}.
+ * A generic manager for a specific player capability.
  * <p>
- * Provides methods to create, retrieve, update, and serialize capability data attached to players.
+ * Handles instance creation, data retrieval, updates, and sync operations for capabilities of type
+ * {@code C}, where {@code C} implements {@link ICap}.
  *
- * @param <D> the capability data type, extending {@link ICap}
+ * @param <C> the capability type managed by this instance
  */
-public abstract class CapDataManager<D extends ICap> implements ICapabilityProvider {
+public abstract class CapDataManager<C extends ICap> {
 
-  protected final Capability<D> capability;
+  private final ResourceLocation id;
+  private final Capability<C> capability;
 
   /**
-   * Creates a manager for the given capability.
+   * Constructs a capability data manager.
    *
-   * @param capability the Forge capability instance managed by this class
+   * @param id         the unique identifier for the capability
+   * @param capability the Forge capability instance
    */
-  protected CapDataManager(Capability<D> capability) {
+  public CapDataManager(ResourceLocation id, Capability<C> capability) {
+    this.id = id;
     this.capability = capability;
   }
 
   /**
-   * Creates a new instance of the capability data.
+   * Creates a new instance of the capability's backing data.
    *
-   * @return a new capability data instance
+   * @return a new capability data object
    */
-  public abstract D buildCap();
+  public abstract C buildCap();
 
   /**
-   * Builds a sync packet containing capability data to send to clients.
+   * Builds a sync packet to be sent to clients.
    *
-   * @param player   the player whose data is being synced, or null
-   * @param data     the capability data to send, or null
-   * @param isPublic whether the data should be visible to other players
-   * @return a capability sync packet, or null if unavailable
+   * @param player   the player whose data is being synced, or {@code null} for none
+   * @param data     the capability data to send, or {@code null}
+   * @param isPublic whether the data is visible to other clients
+   * @return a new capability sync packet
    */
-  public abstract PacketS2CCapSync<D> buildSyncPacket(@Nullable Player player, @Nullable D data,
+  public abstract PacketS2CCapSync<C> buildSyncPacket(@Nullable Player player, @Nullable C data,
       @Nullable Boolean isPublic);
 
   /**
-   * Builds a mock sync packet with null data for network registration.
+   * Constructs a mock sync packet for network registration.
    *
-   * @param isPublic visibility flag for the mock packet
-   * @return a mock capability sync packet, or null
+   * @param isPublic whether the packet should be marked as public
+   * @return a placeholder sync packet
    */
-  public PacketS2CCapSync<D> buildMockSyncPacket(boolean isPublic) {
+  public PacketS2CCapSync<C> buildMockSyncPacket(boolean isPublic) {
     return this.buildSyncPacket(null, null, isPublic);
   }
 
   /**
-   * Updates the capability data of a player by copying from another instance.
+   * Updates the capability data of a player with the given new instance.
    *
-   * @param player  the player whose data to update
+   * @param player  the target player
    * @param newData the new capability data to apply
-   * @param cloned  whether {@code newData} is cloned (affects deserialization)
+   * @param cloned  whether the data was cloned (affects deserialization)
    */
-  public void update(Player player, D newData, boolean cloned) {
+  public void update(Player player, C newData, boolean cloned) {
     this.retrieveData(player, oldData ->
         oldData.deserialize(newData.serialize(new CompoundTag()), cloned));
   }
 
   /**
-   * Updates the capability data of a player by copying from another instance. Assumes
-   * {@code newData} is not cloned.
+   * Updates the capability data of a player assuming the input data is not cloned.
    *
-   * @param player  the player whose data to update
+   * @param player  the target player
    * @param newData the new capability data to apply
    */
+  @SuppressWarnings("unchecked")
   public void update(Player player, ICap newData) {
-    this.update(player, (D) newData, false);
+    this.update(player, (C) newData, false);
   }
 
   /**
    * Copies capability data from one player to another.
    *
-   * @param reference player to copy data from
-   * @param target    player to copy data to
+   * @param reference the player to copy data from
+   * @param target    the player to copy data to
    */
   public void update(Player reference, Player target) {
-    final D data = this.retrieveData(reference);
+    final C data = this.retrieveData(reference);
     if (data != null) {
       this.update(target, data, true);
     }
   }
 
   /**
-   * Retrieves a value by key from the player's capability data.
+   * Retrieves a single value from a player's capability data.
    *
-   * @param player the player whose data to read
+   * @param player the player
    * @param key    the data key
-   * @return the value associated with the key, or {@code null} if not found
+   * @return the value, or {@code null} if not found
    */
   public Object get(Player player, String key) {
-    final D cap = this.retrieveData(player);
+    final C cap = this.retrieveData(player);
     if (cap == null) {
       return null;
     }
+
     final CapDataHolder holder = cap.holder();
     if (holder == null) {
       return null;
     }
+
     final CapData<?, ?> data = holder.datas().get(key);
     if (data == null) {
       return null;
     }
+
     return data.get(cap);
   }
 
   /**
-   * Executes a consumer with the player's capability data if present.
+   * Runs an operation on a player's capability data if it exists.
    *
-   * @param player   the player whose capability to access
-   * @param consumer the consumer to apply on the capability data
+   * @param player   the player
+   * @param consumer the operation to apply
    */
-  public void retrieveData(Player player, Consumer<D> consumer) {
-    player.getCapability(this.capability)
-        .ifPresent(consumer::accept);
+  public void retrieveData(Player player, NonNullConsumer<C> consumer) {
+    player.getCapability(this.capability).ifPresent(consumer);
   }
 
   /**
-   * Retrieves the capability data from the player, or {@code null} if not present.
+   * Retrieves the capability data from a player.
    *
-   * @param player the player whose capability to retrieve
-   * @return the capability data or {@code null}
+   * @param player the player
+   * @return the capability data, or {@code null} if absent
    */
   @SuppressWarnings("all")
-  public D retrieveData(Player player) {
-    return player.getCapability(this.capability)
-        .orElse(null);
+  public C retrieveData(Player player) {
+    return player.getCapability(this.capability).orElse(null);
   }
 
   /**
-   * Provides the capability instance to other systems.
+   * Gets the capability ID.
    *
-   * @param cap  the capability requested
-   * @param side the direction (usually {@code null} for players)
-   * @param <T>  the capability type
-   * @return a {@link LazyOptional} containing the capability if matched, else empty
+   * @return the resource location identifier
    */
-  @Override
-  public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap,
-      @Nullable Direction side) {
-    return this.capability.orEmpty(cap, LazyOptional.of(this::buildCap));
+  public ResourceLocation id() {
+    return this.id;
+  }
+
+  /**
+   * Gets the Forge capability instance.
+   *
+   * @return the capability
+   */
+  public Capability<C> capability() {
+    return this.capability;
+  }
+
+  /**
+   * A default capability provider that holds a single instance of the capability data.
+   *
+   * @param <C> the type of capability being held
+   */
+  public static class CapInstanceProvider<C extends ICap> implements ICapabilityProvider {
+
+    private final ResourceLocation managerId;
+    private final C instance;
+    private final LazyOptional<C> optional;
+
+    /**
+     * Constructs a new capability provider for the given manager.
+     *
+     * @param manager the capability manager
+     */
+    public CapInstanceProvider(CapDataManager<C> manager) {
+      this.managerId = manager.id();
+      this.instance = manager.buildCap();
+      this.optional = LazyOptional.of(() -> this.instance);
+    }
+
+    /**
+     * Provides the capability instance for the given capability type.
+     *
+     * @param cap  the capability requested
+     * @param side the side requested (usually {@code null} for entities)
+     * @param <T>  the expected capability type
+     * @return the optional containing the instance, or empty if not matched
+     */
+    @Override
+    public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> cap,
+        @Nullable Direction side) {
+      final CapDataManager<?> manager = CapManagerRegistry.manager(this.managerId);
+      if (manager == null) {
+        return LazyOptional.empty();
+      }
+
+      if (cap.equals(manager.capability())) {
+        @SuppressWarnings("unchecked")
+        LazyOptional<T> cast = (LazyOptional<T>) this.optional;
+        return cast;
+      }
+
+      return LazyOptional.empty();
+    }
   }
 }

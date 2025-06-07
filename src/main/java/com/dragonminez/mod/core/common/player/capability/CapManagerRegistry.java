@@ -2,7 +2,9 @@ package com.dragonminez.mod.core.common.player.capability;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.core.client.registry.ClientCapNetHandlerRegistry;
+import com.dragonminez.mod.core.common.player.capability.CapDataManager.CapInstanceProvider;
 import com.google.common.collect.HashBasedTable;
+import java.util.HashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -11,8 +13,6 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-
-import java.util.HashMap;
 
 /**
  * Central registry and event handler for managing player capability systems.
@@ -76,12 +76,16 @@ public class CapManagerRegistry {
    */
   @SubscribeEvent
   public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-    if (!(event.getObject() instanceof Player)) {
+    if (!(event.getObject() instanceof Player player)) {
       return;
     }
 
-    Dist dist = FMLEnvironment.dist;
-    MANAGERS.row(dist).forEach(event::addCapability);
+    final boolean isClientSide = player.level().isClientSide;
+    MANAGERS.row(isClientSide ? Dist.CLIENT : Dist.DEDICATED_SERVER)
+        .forEach((location, capDataManager) -> {
+          final CapInstanceProvider<?> provider = new CapInstanceProvider<>(capDataManager);
+          event.addCapability(location, provider);
+        });
   }
 
   /**
