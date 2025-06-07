@@ -32,7 +32,7 @@ public class GeneticDataManager extends CapDataManager<GeneticData> {
    * {@link CapabilityManager} with a generic {@link CapabilityToken}.
    */
   protected GeneticDataManager() {
-    super(CapabilityManager.get(new CapabilityToken<>() {
+    super(GeneticDataHolder.ID, CapabilityManager.get(new CapabilityToken<>() {
     }));
   }
 

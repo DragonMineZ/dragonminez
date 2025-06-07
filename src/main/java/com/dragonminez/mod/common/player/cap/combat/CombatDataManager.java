@@ -28,7 +28,7 @@ public class CombatDataManager extends CapDataManager<CombatData> {
    * {@link CapabilityManager} with a generic {@link CapabilityToken}.
    */
   protected CombatDataManager() {
-    super(CapabilityManager.get(new CapabilityToken<>() {
+    super(CombatDataHolder.ID, CapabilityManager.get(new CapabilityToken<>() {
     }));
   }
 

@@ -27,7 +27,7 @@ public class StatDataManager extends CapDataManager<StatData> {
    * Registers the capability using Forge's {@link CapabilityManager}.
    */
   protected StatDataManager() {
-    super(CapabilityManager.get(new CapabilityToken<>() {}));
+    super(StatDataHolder.ID, CapabilityManager.get(new CapabilityToken<>() {}));
   }
 
   /**
