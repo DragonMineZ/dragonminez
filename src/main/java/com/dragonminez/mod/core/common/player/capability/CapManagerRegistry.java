@@ -1,7 +1,6 @@
 package com.dragonminez.mod.core.common.player.capability;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.core.client.registry.ClientCapNetHandlerRegistry;
 import com.dragonminez.mod.core.common.manager.DistListManager;
 import com.dragonminez.mod.core.common.player.capability.CapDataManager.CapInstanceProvider;
 import com.google.common.collect.HashBasedTable;
@@ -12,7 +11,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 
 /**
  * Central registry and event handler for managing player capability systems.
@@ -34,12 +32,6 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 public class CapManagerRegistry extends DistListManager<ResourceLocation, CapDataManager<?>> {
 
   public static final CapManagerRegistry INSTANCE = new CapManagerRegistry();
-
-  static {
-    if (FMLEnvironment.dist == Dist.CLIENT) {
-      ClientCapNetHandlerRegistry.init();
-    }
-  }
 
   /**
    * Automatically attaches all capability managers registered for the current distribution to
