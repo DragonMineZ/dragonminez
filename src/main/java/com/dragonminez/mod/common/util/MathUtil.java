@@ -1,5 +1,7 @@
 package com.dragonminez.mod.common.util;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * Utility class responsible for value validation and numeric clamping.
  * Designed for static use in mathematical and logical operations.
@@ -23,6 +25,17 @@ public class MathUtil {
       }
     }
     return null;
+  }
+
+  /**
+   * Generates a random integer between the specified min and max values (inclusive).
+   *
+   * @param min the minimum value (inclusive)
+   * @param max the maximum value (inclusive)
+   * @return a randomly generated integer between min and max
+   */
+  public static int randomInt(int min, int max) {
+    return ThreadLocalRandom.current().nextInt(min, max + 1);
   }
 
   /**

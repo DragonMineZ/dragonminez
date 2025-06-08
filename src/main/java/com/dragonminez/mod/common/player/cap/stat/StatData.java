@@ -28,6 +28,18 @@ public class StatData implements ICap {
   }
 
   @Override
+  public void randomize() {
+    final int max = GeneralConfig.attributes().maxAttributes;
+    this.setStrength(MathUtil.randomInt(1, max));
+    this.setStrikePower(MathUtil.randomInt(1, max));
+    this.setEnergy(MathUtil.randomInt(1, max));
+    this.setVitality(MathUtil.randomInt(1, max));
+    this.setResistance(MathUtil.randomInt(1, max));
+    this.setKiPower(MathUtil.randomInt(1, max));
+    this.setAlignment(MathUtil.randomInt(0, 100));
+  }
+
+  @Override
   public CompoundTag serialize(CompoundTag tag) {
     tag.putInt(StatDataHolder.STRENGTH.id(), this.strength);
     tag.putInt(StatDataHolder.STRIKE_POWER.id(), this.strikePower);
