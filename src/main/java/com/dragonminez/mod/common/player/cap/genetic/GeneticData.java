@@ -1,10 +1,10 @@
 package com.dragonminez.mod.common.player.cap.genetic;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
-import com.dragonminez.mod.core.common.player.capability.CapData;
-import com.dragonminez.mod.core.common.player.capability.ICap;
-import com.dragonminez.mod.core.common.util.JavaUtil.DataType;
+import com.dragonminez.core.common.player.capability.CapDataHolder;
+import com.dragonminez.core.common.player.capability.CapData;
+import com.dragonminez.core.common.player.capability.ICap;
+import com.dragonminez.core.common.util.JavaUtil.DataType;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;

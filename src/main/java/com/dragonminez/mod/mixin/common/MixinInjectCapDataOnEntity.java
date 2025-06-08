@@ -1,6 +1,6 @@
 package com.dragonminez.mod.mixin.common;
 
-import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
+import com.dragonminez.core.common.player.capability.CapManagerRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;

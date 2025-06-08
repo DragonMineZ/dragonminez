@@ -1,7 +1,7 @@
 package com.dragonminez.mod.server.config.food;
 
 import com.dragonminez.mod.common.registry.ConfigRegistry;
-import com.dragonminez.mod.core.common.manager.ListManager;
+import com.dragonminez.core.common.manager.ListManager;
 
 public class FoodConfigManager extends ListManager<String, FoodConfig> {
 

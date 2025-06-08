@@ -1,14 +1,14 @@
 package com.dragonminez.mod.server.command.player;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.core.common.player.capability.CapData;
-import com.dragonminez.mod.core.common.player.capability.CapDataHolder;
-import com.dragonminez.mod.core.common.player.capability.CapDataManager;
-import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
-import com.dragonminez.mod.core.common.player.capability.ICap;
-import com.dragonminez.mod.core.common.util.JavaUtil;
-import com.dragonminez.mod.core.common.util.JavaUtil.DataType;
-import com.dragonminez.mod.core.server.player.capability.IServerCapDataManager;
+import com.dragonminez.core.common.player.capability.CapData;
+import com.dragonminez.core.common.player.capability.CapDataHolder;
+import com.dragonminez.core.common.player.capability.CapDataManager;
+import com.dragonminez.core.common.player.capability.CapManagerRegistry;
+import com.dragonminez.core.common.player.capability.ICap;
+import com.dragonminez.core.common.util.JavaUtil;
+import com.dragonminez.core.common.util.JavaUtil.DataType;
+import com.dragonminez.core.server.player.capability.IServerCapDataManager;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;

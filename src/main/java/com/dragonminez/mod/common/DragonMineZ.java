@@ -2,9 +2,9 @@ package com.dragonminez.mod.common;
 
 import com.dragonminez.mod.client.DragonMineClient;
 import com.dragonminez.mod.common.registry.ConfigRegistry;
-import com.dragonminez.mod.core.common.DragonMineCore;
-import com.dragonminez.mod.core.common.network.NetworkManager;
-import com.dragonminez.mod.core.common.config.ConfigManager;
+import com.dragonminez.core.common.DragonMineCore;
+import com.dragonminez.core.common.network.NetworkManager;
+import com.dragonminez.core.common.config.ConfigManager;
 import com.dragonminez.mod.server.DragonMineServer;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;

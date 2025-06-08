@@ -2,8 +2,8 @@ package com.dragonminez.mod.common.registry;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.common.config.GeneralConfigHandler;
-import com.dragonminez.mod.core.common.config.ConfigManager;
-import com.dragonminez.mod.core.common.config.event.RegisterConfigHandlerEvent;
+import com.dragonminez.core.common.config.ConfigManager;
+import com.dragonminez.core.common.config.event.RegisterConfigHandlerEvent;
 import com.dragonminez.mod.server.config.dimensions.DimensionConfigHandler;
 import com.dragonminez.mod.server.config.food.FoodConfigHandler;
 import net.minecraftforge.common.MinecraftForge;

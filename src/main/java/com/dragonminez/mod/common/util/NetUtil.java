@@ -1,7 +1,7 @@
 package com.dragonminez.mod.common.util;
 
-import com.dragonminez.mod.core.common.network.NetworkManager;
-import com.dragonminez.mod.core.common.network.Packet;
+import com.dragonminez.core.common.network.NetworkManager;
+import com.dragonminez.core.common.network.Packet;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 

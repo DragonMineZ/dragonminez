@@ -6,7 +6,7 @@ import com.dragonminez.mod.client.player.cap.stat.ClientStatDataManager;
 import com.dragonminez.mod.common.player.cap.combat.CombatData.CombatDataHolder;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData.GeneticDataHolder;
 import com.dragonminez.mod.common.player.cap.stat.StatData.StatDataHolder;
-import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
+import com.dragonminez.core.common.player.capability.CapManagerRegistry;
 import net.minecraftforge.api.distmarker.Dist;
 
 public class ClientCapabilityRegistry {

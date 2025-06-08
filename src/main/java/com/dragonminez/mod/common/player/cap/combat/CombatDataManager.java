@@ -2,8 +2,8 @@ package com.dragonminez.mod.common.player.cap.combat;
 
 import com.dragonminez.mod.common.network.player.cap.combat.s2c.PacketS2CSyncCombatData;
 import com.dragonminez.mod.common.player.cap.combat.CombatData.CombatDataHolder;
-import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
-import com.dragonminez.mod.core.common.player.capability.CapDataManager;
+import com.dragonminez.core.common.network.capability.PacketS2CCapSync;
+import com.dragonminez.core.common.player.capability.CapDataManager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;

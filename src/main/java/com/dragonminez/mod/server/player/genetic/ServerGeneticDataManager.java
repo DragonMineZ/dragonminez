@@ -3,7 +3,7 @@ package com.dragonminez.mod.server.player.genetic;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData.GeneticDataHolder;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticDataManager;
-import com.dragonminez.mod.core.server.player.capability.IServerCapDataManager;
+import com.dragonminez.core.server.player.capability.IServerCapDataManager;
 import net.minecraft.server.level.ServerPlayer;
 
 /**

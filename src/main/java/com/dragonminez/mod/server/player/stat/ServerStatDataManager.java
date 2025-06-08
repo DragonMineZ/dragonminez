@@ -3,7 +3,7 @@ package com.dragonminez.mod.server.player.stat;
 import com.dragonminez.mod.common.player.cap.stat.StatData;
 import com.dragonminez.mod.common.player.cap.stat.StatData.StatDataHolder;
 import com.dragonminez.mod.common.player.cap.stat.StatDataManager;
-import com.dragonminez.mod.core.server.player.capability.IServerCapDataManager;
+import com.dragonminez.core.server.player.capability.IServerCapDataManager;
 import net.minecraft.server.level.ServerPlayer;
 
 /**

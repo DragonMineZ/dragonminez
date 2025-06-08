@@ -1,7 +1,7 @@
 package com.dragonminez.mod.server.registry;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.core.common.network.event.RegisterNetHandlerEvent;
+import com.dragonminez.core.common.network.event.RegisterNetHandlerEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;

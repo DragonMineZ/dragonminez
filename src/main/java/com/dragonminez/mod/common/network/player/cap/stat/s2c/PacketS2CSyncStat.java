@@ -1,7 +1,7 @@
 package com.dragonminez.mod.common.network.player.cap.stat.s2c;
 
 import com.dragonminez.mod.common.player.cap.stat.StatData;
-import com.dragonminez.mod.core.common.network.capability.PacketS2CCapSync;
+import com.dragonminez.core.common.network.capability.PacketS2CCapSync;
 import net.minecraft.network.FriendlyByteBuf;
 
 /**

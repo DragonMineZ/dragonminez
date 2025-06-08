@@ -1,8 +1,8 @@
 package com.dragonminez.mod.client.hud;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.core.common.player.capability.CapManagerRegistry;
-import com.dragonminez.mod.core.common.util.JavaUtil;
+import com.dragonminez.core.common.player.capability.CapManagerRegistry;
+import com.dragonminez.core.common.util.JavaUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.HashMap;
 import java.util.Map;

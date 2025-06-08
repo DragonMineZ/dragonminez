@@ -1,9 +1,9 @@
 package com.dragonminez.mod.server.config.dimensions;
 
 import com.dragonminez.mod.common.registry.ConfigRegistry;
-import com.dragonminez.mod.core.common.config.model.ConfigDist;
-import com.dragonminez.mod.core.common.config.model.ConfigType;
-import com.dragonminez.mod.core.common.config.model.IConfigHandler;
+import com.dragonminez.core.common.config.model.ConfigDist;
+import com.dragonminez.core.common.config.model.ConfigType;
+import com.dragonminez.core.common.config.model.IConfigHandler;
 
 public class DimensionConfigHandler implements IConfigHandler<DimensionConfig> {
 

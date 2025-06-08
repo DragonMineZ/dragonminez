@@ -1,7 +1,7 @@
 package com.dragonminez.mod.server.config.dimensions;
 
 import com.dragonminez.mod.common.registry.ConfigRegistry;
-import com.dragonminez.mod.core.common.manager.ListManager;
+import com.dragonminez.core.common.manager.ListManager;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
