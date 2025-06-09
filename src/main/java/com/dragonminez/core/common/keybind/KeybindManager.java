@@ -1,5 +1,6 @@
 package com.dragonminez.core.common.keybind;
 
+import com.dragonminez.core.common.util.DebugUtil;
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.core.common.util.NetUtil;
 import com.dragonminez.core.client.keybind.ClientKeybind;
@@ -11,7 +12,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 
 /**
  * Singleton manager for handling keybind registrations.
@@ -40,7 +40,7 @@ public class KeybindManager extends DistListManager<String, Keybind> {
       if (!(value instanceof ClientKeybind clientKey)) {
         continue;
       }
-      if (value.isDebugKey() && FMLEnvironment.production) {
+      if (value.isDebugKey() && !DebugUtil.isDebug()) {
         continue;
       }
       event.register(clientKey.mapping());

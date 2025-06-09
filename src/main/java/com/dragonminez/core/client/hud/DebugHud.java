@@ -1,5 +1,7 @@
 package com.dragonminez.core.client.hud;
 
+import com.dragonminez.core.common.util.DebugUtil;
+import com.dragonminez.core.common.util.TextUtil;
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.core.common.player.capability.CapManagerRegistry;
 import com.dragonminez.core.common.util.JavaUtil;
@@ -12,17 +14,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.EndTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.StringTagVisitor;
 import net.minecraft.nbt.Tag;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Debug HUD for displaying serialized capability NBT data of the player in the in-game GUI.
@@ -50,7 +46,7 @@ public class DebugHud {
    */
   @SubscribeEvent
   public static void onRenderGameOverlay(RenderGuiOverlayEvent.Pre event) {
-    if (FMLEnvironment.production) {
+    if (!DebugUtil.isDebug()) {
       return;
     }
     renderDebugInformation(event.getGuiGraphics());
@@ -76,7 +72,7 @@ public class DebugHud {
           .forEach((manager) ->
               manager.retrieveData(player, cap -> {
                 final Tag tag = cap.serialize(new CompoundTag());
-                final String prettyData = prettyPrintNBT(tag);
+                final String prettyData = TextUtil.prettyPrintNBT(tag);
                 nbtCache.put(JavaUtil.toLegible(cap.holder().identifier().getPath()), prettyData);
               }));
     }
@@ -103,68 +99,5 @@ public class DebugHud {
     });
 
     pose.popPose();
-  }
-
-  /**
-   * Recursively pretty-prints the NBT tag content into a human-readable string. Uses indentation to
-   * represent nested compound and list tags.
-   *
-   * @param tag the NBT tag to serialize as string
-   * @return a pretty-printed multiline string representation of the tag
-   */
-  private static String prettyPrintNBT(Tag tag) {
-    StringBuilder sb = new StringBuilder();
-    tag.accept(new StringTagVisitor() {
-      private int indent = 0;
-
-      private void appendIndent() {
-        sb.append("  ".repeat(indent));
-      }
-
-      @Override
-      public void visitString(@NotNull StringTag stringTag) {
-        appendIndent();
-        sb.append(stringTag).append("\n");
-      }
-
-      @Override
-      public void visitList(@NotNull ListTag listTag) {
-        appendIndent();
-        sb.append("List[").append(listTag.size()).append("]:\n");
-        indent++;
-        for (Tag element : listTag) {
-          element.accept(this);
-        }
-        indent--;
-      }
-
-      @Override
-      public void visitCompound(@NotNull CompoundTag compoundTag) {
-        appendIndent();
-        indent++;
-        sb.append("\n");
-        for (String key : compoundTag.getAllKeys()) {
-          Tag value = compoundTag.get(key);
-          appendIndent();
-          sb.append(key).append(": ");
-          if (value instanceof CompoundTag || value instanceof ListTag) {
-            sb.append("\n");
-            value.accept(this);
-          } else {
-            sb.append(value).append("\n");
-          }
-        }
-        indent--;
-        appendIndent();
-        sb.append("\n");
-      }
-
-      @Override
-      public void visitEnd(@NotNull EndTag endTag) {
-        appendIndent();
-        sb.append("END\n");
-      }
-    });
-    return sb.toString();
   }
 }
