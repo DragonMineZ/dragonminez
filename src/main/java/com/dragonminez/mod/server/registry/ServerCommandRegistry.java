@@ -1,7 +1,7 @@
 package com.dragonminez.mod.server.registry;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.core.common.util.LogUtil;
 import com.dragonminez.mod.server.command.player.PlayerCommand;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;

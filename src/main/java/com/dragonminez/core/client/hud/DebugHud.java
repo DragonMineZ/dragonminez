@@ -1,4 +1,4 @@
-package com.dragonminez.mod.client.hud;
+package com.dragonminez.core.client.hud;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.core.common.player.capability.CapManagerRegistry;

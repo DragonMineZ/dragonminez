@@ -1,7 +1,7 @@
 package com.dragonminez.core.common.keybind;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.util.NetUtil;
+import com.dragonminez.core.common.util.NetUtil;
 import com.dragonminez.core.client.keybind.ClientKeybind;
 import com.dragonminez.core.common.keybind.model.Keybind;
 import com.dragonminez.core.common.manager.DistListManager;

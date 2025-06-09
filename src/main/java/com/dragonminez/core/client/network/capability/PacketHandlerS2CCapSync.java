@@ -1,6 +1,6 @@
 package com.dragonminez.core.client.network.capability;
 
-import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.core.common.util.LogUtil;
 import com.dragonminez.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.core.common.player.capability.CapDataManager;
 import com.dragonminez.core.common.player.capability.CapManagerRegistry;

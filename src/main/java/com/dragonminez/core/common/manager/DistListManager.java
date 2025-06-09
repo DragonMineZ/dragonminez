@@ -1,6 +1,6 @@
 package com.dragonminez.core.common.manager;
 
-import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.core.common.util.LogUtil;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import java.util.Collection;

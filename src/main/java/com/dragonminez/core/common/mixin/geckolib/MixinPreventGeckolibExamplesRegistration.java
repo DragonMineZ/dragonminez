@@ -1,4 +1,4 @@
-package com.dragonminez.mod.common.mixin.geckolib;
+package com.dragonminez.core.common.mixin.geckolib;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

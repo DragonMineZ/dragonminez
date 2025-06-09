@@ -1,7 +1,7 @@
 package com.dragonminez.core.common.config;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.core.common.util.LogUtil;
 import com.dragonminez.core.common.config.event.RegisterConfigHandlerEvent;
 import com.dragonminez.core.common.config.model.ConfigType;
 import com.dragonminez.core.common.config.model.IConfigHandler;

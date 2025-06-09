@@ -10,7 +10,5 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "MixinInjectCapDataOnEntity",
-    "geckolib.MixinPreventGeckolibExamplesRegistration"
   ]
 }

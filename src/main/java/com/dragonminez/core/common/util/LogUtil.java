@@ -1,4 +1,4 @@
-package com.dragonminez.mod.common.util;
+package com.dragonminez.core.common.util;
 
 import com.dragonminez.mod.common.Reference;
 import net.minecraft.CrashReport;

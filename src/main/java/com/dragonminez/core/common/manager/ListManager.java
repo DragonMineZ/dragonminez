@@ -1,6 +1,6 @@
 package com.dragonminez.core.common.manager;
 
-import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.core.common.util.LogUtil;
 import com.google.common.collect.HashMultimap;
 import java.util.Collection;
 import java.util.Set;

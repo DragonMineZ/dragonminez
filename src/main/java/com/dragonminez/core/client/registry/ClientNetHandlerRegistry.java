@@ -1,7 +1,7 @@
 package com.dragonminez.core.client.registry;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.core.common.util.LogUtil;
 import com.dragonminez.core.client.network.capability.PacketHandlerS2CCapSync;
 import com.dragonminez.core.common.network.NetworkManager;
 import com.dragonminez.core.common.network.capability.PacketS2CCapSync;

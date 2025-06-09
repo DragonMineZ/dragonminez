@@ -1,4 +1,4 @@
-package com.dragonminez.mod.common.mixin;
+package com.dragonminez.core.common.mixin;
 
 import com.dragonminez.core.common.player.capability.CapManagerRegistry;
 import net.minecraft.nbt.CompoundTag;

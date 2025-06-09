@@ -1,7 +1,7 @@
 package com.dragonminez.core.server.player.capability;
 
-import com.dragonminez.mod.common.util.LogUtil;
-import com.dragonminez.mod.common.util.NetUtil;
+import com.dragonminez.core.common.util.LogUtil;
+import com.dragonminez.core.common.util.NetUtil;
 import com.dragonminez.core.common.player.capability.CapDataHolder;
 import com.dragonminez.core.common.player.capability.CapDataManager;
 import com.dragonminez.core.common.player.capability.CapData;

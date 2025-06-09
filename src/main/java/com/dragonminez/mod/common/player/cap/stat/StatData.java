@@ -2,7 +2,7 @@ package com.dragonminez.mod.common.player.cap.stat;
 
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.common.config.GeneralConfig;
-import com.dragonminez.mod.common.util.MathUtil;
+import com.dragonminez.core.common.util.MathUtil;
 import com.dragonminez.core.common.player.capability.CapDataHolder;
 import com.dragonminez.core.common.player.capability.CapData;
 import com.dragonminez.core.common.player.capability.ICap;

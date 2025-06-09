@@ -1,7 +1,7 @@
 package com.dragonminez.core.common.network;
 
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.mod.common.util.LogUtil;
+import com.dragonminez.core.common.util.LogUtil;
 import com.dragonminez.core.common.network.event.RegisterNetHandlerEvent;
 import com.dragonminez.core.common.network.event.RegisterNetHandlerEvent.Phase;
 import java.util.function.Consumer;
