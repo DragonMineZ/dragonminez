@@ -1,4 +1,4 @@
-package com.dragonminez.mod.mixin.common.geckolib;
+package com.dragonminez.mod.common.mixin.geckolib;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -10,7 +10,7 @@ import software.bernie.example.GeckoLibMod;
  * <p>
  * GeckoLib, by default, includes example content (e.g., test entities and animations) which are conditionally
  * registered based on a system property (`-Dgeckolib.register_examples=true`). This registration occurs in
- * {@link software.bernie.example.GeckoLibMod#shouldRegisterExamples()}, which checks that property.
+ * {@link GeckoLibMod#shouldRegisterExamples()}, which checks that property.
  *
  * <p><strong>Why this exists:</strong>
  * In development environments, GeckoLib’s example content may be loaded unintentionally if the system property

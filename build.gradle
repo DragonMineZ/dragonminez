@@ -31,14 +31,18 @@ println "Java: ${System.getProperty 'java.version'}, " +
 
 mixin {
     add sourceSets.main, 'mixins.dragonminez.refmap.json'
-    config 'dragonminez.mixins.json'
-    debug = false
 
-    gradle.taskGraph.whenReady { taskGraph ->
-        if (taskGraph.hasTask(':runClient') && System.getProperty('idea.active') != null) {
-            debug = true
-        }
-    }
+    config 'mixin.core_client.json'
+    config 'mixin.core_server.json'
+    config 'mixin.core_common.json'
+
+    config 'mixin.mod_client.json'
+    config 'mixin.mod_server.json'
+    config 'mixin.mod_common.json'
+
+    debug.verbose = true
+    debug.export = true
+    quiet
 }
 
 tasks.jarJar.configure {

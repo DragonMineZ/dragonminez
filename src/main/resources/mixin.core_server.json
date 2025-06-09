@@ -1,13 +1,9 @@
 {
   "required": true,
-  "package": "com.dragonminez.mod.mixin",
+  "package": "com.dragonminez.core.server.mixin",
   "refmap": "mixins.dragonminez.refmap.json",
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
-  "mixins": [
-    "common.MixinInjectCapDataOnEntity",
-    "common.geckolib.MixinPreventGeckolibExamplesRegistration"
-  ],
   "client": [
   ],
   "injectors": {

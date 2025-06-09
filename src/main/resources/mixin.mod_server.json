@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.dragonminez.mod.server.mixin",
+  "refmap": "mixins.dragonminez.refmap.json",
+  "compatibilityLevel": "JAVA_17",
+  "minVersion": "0.8",
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
