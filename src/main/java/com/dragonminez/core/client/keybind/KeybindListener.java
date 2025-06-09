@@ -1,7 +1,9 @@
 package com.dragonminez.core.client.keybind;
 
+import com.dragonminez.core.client.registry.ClientKeybindMappingRegistry;
+import com.dragonminez.core.client.registry.ClientKeybindMappingRegistry.ExtensiveKeyMapping;
+import com.dragonminez.core.common.keybind.KeybindHandlerManager;
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.core.common.keybind.KeyHandlerManager;
 import com.dragonminez.core.common.keybind.KeybindManager;
 import com.dragonminez.core.common.keybind.model.Keybind;
 import java.util.HashMap;
@@ -45,19 +47,21 @@ public class KeybindListener {
     }
 
     for (Keybind keybind : KeybindManager.INSTANCE.values(Dist.CLIENT)) {
-      if (!(keybind instanceof ClientKeybind clientKeybind)) {
+      final ExtensiveKeyMapping mapping = ClientKeybindMappingRegistry.INSTANCE.value(keybind.id());
+      if (mapping == null) {
         continue;
       }
-      final boolean isActive = clientKeybind.isActive();
+
+      final boolean isActive = mapping.isActive();
       final boolean wasActive = keyStateMap.getOrDefault(keybind, false);
 
       if (isActive) {
         if (keybind.canBeHeldDown()) {
-          KeybindListener.onPress(player, clientKeybind, true);
+          KeybindListener.onPress(player, keybind, true);
           continue;
         }
         if (!wasActive) {
-          KeybindListener.onPress(player, clientKeybind, false);
+          KeybindListener.onPress(player, keybind, false);
         }
       }
 
@@ -70,6 +74,6 @@ public class KeybindListener {
       KeybindManager.INSTANCE.notifyServer(keybind, heldDown);
       return;
     }
-    KeyHandlerManager.INSTANCE.onPress(player, keybind.id(), heldDown, false);
+    KeybindHandlerManager.INSTANCE.onPress(player, keybind.id(), heldDown, false);
   }
 }

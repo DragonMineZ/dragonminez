@@ -17,12 +17,12 @@ import net.minecraftforge.fml.common.Mod;
  * in coordination with {@link KeybindManager}.
  */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class KeyHandlerManager extends DistListManager<String, KeybindHandler> {
+public class KeybindHandlerManager extends DistListManager<String, KeybindHandler> {
 
   /**
    * The singleton instance of the {@code KeyHandlerManager}.
    */
-  public static final KeyHandlerManager INSTANCE = new KeyHandlerManager();
+  public static final KeybindHandlerManager INSTANCE = new KeybindHandlerManager();
 
   /**
    * Routes a key press event to the appropriate {@link KeybindHandler} for the given keybind ID.

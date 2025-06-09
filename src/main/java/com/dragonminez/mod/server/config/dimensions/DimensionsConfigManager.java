@@ -20,7 +20,7 @@ public class DimensionsConfigManager extends ListManager<String, DimensionConfig
    * @return The dimension config.
    */
   public DimensionConfig get(ResourceLocation location) {
-    return this.get(location.toString()).stream()
+    return this.values(location.toString()).stream()
         .findFirst()
         .orElse(null);
   }

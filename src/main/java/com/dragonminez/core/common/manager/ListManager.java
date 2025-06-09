@@ -64,8 +64,18 @@ public abstract class ListManager<K, V> {
    * @param key The key to retrieve values for
    * @return A set of values associated with the key
    */
-  public Set<V> get(K key) {
+  public Set<V> values(K key) {
     return this.map.get(key);
+  }
+
+  /**
+   * Gets all values associated with a given key.
+   *
+   * @param key The key to retrieve values for
+   * @return A set of values associated with the key
+   */
+  public V value(K key) {
+    return this.map.get(key).stream().findFirst().get();
   }
 
   /**

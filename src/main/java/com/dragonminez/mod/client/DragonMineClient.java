@@ -2,7 +2,7 @@ package com.dragonminez.mod.client;
 
 import com.dragonminez.mod.client.registry.ClientCapabilityRegistry;
 import com.dragonminez.mod.client.registry.ClientNetHandlerRegistry;
-import com.dragonminez.mod.client.registry.KeybindRegistry;
+import com.dragonminez.mod.client.registry.ClientKeybindRegistry;
 import com.dragonminez.mod.common.Reference;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -29,6 +29,6 @@ public class DragonMineClient {
   private static void registry() {
     ClientCapabilityRegistry.init();
     ClientNetHandlerRegistry.init();
-    KeybindRegistry.init();
+    ClientKeybindRegistry.init();
   }
 }

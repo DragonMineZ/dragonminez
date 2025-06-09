@@ -1,16 +1,11 @@
 package com.dragonminez.core.common.keybind;
 
-import com.dragonminez.core.common.util.DebugUtil;
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.core.common.util.NetUtil;
-import com.dragonminez.core.client.keybind.ClientKeybind;
 import com.dragonminez.core.common.keybind.model.Keybind;
 import com.dragonminez.core.common.manager.DistListManager;
 import com.dragonminez.core.common.manager.ListManager;
 import com.dragonminez.core.common.network.keybind.PacketC2SKeyPressed;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
@@ -19,33 +14,13 @@ import net.minecraftforge.fml.common.Mod;
  * Extends {@link ListManager} with keys of type {@link String} and values of type {@link Keybind}.
  * Ensures unique keys and logs all operations.
  */
-@Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class KeybindManager extends DistListManager<String, Keybind> {
 
   /**
    * The singleton instance of the {@code KeybindManager}.
    */
   public static final KeybindManager INSTANCE = new KeybindManager();
-
-  /**
-   * Registers key mappings for all managed keybinds.
-   * <p>
-   * Debug-only keybinds are excluded in production environments.
-   *
-   * @param event the key mapping registration event
-   */
-  @SubscribeEvent
-  public static void keyRegister(RegisterKeyMappingsEvent event) {
-    for (Keybind value : KeybindManager.INSTANCE.values(Dist.CLIENT)) {
-      if (!(value instanceof ClientKeybind clientKey)) {
-        continue;
-      }
-      if (value.isDebugKey() && !DebugUtil.isDebug()) {
-        continue;
-      }
-      event.register(clientKey.mapping());
-    }
-  }
 
   /**
    * Notifies the server when a keybind is pressed or released.
