@@ -51,7 +51,7 @@ public class KeybindHandlerManager extends DistListManager<String, KeybindHandle
       return;
     }
 
-    handler.onPressed(player, heldDown, dist);
+    handler.onPressed(player);
   }
 
   /**

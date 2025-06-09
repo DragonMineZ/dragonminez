@@ -15,9 +15,6 @@ public abstract class KeybindHandler {
    * Called when the associated keybind is triggered.
    *
    * @param player   the player pressing the key
-   * @param heldDown true if the key is being held down (for repeatable actions), false if just
-   *                 pressed
-   * @param dist the side where this code is being called.
    */
-  public abstract void onPressed(Player player, boolean heldDown, Dist dist);
+  public abstract void onPressed(Player player);
 }

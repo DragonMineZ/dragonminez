@@ -48,6 +48,34 @@ public interface IServerCapDataManager<M extends CapDataManager<D>, D extends IC
   }
 
   /**
+   * Randomizes the capability data for the given player.
+   * <p>
+   * This method invokes {@link ICap#randomize()} on the player's capability data, applying a fresh
+   * randomized state. After randomization, the data is synchronized with the client and optionally
+   * logged for debugging purposes.
+   *
+   * <p>
+   * This is typically used for debug purposes. Note that not every {@link ICap} has a randomize
+   * implementation.
+   *
+   * @param player the player whose capability data should be randomized
+   * @param log    whether to log the randomization event using {@link LogUtil}
+   * @see ICap#randomize()
+   */
+  default void randomize(ServerPlayer player, boolean log) {
+    final D cap = this.manager().retrieveData(player);
+    if (cap == null) {
+      return;
+    }
+
+    cap.randomize();
+    this.sendUpdate(player, cap, true);
+    if (log) {
+      LogUtil.debug("Randomized data for player {}", player.getName().getString());
+    }
+  }
+
+  /**
    * Copies all capability data from a reference player to a target player and syncs the target.
    *
    * @param reference the player to copy data from

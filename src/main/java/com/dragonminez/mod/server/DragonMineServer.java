@@ -3,6 +3,7 @@ package com.dragonminez.mod.server;
 import com.dragonminez.mod.common.DragonMineZ;
 import com.dragonminez.mod.common.Reference;
 import com.dragonminez.mod.server.registry.ServerCapabilityRegistry;
+import com.dragonminez.mod.server.registry.ServerKeybindHandlerRegistry;
 import com.dragonminez.mod.server.registry.ServerKeybindRegistry;
 import com.dragonminez.mod.server.registry.ServerNetHandlerRegistry;
 import net.minecraftforge.api.distmarker.Dist;
@@ -28,6 +29,7 @@ public class DragonMineServer {
 
   private static void registry() {
     ServerKeybindRegistry.init();
+    ServerKeybindHandlerRegistry.init();
     ServerCapabilityRegistry.init();
     ServerNetHandlerRegistry.init();
   }

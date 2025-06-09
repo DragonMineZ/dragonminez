@@ -39,7 +39,7 @@ public class ServerNetHandlerRegistry {
 
     final SimpleChannel channel = event.channel();
     channel.messageBuilder(PacketC2SKeyPressed.class, NetworkManager.INSTANCE.assignId(),
-            NetworkDirection.PLAY_TO_CLIENT)
+            NetworkDirection.PLAY_TO_SERVER)
         .decoder(PacketC2SKeyPressed::new)
         .encoder(PacketC2SKeyPressed::encode)
         .consumerMainThread(PacketHandlerC2SKeyPressed::handle)

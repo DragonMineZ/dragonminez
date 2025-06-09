@@ -62,6 +62,7 @@ public class ClientKeybindMappingRegistry extends ListManager<String, ExtensiveK
 
       final ExtensiveKeyMapping keyMapping = ClientKeybindMappingRegistry.INSTANCE
           .createMapping(value, clientKey);
+      ClientKeybindMappingRegistry.INSTANCE.register(value.id(), keyMapping);
       event.register(keyMapping);
     }
   }

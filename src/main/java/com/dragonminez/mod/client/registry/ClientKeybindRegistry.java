@@ -1,9 +1,7 @@
 package com.dragonminez.mod.client.registry;
 
-public class KeybindRegistry {
+public class ClientKeybindRegistry {
 
   public static void init() {
-
   }
-
 }

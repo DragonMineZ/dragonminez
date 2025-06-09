@@ -1,5 +1,6 @@
 package com.dragonminez.core.client;
 
+import com.dragonminez.core.client.registry.ClientKeybindRegistry;
 import com.dragonminez.core.client.registry.ClientNetHandlerRegistry;
 
 public class DragonMineCoreClient {
@@ -9,6 +10,7 @@ public class DragonMineCoreClient {
   }
 
   private static void registry() {
+    ClientKeybindRegistry.init();
     ClientNetHandlerRegistry.init();
   }
 }
