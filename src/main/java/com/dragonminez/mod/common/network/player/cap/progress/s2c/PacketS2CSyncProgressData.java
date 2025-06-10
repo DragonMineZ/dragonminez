@@ -1,7 +1,7 @@
 package com.dragonminez.mod.common.network.player.cap.progress.s2c;
 
 import com.dragonminez.core.common.network.capability.PacketS2CCapSync;
-import com.dragonminez.mod.common.player.cap.progression.ProgressData;
+import com.dragonminez.mod.common.player.cap.progress.ProgressData;
 import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 

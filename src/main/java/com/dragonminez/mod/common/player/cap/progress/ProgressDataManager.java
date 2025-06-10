@@ -1,9 +1,9 @@
-package com.dragonminez.mod.common.player.cap.progression;
+package com.dragonminez.mod.common.player.cap.progress;
 
 import com.dragonminez.core.common.network.capability.PacketS2CCapSync;
 import com.dragonminez.core.common.player.capability.CapDataManager;
 import com.dragonminez.mod.common.network.player.cap.progress.s2c.PacketS2CSyncProgressData;
-import com.dragonminez.mod.common.player.cap.progression.ProgressData.ProgressDataHolder;
+import com.dragonminez.mod.common.player.cap.progress.ProgressData.ProgressDataHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;

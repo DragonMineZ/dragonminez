@@ -1,4 +1,4 @@
-package com.dragonminez.mod.server.player.combat;
+package com.dragonminez.mod.server.player.cap.combat;
 
 import com.dragonminez.mod.common.player.cap.combat.CombatData;
 import com.dragonminez.mod.common.player.cap.combat.CombatData.CombatDataHolder;

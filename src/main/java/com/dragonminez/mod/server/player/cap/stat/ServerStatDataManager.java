@@ -1,4 +1,4 @@
-package com.dragonminez.mod.server.player.stat;
+package com.dragonminez.mod.server.player.cap.stat;
 
 import com.dragonminez.mod.common.player.cap.stat.StatData;
 import com.dragonminez.mod.common.player.cap.stat.StatData.StatDataHolder;

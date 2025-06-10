@@ -1,4 +1,4 @@
-package com.dragonminez.mod.common.player.cap.progression;
+package com.dragonminez.mod.common.player.cap.progress;
 
 import com.dragonminez.core.common.player.capability.CapData;
 import com.dragonminez.core.common.player.capability.CapDataHolder;

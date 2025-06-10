@@ -1,9 +1,9 @@
-package com.dragonminez.mod.server.player.progression;
+package com.dragonminez.mod.server.player.cap.progression;
 
 import com.dragonminez.core.server.player.capability.IServerCapDataManager;
-import com.dragonminez.mod.common.player.cap.progression.ProgressData;
-import com.dragonminez.mod.common.player.cap.progression.ProgressData.ProgressDataHolder;
-import com.dragonminez.mod.common.player.cap.progression.ProgressDataManager;
+import com.dragonminez.mod.common.player.cap.progress.ProgressData;
+import com.dragonminez.mod.common.player.cap.progress.ProgressData.ProgressDataHolder;
+import com.dragonminez.mod.common.player.cap.progress.ProgressDataManager;
 import net.minecraft.server.level.ServerPlayer;
 
 /**

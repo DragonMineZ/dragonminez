@@ -1,7 +1,7 @@
 package com.dragonminez.mod.client.player.cap.progress;
 
-import com.dragonminez.mod.common.player.cap.progression.ProgressDataManager;
-import com.dragonminez.mod.common.player.cap.progression.ProgressData;
+import com.dragonminez.mod.common.player.cap.progress.ProgressDataManager;
+import com.dragonminez.mod.common.player.cap.progress.ProgressData;
 
 /**
  * Client-side manager for accessing and updating {@link ProgressData}

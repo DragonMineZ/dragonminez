@@ -1,4 +1,4 @@
-package com.dragonminez.mod.server.player.genetic;
+package com.dragonminez.mod.server.player.cap.genetic;
 
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData;
 import com.dragonminez.mod.common.player.cap.genetic.GeneticData.GeneticDataHolder;
