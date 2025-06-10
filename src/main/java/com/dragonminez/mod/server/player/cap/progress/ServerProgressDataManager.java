@@ -1,4 +1,4 @@
-package com.dragonminez.mod.server.player.cap.progression;
+package com.dragonminez.mod.server.player.cap.progress;
 
 import com.dragonminez.core.server.player.capability.IServerCapDataManager;
 import com.dragonminez.mod.common.player.cap.progress.ProgressData;
