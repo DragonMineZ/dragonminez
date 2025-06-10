@@ -1,14 +1,13 @@
 package com.dragonminez.core.client.hud;
 
+import com.dragonminez.core.common.player.capability.CapManagerRegistry;
 import com.dragonminez.core.common.util.DebugUtil;
+import com.dragonminez.core.common.util.JavaUtil;
 import com.dragonminez.core.common.util.TextUtil;
 import com.dragonminez.mod.common.Reference;
-import com.dragonminez.core.common.player.capability.CapManagerRegistry;
-import com.dragonminez.core.common.util.JavaUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -57,47 +56,85 @@ public class DebugHud {
    * recomputation.
    */
   private static void renderDebugInformation(GuiGraphics graphics) {
-    final Minecraft mc = Minecraft.getInstance();
-    final LocalPlayer player = mc.player;
-    if (player == null || mc.options.hideGui) {
-      return;
-    }
+    Minecraft mc = Minecraft.getInstance();
+    LocalPlayer player = mc.player;
+    if (player == null || mc.options.hideGui) return;
 
-    final int currentTick = player.tickCount;
+    int currentTick = player.tickCount;
     if (currentTick != lastUpdateTick) {
       lastUpdateTick = currentTick;
       nbtCache.clear();
 
       CapManagerRegistry.INSTANCE.values(Dist.CLIENT)
-          .forEach((manager) ->
+          .forEach(manager ->
               manager.retrieveData(player, cap -> {
-                final Tag tag = cap.serialize(new CompoundTag(), false);
-                final String prettyData = TextUtil.prettyPrintNBT(tag);
+                Tag tag = cap.serialize(new CompoundTag(), false);
+                String prettyData = TextUtil.prettyPrintNBT(tag);
                 nbtCache.put(JavaUtil.toLegible(cap.holder().identifier().getPath()), prettyData);
               }));
     }
 
-    final Font font = mc.font;
-    final PoseStack pose = graphics.pose();
+    Font font = mc.font;
+    int unscaledLineHeight = 10;
+    int totalLines = 0;
 
-    pose.pushPose();
-    pose.scale(0.8f, 0.8f, 0.8f);
-
-    final int labelX = 10;
-    final AtomicInteger y = new AtomicInteger(50);
-
-    nbtCache.forEach((label, pretty) -> {
-      graphics.drawString(font, label, labelX, y.get(), 0xffffff, true);
-      y.addAndGet(10);
+    for (String pretty : nbtCache.values()) {
+      totalLines++; // label
       for (String line : pretty.split("\n")) {
+        if (!line.isEmpty()) totalLines++;
+      }
+      totalLines++; // spacing
+    }
+
+    int unscaledHeight = totalLines * unscaledLineHeight;
+    int screenHeight = mc.getWindow().getGuiScaledHeight() - 10;
+    float scale = unscaledHeight > screenHeight ? (float) screenHeight / unscaledHeight : 1.0f;
+
+    PoseStack pose = graphics.pose();
+    pose.pushPose();
+    pose.scale(scale, scale, scale);
+
+    int x = 10;
+    int y = 10;
+
+    for (Map.Entry<String, String> entry : nbtCache.entrySet()) {
+      graphics.drawString(font, entry.getKey(), x, y, 0xFFFFFF, true);
+      y += unscaledLineHeight;
+
+      for (String line : entry.getValue().split("\n")) {
         if (!line.isEmpty()) {
-          graphics.drawString(font, line, labelX + 10, y.get(), 0xffaa00, true);
-          y.addAndGet(10);
+          graphics.drawString(font, line, x + 10, y, 0xFFAA00, true);
+          y += unscaledLineHeight;
         }
       }
-      y.addAndGet(10);
-    });
+
+      y += unscaledLineHeight;
+    }
 
     pose.popPose();
+  }
+
+
+  private static float getScale(Minecraft mc) {
+    int totalLines = 0;
+    for (String pretty : nbtCache.values()) {
+      totalLines++;
+      for (String line : pretty.split("\n")) {
+        if (!line.isEmpty()) {
+          totalLines++;
+        }
+      }
+      totalLines++;
+    }
+
+    final int lineHeight = 10;
+    final int availableHeight = mc.getWindow().getGuiScaledHeight() - 20;
+
+    float scale = 0.8f;
+    float requiredHeight = totalLines * lineHeight * scale;
+    if (requiredHeight > availableHeight) {
+      scale = (float) availableHeight / (totalLines * lineHeight);
+    }
+    return scale;
   }
 }
