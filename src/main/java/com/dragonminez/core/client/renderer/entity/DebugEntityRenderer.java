@@ -58,7 +58,7 @@ public class DebugEntityRenderer {
       CapManagerRegistry.INSTANCE.values(Dist.CLIENT).forEach(manager -> {
         manager.retrieveData(player, cap -> {
           String label = JavaUtil.toLegible(cap.holder().identifier().getPath());
-          Tag tag = cap.serialize(new CompoundTag());
+          Tag tag = cap.serialize(new CompoundTag(), false);
           String pretty = TextUtil.prettyPrintNBT(tag);
           updated.add(new CachedDebug(label, pretty));
         });

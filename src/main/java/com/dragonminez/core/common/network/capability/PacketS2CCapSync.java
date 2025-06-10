@@ -30,7 +30,7 @@ public abstract class PacketS2CCapSync<V extends ICap> extends Packet {
     if (rawValue == null) {
       return;
     }
-    this.encodedValue = rawValue.serialize(new CompoundTag());
+    this.encodedValue = rawValue.serialize(new CompoundTag(), false);
     this.playerId = playerId;
   }
 

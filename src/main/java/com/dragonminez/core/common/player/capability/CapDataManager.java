@@ -70,11 +70,11 @@ public abstract class CapDataManager<C extends ICap> {
    *
    * @param player  the target player
    * @param newData the new capability data to apply
-   * @param cloned  whether the data was cloned (affects deserialization)
+   * @param saving  whether the data is being saved (affects deserialization)
    */
-  public void update(Player player, C newData, boolean cloned) {
+  public void update(Player player, C newData, boolean saving) {
     this.retrieveData(player, oldData ->
-        oldData.deserialize(newData.serialize(new CompoundTag()), cloned));
+        oldData.deserialize(newData.serialize(new CompoundTag(), saving), saving));
   }
 
   /**

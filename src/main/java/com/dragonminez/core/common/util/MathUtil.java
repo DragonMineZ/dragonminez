@@ -39,6 +39,18 @@ public class MathUtil {
   }
 
   /**
+   * Generates a random float between the specified min and max values (inclusive of min, exclusive of max).
+   *
+   * @param min the minimum value (inclusive)
+   * @param max the maximum value (exclusive)
+   * @return a randomly generated float between min (inclusive) and max (exclusive)
+   */
+  public static float randomFloat(float min, float max) {
+    return ThreadLocalRandom.current().nextFloat() * (max - min) + min;
+  }
+
+
+  /**
    * Clamps an integer between the given minimum and maximum values.
    *
    * @param value the value to clamp

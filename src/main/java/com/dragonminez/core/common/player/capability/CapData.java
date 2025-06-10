@@ -7,27 +7,26 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
- * Represents a single piece of data stored in a capability, including its type, identifier,
- * access logic, and metadata such as display names and visibility.
+ * Represents a single piece of data stored in a capability, including its type, identifier, access
+ * logic, and metadata such as display names and visibility.
  * <p>
- * {@code CapData} acts as a descriptor for a field within a {@link CapDataHolder}, providing
- * typed access (getter/setter) to the data through functional interfaces.
- * The field may represent numeric, boolean, string, or other supported types as defined in {@link DataType}.
+ * {@code CapData} acts as a descriptor for a field within a {@link CapDataHolder}, providing typed
+ * access (getter/setter) to the data through functional interfaces. The field may represent
+ * numeric, boolean, string, or other supported types as defined in {@link DataType}.
  * </p>
  * <p>
- * These descriptors are typically used to define which values a specific capability supports
- * and are registered once during capability initialization via {@link CapDataHolder#acceptedData()}.
+ * These descriptors are typically used to define which values a specific capability supports and
+ * are registered once during capability initialization via {@link CapDataHolder#acceptedData()}.
  * </p>
  *
  * <p><b>Usage example:</b></p>
  * <pre>{@code
  * CapData<MyCapImpl, Integer> power = CapData.of("power", DataType.INTEGER,
- *     MyCapImpl::setPower, MyCapImpl::getPower, true);
+ *     MyCapImpl::setPower, MyCapImpl::getPower, true, true);
  * }</pre>
  *
  * @param <T> the capability holder type (must implement {@link ICap})
  * @param <V> the value type of this data field
- *
  * @see CapDataHolder
  * @see DataType
  */
@@ -40,6 +39,7 @@ public final class CapData<T extends ICap, V> {
   private final BiConsumer<T, V> setter;
   private final Function<T, V> getter;
   private final boolean isPublic;
+  private final boolean isPersistent;
 
   /**
    * Constructs a new capability data descriptor.
@@ -50,9 +50,11 @@ public final class CapData<T extends ICap, V> {
    * @param getter       getter function to read the value from a holder
    * @param abbreviation optional short label (for UI/logs)
    * @param isPublic     whether the value is externally visible (e.g., shown in commands)
+   * @param isPersistent whether the value is persistent (saved to disk) and copied during player
+   *                     cloning (e.g., on death or dimension transfer).
    */
   public CapData(String id, DataType type, BiConsumer<T, V> setter, Function<T, V> getter,
-      String abbreviation, boolean isPublic) {
+      String abbreviation, boolean isPublic, boolean isPersistent) {
     this.id = id.toLowerCase(Locale.ROOT);
     this.type = type;
     this.legibleId = JavaUtil.toLegible(this.id);
@@ -60,6 +62,7 @@ public final class CapData<T extends ICap, V> {
     this.setter = setter;
     this.getter = getter;
     this.isPublic = isPublic;
+    this.isPersistent = isPersistent;
   }
 
   /**
@@ -73,8 +76,8 @@ public final class CapData<T extends ICap, V> {
    * @return a new {@link CapData} instance
    */
   public static <T extends ICap, V> CapData<T, V> of(String id, DataType type,
-      BiConsumer<T, V> setter, Function<T, V> getter, boolean isPublic) {
-    return new CapData<>(id, type, setter, getter, "", isPublic);
+      BiConsumer<T, V> setter, Function<T, V> getter, boolean isPublic, boolean allowSave) {
+    return new CapData<>(id, type, setter, getter, "", isPublic, allowSave);
   }
 
   /**
@@ -89,8 +92,9 @@ public final class CapData<T extends ICap, V> {
    * @return a new {@link CapData} instance
    */
   public static <T extends ICap, V> CapData<T, V> of(String id, DataType type,
-      String abbreviation, BiConsumer<T, V> setter, Function<T, V> getter, boolean isPublic) {
-    return new CapData<>(id, type, setter, getter, abbreviation, isPublic);
+      String abbreviation, BiConsumer<T, V> setter, Function<T, V> getter, boolean isPublic,
+      boolean allowSave) {
+    return new CapData<>(id, type, setter, getter, abbreviation, isPublic, allowSave);
   }
 
   /**
@@ -112,7 +116,6 @@ public final class CapData<T extends ICap, V> {
    * <p>
    * This method performs an unchecked cast and should only be used with compatible holders.
    *
-   * @param holder the capability data holder
    * @param value  the value to assign
    */
   @SuppressWarnings("unchecked")
@@ -125,7 +128,6 @@ public final class CapData<T extends ICap, V> {
    * <p>
    * This method performs an unchecked cast and should only be used with compatible holders.
    *
-   * @param holder the capability data holder
    * @return the current value of this field
    */
   @SuppressWarnings("unchecked")
@@ -159,5 +161,12 @@ public final class CapData<T extends ICap, V> {
    */
   public boolean isPublic() {
     return this.isPublic;
+  }
+
+  /**
+   * @return true if this data can be saved to the disk.
+   */
+  public boolean isPersistent() {
+    return this.isPersistent;
   }
 }

@@ -14,10 +14,25 @@ public interface ICap {
    * Subclasses should override this method to write their custom data. The default implementation
    * returns the tag unchanged.
    *
-   * @param nbt the tag to write data into
+   * @param nbt    the tag to write data into
+   * @param saving true if the data is being saved to disk
    * @return the modified or original {@link CompoundTag}
    */
-  default CompoundTag serialize(CompoundTag nbt) {
+  default CompoundTag serialize(CompoundTag nbt, boolean saving) {
+    for (CapData<?, ?> data : this.holder().acceptedData()) {
+      if (!data.isPersistent() && saving) {
+        continue;
+      }
+      final Object value = data.get(this);
+      switch (data.type()) {
+        case LONG -> nbt.putLong(data.id(), (Long) value);
+        case FLOAT -> nbt.putFloat(data.id(), (Float) value);
+        case STRING -> nbt.putString(data.id(), (String) value);
+        case DOUBLE -> nbt.putDouble(data.id(), (Double) value);
+        case BOOLEAN -> nbt.putBoolean(data.id(), (Boolean) value);
+        case INTEGER -> nbt.putInt(data.id(), (Integer) value);
+      }
+    }
     return nbt;
   }
 
@@ -28,9 +43,22 @@ public interface ICap {
    * can be used to distinguish between normal deserialization and clone/sync scenarios.
    *
    * @param nbt    the tag to read data from
-   * @param cloned whether the data is being loaded into a cloned or synced instance
+   * @param saving whether the data is being saved or loaded into a cloned or synced instance
    */
-  default void deserialize(CompoundTag nbt, boolean cloned) {
+  default void deserialize(CompoundTag nbt, boolean saving) {
+    for (CapData<?, ?> data : this.holder().acceptedData()) {
+      if (!data.isPersistent() && saving) {
+        continue;
+      }
+      switch (data.type()) {
+        case LONG -> data.set(this, nbt.getLong(data.id()));
+        case FLOAT -> data.set(this, nbt.getFloat(data.id()));
+        case STRING -> data.set(this, nbt.getString(data.id()));
+        case DOUBLE -> data.set(this, nbt.getDouble(data.id()));
+        case BOOLEAN -> data.set(this, nbt.getBoolean(data.id()));
+        case INTEGER -> data.set(this, nbt.getInt(data.id()));
+      }
+    }
   }
 
   /**

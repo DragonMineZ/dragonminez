@@ -71,7 +71,7 @@ public class DebugHud {
       CapManagerRegistry.INSTANCE.values(Dist.CLIENT)
           .forEach((manager) ->
               manager.retrieveData(player, cap -> {
-                final Tag tag = cap.serialize(new CompoundTag());
+                final Tag tag = cap.serialize(new CompoundTag(), false);
                 final String prettyData = TextUtil.prettyPrintNBT(tag);
                 nbtCache.put(JavaUtil.toLegible(cap.holder().identifier().getPath()), prettyData);
               }));

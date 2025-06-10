@@ -6,7 +6,6 @@ import com.dragonminez.core.common.player.capability.CapData;
 import com.dragonminez.core.common.player.capability.ICap;
 import com.dragonminez.core.common.util.JavaUtil.DataType;
 import java.util.List;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 
@@ -18,22 +17,6 @@ public class CombatData implements ICap {
 
   public CombatData() {
     super();
-  }
-
-  @Override
-  public CompoundTag serialize(CompoundTag tag) {
-    tag.putBoolean(CombatDataHolder.COMBAT_MODE.id(), this.isInCombatMode);
-    tag.putBoolean(CombatDataHolder.BLOCKING.id(), this.isBlocking);
-    return tag;
-  }
-
-  @Override
-  public void deserialize(CompoundTag nbt, boolean cloned) {
-    if (cloned) {
-      return;
-    }
-    this.isInCombatMode = nbt.getBoolean(CombatDataHolder.COMBAT_MODE.id());
-    this.isBlocking = nbt.getBoolean(CombatDataHolder.BLOCKING.id());
   }
 
   @Override
@@ -64,11 +47,12 @@ public class CombatData implements ICap {
 
     public static final CapData<CombatData, Boolean> COMBAT_MODE = CapData.of("combat_mode",
         DataType.BOOLEAN, CombatData::setCombatMode,
-        CombatData::isInCombatMode, true
+        CombatData::isInCombatMode, true, false
     );
 
     public static final CapData<CombatData, Boolean> BLOCKING = CapData.of("blocking",
-        DataType.BOOLEAN, CombatData::setBlocking, CombatData::isBlocking, true
+        DataType.BOOLEAN, CombatData::setBlocking, CombatData::isBlocking, true,
+        false
     );
 
     public CombatDataHolder() {

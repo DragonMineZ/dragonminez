@@ -6,7 +6,6 @@ import com.dragonminez.core.common.player.capability.CapData;
 import com.dragonminez.core.common.player.capability.ICap;
 import com.dragonminez.core.common.util.JavaUtil.DataType;
 import java.util.List;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.capabilities.AutoRegisterCapability;
 
@@ -18,19 +17,6 @@ public class GeneticData implements ICap {
 
   public GeneticData() {
     super();
-  }
-
-  @Override
-  public CompoundTag serialize(CompoundTag tag) {
-    tag.putString(GeneticDataHolder.RACE.id(), this.race);
-    tag.putString(GeneticDataHolder.FORM.id(), this.form);
-    return tag;
-  }
-
-  @Override
-  public void deserialize(CompoundTag nbt, boolean cloned) {
-    this.race = nbt.getString(GeneticDataHolder.RACE.id());
-    this.form = nbt.getString(GeneticDataHolder.FORM.id());
   }
 
   @Override
@@ -60,10 +46,10 @@ public class GeneticData implements ICap {
     public static final GeneticDataHolder INSTANCE = new GeneticDataHolder();
 
     public static final CapData<GeneticData, String> RACE = CapData.of("race", DataType.STRING,
-        GeneticData::setRace, GeneticData::getRace, true);
+        GeneticData::setRace, GeneticData::getRace, true, true);
 
     public static final CapData<GeneticData, String> FORM = CapData.of("form", DataType.STRING,
-        GeneticData::setForm, GeneticData::getForm, true);
+        GeneticData::setForm, GeneticData::getForm, true, true);
 
     public GeneticDataHolder() {
       super(ID);

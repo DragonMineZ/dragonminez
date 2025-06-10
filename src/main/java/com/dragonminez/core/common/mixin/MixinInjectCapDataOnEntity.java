@@ -53,7 +53,7 @@ public class MixinInjectCapDataOnEntity {
     CapManagerRegistry.INSTANCE.values()
         .forEach((manager) ->
             manager.retrieveData(player)
-                .serialize(pCompound));
+                .serialize(pCompound, true));
   }
 
   @Inject(method = "load(Lnet/minecraft/nbt/CompoundTag;)V",
