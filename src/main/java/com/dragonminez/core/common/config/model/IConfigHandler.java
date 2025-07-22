@@ -75,10 +75,11 @@ public interface IConfigHandler<T> {
    */
   default String getDataDir() {
     if (this.getType() == ConfigType.STATIC) {
-      return "config/" + this.getStaticDataDir();
+      return "config/" + this.getDist().id() + this.getStaticDataDir();
     }
-    return new File(FMLPaths.CONFIGDIR.get().toString() + File.separator + Reference.MOD_ID + File.separator + this.getStaticDataDir())
-        .getAbsolutePath();
+    return new File(FMLPaths.CONFIGDIR.get().toString() + File.separator
+        + Reference.MOD_ID + File.separator + this.getDist().id() + File.separator +
+        this.getStaticDataDir()).getAbsolutePath();
   }
 
   /**

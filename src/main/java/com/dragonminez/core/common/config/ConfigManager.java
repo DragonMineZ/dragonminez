@@ -1,12 +1,13 @@
 package com.dragonminez.core.common.config;
 
-import com.dragonminez.mod.common.Reference;
-import com.dragonminez.core.common.util.LogUtil;
 import com.dragonminez.core.common.config.event.RegisterConfigHandlerEvent;
+import com.dragonminez.core.common.config.model.ConfigDist;
 import com.dragonminez.core.common.config.model.ConfigType;
 import com.dragonminez.core.common.config.model.IConfigHandler;
 import com.dragonminez.core.common.config.util.JacksonUtil;
 import com.dragonminez.core.common.config.util.ModLoadUtil;
+import com.dragonminez.core.common.util.LogUtil;
+import com.dragonminez.mod.common.Reference;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +22,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 /**
  * Manages configuration handlers for static and runtime configurations. Responsible for loading
@@ -35,17 +38,32 @@ public final class ConfigManager {
   public static final ConfigManager INSTANCE = new ConfigManager();
 
   /**
-   * Directory path for static configurations.
+   * Directory path to static configuration files shared across all environments.
    */
-  public static final String STATIC_CONFIG_DIR = "assets" + File.separator + Reference.MOD_ID
-      + File.separator + "config";
+  public static final String STATIC_COMMON_DIR = "assets" + File.separator + Reference.MOD_ID
+      + File.separator + "config" + File.separator + "common";
 
   /**
-   * Directory path for the default runtime configuration files.
+   * Directory path to static configuration files specific to the current distribution side.
    */
-  public static final String RUNTIME_STATIC_CONFIG_DIR =
+  public static final String STATIC_SIDE_DIR = "assets" + File.separator + Reference.MOD_ID
+      + File.separator + "config" + File.separator + "%s";
+
+  /**
+   * Directory path to runtime-generated configuration files shared across all environments.
+   */
+  public static final String RUNTIME_COMMON_DIR =
       "assets" + File.separator + Reference.MOD_ID
-          + File.separator + "config" + File.separator + "runtime";
+          + File.separator + "config" + File.separator + "runtime" + File.separator + "common";
+
+  /**
+   * Directory path to runtime-generated configuration files specific to the current distribution
+   * side.
+   */
+  public static final String RUNTIME_SIDE_DIR =
+      "assets" + File.separator + Reference.MOD_ID
+          + File.separator + "config" + File.separator + "runtime" + File.separator
+          + "%s";
 
   /**
    * Map storing registered configuration handlers by their identifier.
@@ -89,33 +107,67 @@ public final class ConfigManager {
   }
 
   /**
-   * Loads static configurations from mod assets.
+   * Loads static and runtime configuration files from all loaded mods.
+   * <p>
+   * Static configs are loaded from the assets folder, and runtime configs are processed if they
+   * have default files. This method delegates scanning logic by mod and config type.
    */
   private void loadStaticConfigs() {
     LogUtil.info("Scanning all mods for static DMZ configurations...");
     ModLoadUtil.forEachMod((mods, mod) -> {
       final String modId = mod.getModId();
       LogUtil.info("Scanning mod " + modId + " for static DMZ configurations.");
-
       final Path modPath = ModLoadUtil.getModPath(mods, modId);
       if (modPath == null) {
         return;
       }
-
-      // Process default configs for runtime handlers with defaults.
-      this.handlers(handler -> handler.getType() == ConfigType.RUNTIME && handler.hasDefault())
-          .forEach((IConfigHandler<?> handler) ->
-              this.fetchModFolder(handler, modPath, handler.getStaticDataDir(),
-                  RUNTIME_STATIC_CONFIG_DIR,
-                  this::processRuntimeHandlerDefaultFiles)
-          );
-      // Process static configs.
-      this.handlers(handler -> handler.getType() == ConfigType.STATIC)
-          .forEach((IConfigHandler<?> handler) ->
-              this.fetchModFolder(handler, modPath, handler.getDataDir(), STATIC_CONFIG_DIR,
-                  this::processStaticHandlerFiles)
-          );
+      final boolean loadClientFiles = FMLEnvironment.dist != Dist.DEDICATED_SERVER;
+      this.processRuntimeDefaults(modPath, loadClientFiles);
+      this.processStaticConfigs(modPath, loadClientFiles);
     });
+  }
+
+  /**
+   * Processes all runtime configuration handlers that have default files, scanning both common and
+   * side-specific folders.
+   *
+   * @param modPath the root path to the mod being scanned
+   */
+  private void processRuntimeDefaults(Path modPath, boolean loadClientFiles) {
+    this.handlers(handler -> handler.getType() == ConfigType.RUNTIME && handler.hasDefault())
+        .forEach(handler -> {
+          if (handler.getDist() == ConfigDist.CLIENT && !loadClientFiles) {
+            LogUtil.info("Skipping client-side runtime configs for " + handler.identifier());
+            return;
+          }
+          this.fetchModFolder(handler, modPath, handler.getStaticDataDir(),
+              RUNTIME_COMMON_DIR, this::processRuntimeHandlerDefaultFiles);
+          if (handler.getDist() != ConfigDist.BOTH) {
+            this.fetchModFolder(handler, modPath, handler.getStaticDataDir(),
+                RUNTIME_SIDE_DIR.formatted(handler.getDist().id()), this::processRuntimeHandlerDefaultFiles);
+          }
+        });
+  }
+
+  /**
+   * Processes all static configuration handlers, scanning both common and side-specific folders.
+   *
+   * @param modPath the root path to the mod being scanned
+   */
+  private void processStaticConfigs(Path modPath, boolean loadClientFiles) {
+    this.handlers(handler -> handler.getType() == ConfigType.STATIC)
+        .forEach(handler -> {
+          if (handler.getDist() == ConfigDist.CLIENT && !loadClientFiles) {
+            LogUtil.info("Skipping client-side static configs for " + handler.identifier());
+            return;
+          }
+          this.fetchModFolder(handler, modPath, handler.getDataDir(),
+              STATIC_COMMON_DIR, this::processStaticHandlerFiles);
+          if (handler.getDist() != ConfigDist.BOTH) {
+            this.fetchModFolder(handler, modPath, handler.getDataDir(),
+                STATIC_SIDE_DIR.formatted(handler.getDist().id()), this::processStaticHandlerFiles);
+          }
+        });
   }
 
   /**
@@ -243,7 +295,7 @@ public final class ConfigManager {
   private <T> void processJsonFiles(IConfigHandler<T> handler, Path folder, String dataDir,
       Consumer<Path> fileConsumer) {
     try {
-      if(!dataDir.isEmpty()){
+      if (!dataDir.isEmpty()) {
         folder = folder.resolve(dataDir);
       }
       if (Files.exists(folder) && Files.isDirectory(folder)) {
