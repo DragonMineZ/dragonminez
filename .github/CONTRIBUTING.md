@@ -10,7 +10,7 @@ Please follow the guidelines below to ensure a smooth process for all contributo
 
 1. **Read the Code of Conduct**
 
-   - By contributing, you agree to uphold the [Code of Conduct](CODE_OF_CONDUCT.md).
+   - By contributing, you agree to uphold the [Code of Conduct](/.github/CODE_OF_CONDUCT.md).
 2. **Check Existing Issues**
 
    - Look through the [Issues](https://github.com/orgs/DragonMineZ/projects/5) to see if someone has already reported
