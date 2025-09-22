@@ -12,6 +12,12 @@ out
 *.iws
 *.iml
 
+# docs
+docs/_site/
+docs/.sass-cache/
+docs/.jekyll-cache/
+docs/.bundle/
+
 # Ignore everything in .idea except code styles
 .idea/*
 !.idea/codeStyles/

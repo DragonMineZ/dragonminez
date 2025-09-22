@@ -1,0 +1,10 @@
+source "https://rubygems.org"
+
+gem "csv"
+gem "jekyll", "~> 3.9.3"
+gem "webrick", "~> 1.8"
+
+# GitHub Pages (optional, keeps versions aligned with GitHub Pages build)
+group :jekyll_plugins do
+  gem "github-pages", "~> 228", group: :jekyll_plugins
+end
