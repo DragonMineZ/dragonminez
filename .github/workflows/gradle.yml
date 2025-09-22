@@ -7,17 +7,17 @@ on:
     paths:
       - '**.java'
 
-  push: #Temporally use this until GitHub Repo is public
+  push:
     branches:
       - main
     paths:
       - '**.java'
 
 permissions:
-  pull-requests: read # for PMD to analyze only modified files
+  pull-requests: read
   contents: write # for actions/checkout to fetch code and gradle to submit the dependency graph file
-  security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-  actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+  security-events: write
+  actions: read
 
 jobs:
   gradle-build:
@@ -48,27 +48,5 @@ jobs:
           dependency-graph: generate-and-submit
           artifact-retention-days: 2
 
-      - name: Build with Gradle # Runs the build
+      - name: Build with Gradle # Runs the build (Fool-proof stuff)
         run: ./gradlew build
-
-      - name: PMD report # Runs PMD and uploads the results
-        if: success()
-        uses: pmd/pmd-github-action@v2
-        with:
-          sourcePath: 'src/main/java/com/dragonminez/mod'
-          rulesets: '.github/workflows/pmd/quickstart.xml'
-          analyzeModifiedFilesOnly: true
-
-        #############################
-        #        Quitar comentarios cuando el repositorio sea público y hacer setup de GitHub Advanced Security
-        #############################
-
-#      - name: PMD Violations Check # Fails the build if there are PMD violations
-#        if: success()
-#        if: ${{steps.pmd_scan.outputs.violations}} != 0
-#        run: exit 1
-
-#      - name: Upload SARIF file
-#        uses: github/codeql-action/upload-sarif@v3
-#        with:
-#          sarif_file: pmd-report.sarif
