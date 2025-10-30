@@ -1,0 +1,38 @@
+name: Crowdin Check & Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/main/resources/assets/dragonminez/lang/**
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  crowdin-sync-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Localization Syntax Check
+        run: ./scripts/check_lang.sh
+
+      - name: Crowdin Sync
+        uses: crowdin/github-action@v2
+        with:
+          upload_sources: true
+          upload_translations: true
+          download_translations: true
+          localization_branch_name: crowdin_translations
+          create_pull_request: true
+          pull_request_title: 'New Crowdin Translations'
+          pull_request_body: 'Pull Request started, received different files from Crowdin containing translations'
+          pull_request_base_branch_name: 'main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}

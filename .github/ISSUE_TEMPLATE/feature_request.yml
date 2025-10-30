@@ -1,0 +1,64 @@
+name: Feature Request
+description: Suggest a feature or improvement for DragonMineZ!
+title: "[FEATURE] *Feature Title*"
+projects: [ "DragonMineZ/4" ]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature or improvement! Please provide as much detail as possible to help us understand and evaluate your request.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief summary of the feature or improvement you'd like to see.
+      placeholder: Summarize your feature request here
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### 🌟 Feature Details"
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Provide a detailed explanation of the feature or improvement. Include any relevant use cases or scenarios.
+      placeholder: Describe the feature or improvement in detail
+    validations:
+      required: true
+  - type: input
+    id: benefits
+    attributes:
+      label: Benefits
+      description: Explain how this feature will improve the mod or benefit users.
+      placeholder: List the benefits or improvements here
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### 🔗 Related Features / Mods"
+  - type: input
+    id: related
+    attributes:
+      label: Related Features or Mods
+      description: List any related features or mods that inspired or are similar to your request.
+      placeholder: e.g., Similar feature in another mod
+  - type: markdown
+    attributes:
+      value: "### 🛠️ Implementation Ideas"
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Ideas
+      description: Share any ideas or suggestions on how this feature could be implemented.
+      placeholder: Provide potential implementation details or leave blank if unsure
+  - type: markdown
+    attributes:
+      value: "### 📋 Additional Context"
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Include any other details, visuals, or relevant information to support your request.
+      placeholder: Add any extra context or visuals here

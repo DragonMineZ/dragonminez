@@ -1,0 +1,52 @@
+name: Java CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.java'
+
+  push:
+    branches:
+      - main
+    paths:
+      - '**.java'
+
+permissions:
+  pull-requests: read
+  contents: write # for actions/checkout to fetch code and gradle to submit the dependency graph file
+  security-events: write
+  actions: read
+
+jobs:
+  gradle-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 17 Temurin
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ./.gradle/loom-cache/remapped-mods
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle', '**/gradle-wrapper.properties') }}
+
+      - name: Setup Gradle # Generates and submits the dependency graph
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          dependency-graph: generate-and-submit
+          artifact-retention-days: 2
+
+      - name: Build with Gradle # Runs the build (Fool-proof stuff)
+        run: ./gradlew build

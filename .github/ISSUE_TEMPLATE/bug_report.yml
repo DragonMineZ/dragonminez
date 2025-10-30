@@ -1,0 +1,90 @@
+name: Bug Report
+description: Create a report of a bug to help us improve :)
+title: "[BUG] *Bug Title*"
+labels: [ "Bug" ]
+projects: [ "DragonMineZ/5" ]
+assignees:
+  - Shokkoh
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible to help us diagnose and fix the issue.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief description of the bug or issue.
+      placeholder: Summarize the issue here
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### 🔍 Steps to Reproduce"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: List the steps to reproduce the issue. Include as much detail as you can.
+      placeholder: "1. Step one\n2. Step two\n3. Step three"
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what you expected
+    validations:
+      required: true
+  - type: input
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "### 📋 Environment Details"
+  - type: input
+    id: forge-version
+    attributes:
+      label: Forge Version
+      description: Specify the version of Forge you are using.
+      placeholder: e.g., 47.2.0
+    validations:
+      required: true
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod Version
+      description: Specify the version of the mod you are using.
+      placeholder: e.g., 1.1
+    validations:
+      required: true
+  - type: textarea
+    id: other-mods
+    attributes:
+      label: Other Mods Installed
+      description: List any additional mods that may conflict or affect the issue.
+      placeholder: "- Mod name and version (e.g., Farmer's Delight 1.2.0)"
+  - type: markdown
+    attributes:
+      value: "### 🖼️ Visuals/Attachments"
+  - type: textarea
+    id: visuals
+    attributes:
+      label: Visuals / Attachments / Logs
+      description: Include any relevant screenshots, crash logs, or videos showing the issue.
+      placeholder: Paste your crash-report and your latest.log, or describe any attachments here!
+  - type: checkboxes
+    id: bug-confirmation
+    attributes:
+      label: Bug Confirmation
+      description: By submitting this issue, you confirm to the best of your knowledge that this bug is real and reproducible.
+      options:
+        - label: I confirm that this bug is real and reproducible to the best of my knowledge
+          required: true

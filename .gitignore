@@ -1,0 +1,44 @@
+# eclipse (does anyone use this anymore?)
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+
+# docs
+docs/_site/
+docs/.sass-cache/
+docs/.jekyll-cache/
+docs/.bundle/
+
+# Ignore everything in .idea except code styles
+.idea/*
+!.idea/codeStyles/
+!.idea/codeStyles/*.xml
+
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+run-data
+
+# otros mas
+test
+generated
+
+# Files from Forge MDK
+forge*changelog.txt
+
+run-data/
+src/generated/resources/.cache
