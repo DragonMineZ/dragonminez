@@ -1,0 +1,11 @@
+# Site settings
+title: DragonMineZ
+description: > # this means to ignore newlines until "baseurl:"
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "dragonminez.com" # the base hostname & protocol for your site
+
+discord_bro: https://discord.dragonminez.com/
+github_username: dragonminez
+
+# Build settings
+markdown: kramdown
