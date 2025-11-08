@@ -1,0 +1,21 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.player.idle": {
+			"loop": true,
+			"animation_length": 0,
+			"bones": {}
+		},
+		"animation.player.walk": {
+			"loop": true,
+			"animation_length": 1.0,
+			"bones": {}
+		},
+		"animation.player.run": {
+			"loop": true,
+			"animation_length": 0.5,
+			"bones": {}
+		}
+	}
+}
+

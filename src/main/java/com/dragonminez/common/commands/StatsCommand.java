@@ -202,6 +202,7 @@ public class StatsCommand {
             stats.setVitality(5);
             stats.setKiPower(5);
             stats.setEnergy(5);
+            data.getStatus().setCreatedCharacter(false);
 
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
         });

@@ -6,18 +6,18 @@ import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
 
-public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
+public class PlayerFemaleModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
-    public PlayerBaseModel() {
+    public PlayerFemaleModel() {
     }
 
     @Override
-    public ResourceLocation getModelResource(T t) {
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/races/base.geo.json");
+    public ResourceLocation getModelResource(T entity) {
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/races/female.geo.json");
     }
 
     @Override
-    public ResourceLocation getTextureResource(T t) {
+    public ResourceLocation getTextureResource(T entity) {
         return new ResourceLocation(Reference.MOD_ID, "textures/entity/races/base.png");
     }
 
@@ -26,3 +26,4 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
         return null;
     }
 }
+
