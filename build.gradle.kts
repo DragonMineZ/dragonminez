@@ -1,0 +1,199 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    java
+    idea
+    id("net.minecraftforge.gradle") version "6.0.30"
+    id("org.parchmentmc.librarian.forgegradle") version "1.+"
+    id("org.spongepowered.mixin") version "0.7.38"
+}
+
+val mod_version: String by project
+val mod_group_id: String by project
+val mod_id: String by project
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName.set(mod_id)
+}
+
+java {
+    withSourcesJar()
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+}
+
+println("Java: ${System.getProperty("java.version")}, " +
+        "JVM: ${System.getProperty("java.vm.version")} (${System.getProperty("java.vendor")}), " +
+        "Arch: ${System.getProperty("os.arch")}")
+
+
+extensions.configure<org.spongepowered.asm.gradle.plugins.MixinExtension>("mixin") {
+    add(sourceSets.main.get(), "mixins.dragonminez.refmap.json")
+    config("dragonminez.mixins.json")
+}
+
+tasks.jarJar.configure {
+    archiveClassifier.set("")
+    finalizedBy("reobfJarJar")
+}
+
+tasks.jar.configure {
+    archiveClassifier.set("slim")
+}
+
+repositories {
+    maven {
+        name = "GeckoLib"
+        url = uri("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/")
+        content {
+            includeGroupByRegex("software\\.bernie.*")
+            includeGroup("com.eliotlash.mclib")
+        }
+    }
+    maven {
+        name = "Jared's maven"
+        url = uri("https://maven.blamejared.com/")
+    }
+    maven {
+        url = uri("https://cursemaven.com")
+    }
+    mavenCentral()
+}
+
+val minecraft_version: String by project
+val forge_version: String by project
+val mapping_channel: String by project
+val mapping_version: String by project
+val jei_version: String by project
+
+minecraft {
+    mappings(mapping_channel, mapping_version)
+    copyIdeResources.set(true)
+
+    jarJar {
+        enable()
+    }
+
+    runs {
+        configureEach {
+            workingDirectory(project.file("run"))
+            property("forge.logging.markers", "REGISTRIES")
+            property("forge.logging.console.level", "debug")
+            property("fml.earlyprogresswindow", "false")
+            mods {
+                create(mod_id) {
+                    source(sourceSets.main.get())
+                }
+            }
+        }
+
+        create("client") {
+            property("forge.logging.console.level", "debug")
+        }
+
+        create("server") {
+            property("forge.logging.console.level", "debug")
+        }
+
+        create("gameTestServer") {
+            property("forge.enabledGameTestNamespaces", mod_id)
+        }
+
+        create("data") {
+            workingDirectory(project.file("run-data"))
+            args("--mod", mod_id, "--all", "--output", file("src/generated/resources/"),
+                 "--existing", file("src/main/resources/"))
+        }
+    }
+}
+
+dependencies {
+    minecraft("net.minecraftforge:forge:$minecraft_version-$forge_version")
+    annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
+
+    implementation("com.google.guava:guava:33.4.8-jre")
+    implementation("io.netty:netty-codec:4.2.0.Final")
+    implementation("io.netty:netty-handler:4.2.0.Final")
+    implementation("org.apache.commons:commons-compress:1.27.1")
+
+    val jacksonDep = "minecraftLibrary"(jarJar("com.fasterxml.jackson.core:jackson-databind:2.18.3")!!)
+    jarJar.ranged(jacksonDep, "[2.18.3,)")
+
+    val json5Dep = "minecraftLibrary"(jarJar("de.marhali:json5-java:3.0.0")!!)
+    jarJar.ranged(json5Dep, "[3.0.0,)")
+
+    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1.2"))
+    implementation("com.eliotlash.mclib:mclib:20")
+    implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.7"))
+
+    compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-common-api:$jei_version"))
+    compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-forge-api:$jei_version"))
+    compileOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
+    runtimeOnly(fg.deobf("mezz.jei:jei-$minecraft_version-forge:$jei_version"))
+    runtimeOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
+    runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
+    runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
+}
+
+sourceSets.main {
+    resources.srcDir("src/generated/resources/")
+}
+
+val minecraft_version_range: String by project
+val forge_version_range: String by project
+val loader_version_range: String by project
+val mod_name: String by project
+val mod_license: String by project
+val mod_authors: String by project
+val mod_description: String by project
+val geckolib_version_range: String by project
+val terrablender_version_range: String by project
+
+tasks.named<ProcessResources>("processResources") {
+    val replaceProperties = mapOf(
+        "minecraft_version" to minecraft_version,
+        "minecraft_version_range" to minecraft_version_range,
+        "forge_version" to forge_version,
+        "forge_version_range" to forge_version_range,
+        "loader_version_range" to loader_version_range,
+        "mod_id" to mod_id,
+        "mod_name" to mod_name,
+        "mod_license" to mod_license,
+        "mod_version" to mod_version,
+        "mod_authors" to mod_authors,
+        "mod_description" to mod_description,
+        "geckolib_version_range" to geckolib_version_range,
+        "terrablender_version_range" to terrablender_version_range
+    )
+
+    inputs.properties(replaceProperties)
+
+    filesMatching(listOf("META-INF/mods.toml", "pack.mcmeta")) {
+        expand(replaceProperties + mapOf("project" to project))
+    }
+}
+
+tasks.named<Jar>("jar") {
+    manifest {
+        attributes(mapOf(
+            "Specification-Title" to mod_id,
+            "Specification-Vendor" to mod_authors,
+            "Specification-Version" to mod_version,
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            "Implementation-Vendor" to mod_authors,
+            "Implementation-Timestamp" to SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(Date())
+        ))
+    }
+    finalizedBy("reobfJar")
+}
+

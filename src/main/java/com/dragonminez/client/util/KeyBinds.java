@@ -1,0 +1,43 @@
+package com.dragonminez.client.util;
+
+import com.dragonminez.Reference;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import org.lwjgl.glfw.GLFW;
+
+public class KeyBinds {
+
+    public static final String CATEGORY = "key.categories." + Reference.MOD_ID;
+
+    public static final KeyMapping OPEN_CHARACTER_MENU = registerKey("open_character_menu", GLFW.GLFW_KEY_V);
+    public static final KeyMapping KI_CHARGE = registerKey("ki_charge", GLFW.GLFW_KEY_C);
+    public static final KeyMapping DESCEND_KEY = registerKey("descend_key", GLFW.GLFW_KEY_LEFT_ALT);
+
+    private static KeyMapping registerKey(String name, int keyCode) {
+        return new KeyMapping(
+                "key." + Reference.MOD_ID + "." + name,
+                KeyConflictContext.IN_GAME,
+                InputConstants.Type.KEYSYM,
+                keyCode,
+                CATEGORY
+        );
+    }
+
+    public static void registerAll(net.minecraftforge.client.event.RegisterKeyMappingsEvent event) {
+        try {
+            for (var field : KeyBinds.class.getDeclaredFields()) {
+                if (field.getType() == KeyMapping.class && java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                    field.setAccessible(true);
+                    KeyMapping keyMapping = (KeyMapping) field.get(null);
+                    if (keyMapping != null) {
+                        event.register(keyMapping);
+                    }
+                }
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Failed to register key bindings", e);
+        }
+    }
+}
+
