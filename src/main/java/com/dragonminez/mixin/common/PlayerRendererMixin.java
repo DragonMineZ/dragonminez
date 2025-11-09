@@ -2,6 +2,7 @@ package com.dragonminez.mixin.common;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.client.model.PlayerBaseModel;
 import com.dragonminez.client.model.PlayerMaleModel;
 import com.dragonminez.client.model.PlayerFemaleModel;
 import com.dragonminez.client.render.PlayerRenderModel;
@@ -28,16 +29,16 @@ import java.util.Map;
 public abstract class PlayerRendererMixin {
 
     @Unique
-    private static EntityRendererProvider.Context modRenderContext;
+    private static EntityRendererProvider.Context dmzctx;
 
     @Unique
     @SuppressWarnings("rawtypes")
-    private static final Map<Integer, GeoEntityRenderer> RENDERER_MAP = new HashMap<>();
+    private static final Map<Integer, GeoEntityRenderer> DMZ_RENDERER = new HashMap<>();
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void captureContext(EntityRendererProvider.Context ctx, boolean slim, CallbackInfo ci) {
-        if (modRenderContext == null) {
-            modRenderContext = ctx;
+        if (dmzctx == null) {
+            dmzctx = ctx;
         }
     }
 
@@ -60,19 +61,20 @@ public abstract class PlayerRendererMixin {
             int raceId = data.getCharacter().getRace();
 
             String gender = data.getCharacter().getGender();
-            boolean isFemale = Character.GENDER_FEMALE.equals(gender);
+            boolean isSlim = player.getModelName().equals("slim");
+            int bodyType = data.getCharacter().getBodyType();
 
             String rendererKey = raceId + "_" + gender;
             int rendererId = rendererKey.hashCode();
 
             @SuppressWarnings("rawtypes")
-            GeoEntityRenderer morphRenderer = RENDERER_MAP.get(rendererId);
+            GeoEntityRenderer morphRenderer = DMZ_RENDERER.get(rendererId);
 
             if (morphRenderer == null) {
-                if (modRenderContext == null) return;
+                if (dmzctx == null) return;
 
-                morphRenderer = createRendererForRace(raceId, isFemale, modRenderContext);
-                RENDERER_MAP.put(rendererId, morphRenderer);
+                morphRenderer = createRendererForRace(raceId, gender, bodyType, isSlim, dmzctx);
+                DMZ_RENDERER.put(rendererId, morphRenderer);
             }
 
             if (morphRenderer != null) {
@@ -92,33 +94,33 @@ public abstract class PlayerRendererMixin {
 
     @Unique
     @SuppressWarnings("rawtypes")
-    private GeoEntityRenderer createRendererForRace(int raceId, boolean isFemale, EntityRendererProvider.Context ctx) {
-        LogUtil.info(Env.COMMON, "Raza: " + raceId + ", Femenino: " + isFemale + ". Creando renderer personalizado.");
+    private GeoEntityRenderer createRendererForRace(int raceId, String gender, int bodyType, boolean isSlim, EntityRendererProvider.Context ctx) {
+
+        LogUtil.info(Env.COMMON, "Raza: " + raceId + ", BodyType: " + bodyType + ", isSlim: " + isSlim + ". Creando renderer.");
+        
+        if (bodyType == 0 && (raceId == Character.RACE_HUMAN || raceId == Character.RACE_SAIYAN)) {
+            if (isSlim) {
+                return new PlayerRenderModel(ctx, new PlayerBaseModel());
+            } else {
+                return new PlayerRenderModel(ctx, new PlayerBaseModel());
+            }
+        }
+
+        boolean isFemale = Character.GENDER_FEMALE.equals(gender);
+
         switch (raceId) {
             case Character.RACE_HUMAN:
-                if (isFemale) {
-                    return new PlayerRenderModel(ctx, new PlayerFemaleModel());
-                } else {
-                    return new PlayerRenderModel(ctx, new PlayerMaleModel());
-                }
             case Character.RACE_SAIYAN:
-                if (isFemale) {
-                    return new PlayerRenderModel(ctx, new PlayerFemaleModel());
-                } else {
-                    return new PlayerRenderModel(ctx, new PlayerMaleModel());
-                }
-            case Character.RACE_NAMEKIAN:
-                return new PlayerRenderModel(ctx, new PlayerMaleModel());
-            case Character.RACE_COLD_DEMON:
-                return new PlayerRenderModel(ctx, new PlayerMaleModel());
-            case Character.RACE_BIO_ANDROID:
-                return new PlayerRenderModel(ctx, new PlayerMaleModel());
             case Character.RACE_MAJIN:
                 if (isFemale) {
-                    return new PlayerRenderModel(ctx, new PlayerFemaleModel());
+                    return new PlayerRenderModel(ctx, new PlayerBaseModel());
                 } else {
-                    return new PlayerRenderModel(ctx, new PlayerMaleModel());
+                    return new PlayerRenderModel(ctx, new PlayerBaseModel());
                 }
+            case Character.RACE_NAMEKIAN:
+            case Character.RACE_COLD_DEMON:
+            case Character.RACE_BIO_ANDROID:
+                return new PlayerRenderModel(ctx, new PlayerBaseModel());
             default:
                 return null;
         }
