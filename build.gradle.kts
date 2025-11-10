@@ -125,7 +125,7 @@ dependencies {
     implementation("com.google.guava:guava:33.4.8-jre")
     implementation("io.netty:netty-codec:4.2.0.Final")
     implementation("io.netty:netty-handler:4.2.0.Final")
-    implementation("org.apache.commons:commons-compress:1.27.1")
+    implementation("org.apache.commons:commons-compress:1.28.0")
 
     // Jackson dependencies
     val jacksonCoreDep = "minecraftLibrary"(jarJar("com.fasterxml.jackson.core:jackson-core:2.18.3")!!)
