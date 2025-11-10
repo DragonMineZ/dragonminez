@@ -122,7 +122,7 @@ dependencies {
     minecraft("net.minecraftforge:forge:$minecraft_version-$forge_version")
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
-    implementation("com.google.guava:guava:33.4.8-jre")
+    implementation("com.google.guava:guava:33.5.0-jre")
     implementation("io.netty:netty-codec:4.2.0.Final")
     implementation("io.netty:netty-handler:4.2.0.Final")
     implementation("org.apache.commons:commons-compress:1.27.1")
