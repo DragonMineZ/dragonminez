@@ -48,5 +48,8 @@ jobs:
           dependency-graph: generate-and-submit
           artifact-retention-days: 2
 
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Build with Gradle # Runs the build (Fool-proof stuff)
         run: ./gradlew build
