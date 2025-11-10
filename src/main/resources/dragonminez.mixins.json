@@ -3,12 +3,13 @@
   "minVersion": "0.8",
   "package": "com.dragonminez.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "mixins.dragonminez.refmap.json",
+  "refmap": "dragonminez.refmap.json",
   "mixins": [
-    "common.PlayerRendererMixin",
     "common.PlayerGeoAnimatableMixin"
   ],
-  "client": [],
+  "client": [
+    "client.PlayerRendererMixin"
+  ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

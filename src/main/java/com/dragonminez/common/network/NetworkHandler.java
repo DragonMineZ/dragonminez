@@ -1,6 +1,8 @@
 package com.dragonminez.common.network;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.network.C2S.CreateCharacterC2S;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
@@ -30,19 +32,19 @@ public class NetworkHandler {
 		/*
 		  CLIENT -> SERVER
 		 */
-		net.messageBuilder(com.dragonminez.common.network.C2S.CreateCharacterC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-                .decoder(com.dragonminez.common.network.C2S.CreateCharacterC2S::decode)
-                .encoder(com.dragonminez.common.network.C2S.CreateCharacterC2S::encode)
-                .consumerMainThread(com.dragonminez.common.network.C2S.CreateCharacterC2S::handle)
+		net.messageBuilder(CreateCharacterC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(CreateCharacterC2S::decode)
+                .encoder(CreateCharacterC2S::encode)
+                .consumerMainThread(CreateCharacterC2S::handle)
                 .add();
 
 		/*
 		  SERVER -> CLIENT
 		 */
-		net.messageBuilder(com.dragonminez.common.network.S2C.StatsSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(com.dragonminez.common.network.S2C.StatsSyncS2C::decode)
-                .encoder(com.dragonminez.common.network.S2C.StatsSyncS2C::encode)
-                .consumerMainThread(com.dragonminez.common.network.S2C.StatsSyncS2C::handle)
+		net.messageBuilder(StatsSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(StatsSyncS2C::decode)
+                .encoder(StatsSyncS2C::encode)
+                .consumerMainThread(StatsSyncS2C::handle)
                 .add();
     }
 

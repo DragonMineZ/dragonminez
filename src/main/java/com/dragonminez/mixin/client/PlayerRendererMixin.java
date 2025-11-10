@@ -1,4 +1,4 @@
-package com.dragonminez.mixin.common;
+package com.dragonminez.mixin.client;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
@@ -97,7 +97,7 @@ public abstract class PlayerRendererMixin {
     private GeoEntityRenderer createRendererForRace(int raceId, String gender, int bodyType, boolean isSlim, EntityRendererProvider.Context ctx) {
 
         LogUtil.info(Env.COMMON, "Raza: " + raceId + ", BodyType: " + bodyType + ", isSlim: " + isSlim + ". Creando renderer.");
-        
+
         if (bodyType == 0 && (raceId == Character.RACE_HUMAN || raceId == Character.RACE_SAIYAN)) {
             if (isSlim) {
                 return new PlayerRenderModel(ctx, new PlayerBaseModel());
@@ -126,3 +126,4 @@ public abstract class PlayerRendererMixin {
         }
     }
 }
+
