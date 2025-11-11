@@ -1,6 +1,7 @@
 package com.dragonminez.client.model;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.util.RenderUtil;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -36,7 +37,6 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
         super.setCustomAnimations(animatable, instanceId, animationState);
 
         var head = this.getAnimationProcessor().getBone("head");
-
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
         if(head != null){
@@ -44,6 +44,19 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
             head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
         }
 
+        // Agregar animaciones del RenderUtil para manos
+        float partialTick = animationState.getPartialTick();
+        float ageInTicks = (float) animatable.getTick(animatable);
+
+        var rightArm = this.getAnimationProcessor().getBone("right_arm");
+        var leftArm = this.getAnimationProcessor().getBone("left_arm");
+
+        if (rightArm != null) {
+            RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
+        }
+        if (leftArm != null) {
+            RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
+        }
     }
 
 

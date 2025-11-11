@@ -3,8 +3,6 @@ package com.dragonminez.mixin.client;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.model.PlayerBaseModel;
-import com.dragonminez.client.model.PlayerMaleModel;
-import com.dragonminez.client.model.PlayerFemaleModel;
 import com.dragonminez.client.render.PlayerRenderModel;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
@@ -19,7 +17,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 import java.util.HashMap;
@@ -80,8 +77,10 @@ public abstract class PlayerRendererMixin {
             if (morphRenderer != null) {
                 ci.cancel();
 
-                 morphRenderer.render(
-                        (AbstractClientPlayer & GeoAnimatable) player,
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                GeoEntityRenderer renderer = morphRenderer;
+                renderer.render(
+                        player,
                         entityYaw,
                         partialTicks,
                         poseStack,

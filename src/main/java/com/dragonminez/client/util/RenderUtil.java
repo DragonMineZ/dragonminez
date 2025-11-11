@@ -9,12 +9,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.UseAnim;
 import org.joml.Vector3d;
-import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.molang.MolangQueries;
 
 public class RenderUtil {
 
-    public static void rotateHead(AbstractClientPlayer animatable, GeoBone bone, float partialTick) {
+    public static void rotateHead(AbstractClientPlayer animatable, CoreGeoBone bone, float partialTick) {
         final float lerpBodyRot = Mth.lerp(partialTick, animatable.yBodyRotO,
                 animatable.yBodyRot);
         final float lerpHeadRot = Mth.lerp(partialTick, animatable.yHeadRotO,
@@ -27,7 +27,7 @@ public class RenderUtil {
         bone.setRotY(-netHeadYaw * 0.017453292F);
     }
 
-    public static void animateHand(AbstractClientPlayer animatable, GeoBone armBone,
+    public static void animateHand(AbstractClientPlayer animatable, CoreGeoBone armBone,
                                    float partialTick, float ageInTicks) {
 
         UseAnim useAction = animatable.getUseItem().getUseAnimation();
@@ -71,7 +71,7 @@ public class RenderUtil {
         armBone.setRotZ(rotZ);
     }
 
-    private static void animateBowHand(AbstractClientPlayer player, GeoBone armBone, float ageInTicks) {
+    private static void animateBowHand(AbstractClientPlayer player, CoreGeoBone armBone, float ageInTicks) {
         final boolean armIsLeft = armBone.getName().equals("left_arm");
 
         final float animTime = ageInTicks;
@@ -95,7 +95,7 @@ public class RenderUtil {
         armBone.setRotZ(armBone.getRotZ() + Mth.sin(animTime * 2.0F) * 0.02F);
     }
 
-    private static void animateCrossbowHand(AbstractClientPlayer player, GeoBone armBone, float ageInTicks) {
+    private static void animateCrossbowHand(AbstractClientPlayer player, CoreGeoBone armBone, float ageInTicks) {
         if (!CrossbowItem.isCharged(player.getUseItem())) {
             return;
         }
@@ -122,7 +122,7 @@ public class RenderUtil {
         armBone.setRotZ(armBone.getRotZ() + Mth.sin(animTime * 1.5F) * 0.01F);
     }
 
-    public static void playProceduralAnimations(AbstractClientPlayer player, GeoBone bone,
+    public static void playProceduralAnimations(AbstractClientPlayer player, CoreGeoBone bone,
                                                 float partialTick, float ageInTicks) {
         if (bone.getName().equals("head")) {
             RenderUtil.rotateHead(player, bone, partialTick);
@@ -131,6 +131,7 @@ public class RenderUtil {
             RenderUtil.animateHand(player, bone, partialTick, ageInTicks);
         }
     }
+
     public static boolean isMoving(LivingEntity entity) {
         final Vector3d currentPos = new Vector3d(entity.getX(), entity.getY(), entity.getZ());
         final Vector3d lastPos = new Vector3d(entity.xo, entity.yo, entity.zo);

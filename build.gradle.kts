@@ -103,7 +103,6 @@ minecraft {
 
         create("server") {
             property("forge.logging.console.level", "debug")
-            args("nogui")
         }
 
         create("gameTestServer") {
