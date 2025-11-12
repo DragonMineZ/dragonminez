@@ -6,7 +6,6 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.*;
-import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
@@ -15,7 +14,6 @@ import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 import javax.annotation.Nullable;
 
 public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatable> extends BlockAndItemGeoLayer<T> {
-
     public PlayerItemInHandLayer(GeoRenderer<T> renderer) {
         super(renderer);
     }
@@ -34,6 +32,7 @@ public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatabl
                    animatable.getMainHandItem() :
                    animatable.getOffhandItem();
         }
+
 
         return null;
     }
@@ -66,8 +65,17 @@ public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatabl
             boolean isMainHand = (bone.getName().equals("right_hand_item"));
             if (isMainHand) {
                 if (stack.getItem() instanceof ShieldItem) {
-                    poseStack.translate(-0.0, -0.15, -0.14);
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+                    if (animatable.isUsingItem() && animatable.getUseItem() == stack) {
+                        poseStack.translate(-0.0, -0.01, -0.14);
+                        poseStack.mulPose(Axis.XP.rotationDegrees(-140));
+                        poseStack.mulPose(Axis.XN.rotationDegrees(-65));
+                        poseStack.mulPose(Axis.YP.rotationDegrees(-25));
+//                        poseStack.mulPose(Axis.ZP.rotationDegrees(35));
+
+                    } else {
+                        poseStack.translate(-0.0, -0.15, -0.14);
+                        poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+                    }
                 } else if (stack.getItem() instanceof CrossbowItem) {
                     poseStack.translate(-0.075, -0.15, -0.14);
                     poseStack.mulPose(Axis.XP.rotationDegrees(-90));
@@ -84,7 +92,7 @@ public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatabl
             } else {
                 if (stack.getItem() instanceof ShieldItem) {
                     if (animatable.isUsingItem() && animatable.getUseItem() == stack) {
-                        poseStack.translate(-0.40, 1.85, 0.75);
+                        poseStack.translate(-0.70, 1.15, 0.35);
                         poseStack.mulPose(Axis.XP.rotationDegrees(35));
                         poseStack.mulPose(Axis.YP.rotationDegrees(90));
                         poseStack.mulPose(Axis.ZP.rotationDegrees(-65));

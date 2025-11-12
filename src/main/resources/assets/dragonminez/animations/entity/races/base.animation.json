@@ -1900,6 +1900,17 @@
 				"right_arm": {
 					"rotation": {
 						"vector": [-18.65181, -23.03568, -30.44729]
+					},
+					"position": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"right_forearm": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					},
+					"position": {
+						"vector": [0, 0, 0]
 					}
 				}
 			}
@@ -1910,6 +1921,17 @@
 				"left_arm": {
 					"rotation": {
 						"vector": [-19.24297, 25.73828, 35.06695]
+					},
+					"position": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"left_forearm": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					},
+					"position": {
+						"vector": [0, 0, 0]
 					}
 				}
 			}
