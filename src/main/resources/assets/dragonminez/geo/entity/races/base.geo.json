@@ -103,7 +103,7 @@
 					"parent": "right_forearm",
 					"pivot": [-6, 14, 0],
 					"locators": {
-						"locator": [-6, 14, 0]
+						"locator": [0, 0, 0]
 					}
 				},
 				{
@@ -160,7 +160,7 @@
 					"parent": "left_forearm",
 					"pivot": [6, 14, 0],
 					"locators": {
-						"locator2": [6, 14, 0]
+						"locator2": [0, 0, 0]
 					}
 				},
 				{
@@ -193,7 +193,7 @@
 								"east": {"uv": [0, 26], "uv_size": [4, 6]},
 								"south": {"uv": [12, 26], "uv_size": [4, 6]},
 								"west": {"uv": [8, 26], "uv_size": [4, 6]},
-								"up": {"uv": [4, 16], "uv_size": [4, 4]},
+								"up": {"uv": [8, 16], "uv_size": [4, 4]},
 								"down": {"uv": [8, 20], "uv_size": [4, -4]}
 							}
 						},
@@ -250,7 +250,7 @@
 								"east": {"uv": [16, 58], "uv_size": [4, 6]},
 								"south": {"uv": [28, 58], "uv_size": [4, 6]},
 								"west": {"uv": [24, 58], "uv_size": [4, 6]},
-								"up": {"uv": [20, 48], "uv_size": [4, 4]},
+								"up": {"uv": [24, 48], "uv_size": [4, 4]},
 								"down": {"uv": [24, 52], "uv_size": [4, -4]}
 							}
 						},

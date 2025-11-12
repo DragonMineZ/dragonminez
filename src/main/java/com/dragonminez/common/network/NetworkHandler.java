@@ -2,8 +2,8 @@ package com.dragonminez.common.network;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
+import com.dragonminez.common.network.S2C.PlayerAnimationsSync;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.network.S2C.SyncCreativeFlyingPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
@@ -48,10 +48,10 @@ public class NetworkHandler {
                 .consumerMainThread(StatsSyncS2C::handle)
                 .add();
 
-		net.messageBuilder(SyncCreativeFlyingPacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(SyncCreativeFlyingPacket::new)
-                .encoder(SyncCreativeFlyingPacket::encode)
-                .consumerMainThread(SyncCreativeFlyingPacket::handle)
+		net.messageBuilder(PlayerAnimationsSync.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(PlayerAnimationsSync::new)
+                .encoder(PlayerAnimationsSync::encode)
+                .consumerMainThread(PlayerAnimationsSync::handle)
                 .add();
     }
 

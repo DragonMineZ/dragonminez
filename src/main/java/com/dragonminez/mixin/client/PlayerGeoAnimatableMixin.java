@@ -4,7 +4,11 @@ import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShieldItem;
 import org.joml.Vector3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -27,6 +31,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     private static final RawAnimation ATTACK2 = RawAnimation.begin().thenPlay("animation.base.attack2");
     private static final RawAnimation FLY  = RawAnimation.begin().thenLoop("animation.base.fly");
     private static final RawAnimation JUMP = RawAnimation.begin().thenPlay("animation.base.jump");
+    private static final RawAnimation SWIMMING = RawAnimation.begin().thenLoop("animation.base.swimming");
+    private static final RawAnimation CROUCHING = RawAnimation.begin().thenLoop("animation.base.crouching");
+    private static final RawAnimation CROUCHING_WALK = RawAnimation.begin().thenLoop("animation.base.crouching_walk");
+    private static final RawAnimation SHIELD_RIGHT = RawAnimation.begin().thenLoop("animation.base.shield_right");
+    private static final RawAnimation SHIELD_LEFT = RawAnimation.begin().thenLoop("animation.base.shield_left");
 
     @Unique
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
@@ -63,9 +72,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 //                return PlayState.STOP;
 //            }
 
-            // Ataque - usando attackAnim que está sincronizado en multiplayer
-            // attackAnim > 0 significa que el jugador está en medio de un swing
-            if (player.attackAnim > 0) {
+            // Attacking - Skip if placing blocks
+            if (player.attackAnim > 0 && !isPlacingBlock(player)) {
                 int currentTime = player.tickCount;
                 if (!isPlayingAttack) {
                     int timeSinceLastAttack = currentTime - lastAttackTime;
@@ -87,6 +95,15 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
                 isPlayingAttack = false;
             }
 
+            // Swimming
+            if (player.isSwimming() || player.isVisuallySwimming()) {
+                if (playing != SWIMMING) {
+                    ctl.setAnimation(SWIMMING);
+                }
+                return PlayState.CONTINUE;
+            }
+
+            // Flying
             if (player.isFallFlying() || isCreativeFlying) {
                 if (playing != FLY) {
                     ctl.setAnimation(FLY);
@@ -95,15 +112,26 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
             }
 
             if (player.onGround()) {
-                if (isMoving(player) && player.isSprinting()) { //corriendo
+                // Crouching
+                if (player.isCrouching()) {
+                    if (isMoving(player)) { // Walking
+                        if (playing != CROUCHING_WALK) {
+                            ctl.setAnimation(CROUCHING_WALK);
+                        }
+                    } else { // Still
+                        if (playing != CROUCHING) {
+                            ctl.setAnimation(CROUCHING);
+                        }
+                    }
+                } else if (isMoving(player) && player.isSprinting()) { // Running
                     if (playing != RUN) {
                         ctl.setAnimation(RUN);
                     }
-                } else if (isMoving(player)) { //walk normal
+                } else if (isMoving(player)) { // Walking
                     if (playing != WALK) {
                         ctl.setAnimation(WALK);
                     }
-                } else { //idle
+                } else { // Idle
                     if (playing != IDLE) {
                         ctl.setAnimation(IDLE);
                     }
@@ -111,6 +139,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
                 return PlayState.CONTINUE;
             }
 
+            // Jumping/Falling
             if (!player.onGround()) {
                 if (playing != JUMP) {
                     ctl.setAnimation(JUMP);
@@ -123,10 +152,42 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         }).orElse(PlayState.STOP);
     }
 
+    @Unique
+    private <T extends GeoAnimatable> PlayState shieldPredicate(AnimationState<T> state) {
+        AbstractClientPlayer player = (AbstractClientPlayer) state.getAnimatable();
+        AnimationController<T> ctl = state.getController();
+
+        ItemStack mainHand = player.getMainHandItem();
+        ItemStack offHand = player.getOffhandItem();
+
+        boolean mainHandIsShield = mainHand.getItem() instanceof ShieldItem;
+        boolean offHandIsShield = offHand.getItem() instanceof ShieldItem;
+
+        if (player.isUsingItem()) {
+            if (mainHandIsShield) {
+                if (player.getMainArm() == HumanoidArm.RIGHT) {
+                    ctl.setAnimation(SHIELD_RIGHT);
+                } else {
+                    ctl.setAnimation(SHIELD_LEFT);
+                }
+                return PlayState.CONTINUE;
+            } else if (offHandIsShield) {
+                if (player.getMainArm() == HumanoidArm.RIGHT) {
+                    ctl.setAnimation(SHIELD_LEFT);
+                } else {
+                    ctl.setAnimation(SHIELD_RIGHT);
+                }
+                return PlayState.CONTINUE;
+            }
+        }
+
+        return PlayState.STOP;
+    }
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-        // Usar transitionLength de 0 para las animaciones de ataque para evitar interrupciones
         registrar.add(new AnimationController<>(this, "controller", 0, this::predicate));
+        registrar.add(new AnimationController<>(this, "shield_controller", 0, this::shieldPredicate));
     }
 
     @Override
@@ -147,6 +208,17 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         final Vector3d expectedVelocity = currentPos.sub(lastPos);
         float avgVelocity = (float) (Math.abs(expectedVelocity.x) + Math.abs(expectedVelocity.z) / 2.0);
         return avgVelocity >= 0.015;
+    }
+
+    @Unique
+    private static boolean isPlacingBlock(AbstractClientPlayer player) {
+        ItemStack mainHand = player.getMainHandItem();
+        ItemStack offHand = player.getOffhandItem();
+
+        boolean hasBlockInMainHand = mainHand.getItem() instanceof BlockItem;
+        boolean hasBlockInOffHand = offHand.getItem() instanceof BlockItem;
+
+        return (hasBlockInMainHand || hasBlockInOffHand) && player.isUsingItem();
     }
 
     @Override

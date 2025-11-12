@@ -44,18 +44,23 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
             head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
         }
 
-        // Agregar animaciones del RenderUtil para manos
-        float partialTick = animationState.getPartialTick();
-        float ageInTicks = (float) animatable.getTick(animatable);
+        // Animaciones procedurales adicionales (arco, ballesta, etc.)
+        // Solo se aplican cuando el jugador está usando estos items específicos
+        try {
+            float partialTick = animationState.getPartialTick();
+            float ageInTicks = (float) animatable.getTick(animatable);
 
-        var rightArm = this.getAnimationProcessor().getBone("right_arm");
-        var leftArm = this.getAnimationProcessor().getBone("left_arm");
+            var rightArm = this.getAnimationProcessor().getBone("right_arm");
+            var leftArm = this.getAnimationProcessor().getBone("left_arm");
 
-        if (rightArm != null) {
-            RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
-        }
-        if (leftArm != null) {
-            RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
+            if (rightArm != null) {
+                RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
+            }
+            if (leftArm != null) {
+                RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
+            }
+        } catch (Exception e) {
+            // Ignorar errores de animación para evitar crashes
         }
     }
 

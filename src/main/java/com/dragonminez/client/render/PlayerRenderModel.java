@@ -1,5 +1,6 @@
 package com.dragonminez.client.render;
 
+import com.dragonminez.client.render.layer.PlayerItemInHandLayer;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -13,6 +14,7 @@ public class PlayerRenderModel<T extends AbstractClientPlayer & GeoAnimatable> e
 
         this.shadowRadius = 0.4f;
 
+        this.addRenderLayer(new PlayerItemInHandLayer<>(this));
     }
 
 }

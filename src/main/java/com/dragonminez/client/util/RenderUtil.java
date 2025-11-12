@@ -1,16 +1,12 @@
 package com.dragonminez.client.util;
 
-import com.eliotlash.mclib.utils.MathHelper;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.UseAnim;
 import org.joml.Vector3d;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.molang.MolangQueries;
 
 public class RenderUtil {
 
@@ -30,6 +26,8 @@ public class RenderUtil {
     public static void animateHand(AbstractClientPlayer animatable, CoreGeoBone armBone,
                                    float partialTick, float ageInTicks) {
 
+        // Solo aplicar animaciones procedurales para arco y ballesta
+        // Las animaciones de ataque normal son manejadas por GeckoLib
         UseAnim useAction = animatable.getUseItem().getUseAnimation();
 
         if (useAction == UseAnim.BOW) {
@@ -37,38 +35,14 @@ public class RenderUtil {
             return;
         }
 
-        if (animatable.getUseItem().getItem() instanceof CrossbowItem) {
+        // Verificar si tiene ballesta en mano (cargada, cargando o disparando)
+        if (animatable.getUseItem().getItem() instanceof CrossbowItem ||
+            animatable.getMainHandItem().getItem() instanceof CrossbowItem) {
             RenderUtil.animateCrossbowHand(animatable, armBone, ageInTicks);
             return;
         }
 
-        final float handSwingProgress = animatable.getAttackAnim(partialTick);
-        final boolean armBoneIsLeft = armBone.getName().equals("left_arm");
-        final boolean isPlayerLeftHanded = animatable.getMainArm() == HumanoidArm.LEFT;
-
-        if ((armBoneIsLeft && !isPlayerLeftHanded) || (!armBoneIsLeft && isPlayerLeftHanded)) {
-            return;
-        }
-
-        if (handSwingProgress == 0) {
-            return;
-        }
-
-        final float animTime = ageInTicks;
-
-        final float rotX = (-Mth.cos(handSwingProgress * 2.0F * Mth.PI) + 1.0F)
-                * 0.7925268F;
-        float rotY = Mth.sin(handSwingProgress * Mth.PI) * handSwingProgress;
-        float rotZ = Mth.cos(animTime * 3.60F) * 0.1F + 0.1F;
-
-        if (armBoneIsLeft) {
-            rotY = -rotY;
-            rotZ = -rotZ;
-        }
-
-        armBone.setRotX(rotX);
-        armBone.setRotY(rotY);
-        armBone.setRotZ(rotZ);
+        // No aplicar otras animaciones procedurales, dejar que GeckoLib maneje el resto
     }
 
     private static void animateBowHand(AbstractClientPlayer player, CoreGeoBone armBone, float ageInTicks) {
@@ -96,30 +70,42 @@ public class RenderUtil {
     }
 
     private static void animateCrossbowHand(AbstractClientPlayer player, CoreGeoBone armBone, float ageInTicks) {
-        if (!CrossbowItem.isCharged(player.getUseItem())) {
-            return;
-        }
         final boolean armIsLeft = armBone.getName().equals("left_arm");
-
         final float animTime = ageInTicks;
 
-        float pitch = player.getXRot() * Mth.DEG_TO_RAD; // getXRot()
-        float yawDelta = (player.getYHeadRot() - player.yBodyRot) * Mth.DEG_TO_RAD; // yHeadRot, yBodyRot
+        // Verificar si tiene ballesta en mano principal u offhand
+        boolean hasMainHandCrossbow = player.getMainHandItem().getItem() instanceof CrossbowItem;
+        boolean hasOffHandCrossbow = player.getOffhandItem().getItem() instanceof CrossbowItem;
 
-        float minPitch = -0.2F;
-        float maxPitch = 0.8F;
-        pitch = Mth.clamp(pitch, minPitch, maxPitch);
+        // Verificar estados
+        boolean isCharging = player.isUsingItem() && player.getUseItem().getItem() instanceof CrossbowItem;
+        boolean isMainHandCharged = hasMainHandCrossbow && CrossbowItem.isCharged(player.getMainHandItem());
+        boolean isOffHandCharged = hasOffHandCrossbow && CrossbowItem.isCharged(player.getOffhandItem());
 
-        float yawScale = 0.25F;
-        float minYaw = -0.4F;
-        float maxYaw = 0.4F;
-        float yaw = Mth.clamp(yawDelta * yawScale, minYaw, maxYaw);
+        // Si está cargando, cargada en cualquier mano, o usando
+        if (isCharging || isMainHandCharged || isOffHandCharged) {
+            float pitch = player.getXRot() * Mth.DEG_TO_RAD;
+            float yawDelta = (player.getYHeadRot() - player.yBodyRot) * Mth.DEG_TO_RAD;
 
-        float baseRotX = 1.2F - pitch * 0.5F;
-        armBone.setRotX(baseRotX);
-        armBone.setRotY(armIsLeft ? -0.4F + yaw : 0.4F + yaw);
-        armBone.setRotZ(-0.15F);
-        armBone.setRotZ(armBone.getRotZ() + Mth.sin(animTime * 1.5F) * 0.01F);
+            float minPitch = -0.2F;
+            float maxPitch = 0.8F;
+            pitch = Mth.clamp(pitch, minPitch, maxPitch);
+
+            float yawScale = 0.25F;
+            float minYaw = -0.4F;
+            float maxYaw = 0.4F;
+            float yaw = Mth.clamp(yawDelta * yawScale, minYaw, maxYaw);
+
+            float baseRotX = 1.2F - pitch * 0.5F;
+            armBone.setRotX(baseRotX);
+            armBone.setRotY(armIsLeft ? -0.4F + yaw : 0.4F + yaw);
+            armBone.setRotZ(armIsLeft ? 0.15F : -0.15F);
+
+            // Pequeña animación de respiración cuando está apuntando
+            if (!isCharging) {
+                armBone.setRotZ(armBone.getRotZ() + Mth.sin(animTime * 1.5F) * 0.01F);
+            }
+        }
     }
 
     public static void playProceduralAnimations(AbstractClientPlayer player, CoreGeoBone bone,

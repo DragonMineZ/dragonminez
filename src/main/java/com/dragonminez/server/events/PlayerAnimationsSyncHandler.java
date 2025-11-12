@@ -1,7 +1,7 @@
 package com.dragonminez.server.events;
 
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.SyncCreativeFlyingPacket;
+import com.dragonminez.common.network.S2C.PlayerAnimationsSync;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
@@ -37,7 +37,7 @@ public class PlayerAnimationsSyncHandler {
             // Estado cambió, enviar paquete a todos los jugadores cercanos
             lastFlyingState.put(uuid, isCurrentlyFlying);
 
-            SyncCreativeFlyingPacket packet = new SyncCreativeFlyingPacket(uuid, isCurrentlyFlying);
+            PlayerAnimationsSync packet = new PlayerAnimationsSync(uuid, isCurrentlyFlying);
 
             // Enviar a todos los jugadores que están rastreando a este jugador
             NetworkHandler.INSTANCE.send(

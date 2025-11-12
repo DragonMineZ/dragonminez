@@ -14,16 +14,16 @@ import java.util.function.Supplier;
  * Paquete S2C para sincronizar el estado de vuelo creativo de los jugadores
  * Permite que otros clientes vean la animación de vuelo cuando un jugador vuela en creativo
  */
-public class SyncCreativeFlyingPacket {
+public class PlayerAnimationsSync {
 	private final UUID playerUUID;
 	private final boolean isFlying;
 
-	public SyncCreativeFlyingPacket(UUID playerUUID, boolean isFlying) {
+	public PlayerAnimationsSync(UUID playerUUID, boolean isFlying) {
 		this.playerUUID = playerUUID;
 		this.isFlying = isFlying;
 	}
 
-	public SyncCreativeFlyingPacket(FriendlyByteBuf buf) {
+	public PlayerAnimationsSync(FriendlyByteBuf buf) {
 		this.playerUUID = buf.readUUID();
 		this.isFlying = buf.readBoolean();
 	}
