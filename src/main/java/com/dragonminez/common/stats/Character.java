@@ -1,6 +1,10 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import net.minecraft.nbt.CompoundTag;
+
+import java.util.List;
 
 public class Character {
     private int race;
@@ -10,12 +14,9 @@ public class Character {
     public static final int RACE_HUMAN = 0;
     public static final int RACE_SAIYAN = 1;
     public static final int RACE_NAMEKIAN = 2;
-    public static final int RACE_COLD_DEMON = 3;
+    public static final int RACE_FROST_DEMON = 3;
     public static final int RACE_BIO_ANDROID = 4;
     public static final int RACE_MAJIN = 5;
-
-    public static final String[] RACE_NAMES = {"human", "saiyan", "namekian", "colddemon", "bioandroid", "majin"};
-    public static final boolean[] HAS_GENDER = {true, true, false, false, false, true};
 
     public static final String GENDER_MALE = "male";
     public static final String GENDER_FEMALE = "female";
@@ -39,16 +40,18 @@ public class Character {
         this.race = RACE_HUMAN;
         this.gender = GENDER_MALE;
         this.characterClass = CLASS_WARRIOR;
-        this.hairId = 0;
-        this.bodyType = 0;
-        this.eyesType = 0;
-        this.bodyColor = 0;
-        this.bodyColor2 = 0;
-        this.bodyColor3 = 0;
-        this.hairColor = 921617;
-        this.eye1Color = 0;
-        this.eye2Color = 0;
-        this.auraColor = 8388607;
+
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter("human");
+        this.hairId = config.getDefaultHairType();
+        this.bodyType = config.getDefaultBodyType();
+        this.eyesType = config.getDefaultEyesType();
+        this.bodyColor = config.getDefaultBodyColor();
+        this.bodyColor2 = config.getDefaultBodyColor2();
+        this.bodyColor3 = config.getDefaultBodyColor3();
+        this.hairColor = config.getDefaultHairColor();
+        this.eye1Color = config.getDefaultEye1Color();
+        this.eye2Color = config.getDefaultEye2Color();
+        this.auraColor = config.getDefaultAuraColor();
     }
 
     public int getRace() { return race; }
@@ -65,7 +68,13 @@ public class Character {
     public int getEye2Color() { return eye2Color; }
     public int getAuraColor() { return auraColor; }
 
-    public void setRace(int race) { this.race = Math.max(0, Math.min(5, race)); }
+    public void setRace(int race) {
+        int maxRace = ConfigManager.getLoadedRaces().size() - 1;
+        this.race = Math.max(0, Math.min(maxRace, race));
+        if (!canHaveGender() && !gender.equals(GENDER_MALE)) {
+            this.gender = GENDER_MALE;
+        }
+    }
     public void setGender(String gender) { this.gender = gender; }
     public void setCharacterClass(String characterClass) { this.characterClass = characterClass; }
     public void setHairId(int hairId) { this.hairId = hairId; }
@@ -80,22 +89,28 @@ public class Character {
     public void setAuraColor(int auraColor) { this.auraColor = auraColor; }
 
     public String getRaceName() {
-        if (race >= 0 && race < RACE_NAMES.length) {
-            return RACE_NAMES[race];
+        List<String> raceNames = ConfigManager.getLoadedRaces();
+        if (race >= 0 && race < raceNames.size()) {
+            return raceNames.get(race);
         }
-        return RACE_NAMES[0];
+        return raceNames.isEmpty() ? "human" : raceNames.get(0);
+    }
+
+    public static String[] getRaceNames() {
+        List<String> raceNames = ConfigManager.getLoadedRaces();
+        return raceNames.toArray(new String[0]);
     }
 
     public boolean canHaveGender() {
-        if (race >= 0 && race < HAS_GENDER.length) {
-            return HAS_GENDER[race];
-        }
-        return true;
+        String raceName = getRaceName();
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
+        return raceConfig.hasGender();
     }
 
     public static int getRaceIdByName(String name) {
-        for (int i = 0; i < RACE_NAMES.length; i++) {
-            if (RACE_NAMES[i].equalsIgnoreCase(name)) {
+        List<String> raceNames = ConfigManager.getLoadedRaces();
+        for (int i = 0; i < raceNames.size(); i++) {
+            if (raceNames.get(i).equalsIgnoreCase(name)) {
                 return i;
             }
         }

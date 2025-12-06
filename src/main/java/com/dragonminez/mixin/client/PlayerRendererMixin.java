@@ -118,7 +118,7 @@ public abstract class PlayerRendererMixin {
                     return new PlayerRenderModel(ctx, new PlayerBaseModel());
                 }
             case Character.RACE_NAMEKIAN:
-            case Character.RACE_COLD_DEMON:
+            case Character.RACE_FROST_DEMON:
             case Character.RACE_BIO_ANDROID:
                 return new PlayerRenderModel(ctx, new PlayerBaseModel());
             default:

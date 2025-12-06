@@ -1,6 +1,9 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.events.DMZEvent;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.common.MinecraftForge;
 
 public class Stats {
     private int strength;
@@ -9,6 +12,8 @@ public class Stats {
     private int vitality;
     private int kiPower;
     private int energy;
+
+    private Player player;
 
     public Stats() {
         this.strength = 5;
@@ -19,6 +24,10 @@ public class Stats {
         this.energy = 5;
     }
 
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
     public int getStrength() { return strength; }
     public int getStrikePower() { return strikePower; }
     public int getResistance() { return resistance; }
@@ -26,12 +35,83 @@ public class Stats {
     public int getKiPower() { return kiPower; }
     public int getEnergy() { return energy; }
 
-    public void setStrength(int value) { this.strength = Math.max(5, value); }
-    public void setStrikePower(int value) { this.strikePower = Math.max(5, value); }
-    public void setResistance(int value) { this.resistance = Math.max(5, value); }
-    public void setVitality(int value) { this.vitality = Math.max(5, value); }
-    public void setKiPower(int value) { this.kiPower = Math.max(5, value); }
-    public void setEnergy(int value) { this.energy = Math.max(5, value); }
+    public void setStrength(int value) {
+        int oldValue = this.strength;
+        int newValue = Math.max(5, value);
+        if (oldValue != newValue && player != null) {
+            DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.STRENGTH, oldValue, newValue);
+            if (!MinecraftForge.EVENT_BUS.post(event)) {
+                this.strength = newValue;
+            }
+        } else {
+            this.strength = newValue;
+        }
+    }
+
+    public void setStrikePower(int value) {
+        int oldValue = this.strikePower;
+        int newValue = Math.max(5, value);
+        if (oldValue != newValue && player != null) {
+            DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.STRIKE_POWER, oldValue, newValue);
+            if (!MinecraftForge.EVENT_BUS.post(event)) {
+                this.strikePower = newValue;
+            }
+        } else {
+            this.strikePower = newValue;
+        }
+    }
+
+    public void setResistance(int value) {
+        int oldValue = this.resistance;
+        int newValue = Math.max(5, value);
+        if (oldValue != newValue && player != null) {
+            DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.RESISTANCE, oldValue, newValue);
+            if (!MinecraftForge.EVENT_BUS.post(event)) {
+                this.resistance = newValue;
+            }
+        } else {
+            this.resistance = newValue;
+        }
+    }
+
+    public void setVitality(int value) {
+        int oldValue = this.vitality;
+        int newValue = Math.max(5, value);
+        if (oldValue != newValue && player != null) {
+            DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.VITALITY, oldValue, newValue);
+            if (!MinecraftForge.EVENT_BUS.post(event)) {
+                this.vitality = newValue;
+            }
+        } else {
+            this.vitality = newValue;
+        }
+    }
+
+    public void setKiPower(int value) {
+        int oldValue = this.kiPower;
+        int newValue = Math.max(5, value);
+        if (oldValue != newValue && player != null) {
+            DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.KI_POWER, oldValue, newValue);
+            if (!MinecraftForge.EVENT_BUS.post(event)) {
+                this.kiPower = newValue;
+            }
+        } else {
+            this.kiPower = newValue;
+        }
+    }
+
+    public void setEnergy(int value) {
+        int oldValue = this.energy;
+        int newValue = Math.max(5, value);
+        if (oldValue != newValue && player != null) {
+            DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.ENERGY, oldValue, newValue);
+            if (!MinecraftForge.EVENT_BUS.post(event)) {
+                this.energy = newValue;
+            }
+        } else {
+            this.energy = newValue;
+        }
+    }
 
     public void addStrength(int amount) { setStrength(strength + amount); }
     public void addStrikePower(int amount) { setStrikePower(strikePower + amount); }

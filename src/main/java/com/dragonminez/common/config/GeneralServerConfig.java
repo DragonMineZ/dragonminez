@@ -23,17 +23,13 @@ public class GeneralServerConfig {
 
     public static class WorldGenConfig {
         private boolean generateCustomStructures = true;
-        private boolean generateNamekPlanets = true;
-        private int structureSpawnRate = 100;
+        private boolean generateDragonBalls = true;
 
         public boolean isGenerateCustomStructures() { return generateCustomStructures; }
         public void setGenerateCustomStructures(boolean generate) { this.generateCustomStructures = generate; }
+        public boolean isGenerateDragonBalls() { return generateDragonBalls; }
+        public void setGenerateDragonBalls(boolean generate) { this.generateDragonBalls = generate; }
 
-        public boolean isGenerateNamekPlanets() { return generateNamekPlanets; }
-        public void setGenerateNamekPlanets(boolean generate) { this.generateNamekPlanets = generate; }
-
-        public int getStructureSpawnRate() { return structureSpawnRate; }
-        public void setStructureSpawnRate(int rate) { this.structureSpawnRate = rate; }
     }
 
     public static class GameplayConfig {

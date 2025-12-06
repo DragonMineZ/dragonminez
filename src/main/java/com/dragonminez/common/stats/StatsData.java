@@ -1,6 +1,5 @@
 package com.dragonminez.common.stats;
 
-import com.dragonminez.common.config.ClassStatsConfig;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceStatsConfig;
 import net.minecraft.nbt.CompoundTag;
@@ -19,6 +18,7 @@ public class StatsData {
     public StatsData(Player player) {
         this.player = player;
         this.stats = new Stats();
+        this.stats.setPlayer(player);
         this.status = new Status();
         this.cooldowns = new Cooldowns();
         this.character = new Character();
@@ -38,12 +38,9 @@ public class StatsData {
     public int getLevel() {
         int totalStats = stats.getTotalStats();
 
-        int raceId = character.getRace();
-        String className = character.getCharacterClass();
-
-        RaceStatsConfig raceConfig = ConfigManager.getRaceConfig(raceId);
-        ClassStatsConfig classConfig = raceConfig.getClassConfig(className);
-        ClassStatsConfig.BaseStats baseStats = classConfig.getBaseStats();
+        String raceName = character.getRaceName();
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.BaseStats baseStats = raceConfig.getBaseStats();
 
         int initialStats = baseStats.getStrength() + baseStats.getStrikePower() +
                           baseStats.getResistance() + baseStats.getVitality() +
@@ -142,10 +139,10 @@ public class StatsData {
         character.setCharacterClass(characterClass);
         status.setCreatedCharacter(true);
 
-        RaceStatsConfig raceConfig = ConfigManager.getRaceConfig(raceId);
-        ClassStatsConfig classConfig = raceConfig.getClassConfig(characterClass);
+        String raceName = character.getRaceName();
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.BaseStats baseStats = raceConfig.getBaseStats();
 
-        ClassStatsConfig.BaseStats baseStats = classConfig.getBaseStats();
         stats.setStrength(baseStats.getStrength());
         stats.setStrikePower(baseStats.getStrikePower());
         stats.setResistance(baseStats.getResistance());
@@ -160,12 +157,9 @@ public class StatsData {
     }
 
     public double getStatScaling(String statName) {
-        int raceId = character.getRace();
-        String className = character.getCharacterClass();
-
-        RaceStatsConfig raceConfig = ConfigManager.getRaceConfig(raceId);
-        ClassStatsConfig classConfig = raceConfig.getClassConfig(className);
-        ClassStatsConfig.StatScaling scaling = classConfig.getStatScaling();
+        String raceName = character.getRaceName();
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.StatScaling scaling = raceConfig.getStatScaling();
 
         return switch (statName.toUpperCase()) {
             case "STR" -> scaling.getStrengthScaling();

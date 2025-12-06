@@ -1,8 +1,10 @@
 package com.dragonminez.common.stats;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -54,6 +56,7 @@ public class StatsCapability {
             StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             });
+            NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getAllRaceStats()), serverPlayer);
         }
         event.getEntity().refreshDimensions();
     }
