@@ -36,6 +36,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     private static final RawAnimation CROUCHING_WALK = RawAnimation.begin().thenLoop("animation.base.crouching_walk");
     private static final RawAnimation SHIELD_RIGHT = RawAnimation.begin().thenLoop("animation.base.shield_right");
     private static final RawAnimation SHIELD_LEFT = RawAnimation.begin().thenLoop("animation.base.shield_left");
+    private static final RawAnimation CRAWLING = RawAnimation.begin().thenLoop("animation.base.crawling");
+    private static final RawAnimation CRAWLING_MOVE = RawAnimation.begin().thenLoop("animation.base.crawling_move");
+
+
 
     @Unique
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
@@ -73,34 +77,39 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 //            }
 
             // Attacking - Skip if placing blocks
-            if (player.attackAnim > 0 && !isPlacingBlock(player)) {
-                int currentTime = player.tickCount;
-                if (!isPlayingAttack) {
-                    int timeSinceLastAttack = currentTime - lastAttackTime;
-                    if (timeSinceLastAttack > 40) {
-                        useAttack2 = false;
-                    } else if (timeSinceLastAttack >= 10) {
-                        useAttack2 = !useAttack2;
-                    } else {
-                        useAttack2 = false;
-                    }
-
-                    lastAttackTime = currentTime;
-                    attackAnimStartTime = currentTime;
-                    isPlayingAttack = true;
-                    ctl.setAnimation(useAttack2 ? ATTACK2 : ATTACK);
-                }
-                return PlayState.CONTINUE;
-            } else {
-                isPlayingAttack = false;
-            }
+//            if (player.attackAnim > 0 && !isPlacingBlock(player)) {
+//                int currentTime = player.tickCount;
+//                if (!isPlayingAttack) {
+//                    int timeSinceLastAttack = currentTime - lastAttackTime;
+//                    if (timeSinceLastAttack > 40) {
+//                        useAttack2 = false;
+//                    } else if (timeSinceLastAttack >= 10) {
+//                        useAttack2 = !useAttack2;
+//                    } else {
+//                        useAttack2 = false;
+//                    }
+//
+//                    lastAttackTime = currentTime;
+//                    attackAnimStartTime = currentTime;
+//                    isPlayingAttack = true;
+//                    ctl.setAnimation(useAttack2 ? ATTACK2 : ATTACK);
+//                }
+//                return PlayState.CONTINUE;
+//            } else {
+//                isPlayingAttack = false;
+//            }
 
             // Swimming
-            if (player.isSwimming() || player.isVisuallySwimming()) {
-                if (playing != SWIMMING) {
-                    ctl.setAnimation(SWIMMING);
+            if (player.isSwimming()) {
+                return state.setAndContinue(SWIMMING);
+            }
+
+            if (player.isVisuallyCrawling()) {
+                if (isMoving(player)) {
+                    return state.setAndContinue(CRAWLING_MOVE);
+                } else {
+                    return state.setAndContinue(CRAWLING);
                 }
-                return PlayState.CONTINUE;
             }
 
             // Flying
@@ -153,6 +162,36 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     }
 
     @Unique
+    private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
+        AbstractClientPlayer player = (AbstractClientPlayer) state.getAnimatable();
+        AnimationController<T> ctl = state.getController();
+        RawAnimation playing = ctl.getCurrentRawAnimation();
+
+        if (player.attackAnim > 0 && !isPlacingBlock(player)) {
+            int currentTime = player.tickCount;
+            if (!isPlayingAttack) {
+                int timeSinceLastAttack = currentTime - lastAttackTime;
+                if (timeSinceLastAttack > 40) {
+                    useAttack2 = false;
+                } else if (timeSinceLastAttack >= 10) {
+                    useAttack2 = !useAttack2;
+                } else {
+                    useAttack2 = false;
+                }
+
+                lastAttackTime = currentTime;
+                attackAnimStartTime = currentTime;
+                isPlayingAttack = true;
+                ctl.setAnimation(useAttack2 ? ATTACK2 : ATTACK);
+            }
+            return PlayState.CONTINUE;
+        } else {
+            isPlayingAttack = false;
+            return PlayState.STOP;
+        }
+    }
+
+    @Unique
     private <T extends GeoAnimatable> PlayState shieldPredicate(AnimationState<T> state) {
         AbstractClientPlayer player = (AbstractClientPlayer) state.getAnimatable();
         AnimationController<T> ctl = state.getController();
@@ -186,7 +225,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-        registrar.add(new AnimationController<>(this, "controller", 0, this::predicate));
+        registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
+        registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
         registrar.add(new AnimationController<>(this, "shield_controller", 0, this::shieldPredicate));
     }
 
