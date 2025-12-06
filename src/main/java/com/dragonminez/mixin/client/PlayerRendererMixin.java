@@ -3,6 +3,7 @@ package com.dragonminez.mixin.client;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.model.PlayerBaseModel;
+import com.dragonminez.client.model.PlayerFemaleModel;
 import com.dragonminez.client.render.PlayerRenderModel;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
@@ -99,7 +100,7 @@ public abstract class PlayerRendererMixin {
 
         if (bodyType == 0 && (raceId == Character.RACE_HUMAN || raceId == Character.RACE_SAIYAN)) {
             if (isSlim) {
-                return new PlayerRenderModel(ctx, new PlayerBaseModel());
+                return new PlayerRenderModel(ctx, new PlayerFemaleModel());
             } else {
                 return new PlayerRenderModel(ctx, new PlayerBaseModel());
             }
@@ -112,7 +113,7 @@ public abstract class PlayerRendererMixin {
             case Character.RACE_SAIYAN:
             case Character.RACE_MAJIN:
                 if (isFemale) {
-                    return new PlayerRenderModel(ctx, new PlayerBaseModel());
+                    return new PlayerRenderModel(ctx, new PlayerFemaleModel());
                 } else {
                     return new PlayerRenderModel(ctx, new PlayerBaseModel());
                 }
