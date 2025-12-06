@@ -13,23 +13,16 @@ public class GeneralUserConfig {
     }
 
     public static class HudConfig {
-        private boolean showStats = true;
-        private boolean showEnergyBar = true;
-        private boolean showStaminaBar = true;
+        private int healthBarPosX = 10;
+        private int healthBarPosY = 50;
         private int energyBarPosX = 10;
         private int energyBarPosY = 10;
         private int staminaBarPosX = 10;
         private int staminaBarPosY = 30;
         private boolean compactHud = false;
 
-        public boolean isShowStats() { return showStats; }
-        public void setShowStats(boolean showStats) { this.showStats = showStats; }
-
-        public boolean isShowEnergyBar() { return showEnergyBar; }
-        public void setShowEnergyBar(boolean showEnergyBar) { this.showEnergyBar = showEnergyBar; }
-
-        public boolean isShowStaminaBar() { return showStaminaBar; }
-        public void setShowStaminaBar(boolean showStaminaBar) { this.showStaminaBar = showStaminaBar; }
+        public int getHealthBarPosX() { return healthBarPosX; }
+        public void setHealthBarPosX(int healthBarPosX) { this.healthBarPosX = healthBarPosX; }
 
         public int getEnergyBarPosX() { return energyBarPosX; }
         public void setEnergyBarPosX(int energyBarPosX) { this.energyBarPosX = energyBarPosX; }

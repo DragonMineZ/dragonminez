@@ -4,6 +4,8 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.CharacterCreationScreen;
 import com.dragonminez.client.gui.CharacterStatsScreen;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -11,6 +13,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -31,6 +35,22 @@ public class ForgeClientEvents {
                     mc.setScreen(new CharacterStatsScreen());
                 } else {
                     mc.setScreen(new CharacterCreationScreen());
+                }
+            });
+        }
+
+        if (KeyBinds.KI_CHARGE.isDown()) {
+            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+                if (data.getStatus().hasCreatedCharacter()) {
+                    int currentEnergy = data.getResources().getCurrentEnergy();
+                    int maxEnergy = data.getMaxEnergy();
+
+                    DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(mc.player, currentEnergy, maxEnergy);
+                    if (!MinecraftForge.EVENT_BUS.post(kiEvent)) {
+                        if (currentEnergy < maxEnergy) {
+                            data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + 1));
+                        }
+                    }
                 }
             });
         }
@@ -71,6 +91,11 @@ public class ForgeClientEvents {
                 mc.player.displayClientMessage(Component.literal(text), true);
             }
         });
+    }
+
+    @SubscribeEvent
+    public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
+        ConfigManager.clearServerSync();
     }
 }
 

@@ -1,5 +1,7 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.stats.Character;
@@ -59,7 +61,8 @@ public class CharacterCreationScreen extends Screen {
     }
 
     private void cycleRace() {
-        selectedRace = (selectedRace + 1) % Character.RACE_NAMES.length;
+        String[] raceNames = Character.getRaceNames();
+        selectedRace = (selectedRace + 1) % raceNames.length;
         raceButton.setMessage(Component.translatable("gui.dragonminez.character_creation.race", getRaceName()));
         updateGenderButton();
     }
@@ -90,12 +93,18 @@ public class CharacterCreationScreen extends Screen {
     }
 
     private boolean canHaveGender() {
-        return selectedRace >= 0 && selectedRace < Character.HAS_GENDER.length
-                && Character.HAS_GENDER[selectedRace];
+        String[] raceNames = Character.getRaceNames();
+        if (selectedRace >= 0 && selectedRace < raceNames.length) {
+            String raceName = raceNames[selectedRace];
+            RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
+            return raceConfig.hasGender();
+        }
+        return true;
     }
 
     private String getRaceName() {
-        return Component.translatable("race.dragonminez." + Character.RACE_NAMES[selectedRace]).getString();
+        String[] raceNames = Character.getRaceNames();
+        return Component.translatable("race.dragonminez." + raceNames[selectedRace]).getString();
     }
 
     private String getClassName() {
