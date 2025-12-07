@@ -78,21 +78,26 @@ public abstract class PlayerRendererMixin {
                 dragonminez_renderers.put(rendererId, morphRenderer);
             }
 
-            if (formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty()) {
+            boolean hasActiveForm = formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty();
+            float scale = 1.0f;
+
+            if (hasActiveForm) {
                 var formData = data.getCharacter().getActiveFormData();
                 if (formData != null) {
-                    float scale = (float) formData.getModelScaling();
-                    poseStack.pushPose();
-                    poseStack.scale(scale, scale, scale);
-                    morphRenderer.render(player, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
-                    poseStack.popPose();
-                    ci.cancel();
-                    return;
+                    scale = (float) formData.getModelScaling();
                 }
             }
 
             ci.cancel();
-            morphRenderer.render(player, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
+
+            if (scale != 1.0f) {
+                poseStack.pushPose();
+                poseStack.scale(scale, scale, scale);
+                morphRenderer.render(player, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
+                poseStack.popPose();
+            } else {
+                morphRenderer.render(player, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
+            }
         });
     }
 
