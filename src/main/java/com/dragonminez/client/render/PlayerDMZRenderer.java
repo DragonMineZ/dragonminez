@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,6 +30,7 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.GeoRenderer;
+import software.bernie.geckolib.util.RenderUtils;
 
 public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
@@ -39,6 +41,13 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         this.addRenderLayer(new PlayerItemInHandLayer<>(this));
     }
+
+    @Override
+    public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+    }
+
+
 
     @Override
     public void actuallyRender(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
@@ -119,62 +128,182 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         }
 
         if (renderType != null){
-            updateAnimatedTextureFrame(animatable);
-
-            for (GeoBone group : model.topLevelBones()) {
-                renderRecursively(poseStack, animatable, group, renderType, bufferSource, buffer, isReRender, partialTick, packedLight,
-                        packedOverlay, red, green, blue, alpha);
-            }
+            renderAll(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender,
+                    partialTick, packedLight, packedOverlay, red, green, blue, alpha);
         }
 
         poseStack.popPose();
     }
 
-    @Override
-    public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    private void renderAll(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
 
-        // 1. Variables modificables iniciales
-        RenderType finalRenderType = renderType;
-        VertexConsumer finalBuffer = buffer;
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+        var stats = statsCap.orElse(null);
 
-        // 2. Obtener datos de la Capability
-        var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+        if (stats != null) {
+            var character = stats.getCharacter();
+            String raceName = character.getRace().toLowerCase();
+            String gender = character.getGender().toLowerCase();
+            int bodyType = character.getBodyType();
 
-        if (statsOpt.isPresent()) {
-            var stats = statsOpt.orElse(null);
-            String raceName = stats.getCharacter().getRace();
-            int bodyType = stats.getCharacter().getBodyType();
+            String currentForm = character.getCurrentForm();
+            boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
 
-            // 3. Obtener Configuración de la Raza
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
-            boolean configForcesSkin = raceConfig.useVanillaSkin();
 
-            // 4. LÓGICA DE DECISIÓN DE TEXTURA
+            float[] bodyTint = hexToRGB("#badaff");
+            float[] bodyTint2 = hexToRGB("#f29eff");
+            float[] bodyTint3 = hexToRGB("#ff54da");
+            float[] hairTint = hexToRGB(character.getHairColor());
 
-            // CASO A: Usar Skin de Minecraft (Steve/Alex)
-            // Ocurre si la config lo obliga O si el bodyType es 0 (y la config no prohibe nada raro)
-            if (configForcesSkin || bodyType == 0) {
+            boolean forceVanilla = raceConfig.useVanillaSkin();
+            boolean isStandardHumanoid = (raceName.equals("human") || raceName.equals("saiyan"));
+            boolean isDefaultBody = (bodyType == 0);
+
+            if (forceVanilla || (isStandardHumanoid && isDefaultBody && !hasForm)) {
                 ResourceLocation playerSkin = animatable.getSkinTextureLocation();
+                RenderType globalRenderType = RenderType.entityTranslucent(playerSkin);
+                VertexConsumer globalBuffer = bufferSource.getBuffer(globalRenderType);
 
-                // Usamos entityTranslucent para soportar las transparencias de la capa externa de la skin
-                finalRenderType = RenderType.entityTranslucent(playerSkin);
-                finalBuffer = bufferSource.getBuffer(finalRenderType);
+                for (GeoBone group : model.topLevelBones()) {
+                    renderRecursively(poseStack, animatable, group, globalRenderType, bufferSource, globalBuffer, isReRender, partialTick, packedLight, packedOverlay, 1.0f, 1.0f, 1.0f, alpha);
+                }
+                return;
             }
 
-            // CASO B: Usar Textura Custom (BodyType > 0)
-            // Ejemplo: bodyType 1 para un Saiyan
-            else {
-                // Construimos el nombre: "saiyan_1.png"
-                // Asegúrate de que tus archivos en assets se llamen así: "raza_numero.png"
-                String customTexturePath = "textures/entity/races/" + raceName.toLowerCase() + "_" + bodyType + ".png";
-                ResourceLocation customLoc = new ResourceLocation(Reference.MOD_ID, customTexturePath);
+            boolean isNamek = raceName.equals("namekian");
+            boolean isFrost = raceName.equals("frostdemon");
+            boolean isBio = raceName.equals("bioandroid");
 
-                // Usamos entityCutoutNoCull (o el que prefieras para tus texturas sólidas)
-                finalRenderType = RenderType.entityCutoutNoCull(customLoc);
-                finalBuffer = bufferSource.getBuffer(finalRenderType);
+            if (isNamek || isFrost || isBio) {
+
+                String textureBase = raceName;
+
+                if (hasForm) {
+                    switch (raceName) {
+                        case "bioandroid" -> {
+                            if (currentForm.equals("semi_perfect")) textureBase = "bioandroid_semi";
+                            else if (currentForm.equals("perfect")) textureBase = "bioandroid_perfect";
+                        }
+                        case "frostdemon" -> {
+                            if (currentForm.equals("form2")) textureBase = "frostdemon_2";
+                            else if (currentForm.equals("form3")) textureBase = "frostdemon_3";
+                            else if (currentForm.equals("golden")) textureBase = "frostdemon_golden";
+                        }
+
+                    }
+                }
+
+                // ejmplo "bioandroid_semi_0_"
+                String filePrefix = "textures/entity/races/" + textureBase + "_" + bodyType + "_";
+
+                renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                        filePrefix + "layer1.png", bodyTint);
+
+                renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                        filePrefix + "layer2.png", bodyTint2);
+
+                renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                        filePrefix + "layer3.png", bodyTint3);
+
+                if (isFrost) {
+                    if(bodyType==0){
+                        renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                                filePrefix + "layer4.png", hairTint);
+                        renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                                filePrefix + "layer5.png", hexToRGB("#e67d40"));
+                    } else {
+                        renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                                filePrefix + "layer4.png", hairTint);
+                    }
+
+                }
+                if (isBio) {
+                    renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                            filePrefix + "layer4.png", hairTint);
+                    renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
+                            filePrefix + "layer5.png", hexToRGB("#dbcb9e"));
+                }
+                return;
+            }
+
+            String textureBaseName = raceName;
+            if (isStandardHumanoid) {
+                textureBaseName = "humansaiyan";
+            }
+
+            String genderPart = "";
+            if (raceConfig.hasGender()) {
+                genderPart = "_" + gender;
+            }
+
+            String formPart = "";
+            if (hasForm) {
+                // forma especifica
+                // if (currentForm.equals("ssj4")) formPart = "_ssj4";
+
+                //todas las formas busquen una textura de la forma:
+                // formPart = "_" + currentForm;
+            }
+
+            // "humansaiyan_male_1.png" o "humansaiyan_male_1_ssj4.png"
+            String customPath = "textures/entity/races/" + textureBaseName + genderPart + "_" + bodyType + formPart + ".png";
+
+            ResourceLocation customLoc = new ResourceLocation(Reference.MOD_ID, customPath);
+            RenderType globalRenderType = RenderType.entityCutoutNoCull(customLoc);
+            VertexConsumer globalBuffer = bufferSource.getBuffer(globalRenderType);
+
+            for (GeoBone group : model.topLevelBones()) {
+                renderRecursively(poseStack, animatable, group, globalRenderType, bufferSource, globalBuffer, isReRender, partialTick, packedLight, packedOverlay, bodyTint[0], bodyTint[1], bodyTint[2], alpha);
             }
         }
 
-        super.renderRecursively(poseStack, animatable, bone, finalRenderType, bufferSource, finalBuffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+//        super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
+
+    private void renderColoredPass(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int packedLight, int packedOverlay, String texturePath, float[] rgb) {
+
+        ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, texturePath);
+        RenderType type = RenderType.entityCutoutNoCull(loc);
+        VertexConsumer buffer = bufferSource.getBuffer(type);
+
+        for (GeoBone group : model.topLevelBones()) {
+            renderRecursively(poseStack, animatable, group, type, bufferSource, buffer, false, 0, packedLight, packedOverlay, rgb[0], rgb[1], rgb[2], 1.0f);
+        }
+    }
+
+    private float[] hexToRGB(String hexColor) {
+        if (hexColor == null || hexColor.isEmpty()) return new float[]{1.0f, 1.0f, 1.0f};
+        try {
+            if (hexColor.startsWith("#")) hexColor = hexColor.substring(1);
+            long color = Long.parseLong(hexColor, 16);
+            float r = ((color >> 16) & 0xFF) / 255.0f;
+            float g = ((color >> 8) & 0xFF) / 255.0f;
+            float b = (color & 0xFF) / 255.0f;
+            return new float[]{r, g, b};
+        } catch (Exception e) {
+            return new float[]{1.0f, 1.0f, 1.0f};
+        }
+    }
+
+    private void renderPass(BakedGeoModel model, PoseStack stack, T animatable, RenderType type, MultiBufferSource source, int light, int overlay, float r, float g, float b, float a) {
+        VertexConsumer buffer = source.getBuffer(type);
+        for (GeoBone group : model.topLevelBones()) {
+            renderRecursively(stack, animatable, group, type, source, buffer, false, 0, light, overlay, r, g, b, a);
+        }
+    }
+
+    //RENDER UN SOLO BONE ("head", "body", "left_arm")
+    private void renderBonePass(GeoBone bone, PoseStack stack, T animatable, RenderType type, MultiBufferSource source, int light, int overlay, float r, float g, float b, float a) {
+        if (bone != null) {
+            VertexConsumer buffer = source.getBuffer(type);
+            renderRecursively(stack, animatable, bone, type, source, buffer, false, 0, light, overlay, r, g, b, a);
+        }
+    }
+
+    @Override
+    protected void renderNameTag(T pEntity, Component pDisplayName, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
+        super.renderNameTag(pEntity, pDisplayName, pPoseStack, pBuffer, pPackedLight);
+    }
+
 }

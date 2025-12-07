@@ -45,6 +45,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
 
             int bodyType = data.getCharacter().getBodyType();
+            var gender = data.getCharacter().getGender();
 
             boolean isStandardRace = this.raceName.equals("human") ||
                     this.raceName.equals("saiyan");
@@ -59,7 +60,13 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             }
             else {
                 return switch (this.raceName) {
-                    case "human", "saiyan", "namekian" -> BASE_DEFAULT;
+                    case "human", "saiyan" -> {
+                        if ("female".equals(gender)) {
+                            yield BASE_SLIM;
+                        }
+                        yield BASE_DEFAULT;
+                    }
+                    case "namekian" -> BASE_DEFAULT;
                     default -> new ResourceLocation(Reference.MOD_ID, "geo/entity/races/" + this.raceName + ".geo.json");
                 };
             }
