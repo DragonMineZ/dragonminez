@@ -38,6 +38,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     private static final RawAnimation SHIELD_LEFT = RawAnimation.begin().thenLoop("animation.base.shield_left");
     private static final RawAnimation CRAWLING = RawAnimation.begin().thenLoop("animation.base.crawling");
     private static final RawAnimation CRAWLING_MOVE = RawAnimation.begin().thenLoop("animation.base.crawling_move");
+    private static final RawAnimation TAIL = RawAnimation.begin().thenLoop("animation.base.tail");
 
     @Unique
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
@@ -155,6 +156,39 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     }
 
     @Unique
+    private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
+
+        AbstractClientPlayer player = (AbstractClientPlayer) state.getAnimatable();
+
+        return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+
+            String race = data.getCharacter().getRace();
+
+            boolean hasTail = race.equals("saiyan") ||
+                    race.equals("frostdemon") ||
+                    race.equals("bioandroid");
+
+            if (!hasTail) {
+                return PlayState.STOP;
+            }
+//
+//            // 2. CONFLICTO DE MOVIMIENTO
+//            // Si el jugador camina/corre, generalmente la animación "walk" ya incluye el movimiento de la cola.
+//            // Por lo tanto, detenemos esta animación "idle" para que no peleen entre sí.
+//            if (state.isMoving()) {
+//                return PlayState.STOP;
+//            }
+//
+//            // 3. REPRODUCIR (Idle)
+//            // Si tiene cola y está quieto, reproducimos la animación definida.
+            // Si NO tiene cola, paramos la animación para ahorrar recursos.
+
+            return state.setAndContinue(TAIL);
+
+        }).orElse(PlayState.STOP);
+    }
+
+    @Unique
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
         AbstractClientPlayer player = (AbstractClientPlayer) state.getAnimatable();
         AnimationController<T> ctl = state.getController();
@@ -209,6 +243,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
         registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
         registrar.add(new AnimationController<>(this, "shield_controller", 0, this::shieldPredicate));
+        registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
+
     }
 
     @Override
