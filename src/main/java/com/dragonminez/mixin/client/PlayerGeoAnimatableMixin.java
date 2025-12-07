@@ -39,8 +39,6 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     private static final RawAnimation CRAWLING = RawAnimation.begin().thenLoop("animation.base.crawling");
     private static final RawAnimation CRAWLING_MOVE = RawAnimation.begin().thenLoop("animation.base.crawling_move");
 
-
-
     @Unique
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
@@ -48,13 +46,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     private boolean useAttack2 = false;
 
     @Unique
-    private int lastAttackTime = 0;
-
-    @Unique
     private boolean isPlayingAttack = false;
 
-    @Unique
-    private int attackAnimStartTime = 0;
 
     @Unique
     private boolean isCreativeFlying = false;
@@ -165,24 +158,12 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
         AbstractClientPlayer player = (AbstractClientPlayer) state.getAnimatable();
         AnimationController<T> ctl = state.getController();
-        RawAnimation playing = ctl.getCurrentRawAnimation();
 
         if (player.attackAnim > 0 && !isPlacingBlock(player)) {
-            int currentTime = player.tickCount;
             if (!isPlayingAttack) {
-                int timeSinceLastAttack = currentTime - lastAttackTime;
-                if (timeSinceLastAttack > 40) {
-                    useAttack2 = false;
-                } else if (timeSinceLastAttack >= 10) {
-                    useAttack2 = !useAttack2;
-                } else {
-                    useAttack2 = false;
-                }
-
-                lastAttackTime = currentTime;
-                attackAnimStartTime = currentTime;
                 isPlayingAttack = true;
                 ctl.setAnimation(useAttack2 ? ATTACK2 : ATTACK);
+                useAttack2 = !useAttack2;
             }
             return PlayState.CONTINUE;
         } else {
