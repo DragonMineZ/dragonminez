@@ -14,6 +14,12 @@ public class RaceCharacterConfig {
     @JsonProperty("use_vanilla_skin")
     private boolean useVanillaSkin = false;
 
+    @JsonProperty("custom_model")
+    private String customModel = "";
+
+    public String getCustomModel() { return customModel; }
+    public void setCustomModel(String customModel) { this.customModel = customModel; }
+
     @JsonProperty("default_body_type")
     private int defaultBodyType = 0;
 
@@ -24,25 +30,25 @@ public class RaceCharacterConfig {
     private int defaultEyesType = 0;
 
     @JsonProperty("default_body_color")
-    private int defaultBodyColor = 0;
+    private String defaultBodyColor = "#000000";
 
     @JsonProperty("default_body_color_2")
-    private int defaultBodyColor2 = 0;
+    private String defaultBodyColor2 = "#000000";
 
     @JsonProperty("default_body_color_3")
-    private int defaultBodyColor3 = 0;
+    private String defaultBodyColor3 = "#000000";
 
     @JsonProperty("default_hair_color")
-    private int defaultHairColor = 921617;
+    private String defaultHairColor = "#0E1051";
 
     @JsonProperty("default_eye1_color")
-    private int defaultEye1Color = 0;
+    private String defaultEye1Color = "#000000";
 
     @JsonProperty("default_eye2_color")
-    private int defaultEye2Color = 0;
+    private String defaultEye2Color = "#000000";
 
     @JsonProperty("default_aura_color")
-    private int defaultAuraColor = 8388607;
+    private String defaultAuraColor = "#7FFFFF";
 
     public RaceCharacterConfig() {}
 
@@ -52,13 +58,13 @@ public class RaceCharacterConfig {
     public int getDefaultBodyType() { return defaultBodyType; }
     public int getDefaultHairType() { return defaultHairType; }
     public int getDefaultEyesType() { return defaultEyesType; }
-    public int getDefaultBodyColor() { return defaultBodyColor; }
-    public int getDefaultBodyColor2() { return defaultBodyColor2; }
-    public int getDefaultBodyColor3() { return defaultBodyColor3; }
-    public int getDefaultHairColor() { return defaultHairColor; }
-    public int getDefaultEye1Color() { return defaultEye1Color; }
-    public int getDefaultEye2Color() { return defaultEye2Color; }
-    public int getDefaultAuraColor() { return defaultAuraColor; }
+    public String getDefaultBodyColor() { return defaultBodyColor; }
+    public String getDefaultBodyColor2() { return defaultBodyColor2; }
+    public String getDefaultBodyColor3() { return defaultBodyColor3; }
+    public String getDefaultHairColor() { return defaultHairColor; }
+    public String getDefaultEye1Color() { return defaultEye1Color; }
+    public String getDefaultEye2Color() { return defaultEye2Color; }
+    public String getDefaultAuraColor() { return defaultAuraColor; }
 
     public void setRaceName(String raceName) { this.raceName = raceName; }
     public void setHasGender(boolean hasGender) { this.hasGender = hasGender; }
@@ -66,12 +72,11 @@ public class RaceCharacterConfig {
     public void setDefaultBodyType(int defaultBodyType) { this.defaultBodyType = defaultBodyType; }
     public void setDefaultHairType(int defaultHairType) { this.defaultHairType = defaultHairType; }
     public void setDefaultEyesType(int defaultEyesType) { this.defaultEyesType = defaultEyesType; }
-    public void setDefaultBodyColor(int defaultBodyColor) { this.defaultBodyColor = defaultBodyColor; }
-    public void setDefaultBodyColor2(int defaultBodyColor2) { this.defaultBodyColor2 = defaultBodyColor2; }
-    public void setDefaultBodyColor3(int defaultBodyColor3) { this.defaultBodyColor3 = defaultBodyColor3; }
-    public void setDefaultHairColor(int defaultHairColor) { this.defaultHairColor = defaultHairColor; }
-    public void setDefaultEye1Color(int defaultEye1Color) { this.defaultEye1Color = defaultEye1Color; }
-    public void setDefaultEye2Color(int defaultEye2Color) { this.defaultEye2Color = defaultEye2Color; }
-    public void setDefaultAuraColor(int defaultAuraColor) { this.defaultAuraColor = defaultAuraColor; }
+    public void setDefaultBodyColor(String defaultBodyColor) { this.defaultBodyColor = defaultBodyColor; }
+    public void setDefaultBodyColor2(String defaultBodyColor2) { this.defaultBodyColor2 = defaultBodyColor2; }
+    public void setDefaultBodyColor3(String defaultBodyColor3) { this.defaultBodyColor3 = defaultBodyColor3; }
+    public void setDefaultHairColor(String defaultHairColor) { this.defaultHairColor = defaultHairColor; }
+    public void setDefaultEye1Color(String defaultEye1Color) { this.defaultEye1Color = defaultEye1Color; }
+    public void setDefaultEye2Color(String defaultEye2Color) { this.defaultEye2Color = defaultEye2Color; }
+    public void setDefaultAuraColor(String defaultAuraColor) { this.defaultAuraColor = defaultAuraColor; }
 }
-

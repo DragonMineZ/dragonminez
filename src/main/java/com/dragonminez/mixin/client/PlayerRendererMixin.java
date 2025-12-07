@@ -5,9 +5,10 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.client.model.PlayerBaseModel;
 import com.dragonminez.client.model.PlayerFemaleModel;
 import com.dragonminez.client.render.PlayerRenderModel;
-import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -27,16 +28,16 @@ import java.util.Map;
 public abstract class PlayerRendererMixin {
 
     @Unique
-    private static EntityRendererProvider.Context dmzctx;
+    private static EntityRendererProvider.Context dragonminez_context;
 
     @Unique
     @SuppressWarnings("rawtypes")
-    private static final Map<Integer, GeoEntityRenderer> DMZ_RENDERER = new HashMap<>();
+    private static final Map<Integer, GeoEntityRenderer> dragonminez_renderers = new HashMap<>();
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void captureContext(EntityRendererProvider.Context ctx, boolean slim, CallbackInfo ci) {
-        if (dmzctx == null) {
-            dmzctx = ctx;
+    private void onInit(EntityRendererProvider.Context ctx, boolean slim, CallbackInfo ci) {
+        if (dragonminez_context == null) {
+            dragonminez_context = ctx;
         }
     }
 
@@ -55,75 +56,54 @@ public abstract class PlayerRendererMixin {
             CallbackInfo ci
     ) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-
             int raceId = data.getCharacter().getRace();
-
             String gender = data.getCharacter().getGender();
-            boolean isSlim = player.getModelName().equals("slim");
-            int bodyType = data.getCharacter().getBodyType();
 
             String rendererKey = raceId + "_" + gender;
             int rendererId = rendererKey.hashCode();
 
             @SuppressWarnings("rawtypes")
-            GeoEntityRenderer morphRenderer = DMZ_RENDERER.get(rendererId);
+            GeoEntityRenderer morphRenderer = dragonminez_renderers.get(rendererId);
 
             if (morphRenderer == null) {
-                if (dmzctx == null) return;
+                if (dragonminez_context == null) return;
 
-                morphRenderer = createRendererForRace(raceId, gender, bodyType, isSlim, dmzctx);
-                DMZ_RENDERER.put(rendererId, morphRenderer);
+                morphRenderer = dragonminez_createRendererForRace(raceId, gender, dragonminez_context);
+                dragonminez_renderers.put(rendererId, morphRenderer);
             }
 
-            if (morphRenderer != null) {
-                ci.cancel();
-
-                @SuppressWarnings({"unchecked", "rawtypes"})
-                GeoEntityRenderer renderer = morphRenderer;
-                renderer.render(
-                        player,
-                        entityYaw,
-                        partialTicks,
-                        poseStack,
-                        bufferSource,
-                        packedLight
-                );
-            }
+            ci.cancel();
+            morphRenderer.render(player, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
         });
     }
 
     @Unique
-    @SuppressWarnings("rawtypes")
-    private GeoEntityRenderer createRendererForRace(int raceId, String gender, int bodyType, boolean isSlim, EntityRendererProvider.Context ctx) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private GeoEntityRenderer dragonminez_createRendererForRace(int raceId, String gender, EntityRendererProvider.Context ctx) {
+        String raceName = dragonminez_getRaceNameById(raceId);
+        RaceCharacterConfig raceConfig = com.dragonminez.common.config.ConfigManager.getRaceCharacter(raceName);
+        String customModel = raceConfig.getCustomModel();
 
-        LogUtil.info(Env.COMMON, "Raza: " + raceId + ", BodyType: " + bodyType + ", isSlim: " + isSlim + ". Creando renderer.");
+        LogUtil.info(Env.CLIENT, "Creating renderer for race: " + raceName + ", CustomModel: " + (customModel != null ? customModel : "none"));
 
-        if (bodyType == 0 && (raceId == Character.RACE_HUMAN || raceId == Character.RACE_SAIYAN)) {
-            if (isSlim) {
-                return new PlayerRenderModel(ctx, new PlayerFemaleModel());
-            } else {
-                return new PlayerRenderModel(ctx, new PlayerBaseModel());
+        try {
+            if (Character.GENDER_FEMALE.equals(gender) && (customModel == null || customModel.isEmpty())) {
+                 return new PlayerRenderModel(ctx, new PlayerFemaleModel(raceName, customModel));
             }
-        }
-
-        boolean isFemale = Character.GENDER_FEMALE.equals(gender);
-
-        switch (raceId) {
-            case Character.RACE_HUMAN:
-            case Character.RACE_SAIYAN:
-            case Character.RACE_MAJIN:
-                if (isFemale) {
-                    return new PlayerRenderModel(ctx, new PlayerFemaleModel());
-                } else {
-                    return new PlayerRenderModel(ctx, new PlayerBaseModel());
-                }
-            case Character.RACE_NAMEKIAN:
-            case Character.RACE_FROST_DEMON:
-            case Character.RACE_BIO_ANDROID:
-                return new PlayerRenderModel(ctx, new PlayerBaseModel());
-            default:
-                return null;
+            PlayerBaseModel model = new PlayerBaseModel(raceName, customModel);
+            return new PlayerRenderModel(ctx, model);
+        } catch (Exception e) {
+            LogUtil.error(Env.CLIENT, "Failed to create renderer for race " + raceName + ". Using default. Error: " + e.getMessage());
+            return new PlayerRenderModel(ctx, new PlayerBaseModel());
         }
     }
-}
 
+    @Unique
+    private String dragonminez_getRaceNameById(int raceId) {
+        java.util.List<String> raceNames = com.dragonminez.common.config.ConfigManager.getLoadedRaces();
+        if (raceId >= 0 && raceId < raceNames.size()) {
+            return raceNames.get(raceId);
+        }
+        return "human";
+    }
+}

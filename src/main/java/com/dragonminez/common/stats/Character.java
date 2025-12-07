@@ -28,13 +28,13 @@ public class Character {
     private int hairId;
     private int bodyType;
     private int eyesType;
-    private int bodyColor;
-    private int bodyColor2;
-    private int bodyColor3;
-    private int hairColor;
-    private int eye1Color;
-    private int eye2Color;
-    private int auraColor;
+    private String bodyColor;
+    private String bodyColor2;
+    private String bodyColor3;
+    private String hairColor;
+    private String eye1Color;
+    private String eye2Color;
+    private String auraColor;
 
     public Character() {
         this.race = RACE_HUMAN;
@@ -60,13 +60,13 @@ public class Character {
     public int getHairId() { return hairId; }
     public int getBodyType() { return bodyType; }
     public int getEyesType() { return eyesType; }
-    public int getBodyColor() { return bodyColor; }
-    public int getBodyColor2() { return bodyColor2; }
-    public int getBodyColor3() { return bodyColor3; }
-    public int getHairColor() { return hairColor; }
-    public int getEye1Color() { return eye1Color; }
-    public int getEye2Color() { return eye2Color; }
-    public int getAuraColor() { return auraColor; }
+    public String getBodyColor() { return bodyColor; }
+    public String getBodyColor2() { return bodyColor2; }
+    public String getBodyColor3() { return bodyColor3; }
+    public String getHairColor() { return hairColor; }
+    public String getEye1Color() { return eye1Color; }
+    public String getEye2Color() { return eye2Color; }
+    public String getAuraColor() { return auraColor; }
 
     public void setRace(int race) {
         int maxRace = ConfigManager.getLoadedRaces().size() - 1;
@@ -80,13 +80,13 @@ public class Character {
     public void setHairId(int hairId) { this.hairId = hairId; }
     public void setBodyType(int bodyType) { this.bodyType = bodyType; }
     public void setEyesType(int eyesType) { this.eyesType = eyesType; }
-    public void setBodyColor(int bodyColor) { this.bodyColor = bodyColor; }
-    public void setBodyColor2(int bodyColor2) { this.bodyColor2 = bodyColor2; }
-    public void setBodyColor3(int bodyColor3) { this.bodyColor3 = bodyColor3; }
-    public void setHairColor(int hairColor) { this.hairColor = hairColor; }
-    public void setEye1Color(int eye1Color) { this.eye1Color = eye1Color; }
-    public void setEye2Color(int eye2Color) { this.eye2Color = eye2Color; }
-    public void setAuraColor(int auraColor) { this.auraColor = auraColor; }
+    public void setBodyColor(String bodyColor) { this.bodyColor = bodyColor; }
+    public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
+    public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
+    public void setHairColor(String hairColor) { this.hairColor = hairColor; }
+    public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
+    public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
+    public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
 
     public String getRaceName() {
         List<String> raceNames = ConfigManager.getLoadedRaces();
@@ -125,13 +125,13 @@ public class Character {
         tag.putInt("HairId", hairId);
         tag.putInt("BodyType", bodyType);
         tag.putInt("EyesType", eyesType);
-        tag.putInt("BodyColor", bodyColor);
-        tag.putInt("BodyColor2", bodyColor2);
-        tag.putInt("BodyColor3", bodyColor3);
-        tag.putInt("HairColor", hairColor);
-        tag.putInt("Eye1Color", eye1Color);
-        tag.putInt("Eye2Color", eye2Color);
-        tag.putInt("AuraColor", auraColor);
+        tag.putString("BodyColor", bodyColor);
+        tag.putString("BodyColor2", bodyColor2);
+        tag.putString("BodyColor3", bodyColor3);
+        tag.putString("HairColor", hairColor);
+        tag.putString("Eye1Color", eye1Color);
+        tag.putString("Eye2Color", eye2Color);
+        tag.putString("AuraColor", auraColor);
         return tag;
     }
 
@@ -142,13 +142,13 @@ public class Character {
         this.hairId = tag.getInt("HairId");
         this.bodyType = tag.getInt("BodyType");
         this.eyesType = tag.getInt("EyesType");
-        this.bodyColor = tag.getInt("BodyColor");
-        this.bodyColor2 = tag.getInt("BodyColor2");
-        this.bodyColor3 = tag.getInt("BodyColor3");
-        this.hairColor = tag.getInt("HairColor");
-        this.eye1Color = tag.getInt("Eye1Color");
-        this.eye2Color = tag.getInt("Eye2Color");
-        this.auraColor = tag.getInt("AuraColor");
+        this.bodyColor = tag.getString("BodyColor");
+        this.bodyColor2 = tag.getString("BodyColor2");
+        this.bodyColor3 = tag.getString("BodyColor3");
+        this.hairColor = tag.getString("HairColor");
+        this.eye1Color = tag.getString("Eye1Color");
+        this.eye2Color = tag.getString("Eye2Color");
+        this.auraColor = tag.getString("AuraColor");
     }
 
     public void copyFrom(Character other) {
@@ -167,4 +167,3 @@ public class Character {
         this.auraColor = other.auraColor;
     }
 }
-

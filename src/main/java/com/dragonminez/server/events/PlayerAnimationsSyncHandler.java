@@ -13,10 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Evento del servidor que detecta cambios en el estado de vuelo creativo
- * y sincroniza con todos los clientes cercanos
- */
 @Mod.EventBusSubscriber
 public class PlayerAnimationsSyncHandler {
 
@@ -34,12 +30,10 @@ public class PlayerAnimationsSyncHandler {
 
         Boolean lastState = lastFlyingState.get(uuid);
         if (lastState == null || lastState != isCurrentlyFlying) {
-            // Estado cambió, enviar paquete a todos los jugadores cercanos
             lastFlyingState.put(uuid, isCurrentlyFlying);
 
             PlayerAnimationsSync packet = new PlayerAnimationsSync(uuid, isCurrentlyFlying);
 
-            // Enviar a todos los jugadores que están rastreando a este jugador
             NetworkHandler.INSTANCE.send(
                 PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> serverPlayer),
                 packet

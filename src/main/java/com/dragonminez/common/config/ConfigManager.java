@@ -180,6 +180,7 @@ public class ConfigManager {
         RaceCharacterConfig config = new RaceCharacterConfig();
         config.setRaceName(raceName);
         config.setUseVanillaSkin(false);
+        config.setCustomModel("");
 
         if (isDefault) {
             boolean hasGender = RACES_WITH_GENDER.contains(raceName.toLowerCase());

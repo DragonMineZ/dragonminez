@@ -7,29 +7,47 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animation.*;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
 public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
+    private final ResourceLocation modelLocation;
+    private final ResourceLocation textureLocation;
+    private final ResourceLocation animationLocation;
 
+    public PlayerBaseModel(String raceName, String customModel) {
+        boolean isCustomModel = customModel != null && !customModel.isEmpty();
+
+        if (isCustomModel) {
+            String textureFileName = customModel.replace(".geo.json", ".png");
+            this.modelLocation = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/"  + customModel);
+            this.textureLocation = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + textureFileName);
+        } else {
+            this.modelLocation = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/base.geo.json");
+            this.textureLocation = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/krillin.png");
+        }
+
+        this.animationLocation = new ResourceLocation(Reference.MOD_ID, "animations/entity/races/base.animation.json");
+    }
 
     public PlayerBaseModel() {
+        this("human", "");
     }
 
     @Override
     public ResourceLocation getModelResource(T t) {
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/races/base.geo.json");
+        return modelLocation;
     }
 
     @Override
     public ResourceLocation getTextureResource(T t) {
-        return new ResourceLocation(Reference.MOD_ID, "textures/entity/races/krillin.png");
+        return textureLocation;
     }
 
     @Override
     public ResourceLocation getAnimationResource(T t) {
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/races/base.animation.json");
+        return animationLocation;
     }
 
     @Override
@@ -44,8 +62,6 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
             head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
         }
 
-        // Animaciones procedurales adicionales (arco, ballesta, etc.)
-        // Solo se aplican cuando el jugador está usando estos items específicos
         try {
             float partialTick = animationState.getPartialTick();
             float ageInTicks = (float) animatable.getTick(animatable);
@@ -60,9 +76,7 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
                 RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
             }
         } catch (Exception e) {
-            // Ignorar errores de animación para evitar crashes
+            // Fail silently.
         }
     }
-
-
 }

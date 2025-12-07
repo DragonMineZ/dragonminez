@@ -10,10 +10,6 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-/**
- * Paquete S2C para sincronizar el estado de vuelo creativo de los jugadores
- * Permite que otros clientes vean la animación de vuelo cuando un jugador vuela en creativo
- */
 public class PlayerAnimationsSync {
 	private final UUID playerUUID;
 	private final boolean isFlying;
