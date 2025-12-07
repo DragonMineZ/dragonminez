@@ -9,7 +9,6 @@
   "gui.dragonminez.character_creation.class": "Class: %s",
   "gui.dragonminez.character_creation.gender": "Gender: %s",
   "gui.dragonminez.character_creation.confirm": "Create Character",
-  "gui.dragonminez.character_creation.gender_na": "N/A",
 
   "gui.dragonminez.character_stats.title": "Statistics",
   "gui.dragonminez.character_stats.error": "Error: Could not load statistics",
@@ -52,5 +51,21 @@
   "command.dragonminez.stats.info.status.alive": "Alive",
   "command.dragonminez.stats.info.status.dead": "Dead",
   "command.dragonminez.stats.info.character.created": "Created",
-  "command.dragonminez.stats.info.character.not_created": "Not Created"
+  "command.dragonminez.stats.info.character.not_created": "Not Created",
+
+  "gui.dragonminez.customization.eyes": "Eyes",
+  "gui.dragonminez.customization.type": "Type %s",
+  "gui.dragonminez.customization.body_type": "Body Type",
+  "gui.dragonminez.customization.body_type.default": "Default",
+  "gui.dragonminez.customization.body_type.custom": "Custom",
+  "gui.dragonminez.customization.hair": "Hair",
+  "gui.dragonminez.customization.gender": "Gender",
+  "gui.dragonminez.customization.class": "Class",
+  "gui.dragonminez.customization.body": "Body",
+  "gui.dragonminez.customization.aura": "Aura",
+  "gui.dragonminez.customization.base_stats": "Base Stats",
+  "gui.dragonminez.customization.back": "Back",
+  "gui.dragonminez.customization.next": "Next",
+  "gui.dragonminez.customization.confirm": "Confirm",
+  "gui.dragonminez.customization.select": "Select"
 }

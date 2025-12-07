@@ -180,11 +180,113 @@ public class ConfigManager {
         if (isDefault) {
             boolean hasGender = RACES_WITH_GENDER.contains(raceName.toLowerCase());
             config.setHasGender(hasGender);
+
+            switch (raceName.toLowerCase()) {
+                case "human" -> setupHumanCharacter(config);
+                case "saiyan" -> setupSaiyanCharacter(config);
+                case "namekian" -> setupNamekianCharacter(config);
+                case "frostdemon" -> setupFrostDemonCharacter(config);
+                case "bioandroid" -> setupBioAndroidCharacter(config);
+                case "majin" -> setupMajinCharacter(config);
+                default -> setupDefaultCharacter(config);
+            }
         } else {
             config.setHasGender(true);
+            setupDefaultCharacter(config);
         }
 
         return config;
+    }
+
+    private static void setupHumanCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultBodyColor("#F5D5A6");
+        config.setDefaultBodyColor2("#F5D5A6");
+        config.setDefaultBodyColor3("#F5D5A6");
+        config.setDefaultHairColor("#000000");
+        config.setDefaultEye1Color("#000000");
+        config.setDefaultEye2Color("#000000");
+        config.setDefaultAuraColor("#FFFFFF");
+    }
+
+    private static void setupSaiyanCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultBodyColor("#F5D5A6");
+        config.setDefaultBodyColor2("#F5D5A6");
+        config.setDefaultBodyColor3("#F5D5A6");
+        config.setDefaultHairColor("#000000");
+        config.setDefaultEye1Color("#000000");
+        config.setDefaultEye2Color("#000000");
+        config.setDefaultAuraColor("#FFFFFF");
+    }
+
+    private static void setupNamekianCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultBodyColor("#3D7C3F");
+        config.setDefaultBodyColor2("#FFCC99");
+        config.setDefaultBodyColor3("#FF99CC");
+        config.setDefaultHairColor("#3D7C3F");
+        config.setDefaultEye1Color("#000000");
+        config.setDefaultEye2Color("#000000");
+        config.setDefaultAuraColor("#7FFF00");
+    }
+
+    private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultBodyColor("#F5F5FF");
+        config.setDefaultBodyColor2("#B366CC");
+        config.setDefaultBodyColor3("#660099");
+        config.setDefaultHairColor("#F5F5FF");
+        config.setDefaultEye1Color("#FF0000");
+        config.setDefaultEye2Color("#000000");
+        config.setDefaultAuraColor("#B366CC");
+    }
+
+    private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultBodyColor("#8BC34A");
+        config.setDefaultBodyColor2("#000000");
+        config.setDefaultBodyColor3("#FF9800");
+        config.setDefaultHairColor("#8BC34A");
+        config.setDefaultEye1Color("#FF0000");
+        config.setDefaultEye2Color("#000000");
+        config.setDefaultAuraColor("#8BC34A");
+    }
+
+    private static void setupMajinCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultBodyColor("#FF69B4");
+        config.setDefaultBodyColor2("#FF69B4");
+        config.setDefaultBodyColor3("#FF69B4");
+        config.setDefaultHairColor("#FF69B4");
+        config.setDefaultEye1Color("#000000");
+        config.setDefaultEye2Color("#000000");
+        config.setDefaultAuraColor("#FF69B4");
+    }
+
+    private static void setupDefaultCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultBodyColor("#F5D5A6");
+        config.setDefaultBodyColor2("#F5D5A6");
+        config.setDefaultBodyColor3("#F5D5A6");
+        config.setDefaultHairColor("#3D2914");
+        config.setDefaultEye1Color("#4A3728");
+        config.setDefaultEye2Color("#4A3728");
+        config.setDefaultAuraColor("#FFFFFF");
     }
 
     private static RaceStatsConfig createDefaultStatsConfig(String raceName, boolean isVanilla) {

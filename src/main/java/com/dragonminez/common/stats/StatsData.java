@@ -136,10 +136,23 @@ public class StatsData {
         this.hasInitializedHealth = other.hasInitializedHealth;
     }
 
-    public void initializeWithRaceAndClass(String raceName, String characterClass, String gender) {
+    public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
+                                           int hairId, int bodyType, int eyesType,
+                                           String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
+                                           String eye1Color, String eye2Color, String auraColor) {
         character.setRace(raceName);
         character.setGender(gender);
         character.setCharacterClass(characterClass);
+        character.setHairId(hairId);
+        character.setBodyType(bodyType);
+        character.setEyesType(eyesType);
+        character.setHairColor(hairColor);
+        character.setBodyColor(bodyColor);
+        character.setBodyColor2(bodyColor2);
+        character.setBodyColor3(bodyColor3);
+        character.setEye1Color(eye1Color);
+        character.setEye2Color(eye2Color);
+        character.setAuraColor(auraColor);
         status.setCreatedCharacter(true);
 
         RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);

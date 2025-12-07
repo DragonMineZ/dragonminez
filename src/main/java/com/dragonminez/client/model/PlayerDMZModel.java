@@ -46,7 +46,6 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
             int bodyType = data.getCharacter().getBodyType();
 
-            // Si es una raza estándar (Human, Saiyan, Namek)
             boolean isStandardRace = this.raceName.equals("human") ||
                     this.raceName.equals("saiyan");
 

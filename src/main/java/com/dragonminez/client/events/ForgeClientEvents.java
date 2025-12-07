@@ -1,8 +1,8 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.RaceSelectionScreen;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.client.gui.CharacterCreationScreen;
 import com.dragonminez.client.gui.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
@@ -34,7 +34,7 @@ public class ForgeClientEvents {
                 if (data.getStatus().hasCreatedCharacter()) {
                     mc.setScreen(new CharacterStatsScreen());
                 } else {
-                    mc.setScreen(new CharacterCreationScreen());
+                    mc.setScreen(new RaceSelectionScreen(null, data.getCharacter()));
                 }
             });
         }
