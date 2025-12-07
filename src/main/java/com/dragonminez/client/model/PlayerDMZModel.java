@@ -2,6 +2,8 @@ package com.dragonminez.client.model;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.RenderUtil;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -11,33 +13,59 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
-public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
-    private final ResourceLocation modelLocation;
+public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
+
+    private static final ResourceLocation BASE_DEFAULT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/dmzbase.geo.json");
+    private static final ResourceLocation BASE_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/dmzbaseslim.geo.json");
+
     private final ResourceLocation textureLocation;
     private final ResourceLocation animationLocation;
+    private final String raceName;
+    private final String customModel;
 
-    public PlayerBaseModel(String raceName, String customModel) {
-        boolean isCustomModel = customModel != null && !customModel.isEmpty();
+    public PlayerDMZModel(String raceName, String customModel) {
+        this.raceName = raceName.toLowerCase();
+        this.customModel = customModel;
 
-        if (isCustomModel) {
-            String textureFileName = customModel.replace(".geo.json", ".png");
-            this.modelLocation = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/"  + customModel);
-            this.textureLocation = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + textureFileName);
-        } else {
-            this.modelLocation = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/base.geo.json");
-            this.textureLocation = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/krillin.png");
-        }
-
+        this.textureLocation = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/krillin.png");
         this.animationLocation = new ResourceLocation(Reference.MOD_ID, "animations/entity/races/base.animation.json");
     }
 
-    public PlayerBaseModel() {
+    public PlayerDMZModel() {
         this("human", "");
     }
 
     @Override
-    public ResourceLocation getModelResource(T t) {
-        return modelLocation;
+    public ResourceLocation getModelResource(T player) {
+
+        if (this.customModel != null && !this.customModel.isEmpty()) {
+            return new ResourceLocation(Reference.MOD_ID, "geo/entity/races/" + this.customModel);
+        }
+
+        return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+
+            int bodyType = data.getCharacter().getBodyType();
+
+            // Si es una raza estándar (Human, Saiyan, Namek)
+            boolean isStandardRace = this.raceName.equals("human") ||
+                    this.raceName.equals("saiyan");
+
+            if (bodyType == 0 && isStandardRace) {
+
+                if (player.getModelName().equals("slim")) {
+                    return BASE_SLIM;
+                } else {
+                    return BASE_DEFAULT;
+                }
+            }
+            else {
+                return switch (this.raceName) {
+                    case "human", "saiyan", "namekian" -> BASE_DEFAULT;
+                    default -> new ResourceLocation(Reference.MOD_ID, "geo/entity/races/" + this.raceName + ".geo.json");
+                };
+            }
+
+        }).orElse(BASE_DEFAULT);
     }
 
     @Override

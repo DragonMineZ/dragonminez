@@ -2,9 +2,9 @@ package com.dragonminez.mixin.client;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.client.model.PlayerBaseModel;
-import com.dragonminez.client.model.PlayerFemaleModel;
-import com.dragonminez.client.render.PlayerRenderModel;
+import com.dragonminez.client.model.PlayerDMZModel;
+import com.dragonminez.client.render.PlayerDMZRenderer;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -62,6 +62,7 @@ public abstract class PlayerRendererMixin {
             String form = data.getCharacter().getCurrentForm();
 
             String rendererKey = race + "_" + gender;
+
             if (formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty()) {
                 rendererKey += "_" + formGroup + "_" + form;
             }
@@ -98,11 +99,11 @@ public abstract class PlayerRendererMixin {
     @Unique
     @SuppressWarnings({"rawtypes", "unchecked"})
     private GeoEntityRenderer dragonminez_createRendererForRace(String race, String gender, String formGroup, String form, EntityRendererProvider.Context ctx) {
-        RaceCharacterConfig raceConfig = com.dragonminez.common.config.ConfigManager.getRaceCharacter(race);
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
         String customModel = raceConfig.getCustomModel();
 
         if (formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty()) {
-            var formData = com.dragonminez.common.config.ConfigManager.getForm(race, formGroup, form);
+            var formData = ConfigManager.getForm(race, formGroup, form);
             if (formData != null && formData.hasCustomModel()) {
                 customModel = formData.getCustomModel();
                 LogUtil.info(Env.CLIENT, "Using form custom model for race: " + race + ", form: " + formGroup + "." + form + ", model: " + customModel);
@@ -115,13 +116,13 @@ public abstract class PlayerRendererMixin {
 
         try {
             if (Character.GENDER_FEMALE.equals(gender) && (customModel == null || customModel.isEmpty())) {
-                 return new PlayerRenderModel(ctx, new PlayerFemaleModel(race, customModel));
+                 return new PlayerDMZRenderer(ctx, new PlayerDMZModel(race, customModel));
             }
-            PlayerBaseModel model = new PlayerBaseModel(race, customModel);
-            return new PlayerRenderModel(ctx, model);
+            PlayerDMZModel model = new PlayerDMZModel(race, customModel);
+            return new PlayerDMZRenderer(ctx, model);
         } catch (Exception e) {
             LogUtil.error(Env.CLIENT, "Failed to create renderer for race " + race + ". Using default. Error: " + e.getMessage());
-            return new PlayerRenderModel(ctx, new PlayerBaseModel());
+            return new PlayerDMZRenderer(ctx, new PlayerDMZModel());
         }
     }
 }
