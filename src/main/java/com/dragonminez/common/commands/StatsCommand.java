@@ -103,6 +103,18 @@ public class StatsCommand {
                         .then(Commands.literal("reset")
                                 .executes(ctx -> resetStats(ctx.getSource(),
                                         EntityArgument.getPlayer(ctx, "player"))))
+
+                        .then(Commands.literal("transform")
+                                .then(Commands.argument("group", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                        .then(Commands.argument("form", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                                .executes(ctx -> setTransform(ctx.getSource(),
+                                                        EntityArgument.getPlayer(ctx, "player"),
+                                                        com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "group"),
+                                                        com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "form"))))))
+
+                        .then(Commands.literal("untransform")
+                                .executes(ctx -> clearTransform(ctx.getSource(),
+                                        EntityArgument.getPlayer(ctx, "player"))))
                 )
         );
     }
@@ -211,5 +223,31 @@ public class StatsCommand {
                 player.getName().getString()), true);
         return 1;
     }
-}
 
+    private static int setTransform(CommandSourceStack source, ServerPlayer player, String group, String form) {
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+            String raceName = data.getCharacter().getRaceName();
+
+            if (!ConfigManager.hasForm(raceName, group, form)) {
+                source.sendFailure(Component.literal("Form " + group + "." + form + " does not exist for race " + raceName));
+                return;
+            }
+
+            data.getCharacter().setActiveForm(group, form);
+            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+
+            source.sendSuccess(() -> Component.literal("§a" + player.getName().getString() + " transformed into " + group + "." + form), true);
+        });
+        return 1;
+    }
+
+    private static int clearTransform(CommandSourceStack source, ServerPlayer player) {
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+            data.getCharacter().clearActiveForm();
+            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+
+            source.sendSuccess(() -> Component.literal("§a" + player.getName().getString() + " returned to base form"), true);
+        });
+        return 1;
+    }
+}

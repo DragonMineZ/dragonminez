@@ -69,10 +69,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
 
-            int raceId = data.getCharacter().getRace();
+            String raceName = data.getCharacter().getRace();
 
             // Si no es humano no hace ninguna animacion, esto lo usare luego para la raza majin o no se
-//            if (raceId != Character.RACE_HUMAN) {
+//            if (!raceName.equals("human")) {
 //                return PlayState.STOP;
 //            }
 

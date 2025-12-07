@@ -39,8 +39,11 @@ public class StatsData {
         int totalStats = stats.getTotalStats();
 
         String raceName = character.getRaceName();
+        String characterClass = character.getCharacterClass();
+
         RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-        RaceStatsConfig.BaseStats baseStats = raceConfig.getBaseStats();
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
         int initialStats = baseStats.getStrength() + baseStats.getStrikePower() +
                           baseStats.getResistance() + baseStats.getVitality() +
@@ -133,15 +136,15 @@ public class StatsData {
         this.hasInitializedHealth = other.hasInitializedHealth;
     }
 
-    public void initializeWithRaceAndClass(int raceId, String characterClass, String gender) {
-        character.setRace(raceId);
+    public void initializeWithRaceAndClass(String raceName, String characterClass, String gender) {
+        character.setRace(raceName);
         character.setGender(gender);
         character.setCharacterClass(characterClass);
         status.setCreatedCharacter(true);
 
-        String raceName = character.getRaceName();
         RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-        RaceStatsConfig.BaseStats baseStats = raceConfig.getBaseStats();
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
         stats.setStrength(baseStats.getStrength());
         stats.setStrikePower(baseStats.getStrikePower());
@@ -158,8 +161,11 @@ public class StatsData {
 
     public double getStatScaling(String statName) {
         String raceName = character.getRaceName();
+        String characterClass = character.getCharacterClass();
+
         RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-        RaceStatsConfig.StatScaling scaling = raceConfig.getStatScaling();
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 
         return switch (statName.toUpperCase()) {
             case "STR" -> scaling.getStrengthScaling();
@@ -170,6 +176,15 @@ public class StatsData {
             case "PWR" -> scaling.getKiPowerScaling();
             case "ENE" -> scaling.getEnergyScaling();
             default -> 1.0;
+        };
+    }
+
+    private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
+        return switch (characterClass.toLowerCase()) {
+            case "warrior" -> config.getWarrior();
+            case "spiritualist" -> config.getSpiritualist();
+            case "martialartist" -> config.getMartialArtist();
+            default -> config.getWarrior();
         };
     }
 

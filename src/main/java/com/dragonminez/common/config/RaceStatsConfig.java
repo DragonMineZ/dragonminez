@@ -5,39 +5,63 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RaceStatsConfig {
 
-    @JsonProperty("race_name")
-    private String raceName;
+    @JsonProperty("warrior")
+    private ClassStats warrior = new ClassStats();
 
-    @JsonProperty("base_stats")
-    private BaseStats baseStats = new BaseStats();
+    @JsonProperty("spiritualist")
+    private ClassStats spiritualist = new ClassStats();
 
-    @JsonProperty("stat_scaling")
-    private StatScaling statScaling = new StatScaling();
+    @JsonProperty("martial_artist")
+    private ClassStats martialArtist = new ClassStats();
 
     public RaceStatsConfig() {}
 
-    public String getRaceName() {
-        return raceName;
+    public ClassStats getWarrior() {
+        return warrior;
     }
 
-    public void setRaceName(String raceName) {
-        this.raceName = raceName;
+    public void setWarrior(ClassStats warrior) {
+        this.warrior = warrior;
     }
 
-    public BaseStats getBaseStats() {
-        return baseStats;
+    public ClassStats getSpiritualist() {
+        return spiritualist;
     }
 
-    public void setBaseStats(BaseStats baseStats) {
-        this.baseStats = baseStats;
+    public void setSpiritualist(ClassStats spiritualist) {
+        this.spiritualist = spiritualist;
     }
 
-    public StatScaling getStatScaling() {
-        return statScaling;
+    public ClassStats getMartialArtist() {
+        return martialArtist;
     }
 
-    public void setStatScaling(StatScaling statScaling) {
-        this.statScaling = statScaling;
+    public void setMartialArtist(ClassStats martialArtist) {
+        this.martialArtist = martialArtist;
+    }
+
+    public static class ClassStats {
+        @JsonProperty("base_stats")
+        private BaseStats baseStats = new BaseStats();
+
+        @JsonProperty("stat_scaling")
+        private StatScaling statScaling = new StatScaling();
+
+        public BaseStats getBaseStats() {
+            return baseStats;
+        }
+
+        public void setBaseStats(BaseStats baseStats) {
+            this.baseStats = baseStats;
+        }
+
+        public StatScaling getStatScaling() {
+            return statScaling;
+        }
+
+        public void setStatScaling(StatScaling statScaling) {
+            this.statScaling = statScaling;
+        }
     }
 
     public static class BaseStats {
@@ -82,10 +106,10 @@ public class RaceStatsConfig {
         private double strikePowerScaling = 1.0;
 
         @JsonProperty("STM_scaling")
-        private double staminaScaling = 2.0;
+        private double staminaScaling = 1.0;
 
         @JsonProperty("DEF_scaling")
-        private double defenseScaling = 0.5;
+        private double defenseScaling = 1.0;
 
         @JsonProperty("VIT_scaling")
         private double vitalityScaling = 1.0;

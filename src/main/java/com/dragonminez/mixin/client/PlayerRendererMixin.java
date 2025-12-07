@@ -56,10 +56,15 @@ public abstract class PlayerRendererMixin {
             CallbackInfo ci
     ) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            int raceId = data.getCharacter().getRace();
+            String race = data.getCharacter().getRace();
             String gender = data.getCharacter().getGender();
+            String formGroup = data.getCharacter().getCurrentFormGroup();
+            String form = data.getCharacter().getCurrentForm();
 
-            String rendererKey = raceId + "_" + gender;
+            String rendererKey = race + "_" + gender;
+            if (formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty()) {
+                rendererKey += "_" + formGroup + "_" + form;
+            }
             int rendererId = rendererKey.hashCode();
 
             @SuppressWarnings("rawtypes")
@@ -68,8 +73,21 @@ public abstract class PlayerRendererMixin {
             if (morphRenderer == null) {
                 if (dragonminez_context == null) return;
 
-                morphRenderer = dragonminez_createRendererForRace(raceId, gender, dragonminez_context);
+                morphRenderer = dragonminez_createRendererForRace(race, gender, formGroup, form, dragonminez_context);
                 dragonminez_renderers.put(rendererId, morphRenderer);
+            }
+
+            if (formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty()) {
+                var formData = data.getCharacter().getActiveFormData();
+                if (formData != null) {
+                    float scale = (float) formData.getModelScaling();
+                    poseStack.pushPose();
+                    poseStack.scale(scale, scale, scale);
+                    morphRenderer.render(player, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
+                    poseStack.popPose();
+                    ci.cancel();
+                    return;
+                }
             }
 
             ci.cancel();
@@ -79,31 +97,31 @@ public abstract class PlayerRendererMixin {
 
     @Unique
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private GeoEntityRenderer dragonminez_createRendererForRace(int raceId, String gender, EntityRendererProvider.Context ctx) {
-        String raceName = dragonminez_getRaceNameById(raceId);
-        RaceCharacterConfig raceConfig = com.dragonminez.common.config.ConfigManager.getRaceCharacter(raceName);
+    private GeoEntityRenderer dragonminez_createRendererForRace(String race, String gender, String formGroup, String form, EntityRendererProvider.Context ctx) {
+        RaceCharacterConfig raceConfig = com.dragonminez.common.config.ConfigManager.getRaceCharacter(race);
         String customModel = raceConfig.getCustomModel();
 
-        LogUtil.info(Env.CLIENT, "Creating renderer for race: " + raceName + ", CustomModel: " + (customModel != null ? customModel : "none"));
+        if (formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty()) {
+            var formData = com.dragonminez.common.config.ConfigManager.getForm(race, formGroup, form);
+            if (formData != null && formData.hasCustomModel()) {
+                customModel = formData.getCustomModel();
+                LogUtil.info(Env.CLIENT, "Using form custom model for race: " + race + ", form: " + formGroup + "." + form + ", model: " + customModel);
+            } else if (formData != null) {
+                LogUtil.info(Env.CLIENT, "Form active but no custom model, using base race model for: " + race + ", form: " + formGroup + "." + form);
+            }
+        }
+
+        LogUtil.info(Env.CLIENT, "Creating renderer for race: " + race + ", CustomModel: " + (customModel != null ? customModel : "none"));
 
         try {
             if (Character.GENDER_FEMALE.equals(gender) && (customModel == null || customModel.isEmpty())) {
-                 return new PlayerRenderModel(ctx, new PlayerFemaleModel(raceName, customModel));
+                 return new PlayerRenderModel(ctx, new PlayerFemaleModel(race, customModel));
             }
-            PlayerBaseModel model = new PlayerBaseModel(raceName, customModel);
+            PlayerBaseModel model = new PlayerBaseModel(race, customModel);
             return new PlayerRenderModel(ctx, model);
         } catch (Exception e) {
-            LogUtil.error(Env.CLIENT, "Failed to create renderer for race " + raceName + ". Using default. Error: " + e.getMessage());
+            LogUtil.error(Env.CLIENT, "Failed to create renderer for race " + race + ". Using default. Error: " + e.getMessage());
             return new PlayerRenderModel(ctx, new PlayerBaseModel());
         }
-    }
-
-    @Unique
-    private String dragonminez_getRaceNameById(int raceId) {
-        java.util.List<String> raceNames = com.dragonminez.common.config.ConfigManager.getLoadedRaces();
-        if (raceId >= 0 && raceId < raceNames.size()) {
-            return raceNames.get(raceId);
-        }
-        return "human";
     }
 }

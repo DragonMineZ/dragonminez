@@ -13,25 +13,25 @@ import java.util.function.Supplier;
 
 public class CreateCharacterC2S {
 
-    private final int raceId;
+    private final String raceName;
     private final String className;
     private final String gender;
 
-    public CreateCharacterC2S(int raceId, String className, String gender) {
-        this.raceId = raceId;
+    public CreateCharacterC2S(String raceName, String className, String gender) {
+        this.raceName = raceName;
         this.className = className;
         this.gender = gender;
     }
 
     public static void encode(CreateCharacterC2S msg, FriendlyByteBuf buf) {
-        buf.writeInt(msg.raceId);
+        buf.writeUtf(msg.raceName);
         buf.writeUtf(msg.className);
         buf.writeUtf(msg.gender);
     }
 
     public static CreateCharacterC2S decode(FriendlyByteBuf buf) {
         return new CreateCharacterC2S(
-                buf.readInt(),
+                buf.readUtf(),
                 buf.readUtf(),
                 buf.readUtf()
         );
@@ -44,10 +44,10 @@ public class CreateCharacterC2S {
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 if (!data.getStatus().hasCreatedCharacter()) {
-                    data.initializeWithRaceAndClass(msg.raceId, msg.className, msg.gender);
+                    data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender);
 
                     LogUtil.info(Env.COMMON, "Jugador {} creó personaje: Raza={}, Clase={}, Género={}",
-                            player.getName().getString(), msg.raceId, msg.className, msg.gender);
+                            player.getName().getString(), msg.raceName, msg.className, msg.gender);
 
                     NetworkHandler.sendToPlayer(new com.dragonminez.common.network.S2C.StatsSyncS2C(player), player);
                 }

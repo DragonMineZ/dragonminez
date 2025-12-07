@@ -56,7 +56,7 @@ public class StatsCapability {
             StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             });
-            NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getAllRaceStats()), serverPlayer);
+            NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getAllRaceStats(), ConfigManager.getAllRaceCharacters()), serverPlayer);
         }
         event.getEntity().refreshDimensions();
     }

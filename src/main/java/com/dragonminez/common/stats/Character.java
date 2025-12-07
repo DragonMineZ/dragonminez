@@ -1,22 +1,19 @@
 package com.dragonminez.common.stats;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
 
 public class Character {
-    private int race;
+    private String race;
     private String gender;
     private String characterClass;
 
-    public static final int RACE_HUMAN = 0;
-    public static final int RACE_SAIYAN = 1;
-    public static final int RACE_NAMEKIAN = 2;
-    public static final int RACE_FROST_DEMON = 3;
-    public static final int RACE_BIO_ANDROID = 4;
-    public static final int RACE_MAJIN = 5;
+    private String currentFormGroup = "";
+    private String currentForm = "";
 
     public static final String GENDER_MALE = "male";
     public static final String GENDER_FEMALE = "female";
@@ -37,7 +34,7 @@ public class Character {
     private String auraColor;
 
     public Character() {
-        this.race = RACE_HUMAN;
+        this.race = "human";
         this.gender = GENDER_MALE;
         this.characterClass = CLASS_WARRIOR;
 
@@ -54,9 +51,11 @@ public class Character {
         this.auraColor = config.getDefaultAuraColor();
     }
 
-    public int getRace() { return race; }
+    public String getRace() { return race; }
     public String getGender() { return gender; }
     public String getCharacterClass() { return characterClass; }
+    public String getCurrentFormGroup() { return currentFormGroup; }
+    public String getCurrentForm() { return currentForm; }
     public int getHairId() { return hairId; }
     public int getBodyType() { return bodyType; }
     public int getEyesType() { return eyesType; }
@@ -68,9 +67,12 @@ public class Character {
     public String getEye2Color() { return eye2Color; }
     public String getAuraColor() { return auraColor; }
 
-    public void setRace(int race) {
-        int maxRace = ConfigManager.getLoadedRaces().size() - 1;
-        this.race = Math.max(0, Math.min(maxRace, race));
+    public void setRace(String race) {
+        if (race != null && ConfigManager.isRaceLoaded(race)) {
+            this.race = race.toLowerCase();
+        } else {
+            this.race = "human";
+        }
         if (!canHaveGender() && !gender.equals(GENDER_MALE)) {
             this.gender = GENDER_MALE;
         }
@@ -87,13 +89,11 @@ public class Character {
     public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
     public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
     public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
+    public void setCurrentFormGroup(String currentFormGroup) { this.currentFormGroup = currentFormGroup; }
+    public void setCurrentForm(String currentForm) { this.currentForm = currentForm; }
 
     public String getRaceName() {
-        List<String> raceNames = ConfigManager.getLoadedRaces();
-        if (race >= 0 && race < raceNames.size()) {
-            return raceNames.get(race);
-        }
-        return raceNames.isEmpty() ? "human" : raceNames.get(0);
+        return race != null && !race.isEmpty() ? race : "human";
     }
 
     public static String[] getRaceNames() {
@@ -102,24 +102,14 @@ public class Character {
     }
 
     public boolean canHaveGender() {
-        String raceName = getRaceName();
-        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
         return raceConfig.hasGender();
     }
 
-    public static int getRaceIdByName(String name) {
-        List<String> raceNames = ConfigManager.getLoadedRaces();
-        for (int i = 0; i < raceNames.size(); i++) {
-            if (raceNames.get(i).equalsIgnoreCase(name)) {
-                return i;
-            }
-        }
-        return RACE_HUMAN;
-    }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Race", race);
+        tag.putString("Race", race);
         tag.putString("Gender", gender);
         tag.putString("Class", characterClass);
         tag.putInt("HairId", hairId);
@@ -132,11 +122,22 @@ public class Character {
         tag.putString("Eye1Color", eye1Color);
         tag.putString("Eye2Color", eye2Color);
         tag.putString("AuraColor", auraColor);
+        tag.putString("CurrentFormGroup", currentFormGroup);
+        tag.putString("CurrentForm", currentForm);
         return tag;
     }
 
     public void load(CompoundTag tag) {
-        this.race = tag.getInt("Race");
+        if (tag.contains("Race", 8)) {
+            this.race = tag.getString("Race");
+        } else if (tag.contains("Race", 3)) {
+            int oldRaceId = tag.getInt("Race");
+            List<String> races = ConfigManager.getLoadedRaces();
+            this.race = (oldRaceId >= 0 && oldRaceId < races.size()) ? races.get(oldRaceId) : "human";
+        } else {
+            this.race = "human";
+        }
+
         this.gender = tag.getString("Gender");
         this.characterClass = tag.getString("Class");
         this.hairId = tag.getInt("HairId");
@@ -149,6 +150,29 @@ public class Character {
         this.eye1Color = tag.getString("Eye1Color");
         this.eye2Color = tag.getString("Eye2Color");
         this.auraColor = tag.getString("AuraColor");
+        this.currentFormGroup = tag.getString("CurrentFormGroup");
+        this.currentForm = tag.getString("CurrentForm");
+    }
+
+    public boolean hasActiveForm() {
+        return !currentFormGroup.isEmpty() && !currentForm.isEmpty();
+    }
+
+    public void setActiveForm(String groupName, String formName) {
+        this.currentFormGroup = groupName != null ? groupName : "";
+        this.currentForm = formName != null ? formName : "";
+    }
+
+    public void clearActiveForm() {
+        this.currentFormGroup = "";
+        this.currentForm = "";
+    }
+
+    public FormConfig.FormData getActiveFormData() {
+        if (!hasActiveForm()) {
+            return null;
+        }
+        return ConfigManager.getForm(getRaceName(), currentFormGroup, currentForm);
     }
 
     public void copyFrom(Character other) {
@@ -165,5 +189,7 @@ public class Character {
         this.eye1Color = other.eye1Color;
         this.eye2Color = other.eye2Color;
         this.auraColor = other.auraColor;
+        this.currentFormGroup = other.currentFormGroup;
+        this.currentForm = other.currentForm;
     }
 }

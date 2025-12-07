@@ -57,7 +57,7 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
         var head = this.getAnimationProcessor().getBone("head");
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
-        if(head != null){
+        if (head != null) {
             head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
             head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
         }
@@ -76,7 +76,6 @@ public class PlayerBaseModel<T extends AbstractClientPlayer & GeoAnimatable> ext
                 RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
             }
         } catch (Exception e) {
-            // Fail silently.
         }
     }
 }

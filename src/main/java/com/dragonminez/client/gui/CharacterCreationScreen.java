@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 
 public class CharacterCreationScreen extends Screen {
 
-    private int selectedRace = 0;
+    private String selectedRace = "human";
     private String selectedClass = Character.CLASS_WARRIOR;
     private String selectedGender = Character.GENDER_MALE;
 
@@ -62,7 +62,18 @@ public class CharacterCreationScreen extends Screen {
 
     private void cycleRace() {
         String[] raceNames = Character.getRaceNames();
-        selectedRace = (selectedRace + 1) % raceNames.length;
+
+        int currentIndex = 0;
+        for (int i = 0; i < raceNames.length; i++) {
+            if (raceNames[i].equals(selectedRace)) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        int nextIndex = (currentIndex + 1) % raceNames.length;
+        selectedRace = raceNames[nextIndex];
+
         raceButton.setMessage(Component.translatable("gui.dragonminez.character_creation.race", getRaceName()));
         updateGenderButton();
     }
@@ -93,18 +104,12 @@ public class CharacterCreationScreen extends Screen {
     }
 
     private boolean canHaveGender() {
-        String[] raceNames = Character.getRaceNames();
-        if (selectedRace >= 0 && selectedRace < raceNames.length) {
-            String raceName = raceNames[selectedRace];
-            RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
-            return raceConfig.hasGender();
-        }
-        return true;
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(selectedRace);
+        return raceConfig.hasGender();
     }
 
     private String getRaceName() {
-        String[] raceNames = Character.getRaceNames();
-        return Component.translatable("race.dragonminez." + raceNames[selectedRace]).getString();
+        return Component.translatable("race.dragonminez." + selectedRace).getString();
     }
 
     private String getClassName() {
