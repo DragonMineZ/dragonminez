@@ -1,6 +1,7 @@
 package com.dragonminez.client.render;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.layer.PlayerArmorLayer;
 import com.dragonminez.client.render.layer.PlayerItemInHandLayer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -40,6 +41,8 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         this.shadowRadius = 0.4f;
 
         this.addRenderLayer(new PlayerItemInHandLayer<>(this));
+        this.addRenderLayer(new PlayerArmorLayer<>(this));
+
     }
 
     @Override
@@ -151,14 +154,35 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 
-            float[] bodyTint = hexToRGB("#badaff");
-            float[] bodyTint2 = hexToRGB("#f29eff");
-            float[] bodyTint3 = hexToRGB("#ff54da");
+            float[] bodyTint = hexToRGB(character.getBodyColor());
+            float[] bodyTint2 = hexToRGB(character.getBodyColor2());
+            float[] bodyTint3 = hexToRGB(character.getBodyColor3());
             float[] hairTint = hexToRGB(character.getHairColor());
 
             boolean forceVanilla = raceConfig.useVanillaSkin();
             boolean isStandardHumanoid = (raceName.equals("human") || raceName.equals("saiyan"));
             boolean isDefaultBody = (bodyType == 0);
+
+            model.getBone("armorBody").ifPresent(bone -> {
+                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
+                bone.setHidden(isMajinFat);
+            });
+            model.getBone("armorBody2").ifPresent(bone -> {
+                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
+                bone.setHidden(isMajinFat);
+            });
+            model.getBone("armorLeggingsBody").ifPresent(bone -> {
+                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
+                bone.setHidden(isMajinFat);
+            });
+            model.getBone("armorRightArm").ifPresent(bone -> {
+                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
+                bone.setHidden(isMajinFat);
+            });
+            model.getBone("armorLeftArm").ifPresent(bone -> {
+                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
+                bone.setHidden(isMajinFat);
+            });
 
             if (forceVanilla || (isStandardHumanoid && isDefaultBody && !hasForm)) {
                 ResourceLocation playerSkin = animatable.getSkinTextureLocation();
@@ -258,7 +282,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             }
         }
 
-//        super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 
     private void renderColoredPass(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int packedLight, int packedOverlay, String texturePath, float[] rgb) {
