@@ -1,0 +1,59 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 64,
+				"texture_height": 32,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 4,
+				"visible_bounds_offset": [0, 1, 0]
+			},
+			"bones": [
+				{
+					"name": "body",
+					"pivot": [0, 21, 0]
+				},
+				{
+					"name": "armorBody",
+					"parent": "body",
+					"pivot": [0, 21, 0],
+					"cubes": [
+						{
+							"origin": [-4.5, 16, -3.25],
+							"size": [9, 5, 6.5],
+							"uv": {
+								"north": {"uv": [20, 20], "uv_size": [8, 6]},
+								"east": {"uv": [16, 20], "uv_size": [4, 6]},
+								"south": {"uv": [32, 20], "uv_size": [8, 6]},
+								"west": {"uv": [28, 20], "uv_size": [4, 6]},
+								"up": {"uv": [20, 16], "uv_size": [9, 4]},
+								"down": {"uv": [32, 26], "uv_size": [8, -4]}
+							}
+						}
+					]
+				},
+				{
+					"name": "armorBody2",
+					"parent": "body",
+					"pivot": [0, 16, 0],
+					"cubes": [
+						{
+							"origin": [-5, 9, -4.25],
+							"size": [10, 7.1, 8.5],
+							"uv": {
+								"north": {"uv": [20, 25], "uv_size": [8, 7]},
+								"east": {"uv": [16, 25], "uv_size": [4, 7]},
+								"south": {"uv": [32, 25], "uv_size": [8, 7]},
+								"west": {"uv": [28, 25], "uv_size": [4, 7]},
+								"up": {"uv": [20, 25], "uv_size": [8, 4]},
+								"down": {"uv": [29, 20], "uv_size": [9, -4]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

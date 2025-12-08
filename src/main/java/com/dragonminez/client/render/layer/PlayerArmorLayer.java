@@ -1,5 +1,7 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -20,9 +22,24 @@ public class PlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> ex
     @Override
     protected @Nullable ItemStack getArmorItemForBone(GeoBone bone, T animatable) {
         String boneName = bone.getName();
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+
+        if (stats != null) {
+            var character = stats.getCharacter();
+            var race = character.getRace();
+            var gender = character.getGender();
+
+            if (race.equals("majin") && gender.equals("male") || gender.equals("female")) {
+                if (boneName.equals("armorBody")) {
+                    return null;
+                }
+            }
+        }
+
         return switch (boneName) {
             case "armorHead" -> this.helmetStack;
-            case "armorBody","armorBody2", "armorRightArm", "armorLeftArm" -> this.chestplateStack;
+            case "armorBody", "armorRightArm", "armorLeftArm" -> this.chestplateStack;
             case "armorLeggingsBody","armorLeftLeg", "armorRightLeg" -> this.leggingsStack;
             case "armorRightBoot", "armorLeftBoot" -> this.bootsStack;
             default -> null;
@@ -34,7 +51,7 @@ public class PlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> ex
         String boneName = bone.getName();
         return switch (boneName) {
             case "armorHead" -> EquipmentSlot.HEAD;
-            case "armorBody","armorBody2", "armorRightArm", "armorLeftArm" -> EquipmentSlot.CHEST;
+            case "armorBody", "armorRightArm", "armorLeftArm" -> EquipmentSlot.CHEST;
             case "armorLeggingsBody","armorRightLeg", "armorLeftLeg" -> EquipmentSlot.LEGS;
             case "armorRightBoot", "armorLeftBoot" -> EquipmentSlot.FEET;
             default -> super.getEquipmentSlotForBone(bone, stack, animatable);
@@ -47,7 +64,7 @@ public class PlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> ex
 
         return switch (boneName) {
             case "armorHead" -> baseModel.head;
-            case "armorBody","armorBody2", "armorLeggingsBody" -> baseModel.body;
+            case "armorBody", "armorLeggingsBody" -> baseModel.body;
             case "armorRightArm" -> baseModel.rightArm;
             case "armorLeftArm" -> baseModel.leftArm;
             case "armorRightLeg", "armorRightBoot" -> baseModel.rightLeg;
@@ -55,4 +72,7 @@ public class PlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> ex
             default -> super.getModelPartForBone(bone, slot, stack, animatable, baseModel);
         };
     }
+
+
+
 }

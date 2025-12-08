@@ -18,6 +18,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BASE_DEFAULT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/dmzbase.geo.json");
     private static final ResourceLocation BASE_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/dmzbaseslim.geo.json");
     private static final ResourceLocation MAJIN_FAT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/majinfat.geo.json");
+    private static final ResourceLocation MAJIN_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/majinslim.geo.json");
 
     private final ResourceLocation textureLocation;
     private final ResourceLocation animationLocation;
@@ -63,14 +64,14 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 return switch (this.raceName) {
                     case "human", "saiyan" -> {
                         if ("female".equals(gender)) {
-                            yield BASE_SLIM;
+                            yield MAJIN_SLIM;
                         }
                         yield BASE_DEFAULT;
                     }
                     case "namekian" -> BASE_DEFAULT;
                     case "majin" -> {
                         if("female".equals(gender)){
-                            yield BASE_SLIM;
+                            yield MAJIN_SLIM;
                         }
                         yield MAJIN_FAT;
 

@@ -3,6 +3,7 @@ package com.dragonminez.client.render;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.layer.PlayerArmorLayer;
 import com.dragonminez.client.render.layer.PlayerItemInHandLayer;
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
@@ -14,14 +15,21 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.DyeableArmorItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.ForgeHooksClient;
 import org.joml.Matrix4f;
+import software.bernie.geckolib.cache.GeckoLibCache;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.constant.DataTickets;
@@ -30,10 +38,15 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.util.RenderUtils;
+
+import java.util.Optional;
 
 public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
+
+    private static final ResourceLocation MAJIN_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/armor/armormajinfat.geo.json");
+    private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/armor/armormajinslim.geo.json");
+
+    private boolean isRenderingArmor = false;
 
     public PlayerDMZRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
         super(renderManager, model);
@@ -154,35 +167,21 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 
-            float[] bodyTint = hexToRGB(character.getBodyColor());
-            float[] bodyTint2 = hexToRGB(character.getBodyColor2());
-            float[] bodyTint3 = hexToRGB(character.getBodyColor3());
-            float[] hairTint = hexToRGB(character.getHairColor());
+            int[] bodyTint = ColorUtils.hexToRgb(character.getBodyColor());
+            int[] bodyTint2 = ColorUtils.hexToRgb(character.getBodyColor2());
+            int[] bodyTint3 = ColorUtils.hexToRgb(character.getBodyColor3());
+            int[] hairTint = ColorUtils.hexToRgb(character.getHairColor());
 
             boolean forceVanilla = raceConfig.useVanillaSkin();
             boolean isStandardHumanoid = (raceName.equals("human") || raceName.equals("saiyan"));
             boolean isDefaultBody = (bodyType == 0);
 
-            model.getBone("armorBody").ifPresent(bone -> {
-                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
-                bone.setHidden(isMajinFat);
-            });
-            model.getBone("armorBody2").ifPresent(bone -> {
-                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
-                bone.setHidden(isMajinFat);
-            });
-            model.getBone("armorLeggingsBody").ifPresent(bone -> {
-                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
-                bone.setHidden(isMajinFat);
-            });
-            model.getBone("armorRightArm").ifPresent(bone -> {
-                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
-                bone.setHidden(isMajinFat);
-            });
-            model.getBone("armorLeftArm").ifPresent(bone -> {
-                boolean isMajinFat = raceName.equals("majin") && gender.equals("male");
-                bone.setHidden(isMajinFat);
-            });
+            //Por si carga las otras piezas del modelo aca las esconde
+            model.getBone("armorBody").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
+            model.getBone("armorBody2").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
+            model.getBone("armorLeggingsBody").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
+            model.getBone("armorRightArm").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
+            model.getBone("armorLeftArm").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
 
             if (forceVanilla || (isStandardHumanoid && isDefaultBody && !hasForm)) {
                 ResourceLocation playerSkin = animatable.getSkinTextureLocation();
@@ -235,7 +234,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                         renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
                                 filePrefix + "layer4.png", hairTint);
                         renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
-                                filePrefix + "layer5.png", hexToRGB("#e67d40"));
+                                filePrefix + "layer5.png", ColorUtils.hexToRgb("#e67d40"));
                     } else {
                         renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
                                 filePrefix + "layer4.png", hairTint);
@@ -246,7 +245,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                     renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
                             filePrefix + "layer4.png", hairTint);
                     renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
-                            filePrefix + "layer5.png", hexToRGB("#dbcb9e"));
+                            filePrefix + "layer5.png", ColorUtils.hexToRgb("#dbcb9e"));
                 }
                 return;
             }
@@ -283,7 +282,32 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     }
 
-    private void renderColoredPass(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int packedLight, int packedOverlay, String texturePath, float[] rgb) {
+    @Override
+    public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+
+        String boneName = bone.getName();
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+        if (stats != null) {
+            var character = stats.getCharacter();
+
+            boolean isMajinFat = character.getRace().equals("majin") &&
+                    character.getGender().equals("male");
+
+            if (isMajinFat && !isRenderingArmor) {
+                if (renderCustomArmor(poseStack, animatable, bone, bufferSource, packedLight, packedOverlay, isReRender, partialTick)) {
+                    return;
+                }
+            }
+
+        }
+        super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+
+
+
+    }
+
+    private void renderColoredPass(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int packedLight, int packedOverlay, String texturePath, int[] rgb) {
 
         ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, texturePath);
         RenderType type = RenderType.entityCutoutNoCull(loc);
@@ -294,33 +318,115 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         }
     }
 
-    private float[] hexToRGB(String hexColor) {
-        if (hexColor == null || hexColor.isEmpty()) return new float[]{1.0f, 1.0f, 1.0f};
-        try {
-            if (hexColor.startsWith("#")) hexColor = hexColor.substring(1);
-            long color = Long.parseLong(hexColor, 16);
-            float r = ((color >> 16) & 0xFF) / 255.0f;
-            float g = ((color >> 8) & 0xFF) / 255.0f;
-            float b = (color & 0xFF) / 255.0f;
-            return new float[]{r, g, b};
-        } catch (Exception e) {
-            return new float[]{1.0f, 1.0f, 1.0f};
+
+    private boolean renderCustomArmor(PoseStack poseStack, T animatable, GeoBone mainBone, MultiBufferSource bufferSource, int packedLight, int packedOverlay, boolean isReRender, float partialTick) {
+        String boneName = mainBone.getName();
+
+        // 1. FILTRO DE HUESOS
+        if (boneName.equals("armorBody") || boneName.equals("armorBody2")) {
+
+            ItemStack chestStack = animatable.getItemBySlot(EquipmentSlot.CHEST);
+
+            if (!chestStack.isEmpty() && chestStack.getItem() instanceof ArmorItem armorItem) {
+
+                ResourceLocation texture = getArmorTexture(animatable, chestStack, EquipmentSlot.CHEST, null);
+
+                boolean isVanillaArmor = texture.getNamespace().equals("minecraft");
+
+                if (isVanillaArmor) {
+
+                    BakedGeoModel armorGeoModel = GeckoLibCache.getBakedModels().get(MAJIN_ARMOR_MODEL);
+                    if (armorGeoModel == null) return false;
+
+                    Optional<GeoBone> armorBoneOpt = armorGeoModel.getBone(boneName);
+
+                    if (armorBoneOpt.isPresent()) {
+                        GeoBone armorBone = armorBoneOpt.get();
+
+                        armorBone.setRotX(mainBone.getRotX());
+                        armorBone.setRotY(mainBone.getRotY());
+                        armorBone.setRotZ(mainBone.getRotZ());
+
+                        armorBone.setPosX(mainBone.getPosX());
+                        armorBone.setPosY(mainBone.getPosY());
+                        armorBone.setPosZ(mainBone.getPosZ());
+
+                        float inflation = 1.07f;
+
+                        armorBone.setScaleX(mainBone.getScaleX() * inflation);
+                        armorBone.setScaleY(mainBone.getScaleY() * inflation + 0.05f);
+                        armorBone.setScaleZ(mainBone.getScaleZ() * inflation);
+
+                        float r = 1.0F, g = 1.0F, b = 1.0F;
+                        if (armorItem instanceof DyeableArmorItem dyeable) {
+                            int color = dyeable.getColor(chestStack);
+                            r = (float)(color >> 16 & 255) / 255.0F;
+                            g = (float)(color >> 8 & 255) / 255.0F;
+                            b = (float)(color & 255) / 255.0F;
+                        }
+
+                        RenderType armorType = RenderType.entityCutoutNoCull(texture);
+                        VertexConsumer armorBuffer = ItemRenderer.getArmorFoilBuffer(bufferSource, armorType, false, chestStack.hasFoil());
+
+                        this.isRenderingArmor = true;
+                        mainBone.setHidden(true);
+
+                        this.renderRecursively(poseStack, animatable, armorBone, armorType, bufferSource, armorBuffer, isReRender, partialTick, packedLight, packedOverlay, r, g, b, 1.0f);
+
+                        if (armorItem instanceof DyeableArmorItem) {
+                            ResourceLocation overlayTex = getArmorTexture(animatable, chestStack, EquipmentSlot.CHEST, "overlay");
+                            RenderType overlayType = RenderType.entityCutoutNoCull(overlayTex);
+                            VertexConsumer overlayBuffer = ItemRenderer.getArmorFoilBuffer(bufferSource, overlayType, false, false);
+                            this.renderRecursively(poseStack, animatable, armorBone, overlayType, bufferSource, overlayBuffer, isReRender, partialTick, packedLight, packedOverlay, 1.0f, 1.0f, 1.0f, 1.0f);
+                        }
+
+                        this.isRenderingArmor = false;
+                        return true;
+                    }
+                }
+                else {
+
+                    float r = 1.0F, g = 1.0F, b = 1.0F;
+
+                    RenderType armorType = RenderType.entityCutoutNoCull(texture);
+                    VertexConsumer armorBuffer = ItemRenderer.getArmorFoilBuffer(bufferSource, armorType, false, chestStack.hasFoil());
+
+                    this.isRenderingArmor = true;
+                    mainBone.setHidden(false);
+
+                    this.renderRecursively(poseStack, animatable, mainBone, armorType, bufferSource, armorBuffer, isReRender, partialTick, packedLight, packedOverlay, r, g, b, 1.0f);
+
+                    this.isRenderingArmor = false;
+                    return true;
+                }
+
+            } else {
+                mainBone.setHidden(true);
+                return true;
+            }
         }
+        return false;
     }
 
-    private void renderPass(BakedGeoModel model, PoseStack stack, T animatable, RenderType type, MultiBufferSource source, int light, int overlay, float r, float g, float b, float a) {
-        VertexConsumer buffer = source.getBuffer(type);
-        for (GeoBone group : model.topLevelBones()) {
-            renderRecursively(stack, animatable, group, type, source, buffer, false, 0, light, overlay, r, g, b, a);
-        }
-    }
+    private ResourceLocation getArmorTexture(LivingEntity entity, ItemStack stack, EquipmentSlot slot, String type) {
+        String domain = "minecraft";
+        String path = ((ArmorItem) stack.getItem()).getMaterial().getName();
+        String[] split = path.split(":", 2);
 
-    //RENDER UN SOLO BONE ("head", "body", "left_arm")
-    private void renderBonePass(GeoBone bone, PoseStack stack, T animatable, RenderType type, MultiBufferSource source, int light, int overlay, float r, float g, float b, float a) {
-        if (bone != null) {
-            VertexConsumer buffer = source.getBuffer(type);
-            renderRecursively(stack, animatable, bone, type, source, buffer, false, 0, light, overlay, r, g, b, a);
+        if (split.length > 1) {
+            domain = split[0];
+            path = split[1];
         }
+
+        String typeSuffix = (type == null || type.isEmpty()) ? "" : "_" + type;
+
+        String layer = (slot == EquipmentSlot.LEGS) ? "layer_2" : "layer_1";
+
+        String textureString = String.format("%s:textures/models/armor/%s_%s%s.png", domain, path, layer, typeSuffix);
+
+        textureString = ForgeHooksClient.getArmorTexture(entity, stack, textureString, slot, type);
+
+        return new ResourceLocation(textureString);
     }
 
     @Override

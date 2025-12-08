@@ -24,7 +24,7 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import java.util.HashMap;
 import java.util.Map;
 
-@Mixin(PlayerRenderer.class)
+    @Mixin(PlayerRenderer.class)
 public abstract class PlayerRendererMixin {
 
     @Unique
