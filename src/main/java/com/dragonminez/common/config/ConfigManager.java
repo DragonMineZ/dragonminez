@@ -506,34 +506,59 @@ public class ConfigManager {
         }
     }
 
-    public static void applySyncedServerConfig(Map<String, ?> syncedStats, Map<String, ?> syncedCharacters) {
+    public static void applySyncedServerConfig(Map<String, ?> syncedStats,
+                                               Map<String, ?> syncedCharacters,
+                                               Map<String, ?> syncedForms,
+                                               Object generalServerData) {
         SERVER_SYNCED_STATS.clear();
         SERVER_SYNCED_CHARACTER.clear();
+        RACE_FORMS.clear();
 
-        syncedStats.forEach((raceName, data) -> {
-            if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceStatsData statsData) {
-                SERVER_SYNCED_STATS.put(raceName.toLowerCase(), statsData.toConfig(raceName));
-            }
-        });
+        if (syncedStats != null) {
+            syncedStats.forEach((raceName, data) -> {
+                if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceStatsData statsData) {
+                    SERVER_SYNCED_STATS.put(raceName.toLowerCase(), statsData.toConfig(raceName));
+                }
+            });
+        }
 
-        syncedCharacters.forEach((raceName, data) -> {
-            if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceCharacterData characterData) {
-                SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), characterData.toConfig());
-            }
-        });
+        if (syncedCharacters != null) {
+            syncedCharacters.forEach((raceName, data) -> {
+                if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceCharacterData characterData) {
+                    SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), characterData.toConfig());
+                }
+            });
+        }
 
-        LogUtil.info(Env.COMMON, "Server configuration synced for {} races ({} stats, {} characters)",
-            syncedStats.size(), SERVER_SYNCED_STATS.size(), SERVER_SYNCED_CHARACTER.size());
+        if (syncedForms != null) {
+            syncedForms.forEach((raceName, data) -> {
+                if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceFormsData formsData) {
+                    Map<String, FormConfig> forms = formsData.toConfig(raceName.toString());
+                    if (forms != null) {
+                        RACE_FORMS.put(raceName.toLowerCase(), forms);
+                    }
+                }
+            });
+        }
+
+        if (generalServerData instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.GeneralServerData generalData) {
+            serverConfig = generalData.toConfig();
+            LogUtil.info(Env.COMMON, "Applied general server configuration from sync");
+        }
+
+        LogUtil.info(Env.COMMON, "Server configuration synced: {} stats, {} characters, {} form groups",
+            SERVER_SYNCED_STATS.size(), SERVER_SYNCED_CHARACTER.size(), RACE_FORMS.size());
     }
 
     public static void clearServerSync() {
         SERVER_SYNCED_STATS.clear();
         SERVER_SYNCED_CHARACTER.clear();
+        RACE_FORMS.clear();
         LogUtil.info(Env.COMMON, "Server configuration sync cleared, using local config");
     }
 
     public static boolean isUsingServerConfig() {
-        return !SERVER_SYNCED_STATS.isEmpty();
+        return !SERVER_SYNCED_STATS.isEmpty() || !SERVER_SYNCED_CHARACTER.isEmpty() || !RACE_FORMS.isEmpty();
     }
 
     public static Map<String, RaceStatsConfig> getAllRaceStats() {

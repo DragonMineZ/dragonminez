@@ -2,6 +2,7 @@ package com.dragonminez.common.stats;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
@@ -17,6 +18,9 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StatsCapability {
@@ -56,7 +60,21 @@ public class StatsCapability {
             StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             });
-            NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getAllRaceStats(), ConfigManager.getAllRaceCharacters()), serverPlayer);
+
+            Map<String, Map<String, FormConfig>> allForms = new HashMap<>();
+            ConfigManager.getLoadedRaces().forEach(raceName -> {
+                allForms.put(raceName, ConfigManager.getAllFormsForRace(raceName));
+            });
+
+            NetworkHandler.sendToPlayer(
+                new SyncServerConfigS2C(
+                    ConfigManager.getAllRaceStats(),
+                    ConfigManager.getAllRaceCharacters(),
+                    allForms,
+                    ConfigManager.getServerConfig()
+                ),
+                serverPlayer
+            );
         }
         event.getEntity().refreshDimensions();
     }
