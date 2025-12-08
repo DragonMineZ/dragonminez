@@ -1,54 +1,60 @@
 package com.dragonminez.common.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 
 public class RaceCharacterConfig {
 
-    @JsonProperty("race_name")
+    @SerializedName("raceName")
     private String raceName;
 
-    @JsonProperty("has_gender")
+    @SerializedName("hasGender")
     private boolean hasGender = true;
 
-    @JsonProperty("use_vanilla_skin")
+    @SerializedName("useVanillaSkin")
     private boolean useVanillaSkin = false;
 
-    @JsonProperty("custom_model")
+    @SerializedName("customModel")
     private String customModel = "";
 
     public String getCustomModel() { return customModel; }
     public void setCustomModel(String customModel) { this.customModel = customModel; }
 
-    @JsonProperty("default_body_type")
+    @SerializedName("defaultBodyType")
     private int defaultBodyType = 0;
 
-    @JsonProperty("default_hair_type")
+    @SerializedName("defaultHairType")
     private int defaultHairType = 0;
 
-    @JsonProperty("default_eyes_type")
+    @SerializedName("defaultEyesType")
     private int defaultEyesType = 0;
 
-    @JsonProperty("default_body_color")
-    private String defaultBodyColor = "#000000";
+    @SerializedName("defaultNoseType")
+    private int defaultNoseType = 0;
 
-    @JsonProperty("default_body_color_2")
-    private String defaultBodyColor2 = "#000000";
+    @SerializedName("defaultMouthType")
+    private int defaultMouthType = 0;
 
-    @JsonProperty("default_body_color_3")
-    private String defaultBodyColor3 = "#000000";
+    @SerializedName("defaultBodyColor")
+	private String defaultBodyColor = null;
 
-    @JsonProperty("default_hair_color")
-    private String defaultHairColor = "#0E1051";
+    @SerializedName("defaultBodyColor2")
+    private String defaultBodyColor2 = null;
 
-    @JsonProperty("default_eye1_color")
-    private String defaultEye1Color = "#000000";
+    @SerializedName("defaultBodyColor3")
+    private String defaultBodyColor3 = null;
 
-    @JsonProperty("default_eye2_color")
-    private String defaultEye2Color = "#000000";
+    @SerializedName("defaultHairColor")
+    private String defaultHairColor = null;
 
-    @JsonProperty("default_aura_color")
-    private String defaultAuraColor = "#7FFFFF";
+    @SerializedName("defaultEye1Color")
+    private String defaultEye1Color = null;
+
+    @SerializedName("defaultEye2Color")
+    private String defaultEye2Color = null;
+
+    @SerializedName("defaultAuraColor")
+    private String defaultAuraColor = null;
 
     public RaceCharacterConfig() {}
 
@@ -58,6 +64,8 @@ public class RaceCharacterConfig {
     public int getDefaultBodyType() { return defaultBodyType; }
     public int getDefaultHairType() { return defaultHairType; }
     public int getDefaultEyesType() { return defaultEyesType; }
+    public int getDefaultNoseType() { return defaultNoseType; }
+    public int getDefaultMouthType() { return defaultMouthType; }
     public String getDefaultBodyColor() { return defaultBodyColor; }
     public String getDefaultBodyColor2() { return defaultBodyColor2; }
     public String getDefaultBodyColor3() { return defaultBodyColor3; }
@@ -72,6 +80,8 @@ public class RaceCharacterConfig {
     public void setDefaultBodyType(int defaultBodyType) { this.defaultBodyType = defaultBodyType; }
     public void setDefaultHairType(int defaultHairType) { this.defaultHairType = defaultHairType; }
     public void setDefaultEyesType(int defaultEyesType) { this.defaultEyesType = defaultEyesType; }
+    public void setDefaultNoseType(int defaultNoseType) { this.defaultNoseType = defaultNoseType; }
+    public void setDefaultMouthType(int defaultMouthType) { this.defaultMouthType = defaultMouthType; }
     public void setDefaultBodyColor(String defaultBodyColor) { this.defaultBodyColor = defaultBodyColor; }
     public void setDefaultBodyColor2(String defaultBodyColor2) { this.defaultBodyColor2 = defaultBodyColor2; }
     public void setDefaultBodyColor3(String defaultBodyColor3) { this.defaultBodyColor3 = defaultBodyColor3; }

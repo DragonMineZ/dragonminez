@@ -25,6 +25,8 @@ public class Character {
     private int hairId;
     private int bodyType;
     private int eyesType;
+    private int noseType;
+    private int mouthType;
     private String bodyColor;
     private String bodyColor2;
     private String bodyColor3;
@@ -42,13 +44,15 @@ public class Character {
         this.hairId = config.getDefaultHairType();
         this.bodyType = config.getDefaultBodyType();
         this.eyesType = config.getDefaultEyesType();
-        this.bodyColor = config.getDefaultBodyColor();
-        this.bodyColor2 = config.getDefaultBodyColor2();
-        this.bodyColor3 = config.getDefaultBodyColor3();
-        this.hairColor = config.getDefaultHairColor();
-        this.eye1Color = config.getDefaultEye1Color();
-        this.eye2Color = config.getDefaultEye2Color();
-        this.auraColor = config.getDefaultAuraColor();
+        this.noseType = config.getDefaultNoseType();
+        this.mouthType = config.getDefaultMouthType();
+        this.bodyColor = config.getDefaultBodyColor() != null ? config.getDefaultBodyColor() : "#F5D5A6";
+        this.bodyColor2 = config.getDefaultBodyColor2() != null ? config.getDefaultBodyColor2() : "#F5D5A6";
+        this.bodyColor3 = config.getDefaultBodyColor3() != null ? config.getDefaultBodyColor3() : "#F5D5A6";
+        this.hairColor = config.getDefaultHairColor() != null ? config.getDefaultHairColor() : "#000000";
+        this.eye1Color = config.getDefaultEye1Color() != null ? config.getDefaultEye1Color() : "#000000";
+        this.eye2Color = config.getDefaultEye2Color() != null ? config.getDefaultEye2Color() : "#000000";
+        this.auraColor = config.getDefaultAuraColor() != null ? config.getDefaultAuraColor() : "#FFFFFF";
     }
 
     public String getRace() { return race; }
@@ -59,6 +63,8 @@ public class Character {
     public int getHairId() { return hairId; }
     public int getBodyType() { return bodyType; }
     public int getEyesType() { return eyesType; }
+    public int getNoseType() { return noseType; }
+    public int getMouthType() { return mouthType; }
     public String getBodyColor() { return bodyColor; }
     public String getBodyColor2() { return bodyColor2; }
     public String getBodyColor3() { return bodyColor3; }
@@ -82,6 +88,8 @@ public class Character {
     public void setHairId(int hairId) { this.hairId = hairId; }
     public void setBodyType(int bodyType) { this.bodyType = bodyType; }
     public void setEyesType(int eyesType) { this.eyesType = eyesType; }
+    public void setNoseType(int noseType) { this.noseType = noseType; }
+    public void setMouthType(int mouthType) { this.mouthType = mouthType; }
     public void setBodyColor(String bodyColor) { this.bodyColor = bodyColor; }
     public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
     public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
@@ -115,6 +123,8 @@ public class Character {
         tag.putInt("HairId", hairId);
         tag.putInt("BodyType", bodyType);
         tag.putInt("EyesType", eyesType);
+        tag.putInt("NoseType", noseType);
+        tag.putInt("MouthType", mouthType);
         tag.putString("BodyColor", bodyColor);
         tag.putString("BodyColor2", bodyColor2);
         tag.putString("BodyColor3", bodyColor3);
@@ -143,6 +153,8 @@ public class Character {
         this.hairId = tag.getInt("HairId");
         this.bodyType = tag.getInt("BodyType");
         this.eyesType = tag.getInt("EyesType");
+        this.noseType = tag.getInt("NoseType");
+        this.mouthType = tag.getInt("MouthType");
         this.bodyColor = tag.getString("BodyColor");
         this.bodyColor2 = tag.getString("BodyColor2");
         this.bodyColor3 = tag.getString("BodyColor3");
@@ -182,6 +194,8 @@ public class Character {
         this.hairId = other.hairId;
         this.bodyType = other.bodyType;
         this.eyesType = other.eyesType;
+        this.noseType = other.noseType;
+        this.mouthType = other.mouthType;
         this.bodyColor = other.bodyColor;
         this.bodyColor2 = other.bodyColor2;
         this.bodyColor3 = other.bodyColor3;

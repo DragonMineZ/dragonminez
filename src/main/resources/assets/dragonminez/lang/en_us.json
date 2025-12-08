@@ -54,6 +54,8 @@
   "command.dragonminez.stats.info.character.not_created": "Not Created",
 
   "gui.dragonminez.customization.eyes": "Eyes",
+  "gui.dragonminez.customization.nose": "Nose",
+  "gui.dragonminez.customization.mouth": "Mouth",
   "gui.dragonminez.customization.type": "Type %s",
   "gui.dragonminez.customization.body_type": "Body Type",
   "gui.dragonminez.customization.body_type.default": "Default",

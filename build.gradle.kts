@@ -136,9 +136,6 @@ dependencies {
     val jacksonDatabindDep = "minecraftLibrary"(jarJar("com.fasterxml.jackson.core:jackson-databind:2.18.3")!!)
     jarJar.ranged(jacksonDatabindDep, "[2.18.3,)")
 
-    // JSON5 dependency
-    val json5Dep = "minecraftLibrary"(jarJar("de.marhali:json5-java:3.0.0")!!)
-    jarJar.ranged(json5Dep, "[3.0.0,)")
 
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2"))
     implementation("com.eliotlash.mclib:mclib:20")

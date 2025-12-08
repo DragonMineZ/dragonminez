@@ -21,6 +21,8 @@ public class CreateCharacterC2S {
     private final int hairId;
     private final int bodyType;
     private final int eyesType;
+    private final int noseType;
+    private final int mouthType;
     private final String hairColor;
     private final String bodyColor;
     private final String bodyColor2;
@@ -36,6 +38,8 @@ public class CreateCharacterC2S {
         this.hairId = character.getHairId();
         this.bodyType = character.getBodyType();
         this.eyesType = character.getEyesType();
+        this.noseType = character.getNoseType();
+        this.mouthType = character.getMouthType();
         this.hairColor = character.getHairColor();
         this.bodyColor = character.getBodyColor();
         this.bodyColor2 = character.getBodyColor2();
@@ -46,7 +50,7 @@ public class CreateCharacterC2S {
     }
 
     private CreateCharacterC2S(String raceName, String className, String gender, int hairId, int bodyType, int eyesType,
-                               String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
+                               int noseType, int mouthType, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
                                String eye1Color, String eye2Color, String auraColor) {
         this.raceName = raceName;
         this.className = className;
@@ -54,6 +58,8 @@ public class CreateCharacterC2S {
         this.hairId = hairId;
         this.bodyType = bodyType;
         this.eyesType = eyesType;
+        this.noseType = noseType;
+        this.mouthType = mouthType;
         this.hairColor = hairColor;
         this.bodyColor = bodyColor;
         this.bodyColor2 = bodyColor2;
@@ -70,6 +76,8 @@ public class CreateCharacterC2S {
         buf.writeInt(msg.hairId);
         buf.writeInt(msg.bodyType);
         buf.writeInt(msg.eyesType);
+        buf.writeInt(msg.noseType);
+        buf.writeInt(msg.mouthType);
         buf.writeUtf(msg.hairColor);
         buf.writeUtf(msg.bodyColor);
         buf.writeUtf(msg.bodyColor2);
@@ -84,6 +92,8 @@ public class CreateCharacterC2S {
                 buf.readUtf(),
                 buf.readUtf(),
                 buf.readUtf(),
+                buf.readInt(),
+                buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
@@ -105,7 +115,7 @@ public class CreateCharacterC2S {
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 if (!data.getStatus().hasCreatedCharacter()) {
                     data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender,
-                            msg.hairId, msg.bodyType, msg.eyesType,
+                            msg.hairId, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType,
                             msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
                             msg.eye1Color, msg.eye2Color, msg.auraColor);
 

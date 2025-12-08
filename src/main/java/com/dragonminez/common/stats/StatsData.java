@@ -137,7 +137,7 @@ public class StatsData {
     }
 
     public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
-                                           int hairId, int bodyType, int eyesType,
+                                           int hairId, int bodyType, int eyesType, int noseType, int mouthType,
                                            String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
                                            String eye1Color, String eye2Color, String auraColor) {
         character.setRace(raceName);
@@ -146,6 +146,8 @@ public class StatsData {
         character.setHairId(hairId);
         character.setBodyType(bodyType);
         character.setEyesType(eyesType);
+        character.setNoseType(noseType);
+        character.setMouthType(mouthType);
         character.setHairColor(hairColor);
         character.setBodyColor(bodyColor);
         character.setBodyColor2(bodyColor2);

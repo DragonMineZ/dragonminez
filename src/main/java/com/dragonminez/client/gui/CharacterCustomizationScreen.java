@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
@@ -62,6 +63,38 @@ public class CharacterCustomizationScreen extends Screen {
         super(Component.literal("Character Customization"));
         this.previousScreen = previousScreen;
         this.character = character;
+
+        initializeDefaultColors();
+    }
+
+    private void initializeDefaultColors() {
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+        if (config == null) return;
+
+        if (character.getBodyColor() == null || character.getBodyColor().isEmpty()) {
+            System.out.println("[CharCustom] initDefaults - Setting bodyColor from config");
+            character.setBodyColor(config.getDefaultBodyColor());
+        }
+        if (character.getBodyColor2() == null || character.getBodyColor2().isEmpty()) {
+            character.setBodyColor2(config.getDefaultBodyColor2());
+        }
+        if (character.getBodyColor3() == null || character.getBodyColor3().isEmpty()) {
+            character.setBodyColor3(config.getDefaultBodyColor3());
+        }
+        if (character.getHairColor() == null || character.getHairColor().isEmpty()) {
+            System.out.println("[CharCustom] initDefaults - Setting hairColor from config");
+            character.setHairColor(config.getDefaultHairColor());
+        }
+        if (character.getEye1Color() == null || character.getEye1Color().isEmpty()) {
+            character.setEye1Color(config.getDefaultEye1Color());
+        }
+        if (character.getEye2Color() == null || character.getEye2Color().isEmpty()) {
+            character.setEye2Color(config.getDefaultEye2Color());
+        }
+        if (character.getAuraColor() == null || character.getAuraColor().isEmpty()) {
+            System.out.println("[CharCustom] initDefaults - Setting auraColor from config");
+            character.setAuraColor(config.getDefaultAuraColor());
+        }
     }
 
     @Override
@@ -93,9 +126,25 @@ public class CharacterCustomizationScreen extends Screen {
         addRenderableWidget(createArrowButton(eyesPosX, eyesPosY, false,
                 btn -> changeEyes(1)));
 
+        int nosePosX = 113;
+        int nosePosY = centerY - 26;
+
+        addRenderableWidget(createArrowButton(nosePosX - 65, nosePosY, true,
+                btn -> changeNose(-1)));
+        addRenderableWidget(createArrowButton(nosePosX, nosePosY, false,
+                btn -> changeNose(1)));
+
+        int mouthPosX = 113;
+        int mouthPosY = centerY + 10;
+
+        addRenderableWidget(createArrowButton(mouthPosX - 65, mouthPosY, true,
+                btn -> changeMouth(-1)));
+        addRenderableWidget(createArrowButton(mouthPosX, mouthPosY, false,
+                btn -> changeMouth(1)));
+
         if (canChangeBodyType()) {
             int bodyPosX = 113;
-            int bodyPosY = centerY - 26;
+            int bodyPosY = centerY + 46;
 
             addRenderableWidget(createArrowButton(bodyPosX - 65, bodyPosY, true,
                     btn -> changeBodyType(-1)));
@@ -104,7 +153,7 @@ public class CharacterCustomizationScreen extends Screen {
         }
 
         int hairPosX = 113;
-        int hairPosY = centerY + 10;
+        int hairPosY = centerY + 82;
 
         addRenderableWidget(createArrowButton(hairPosX - 65, hairPosY, true,
                 btn -> changeHair(-1)));
@@ -113,7 +162,7 @@ public class CharacterCustomizationScreen extends Screen {
 
         if (character.canHaveGender()) {
             int genderPosX = 113;
-            int genderPosY = centerY + 46;
+            int genderPosY = centerY + 118;
 
             if (character.getGender().equals(Character.GENDER_MALE)) {
                 addRenderableWidget(createArrowButton(genderPosX, genderPosY, false,
@@ -295,13 +344,21 @@ public class CharacterCustomizationScreen extends Screen {
         float[] hsv = ColorUtils.hexToHsv(currentColor);
 
         if (hueSlider != null) hueSlider.setValue((int) hsv[0]);
-        if (saturationSlider != null) saturationSlider.setValue((int) hsv[1]);
-        if (valueSlider != null) valueSlider.setValue((int) hsv[2]);
+        if (saturationSlider != null) {
+            int satValue = (int) hsv[1];
+            if (satValue == 0) satValue = 100;
+            saturationSlider.setValue(satValue);
+        }
+        if (valueSlider != null) {
+            int valValue = (int) hsv[2];
+            if (valValue == 0) valValue = 100;
+            valueSlider.setValue(valValue);
+        }
 
         if (saturationSlider != null) saturationSlider.setCurrentHue(hsv[0]);
         if (valueSlider != null) {
             valueSlider.setCurrentHue(hsv[0]);
-            valueSlider.setCurrentSaturation(hsv[1]);
+            valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
         }
 
         setSlidersVisible();
@@ -349,6 +406,9 @@ public class CharacterCustomizationScreen extends Screen {
 
     private TexturedTextButton createColorButton(int x, int y, String fieldName) {
         String currentColor = getColorFromField(fieldName);
+        if (currentColor == null || currentColor.isEmpty()) {
+            currentColor = "#FFFFFF";
+        }
         int colorInt = ColorUtils.hexToInt(currentColor);
 
         return new TexturedTextButton.Builder()
@@ -364,7 +424,9 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void changeHair(int delta) {
-        int maxHair = getMaxHairForRace();
+        int maxHair = TextureCounter.getMaxHairTypes(character.getRace());
+        if (maxHair == 0) maxHair = 15;
+
         int newHair = character.getHairId() + delta;
 
         if (newHair < 0) {
@@ -377,25 +439,18 @@ public class CharacterCustomizationScreen extends Screen {
         refreshButtons();
     }
 
-    private int getMaxHairForRace() {
-        String race = character.getRace();
-        String gender = character.getGender();
-
-        if (race.equals("namekian") || race.equals("frostdemon")) {
-            return 4;
-        }
-
-        if (race.equals("majin") && gender.equals(Character.GENDER_MALE)) {
-            return 4;
-        }
-
-        return 15;
-    }
 
     private void changeBodyType(int delta) {
-        String race = character.getRace();
+        int maxType = TextureCounter.getMaxBodyTypes(character.getRace(), character.getGender());
+        if (maxType < 0) {
+            if (character.getRace().equals("human") || character.getRace().equals("saiyan")) {
+                maxType = 1;
+            } else {
+                maxType = 0;
+            }
+        }
+
         int currentType = character.getBodyType();
-        int maxType = getMaxBodyTypeForRace(race);
 
         int newType = currentType + delta;
 
@@ -423,19 +478,36 @@ public class CharacterCustomizationScreen extends Screen {
         return true;
     }
 
-    private int getMaxBodyTypeForRace(String race) {
-        if (race.equals("human") || race.equals("saiyan")) {
-            return 1;
-        } else {
-            return 2;
-        }
+    private void changeEyes(int delta) {
+        int maxEyes = TextureCounter.getMaxEyesTypes(character.getRace());
+        if (maxEyes == 0) maxEyes = 1;
+
+        int newEyes = character.getEyesType() + delta;
+        if (newEyes < 0) newEyes = maxEyes;
+        if (newEyes > maxEyes) newEyes = 0;
+        character.setEyesType(newEyes);
+        refreshButtons();
     }
 
-    private void changeEyes(int delta) {
-        int newEyes = character.getEyesType() + delta;
-        if (newEyes < 0) newEyes = 1;
-        if (newEyes > 1) newEyes = 0;
-        character.setEyesType(newEyes);
+    private void changeNose(int delta) {
+        int maxNose = TextureCounter.getMaxNoseTypes(character.getRace());
+        if (maxNose == 0) maxNose = 1;
+
+        int newNose = character.getNoseType() + delta;
+        if (newNose < 0) newNose = maxNose;
+        if (newNose > maxNose) newNose = 0;
+        character.setNoseType(newNose);
+        refreshButtons();
+    }
+
+    private void changeMouth(int delta) {
+        int maxMouth = TextureCounter.getMaxMouthTypes(character.getRace());
+        if (maxMouth == 0) maxMouth = 1;
+
+        int newMouth = character.getMouthType() + delta;
+        if (newMouth < 0) newMouth = maxMouth;
+        if (newMouth > maxMouth) newMouth = 0;
+        character.setMouthType(newMouth);
         refreshButtons();
     }
 
@@ -472,7 +544,7 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private String getColorFromField(String fieldName) {
-        return switch (fieldName) {
+        String color = switch (fieldName) {
             case "hairColor" -> character.getHairColor();
             case "bodyColor" -> character.getBodyColor();
             case "bodyColor2" -> character.getBodyColor2();
@@ -480,8 +552,12 @@ public class CharacterCustomizationScreen extends Screen {
             case "eye1Color" -> character.getEye1Color();
             case "eye2Color" -> character.getEye2Color();
             case "auraColor" -> character.getAuraColor();
-            default -> "#FFFFFF";
+            default -> null;
         };
+
+        String result = (color != null && !color.isEmpty()) ? color : "#FFFFFF";
+        System.out.println("[CharCustom] getColorFromField('" + fieldName + "') - raw: " + color + " -> result: " + result);
+        return result;
     }
 
     private void applyColor(String color) {
@@ -564,8 +640,14 @@ public class CharacterCustomizationScreen extends Screen {
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.eyes").getString(), textX, centerY - 70, 0xFF9B9B);
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getEyesType() + 1).getString(), textX, centerY - 58, 0xFFFFFF);
 
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.nose").getString(), textX, centerY - 34, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getNoseType() + 1).getString(), textX, centerY - 22, 0xFFFFFF);
+
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.mouth").getString(), textX, centerY + 2, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getMouthType() + 1).getString(), textX, centerY + 14, 0xFFFFFF);
+
             if (canChangeBodyType()) {
-                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.body_type").getString(), textX, centerY - 35, 0xFF9B9B);
+                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.body_type").getString(), textX, centerY + 38, 0xFF9B9B);
 
                 String race = character.getRace();
                 int bodyType = character.getBodyType();
@@ -578,17 +660,17 @@ public class CharacterCustomizationScreen extends Screen {
                     bodyTypeText = Component.translatable("gui.dragonminez.customization.type", bodyType + 1).getString();
                 }
 
-                drawCenteredStringWithBorder(graphics, bodyTypeText, textX, centerY - 23, 0xFFFFFF);
+                drawCenteredStringWithBorder(graphics, bodyTypeText, textX, centerY + 50, 0xFFFFFF);
             }
 
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hair").getString(), textX, centerY, 0xFF9B9B);
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 12, 0xFFFFFF);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hair").getString(), textX, centerY + 74, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 86, 0xFFFFFF);
 
             if (character.canHaveGender()) {
-                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.gender").getString(), textX, centerY + 35, 0xFF9B9B);
+                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.gender").getString(), textX, centerY + 110, 0xFF9B9B);
                 String genderText = Component.translatable("gender.dragonminez." + character.getGender()).getString();
                 int genderColor = character.getGender().equals(Character.GENDER_MALE) ? 0x2133A6 : 0xFC63D9;
-                drawCenteredStringWithBorder(graphics, genderText, textX, centerY + 47, 0xFFFFFF, genderColor);
+                drawCenteredStringWithBorder(graphics, genderText, textX, centerY + 122, 0xFFFFFF, genderColor);
             }
         } else if (currentPage == 1) {
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.class").getString(), textX, centerY - 70, 0xFF9B9B);

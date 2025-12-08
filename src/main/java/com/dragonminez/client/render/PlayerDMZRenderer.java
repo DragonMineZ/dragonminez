@@ -201,25 +201,25 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
             if (isNamek || isFrost || isBio) {
 
-                String textureBase = raceName;
+                String filePrefix;
 
                 if (hasForm) {
+                    String transformTexture = "";
                     switch (raceName) {
                         case "bioandroid" -> {
-                            if (currentForm.equals("semi_perfect")) textureBase = "bioandroid_semi";
-                            else if (currentForm.equals("perfect")) textureBase = "bioandroid_perfect";
+                            if (currentForm.equals("semi_perfect")) transformTexture = "bioandroid_semi";
+                            else if (currentForm.equals("perfect")) transformTexture = "bioandroid_perfect";
                         }
                         case "frostdemon" -> {
-                            if (currentForm.equals("form2")) textureBase = "frostdemon_2";
-                            else if (currentForm.equals("form3")) textureBase = "frostdemon_3";
-                            else if (currentForm.equals("golden")) textureBase = "frostdemon_golden";
+                            if (currentForm.equals("form2")) transformTexture = "frostdemon_form2";
+                            else if (currentForm.equals("form3")) transformTexture = "frostdemon_form3";
+                            else if (currentForm.equals("golden")) transformTexture = "frostdemon_golden";
                         }
-
                     }
+                    filePrefix = "textures/entity/races/" + raceName + "/" + transformTexture + "_";
+                } else {
+                    filePrefix = "textures/entity/races/" + raceName + "/bodytype_" + bodyType + "_";
                 }
-
-                // ejmplo "bioandroid_semi_0_"
-                String filePrefix = "textures/entity/races/" + textureBase + "_" + bodyType + "_";
 
                 renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
                         filePrefix + "layer1.png", bodyTint);
@@ -270,8 +270,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                 // formPart = "_" + currentForm;
             }
 
-            // "humansaiyan_male_1.png" o "humansaiyan_male_1_ssj4.png"
-            String customPath = "textures/entity/races/" + textureBaseName + genderPart + "_" + bodyType + formPart + ".png";
+            String customPath = "textures/entity/races/" + textureBaseName + "/bodytype" + genderPart + "_" + bodyType + formPart + ".png";
 
             ResourceLocation customLoc = new ResourceLocation(Reference.MOD_ID, customPath);
             RenderType globalRenderType = RenderType.entityCutoutNoCull(customLoc);

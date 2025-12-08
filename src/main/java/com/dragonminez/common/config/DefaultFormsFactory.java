@@ -37,8 +37,8 @@ public class DefaultFormsFactory {
 		superforms.setForms(new HashMap<>());
 		forms.put("superforms", superforms);
 
-		Path humanPath = formsPath.resolve("superforms.json5");
-		Files.writeString(humanPath, "{\n  \"group_name\": \"superforms\",\n  \"forms\": {\n    // Humans have no transformations by default\n  }\n}", StandardCharsets.UTF_8);
+		Path humanPath = formsPath.resolve("superforms.json");
+		Files.writeString(humanPath, "{\"group_name\":\"superforms\",\"forms\":{}}", StandardCharsets.UTF_8);
 		LogUtil.info(Env.COMMON, "Default Human forms created");
 	}
 
@@ -98,21 +98,8 @@ public class DefaultFormsFactory {
 
         forms.put("ssgrades", ssGrades);
 
-        Path ssGradesPath = formsPath.resolve("ssgrades.json5");
-        loader.saveConfigWithComments(ssGradesPath, ssGrades,
-            "DragonMineZ - Super Saiyan Grades Transformations",
-            "Each form is identified by its 'name' field for transformation commands",
-            "Keys (form1, form2, etc.) determine the transformation order",
-            "",
-            "Available fields:",
-            "  name: Identifier used for /dmzstats transform command or interfaces",
-            "  custom_model: Optional custom model file (leave empty to use colors/scaling)",
-            "  model_scaling: Size multiplier (1.0 = normal, 1.5 = 150% size)",
-            "  *_color: Hex color codes for appearance (hair, eyes, aura, body)",
-            "  *_mult: Stat multipliers (str, skp, stm, def, vit, pwr, ene)",
-            "  speed_mult: Movement speed multiplier",
-            "  energy_drain: Energy consumption in percentage per second"
-        );
+        Path ssGradesPath = formsPath.resolve("ssgrades.json");
+        loader.saveConfig(ssGradesPath, ssGrades);
         LogUtil.info(Env.COMMON, "Default Super Saiyan Grades forms created");
     }
 
@@ -136,21 +123,8 @@ public class DefaultFormsFactory {
 
         forms.put("superforms", namekianForms);
 
-        Path namekianPath = formsPath.resolve("superforms.json5");
-        loader.saveConfigWithComments(namekianPath, namekianForms,
-            "DragonMineZ - Namekian Transformations",
-                "Each form is identified by its 'name' field for transformation commands",
-                "Keys (form1, form2, etc.) determine the transformation order",
-                "",
-                "Available fields:",
-                "  name: Identifier used for /dmzstats transform command or interfaces",
-                "  custom_model: Optional custom model file (leave empty to use colors/scaling)",
-                "  model_scaling: Size multiplier (1.0 = normal, 1.5 = 150% size)",
-                "  *_color: Hex color codes for appearance (hair, eyes, aura, body)",
-                "  *_mult: Stat multipliers (str, skp, stm, def, vit, pwr, ene)",
-                "  speed_mult: Movement speed multiplier",
-                "  energy_drain: Energy consumption in percentage per second"
-        );
+        Path namekianPath = formsPath.resolve("superforms.json");
+        loader.saveConfig(namekianPath, namekianForms);
         LogUtil.info(Env.COMMON, "Default Namekian forms created");
     }
 
@@ -160,21 +134,9 @@ public class DefaultFormsFactory {
         frostForms.setForms(new LinkedHashMap<>());
         forms.put("evolutionforms", frostForms);
 
-        Path frostPath = formsPath.resolve("evolutionforms.json5");
-        loader.saveConfigWithComments(frostPath, frostForms,
-            "DragonMineZ - Frost Demon Evolution Forms",
-                "Each form is identified by its 'name' field for transformation commands",
-                "Keys (form1, form2, etc.) determine the transformation order",
-                "",
-                "Available fields:",
-                "  name: Identifier used for /dmzstats transform command or interfaces",
-                "  custom_model: Optional custom model file (leave empty to use colors/scaling)",
-                "  model_scaling: Size multiplier (1.0 = normal, 1.5 = 150% size)",
-                "  *_color: Hex color codes for appearance (hair, eyes, aura, body)",
-                "  *_mult: Stat multipliers (str, skp, stm, def, vit, pwr, ene)",
-                "  speed_mult: Movement speed multiplier",
-                "  energy_drain: Energy consumption in percentage per second"
-        );
+        Path frostPath = formsPath.resolve("evolutionforms.json");
+        loader.saveConfig(frostPath, frostForms);
+        LogUtil.info(Env.COMMON, "Default Frost Demon forms created");
     }
 
     private void createMajinForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -183,21 +145,9 @@ public class DefaultFormsFactory {
         majinForms.setForms(new LinkedHashMap<>());
         forms.put("pureforms", majinForms);
 
-        Path majinPath = formsPath.resolve("pureforms.json5");
-        loader.saveConfigWithComments(majinPath, majinForms,
-            "DragonMineZ - Majin Pure Forms",
-                "Each form is identified by its 'name' field for transformation commands",
-                "Keys (form1, form2, etc.) determine the transformation order",
-                "",
-                "Available fields:",
-                "  name: Identifier used for /dmzstats transform command or interfaces",
-                "  custom_model: Optional custom model file (leave empty to use colors/scaling)",
-                "  model_scaling: Size multiplier (1.0 = normal, 1.5 = 150% size)",
-                "  *_color: Hex color codes for appearance (hair, eyes, aura, body)",
-                "  *_mult: Stat multipliers (str, skp, stm, def, vit, pwr, ene)",
-                "  speed_mult: Movement speed multiplier",
-                "  energy_drain: Energy consumption in percentage per second"
-        );
+        Path majinPath = formsPath.resolve("pureforms.json");
+        loader.saveConfig(majinPath, majinForms);
+        LogUtil.info(Env.COMMON, "Default Majin forms created");
     }
 
     private void createBioAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -206,21 +156,9 @@ public class DefaultFormsFactory {
         bioForms.setForms(new LinkedHashMap<>());
         forms.put("bioevolution", bioForms);
 
-        Path bioPath = formsPath.resolve("bioevolution.json5");
-        loader.saveConfigWithComments(bioPath, bioForms,
-            "DragonMineZ - Bio Android Evolution Forms",
-                "Each form is identified by its 'name' field for transformation commands",
-                "Keys (form1, form2, etc.) determine the transformation order",
-                "",
-                "Available fields:",
-                "  name: Identifier used for /dmzstats transform command or interfaces",
-                "  custom_model: Optional custom model file (leave empty to use colors/scaling)",
-                "  model_scaling: Size multiplier (1.0 = normal, 1.5 = 150% size)",
-                "  *_color: Hex color codes for appearance (hair, eyes, aura, body)",
-                "  *_mult: Stat multipliers (str, skp, stm, def, vit, pwr, ene)",
-                "  speed_mult: Movement speed multiplier",
-                "  energy_drain: Energy consumption in percentage per second"
-        );
+        Path bioPath = formsPath.resolve("bioevolution.json");
+        loader.saveConfig(bioPath, bioForms);
+        LogUtil.info(Env.COMMON, "Default Bio Android forms created");
     }
 }
 

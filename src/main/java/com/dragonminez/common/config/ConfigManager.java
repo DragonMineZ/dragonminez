@@ -57,31 +57,23 @@ public class ConfigManager {
     }
 
     private static void loadGeneralConfigs() throws IOException {
-        Path userConfigPath = CONFIG_DIR.resolve("general-user.json5");
+        Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
         if (Files.exists(userConfigPath)) {
             userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
             LogUtil.info(Env.COMMON, "User configuration loaded from: {}", userConfigPath);
         } else {
             userConfig = new GeneralUserConfig();
-            LOADER.saveConfigWithComments(userConfigPath, userConfig,
-                "DragonMineZ - User Configuration",
-                "This file contains client-side settings.",
-                "These settings only affect your client and are not synced to servers."
-            );
+            LOADER.saveConfig(userConfigPath, userConfig);
             LogUtil.info(Env.COMMON, "Default user configuration created at: {}", userConfigPath);
         }
 
-        Path serverConfigPath = CONFIG_DIR.resolve("general-server.json5");
+        Path serverConfigPath = CONFIG_DIR.resolve("general-server.json");
         if (Files.exists(serverConfigPath)) {
             serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
             LogUtil.info(Env.COMMON, "Server configuration loaded from: {}", serverConfigPath);
         } else {
             serverConfig = new GeneralServerConfig();
-            LOADER.saveConfigWithComments(serverConfigPath, serverConfig,
-                "DragonMineZ - Server Configuration",
-                "This file contains server-side settings.",
-                "These settings are synced to all connected clients."
-            );
+            LOADER.saveConfig(serverConfigPath, serverConfig);
             LogUtil.info(Env.COMMON, "Default server configuration created at: {}", serverConfigPath);
         }
     }
@@ -112,8 +104,8 @@ public class ConfigManager {
         Path racePath = RACES_DIR.resolve(raceName);
         Files.createDirectories(racePath);
 
-        Path characterPath = racePath.resolve("character.json5");
-        Path statsPath = racePath.resolve("stats.json5");
+        Path characterPath = racePath.resolve("character.json");
+        Path statsPath = racePath.resolve("stats.json");
         Path formsPath = racePath.resolve("forms");
         Files.createDirectories(formsPath);
 
@@ -121,15 +113,17 @@ public class ConfigManager {
         if (Files.exists(characterPath)) {
             characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
             LogUtil.info(Env.COMMON, "Character config for '{}' loaded", raceName);
+
+            RaceCharacterConfig defaultConfig = createDefaultCharacterConfig(raceName, isDefault);
+            boolean needsUpdate = mergeCharacterConfig(characterConfig, defaultConfig);
+
+            if (needsUpdate) {
+                LOADER.saveConfig(characterPath, characterConfig);
+                LogUtil.info(Env.COMMON, "Character config for '{}' updated with new fields", raceName);
+            }
         } else {
             characterConfig = createDefaultCharacterConfig(raceName, isDefault);
-            LOADER.saveConfigWithComments(characterPath, characterConfig,
-                "DragonMineZ - " + raceName.toUpperCase() + " Character Configuration",
-                "custom_model: Path to custom model file (e.g., 'myrace.geo.json')",
-                "has_gender: Whether this race can select male/female",
-                "use_vanilla_skin: Use vanilla Minecraft skins instead of custom model",
-                "default_*: Default appearance values for this race"
-            );
+            LOADER.saveConfig(characterPath, characterConfig);
             LogUtil.info(Env.COMMON, "Character config for '{}' created", raceName);
         }
 
@@ -139,13 +133,7 @@ public class ConfigManager {
             LogUtil.info(Env.COMMON, "Stats config for '{}' loaded", raceName);
         } else {
             statsConfig = createDefaultStatsConfig(raceName, isDefault);
-            LOADER.saveConfigWithComments(statsPath, statsConfig,
-                "DragonMineZ - " + raceName.toUpperCase() + " Stats Configuration",
-                "Each class (warrior, spiritualist, martial_artist) has:",
-                "  base_stats: Starting values for each stat",
-                "  stat_scaling: Multipliers applied when leveling up (1.0 = normal)",
-                "Stats: str=Strength, skp=Strike Power, res=Resistance, vit=Vitality, pwr=Ki Power, ene=Energy"
-            );
+            LOADER.saveConfig(statsPath, statsConfig);
             LogUtil.info(Env.COMMON, "Stats config for '{}' created", raceName);
         }
 
@@ -155,10 +143,9 @@ public class ConfigManager {
             FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
         }
 
-        RACE_FORMS.put(raceName, raceForms);
-
-        RACE_CHARACTER.put(raceName, characterConfig);
-        RACE_STATS.put(raceName, statsConfig);
+        RACE_FORMS.put(raceName.toLowerCase(), raceForms);
+        RACE_CHARACTER.put(raceName.toLowerCase(), characterConfig);
+        RACE_STATS.put(raceName.toLowerCase(), statsConfig);
         LOADED_RACES.add(raceName);
     }
 
@@ -202,38 +189,44 @@ public class ConfigManager {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
         config.setDefaultEyesType(0);
-        config.setDefaultBodyColor("#F5D5A6");
-        config.setDefaultBodyColor2("#F5D5A6");
-        config.setDefaultBodyColor3("#F5D5A6");
-        config.setDefaultHairColor("#000000");
-        config.setDefaultEye1Color("#000000");
-        config.setDefaultEye2Color("#000000");
-        config.setDefaultAuraColor("#FFFFFF");
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+        config.setDefaultBodyColor("#FFD3C9");
+        config.setDefaultBodyColor2("#FFD3C9");
+        config.setDefaultBodyColor3("#FFD3C9");
+        config.setDefaultHairColor("#0E1011");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
+        config.setDefaultAuraColor("#7FFFFF");
     }
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
         config.setDefaultEyesType(0);
-        config.setDefaultBodyColor("#F5D5A6");
-        config.setDefaultBodyColor2("#F5D5A6");
-        config.setDefaultBodyColor3("#F5D5A6");
-        config.setDefaultHairColor("#000000");
-        config.setDefaultEye1Color("#000000");
-        config.setDefaultEye2Color("#000000");
-        config.setDefaultAuraColor("#FFFFFF");
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+        config.setDefaultBodyColor("#FFD3C9");
+        config.setDefaultBodyColor2("#FFD3C9");
+        config.setDefaultBodyColor3("#FFD3C9");
+        config.setDefaultHairColor("#0E1011");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
+        config.setDefaultAuraColor("#7FFFFF");
     }
 
     private static void setupNamekianCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
         config.setDefaultEyesType(0);
-        config.setDefaultBodyColor("#3D7C3F");
-        config.setDefaultBodyColor2("#FFCC99");
-        config.setDefaultBodyColor3("#FF99CC");
-        config.setDefaultHairColor("#3D7C3F");
-        config.setDefaultEye1Color("#000000");
-        config.setDefaultEye2Color("#000000");
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+        config.setDefaultBodyColor("#1FAA24");
+        config.setDefaultBodyColor2("#BB2024");
+        config.setDefaultBodyColor3("#FF86A6");
+        config.setDefaultHairColor("#1FAA24");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFF00");
     }
 
@@ -241,52 +234,60 @@ public class ConfigManager {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
         config.setDefaultEyesType(0);
-        config.setDefaultBodyColor("#F5F5FF");
-        config.setDefaultBodyColor2("#B366CC");
-        config.setDefaultBodyColor3("#660099");
-        config.setDefaultHairColor("#F5F5FF");
-        config.setDefaultEye1Color("#FF0000");
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+        config.setDefaultBodyColor("#FFFFFF");
+        config.setDefaultBodyColor2("#E8A2FF");
+        config.setDefaultBodyColor3("#FF39A9");
+        config.setDefaultHairColor("#FF001D");
+        config.setDefaultEye1Color("#FF001D");
         config.setDefaultEye2Color("#000000");
-        config.setDefaultAuraColor("#B366CC");
+        config.setDefaultAuraColor("#5F00FF");
     }
 
     private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
         config.setDefaultEyesType(0);
-        config.setDefaultBodyColor("#8BC34A");
-        config.setDefaultBodyColor2("#000000");
-        config.setDefaultBodyColor3("#FF9800");
-        config.setDefaultHairColor("#8BC34A");
-        config.setDefaultEye1Color("#FF0000");
-        config.setDefaultEye2Color("#000000");
-        config.setDefaultAuraColor("#8BC34A");
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+        config.setDefaultBodyColor("#187600");
+        config.setDefaultBodyColor2("#9FE321");
+        config.setDefaultBodyColor3("#FF7600");
+        config.setDefaultHairColor("#187600");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
+        config.setDefaultAuraColor("#1AA700");
     }
 
     private static void setupMajinCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
         config.setDefaultEyesType(0);
-        config.setDefaultBodyColor("#FF69B4");
-        config.setDefaultBodyColor2("#FF69B4");
-        config.setDefaultBodyColor3("#FF69B4");
-        config.setDefaultHairColor("#FF69B4");
-        config.setDefaultEye1Color("#000000");
-        config.setDefaultEye2Color("#000000");
-        config.setDefaultAuraColor("#FF69B4");
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+        config.setDefaultBodyColor("#FFA4FF");
+        config.setDefaultBodyColor2("#FFA4FF");
+        config.setDefaultBodyColor3("#FFA4FF");
+        config.setDefaultHairColor("#FFA4FF");
+        config.setDefaultEye1Color("#B40000");
+        config.setDefaultEye2Color("#B40000");
+        config.setDefaultAuraColor("#FF6DFF");
     }
 
     private static void setupDefaultCharacter(RaceCharacterConfig config) {
-        config.setDefaultBodyType(0);
-        config.setDefaultHairType(0);
-        config.setDefaultEyesType(0);
-        config.setDefaultBodyColor("#F5D5A6");
-        config.setDefaultBodyColor2("#F5D5A6");
-        config.setDefaultBodyColor3("#F5D5A6");
-        config.setDefaultHairColor("#3D2914");
-        config.setDefaultEye1Color("#4A3728");
-        config.setDefaultEye2Color("#4A3728");
-        config.setDefaultAuraColor("#FFFFFF");
+		config.setDefaultBodyType(0);
+		config.setDefaultHairType(0);
+		config.setDefaultEyesType(0);
+		config.setDefaultNoseType(0);
+		config.setDefaultMouthType(0);
+		config.setDefaultBodyColor("#FFD3C9");
+		config.setDefaultBodyColor2("#FFD3C9");
+		config.setDefaultBodyColor3("#FFD3C9");
+		config.setDefaultHairColor("#0E1011");
+		config.setDefaultEye1Color("#0E1011");
+		config.setDefaultEye2Color("#0E1011");
+		config.setDefaultAuraColor("#7FFFFF");
     }
 
     private static RaceStatsConfig createDefaultStatsConfig(String raceName, boolean isVanilla) {
@@ -372,6 +373,56 @@ public class ConfigManager {
         scaling.setEnergyScaling(1.0);
     }
 
+    private static boolean mergeCharacterConfig(RaceCharacterConfig existing, RaceCharacterConfig defaults) {
+        boolean updated = false;
+
+        if (existing.getDefaultNoseType() == 0 && defaults.getDefaultNoseType() != 0) {
+            existing.setDefaultNoseType(defaults.getDefaultNoseType());
+            updated = true;
+        }
+
+        if (existing.getDefaultMouthType() == 0 && defaults.getDefaultMouthType() != 0) {
+            existing.setDefaultMouthType(defaults.getDefaultMouthType());
+            updated = true;
+        }
+
+        if (existing.getDefaultBodyColor() == null && defaults.getDefaultBodyColor() != null) {
+            existing.setDefaultBodyColor(defaults.getDefaultBodyColor());
+            updated = true;
+        }
+
+        if (existing.getDefaultBodyColor2() == null && defaults.getDefaultBodyColor2() != null) {
+            existing.setDefaultBodyColor2(defaults.getDefaultBodyColor2());
+            updated = true;
+        }
+
+        if (existing.getDefaultBodyColor3() == null && defaults.getDefaultBodyColor3() != null) {
+            existing.setDefaultBodyColor3(defaults.getDefaultBodyColor3());
+            updated = true;
+        }
+
+        if (existing.getDefaultHairColor() == null && defaults.getDefaultHairColor() != null) {
+            existing.setDefaultHairColor(defaults.getDefaultHairColor());
+            updated = true;
+        }
+
+        if (existing.getDefaultEye1Color() == null && defaults.getDefaultEye1Color() != null) {
+            existing.setDefaultEye1Color(defaults.getDefaultEye1Color());
+            updated = true;
+        }
+
+        if (existing.getDefaultEye2Color() == null && defaults.getDefaultEye2Color() != null) {
+            existing.setDefaultEye2Color(defaults.getDefaultEye2Color());
+            updated = true;
+        }
+
+        if (existing.getDefaultAuraColor() == null && defaults.getDefaultAuraColor() != null) {
+            existing.setDefaultAuraColor(defaults.getDefaultAuraColor());
+            updated = true;
+        }
+
+        return updated;
+    }
 
     public static RaceStatsConfig getRaceStats(String raceName) {
         if (SERVER_SYNCED_STATS.containsKey(raceName.toLowerCase())) {
@@ -381,10 +432,16 @@ public class ConfigManager {
     }
 
     public static RaceCharacterConfig getRaceCharacter(String raceName) {
-        if (SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase())) {
-            return SERVER_SYNCED_CHARACTER.get(raceName.toLowerCase());
+        String key = raceName.toLowerCase();
+
+        if (SERVER_SYNCED_CHARACTER.containsKey(key)) {
+            RaceCharacterConfig syncedConfig = SERVER_SYNCED_CHARACTER.get(key);
+            if (syncedConfig != null && syncedConfig.getDefaultBodyColor() != null) {
+                return syncedConfig;
+            }
         }
-        return RACE_CHARACTER.getOrDefault(raceName.toLowerCase(), RACE_CHARACTER.get("human"));
+
+        return RACE_CHARACTER.getOrDefault(key, RACE_CHARACTER.get("human"));
     }
 
     public static List<String> getLoadedRaces() {
@@ -405,7 +462,7 @@ public class ConfigManager {
 
     public static void saveGeneralUserConfig() {
         try {
-            Path path = CONFIG_DIR.resolve("general-user.json5");
+            Path path = CONFIG_DIR.resolve("general-user.json");
             LOADER.saveConfig(path, userConfig);
             LogUtil.info(Env.COMMON, "User configuration saved to: {}", path);
         } catch (IOException e) {
@@ -415,7 +472,7 @@ public class ConfigManager {
 
     public static void saveGeneralServerConfig() {
         try {
-            Path path = CONFIG_DIR.resolve("general-server.json5");
+            Path path = CONFIG_DIR.resolve("general-server.json");
             LOADER.saveConfig(path, serverConfig);
             LogUtil.info(Env.COMMON, "Server configuration saved to: {}", path);
         } catch (IOException e) {
@@ -425,7 +482,7 @@ public class ConfigManager {
 
     public static void saveRaceStats(String raceName) {
         try {
-            Path path = RACES_DIR.resolve(raceName).resolve("stats.json5");
+            Path path = RACES_DIR.resolve(raceName).resolve("stats.json");
             RaceStatsConfig config = RACE_STATS.get(raceName);
             if (config != null) {
                 LOADER.saveConfig(path, config);
@@ -438,7 +495,7 @@ public class ConfigManager {
 
     public static void saveRaceCharacter(String raceName) {
         try {
-            Path path = RACES_DIR.resolve(raceName).resolve("character.json5");
+            Path path = RACES_DIR.resolve(raceName).resolve("character.json");
             RaceCharacterConfig config = RACE_CHARACTER.get(raceName);
             if (config != null) {
                 LOADER.saveConfig(path, config);

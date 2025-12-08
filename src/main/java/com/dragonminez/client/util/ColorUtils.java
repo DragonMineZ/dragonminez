@@ -3,11 +3,21 @@ package com.dragonminez.client.util;
 public class ColorUtils {
 
     public static int[] hexToRgb(String hex) {
+        if (hex == null || hex.isEmpty()) {
+            return new int[]{255, 255, 255};
+        }
         hex = hex.replace("#", "");
-        int r = Integer.parseInt(hex.substring(0, 2), 16);
-        int g = Integer.parseInt(hex.substring(2, 4), 16);
-        int b = Integer.parseInt(hex.substring(4, 6), 16);
-        return new int[]{r, g, b};
+        if (hex.length() != 6) {
+            return new int[]{255, 255, 255};
+        }
+        try {
+            int r = Integer.parseInt(hex.substring(0, 2), 16);
+            int g = Integer.parseInt(hex.substring(2, 4), 16);
+            int b = Integer.parseInt(hex.substring(4, 6), 16);
+            return new int[]{r, g, b};
+        } catch (NumberFormatException e) {
+            return new int[]{255, 255, 255};
+        }
     }
 
     public static String rgbToHex(int r, int g, int b) {
@@ -98,10 +108,17 @@ public class ColorUtils {
     }
 
     public static int hexToInt(String hex) {
+        if (hex == null || hex.isEmpty()) {
+            return 0xFFFFFF;
+        }
         if (hex.startsWith("#")) {
             hex = hex.substring(1);
         }
-        return Integer.parseInt(hex, 16);
+        try {
+            return Integer.parseInt(hex, 16);
+        } catch (NumberFormatException e) {
+            return 0xFFFFFF;
+        }
     }
 }
 

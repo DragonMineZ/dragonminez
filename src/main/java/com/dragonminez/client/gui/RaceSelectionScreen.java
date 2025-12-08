@@ -256,20 +256,20 @@ public class RaceSelectionScreen extends Screen {
         String selectedRace = availableRaces[selectedRaceIndex];
         character.setRace(selectedRace);
 
-        if (!selectedRace.equals("human") && !selectedRace.equals("saiyan")) {
-            RaceCharacterConfig config = ConfigManager.getRaceCharacter(selectedRace);
-            if (config != null) {
-                character.setBodyColor(config.getDefaultBodyColor());
-                character.setBodyColor2(config.getDefaultBodyColor2());
-                character.setBodyColor3(config.getDefaultBodyColor3());
-                character.setHairColor(config.getDefaultHairColor());
-                character.setEye1Color(config.getDefaultEye1Color());
-                character.setEye2Color(config.getDefaultEye2Color());
-                character.setAuraColor(config.getDefaultAuraColor());
-                character.setBodyType(config.getDefaultBodyType());
-                character.setHairId(config.getDefaultHairType());
-                character.setEyesType(config.getDefaultEyesType());
-            }
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter(selectedRace);
+        if (config != null) {
+            character.setBodyColor(config.getDefaultBodyColor());
+            character.setBodyColor2(config.getDefaultBodyColor2());
+            character.setBodyColor3(config.getDefaultBodyColor3());
+            character.setHairColor(config.getDefaultHairColor());
+            character.setEye1Color(config.getDefaultEye1Color());
+            character.setEye2Color(config.getDefaultEye2Color());
+            character.setAuraColor(config.getDefaultAuraColor());
+            character.setBodyType(config.getDefaultBodyType());
+            character.setHairId(config.getDefaultHairType());
+            character.setEyesType(config.getDefaultEyesType());
+            character.setNoseType(config.getDefaultNoseType());
+            character.setMouthType(config.getDefaultMouthType());
         }
     }
 
