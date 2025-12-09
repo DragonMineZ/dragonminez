@@ -15,6 +15,7 @@ public class GeneralUserConfig {
     public static class HudConfig {
 		private int xenoverseHudPosX = 5;
 		private int xenoverseHudPosY = 5;
+		private float xenoverseHudScale = 1.4f;
 		private boolean compactHud = false;
         private int healthBarPosX = 10;
         private int healthBarPosY = 50;
@@ -27,6 +28,8 @@ public class GeneralUserConfig {
 		public void setXenoverseHudPosX(int xenoverseHudPosX) { this.xenoverseHudPosX = xenoverseHudPosX; }
 		public int getXenoverseHudPosY() { return xenoverseHudPosY; }
 		public void setXenoverseHudPosY(int xenoverseHudPosY) { this.xenoverseHudPosY = xenoverseHudPosY; }
+		public float getXenoverseHudScale() { return xenoverseHudScale; }
+		public void setXenoverseHudScale(float xenoverseHudScale) { this.xenoverseHudScale = xenoverseHudScale; }
 
 		public boolean isCompactHud() { return compactHud; }
 		public void setCompactHud(boolean compactHud) { this.compactHud = compactHud; }
