@@ -167,19 +167,21 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 
-            int[] bodyTint = ColorUtils.hexToRgb(character.getBodyColor());
-            int[] bodyTint2 = ColorUtils.hexToRgb(character.getBodyColor2());
-            int[] bodyTint3 = ColorUtils.hexToRgb(character.getBodyColor3());
-            int[] hairTint = ColorUtils.hexToRgb(character.getHairColor());
+            float[] bodyTint = hexToRGB(character.getBodyColor());
+            float[] bodyTint2 = hexToRGB(character.getBodyColor2());
+            float[] bodyTint3 = hexToRGB(character.getBodyColor3());
+            float[] hairTint = hexToRGB(character.getHairColor());
 
             boolean forceVanilla = raceConfig.useVanillaSkin();
             boolean isStandardHumanoid = (raceName.equals("human") || raceName.equals("saiyan"));
             boolean isDefaultBody = (bodyType == 0);
+            boolean hideArmorBones = (raceName.equals("majin") && gender.equals("male")) || gender.equals("female");
 
             //Por si carga las otras piezas del modelo aca las esconde
-            model.getBone("armorBody").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
+            model.getBone("armorBody").ifPresent(bone -> bone.setHidden(hideArmorBones));
             model.getBone("armorBody2").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
-            model.getBone("armorLeggingsBody").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
+            model.getBone("armorLeggingsBody").ifPresent(bone -> bone.setHidden(hideArmorBones));
+            model.getBone("boobas").ifPresent(bone -> bone.setHidden(gender.equals("female")));
             model.getBone("armorRightArm").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
             model.getBone("armorLeftArm").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
 
@@ -234,7 +236,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                         renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
                                 filePrefix + "layer4.png", hairTint);
                         renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
-                                filePrefix + "layer5.png", ColorUtils.hexToRgb("#e67d40"));
+                                filePrefix + "layer5.png", hexToRGB("#e67d40"));
                     } else {
                         renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
                                 filePrefix + "layer4.png", hairTint);
@@ -245,7 +247,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                     renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
                             filePrefix + "layer4.png", hairTint);
                     renderColoredPass(model, poseStack, animatable, bufferSource, packedLight, packedOverlay,
-                            filePrefix + "layer5.png", ColorUtils.hexToRgb("#dbcb9e"));
+                            filePrefix + "layer5.png", hexToRGB("#dbcb9e"));
                 }
                 return;
             }
@@ -285,17 +287,16 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
     @Override
     public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
 
-        String boneName = bone.getName();
-
         var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
         if (stats != null) {
             var character = stats.getCharacter();
-
+            var gender = character.getGender();
+            var raceName = character.getRaceName();
             boolean isMajinFat = character.getRace().equals("majin") &&
                     character.getGender().equals("male");
 
-            if (isMajinFat && !isRenderingArmor) {
-                if (renderCustomArmor(poseStack, animatable, bone, bufferSource, packedLight, packedOverlay, isReRender, partialTick)) {
+            if (isMajinFat && !isRenderingArmor || gender.equals("female") && !isRenderingArmor) {
+                if (renderCustomArmor(poseStack, animatable, bone, bufferSource, packedLight, packedOverlay, isReRender, partialTick, gender, raceName)) {
                     return;
                 }
             }
@@ -307,7 +308,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     }
 
-    private void renderColoredPass(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int packedLight, int packedOverlay, String texturePath, int[] rgb) {
+    private void renderColoredPass(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, int packedLight, int packedOverlay, String texturePath, float[] rgb) {
 
         ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, texturePath);
         RenderType type = RenderType.entityCutoutNoCull(loc);
@@ -319,11 +320,10 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
     }
 
 
-    private boolean renderCustomArmor(PoseStack poseStack, T animatable, GeoBone mainBone, MultiBufferSource bufferSource, int packedLight, int packedOverlay, boolean isReRender, float partialTick) {
+    private boolean renderCustomArmor(PoseStack poseStack, T animatable, GeoBone mainBone, MultiBufferSource bufferSource, int packedLight, int packedOverlay, boolean isReRender, float partialTick, String gender, String raceName) {
         String boneName = mainBone.getName();
 
-        // 1. FILTRO DE HUESOS
-        if (boneName.equals("armorBody") || boneName.equals("armorBody2")) {
+        if (boneName.equals("armorBody") || boneName.equals("armorBody2") || boneName.equals("boobas")) {
 
             ItemStack chestStack = animatable.getItemBySlot(EquipmentSlot.CHEST);
 
@@ -334,8 +334,18 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                 boolean isVanillaArmor = texture.getNamespace().equals("minecraft");
 
                 if (isVanillaArmor) {
+                    ResourceLocation modelToLoad = null;
 
-                    BakedGeoModel armorGeoModel = GeckoLibCache.getBakedModels().get(MAJIN_ARMOR_MODEL);
+                    if (gender.equals("female")) {
+                        modelToLoad = MAJIN_SLIM_ARMOR_MODEL;
+                    }
+                    else if (raceName.equals("majin")) {
+                        modelToLoad = MAJIN_ARMOR_MODEL;
+                    }
+
+                    if (modelToLoad == null) modelToLoad = MAJIN_ARMOR_MODEL;
+
+                    BakedGeoModel armorGeoModel = GeckoLibCache.getBakedModels().get(modelToLoad);
                     if (armorGeoModel == null) return false;
 
                     Optional<GeoBone> armorBoneOpt = armorGeoModel.getBone(boneName);
@@ -351,11 +361,11 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                         armorBone.setPosY(mainBone.getPosY());
                         armorBone.setPosZ(mainBone.getPosZ());
 
-                        float inflation = 1.07f;
-
+                        float inflation = 1.05f;
                         armorBone.setScaleX(mainBone.getScaleX() * inflation);
-                        armorBone.setScaleY(mainBone.getScaleY() * inflation + 0.05f);
+                        armorBone.setScaleY(mainBone.getScaleY() * inflation);
                         armorBone.setScaleZ(mainBone.getScaleZ() * inflation);
+
 
                         float r = 1.0F, g = 1.0F, b = 1.0F;
                         if (armorItem instanceof DyeableArmorItem dyeable) {
@@ -384,10 +394,9 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                         return true;
                     }
                 }
+
                 else {
-
                     float r = 1.0F, g = 1.0F, b = 1.0F;
-
                     RenderType armorType = RenderType.entityCutoutNoCull(texture);
                     VertexConsumer armorBuffer = ItemRenderer.getArmorFoilBuffer(bufferSource, armorType, false, chestStack.hasFoil());
 
@@ -434,4 +443,17 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         super.renderNameTag(pEntity, pDisplayName, pPoseStack, pBuffer, pPackedLight);
     }
 
+    private float[] hexToRGB(String hexColor) {
+        if (hexColor == null || hexColor.isEmpty()) return new float[]{1.0f, 1.0f, 1.0f};
+        try {
+            if (hexColor.startsWith("#")) hexColor = hexColor.substring(1);
+            long color = Long.parseLong(hexColor, 16);
+            float r = ((color >> 16) & 0xFF) / 255.0f;
+            float g = ((color >> 8) & 0xFF) / 255.0f;
+            float b = (color & 0xFF) / 255.0f;
+            return new float[]{r, g, b};
+        } catch (Exception e) {
+            return new float[]{1.0f, 1.0f, 1.0f};
+        }
+    }
 }

@@ -34,6 +34,9 @@ public class PlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> ex
                 if (boneName.equals("armorBody")) {
                     return null;
                 }
+                if (boneName.equals("boobas")) {
+                    return null;
+                }
             }
         }
 
