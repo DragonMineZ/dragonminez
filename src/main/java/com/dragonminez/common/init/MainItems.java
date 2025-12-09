@@ -1,6 +1,8 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.init.armor.ModArmorMaterials;
 import com.dragonminez.common.init.item.*;
 import net.minecraft.world.item.*;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -186,9 +188,9 @@ public final class MainItems {
 //	public static final RegistryObject<Item> SHIN_ARMOR_LEGGINGS = armorItem("shin_armor_leggings", ArmorItem.Type.LEGGINGS, "kaioshin");
 //	public static final RegistryObject<Item> SHIN_ARMOR_BOOTS = armorItem("shin_armor_boots", ArmorItem.Type.BOOTS, "kaioshin");
 //	// BLACK GOKU
-//	public static final RegistryObject<Item> BLACK_ARMOR_CHESTPLATE = armorItem("black_armor_chestplate", ArmorItem.Type.CHESTPLATE, "blackgoku");
-//	public static final RegistryObject<Item> BLACK_ARMOR_LEGGINGS = armorItem("black_armor_leggings", ArmorItem.Type.LEGGINGS, "blackgoku");
-//	public static final RegistryObject<Item> BLACK_ARMOR_BOOTS = armorItem("black_armor_boots", ArmorItem.Type.BOOTS, "blackgoku");
+	public static final RegistryObject<Item> BLACK_ARMOR_CHESTPLATE = armorItem("black_armor_chestplate", ArmorItem.Type.CHESTPLATE, "blackgoku");
+	public static final RegistryObject<Item> BLACK_ARMOR_LEGGINGS = armorItem("black_armor_leggings", ArmorItem.Type.LEGGINGS, "blackgoku");
+	public static final RegistryObject<Item> BLACK_ARMOR_BOOTS = armorItem("black_armor_boots", ArmorItem.Type.BOOTS, "blackgoku");
 //	// ZAMASU
 //	public static final RegistryObject<Item> ZAMASU_ARMOR_CHESTPLATE = armorItem("zamasu_armor_chestplate", ArmorItem.Type.CHESTPLATE, "zamasu_gi");
 //	public static final RegistryObject<Item> ZAMASU_ARMOR_LEGGINGS = armorItem("zamasu_armor_leggings", ArmorItem.Type.LEGGINGS, "zamasu_gi");
@@ -405,11 +407,11 @@ public final class MainItems {
 	//}
 //
 	//// Mismos métodos, pero con isDamageOn en false por defecto, evitando así poner "false" en cada registro de items.
-	//public static RegistryObject<Item> armorItem(String name, ArmorItem.Type armorType, String itemId) {
-	//	return ITEM_REGISTER.register(name, () ->
-	//			new DbzArmorItem(ModArmorMaterials.KIKONO, armorType,
-	//					new Item.Properties().fireResistant().stacksTo(1), itemId, false, false));
-	//}
+	public static RegistryObject<Item> armorItem(String name, ArmorItem.Type armorType, String itemId) {
+		return ITEM_REGISTER.register(name, () ->
+				new DbzArmorItem(ModArmorMaterials.KIKONO, armorType,
+						new Item.Properties().fireResistant().stacksTo(1), itemId, false, false));
+	}
 //
 	//public static RegistryObject<Item> saiyArItem(String name, ArmorItem.Type armorType, String itemId) {
 	//	return ITEM_REGISTER.register(name, () ->

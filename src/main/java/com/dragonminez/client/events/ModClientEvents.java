@@ -4,8 +4,10 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainBlockEntities;
+import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -26,4 +28,10 @@ public class ModClientEvents {
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);
 		});
 	}
+
+    @SubscribeEvent
+    public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions e) {
+        e.registerLayerDefinition(ArmorBaseModel.LAYER_LOCATION, ArmorBaseModel::createBodyLayer);
+
+    }
 }

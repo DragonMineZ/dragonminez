@@ -153,6 +153,8 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     private void renderAll(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
 
+        hideLayerBonesIfArmored(model, animatable);
+
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         var stats = statsCap.orElse(null);
 
@@ -182,8 +184,8 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             model.getBone("armorBody2").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
             model.getBone("armorLeggingsBody").ifPresent(bone -> bone.setHidden(hideArmorBones));
             model.getBone("boobas").ifPresent(bone -> bone.setHidden(gender.equals("female")));
-            model.getBone("armorRightArm").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
-            model.getBone("armorLeftArm").ifPresent(bone -> bone.setHidden(raceName.equals("majin") && gender.equals("male")));
+            model.getBone("armorRightArm").ifPresent(bone -> bone.setHidden(true));
+            model.getBone("armorLeftArm").ifPresent(bone -> bone.setHidden(true));
 
             if (forceVanilla || (isStandardHumanoid && isDefaultBody && !hasForm)) {
                 ResourceLocation playerSkin = animatable.getSkinTextureLocation();
@@ -438,6 +440,27 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         return new ResourceLocation(textureString);
     }
 
+    private void hideLayerBonesIfArmored(BakedGeoModel model, T animatable) {
+        ItemStack chestStack = animatable.getItemBySlot(EquipmentSlot.CHEST);
+        if (!chestStack.isEmpty()) {
+            model.getBone("body_layer").ifPresent(bone -> bone.setHidden(true));
+            model.getBone("right_arm_layer").ifPresent(bone -> bone.setHidden(true));
+            model.getBone("left_arm_layer").ifPresent(bone -> bone.setHidden(true));
+        } else {
+            model.getBone("body_layer").ifPresent(bone -> bone.setHidden(false));
+            model.getBone("right_arm_layer").ifPresent(bone -> bone.setHidden(false));
+            model.getBone("left_arm_layer").ifPresent(bone -> bone.setHidden(false));
+        }
+        ItemStack legStack = animatable.getItemBySlot(EquipmentSlot.LEGS);
+        ItemStack bootStack = animatable.getItemBySlot(EquipmentSlot.FEET);
+        if (!legStack.isEmpty() || !bootStack.isEmpty()) {
+            model.getBone("right_leg_layer").ifPresent(bone -> bone.setHidden(true));
+            model.getBone("left_leg_layer").ifPresent(bone -> bone.setHidden(true));
+        } else {
+            model.getBone("right_leg_layer").ifPresent(bone -> bone.setHidden(false));
+            model.getBone("left_leg_layer").ifPresent(bone -> bone.setHidden(false));
+        }
+    }
     @Override
     protected void renderNameTag(T pEntity, Component pDisplayName, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
         super.renderNameTag(pEntity, pDisplayName, pPoseStack, pBuffer, pPackedLight);
