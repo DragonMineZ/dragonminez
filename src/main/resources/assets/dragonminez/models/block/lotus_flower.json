@@ -1,0 +1,37 @@
+{
+	"credit": "Made with Blockbench",
+	"ambientocclusion": false,
+	"textures": {
+		"particle": "dragonminez:block/lilypad_namek",
+		"texture": "dragonminez:block/lilypad_namek",
+		"root": "dragonminez:block/lotus_flower0"
+	},
+	"elements": [
+		{
+			"from": [0, 0.25, 0],
+			"to": [16, 0.25, 16],
+			"faces": {
+				"up": {"uv": [16, 0, 0, 16], "texture": "#texture", "tintindex": 0},
+				"down": {"uv": [16, 16, 0, 0], "texture": "#texture", "tintindex": 0}
+			}
+		},
+		{
+			"from": [4, -10.75, 8],
+			"to": [12, 0.25, 8],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 0.25, 8]},
+			"faces": {
+				"north": {"uv": [0, 5, 8, 16], "texture": "#root"},
+				"south": {"uv": [0, 5, 8, 16], "texture": "#root"}
+			}
+		},
+		{
+			"from": [8, -10.75, 4],
+			"to": [8, 0.25, 12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 0.25, 8]},
+			"faces": {
+				"east": {"uv": [0, 5, 8, 16], "texture": "#root"},
+				"west": {"uv": [0, 5, 8, 16], "texture": "#root"}
+			}
+		}
+	]
+}

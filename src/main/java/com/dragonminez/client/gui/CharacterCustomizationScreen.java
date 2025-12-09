@@ -119,7 +119,7 @@ public class CharacterCustomizationScreen extends Screen {
 
     private void initPage0(int centerY) {
         int eyesPosX = 113;
-        int eyesPosY = centerY - 62;
+        int eyesPosY = centerY - 70;
 
         addRenderableWidget(createArrowButton(eyesPosX - 65, eyesPosY, true,
                 btn -> changeEyes(-1)));
@@ -127,7 +127,7 @@ public class CharacterCustomizationScreen extends Screen {
                 btn -> changeEyes(1)));
 
         int nosePosX = 113;
-        int nosePosY = centerY - 26;
+        int nosePosY = centerY - 40;
 
         addRenderableWidget(createArrowButton(nosePosX - 65, nosePosY, true,
                 btn -> changeNose(-1)));
@@ -135,7 +135,7 @@ public class CharacterCustomizationScreen extends Screen {
                 btn -> changeNose(1)));
 
         int mouthPosX = 113;
-        int mouthPosY = centerY + 10;
+        int mouthPosY = centerY - 10;
 
         addRenderableWidget(createArrowButton(mouthPosX - 65, mouthPosY, true,
                 btn -> changeMouth(-1)));
@@ -144,7 +144,7 @@ public class CharacterCustomizationScreen extends Screen {
 
         if (canChangeBodyType()) {
             int bodyPosX = 113;
-            int bodyPosY = centerY + 46;
+            int bodyPosY = centerY + 20;
 
             addRenderableWidget(createArrowButton(bodyPosX - 65, bodyPosY, true,
                     btn -> changeBodyType(-1)));
@@ -153,7 +153,7 @@ public class CharacterCustomizationScreen extends Screen {
         }
 
         int hairPosX = 113;
-        int hairPosY = centerY + 82;
+        int hairPosY = centerY + 50;
 
         addRenderableWidget(createArrowButton(hairPosX - 65, hairPosY, true,
                 btn -> changeHair(-1)));
@@ -162,7 +162,7 @@ public class CharacterCustomizationScreen extends Screen {
 
         if (character.canHaveGender()) {
             int genderPosX = 113;
-            int genderPosY = centerY + 118;
+            int genderPosY = centerY + 80;
 
             if (character.getGender().equals(Character.GENDER_MALE)) {
                 addRenderableWidget(createArrowButton(genderPosX, genderPosY, false,
@@ -637,17 +637,17 @@ public class CharacterCustomizationScreen extends Screen {
         int textX = 84;
 
         if (currentPage == 0) {
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.eyes").getString(), textX, centerY - 70, 0xFF9B9B);
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getEyesType() + 1).getString(), textX, centerY - 58, 0xFFFFFF);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.eyes").getString(), textX, centerY - 78, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getEyesType() + 1).getString(), textX, centerY - 66, 0xFFFFFF);
 
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.nose").getString(), textX, centerY - 34, 0xFF9B9B);
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getNoseType() + 1).getString(), textX, centerY - 22, 0xFFFFFF);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.nose").getString(), textX, centerY - 48, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getNoseType() + 1).getString(), textX, centerY - 36, 0xFFFFFF);
 
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.mouth").getString(), textX, centerY + 2, 0xFF9B9B);
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getMouthType() + 1).getString(), textX, centerY + 14, 0xFFFFFF);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.mouth").getString(), textX, centerY - 18, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getMouthType() + 1).getString(), textX, centerY - 6, 0xFFFFFF);
 
             if (canChangeBodyType()) {
-                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.body_type").getString(), textX, centerY + 38, 0xFF9B9B);
+                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.body_type").getString(), textX, centerY + 12, 0xFF9B9B);
 
                 String race = character.getRace();
                 int bodyType = character.getBodyType();
@@ -660,17 +660,17 @@ public class CharacterCustomizationScreen extends Screen {
                     bodyTypeText = Component.translatable("gui.dragonminez.customization.type", bodyType + 1).getString();
                 }
 
-                drawCenteredStringWithBorder(graphics, bodyTypeText, textX, centerY + 50, 0xFFFFFF);
+                drawCenteredStringWithBorder(graphics, bodyTypeText, textX, centerY + 24, 0xFFFFFF);
             }
 
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hair").getString(), textX, centerY + 74, 0xFF9B9B);
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 86, 0xFFFFFF);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hair").getString(), textX, centerY + 42, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 54, 0xFFFFFF);
 
             if (character.canHaveGender()) {
-                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.gender").getString(), textX, centerY + 110, 0xFF9B9B);
+                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.gender").getString(), textX, centerY + 72, 0xFF9B9B);
                 String genderText = Component.translatable("gender.dragonminez." + character.getGender()).getString();
                 int genderColor = character.getGender().equals(Character.GENDER_MALE) ? 0x2133A6 : 0xFC63D9;
-                drawCenteredStringWithBorder(graphics, genderText, textX, centerY + 122, 0xFFFFFF, genderColor);
+                drawCenteredStringWithBorder(graphics, genderText, textX, centerY + 84, 0xFFFFFF, genderColor);
             }
         } else if (currentPage == 1) {
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.class").getString(), textX, centerY - 70, 0xFF9B9B);

@@ -1,17 +1,17 @@
 package com.dragonminez.common.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 
 public class RaceStatsConfig {
 
-    @JsonProperty("warrior")
+    @SerializedName("warrior")
     private ClassStats warrior = new ClassStats();
 
-    @JsonProperty("spiritualist")
+    @SerializedName("spiritualist")
     private ClassStats spiritualist = new ClassStats();
 
-    @JsonProperty("martial_artist")
+    @SerializedName("martial_artist")
     private ClassStats martialArtist = new ClassStats();
 
     public RaceStatsConfig() {}
@@ -41,10 +41,10 @@ public class RaceStatsConfig {
     }
 
     public static class ClassStats {
-        @JsonProperty("base_stats")
+        @SerializedName("base_stats")
         private BaseStats baseStats = new BaseStats();
 
-        @JsonProperty("stat_scaling")
+        @SerializedName("stat_scaling")
         private StatScaling statScaling = new StatScaling();
 
         public BaseStats getBaseStats() {
@@ -65,22 +65,22 @@ public class RaceStatsConfig {
     }
 
     public static class BaseStats {
-        @JsonProperty("STR")
+        @SerializedName("STR")
         private int strength = 5;
 
-        @JsonProperty("SKP")
+        @SerializedName("SKP")
         private int strikePower = 5;
 
-        @JsonProperty("RES")
+        @SerializedName("RES")
         private int resistance = 5;
 
-        @JsonProperty("VIT")
+        @SerializedName("VIT")
         private int vitality = 5;
 
-        @JsonProperty("PWR")
+        @SerializedName("PWR")
         private int kiPower = 5;
 
-        @JsonProperty("ENE")
+        @SerializedName("ENE")
         private int energy = 5;
 
         public int getStrength() { return strength; }
@@ -99,25 +99,25 @@ public class RaceStatsConfig {
     }
 
     public static class StatScaling {
-        @JsonProperty("STR_scaling")
+        @SerializedName("STR_scaling")
         private double strengthScaling = 1.0;
 
-        @JsonProperty("SKP_scaling")
+        @SerializedName("SKP_scaling")
         private double strikePowerScaling = 1.0;
 
-        @JsonProperty("STM_scaling")
+        @SerializedName("STM_scaling")
         private double staminaScaling = 1.0;
 
-        @JsonProperty("DEF_scaling")
+        @SerializedName("DEF_scaling")
         private double defenseScaling = 1.0;
 
-        @JsonProperty("VIT_scaling")
+        @SerializedName("VIT_scaling")
         private double vitalityScaling = 1.0;
 
-        @JsonProperty("PWR_scaling")
+        @SerializedName("PWR_scaling")
         private double kiPowerScaling = 1.0;
 
-        @JsonProperty("ENE_scaling")
+        @SerializedName("ENE_scaling")
         private double energyScaling = 1.0;
 
         public double getStrengthScaling() { return strengthScaling; }

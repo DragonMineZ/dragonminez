@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "": [
+	{"model": "dragonminez:block/amaryllis_flower1"},
+	{"model": "dragonminez:block/amaryllis_flower1", "y": 90},
+	{"model": "dragonminez:block/amaryllis_flower1", "y": 180},
+	{"model": "dragonminez:block/amaryllis_flower1", "y": 270},
+	{"model": "dragonminez:block/amaryllis_flower2"},
+	{"model": "dragonminez:block/amaryllis_flower2", "y": 90},
+	{"model": "dragonminez:block/amaryllis_flower2", "y": 180},
+	{"model": "dragonminez:block/amaryllis_flower2", "y": 270},
+	{"model": "dragonminez:block/amaryllis_flower3"},
+	{"model": "dragonminez:block/amaryllis_flower3", "y": 90},
+	{"model": "dragonminez:block/amaryllis_flower3", "y": 180},
+	{"model": "dragonminez:block/amaryllis_flower3", "y": 270},
+	{"model": "dragonminez:block/amaryllis_flower4"},
+	{"model": "dragonminez:block/amaryllis_flower4", "y": 90},
+	{"model": "dragonminez:block/amaryllis_flower4", "y": 180},
+	{"model": "dragonminez:block/amaryllis_flower4", "y": 270}
+  ]
+  }
+}

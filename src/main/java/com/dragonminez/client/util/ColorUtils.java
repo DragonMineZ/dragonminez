@@ -6,14 +6,14 @@ public class ColorUtils {
         if (hex == null || hex.isEmpty()) {
             return new int[]{255, 255, 255};
         }
-        hex = hex.replace("#", "");
-        if (hex.length() != 6) {
-            return new int[]{255, 255, 255};
-        }
         try {
-            int r = Integer.parseInt(hex.substring(0, 2), 16);
-            int g = Integer.parseInt(hex.substring(2, 4), 16);
-            int b = Integer.parseInt(hex.substring(4, 6), 16);
+            if (hex.startsWith("#")) {
+                hex = hex.substring(1);
+            }
+            int color = Integer.parseInt(hex, 16);
+            int r = (color >> 16) & 0xFF;
+            int g = (color >> 8) & 0xFF;
+            int b = color & 0xFF;
             return new int[]{r, g, b};
         } catch (NumberFormatException e) {
             return new int[]{255, 255, 255};

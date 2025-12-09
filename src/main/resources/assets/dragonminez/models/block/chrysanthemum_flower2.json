@@ -1,0 +1,8 @@
+{
+	"credit": "Made with Blockbench",
+	"parent": "dragonminez:block/marigold_flower2",
+	"textures": {
+		"0": "dragonminez:block/chrysanthemum_flower",
+		"particle": "dragonminez:block/chrysanthemum_flower"
+	}
+}

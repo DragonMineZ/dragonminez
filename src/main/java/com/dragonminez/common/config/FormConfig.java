@@ -1,16 +1,16 @@
 package com.dragonminez.common.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FormConfig {
 
-    @JsonProperty("group_name")
+    @SerializedName("group_name")
     private String groupName;
 
-    @JsonProperty("forms")
+    @SerializedName("forms")
     private Map<String, FormData> forms = new LinkedHashMap<>();
 
     public FormConfig() {}
@@ -45,64 +45,64 @@ public class FormConfig {
     }
 
     public static class FormData {
-        @JsonProperty("name")
+        @SerializedName("name")
         private String name = "";
 
-        @JsonProperty("custom_model")
+        @SerializedName("custom_model")
         private String customModel = "";
 
-        @JsonProperty("body_color_1")
+        @SerializedName("body_color_1")
         private String bodyColor1 = "";
 
-        @JsonProperty("body_color_2")
+        @SerializedName("body_color_2")
         private String bodyColor2 = "";
 
-        @JsonProperty("body_color_3")
+        @SerializedName("body_color_3")
         private String bodyColor3 = "";
 
-        @JsonProperty("hair_type")
+        @SerializedName("hair_type")
         private int hairType = -1;
 
-        @JsonProperty("hair_color")
+        @SerializedName("hair_color")
         private String hairColor = "";
 
-        @JsonProperty("eye1_color")
+        @SerializedName("eye1_color")
         private String eye1Color = "";
 
-        @JsonProperty("eye2_color")
+        @SerializedName("eye2_color")
         private String eye2Color = "";
 
-        @JsonProperty("aura_color")
+        @SerializedName("aura_color")
         private String auraColor = "";
 
-        @JsonProperty("model_scaling")
+        @SerializedName("model_scaling")
         private double modelScaling = 1.0;
 
-        @JsonProperty("str_mult")
+        @SerializedName("str_mult")
         private double strMultiplier = 1.0;
 
-        @JsonProperty("skp_mult")
+        @SerializedName("skp_mult")
         private double skpMultiplier = 1.0;
 
-        @JsonProperty("stm_mult")
+        @SerializedName("stm_mult")
         private double stmMultiplier = 1.0;
 
-        @JsonProperty("def_mult")
+        @SerializedName("def_mult")
         private double defMultiplier = 1.0;
 
-        @JsonProperty("vit_mult")
+        @SerializedName("vit_mult")
         private double vitMultiplier = 1.0;
 
-        @JsonProperty("pwr_mult")
+        @SerializedName("pwr_mult")
         private double pwrMultiplier = 1.0;
 
-        @JsonProperty("ene_mult")
+        @SerializedName("ene_mult")
         private double eneMultiplier = 1.0;
 
-        @JsonProperty("speed_mult")
+        @SerializedName("speed_mult")
         private double speedMultiplier = 1.0;
 
-        @JsonProperty("energy_drain")
+        @SerializedName("energy_drain")
         private double energyDrain = 1.0;
 
         public FormData() {}

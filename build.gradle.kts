@@ -126,17 +126,6 @@ dependencies {
     implementation("io.netty:netty-handler:4.2.0.Final")
     implementation("org.apache.commons:commons-compress:1.27.1")
 
-    // Jackson dependencies
-    val jacksonCoreDep = "minecraftLibrary"(jarJar("com.fasterxml.jackson.core:jackson-core:2.18.3")!!)
-    jarJar.ranged(jacksonCoreDep, "[2.18.3,)")
-
-    val jacksonAnnotationsDep = "minecraftLibrary"(jarJar("com.fasterxml.jackson.core:jackson-annotations:2.18.3")!!)
-    jarJar.ranged(jacksonAnnotationsDep, "[2.18.3,)")
-
-    val jacksonDatabindDep = "minecraftLibrary"(jarJar("com.fasterxml.jackson.core:jackson-databind:2.18.3")!!)
-    jarJar.ranged(jacksonDatabindDep, "[2.18.3,)")
-
-
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2"))
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.7"))

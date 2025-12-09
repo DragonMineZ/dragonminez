@@ -1,0 +1,14 @@
+{
+  "variants": {
+    "": [
+	{"model": "dragonminez:block/sacred_trillium_flower1"},
+	{"model": "dragonminez:block/sacred_trillium_flower1", "y": 90},
+	{"model": "dragonminez:block/sacred_trillium_flower1", "y": 180},
+	{"model": "dragonminez:block/sacred_trillium_flower1", "y": 270},
+	{"model": "dragonminez:block/sacred_trillium_flower2"},
+	{"model": "dragonminez:block/sacred_trillium_flower2", "y": 90},
+	{"model": "dragonminez:block/sacred_trillium_flower2", "y": 180},
+	{"model": "dragonminez:block/sacred_trillium_flower2", "y": 270}
+  ]
+  }
+}

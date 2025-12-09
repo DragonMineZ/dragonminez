@@ -1,0 +1,6 @@
+{
+    "parent": "block/tinted_cross",
+    "textures": {
+        "cross": "dragonminez:block/sacred_fern_0"
+    }
+}

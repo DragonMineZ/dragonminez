@@ -1,0 +1,230 @@
+{
+  "entity.namekian.vill.ambient": {
+    "subtitle": "sounds.dragonminez.entity.namekian.vill.ambient",
+    "sounds": [
+      "dragonminez:namek_vill_ambient"
+    ]
+  },
+  "entity.namekian.vill.hurt": {
+    "subtitle": "sounds.dragonminez.entity.namekian.vill.hurt",
+    "sounds": [
+      "dragonminez:namek_vill_hurt"
+    ]
+  },
+  "entity.namekian.vill.death": {
+    "subtitle": "sounds.dragonminez.entity.namekian.vill.death",
+    "sounds": [
+      "dragonminez:namek_vill_death"
+    ]
+  },
+  "entity.frieza.s.ambient": {
+    "subtitle": "sounds.dragonminez.entity.frieza.s.ambient",
+    "sounds": [
+      "dragonminez:frieza_s_ambient"
+    ]
+  },
+  "entity.frieza.s.hurt": {
+    "subtitle": "sounds.dragonminez.entity.frieza.s.hurt",
+    "sounds": [
+      "dragonminez:frieza_s_hurt"
+    ]
+  },
+  "entity.frieza.s.death": {
+    "subtitle": "sounds.dragonminez.entity.frieza.s.death",
+    "sounds": [
+      "dragonminez:frieza_s_death"
+    ]
+  },
+  "entity.frieza.s.attack": {
+    "subtitle": "sounds.dragonminez.entity.frieza.s.attack",
+    "sounds": [
+      "dragonminez:frieza_s_attack"
+    ]
+  },
+  "ui_menu_switch": {
+    "subtitle": "sounds.dragonminez.ui_menu_switch",
+    "sounds": [
+      "dragonminez:ui_menu_switch"
+    ]
+  },
+  "ui_nave_cooldown": {
+    "subtitle": "sounds.dragonminez.ui_nave_cooldown",
+    "sounds": [
+      "dragonminez:ui_nave_cooldown"
+    ]
+  },
+  "ui_nave_takeoff": {
+    "subtitle": "sounds.dragonminez.ui_nave_takeoff",
+    "sounds": [
+      "dragonminez:ui_nave_takeoff"
+    ]
+  },
+  "punch1": {
+    "subtitle": "sounds.dragonminez.punch1",
+    "sounds": [
+      "dragonminez:golpe1"
+    ]
+  },
+  "punch2": {
+    "subtitle": "sounds.dragonminez.punch2",
+    "sounds": [
+      "dragonminez:golpe2"
+    ]
+  },
+  "punch3": {
+    "subtitle": "sounds.dragonminez.punch3",
+    "sounds": [
+      "dragonminez:golpe3"
+    ]
+  },
+  "punch4": {
+    "subtitle": "sounds.dragonminez.punch4",
+    "sounds": [
+      "dragonminez:golpe4"
+    ]
+  },
+  "punch5": {
+    "subtitle": "sounds.dragonminez.punch5",
+    "sounds": [
+      "dragonminez:golpe5"
+    ]
+  },
+  "punch6": {
+    "subtitle": "sounds.dragonminez.punch6",
+    "sounds": [
+      "dragonminez:golpe6"
+    ]
+  },
+  "critic_punch1": {
+    "subtitle": "sounds.dragonminez.critic_punch1",
+    "sounds": [
+      "dragonminez:critico1"
+    ]
+  },
+  "critic_punch2": {
+    "subtitle": "sounds.dragonminez.critic_punch2",
+    "sounds": [
+      "dragonminez:critico2"
+    ]
+  },
+  "dragonradar": {
+    "subtitle": "sounds.dragonminez.dragonradar",
+    "sounds": [
+      "dragonminez:dragonradar"
+    ]
+  },
+  "dragonballssound": {
+    "subtitle": "sounds.dragonminez.dragonballssound",
+    "sounds": [
+      "dragonminez:dragonballssound"
+    ]
+  },
+  "froglaugh": {
+    "subtitle": "sounds.dragonminez.froglaugh",
+    "sounds": [
+      "dragonminez:froglaugh"
+    ]
+  },
+  "frogsound1": {
+    "subtitle": "sounds.dragonminez.frogsound1",
+    "sounds": [
+      "dragonminez:frogsound1"
+    ]
+  },
+  "frogsound2": {
+    "subtitle": "sounds.dragonminez.frogsound2",
+    "sounds": [
+      "dragonminez:frogsound2"
+    ]
+  },
+  "frogsound3": {
+    "subtitle": "sounds.dragonminez.frogsound3",
+    "sounds": [
+      "dragonminez:frogsound3"
+    ]
+  },
+  "shenron": {
+    "subtitle": "sounds.dragonminez.shenron",
+    "sounds": [
+      "dragonminez:shenron"
+    ]
+  },
+  "ship_open": {
+    "subtitle": "sounds.dragonminez.ship_open",
+    "sounds": [
+      "dragonminez:ship_open"
+    ]
+  },
+  "ship_landing_open": {
+    "subtitle": "sounds.dragonminez.ship_landing_open",
+    "sounds": [
+      "dragonminez:ship_landing_open"
+    ]
+  },
+  "nube": {
+    "subtitle": "sounds.dragonminez.nube",
+    "sounds": [
+      "dragonminez:nube"
+    ]
+  },
+  "senzu": {
+    "subtitle": "sounds.dragonminez.senzu",
+    "sounds": [
+      "dragonminez:senzu"
+    ]
+  },
+  "menu_music": {
+    "subtitle": "sounds.dragonminez.menu_music",
+    "sounds": [
+      "dragonminez:menu_music"
+    ]
+  },
+  "aura_start": {
+    "subtitle": "sounds.dragonminez.aura_start",
+    "sounds": [
+      "dragonminez:aura_start"
+    ]
+  },
+  "ki_charge_loop": {
+    "subtitle": "sounds.dragonminez.ki_charge_loop",
+    "sounds": [
+      "dragonminez:ki_charge_loop"
+    ]
+  },
+  "turbo_loop": {
+    "subtitle": "sounds.dragonminez.turbo_loop",
+    "sounds": [
+      "dragonminez:turbo_loop"
+    ]
+  },
+  "kiblast_shoot": {
+    "subtitle": "sounds.dragonminez.kiblast_shoot",
+    "sounds": [
+      "dragonminez:kiblast_shoot"
+    ]
+  },
+  "oozaru_heartbeat": {
+    "subtitle": "sounds.dragonminez.oozaru_heartbeat",
+    "sounds": [
+      "dragonminez:oozaru_heartbeat"
+    ]
+  },
+  "oozaru_growl_player": {
+    "subtitle": "sounds.dragonminez.oozaru_growl_player",
+    "sounds": [
+      "dragonminez:oozaru_growl_player"
+    ]
+  },
+  "vegeta_oozaru_growl": {
+    "subtitle": "sounds.dragonminez.vegeta_oozaru_growl",
+    "sounds": [
+      "dragonminez:vegeta_oozaru_growl"
+    ]
+  },
+  "vegeta_oozaru_death": {
+    "subtitle": "sounds.dragonminez.vegeta_oozaru_death",
+    "sounds": [
+      "dragonminez:vegeta_oozaru_death"
+    ]
+  }
+}

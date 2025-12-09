@@ -69,5 +69,9 @@
   "gui.dragonminez.customization.back": "Back",
   "gui.dragonminez.customization.next": "Next",
   "gui.dragonminez.customization.confirm": "Confirm",
-  "gui.dragonminez.customization.select": "Select"
+  "gui.dragonminez.customization.select": "Select",
+
+  "item.dragonminez.senzu_bean.cooldown": "You must wait %s seconds before eating another Senzu Bean!",
+
+  "error.dmz.createcharacter": "You must create a character first!"
 }
