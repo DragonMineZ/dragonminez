@@ -59,7 +59,7 @@ public class StatsData {
         int vit = stats.getVitality();
         int pwr = stats.getKiPower();
 
-        double releaseMultiplier = (double) resources.getRelease() / 100.0;
+        double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
 
         return (int) ((str + skp + res + vit + pwr) * releaseMultiplier);
     }
@@ -170,7 +170,7 @@ public class StatsData {
 
         resources.setCurrentEnergy(getMaxEnergy());
         resources.setCurrentStamina(getMaxStamina());
-        resources.setRelease(5);
+        resources.setPowerRelease(5);
         resources.setAlignment(100);
     }
 

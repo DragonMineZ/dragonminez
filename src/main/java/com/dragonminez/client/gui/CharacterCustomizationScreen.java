@@ -72,7 +72,6 @@ public class CharacterCustomizationScreen extends Screen {
         if (config == null) return;
 
         if (character.getBodyColor() == null || character.getBodyColor().isEmpty()) {
-            System.out.println("[CharCustom] initDefaults - Setting bodyColor from config");
             character.setBodyColor(config.getDefaultBodyColor());
         }
         if (character.getBodyColor2() == null || character.getBodyColor2().isEmpty()) {
@@ -82,7 +81,6 @@ public class CharacterCustomizationScreen extends Screen {
             character.setBodyColor3(config.getDefaultBodyColor3());
         }
         if (character.getHairColor() == null || character.getHairColor().isEmpty()) {
-            System.out.println("[CharCustom] initDefaults - Setting hairColor from config");
             character.setHairColor(config.getDefaultHairColor());
         }
         if (character.getEye1Color() == null || character.getEye1Color().isEmpty()) {
@@ -92,7 +90,6 @@ public class CharacterCustomizationScreen extends Screen {
             character.setEye2Color(config.getDefaultEye2Color());
         }
         if (character.getAuraColor() == null || character.getAuraColor().isEmpty()) {
-            System.out.println("[CharCustom] initDefaults - Setting auraColor from config");
             character.setAuraColor(config.getDefaultAuraColor());
         }
     }
@@ -556,7 +553,6 @@ public class CharacterCustomizationScreen extends Screen {
         };
 
         String result = (color != null && !color.isEmpty()) ? color : "#FFFFFF";
-        System.out.println("[CharCustom] getColorFromField('" + fieldName + "') - raw: " + color + " -> result: " + result);
         return result;
     }
 

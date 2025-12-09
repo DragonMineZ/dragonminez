@@ -13,16 +13,29 @@ public class GeneralUserConfig {
     }
 
     public static class HudConfig {
+		private int xenoverseHudPosX = 5;
+		private int xenoverseHudPosY = 5;
+		private boolean compactHud = false;
         private int healthBarPosX = 10;
         private int healthBarPosY = 50;
         private int energyBarPosX = 10;
         private int energyBarPosY = 10;
         private int staminaBarPosX = 10;
         private int staminaBarPosY = 30;
-        private boolean compactHud = false;
+
+		public int getXenoverseHudPosX() { return xenoverseHudPosX; }
+		public void setXenoverseHudPosX(int xenoverseHudPosX) { this.xenoverseHudPosX = xenoverseHudPosX; }
+		public int getXenoverseHudPosY() { return xenoverseHudPosY; }
+		public void setXenoverseHudPosY(int xenoverseHudPosY) { this.xenoverseHudPosY = xenoverseHudPosY; }
+
+		public boolean isCompactHud() { return compactHud; }
+		public void setCompactHud(boolean compactHud) { this.compactHud = compactHud; }
 
         public int getHealthBarPosX() { return healthBarPosX; }
         public void setHealthBarPosX(int healthBarPosX) { this.healthBarPosX = healthBarPosX; }
+
+		public int getHealthBarPosY() { return healthBarPosY; }
+		public void setHealthBarPosY(int healthBarPosY) { this.healthBarPosY = healthBarPosY; }
 
         public int getEnergyBarPosX() { return energyBarPosX; }
         public void setEnergyBarPosX(int energyBarPosX) { this.energyBarPosX = energyBarPosX; }
@@ -35,9 +48,6 @@ public class GeneralUserConfig {
 
         public int getStaminaBarPosY() { return staminaBarPosY; }
         public void setStaminaBarPosY(int staminaBarPosY) { this.staminaBarPosY = staminaBarPosY; }
-
-        public boolean isCompactHud() { return compactHud; }
-        public void setCompactHud(boolean compactHud) { this.compactHud = compactHud; }
     }
 }
 

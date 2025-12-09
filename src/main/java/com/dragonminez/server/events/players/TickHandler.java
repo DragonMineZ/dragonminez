@@ -67,6 +67,20 @@ public class TickHandler {
                 playerTickCounters.put(playerId, tickCounter);
             }
 
+			if (data.getStatus().isChargingKi() && !data.getStatus().isDescending() && tickCounter % 20 == 0) {
+				int currentRelease = data.getResources().getPowerRelease();
+				if (currentRelease < 100) {
+					int newRelease = Math.min(100, currentRelease + 5);
+					data.getResources().setPowerRelease(newRelease);
+				}
+			} else if (data.getStatus().isDescending() && data.getStatus().isChargingKi() && tickCounter % 20 == 0) {
+				int currentRelease = data.getResources().getPowerRelease();
+				if (currentRelease > 0) {
+					int newRelease = Math.max(0, currentRelease - 5);
+					data.getResources().setPowerRelease(newRelease);
+				}
+			}
+
             if (shouldSync) {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             }

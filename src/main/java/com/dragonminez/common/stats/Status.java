@@ -12,6 +12,7 @@ public class Status {
     private boolean isDescending;
     private boolean isInKaioPlanet;
     private boolean compactMenu;
+	private boolean isChargingKi;
 
     public Status() {
         this.isAlive = true;
@@ -23,6 +24,7 @@ public class Status {
         this.isDescending = false;
         this.isInKaioPlanet = false;
         this.compactMenu = false;
+		this.isChargingKi = false;
     }
 
     public boolean isAlive() { return isAlive; }
@@ -34,6 +36,7 @@ public class Status {
     public boolean isDescending() { return isDescending; }
     public boolean isInKaioPlanet() { return isInKaioPlanet; }
     public boolean isCompactMenu() { return compactMenu; }
+	public boolean isChargingKi() { return isChargingKi; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -44,6 +47,7 @@ public class Status {
     public void setDescending(boolean descending) { this.isDescending = descending; }
     public void setInKaioPlanet(boolean inKaio) { this.isInKaioPlanet = inKaio; }
     public void setCompactMenu(boolean compact) { this.compactMenu = compact; }
+	public void setChargingKi(boolean charging) { this.isChargingKi = charging; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -56,6 +60,7 @@ public class Status {
         tag.putBoolean("Descending", isDescending);
         tag.putBoolean("InKaioPlanet", isInKaioPlanet);
         tag.putBoolean("CompactMenu", compactMenu);
+		tag.putBoolean("IsChargingKi", isChargingKi);
         return tag;
     }
 
@@ -69,6 +74,7 @@ public class Status {
         this.isDescending = tag.getBoolean("Descending");
         this.isInKaioPlanet = tag.getBoolean("InKaioPlanet");
         this.compactMenu = tag.getBoolean("CompactMenu");
+		this.isChargingKi = tag.getBoolean("IsChargingKi");
     }
 
     public void copyFrom(Status other) {
@@ -81,6 +87,7 @@ public class Status {
         this.isDescending = other.isDescending;
         this.isInKaioPlanet = other.isInKaioPlanet;
         this.compactMenu = other.compactMenu;
+		this.isChargingKi = other.isChargingKi;
     }
 }
 

@@ -12,6 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -20,6 +22,19 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
+
+	@SubscribeEvent
+	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
+		if (Minecraft.getInstance().player != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+				if (data.getStatus().hasCreatedCharacter()) {
+					if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
+						event.setCanceled(true);
+					}
+				}
+			});
+		}
+	}
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
