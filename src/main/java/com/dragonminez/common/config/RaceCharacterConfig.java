@@ -35,6 +35,9 @@ public class RaceCharacterConfig {
     @SerializedName("defaultMouthType")
     private int defaultMouthType = 0;
 
+	@SerializedName("defaultTattooType")
+	private int defaultTattooType = 0;
+
     @SerializedName("defaultBodyColor")
 	private String defaultBodyColor = null;
 
@@ -68,6 +71,7 @@ public class RaceCharacterConfig {
     public int getDefaultEyesType() { return defaultEyesType; }
     public int getDefaultNoseType() { return defaultNoseType; }
     public int getDefaultMouthType() { return defaultMouthType; }
+	public int getDefaultTattooType() { return defaultTattooType; }
     public String getDefaultBodyColor() { return defaultBodyColor; }
     public String getDefaultBodyColor2() { return defaultBodyColor2; }
     public String getDefaultBodyColor3() { return defaultBodyColor3; }
@@ -86,6 +90,7 @@ public class RaceCharacterConfig {
     public void setDefaultEyesType(int defaultEyesType) { this.defaultEyesType = defaultEyesType; }
     public void setDefaultNoseType(int defaultNoseType) { this.defaultNoseType = defaultNoseType; }
     public void setDefaultMouthType(int defaultMouthType) { this.defaultMouthType = defaultMouthType; }
+	public void setDefaultTattooType(int defaultTattooType) { this.defaultTattooType = defaultTattooType; }
     public void setDefaultBodyColor(String defaultBodyColor) { this.defaultBodyColor = defaultBodyColor; }
     public void setDefaultBodyColor2(String defaultBodyColor2) { this.defaultBodyColor2 = defaultBodyColor2; }
     public void setDefaultBodyColor3(String defaultBodyColor3) { this.defaultBodyColor3 = defaultBodyColor3; }

@@ -161,9 +161,17 @@ public class CharacterCustomizationScreen extends Screen {
         addRenderableWidget(createArrowButton(hairPosX, hairPosY, false,
                 btn -> changeHair(1)));
 
+        int tattooPosX = 113;
+        int tattooPosY = centerY + 80;
+
+        addRenderableWidget(createArrowButton(tattooPosX - 65, tattooPosY, true,
+                btn -> changeTattoo(-1)));
+        addRenderableWidget(createArrowButton(tattooPosX, tattooPosY, false,
+                btn -> changeTattoo(1)));
+
         if (character.canHaveGender()) {
             int genderPosX = 113;
-            int genderPosY = centerY + 80;
+            int genderPosY = centerY + 110;
 
             if (character.getGender().equals(Character.GENDER_MALE)) {
                 addRenderableWidget(createArrowButton(genderPosX, genderPosY, false,
@@ -426,7 +434,7 @@ public class CharacterCustomizationScreen extends Screen {
 
     private void changeHair(int delta) {
         int maxHair = TextureCounter.getMaxHairTypes(character.getRace());
-        if (maxHair == 0) maxHair = 15;
+        if (maxHair == 0) maxHair = 5;
 
         int newHair = character.getHairId() + delta;
 
@@ -511,6 +519,17 @@ public class CharacterCustomizationScreen extends Screen {
         character.setMouthType(newMouth);
         refreshButtons();
     }
+
+	private void changeTattoo(int delta) {
+		int maxTattoo = TextureCounter.getMaxTattooTypes(character.getRace());
+		if (maxTattoo == 0) maxTattoo = 1;
+
+		int newTattoo = character.getTattooType() + delta;
+		if (newTattoo < 0) newTattoo = maxTattoo;
+		if (newTattoo > maxTattoo) newTattoo = 0;
+		character.setTattooType(newTattoo);
+		refreshButtons();
+	}
 
     private void refreshButtons() {
         String savedColorField = currentColorField;
@@ -666,11 +685,14 @@ public class CharacterCustomizationScreen extends Screen {
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hair").getString(), textX, centerY + 42, 0xFF9B9B);
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 54, 0xFFFFFF);
 
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.tattoo").getString(), textX, centerY + 72, 0xFF9B9B);
+            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getTattooType() + 1).getString(), textX, centerY + 84, 0xFFFFFF);
+
             if (character.canHaveGender()) {
-                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.gender").getString(), textX, centerY + 72, 0xFF9B9B);
+                drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.gender").getString(), textX, centerY + 102, 0xFF9B9B);
                 String genderText = Component.translatable("gender.dragonminez." + character.getGender()).getString();
                 int genderColor = character.getGender().equals(Character.GENDER_MALE) ? 0x2133A6 : 0xFC63D9;
-                drawCenteredStringWithBorder(graphics, genderText, textX, centerY + 84, 0xFFFFFF, genderColor);
+                drawCenteredStringWithBorder(graphics, genderText, textX, centerY + 114, 0xFFFFFF, genderColor);
             }
         } else if (currentPage == 1) {
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.class").getString(), textX, centerY - 70, 0xFF9B9B);

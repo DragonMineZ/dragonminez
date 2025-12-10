@@ -270,6 +270,7 @@ public class RaceSelectionScreen extends Screen {
             character.setEyesType(config.getDefaultEyesType());
             character.setNoseType(config.getDefaultNoseType());
             character.setMouthType(config.getDefaultMouthType());
+			character.setTattooType(config.getDefaultTattooType());
         }
     }
 

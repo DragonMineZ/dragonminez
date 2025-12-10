@@ -13,6 +13,7 @@ public class Status {
     private boolean isInKaioPlanet;
     private boolean compactMenu;
 	private boolean isChargingKi;
+	private boolean isKaiokenActive;
 
     public Status() {
         this.isAlive = true;
@@ -25,6 +26,7 @@ public class Status {
         this.isInKaioPlanet = false;
         this.compactMenu = false;
 		this.isChargingKi = false;
+		this.isKaiokenActive = false;
     }
 
     public boolean isAlive() { return isAlive; }
@@ -37,6 +39,7 @@ public class Status {
     public boolean isInKaioPlanet() { return isInKaioPlanet; }
     public boolean isCompactMenu() { return compactMenu; }
 	public boolean isChargingKi() { return isChargingKi; }
+	public boolean isKaiokenActive() { return isKaiokenActive; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -48,6 +51,7 @@ public class Status {
     public void setInKaioPlanet(boolean inKaio) { this.isInKaioPlanet = inKaio; }
     public void setCompactMenu(boolean compact) { this.compactMenu = compact; }
 	public void setChargingKi(boolean charging) { this.isChargingKi = charging; }
+	public void setKaiokenActive(boolean active) { this.isKaiokenActive = active; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();

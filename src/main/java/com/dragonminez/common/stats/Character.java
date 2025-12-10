@@ -27,6 +27,7 @@ public class Character {
     private int eyesType;
     private int noseType;
     private int mouthType;
+	private int tattooType;
     private String bodyColor;
     private String bodyColor2;
     private String bodyColor3;
@@ -46,6 +47,7 @@ public class Character {
         this.eyesType = config.getDefaultEyesType();
         this.noseType = config.getDefaultNoseType();
         this.mouthType = config.getDefaultMouthType();
+		this.tattooType = config.getDefaultTattooType();
         this.bodyColor = config.getDefaultBodyColor() != null ? config.getDefaultBodyColor() : "#F5D5A6";
         this.bodyColor2 = config.getDefaultBodyColor2() != null ? config.getDefaultBodyColor2() : "#F5D5A6";
         this.bodyColor3 = config.getDefaultBodyColor3() != null ? config.getDefaultBodyColor3() : "#F5D5A6";
@@ -65,6 +67,7 @@ public class Character {
     public int getEyesType() { return eyesType; }
     public int getNoseType() { return noseType; }
     public int getMouthType() { return mouthType; }
+	public int getTattooType() { return tattooType; }
     public String getBodyColor() { return bodyColor; }
     public String getBodyColor2() { return bodyColor2; }
     public String getBodyColor3() { return bodyColor3; }
@@ -90,6 +93,7 @@ public class Character {
     public void setEyesType(int eyesType) { this.eyesType = eyesType; }
     public void setNoseType(int noseType) { this.noseType = noseType; }
     public void setMouthType(int mouthType) { this.mouthType = mouthType; }
+	public void setTattooType(int tattooType) { this.tattooType = tattooType; }
     public void setBodyColor(String bodyColor) { this.bodyColor = bodyColor; }
     public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
     public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
