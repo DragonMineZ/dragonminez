@@ -234,6 +234,7 @@ public class StatsCommand {
             }
 
             data.getCharacter().setActiveForm(group, form);
+
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 
             source.sendSuccess(() -> Component.literal("§a" + player.getName().getString() + " transformed into " + group + "." + form), true);
