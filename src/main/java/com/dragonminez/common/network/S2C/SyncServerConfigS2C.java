@@ -384,7 +384,8 @@ public class SyncServerConfigS2C {
         public String name, customModel, bodyColor1, bodyColor2, bodyColor3;
         public String hairColor, eye1Color, eye2Color, auraColor;
         public int hairType;
-        public double modelScaling, strMult, skpMult, stmMult, defMult, vitMult, pwrMult, eneMult, speedMult, energyDrain;
+        public float modelScaling;
+		public double strMult, skpMult, stmMult, defMult, vitMult, pwrMult, eneMult, speedMult, energyDrain;
 
         public FormDataData(FormConfig.FormData formData) {
             this.name = formData.getName();
@@ -420,7 +421,7 @@ public class SyncServerConfigS2C {
             this.eye1Color = buf.readUtf();
             this.eye2Color = buf.readUtf();
             this.auraColor = buf.readUtf();
-            this.modelScaling = buf.readDouble();
+            this.modelScaling = buf.readFloat();
             this.strMult = buf.readDouble();
             this.skpMult = buf.readDouble();
             this.stmMult = buf.readDouble();
@@ -443,7 +444,7 @@ public class SyncServerConfigS2C {
             buf.writeUtf(eye1Color);
             buf.writeUtf(eye2Color);
             buf.writeUtf(auraColor);
-            buf.writeDouble(modelScaling);
+            buf.writeFloat(modelScaling);
             buf.writeDouble(strMult);
             buf.writeDouble(skpMult);
             buf.writeDouble(stmMult);

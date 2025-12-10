@@ -76,7 +76,7 @@ public class FormConfig {
         private String auraColor = "";
 
         @SerializedName("model_scaling")
-        private double modelScaling = 0.9375;
+        private float modelScaling = 0.9375f;
 
         @SerializedName("str_mult")
         private double strMultiplier = 1.0;
@@ -117,7 +117,7 @@ public class FormConfig {
         public String getEye1Color() { return eye1Color; }
         public String getEye2Color() { return eye2Color; }
         public String getAuraColor() { return auraColor; }
-        public double getModelScaling() { return modelScaling; }
+        public float getModelScaling() { return modelScaling; }
         public double getStrMultiplier() { return strMultiplier; }
         public double getSkpMultiplier() { return skpMultiplier; }
         public double getStmMultiplier() { return stmMultiplier; }
@@ -138,7 +138,7 @@ public class FormConfig {
         public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
         public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
         public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
-        public void setModelScaling(double modelScaling) { this.modelScaling = modelScaling; }
+        public void setModelScaling(float modelScaling) { this.modelScaling = modelScaling; }
         public void setStrMultiplier(double strMultiplier) { this.strMultiplier = strMultiplier; }
         public void setSkpMultiplier(double skpMultiplier) { this.skpMultiplier = skpMultiplier; }
         public void setStmMultiplier(double stmMultiplier) { this.stmMultiplier = stmMultiplier; }
