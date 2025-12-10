@@ -6,8 +6,10 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
+import com.eliotlash.mclib.math.functions.limit.Min;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -27,16 +29,14 @@ public class XenoverseHUD {
 	private static volatile float currentStmBarWidth = 0;
 	private static final float LERP_SPEED = 0.25f;
 
-	private static int displayedRelease = 0;
-	private static int releaseUpdateSpeed = 2;
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
+		if (ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			Character character = data.getCharacter();
-			Stats stats = data.getStats();
 			Status status = data.getStatus();
 			Resources resources = data.getResources();
 
@@ -134,7 +134,7 @@ public class XenoverseHUD {
 
 				boolean isMajin = raceName.equalsIgnoreCase("majin");
 
-				guiGraphics.blit(racialIcons, initialX + 16, isMajin ? (initialY + 12) : (initialY + 13), iconU, baseIconV, 16, 16);
+				guiGraphics.blit(racialIcons, initialX + 15, isMajin ? (initialY + 12) : (initialY + 13), iconU, baseIconV, 16, 16);
 
 				float fillRatio = powerRelease / 100.0f;
 				int fillHeight = (int) (16 * fillRatio);
@@ -143,16 +143,48 @@ public class XenoverseHUD {
 					int fillIconV = 18;
 					int screenY = (isMajin ? (initialY + 12) : (initialY + 13)) + (16 - fillHeight);
 					int textureV = fillIconV + (16 - fillHeight);
-					guiGraphics.blit(racialIcons, initialX + 16, screenY, iconU, textureV, 16, fillHeight);
+					guiGraphics.blit(racialIcons, initialX + 15, screenY, iconU, textureV, 16, fillHeight);
 				}
-
 
 				// Radar & Form Release
 				RenderSystem.setShaderTexture(0, hud);
 				guiGraphics.blit(hud, initialX + 8, initialY + 8, 218, 100, 26, 27);
+				float fillFormRatio = formRelease / 100.0f;
+				int fillFormHeight = (int) (17 * fillFormRatio);
+				if (fillFormHeight > 0) {
+					guiGraphics.blit(hud, initialX + 10, initialY + 20 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight);
+				}
+
+				guiGraphics.pose().scale(0.5f, 0.5f, 1.0f);
+				drawStringWithBorder(guiGraphics, powerRelease + "%", initialX + 14, initialY + 64, ColorUtils.hexToInt("#FACAF7"));
+
+				if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
+					String plainHP = numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
+					String percentHP = String.format("%.0f", (currentHP / maxHP) * 100) + "%";
+					String hpText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentHP : plainHP;
+					drawStringWithBorder(guiGraphics, hpText, initialX + 200, initialY + 36, ColorUtils.hexToInt("#FFFFFF"));
+
+					String plainKi = numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
+					String percentKi = String.format("%.0f", (currentKi / (float) maxKi) * 100) + "%";
+					String kiText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentKi : plainKi;
+					drawStringWithBorder(guiGraphics, kiText, initialX + 180, initialY + 51, ColorUtils.hexToInt("#FFFFFF"));
+
+					String plainStm = numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
+					String percentStm = String.format("%.0f", (currentStm / (float) maxStm) * 100) + "%";
+					String stmText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentStm : plainStm;
+					drawStringWithBorder(guiGraphics, stmText, initialX + 160, initialY + 64, ColorUtils.hexToInt("#FFFFFF"));
+				}
 
 				guiGraphics.pose().popPose();
 			}
 		});
 	};
+
+	private static void drawStringWithBorder(GuiGraphics guiGraphics, String text, int x, int y, int color) {
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x - 1, y, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x + 1, y, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x, y - 1, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x, y + 1, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x, y, color);
+	}
 }

@@ -38,7 +38,8 @@ public class GeneralServerConfig {
     }
 
     public static class GameplayConfig {
-        private double tpsMultiplier = 1.0;
+        private double tpGainMultiplier = 1.0;
+		private double tpCostMultiplier = 1.0;
         private boolean respectAttackCooldown = true;
         private int maxStatValue = 10000;
 
@@ -48,8 +49,10 @@ public class GeneralServerConfig {
         @SerializedName("food_regenerations")
         private Map<String, float[]> foodRegenerations = createDefaultFoodRegenerations();
 
-        public double getTpsMultiplier() { return tpsMultiplier; }
-        public void setTpsMultiplier(double multiplier) { this.tpsMultiplier = multiplier; }
+        public double getTpsMultiplier() { return tpGainMultiplier; }
+        public void setTpsMultiplier(double multiplier) { this.tpGainMultiplier = multiplier; }
+		public double getTpCostMultiplier() { return tpCostMultiplier; }
+		public void setTpCostMultiplier(double multiplier) { this.tpCostMultiplier = multiplier; }
 
         public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
         public void setRespectAttackCooldown(boolean respectAttackCooldown) { this.respectAttackCooldown = respectAttackCooldown; }

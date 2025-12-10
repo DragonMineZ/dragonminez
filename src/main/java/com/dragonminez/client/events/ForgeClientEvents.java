@@ -53,22 +53,6 @@ public class ForgeClientEvents {
                 }
             });
         }
-
-        if (KeyBinds.KI_CHARGE.isDown()) {
-            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-                if (data.getStatus().hasCreatedCharacter()) {
-                    int currentEnergy = data.getResources().getCurrentEnergy();
-                    int maxEnergy = data.getMaxEnergy();
-
-                    DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(mc.player, currentEnergy, maxEnergy);
-                    if (!MinecraftForge.EVENT_BUS.post(kiEvent)) {
-                        if (currentEnergy < maxEnergy) {
-                            data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + 1));
-                        }
-                    }
-                }
-            });
-        }
     }
 
     private static int tickCounter = 0;
@@ -88,24 +72,7 @@ public class ForgeClientEvents {
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
             tickCounter = 0;
-            updateActionBar(mc);
         }
-    }
-
-    private static void updateActionBar(Minecraft mc) {
-        StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-            if (data.getStatus().hasCreatedCharacter()) {
-                int currentStamina = data.getResources().getCurrentStamina();
-                int maxStamina = data.getMaxStamina();
-                int currentEnergy = data.getResources().getCurrentEnergy();
-                int maxEnergy = data.getMaxEnergy();
-
-                String text = "§2STM: §f" + currentStamina + " §7/ §f" + maxStamina +
-                        "     §bKI: §f" + currentEnergy + " §7/ §f" + maxEnergy;
-
-                mc.player.displayClientMessage(Component.literal(text), true);
-            }
-        });
     }
 
     @SubscribeEvent

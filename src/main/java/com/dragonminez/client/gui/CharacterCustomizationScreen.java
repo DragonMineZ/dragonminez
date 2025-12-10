@@ -12,6 +12,8 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,6 +27,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
+
+import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
 public class CharacterCustomizationScreen extends Screen {
@@ -789,9 +793,10 @@ public class CharacterCustomizationScreen extends Screen {
             default -> statsConfig.getWarrior();
         };
 
-        if (classStats == null || classStats.getBaseStats() == null) return;
+        if (classStats == null || classStats.getBaseStats() == null || classStats.getStatScaling() == null) return;
 
         RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
+		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 
         int statsPanelX = this.width - 158;
         int centerX = statsPanelX + 74;
@@ -819,6 +824,47 @@ public class CharacterCustomizationScreen extends Screen {
 
         drawCenteredStringWithBorder(graphics, "ENE", centerX + 40, startY, 0x7CFDD6);
         drawCenteredStringWithBorder(graphics, String.valueOf(baseStats.getEnergy()), centerX + 40, startY + 12, 0xFFFFFF);
+
+        startY += 35;
+
+        double maxMeleeDamage = baseStats.getStrength() * scaling.getStrengthScaling();
+        double maxStrikeDamage = baseStats.getStrikePower() * scaling.getStrikePowerScaling() + (baseStats.getStrength() * scaling.getStrengthScaling()) * 0.25;
+		int maxStamina = 100 + (int) (baseStats.getResistance() * scaling.getStaminaScaling());
+		double maxDefense = baseStats.getResistance() * scaling.getDefenseScaling();
+		double maxHealth = 20 + (baseStats.getVitality() * scaling.getVitalityScaling());
+        double maxKiDamage = baseStats.getKiPower() * scaling.getKiPowerScaling();
+		int maxEnergy = 100 + (int) (baseStats.getEnergy() * scaling.getEnergyScaling());
+
+        int rowY = startY;
+        int labelX = centerX - 55;
+        int valueX = centerX + 25;
+
+        drawStringWithBorder(graphics, "Melee Damage", labelX, rowY, 0x7CFDD6);
+        drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxMeleeDamage), valueX, rowY, 0xFFFFFF);
+
+        rowY += 12;
+        drawStringWithBorder(graphics, "Strike Damage", labelX, rowY, 0x7CFDD6);
+        drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxStrikeDamage), valueX, rowY, 0xFFFFFF);
+
+		rowY += 12;
+		drawStringWithBorder(graphics, "Defense", labelX, rowY, 0x7CFDD6);
+		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxDefense), valueX, rowY, 0xFFFFFF);
+
+		rowY += 12;
+		drawStringWithBorder(graphics, "Stamina", labelX, rowY, 0x7CFDD6);
+		drawStringWithBorder(graphics, String.valueOf(maxStamina), valueX, rowY, 0xFFFFFF);
+
+		rowY += 12;
+		drawStringWithBorder(graphics, "Health", labelX, rowY, 0x7CFDD6);
+		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxHealth), valueX, rowY, 0xFFFFFF);
+
+		rowY += 12;
+		drawStringWithBorder(graphics, "Ki Damage", labelX, rowY, 0x7CFDD6);
+		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxKiDamage), valueX, rowY, 0xFFFFFF);
+
+		rowY += 12;
+		drawStringWithBorder(graphics, "Energy", labelX, rowY, 0x7CFDD6);
+		drawStringWithBorder(graphics, String.valueOf(maxEnergy), valueX, rowY, 0xFFFFFF);
     }
 
     @Override
@@ -869,4 +915,3 @@ public class CharacterCustomizationScreen extends Screen {
         return false;
     }
 }
-

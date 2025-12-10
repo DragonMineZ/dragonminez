@@ -51,14 +51,16 @@ public class TickHandler {
                 int currentEnergy = data.getResources().getCurrentEnergy();
                 int maxEnergy = data.getMaxEnergy();
                 if (currentEnergy < maxEnergy) {
-                    int newEnergy = (int) Math.min(maxEnergy, currentEnergy + ENERGY_REGEN_RATE);
+                    double newEnergyDouble = Math.min(maxEnergy, currentEnergy + ENERGY_REGEN_RATE);
+                    int newEnergy = (int) Math.ceil(newEnergyDouble);
                     data.getResources().setCurrentEnergy(newEnergy);
                 }
 
                 int currentStamina = data.getResources().getCurrentStamina();
                 int maxStamina = data.getMaxStamina();
                 if (currentStamina < maxStamina) {
-                    int newStamina = (int) Math.min(maxStamina, currentStamina + STAMINA_REGEN_RATE);
+                    double newStaminaDouble = Math.min(maxStamina, currentStamina + STAMINA_REGEN_RATE);
+                    int newStamina = (int) Math.ceil(newStaminaDouble);
                     data.getResources().setCurrentStamina(newStamina);
                 }
 

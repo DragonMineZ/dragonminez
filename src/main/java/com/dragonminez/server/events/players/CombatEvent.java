@@ -52,7 +52,7 @@ public class CombatEvent {
             }
 
             double mcBaseDamage = event.getAmount();
-            double dmzDamage = attackerData.getAttackDamage();
+            double dmzDamage = attackerData.getMeleeDamage();
 
             int staminaRequired = (int) Math.ceil(dmzDamage * STAMINA_CONSUMPTION_RATIO);
             int currentStamina = attackerData.getResources().getCurrentStamina();

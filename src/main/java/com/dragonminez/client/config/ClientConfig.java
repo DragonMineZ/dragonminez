@@ -18,11 +18,11 @@ public class ClientConfig {
     }
 
     public static boolean isCompactHud() {
-        return hud().isCompactHud();
+        return hud().isAlternativeHud();
     }
 
     public static void setCompactHud(boolean compact) {
-        hud().setCompactHud(compact);
+        hud().setAlternativeHud(compact);
         save();
     }
 }

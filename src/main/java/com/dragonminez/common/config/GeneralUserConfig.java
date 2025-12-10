@@ -15,8 +15,10 @@ public class GeneralUserConfig {
     public static class HudConfig {
 		private int xenoverseHudPosX = 5;
 		private int xenoverseHudPosY = 5;
-		private float xenoverseHudScale = 1.4f;
-		private boolean compactHud = false;
+		private float xenoverseHudScale = 1.8f;
+		private boolean advancedDescription = true;
+		private boolean advancedDescriptionPercentage = true;
+		private boolean alternativeHud = false;
         private int healthBarPosX = 10;
         private int healthBarPosY = 50;
         private int energyBarPosX = 10;
@@ -30,9 +32,13 @@ public class GeneralUserConfig {
 		public void setXenoverseHudPosY(int xenoverseHudPosY) { this.xenoverseHudPosY = xenoverseHudPosY; }
 		public float getXenoverseHudScale() { return xenoverseHudScale; }
 		public void setXenoverseHudScale(float xenoverseHudScale) { this.xenoverseHudScale = xenoverseHudScale; }
+		public boolean isAdvancedDescription() { return advancedDescription; }
+		public void setAdvancedDescription(boolean advancedDescription) { this.advancedDescription = advancedDescription; }
+		public boolean isAdvancedDescriptionPercentage() { return advancedDescriptionPercentage; }
+		public void setAdvancedDescriptionPercentage(boolean advancedDescriptionPercentage) { this.advancedDescriptionPercentage = advancedDescriptionPercentage; }
 
-		public boolean isCompactHud() { return compactHud; }
-		public void setCompactHud(boolean compactHud) { this.compactHud = compactHud; }
+		public boolean isAlternativeHud() { return alternativeHud; }
+		public void setAlternativeHud(boolean alternativeHud) { this.alternativeHud = alternativeHud; }
 
         public int getHealthBarPosX() { return healthBarPosX; }
         public void setHealthBarPosX(int healthBarPosX) { this.healthBarPosX = healthBarPosX; }
