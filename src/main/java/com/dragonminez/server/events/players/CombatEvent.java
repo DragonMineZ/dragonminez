@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -31,9 +32,24 @@ public class CombatEvent {
 
             if (respectCooldown) {
                 float attackStrength = attacker.getAttackStrengthScale(0.5F);
-                if (attackStrength < 0.9F) {
-                    event.setCanceled(true);
-                }
+
+                StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
+                    if (attackerData.getStatus().hasCreatedCharacter() && attackerData.getCharacter().hasActiveForm()) {
+                        FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+                        if (activeForm != null) {
+                            double attackSpeed = activeForm.getAttackSpeed();
+                            float adjustedStrength = (float) (attackStrength * attackSpeed);
+
+                            if (adjustedStrength < 0.9F) {
+                                event.setCanceled(true);
+                            }
+                        } else if (attackStrength < 0.9F) {
+                            event.setCanceled(true);
+                        }
+                    } else if (attackStrength < 0.9F) {
+                        event.setCanceled(true);
+                    }
+                });
             }
         }
     }
@@ -54,7 +70,17 @@ public class CombatEvent {
             double mcBaseDamage = event.getAmount();
             double dmzDamage = attackerData.getMeleeDamage();
 
-            int staminaRequired = (int) Math.ceil(dmzDamage * STAMINA_CONSUMPTION_RATIO);
+            int baseStaminaRequired = (int) Math.ceil(dmzDamage * STAMINA_CONSUMPTION_RATIO);
+
+            double staminaDrainMultiplier = 1.0;
+            if (attackerData.getCharacter().hasActiveForm()) {
+                FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+                if (activeForm != null) {
+                    staminaDrainMultiplier = activeForm.getStaminaDrain();
+                }
+            }
+
+            int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
             int currentStamina = attackerData.getResources().getCurrentStamina();
 
             double finalDmzDamage;
@@ -67,7 +93,6 @@ public class CombatEvent {
                 attackerData.getResources().setCurrentStamina(0);
             }
 
-            // Sincronizar stamina al cliente
             if (attacker instanceof ServerPlayer serverPlayer) {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             }

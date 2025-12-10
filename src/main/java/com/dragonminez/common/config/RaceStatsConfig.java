@@ -14,6 +14,7 @@ public class RaceStatsConfig {
     @SerializedName("martial_artist")
     private ClassStats martialArtist = new ClassStats();
 
+
     public RaceStatsConfig() {}
 
     public ClassStats getWarrior() {
@@ -40,12 +41,22 @@ public class RaceStatsConfig {
         this.martialArtist = martialArtist;
     }
 
+
     public static class ClassStats {
         @SerializedName("base_stats")
         private BaseStats baseStats = new BaseStats();
 
         @SerializedName("stat_scaling")
         private StatScaling statScaling = new StatScaling();
+
+        @SerializedName("health_regen_rate")
+        private double healthRegenRate = 0.0025;
+
+        @SerializedName("energy_regen_rate")
+        private double energyRegenRate = 0.01;
+
+        @SerializedName("stamina_regen_rate")
+        private double staminaRegenRate = 0.01;
 
         public BaseStats getBaseStats() {
             return baseStats;
@@ -61,6 +72,30 @@ public class RaceStatsConfig {
 
         public void setStatScaling(StatScaling statScaling) {
             this.statScaling = statScaling;
+        }
+
+        public double getHealthRegenRate() {
+            return healthRegenRate;
+        }
+
+        public void setHealthRegenRate(double healthRegenRate) {
+            this.healthRegenRate = healthRegenRate;
+        }
+
+        public double getEnergyRegenRate() {
+            return energyRegenRate;
+        }
+
+        public void setEnergyRegenRate(double energyRegenRate) {
+            this.energyRegenRate = energyRegenRate;
+        }
+
+        public double getStaminaRegenRate() {
+            return staminaRegenRate;
+        }
+
+        public void setStaminaRegenRate(double staminaRegenRate) {
+            this.staminaRegenRate = staminaRegenRate;
         }
     }
 

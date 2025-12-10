@@ -43,6 +43,9 @@ public class UpdateStatC2S {
                     case "isDescending":
                         data.getStatus().setDescending(msg.value);
                         break;
+					case "isTransforming":
+						data.getStatus().setTransforming(msg.value);
+						break;
                 }
             });
         });

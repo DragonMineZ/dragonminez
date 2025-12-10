@@ -2,6 +2,7 @@ package com.dragonminez.common.config;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -37,7 +38,9 @@ public class ConfigManager {
 
     private static GeneralUserConfig userConfig;
     private static GeneralServerConfig serverConfig;
+    private static SkillsConfig skillsConfig;
 
+    private static SkillsConfig SERVER_SYNCED_SKILLS;
 
     public static void initialize() {
         LogUtil.info(Env.COMMON, "Initializing DragonMineZ configuration system...");
@@ -75,6 +78,16 @@ public class ConfigManager {
             serverConfig = new GeneralServerConfig();
             LOADER.saveConfig(serverConfigPath, serverConfig);
             LogUtil.info(Env.COMMON, "Default server configuration created at: {}", serverConfigPath);
+        }
+
+        Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
+        if (Files.exists(skillsConfigPath)) {
+            skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+            LogUtil.info(Env.COMMON, "Skills configuration loaded from: {}", skillsConfigPath);
+        } else {
+            skillsConfig = new SkillsConfig();
+            LOADER.saveConfig(skillsConfigPath, skillsConfig);
+            LogUtil.info(Env.COMMON, "Default skills configuration created at: {}", skillsConfigPath);
         }
     }
 
@@ -199,6 +212,10 @@ public class ConfigManager {
         config.setDefaultEye1Color("#0E1011");
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFFFF");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
@@ -214,6 +231,10 @@ public class ConfigManager {
         config.setDefaultEye1Color("#0E1011");
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFFFF");
+
+        config.setSuperformTpCost(new int[]{1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000});
+        config.setGodformTpCost(new int[]{10000, 20000, 30000});
+        config.setLegendaryformsTpCost(new int[]{50000, 100000});
     }
 
     private static void setupNamekianCharacter(RaceCharacterConfig config) {
@@ -229,6 +250,10 @@ public class ConfigManager {
         config.setDefaultEye1Color("#0E1011");
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFF00");
+
+        config.setSuperformTpCost(new int[]{1000, 2000});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
@@ -244,6 +269,10 @@ public class ConfigManager {
         config.setDefaultEye1Color("#FF001D");
         config.setDefaultEye2Color("#000000");
         config.setDefaultAuraColor("#5F00FF");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
@@ -259,6 +288,10 @@ public class ConfigManager {
         config.setDefaultEye1Color("#0E1011");
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#1AA700");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static void setupMajinCharacter(RaceCharacterConfig config) {
@@ -274,6 +307,10 @@ public class ConfigManager {
         config.setDefaultEye1Color("#B40000");
         config.setDefaultEye2Color("#B40000");
         config.setDefaultAuraColor("#FF6DFF");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static void setupDefaultCharacter(RaceCharacterConfig config) {
@@ -289,6 +326,10 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
+
+		config.setSuperformTpCost(new int[]{});
+		config.setGodformTpCost(new int[]{});
+		config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static RaceStatsConfig createDefaultStatsConfig(String raceName, boolean isVanilla) {
@@ -311,49 +352,50 @@ public class ConfigManager {
     }
 
     private static void setupHumanStats(RaceStatsConfig config) {
-        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 5, 5);
-        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 5, 5);
-        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 5, 5);
+        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 5, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 5, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 5, 5, 0.0035, 0.008, 0.009);
     }
 
     private static void setupSaiyanStats(RaceStatsConfig config) {
-        setupClassStats(config.getWarrior(), 6, 6, 5, 5, 5, 5);
-        setupClassStats(config.getSpiritualist(), 6, 6, 5, 5, 5, 5);
-        setupClassStats(config.getMartialArtist(), 6, 6, 5, 5, 5, 5);
+        setupClassStats(config.getWarrior(), 6, 6, 5, 5, 5, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 6, 6, 5, 5, 5, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 6, 6, 5, 5, 5, 5, 0.0035, 0.008, 0.009);
     }
 
     private static void setupNamekianStats(RaceStatsConfig config) {
-        setupClassStats(config.getWarrior(), 4, 4, 6, 6, 6, 6);
-        setupClassStats(config.getSpiritualist(), 4, 4, 6, 6, 6, 6);
-        setupClassStats(config.getMartialArtist(), 4, 4, 6, 6, 6, 6);
+        setupClassStats(config.getWarrior(), 4, 4, 6, 6, 6, 6, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 4, 4, 6, 6, 6, 6, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 4, 4, 6, 6, 6, 6, 0.0035, 0.008, 0.009);
     }
 
     private static void setupFrostDemonStats(RaceStatsConfig config) {
-        setupClassStats(config.getWarrior(), 7, 7, 6, 5, 6, 5);
-        setupClassStats(config.getSpiritualist(), 7, 7, 6, 5, 6, 5);
-        setupClassStats(config.getMartialArtist(), 7, 7, 6, 5, 6, 5);
+        setupClassStats(config.getWarrior(), 7, 7, 6, 5, 6, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 7, 7, 6, 5, 6, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 7, 7, 6, 5, 6, 5, 0.0035, 0.008, 0.009);
     }
 
     private static void setupBioAndroidStats(RaceStatsConfig config) {
-        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 6, 6);
-        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 6, 6);
-        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 6, 6);
+        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 6, 6, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 6, 6, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 6, 6, 0.0035, 0.008, 0.009);
     }
 
     private static void setupMajinStats(RaceStatsConfig config) {
-        setupClassStats(config.getWarrior(), 5, 5, 6, 6, 6, 7);
-        setupClassStats(config.getSpiritualist(), 5, 5, 6, 6, 6, 7);
-        setupClassStats(config.getMartialArtist(), 5, 5, 6, 6, 6, 7);
+        setupClassStats(config.getWarrior(), 5, 5, 6, 6, 6, 7, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 6, 6, 6, 7, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 6, 6, 6, 7, 0.0035, 0.008, 0.009);
     }
 
     private static void setupDefaultStats(RaceStatsConfig config) {
-        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 5, 5);
-        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 5, 5);
-        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 5, 5);
+        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 5, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 5, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 5, 5, 0.0035, 0.008, 0.009);
     }
 
     private static void setupClassStats(RaceStatsConfig.ClassStats classStats,
-                                        int str, int skp, int res, int vit, int pwr, int ene) {
+                                        int str, int skp, int res, int vit, int pwr, int ene,
+                                        double healthRegen, double energyRegen, double staminaRegen) {
         RaceStatsConfig.BaseStats base = classStats.getBaseStats();
         base.setStrength(str);
         base.setStrikePower(skp);
@@ -362,14 +404,16 @@ public class ConfigManager {
         base.setKiPower(pwr);
         base.setEnergy(ene);
 
+        classStats.setHealthRegenRate(healthRegen);
+        classStats.setEnergyRegenRate(energyRegen);
+        classStats.setStaminaRegenRate(staminaRegen);
+
         RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
         scaling.setStrengthScaling(1.0);
         scaling.setStrikePowerScaling(1.0);
         scaling.setStaminaScaling(1.0);
         scaling.setDefenseScaling(1.0);
         scaling.setVitalityScaling(1.0);
-        scaling.setKiPowerScaling(1.0);
-        scaling.setKiPowerScaling(1.0);
         scaling.setKiPowerScaling(1.0);
         scaling.setEnergyScaling(1.0);
     }
@@ -510,14 +554,15 @@ public class ConfigManager {
     public static void applySyncedServerConfig(Map<String, ?> syncedStats,
                                                Map<String, ?> syncedCharacters,
                                                Map<String, ?> syncedForms,
-                                               Object generalServerData) {
+                                               Object generalServerData,
+                                               Object skillsData) {
         SERVER_SYNCED_STATS.clear();
         SERVER_SYNCED_CHARACTER.clear();
         RACE_FORMS.clear();
 
         if (syncedStats != null) {
             syncedStats.forEach((raceName, data) -> {
-                if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceStatsData statsData) {
+                if (data instanceof SyncServerConfigS2C.RaceStatsData statsData) {
                     SERVER_SYNCED_STATS.put(raceName.toLowerCase(), statsData.toConfig(raceName));
                 }
             });
@@ -525,7 +570,7 @@ public class ConfigManager {
 
         if (syncedCharacters != null) {
             syncedCharacters.forEach((raceName, data) -> {
-                if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceCharacterData characterData) {
+                if (data instanceof SyncServerConfigS2C.RaceCharacterData characterData) {
                     SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), characterData.toConfig());
                 }
             });
@@ -533,7 +578,7 @@ public class ConfigManager {
 
         if (syncedForms != null) {
             syncedForms.forEach((raceName, data) -> {
-                if (data instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.RaceFormsData formsData) {
+                if (data instanceof SyncServerConfigS2C.RaceFormsData formsData) {
                     Map<String, FormConfig> forms = formsData.toConfig(raceName.toString());
                     if (forms != null) {
                         RACE_FORMS.put(raceName.toLowerCase(), forms);
@@ -542,9 +587,14 @@ public class ConfigManager {
             });
         }
 
-        if (generalServerData instanceof com.dragonminez.common.network.S2C.SyncServerConfigS2C.GeneralServerData generalData) {
+        if (generalServerData instanceof SyncServerConfigS2C.GeneralServerData generalData) {
             serverConfig = generalData.toConfig();
             LogUtil.info(Env.COMMON, "Applied general server configuration from sync");
+        }
+
+        if (skillsData instanceof SyncServerConfigS2C.SkillsData syncedSkills) {
+            SERVER_SYNCED_SKILLS = syncedSkills.toConfig();
+            LogUtil.info(Env.COMMON, "Applied skills configuration from sync");
         }
 
         LogUtil.info(Env.COMMON, "Server configuration synced: {} stats, {} characters, {} form groups",
@@ -555,6 +605,7 @@ public class ConfigManager {
         SERVER_SYNCED_STATS.clear();
         SERVER_SYNCED_CHARACTER.clear();
         RACE_FORMS.clear();
+        SERVER_SYNCED_SKILLS = null;
         LogUtil.info(Env.COMMON, "Server configuration sync cleared, using local config");
     }
 
@@ -597,5 +648,20 @@ public class ConfigManager {
 
     public static boolean hasForm(String raceName, String groupName, String formName) {
         return getForm(raceName, groupName, formName) != null;
+    }
+
+    public static SkillsConfig getSkillsConfig() {
+        if (SERVER_SYNCED_SKILLS != null) {
+            return SERVER_SYNCED_SKILLS;
+        }
+        return skillsConfig != null ? skillsConfig : new SkillsConfig();
+    }
+
+    public static void setServerSyncedSkills(SkillsConfig config) {
+        SERVER_SYNCED_SKILLS = config;
+    }
+
+    public static void clearServerSyncedSkills() {
+        SERVER_SYNCED_SKILLS = null;
     }
 }

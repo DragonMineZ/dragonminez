@@ -1,6 +1,7 @@
 package com.dragonminez.common.stats;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
@@ -12,6 +13,7 @@ public class StatsData {
     private final Cooldowns cooldowns;
     private final Character character;
     private final Resources resources;
+    private final Skills skills;
 
     private boolean hasInitializedHealth = false;
 
@@ -23,6 +25,7 @@ public class StatsData {
         this.cooldowns = new Cooldowns();
         this.character = new Character();
         this.resources = new Resources();
+        this.skills = new Skills();
     }
 
     public Stats getStats() { return stats; }
@@ -30,6 +33,7 @@ public class StatsData {
     public Cooldowns getCooldowns() { return cooldowns; }
     public Character getCharacter() { return character; }
     public Resources getResources() { return resources; }
+    public Skills getSkills() { return skills; }
     public Player getPlayer() { return player; }
 
     public boolean hasInitializedHealth() { return hasInitializedHealth; }
@@ -133,6 +137,7 @@ public class StatsData {
         nbt.put("Cooldowns", cooldowns.save());
         nbt.put("Character", character.save());
         nbt.put("Resources", resources.save());
+        nbt.put("Skills", skills.save());
         nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
         return nbt;
     }
@@ -153,8 +158,15 @@ public class StatsData {
         if (nbt.contains("Resources")) {
             resources.load(nbt.getCompound("Resources"));
         }
+        if (nbt.contains("Skills")) {
+            skills.load(nbt.getCompound("Skills"));
+        }
         if (nbt.contains("HasInitializedHealth")) {
             hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
+        }
+
+        if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+            updateTransformationSkillLimits(character.getRaceName());
         }
     }
 
@@ -164,7 +176,12 @@ public class StatsData {
         this.cooldowns.copyFrom(other.cooldowns);
         this.character.copyFrom(other.character);
         this.resources.copyFrom(other.resources);
+        this.skills.copyFrom(other.skills);
         this.hasInitializedHealth = other.hasInitializedHealth;
+
+        if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+            updateTransformationSkillLimits(character.getRaceName());
+        }
     }
 
     public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
@@ -204,6 +221,19 @@ public class StatsData {
         resources.setCurrentStamina(getMaxStamina());
         resources.setPowerRelease(5);
         resources.setAlignment(100);
+
+        updateTransformationSkillLimits(raceName);
+    }
+
+    public void updateTransformationSkillLimits(String raceName) {
+        RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
+        if (charConfig != null) {
+            int superformMax = charConfig.getSuperformTpCost() != null ? charConfig.getSuperformTpCost().length : 0;
+            int godformMax = charConfig.getGodformTpCost() != null ? charConfig.getGodformTpCost().length : 0;
+            int legendaryMax = charConfig.getLegendaryformsTpCost() != null ? charConfig.getLegendaryformsTpCost().length : 0;
+
+            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax);
+        }
     }
 
     public double getStatScaling(String statName) {

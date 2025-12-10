@@ -15,11 +15,13 @@ public class SyncServerConfigS2C {
     private final Map<String, RaceCharacterData> raceCharacters;
     private final Map<String, RaceFormsData> raceForms;
     private final GeneralServerData generalServer;
+    private final SkillsData skills;
 
     public SyncServerConfigS2C(Map<String, RaceStatsConfig> statsConfigs,
                                Map<String, RaceCharacterConfig> characterConfigs,
                                Map<String, Map<String, FormConfig>> formsConfigs,
-                               GeneralServerConfig serverConfig) {
+                               GeneralServerConfig serverConfig,
+                               SkillsConfig skillsConfig) {
         this.raceStats = new HashMap<>();
         statsConfigs.forEach((raceName, config) -> {
             this.raceStats.put(raceName, new RaceStatsData(config));
@@ -36,6 +38,7 @@ public class SyncServerConfigS2C {
         });
 
         this.generalServer = new GeneralServerData(serverConfig);
+        this.skills = new SkillsData(skillsConfig);
     }
 
     public SyncServerConfigS2C(FriendlyByteBuf buf) {
@@ -64,6 +67,7 @@ public class SyncServerConfigS2C {
         }
 
         this.generalServer = new GeneralServerData(buf);
+        this.skills = new SkillsData(buf);
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -86,11 +90,12 @@ public class SyncServerConfigS2C {
         });
 
         generalServer.encode(buf);
+        skills.encode(buf);
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            ConfigManager.applySyncedServerConfig(raceStats, raceCharacters, raceForms, generalServer);
+            ConfigManager.applySyncedServerConfig(raceStats, raceCharacters, raceForms, generalServer, skills);
         });
         ctx.get().setPacketHandled(true);
     }
@@ -219,6 +224,7 @@ public class SyncServerConfigS2C {
         public int defaultBodyType, defaultHairType, defaultEyesType, defaultNoseType, defaultMouthType;
         public String defaultBodyColor, defaultBodyColor2, defaultBodyColor3;
         public String defaultHairColor, defaultEye1Color, defaultEye2Color, defaultAuraColor;
+        public int[] superformTpCost, godformTpCost, legendaryformsTpCost;
 
         public RaceCharacterData(RaceCharacterConfig config) {
             this.raceName = config.getRaceName();
@@ -237,6 +243,9 @@ public class SyncServerConfigS2C {
             this.defaultEye1Color = config.getDefaultEye1Color();
             this.defaultEye2Color = config.getDefaultEye2Color();
             this.defaultAuraColor = config.getDefaultAuraColor();
+            this.superformTpCost = config.getSuperformTpCost();
+            this.godformTpCost = config.getGodformTpCost();
+            this.legendaryformsTpCost = config.getLegendaryformsTpCost();
         }
 
         public RaceCharacterData(FriendlyByteBuf buf) {
@@ -256,6 +265,24 @@ public class SyncServerConfigS2C {
             this.defaultEye1Color = buf.readUtf();
             this.defaultEye2Color = buf.readUtf();
             this.defaultAuraColor = buf.readUtf();
+
+            int superformLen = buf.readInt();
+            this.superformTpCost = new int[superformLen];
+            for (int i = 0; i < superformLen; i++) {
+                this.superformTpCost[i] = buf.readInt();
+            }
+
+            int godformLen = buf.readInt();
+            this.godformTpCost = new int[godformLen];
+            for (int i = 0; i < godformLen; i++) {
+                this.godformTpCost[i] = buf.readInt();
+            }
+
+            int legendaryLen = buf.readInt();
+            this.legendaryformsTpCost = new int[legendaryLen];
+            for (int i = 0; i < legendaryLen; i++) {
+                this.legendaryformsTpCost[i] = buf.readInt();
+            }
         }
 
         public void encode(FriendlyByteBuf buf) {
@@ -275,6 +302,27 @@ public class SyncServerConfigS2C {
             buf.writeUtf(defaultEye1Color);
             buf.writeUtf(defaultEye2Color);
             buf.writeUtf(defaultAuraColor);
+
+            buf.writeInt(superformTpCost != null ? superformTpCost.length : 0);
+            if (superformTpCost != null) {
+                for (int cost : superformTpCost) {
+                    buf.writeInt(cost);
+                }
+            }
+
+            buf.writeInt(godformTpCost != null ? godformTpCost.length : 0);
+            if (godformTpCost != null) {
+                for (int cost : godformTpCost) {
+                    buf.writeInt(cost);
+                }
+            }
+
+            buf.writeInt(legendaryformsTpCost != null ? legendaryformsTpCost.length : 0);
+            if (legendaryformsTpCost != null) {
+                for (int cost : legendaryformsTpCost) {
+                    buf.writeInt(cost);
+                }
+            }
         }
 
         public RaceCharacterConfig toConfig() {
@@ -295,6 +343,9 @@ public class SyncServerConfigS2C {
             config.setDefaultEye1Color(defaultEye1Color);
             config.setDefaultEye2Color(defaultEye2Color);
             config.setDefaultAuraColor(defaultAuraColor);
+            config.setSuperformTpCost(superformTpCost);
+            config.setGodformTpCost(godformTpCost);
+            config.setLegendaryformsTpCost(legendaryformsTpCost);
             return config;
         }
     }
@@ -338,10 +389,12 @@ public class SyncServerConfigS2C {
 
     public static class FormGroupData {
         public String groupName;
+        public String formType;
         public Map<String, FormDataData> forms;
 
         public FormGroupData(FormConfig config) {
             this.groupName = config.getGroupName();
+            this.formType = config.getFormType();
             this.forms = new LinkedHashMap<>();
             config.getForms().forEach((formKey, formData) -> {
                 this.forms.put(formKey, new FormDataData(formData));
@@ -350,6 +403,7 @@ public class SyncServerConfigS2C {
 
         public FormGroupData(FriendlyByteBuf buf) {
             this.groupName = buf.readUtf();
+            this.formType = buf.readUtf();
             int formCount = buf.readInt();
             this.forms = new LinkedHashMap<>();
             for (int i = 0; i < formCount; i++) {
@@ -361,6 +415,7 @@ public class SyncServerConfigS2C {
 
         public void encode(FriendlyByteBuf buf) {
             buf.writeUtf(groupName);
+            buf.writeUtf(formType);
             buf.writeInt(forms.size());
             forms.forEach((formKey, data) -> {
                 buf.writeUtf(formKey);
@@ -371,6 +426,7 @@ public class SyncServerConfigS2C {
         public FormConfig toConfig() {
             FormConfig config = new FormConfig();
             config.setGroupName(groupName);
+            config.setFormType(formType);
             Map<String, FormConfig.FormData> formsMap = new LinkedHashMap<>();
             forms.forEach((formKey, data) -> {
                 formsMap.put(formKey, data.toFormData());
@@ -384,11 +440,13 @@ public class SyncServerConfigS2C {
         public String name, customModel, bodyColor1, bodyColor2, bodyColor3;
         public String hairColor, eye1Color, eye2Color, auraColor;
         public int hairType;
+        public int unlockOnSuperformLevel;
         public float modelScaling;
-		public double strMult, skpMult, stmMult, defMult, vitMult, pwrMult, eneMult, speedMult, energyDrain;
+		public double strMult, skpMult, stmMult, defMult, vitMult, pwrMult, eneMult, speedMult, energyDrain, staminaDrain, attackSpeed;
 
         public FormDataData(FormConfig.FormData formData) {
             this.name = formData.getName();
+            this.unlockOnSuperformLevel = formData.getUnlockOnSuperformLevel();
             this.customModel = formData.getCustomModel();
             this.bodyColor1 = formData.getBodyColor1();
             this.bodyColor2 = formData.getBodyColor2();
@@ -408,10 +466,13 @@ public class SyncServerConfigS2C {
             this.eneMult = formData.getEneMultiplier();
             this.speedMult = formData.getSpeedMultiplier();
             this.energyDrain = formData.getEnergyDrain();
+            this.staminaDrain = formData.getStaminaDrain();
+            this.attackSpeed = formData.getAttackSpeed();
         }
 
         public FormDataData(FriendlyByteBuf buf) {
             this.name = buf.readUtf();
+            this.unlockOnSuperformLevel = buf.readInt();
             this.customModel = buf.readUtf();
             this.bodyColor1 = buf.readUtf();
             this.bodyColor2 = buf.readUtf();
@@ -431,10 +492,13 @@ public class SyncServerConfigS2C {
             this.eneMult = buf.readDouble();
             this.speedMult = buf.readDouble();
             this.energyDrain = buf.readDouble();
+            this.staminaDrain = buf.readDouble();
+            this.attackSpeed = buf.readDouble();
         }
 
         public void encode(FriendlyByteBuf buf) {
             buf.writeUtf(name);
+            buf.writeInt(unlockOnSuperformLevel);
             buf.writeUtf(customModel);
             buf.writeUtf(bodyColor1);
             buf.writeUtf(bodyColor2);
@@ -454,11 +518,14 @@ public class SyncServerConfigS2C {
             buf.writeDouble(eneMult);
             buf.writeDouble(speedMult);
             buf.writeDouble(energyDrain);
+            buf.writeDouble(staminaDrain);
+            buf.writeDouble(attackSpeed);
         }
 
         public FormConfig.FormData toFormData() {
             FormConfig.FormData formData = new FormConfig.FormData();
             formData.setName(name);
+            formData.setUnlockOnSuperformLevel(unlockOnSuperformLevel);
             formData.setCustomModel(customModel);
             formData.setBodyColor1(bodyColor1);
             formData.setBodyColor2(bodyColor2);
@@ -478,6 +545,8 @@ public class SyncServerConfigS2C {
             formData.setEneMultiplier(eneMult);
             formData.setSpeedMultiplier(speedMult);
             formData.setEnergyDrain(energyDrain);
+            formData.setStaminaDrain(staminaDrain);
+            formData.setAttackSpeed(attackSpeed);
             return formData;
         }
     }
@@ -487,6 +556,7 @@ public class SyncServerConfigS2C {
         public double tpsMultiplier;
         public boolean respectAttackCooldown;
         public int maxStatValue;
+        public boolean kaiokenStackable;
 
         public GeneralServerData(GeneralServerConfig config) {
             this.generateCustomStructures = config.getWorldGen().isGenerateCustomStructures();
@@ -494,6 +564,7 @@ public class SyncServerConfigS2C {
             this.tpsMultiplier = config.getGameplay().getTpsMultiplier();
             this.respectAttackCooldown = config.getGameplay().isRespectAttackCooldown();
             this.maxStatValue = config.getGameplay().getMaxStatValue();
+            this.kaiokenStackable = config.getGameplay().isKaiokenStackable();
         }
 
         public GeneralServerData(FriendlyByteBuf buf) {
@@ -502,6 +573,7 @@ public class SyncServerConfigS2C {
             this.tpsMultiplier = buf.readDouble();
             this.respectAttackCooldown = buf.readBoolean();
             this.maxStatValue = buf.readInt();
+            this.kaiokenStackable = buf.readBoolean();
         }
 
         public void encode(FriendlyByteBuf buf) {
@@ -510,6 +582,7 @@ public class SyncServerConfigS2C {
             buf.writeDouble(tpsMultiplier);
             buf.writeBoolean(respectAttackCooldown);
             buf.writeInt(maxStatValue);
+            buf.writeBoolean(kaiokenStackable);
         }
 
         public GeneralServerConfig toConfig() {
@@ -519,7 +592,79 @@ public class SyncServerConfigS2C {
             config.getGameplay().setTpsMultiplier(tpsMultiplier);
             config.getGameplay().setRespectAttackCooldown(respectAttackCooldown);
             config.getGameplay().setMaxStatValue(maxStatValue);
+            config.getGameplay().setKaiokenStackable(kaiokenStackable);
             return config;
+        }
+    }
+
+    public static class SkillsData {
+        public Map<String, SkillCostsData> skills;
+
+        public SkillsData(SkillsConfig config) {
+            this.skills = new LinkedHashMap<>();
+            config.getSkills().forEach((skillName, skillCosts) -> {
+                this.skills.put(skillName, new SkillCostsData(skillCosts));
+            });
+        }
+
+        public SkillsData(FriendlyByteBuf buf) {
+            int size = buf.readInt();
+            this.skills = new LinkedHashMap<>();
+            for (int i = 0; i < size; i++) {
+                String skillName = buf.readUtf();
+                SkillCostsData data = new SkillCostsData(buf);
+                this.skills.put(skillName, data);
+            }
+        }
+
+        public void encode(FriendlyByteBuf buf) {
+            buf.writeInt(skills.size());
+            skills.forEach((skillName, data) -> {
+                buf.writeUtf(skillName);
+                data.encode(buf);
+            });
+        }
+
+        public SkillsConfig toConfig() {
+            SkillsConfig config = new SkillsConfig();
+            Map<String, SkillsConfig.SkillCosts> skillsMap = new LinkedHashMap<>();
+            skills.forEach((skillName, data) -> {
+                skillsMap.put(skillName, data.toSkillCosts());
+            });
+            config.getSkills().clear();
+            config.getSkills().putAll(skillsMap);
+            return config;
+        }
+    }
+
+    public static class SkillCostsData {
+        public int[] costs;
+
+        public SkillCostsData(SkillsConfig.SkillCosts skillCosts) {
+            this.costs = skillCosts.getCosts().stream().mapToInt(Integer::intValue).toArray();
+        }
+
+        public SkillCostsData(FriendlyByteBuf buf) {
+            int length = buf.readInt();
+            this.costs = new int[length];
+            for (int i = 0; i < length; i++) {
+                this.costs[i] = buf.readInt();
+            }
+        }
+
+        public void encode(FriendlyByteBuf buf) {
+            buf.writeInt(costs.length);
+            for (int cost : costs) {
+                buf.writeInt(cost);
+            }
+        }
+
+        public SkillsConfig.SkillCosts toSkillCosts() {
+            java.util.List<Integer> costsList = new java.util.ArrayList<>();
+            for (int cost : costs) {
+                costsList.add(cost);
+            }
+            return new SkillsConfig.SkillCosts(costsList);
         }
     }
 }

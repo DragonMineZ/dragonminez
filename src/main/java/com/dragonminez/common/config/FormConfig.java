@@ -10,6 +10,9 @@ public class FormConfig {
     @SerializedName("group_name")
     private String groupName;
 
+    @SerializedName("form_type")
+    private String formType = "super";
+
     @SerializedName("forms")
     private Map<String, FormData> forms = new LinkedHashMap<>();
 
@@ -22,6 +25,15 @@ public class FormConfig {
     public void setGroupName(String groupName) {
         this.groupName = groupName;
     }
+
+    public String getFormType() {
+        return formType;
+    }
+
+    public void setFormType(String formType) {
+        this.formType = formType;
+    }
+
 
     public Map<String, FormData> getForms() {
         return forms;
@@ -47,6 +59,9 @@ public class FormConfig {
     public static class FormData {
         @SerializedName("name")
         private String name = "";
+
+        @SerializedName("unlock_on_superform_level")
+        private int unlockOnSuperformLevel = 0;
 
         @SerializedName("custom_model")
         private String customModel = "";
@@ -105,9 +120,16 @@ public class FormConfig {
         @SerializedName("energy_drain")
         private double energyDrain = 1.0;
 
+        @SerializedName("stamina_drain")
+        private double staminaDrain = 1.0;
+
+        @SerializedName("attack_speed")
+        private double attackSpeed = 1.0;
+
         public FormData() {}
 
         public String getName() { return name; }
+        public int getUnlockOnSuperformLevel() { return unlockOnSuperformLevel; }
         public String getCustomModel() { return customModel; }
         public String getBodyColor1() { return bodyColor1; }
         public String getBodyColor2() { return bodyColor2; }
@@ -127,8 +149,11 @@ public class FormConfig {
         public double getEneMultiplier() { return eneMultiplier; }
         public double getSpeedMultiplier() { return speedMultiplier; }
         public double getEnergyDrain() { return energyDrain; }
+        public double getStaminaDrain() { return staminaDrain; }
+        public double getAttackSpeed() { return attackSpeed; }
 
         public void setName(String name) { this.name = name; }
+        public void setUnlockOnSuperformLevel(int level) { this.unlockOnSuperformLevel = level; }
         public void setCustomModel(String customModel) { this.customModel = customModel; }
         public void setBodyColor1(String bodyColor1) { this.bodyColor1 = bodyColor1; }
         public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
@@ -148,6 +173,8 @@ public class FormConfig {
         public void setEneMultiplier(double eneMultiplier) { this.eneMultiplier = eneMultiplier; }
         public void setSpeedMultiplier(double speedMultiplier) { this.speedMultiplier = speedMultiplier; }
         public void setEnergyDrain(double energyDrain) { this.energyDrain = energyDrain; }
+        public void setStaminaDrain(double staminaDrain) { this.staminaDrain = staminaDrain; }
+        public void setAttackSpeed(double attackSpeed) { this.attackSpeed = attackSpeed; }
 
         public boolean hasCustomModel() {
             return customModel != null && !customModel.isEmpty();

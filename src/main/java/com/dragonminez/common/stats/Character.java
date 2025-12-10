@@ -12,6 +12,7 @@ public class Character {
     private String gender;
     private String characterClass;
 
+    private String selectedFormGroup = "";
     private String currentFormGroup = "";
     private String currentForm = "";
 
@@ -60,6 +61,9 @@ public class Character {
     public String getRace() { return race; }
     public String getGender() { return gender; }
     public String getCharacterClass() { return characterClass; }
+    public String getSelectedFormGroup() { return selectedFormGroup; }
+    public String getActiveFormGroup() { return currentFormGroup; }
+    public String getActiveFormName() { return currentForm; }
     public String getCurrentFormGroup() { return currentFormGroup; }
     public String getCurrentForm() { return currentForm; }
     public int getHairId() { return hairId; }
@@ -101,6 +105,7 @@ public class Character {
     public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
     public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
     public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
+    public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
     public void setCurrentFormGroup(String currentFormGroup) { this.currentFormGroup = currentFormGroup; }
     public void setCurrentForm(String currentForm) { this.currentForm = currentForm; }
 
@@ -141,6 +146,7 @@ public class Character {
         tag.putString("Eye1Color", eye1Color);
         tag.putString("Eye2Color", eye2Color);
         tag.putString("AuraColor", auraColor);
+        tag.putString("SelectedFormGroup", selectedFormGroup);
         tag.putString("CurrentFormGroup", currentFormGroup);
         tag.putString("CurrentForm", currentForm);
         return tag;
@@ -171,6 +177,7 @@ public class Character {
         this.eye1Color = tag.getString("Eye1Color");
         this.eye2Color = tag.getString("Eye2Color");
         this.auraColor = tag.getString("AuraColor");
+        this.selectedFormGroup = tag.getString("SelectedFormGroup");
         this.currentFormGroup = tag.getString("CurrentFormGroup");
         this.currentForm = tag.getString("CurrentForm");
     }
@@ -212,6 +219,7 @@ public class Character {
         this.eye1Color = other.eye1Color;
         this.eye2Color = other.eye2Color;
         this.auraColor = other.auraColor;
+        this.selectedFormGroup = other.selectedFormGroup;
         this.currentFormGroup = other.currentFormGroup;
         this.currentForm = other.currentForm;
     }

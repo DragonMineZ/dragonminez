@@ -43,6 +43,9 @@ public class GeneralServerConfig {
         private boolean respectAttackCooldown = true;
         private int maxStatValue = 10000;
 
+        @SerializedName("kaioken_stackable")
+        private boolean kaiokenStackable = true;
+
         @SerializedName("senzu_cooldown_ticks")
         private int senzuCooldownTicks = 240;
 
@@ -59,6 +62,9 @@ public class GeneralServerConfig {
 
         public int getMaxStatValue() { return maxStatValue; }
         public void setMaxStatValue(int maxStatValue) { this.maxStatValue = maxStatValue; }
+
+        public boolean isKaiokenStackable() { return kaiokenStackable; }
+        public void setKaiokenStackable(boolean stackable) { this.kaiokenStackable = stackable; }
 
         public int getSenzuCooldownTicks() { return senzuCooldownTicks; }
         public void setSenzuCooldownTicks(int ticks) { this.senzuCooldownTicks = ticks; }

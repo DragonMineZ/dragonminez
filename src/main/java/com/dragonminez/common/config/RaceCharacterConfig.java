@@ -59,6 +59,15 @@ public class RaceCharacterConfig {
     @SerializedName("defaultAuraColor")
     private String defaultAuraColor = null;
 
+    @SerializedName("superform_tpcost")
+    private int[] superformTpCost = null;
+
+    @SerializedName("godform_tpcost")
+    private int[] godformTpCost = null;
+
+    @SerializedName("legendaryforms_tpcost")
+    private int[] legendaryformsTpCost = null;
+
     public RaceCharacterConfig() {}
 
     public String getRaceName() { return raceName; }
@@ -79,6 +88,9 @@ public class RaceCharacterConfig {
     public String getDefaultEye1Color() { return defaultEye1Color; }
     public String getDefaultEye2Color() { return defaultEye2Color; }
     public String getDefaultAuraColor() { return defaultAuraColor; }
+    public int[] getSuperformTpCost() { return superformTpCost; }
+    public int[] getGodformTpCost() { return godformTpCost; }
+    public int[] getLegendaryformsTpCost() { return legendaryformsTpCost; }
 
     public void setRaceName(String raceName) { this.raceName = raceName; }
     public void setHasGender(boolean hasGender) { this.hasGender = hasGender; }
@@ -98,4 +110,7 @@ public class RaceCharacterConfig {
     public void setDefaultEye1Color(String defaultEye1Color) { this.defaultEye1Color = defaultEye1Color; }
     public void setDefaultEye2Color(String defaultEye2Color) { this.defaultEye2Color = defaultEye2Color; }
     public void setDefaultAuraColor(String defaultAuraColor) { this.defaultAuraColor = defaultAuraColor; }
+    public void setSuperformTpCost(int[] costs) { this.superformTpCost = costs; }
+    public void setGodformTpCost(int[] costs) { this.godformTpCost = costs; }
+    public void setLegendaryformsTpCost(int[] costs) { this.legendaryformsTpCost = costs; }
 }

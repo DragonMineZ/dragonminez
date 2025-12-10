@@ -71,7 +71,8 @@ public class StatsCapability {
                     ConfigManager.getAllRaceStats(),
                     ConfigManager.getAllRaceCharacters(),
                     allForms,
-                    ConfigManager.getServerConfig()
+                    ConfigManager.getServerConfig(),
+                    ConfigManager.getSkillsConfig()
                 ),
                 serverPlayer
             );

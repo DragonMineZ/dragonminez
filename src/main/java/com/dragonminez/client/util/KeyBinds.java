@@ -13,6 +13,10 @@ public class KeyBinds {
     public static final KeyMapping OPEN_CHARACTER_MENU = registerKey("open_character_menu", GLFW.GLFW_KEY_V);
     public static final KeyMapping KI_CHARGE = registerKey("ki_charge", GLFW.GLFW_KEY_C);
     public static final KeyMapping DESCEND_KEY = registerKey("descend_key", GLFW.GLFW_KEY_LEFT_ALT);
+	public static final KeyMapping TRANSFORM_KEY = registerKey("transform_key", GLFW.GLFW_KEY_G);
+	public static final KeyMapping SPACEPOD_MENU = registerKey("spacepod_menu", GLFW.GLFW_KEY_H);
+	public static final KeyMapping UTILITY_MENU = registerKey("utility_menu", GLFW.GLFW_KEY_X);
+	public static final KeyMapping LOCK_ON_TARGET = registerKey("lock_on_target", GLFW.GLFW_KEY_Z);
 
     private static KeyMapping registerKey(String name, int keyCode) {
         return new KeyMapping(
