@@ -165,7 +165,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     private void doRenderLogic(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha, @Nullable GeoBone targetBone, float partialTick, boolean isReRender) {
 
-        // Ocultar capas de ropa (Solo si renderizamos todo el cuerpo)
         if (targetBone == null) hideLayerBonesIfArmored(model, animatable);
 
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
@@ -202,17 +201,14 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             boolean isStandardHumanoid = (raceName.equals("human") || raceName.equals("saiyan"));
             boolean isDefaultBody = (bodyType == 0);
 
-            // CASO A: VANILLA SKIN
             if (forceVanilla || (isStandardHumanoid && isDefaultBody && !hasForm)) {
                 ResourceLocation playerSkin = animatable.getSkinTextureLocation();
                 RenderType type = RenderType.entityTranslucent(playerSkin);
                 VertexConsumer buff = bufferSource.getBuffer(type);
-                // Pasamos isReRender
                 renderTarget(poseStack, animatable, model, type, bufferSource, buff, packedLight, packedOverlay, 1.0f, 1.0f, 1.0f, alpha, targetBone, partialTick, isReRender);
                 return;
             }
 
-            // CASO B: MULTI-LAYER (Namek, etc)
             boolean isNamek = raceName.equals("namekian");
             boolean isFrost = raceName.equals("frostdemon");
             boolean isBio = raceName.equals("bioandroid");
@@ -250,7 +246,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                 return;
             }
 
-            // CASO C: CUSTOM BODY (Buff, Custom)
             String textureBaseName = isStandardHumanoid ? "humansaiyan" : raceName;
             String genderPart = raceConfig.hasGender() ? "_" + gender : "";
             String formPart = "";
@@ -264,7 +259,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             return;
         }
 
-        // Fallback
         if (targetBone == null) {
             super.actuallyRender(poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
         }
@@ -283,15 +277,12 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             String gender = character.getGender().toLowerCase();
             String raceName = character.getRace().toLowerCase();
 
-            // Detectar si debemos reemplazar la armadura
             boolean shouldReplaceArmor = (raceName.equals("majin") && gender.equals("male")) || gender.equals("female");
 
-            // Lista de huesos a reemplazar
             boolean isArmorBone = boneName.equals("armorBody") || boneName.equals("armorBody2") ||
                     boneName.equals("armorRightArm") || boneName.equals("armorLeftArm") ||
                     boneName.equals("boobas");
 
-            // Si es un hueso de armadura en una raza/género custom, intentamos dibujarlo
             if (shouldReplaceArmor && isArmorBone && !isRenderingArmor) {
                 if (renderCustomArmor(poseStack, animatable, bone, bufferSource, packedLight, packedOverlay, false, partialTick, gender, raceName)) {
                     return;
