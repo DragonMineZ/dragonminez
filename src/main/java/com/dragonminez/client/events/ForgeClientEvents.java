@@ -12,6 +12,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -20,6 +22,19 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
+
+	@SubscribeEvent
+	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
+		if (Minecraft.getInstance().player != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+				if (data.getStatus().hasCreatedCharacter()) {
+					if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
+						event.setCanceled(true);
+					}
+				}
+			});
+		}
+	}
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
@@ -35,22 +50,6 @@ public class ForgeClientEvents {
                     mc.setScreen(new CharacterStatsScreen());
                 } else {
                     mc.setScreen(new RaceSelectionScreen(null, data.getCharacter()));
-                }
-            });
-        }
-
-        if (KeyBinds.KI_CHARGE.isDown()) {
-            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-                if (data.getStatus().hasCreatedCharacter()) {
-                    int currentEnergy = data.getResources().getCurrentEnergy();
-                    int maxEnergy = data.getMaxEnergy();
-
-                    DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(mc.player, currentEnergy, maxEnergy);
-                    if (!MinecraftForge.EVENT_BUS.post(kiEvent)) {
-                        if (currentEnergy < maxEnergy) {
-                            data.getResources().setCurrentEnergy(Math.min(maxEnergy, currentEnergy + 1));
-                        }
-                    }
                 }
             });
         }
@@ -73,24 +72,7 @@ public class ForgeClientEvents {
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
             tickCounter = 0;
-            updateActionBar(mc);
         }
-    }
-
-    private static void updateActionBar(Minecraft mc) {
-        StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-            if (data.getStatus().hasCreatedCharacter()) {
-                int currentStamina = data.getResources().getCurrentStamina();
-                int maxStamina = data.getMaxStamina();
-                int currentEnergy = data.getResources().getCurrentEnergy();
-                int maxEnergy = data.getMaxEnergy();
-
-                String text = "§2STM: §f" + currentStamina + " §7/ §f" + maxStamina +
-                        "     §bKI: §f" + currentEnergy + " §7/ §f" + maxEnergy;
-
-                mc.player.displayClientMessage(Component.literal(text), true);
-            }
-        });
     }
 
     @SubscribeEvent

@@ -23,7 +23,7 @@ public class Resources {
 
     public int getCurrentEnergy() { return currentEnergy; }
     public int getCurrentStamina() { return currentStamina; }
-    public int getRelease() { return release; }
+    public int getPowerRelease() { return release; }
     public int getFormRelease() { return formRelease; }
     public int getAlignment() { return alignment; }
     public int getTrainingPoints() { return trainingPoints; }
@@ -31,7 +31,7 @@ public class Resources {
 
     public void setCurrentEnergy(int energy) { this.currentEnergy = Math.max(0, energy); }
     public void setCurrentStamina(int stamina) { this.currentStamina = Math.max(0, stamina); }
-    public void setRelease(int release) { this.release = Math.max(0, release); }
+    public void setPowerRelease(int release) { this.release = Math.max(0, release); }
     public void setFormRelease(int formRelease) { this.formRelease = Math.max(0, Math.min(100, formRelease)); }
     public void setAlignment(int alignment) { this.alignment = Math.max(0, Math.min(100, alignment)); }
     public void setTrainingPoints(int points) { this.trainingPoints = Math.max(0, points); }

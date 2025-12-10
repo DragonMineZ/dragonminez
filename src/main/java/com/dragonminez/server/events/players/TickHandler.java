@@ -51,14 +51,16 @@ public class TickHandler {
                 int currentEnergy = data.getResources().getCurrentEnergy();
                 int maxEnergy = data.getMaxEnergy();
                 if (currentEnergy < maxEnergy) {
-                    int newEnergy = (int) Math.min(maxEnergy, currentEnergy + ENERGY_REGEN_RATE);
+                    double newEnergyDouble = Math.min(maxEnergy, currentEnergy + ENERGY_REGEN_RATE);
+                    int newEnergy = (int) Math.ceil(newEnergyDouble);
                     data.getResources().setCurrentEnergy(newEnergy);
                 }
 
                 int currentStamina = data.getResources().getCurrentStamina();
                 int maxStamina = data.getMaxStamina();
                 if (currentStamina < maxStamina) {
-                    int newStamina = (int) Math.min(maxStamina, currentStamina + STAMINA_REGEN_RATE);
+                    double newStaminaDouble = Math.min(maxStamina, currentStamina + STAMINA_REGEN_RATE);
+                    int newStamina = (int) Math.ceil(newStaminaDouble);
                     data.getResources().setCurrentStamina(newStamina);
                 }
 
@@ -66,6 +68,20 @@ public class TickHandler {
             } else {
                 playerTickCounters.put(playerId, tickCounter);
             }
+
+			if (data.getStatus().isChargingKi() && !data.getStatus().isDescending() && tickCounter % 20 == 0) {
+				int currentRelease = data.getResources().getPowerRelease();
+				if (currentRelease < 100) {
+					int newRelease = Math.min(100, currentRelease + 5);
+					data.getResources().setPowerRelease(newRelease);
+				}
+			} else if (data.getStatus().isDescending() && data.getStatus().isChargingKi() && tickCounter % 20 == 0) {
+				int currentRelease = data.getResources().getPowerRelease();
+				if (currentRelease > 0) {
+					int newRelease = Math.max(0, currentRelease - 5);
+					data.getResources().setPowerRelease(newRelease);
+				}
+			}
 
             if (shouldSync) {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);

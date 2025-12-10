@@ -2,21 +2,21 @@ package com.dragonminez.client.util;
 
 public class ColorUtils {
 
-    public static int[] hexToRgb(String hex) {
+    public static float[] hexToRgb(String hex) {
         if (hex == null || hex.isEmpty()) {
-            return new int[]{255, 255, 255};
+            return new float[]{1.0f, 1.0f, 1.0f};
         }
         try {
             if (hex.startsWith("#")) {
                 hex = hex.substring(1);
             }
-            int color = Integer.parseInt(hex, 16);
-            int r = (color >> 16) & 0xFF;
-            int g = (color >> 8) & 0xFF;
-            int b = color & 0xFF;
-            return new int[]{r, g, b};
-        } catch (NumberFormatException e) {
-            return new int[]{255, 255, 255};
+            long color = Long.parseLong(hex, 16);
+            float r = ((color >> 16) & 0xFF) / 255.0f;
+            float g = ((color >> 8) & 0xFF) / 255.0f;
+            float b = (color & 0xFF) / 255.0f;
+            return new float[]{r, g, b};
+        } catch (Exception e) {
+            return new float[]{1.0f, 1.0f, 1.0f};
         }
     }
 
@@ -98,8 +98,8 @@ public class ColorUtils {
     }
 
     public static float[] hexToHsv(String hex) {
-        int[] rgb = hexToRgb(hex);
-        return rgbToHsv(rgb[0], rgb[1], rgb[2]);
+        float[] rgb = hexToRgb(hex);
+        return rgbToHsv((int)(rgb[0] * 255), (int)(rgb[1] * 255), (int)(rgb[2] * 255));
     }
 
     public static String hsvToHex(float h, float s, float v) {

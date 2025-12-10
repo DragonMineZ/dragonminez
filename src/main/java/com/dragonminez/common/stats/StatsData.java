@@ -59,40 +59,71 @@ public class StatsData {
         int vit = stats.getVitality();
         int pwr = stats.getKiPower();
 
-        double releaseMultiplier = (double) resources.getRelease() / 100.0;
+        double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
 
         return (int) ((str + skp + res + vit + pwr) * releaseMultiplier);
     }
 
     public int getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
-        return 20 + (int)(stats.getVitality() * vitScaling);
+        return 20 + (int) (stats.getVitality() * vitScaling);
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
-        return 100 + (int)(stats.getEnergy() * eneScaling);
+        return 100 + (int) (stats.getEnergy() * eneScaling);
     }
 
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
-        return 100 + (int)(stats.getResistance() * stmScaling);
+        return 100 + (int) (stats.getResistance() * stmScaling);
     }
 
-    public double getAttackDamage() {
+	public double getMaxMeleeDamage() {
+		double strScaling = getStatScaling("STR");
+		return 1 + stats.getStrength() * strScaling;
+	}
+
+    public double getMeleeDamage() {
         double strScaling = getStatScaling("STR");
-        double skpScaling = getStatScaling("SKP");
-        return (stats.getStrength() * strScaling) + (stats.getStrikePower() * skpScaling);
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+        return 1 + ((stats.getStrength() * strScaling) * releaseMultiplier);
     }
+
+	public double getMaxStrikeDamage() {
+		double skpScaling = getStatScaling("SKP");
+		double strScaling = getStatScaling("STR");
+		return 1 + (stats.getStrikePower() * skpScaling + (stats.getStrength() * strScaling) * 0.25);
+	}
+
+	public double getStrikeDamage() {
+		double skpScaling = getStatScaling("SKP");
+		double strScaling = getStatScaling("STR");
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double baseDamage = stats.getStrikePower() * skpScaling + (stats.getStrength() * strScaling) * 0.25;
+        return 1 + baseDamage * releaseMultiplier;
+	}
+
+	public double getMaxKiDamage() {
+		double pwrScaling = getStatScaling("PWR");
+		return stats.getKiPower() * pwrScaling;
+	}
 
     public double getKiDamage() {
         double pwrScaling = getStatScaling("PWR");
-        return stats.getKiPower() * pwrScaling;
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+        return (stats.getKiPower() * pwrScaling) * releaseMultiplier;
     }
+
+	public double getMaxDefense() {
+		double defScaling = getStatScaling("DEF");
+		return stats.getResistance() * defScaling;
+	}
 
     public double getDefense() {
         double defScaling = getStatScaling("DEF");
-        return stats.getResistance() * defScaling;
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+        return (stats.getResistance() * defScaling) * releaseMultiplier;
     }
 
     public CompoundTag save() {
@@ -170,7 +201,7 @@ public class StatsData {
 
         resources.setCurrentEnergy(getMaxEnergy());
         resources.setCurrentStamina(getMaxStamina());
-        resources.setRelease(5);
+        resources.setPowerRelease(5);
         resources.setAlignment(100);
     }
 
@@ -203,8 +234,39 @@ public class StatsData {
         };
     }
 
+    public int calculateRecursiveCost(int statsToAdd, int baseMultiplier, int maxStats, double multiplier) {
+        int totalCost = 0;
+        int currentTotalStats = stats.getTotalStats();
+
+        for (int i = 0; i < statsToAdd; i++) {
+            if (currentTotalStats + i >= maxStats * 6) break;
+            int statLevel = (currentTotalStats + i) / 6;
+            totalCost += (int) Math.round(baseMultiplier + (multiplier * statLevel));
+        }
+        return totalCost;
+    }
+
+    public int calculateStatIncrease(int baseMultiplier, int statsToAdd, int availableTPs, int maxStats, double multiplier) {
+        int statsIncreased = 0;
+        int costAccumulated = 0;
+        int currentTotalStats = stats.getTotalStats();
+
+        while (statsIncreased < statsToAdd) {
+            if (currentTotalStats + statsIncreased >= maxStats * 6) break;
+
+            int statLevel = (currentTotalStats + statsIncreased) / 6;
+            int costForStat = (int) Math.round(baseMultiplier + (multiplier * statLevel));
+
+            if (costAccumulated + costForStat > availableTPs) break;
+
+            costAccumulated += costForStat;
+            statsIncreased++;
+        }
+
+        return statsIncreased;
+    }
+
     public void tick() {
         cooldowns.tick();
     }
 }
-
