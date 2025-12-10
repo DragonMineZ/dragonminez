@@ -49,7 +49,9 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.util.RenderUtils;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
@@ -58,6 +60,9 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     private final PlayerModel<AbstractClientPlayer> vanillaModelReference;
 
+    private Matrix4f headPose = null;
+    private GeoBone headBone = null;
+    private boolean isRenderingFace = false;
     private boolean isRenderingArmor = false;
 
     public PlayerDMZRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
@@ -73,13 +78,43 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     @Override
     public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
+        var stats = statsCap.orElse(null);
+
+        float scaling = 0.9375F;
+
+        if (stats != null) {
+            var character = stats.getCharacter();
+
+            var activeForm = character.getActiveFormData();
+
+            if (activeForm != null) {
+                scaling = (float) activeForm.getModelScaling();
+            } else {
+                scaling = (float) character.getModelScaling();
+            }
+        }
+
+        poseStack.pushPose();
+
+        poseStack.scale(scaling, scaling, scaling);
+
+        this.shadowRadius = 0.4f * scaling;
+
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+
+        poseStack.popPose();
     }
+
 
 
     @Override
     public void actuallyRender(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         poseStack.pushPose();
+//
+        this.headPose = null;
+        this.headBone = null;
 
         LivingEntity livingEntity = (LivingEntity) animatable;
         boolean shouldSit = animatable.isPassenger() && (animatable.getVehicle() != null && animatable.getVehicle().shouldRiderSit());
@@ -158,7 +193,25 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         if (renderType != null){
             doRenderLogic(poseStack, animatable, model, renderType, bufferSource, buffer, packedLight,
                     packedOverlay, 1.0f, 1.0f, 1.0f, alpha, null, partialTick, isReRender);
+
+            if (this.headPose != null && this.headBone != null) {
+                poseStack.pushPose();
+
+                // ERROR ANTERIOR: poseStack.mulPoseMatrix(this.headPose);
+                // CORRECCIÓN: Usamos .set() para sobrescribir la posición
+
+                poseStack.last().pose().set(this.headPose);
+
+                this.isRenderingFace = true;
+                renderFacesPlayer(poseStack, animatable, this.headBone, bufferSource, packedLight, packedOverlay, partialTick, isReRender);
+                this.isRenderingFace = false;
+
+                poseStack.popPose();
+            }
+
         }
+
+
 
         poseStack.popPose();
     }
@@ -180,8 +233,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
             RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 
-
-                // Condición: Ocultar si es Majin (Hombre) O si es cualquier Mujer
                 boolean hideArmorBones = (raceName.equals("majin") && gender.equals("male")) || gender.equals("female");
 
                 model.getBone("armorBody").ifPresent(bone -> bone.setHidden(hideArmorBones));
@@ -289,9 +340,22 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                 }
             }
 
+
+
         }
+//
+//        if (boneName.equals("head") && !this.isRenderingFace) {
+//            this.isRenderingFace = true;
+//            renderFacesPlayer(poseStack, animatable, bone, bufferSource, packedLight, packedOverlay, partialTick, isReRender);
+//            this.isRenderingFace = false;
+//        }
 
         super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        if (bone.getName().equals("head")) {
+            this.headPose = new Matrix4f(poseStack.last().pose());
+            this.headBone = bone;
+        }
+
     }
 
 
@@ -501,7 +565,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                     zOffset = 0.1D;
 
                     model.getBone("left_arm").ifPresent(bone2 -> {
-                        bone2.setPosX(5);
+//                        bone2.setPosX(5);
                     });
                 } else {
                     poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(180));
@@ -536,7 +600,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
             poseStack.translate(xOffset, yOffset, zOffset);
 
-            // Renderizado
             float partialTick = Minecraft.getInstance().getFrameTime();
             ResourceLocation texture = this.getTextureLocation(animatable);
             RenderType renderType = this.getRenderType(animatable, texture, bufferSource, partialTick);
@@ -561,6 +624,84 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         });
     }
 
+    private void renderFacesPlayer(PoseStack poseStack, T animatable, GeoBone headBone, MultiBufferSource bufferSource, int packedLight, int packedOverlay, float partialTick, boolean isReRender) {
+
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+        var stats = statsCap.orElse(null);
+
+        if (stats == null) return;
+
+        var character = stats.getCharacter();
+        String raceName = character.getRace().toLowerCase();
+        int bodyType = character.getBodyType();
+
+        boolean isVanillaPlayer = raceName.equals("human") || raceName.equals("saiyan");
+
+        if (isVanillaPlayer && bodyType == 0) {
+            return;
+        }
+
+        String raceFolder = isVanillaPlayer ? "humansaiyan" : raceName;
+        String filePrefix = isVanillaPlayer ? "humansaiyan" : raceName;
+
+        float originalScaleX = headBone.getScaleX();
+        float originalScaleY = headBone.getScaleY();
+        float originalScaleZ = headBone.getScaleZ();
+
+        float inflation = 0.003f;
+        headBone.setScaleX(originalScaleX + inflation);
+        headBone.setScaleY(originalScaleY + inflation);
+        headBone.setScaleZ(originalScaleZ + inflation);
+
+        float[] eye1Tint = hexToRGB(character.getEye1Color());
+        float[] eye2Tint = hexToRGB(character.getEye2Color());
+        float[] hairTint = hexToRGB(character.getHairColor());
+        float[] whiteTint = new float[]{1.0f, 1.0f, 1.0f};
+
+        float[] skinTint;
+        if (raceName.equals("bioandroid") || raceName.equals("frostdemon")) {
+            skinTint = hexToRGB(character.getBodyColor2());
+        } else {
+            skinTint = hexToRGB(character.getBodyColor());
+        }
+
+        int eyesType = character.getEyesType();
+        String eyeBaseName = filePrefix + "_eye_" + eyesType;
+
+        renderFacePart(poseStack, animatable, headBone, bufferSource, packedLight, packedOverlay, raceFolder, eyeBaseName + "_0.png", whiteTint, partialTick, isReRender);
+        renderFacePart(poseStack, animatable, headBone, bufferSource, packedLight, packedOverlay, raceFolder, eyeBaseName + "_1.png", eye1Tint, partialTick, isReRender);
+        renderFacePart(poseStack, animatable, headBone, bufferSource, packedLight, packedOverlay, raceFolder, eyeBaseName + "_2.png", eye2Tint, partialTick, isReRender);
+
+        if (isVanillaPlayer || raceName.equals("namekian")) {
+            renderFacePart(poseStack, animatable, headBone, bufferSource, packedLight, packedOverlay, raceFolder, eyeBaseName + "_3.png", hairTint, partialTick, isReRender);
+        }
+
+        int noseType = character.getNoseType();
+        String noseName = filePrefix + "_nose_" + noseType + ".png";
+        renderFacePart(poseStack, animatable, headBone, bufferSource, packedLight, packedOverlay, raceFolder, noseName, skinTint, partialTick, isReRender);
+
+        int mouthType = character.getMouthType();
+        String mouthName = filePrefix + "_mouth_" + mouthType + ".png";
+        renderFacePart(poseStack, animatable, headBone, bufferSource, packedLight, packedOverlay, raceFolder, mouthName, skinTint, partialTick, isReRender);
+
+        headBone.setScaleX(originalScaleX);
+        headBone.setScaleY(originalScaleY);
+        headBone.setScaleZ(originalScaleZ);
+    }
+
+    private void renderFacePart(PoseStack poseStack, T animatable, GeoBone bone, MultiBufferSource bufferSource,
+                                int packedLight, int packedOverlay, String raceFolder, String fileName,
+                                float[] rgb, float partialTick, boolean isReRender) {
+
+        String path = "textures/entity/races/" + raceFolder + "/faces/" + fileName;
+        ResourceLocation location = new ResourceLocation(Reference.MOD_ID, path);
+
+        RenderType type = RenderType.entityCutoutNoCull(location);
+        VertexConsumer buffer = bufferSource.getBuffer(type);
+
+        renderRecursively(poseStack, animatable, bone, type, bufferSource, buffer, isReRender, partialTick,
+                packedLight, packedOverlay, rgb[0], rgb[1], rgb[2], 1.0f);
+    }
 
     private void renderTarget(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType type, MultiBufferSource bufferSource, VertexConsumer buffer, int packedLight, int packedOverlay, float r, float g, float b, float a, @Nullable GeoBone targetBone, float partialTick, boolean isReRender) {
         if (targetBone != null) {
@@ -572,7 +713,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         }
 
     }
-
 
     @Override
     protected void renderNameTag(T pEntity, Component pDisplayName, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
