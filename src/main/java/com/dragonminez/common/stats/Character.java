@@ -114,6 +114,11 @@ public class Character {
         return raceConfig.hasGender();
     }
 
+    public double getModelScaling() {
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
+        return raceConfig.getDefaultModelScaling();
+    }
+
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
