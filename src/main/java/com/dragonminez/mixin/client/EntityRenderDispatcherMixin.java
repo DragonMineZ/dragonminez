@@ -82,7 +82,6 @@ public abstract class EntityRenderDispatcherMixin {
         LogUtil.info(Env.CLIENT, "DMZ Renderers Cache cleared on Resource Reload");
     }
 
-    // 3. MÉTODO FACTORY (Tu lógica de creación de renderers)
     @Unique
     private GeoEntityRenderer<?> dmz$createRendererForRace(String race, String gender, String formGroup, String form, EntityRendererProvider.Context ctx) {
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);

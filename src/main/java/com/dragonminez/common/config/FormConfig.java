@@ -76,7 +76,7 @@ public class FormConfig {
         private String auraColor = "";
 
         @SerializedName("model_scaling")
-        private double modelScaling = 1.0;
+        private double modelScaling = 0.9375;
 
         @SerializedName("str_mult")
         private double strMultiplier = 1.0;

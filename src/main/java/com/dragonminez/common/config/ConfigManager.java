@@ -163,6 +163,7 @@ public class ConfigManager {
         config.setRaceName(raceName);
         config.setUseVanillaSkin(false);
         config.setCustomModel("");
+		config.setDefaultModelScaling(0.9375);
 
         if (isDefault) {
             boolean hasGender = RACES_WITH_GENDER.contains(raceName.toLowerCase());

@@ -17,8 +17,8 @@ public class RaceCharacterConfig {
     @SerializedName("customModel")
     private String customModel = "";
 
-    public String getCustomModel() { return customModel; }
-    public void setCustomModel(String customModel) { this.customModel = customModel; }
+	@SerializedName("defaultModelScaling")
+	private double defaultModelScaling = 0.9375;
 
     @SerializedName("defaultBodyType")
     private int defaultBodyType = 0;
@@ -61,6 +61,8 @@ public class RaceCharacterConfig {
     public String getRaceName() { return raceName; }
     public boolean hasGender() { return hasGender; }
     public boolean useVanillaSkin() { return useVanillaSkin; }
+	public String getCustomModel() { return customModel; }
+	public double getDefaultModelScaling() { return defaultModelScaling; }
     public int getDefaultBodyType() { return defaultBodyType; }
     public int getDefaultHairType() { return defaultHairType; }
     public int getDefaultEyesType() { return defaultEyesType; }
@@ -77,6 +79,8 @@ public class RaceCharacterConfig {
     public void setRaceName(String raceName) { this.raceName = raceName; }
     public void setHasGender(boolean hasGender) { this.hasGender = hasGender; }
     public void setUseVanillaSkin(boolean useVanillaSkin) { this.useVanillaSkin = useVanillaSkin; }
+	public void setCustomModel(String customModel) { this.customModel = customModel; }
+	public void setDefaultModelScaling(double defaultModelScaling) { this.defaultModelScaling = defaultModelScaling; }
     public void setDefaultBodyType(int defaultBodyType) { this.defaultBodyType = defaultBodyType; }
     public void setDefaultHairType(int defaultHairType) { this.defaultHairType = defaultHairType; }
     public void setDefaultEyesType(int defaultEyesType) { this.defaultEyesType = defaultEyesType; }
