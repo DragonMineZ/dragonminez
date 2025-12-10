@@ -3,7 +3,6 @@ package com.dragonminez.client.render;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.layer.PlayerArmorLayer;
 import com.dragonminez.client.render.layer.PlayerItemInHandLayer;
-import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
@@ -12,7 +11,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
@@ -21,7 +19,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -47,12 +44,9 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.util.RenderUtils;
 
 import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
@@ -191,7 +185,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         }
 
         if (renderType != null){
-            doRenderLogic(poseStack, animatable, model, renderType, bufferSource, buffer, packedLight,
+            renderBodyAll(poseStack, animatable, model, renderType, bufferSource, buffer, packedLight,
                     packedOverlay, 1.0f, 1.0f, 1.0f, alpha, null, partialTick, isReRender);
 
             if (!isReRender) {
@@ -210,12 +204,20 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
                 poseStack.popPose();
             }
 
+            if (!isReRender) {
+                poseStack.pushPose();
+//                poseStack.scale(1.005f,1.005f,1.005f);
+                renderEffects(poseStack, animatable, model, bufferSource, packedLight, packedOverlay, partialTick);
+                poseStack.popPose();
+
+            }
+
         }
 
         poseStack.popPose();
     }
 
-    private void doRenderLogic(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha, @Nullable GeoBone targetBone, float partialTick, boolean isReRender) {
+    private void renderBodyAll(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha, @Nullable GeoBone targetBone, float partialTick, boolean isReRender) {
 
         if (targetBone == null) hideLayerBonesIfArmored(model, animatable);
 
@@ -441,7 +443,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             RenderType renderType = this.getRenderType(animatable, texture, bufferSource, partialTick);
             VertexConsumer buffer = bufferSource.getBuffer(renderType);
 
-            this.doRenderLogic(
+            this.renderBodyAll(
                     poseStack,
                     animatable,
                     bakedModel,
@@ -529,7 +531,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         var stats = statsCap.orElse(null);
         if (stats == null) return;
-
         int tattooType = stats.getCharacter().getTattooType();
         if (tattooType == 0) return;
 
@@ -551,6 +552,127 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         this.isRenderingTattoo = false;
     }
+
+
+    private static final Set<String> BONES_TO_IGNORE = Set.of(
+            "armorHead",
+            "armorBody", "armorBody2", "boobas",
+            "armorLeggingsBody",
+            "hat_layer",
+            "body_layer",
+            "right_arm_layer", "armorRightArm",
+            "left_arm_layer", "armorLeftArm",
+            "armorLeftLeg", "armorLeftBoot", "left_leg_layer",
+            "armorRightLeg", "armorRightBoot", "right_leg_layer"
+    );
+
+    private void renderEffects(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, int packedLight, int packedOverlay, float partialTick) {
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+        var stats = statsCap.orElse(null);
+        if (stats == null) return;
+        if (!stats.getSkills().getSkill("kaioken").isActive()) return;
+
+        var character = stats.getCharacter();
+        String raceName = character.getRace().toLowerCase();
+        int bodyType = character.getBodyType();
+        String gender = character.getGender().toLowerCase();
+        String currentForm = character.getCurrentForm();
+
+        List<ResourceLocation> textures = getKaiokenTexturesInternal(raceName, bodyType, gender, currentForm, animatable);
+        if (textures.isEmpty()) return;
+
+        poseStack.pushPose();
+
+        Map<String, Boolean> originalVisibility = new HashMap<>();
+
+        for (GeoBone bone : model.topLevelBones()) {
+            filterBonesForRenderEffects(bone, originalVisibility);
+        }
+
+        float r = 1.0f, g = 0.1f, b = 0.1f, a = 0.6f;
+        for (ResourceLocation tex : textures) {
+            RenderType type = RenderType.entityTranslucent(tex);
+            VertexConsumer buffer = bufferSource.getBuffer(type);
+            renderTarget(poseStack, animatable, model, type, bufferSource, buffer, packedLight, packedOverlay, r, g, b, a, null, partialTick, false);
+        }
+
+        for (GeoBone bone : model.topLevelBones()) {
+            restoreBones(bone, originalVisibility);
+        }
+
+        poseStack.popPose();
+    }
+
+    private void filterBonesForRenderEffects(GeoBone bone, Map<String, Boolean> originalVisibility) {
+        originalVisibility.put(bone.getName(), !bone.isHidden());
+
+        if (BONES_TO_IGNORE.contains(bone.getName())) {
+            bone.setHidden(true);
+            saveChildrenVisibility(bone, originalVisibility);
+        } else {
+            bone.setHidden(false);
+            for (GeoBone child : bone.getChildBones()) {
+                filterBonesForRenderEffects(child, originalVisibility);
+            }
+        }
+    }
+
+    private void saveChildrenVisibility(GeoBone bone, Map<String, Boolean> originalVisibility) {
+        for (GeoBone child : bone.getChildBones()) {
+            originalVisibility.put(child.getName(), !child.isHidden());
+            saveChildrenVisibility(child, originalVisibility);
+        }
+    }
+
+    private void restoreBones(GeoBone bone, Map<String, Boolean> originalVisibility) {
+        if (originalVisibility.containsKey(bone.getName())) {
+            bone.setHidden(!originalVisibility.get(bone.getName()));
+        }
+        for (GeoBone child : bone.getChildBones()) {
+            restoreBones(child, originalVisibility);
+        }
+    }
+
+    private List<ResourceLocation> getKaiokenTexturesInternal(String raceName, int bodyType, String gender, String currentForm, T animatable) {
+        List<ResourceLocation> textures = new ArrayList<>();
+        boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
+
+        if (raceName.equals("namekian") || raceName.equals("frostdemon") || raceName.equals("bioandroid")) {
+            String filePrefix;
+            if (hasForm) {
+                String transformTexture = raceName;
+                switch (raceName) {
+                    case "bioandroid" -> {
+                        if (currentForm.equals("semi_perfect")) transformTexture = "bioandroid_semi";
+                        else if (currentForm.equals("perfect")) transformTexture = "bioandroid_perfect";
+                    }
+                    case "frostdemon" -> {
+                        if (currentForm.equals("form2")) transformTexture = "frostdemon_form2";
+                        else if (currentForm.equals("form3")) transformTexture = "frostdemon_form3";
+                        else if (currentForm.equals("golden")) transformTexture = "frostdemon_golden";
+                    }
+                }
+                filePrefix = "textures/entity/races/" + raceName + "/" + transformTexture + "_";
+            } else {
+                filePrefix = "textures/entity/races/" + raceName + "/bodytype_" + bodyType + "_";
+            }
+            textures.add(new ResourceLocation(Reference.MOD_ID, filePrefix + "layer1.png"));
+            textures.add(new ResourceLocation(Reference.MOD_ID, filePrefix + "layer2.png"));
+            textures.add(new ResourceLocation(Reference.MOD_ID, filePrefix + "layer3.png"));
+        } else {
+            boolean isVanillaLike = (raceName.equals("human") || raceName.equals("saiyan")) && bodyType == 0;
+            if (isVanillaLike && !hasForm) {
+                textures.add(animatable.getSkinTextureLocation());
+            } else {
+                String textureBaseName = (raceName.equals("human") || raceName.equals("saiyan")) ? "humansaiyan" : raceName;
+                String genderPart = (!raceName.equals("namekian") && !raceName.equals("frostdemon")) ? "_" + gender : "";
+                String path = "textures/entity/races/" + textureBaseName + "/bodytype" + genderPart + "_" + bodyType + ".png";
+                textures.add(new ResourceLocation(Reference.MOD_ID, path));
+            }
+        }
+        return textures;
+    }
+
 
     private void renderFacePart(PoseStack poseStack, T animatable, GeoBone bone, MultiBufferSource bufferSource,
                                 int packedLight, int packedOverlay, String raceFolder, String fileName,
