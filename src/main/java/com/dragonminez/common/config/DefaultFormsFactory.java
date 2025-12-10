@@ -52,7 +52,7 @@ public class DefaultFormsFactory {
         ssj1.setEye1Color("#00FFFF");
         ssj1.setEye2Color("#00FFFF");
         ssj1.setAuraColor("#FFD700");
-		ssj1.setModelScaling(0.9375);
+		ssj1.setModelScaling(0.9375f);
         ssj1.setStrMultiplier(1.5);
         ssj1.setSkpMultiplier(1.5);
         ssj1.setStmMultiplier(1.5);
@@ -69,7 +69,7 @@ public class DefaultFormsFactory {
         ssg2.setEye1Color("#00FFFF");
         ssg2.setEye2Color("#00FFFF");
         ssg2.setAuraColor("#FFD700");
-        ssg2.setModelScaling(1.1);
+        ssg2.setModelScaling(1.1f);
         ssg2.setStrMultiplier(2.0);
         ssg2.setSkpMultiplier(2.0);
         ssg2.setDefMultiplier(1.8);
@@ -84,7 +84,7 @@ public class DefaultFormsFactory {
         ssg3.setEye1Color("#00FFFF");
         ssg3.setEye2Color("#00FFFF");
         ssg3.setAuraColor("#FFD700");
-        ssg3.setModelScaling(1.2);
+        ssg3.setModelScaling(1.2f);
         ssg3.setStrMultiplier(2.5);
         ssg3.setSkpMultiplier(2.5);
         ssg3.setDefMultiplier(2.0);
@@ -110,7 +110,7 @@ public class DefaultFormsFactory {
 
         FormConfig.FormData giantForm = new FormConfig.FormData();
         giantForm.setName("giant");
-        giantForm.setModelScaling(3.0);
+        giantForm.setModelScaling(3.0f);
         giantForm.setStrMultiplier(2.5);
         giantForm.setSkpMultiplier(2.5);
         giantForm.setDefMultiplier(2.0);
