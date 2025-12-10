@@ -46,7 +46,7 @@ public class TextureCounter {
             return EYES_TYPE_CACHE.get(race);
         }
 
-        int count = countTextures(race, "eyes");
+        int count = countFaceTextures(race, "eye");
         EYES_TYPE_CACHE.put(race, count);
         return count;
     }
@@ -56,7 +56,7 @@ public class TextureCounter {
             return NOSE_TYPE_CACHE.get(race);
         }
 
-        int count = countTextures(race, "nose");
+        int count = countFaceTextures(race, "nose");
         NOSE_TYPE_CACHE.put(race, count);
         return count;
     }
@@ -66,16 +66,16 @@ public class TextureCounter {
             return MOUTH_TYPE_CACHE.get(race);
         }
 
-        int count = countTextures(race, "mouth");
+        int count = countFaceTextures(race, "mouth");
         MOUTH_TYPE_CACHE.put(race, count);
         return count;
     }
 
 	public static int getMaxTattooTypes(String race) {
-		if (MOUTH_TYPE_CACHE.containsKey(race + "_tattoo")) {
-			return TATTOO_TYPE_CACHE.get(race + "_tattoo");
+		if (TATTOO_TYPE_CACHE.containsKey(race)) {
+			return TATTOO_TYPE_CACHE.get(race);
 		}
-		int count = countTextures(race, "tattoo");
+		int count = countTattooTextures();
 		TATTOO_TYPE_CACHE.put(race, count);
 		return count;
 	}
@@ -130,6 +130,48 @@ public class TextureCounter {
 
             if (resourceManager.getResource(location).isPresent()) {
                 count = i;
+            } else {
+                break;
+            }
+        }
+
+        return count;
+    }
+
+    private static int countFaceTextures(String race, String type) {
+        ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
+        int count = 0;
+
+        String raceFolder = race.equals("human") || race.equals("saiyan") ? "humansaiyan" : race;
+        String basePath = "textures/entity/races/" + raceFolder + "/faces/" + raceFolder + "_" + type + "_";
+
+        boolean isEyes = type.equals("eye");
+        String suffix = isEyes ? "_0.png" : ".png";
+
+        for (int i = 0; i <= 100; i++) {
+            ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + suffix);
+
+            if (resourceManager.getResource(location).isPresent()) {
+                count = i + 1;
+            } else {
+                break;
+            }
+        }
+
+        return count;
+    }
+
+    private static int countTattooTextures() {
+        ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
+        int count = 0;
+
+        String basePath = "textures/entity/races/tattoos/tattoo_";
+
+        for (int i = 0; i <= 100; i++) {
+            ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + ".png");
+
+            if (resourceManager.getResource(location).isPresent()) {
+                count = i + 1;
             } else {
                 break;
             }
