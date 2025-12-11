@@ -3,8 +3,10 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
+import com.dragonminez.client.init.entities.renderer.MasterEntityRenderer;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainBlockEntities;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
@@ -33,8 +35,14 @@ public class ModClientEvents {
 		event.enqueueWork(() -> {
 			//Bloques
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);
-		});
+
+        });
 	}
+
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(MainEntities.MASTER_KARIN.get(), MasterEntityRenderer::new);
+    }
 
     @SubscribeEvent
     public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions e) {

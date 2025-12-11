@@ -22,6 +22,7 @@ public class DMZCommon {
 		MainFluids.register(modEventBus);
 		MainSounds.register(modEventBus);
 		MainTabs.register(modEventBus);
+        MainEntities.register(modEventBus);
     }
 }
 
