@@ -70,64 +70,77 @@ public class StatsData {
 
     public int getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
-        return 20 + (int) (stats.getVitality() * vitScaling);
+        double vitMult = 1.0 + getTotalMultiplier("VIT");
+        return (int) (20 + (stats.getVitality() * vitScaling * vitMult));
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
-        return 100 + (int) (stats.getEnergy() * eneScaling);
+        double eneMult = 1.0 + getTotalMultiplier("ENE");
+        return (int) (100 + (stats.getEnergy() * eneScaling * eneMult));
     }
 
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
-        return 100 + (int) (stats.getResistance() * stmScaling);
+        double resMult = 1.0 + getTotalMultiplier("RES");
+        return (int) (100 + (stats.getResistance() * stmScaling * resMult));
     }
 
 	public double getMaxMeleeDamage() {
 		double strScaling = getStatScaling("STR");
-		return 1 + stats.getStrength() * strScaling;
+		double strMult = 1.0 + getTotalMultiplier("STR");
+		return (1 + stats.getStrength() * strScaling) * strMult;
 	}
 
     public double getMeleeDamage() {
         double strScaling = getStatScaling("STR");
+        double strMult = 1.0 + getTotalMultiplier("STR");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-        return 1 + ((stats.getStrength() * strScaling) * releaseMultiplier);
+        return (1 + ((stats.getStrength() * strScaling) * releaseMultiplier)) * strMult;
     }
 
 	public double getMaxStrikeDamage() {
 		double skpScaling = getStatScaling("SKP");
 		double strScaling = getStatScaling("STR");
-		return 1 + (stats.getStrikePower() * skpScaling + (stats.getStrength() * strScaling) * 0.25);
+		double skpMult = 1.0 + getTotalMultiplier("SKP");
+		double strMult = 1.0 + getTotalMultiplier("STR");
+		return (1 + (stats.getStrikePower() * skpScaling * skpMult + (stats.getStrength() * strScaling * strMult) * 0.25));
 	}
 
 	public double getStrikeDamage() {
 		double skpScaling = getStatScaling("SKP");
 		double strScaling = getStatScaling("STR");
+		double skpMult = 1.0 + getTotalMultiplier("SKP");
+		double strMult = 1.0 + getTotalMultiplier("STR");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double baseDamage = stats.getStrikePower() * skpScaling + (stats.getStrength() * strScaling) * 0.25;
+		double baseDamage = stats.getStrikePower() * skpScaling * skpMult + (stats.getStrength() * strScaling * strMult) * 0.25;
         return 1 + baseDamage * releaseMultiplier;
 	}
 
 	public double getMaxKiDamage() {
 		double pwrScaling = getStatScaling("PWR");
-		return stats.getKiPower() * pwrScaling;
+		double pwrMult = 1.0 + getTotalMultiplier("PWR");
+		return stats.getKiPower() * pwrScaling * pwrMult;
 	}
 
     public double getKiDamage() {
         double pwrScaling = getStatScaling("PWR");
+        double pwrMult = 1.0 + getTotalMultiplier("PWR");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-        return (stats.getKiPower() * pwrScaling) * releaseMultiplier;
+        return (stats.getKiPower() * pwrScaling * pwrMult) * releaseMultiplier;
     }
 
 	public double getMaxDefense() {
 		double defScaling = getStatScaling("DEF");
-		return stats.getResistance() * defScaling;
+		double resMult = 1.0 + getTotalMultiplier("RES");
+		return stats.getResistance() * defScaling * resMult;
 	}
 
     public double getDefense() {
         double defScaling = getStatScaling("DEF");
+        double resMult = 1.0 + getTotalMultiplier("RES");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-        return (stats.getResistance() * defScaling) * releaseMultiplier;
+        return (stats.getResistance() * defScaling * resMult) * releaseMultiplier;
     }
 
     public CompoundTag save() {
@@ -299,5 +312,65 @@ public class StatsData {
 
     public void tick() {
         cooldowns.tick();
+    }
+
+    public double getTotalMultiplier(String statName) {
+        return getFormMultiplier(statName) + getKaiokenMultiplier(statName);
+    }
+
+    public double getFormMultiplier(String statName) {
+        String currentForm = character.getCurrentForm();
+        String currentFormGroup = character.getCurrentFormGroup();
+
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) {
+            return 0.0;
+        }
+
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) {
+            return 0.0;
+        }
+
+        var formConfig = ConfigManager.getFormGroup(
+            character.getRaceName(), currentFormGroup);
+
+        if (formConfig == null) {
+            return 0.0;
+        }
+
+        var formData = formConfig.getForm(currentForm);
+        if (formData == null) {
+            return 0.0;
+        }
+
+        return switch (statName.toUpperCase()) {
+            case "STR" -> formData.getStrMultiplier() - 1.0;
+            case "SKP" -> formData.getSkpMultiplier() - 1.0;
+			case "STM" -> formData.getStmMultiplier() - 1.0;
+			case "RES" -> (formData.getDefMultiplier() - 1.0 + formData.getStmMultiplier() - 1.0) / 2.0;
+            case "VIT" -> formData.getVitMultiplier() - 1.0;
+            case "PWR" -> formData.getPwrMultiplier() - 1.0;
+            case "ENE" -> formData.getEneMultiplier() - 1.0;
+            default -> 0.0;
+        };
+    }
+
+    public double getKaiokenMultiplier(String statName) {
+        var skill = skills.getSkill("kaioken");
+        if (skill == null || !skill.isActive()) {
+            return 0.0;
+        }
+
+        int kaiokenLevel = skill.getLevel();
+        if (kaiokenLevel <= 0) {
+            return 0.0;
+        }
+
+        double baseMultiplier = kaiokenLevel * 0.5;
+
+        return switch (statName.toUpperCase()) {
+            case "STR", "SKP", "PWR" -> baseMultiplier;
+            case "RES", "DEF", "VIT", "ENE" -> baseMultiplier * 0.5;
+            default -> 0.0;
+        };
     }
 }

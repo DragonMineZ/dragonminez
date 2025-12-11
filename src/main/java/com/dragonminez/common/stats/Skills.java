@@ -16,15 +16,6 @@ public class Skills {
     }
 
     private void registerDefaultSkills() {
-        skillMap.put("jump", new Skill("jump", 10));
-        skillMap.put("fly", new Skill("fly", 10));
-        skillMap.put("potentialunlock", new Skill("potentialunlock", 13));
-		skillMap.put("meditation", new Skill("meditation", 10));
-        skillMap.put("kicontrol", new Skill("kicontrol", 10));
-        skillMap.put("kisense", new Skill("kisense", 10));
-        skillMap.put("kimanipulation", new Skill("kimanipulation", 10));
-        skillMap.put("kaioken", new Skill("kaioken", 10));
-
         skillMap.put("superform", new Skill("superform", 0));
         skillMap.put("godform", new Skill("godform", 0));
         skillMap.put("legendaryforms", new Skill("legendaryforms", 0));

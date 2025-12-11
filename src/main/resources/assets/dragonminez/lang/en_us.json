@@ -56,6 +56,8 @@
   "gui.dragonminez.character_stats.max_energy.tooltip1": "Maximum ki energy",
   "gui.dragonminez.character_stats.max_energy.tooltip2": "Increasing Energy increases this value by %s per point",
   "gui.dragonminez.character_stats.max_value": "Maximum value: %s",
+  "gui.dragonminez.character_stats.base_value": "Base Value",
+  "gui.dragonminez.character_stats.modified_value": "Modified Value",
   "gui.dragonminez.character_stats.alignment.good": "Alignment: %s (Good)",
   "gui.dragonminez.character_stats.alignment.neutral": "Alignment: %s (Neutral)",
   "gui.dragonminez.character_stats.alignment.evil": "Alignment: %s (Evil)",

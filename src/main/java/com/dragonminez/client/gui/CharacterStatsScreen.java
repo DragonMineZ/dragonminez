@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
+import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.IncreaseStatC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -42,6 +43,7 @@ public class CharacterStatsScreen extends Screen {
     private int tickCount = 0;
     private int tpMultiplier = 1;
     private final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.US);
+    private boolean useHexagonView = false;
 
     private CustomTextureButton strButton;
     private CustomTextureButton skpButton;
@@ -50,6 +52,7 @@ public class CharacterStatsScreen extends Screen {
     private CustomTextureButton pwrButton;
     private CustomTextureButton eneButton;
     private CustomTextureButton multiplierButton;
+    private SwitchButton viewSwitchButton;
 
     public CharacterStatsScreen() {
         super(Component.translatable("gui.dragonminez.character_stats.title"));
@@ -60,6 +63,7 @@ public class CharacterStatsScreen extends Screen {
         super.init();
         updateStatsData();
         initStatButtons();
+        initViewSwitchButton();
     }
 
     @Override
@@ -317,6 +321,7 @@ public class CharacterStatsScreen extends Screen {
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 72, statsStartY, 0x68CCFF, 0x000000);
 
         String[] statNames = {"str", "skp", "res", "vit", "pwr", "ene"};
+        String[] statNamesUpper = {"STR", "SKP", "RES", "VIT", "PWR", "ENE"};
         int[] statValues = {
             statsData.getStats().getStrength(),
             statsData.getStats().getStrikePower(),
@@ -331,13 +336,34 @@ public class CharacterStatsScreen extends Screen {
             int statLabelX = 32;
             int yPos = statY + (i * 12);
 
+            double totalMult = statsData.getTotalMultiplier(statNamesUpper[i]);
+            int baseValue = statValues[i];
+            double modifiedValue = baseValue * (1.0 + totalMult);
+
             Component statComponent = Component.translatable("gui.dragonminez.character_stats." + statNames[i]).withStyle(style -> style.withBold(true));
             drawStringWithBorder2(graphics, statComponent, statLabelX, yPos, 0xD71432, 0x000000);
-            drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(statValues[i])), valueX, yPos, 0xFFD7AB, 0x000000);
+
+            int statColor = totalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+            String statText = totalMult > 0.1
+                ? numberFormatter.format((int)modifiedValue) + " x" + String.format(Locale.US, "%.1f", 1.0 + totalMult)
+                : numberFormatter.format(baseValue);
+
+            drawStringWithBorder2(graphics, Component.literal(statText), valueX, yPos, statColor, 0x000000);
 
             if (mouseX >= statLabelX && mouseX <= statLabelX + 25 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
                 List<FormattedCharSequence> tooltip = new ArrayList<>();
                 tooltip.add(Component.translatable("gui.dragonminez.character_stats." + statNames[i] + ".desc").getVisualOrderText());
+
+                if (totalMult > 0.1) {
+                    tooltip.add(Component.literal("").getVisualOrderText());
+                    tooltip.add(Component.translatable("gui.dragonminez.character_stats.base_value")
+                        .append(": " + numberFormatter.format(baseValue))
+                        .withStyle(ChatFormatting.GRAY).getVisualOrderText());
+                    tooltip.add(Component.translatable("gui.dragonminez.character_stats.modified_value")
+                        .append(": " + numberFormatter.format((int)modifiedValue))
+                        .withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                }
+
                 graphics.renderTooltip(font, tooltip, mouseX, mouseY);
             }
         }
@@ -347,6 +373,14 @@ public class CharacterStatsScreen extends Screen {
     }
 
     private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (useHexagonView) {
+            renderStatisticsInfoHexagon(graphics, mouseX, mouseY);
+        } else {
+            renderStatisticsInfoList(graphics, mouseX, mouseY);
+        }
+    }
+
+    private void renderStatisticsInfoList(GuiGraphics graphics, int mouseX, int mouseY) {
         int rightX = this.width - 127;
         int centerY = this.height / 2;
         int titleY = centerY - 83;
@@ -444,18 +478,29 @@ public class CharacterStatsScreen extends Screen {
             }
         }
 
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", meleeDamage)), valueX + 15, labelStartY, 0xFFD7AB, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", strikeDamage)), valueX + 15, labelStartY + 12, 0xFFD7AB, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(numberFormatter.format(stamina)), valueX + 15, labelStartY + 24, 0xFFD7AB, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", defense)), valueX + 15, labelStartY + 36, 0xFFD7AB, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(numberFormatter.format(health)), valueX + 15, labelStartY + 48, 0xFFD7AB, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", kiDamage)), valueX + 15, labelStartY + 60, 0xFFD7AB, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(numberFormatter.format(energy)), valueX + 15, labelStartY + 72, 0xFFD7AB, 0x000000);
+        double strTotalMult = statsData.getTotalMultiplier("STR");
+        double skpTotalMult = statsData.getTotalMultiplier("SKP");
+        double resTotalMult = statsData.getTotalMultiplier("RES");
+        double vitTotalMult = statsData.getTotalMultiplier("VIT");
+        double pwrTotalMult = statsData.getTotalMultiplier("PWR");
+        double eneTotalMult = statsData.getTotalMultiplier("ENE");
 
-        int battlePower = statsData.getBattlePower();
-        drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.battle_power"), rightX, labelStartY + 102, 0xC51D1D, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(numberFormatter.format(battlePower)), valueX + 15, labelStartY + 102, 0xfebc0d, 0x000000);
-    }
+        int meleeDamageColor = strTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+        int strikeDamageColor = skpTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+        int staminaColor = resTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+        int defenseColor = resTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+        int healthColor = vitTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+        int kiDamageColor = pwrTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+        int energyColor = eneTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
+
+        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", meleeDamage)), valueX + 15, labelStartY, meleeDamageColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", strikeDamage)), valueX + 15, labelStartY + 12, strikeDamageColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(numberFormatter.format(stamina)), valueX + 15, labelStartY + 24, staminaColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", defense)), valueX + 15, labelStartY + 36, defenseColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(numberFormatter.format(health)), valueX + 15, labelStartY + 48, healthColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", kiDamage)), valueX + 15, labelStartY + 60, kiDamageColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(numberFormatter.format(energy)), valueX + 15, labelStartY + 72, energyColor, 0x000000);
+	}
 
     private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
         LivingEntity player = Minecraft.getInstance().player;
@@ -534,6 +579,292 @@ public class CharacterStatsScreen extends Screen {
         graphics.drawString(font, borderComponent, x, y - 1, borderColor, false);
 
         graphics.drawString(font, text, x, y, textColor, false);
+    }
+
+    private void initViewSwitchButton() {
+        int centerY = this.height / 2;
+        int buttonX = this.width - 30;
+        int buttonY = centerY + 95;
+
+        viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
+            useHexagonView = !useHexagonView;
+            ((SwitchButton) button).toggle();
+        });
+        this.addRenderableWidget(viewSwitchButton);
+    }
+
+    private void renderStatisticsInfoHexagon(GuiGraphics graphics, int mouseX, int mouseY) {
+        int centerY = this.height / 2;
+        int titleY = centerY - 83;
+        int centerX = this.width - 75;
+
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), centerX, titleY, 0xF91E64, 0x000000);
+
+        double meleeDamage = statsData.getMeleeDamage();
+        double maxMeleeDamage = statsData.getMaxMeleeDamage();
+        double strikeDamage = statsData.getStrikeDamage();
+        double maxStrikeDamage = statsData.getMaxStrikeDamage();
+        int stamina = statsData.getMaxStamina();
+        double defense = statsData.getDefense();
+        double maxDefense = statsData.getMaxDefense();
+        int health = statsData.getMaxHealth();
+        double kiDamage = statsData.getKiDamage();
+        double maxKiDamage = statsData.getMaxKiDamage();
+        int energy = statsData.getMaxEnergy();
+
+        double strScaling = statsData.getStatScaling("STR");
+        double skpScaling = statsData.getStatScaling("SKP");
+        double resScaling = (statsData.getStatScaling("DEF") + statsData.getStatScaling("STM")) / 2;
+        double vitScaling = statsData.getStatScaling("VIT");
+        double pwrScaling = statsData.getStatScaling("PWR");
+        double eneScaling = statsData.getStatScaling("ENE");
+
+        int hexCenterY = centerY - 20;
+        float maxRadius = 35.0f;
+
+        int strValue = statsData.getStats().getStrength();
+        int skpValue = statsData.getStats().getStrikePower();
+        int resValue = statsData.getStats().getResistance();
+        int vitValue = statsData.getStats().getVitality();
+        int pwrValue = statsData.getStats().getKiPower();
+        int eneValue = statsData.getStats().getEnergy();
+
+        int maxStatValue = Math.max(strValue, Math.max(skpValue, Math.max(resValue, Math.max(vitValue, Math.max(pwrValue, eneValue)))));
+
+        if (maxStatValue == 0) {
+            maxStatValue = 1;
+        }
+
+        int absoluteMaxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+        float referenceValue;
+
+        if (maxStatValue >= absoluteMaxStats * 0.9f) {
+            referenceValue = absoluteMaxStats;
+        } else {
+            referenceValue = maxStatValue * 1.1f;
+        }
+
+        float[] statRadii = new float[6];
+        statRadii[0] = maxRadius * ((float) strValue / referenceValue);
+        statRadii[1] = maxRadius * ((float) resValue / referenceValue);
+        statRadii[2] = maxRadius * ((float) eneValue / referenceValue);
+        statRadii[3] = maxRadius * ((float) vitValue / referenceValue);
+        statRadii[4] = maxRadius * ((float) pwrValue / referenceValue);
+        statRadii[5] = maxRadius * ((float) skpValue / referenceValue);
+
+        float[] hexPointsX = new float[6];
+        float[] hexPointsY = new float[6];
+        float[] hexPointsMaxX = new float[6];
+        float[] hexPointsMaxY = new float[6];
+
+        for (int i = 0; i < 6; i++) {
+            double angle = Math.toRadians(60 * i - 90);
+            hexPointsX[i] = centerX + (float)(statRadii[i] * Math.cos(angle));
+            hexPointsY[i] = hexCenterY + (float)(statRadii[i] * Math.sin(angle));
+
+            hexPointsMaxX[i] = centerX + (float)(maxRadius * Math.cos(angle));
+            hexPointsMaxY[i] = hexCenterY + (float)(maxRadius * Math.sin(angle));
+        }
+
+        drawHexagon(graphics, centerX, hexCenterY, hexPointsX, hexPointsY, hexPointsMaxX, hexPointsMaxY);
+
+        float textOffset = 10.0f;
+
+        int strX = (int)(centerX + (maxRadius + textOffset) * Math.cos(Math.toRadians(-90)));
+        int strY = (int)(hexCenterY + (maxRadius + textOffset) * Math.sin(Math.toRadians(-90)));
+
+        int resX = (int)(centerX + (maxRadius + textOffset) * Math.cos(Math.toRadians(-30)));
+        int resY = (int)(hexCenterY + (maxRadius + textOffset) * Math.sin(Math.toRadians(-30)));
+
+        int eneX = (int)(centerX + (maxRadius + textOffset) * Math.cos(Math.toRadians(30)));
+        int eneY = (int)(hexCenterY + (maxRadius + textOffset) * Math.sin(Math.toRadians(30)));
+
+        int vitX = (int)(centerX + (maxRadius + textOffset) * Math.cos(Math.toRadians(90)));
+        int vitY = (int)(hexCenterY + (maxRadius + textOffset) * Math.sin(Math.toRadians(90)));
+
+        int pwrX = (int)(centerX + (maxRadius + textOffset) * Math.cos(Math.toRadians(150)));
+        int pwrY = (int)(hexCenterY + (maxRadius + textOffset) * Math.sin(Math.toRadians(150)));
+
+        int skpX = (int)(centerX + (maxRadius + textOffset) * Math.cos(Math.toRadians(210)));
+        int skpY = (int)(hexCenterY + (maxRadius + textOffset) * Math.sin(Math.toRadians(210)));
+
+        Component strComponent = Component.translatable("gui.dragonminez.character_stats.str").withStyle(style -> style.withBold(true));
+        drawStringWithBorder(graphics, strComponent, strX, strY, 0xD71432, 0x000000);
+
+        Component skpComponent = Component.translatable("gui.dragonminez.character_stats.skp").withStyle(style -> style.withBold(true));
+        drawStringWithBorder(graphics, skpComponent, skpX, skpY, 0xD71432, 0x000000);
+
+        Component resComponent = Component.translatable("gui.dragonminez.character_stats.res").withStyle(style -> style.withBold(true));
+        drawStringWithBorder(graphics, resComponent, resX, resY, 0xD71432, 0x000000);
+
+        Component pwrComponent = Component.translatable("gui.dragonminez.character_stats.pwr").withStyle(style -> style.withBold(true));
+        drawStringWithBorder(graphics, pwrComponent, pwrX, pwrY, 0xD71432, 0x000000);
+
+        Component eneComponent = Component.translatable("gui.dragonminez.character_stats.ene").withStyle(style -> style.withBold(true));
+        drawStringWithBorder(graphics, eneComponent, eneX, eneY, 0xD71432, 0x000000);
+
+        Component vitComponent = Component.translatable("gui.dragonminez.character_stats.vit").withStyle(style -> style.withBold(true));
+        drawStringWithBorder(graphics, vitComponent, vitX, vitY, 0xD71432, 0x000000);
+
+        int strTextWidth = font.width(strComponent);
+        int skpTextWidth = font.width(skpComponent);
+        int resTextWidth = font.width(resComponent);
+        int pwrTextWidth = font.width(pwrComponent);
+        int eneTextWidth = font.width(eneComponent);
+        int vitTextWidth = font.width(vitComponent);
+
+        if (mouseX >= strX - strTextWidth/2 && mouseX <= strX + strTextWidth/2 && mouseY >= strY && mouseY <= strY + font.lineHeight) {
+            List<FormattedCharSequence> tooltip = new ArrayList<>();
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip1").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip2",
+                String.format(Locale.US, "%.2f", strScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
+                String.format(Locale.US, "%.1f", maxMeleeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+            tooltip.add(Component.literal("").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage").append(": ")
+                .append(Component.literal(String.format(Locale.US, "%.1f", meleeDamage)))
+                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+        }
+
+        if (mouseX >= skpX - skpTextWidth/2 && mouseX <= skpX + skpTextWidth/2 && mouseY >= skpY && mouseY <= skpY + font.lineHeight) {
+            List<FormattedCharSequence> tooltip = new ArrayList<>();
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip1").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip2",
+                String.format(Locale.US, "%.2f", skpScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
+                String.format(Locale.US, "%.1f", maxStrikeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+            tooltip.add(Component.literal("").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage").append(": ")
+                .append(Component.literal(String.format(Locale.US, "%.1f", strikeDamage)))
+                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+        }
+
+        if (mouseX >= resX - resTextWidth/2 && mouseX <= resX + resTextWidth/2 && mouseY >= resY && mouseY <= resY + font.lineHeight) {
+            List<FormattedCharSequence> tooltip = new ArrayList<>();
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense.tooltip1").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense.tooltip2",
+                String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
+                String.format(Locale.US, "%.1f", maxDefense)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+            tooltip.add(Component.literal("").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip1").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip2",
+                String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+            tooltip.add(Component.literal("").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense").append(": ")
+                .append(Component.literal(String.format(Locale.US, "%.1f", defense)))
+                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina").append(": ")
+                .append(Component.literal(numberFormatter.format(stamina)))
+                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+        }
+
+        if (mouseX >= pwrX - pwrTextWidth/2 && mouseX <= pwrX + pwrTextWidth/2 && mouseY >= pwrY && mouseY <= pwrY + font.lineHeight) {
+            List<FormattedCharSequence> tooltip = new ArrayList<>();
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip1").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip2",
+                String.format(Locale.US, "%.2f", pwrScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
+                String.format(Locale.US, "%.1f", maxKiDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+            tooltip.add(Component.literal("").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage").append(": ")
+                .append(Component.literal(String.format(Locale.US, "%.1f", kiDamage)))
+                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+        }
+
+        if (mouseX >= eneX - eneTextWidth/2 && mouseX <= eneX + eneTextWidth/2 && mouseY >= eneY && mouseY <= eneY + font.lineHeight) {
+            List<FormattedCharSequence> tooltip = new ArrayList<>();
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip1").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip2",
+                String.format(Locale.US, "%.2f", eneScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+            tooltip.add(Component.literal("").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy").append(": ")
+                .append(Component.literal(numberFormatter.format(energy)))
+                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+        }
+
+        if (mouseX >= vitX - vitTextWidth/2 && mouseX <= vitX + vitTextWidth/2 && mouseY >= vitY && mouseY <= vitY + font.lineHeight) {
+            List<FormattedCharSequence> tooltip = new ArrayList<>();
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.health.tooltip1").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.health.tooltip2",
+                String.format(Locale.US, "%.2f", vitScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+            tooltip.add(Component.literal("").getVisualOrderText());
+            tooltip.add(Component.translatable("gui.dragonminez.character_stats.health").append(": ")
+                .append(Component.literal(numberFormatter.format(health)))
+                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+        }
+
+        int battlePowerY = this.height / 2 + 105;
+        int battlePower = statsData.getBattlePower();
+        drawStringWithBorder(graphics, Component.literal("BP: " + numberFormatter.format(battlePower)), centerX, battlePowerY, 0xfebc0d, 0x000000);
+    }
+
+    private void drawHexagon(GuiGraphics graphics, int centerX, int centerY, float[] pointsX, float[] pointsY, float[] maxPointsX, float[] maxPointsY) {
+        var pose = graphics.pose();
+        var matrix = pose.last().pose();
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionColorShader);
+        RenderSystem.disableCull();
+
+        var tesselator = com.mojang.blaze3d.vertex.Tesselator.getInstance();
+        var buffer = tesselator.getBuilder();
+
+        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.TRIANGLES, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
+
+        float fillR = 0.82f;
+        float fillG = 0.08f;
+        float fillB = 0.2f;
+        float fillAlpha = 0.3f;
+
+        for (int i = 0; i < 6; i++) {
+            int next = (i + 1) % 6;
+            buffer.vertex(matrix, centerX, centerY, 0).color(fillR, fillG, fillB, fillAlpha).endVertex();
+            buffer.vertex(matrix, pointsX[i], pointsY[i], 0).color(fillR, fillG, fillB, fillAlpha).endVertex();
+            buffer.vertex(matrix, pointsX[next], pointsY[next], 0).color(fillR, fillG, fillB, fillAlpha).endVertex();
+        }
+
+        tesselator.end();
+
+        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.DEBUG_LINES, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
+
+        float outlineR = 0.82f;
+        float outlineG = 0.08f;
+        float outlineB = 0.2f;
+        float outlineAlpha = 0.5f;
+
+        for (int i = 0; i < 6; i++) {
+            int next = (i + 1) % 6;
+            buffer.vertex(matrix, maxPointsX[i], maxPointsY[i], 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+            buffer.vertex(matrix, maxPointsX[next], maxPointsY[next], 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+        }
+
+        tesselator.end();
+
+        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.DEBUG_LINES, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
+
+        float lineR = 0.82f;
+        float lineG = 0.08f;
+        float lineB = 0.2f;
+        float lineAlpha = 0.8f;
+
+        for (int i = 0; i < 6; i++) {
+            int next = (i + 1) % 6;
+            buffer.vertex(matrix, pointsX[i], pointsY[i], 0).color(lineR, lineG, lineB, lineAlpha).endVertex();
+            buffer.vertex(matrix, pointsX[next], pointsY[next], 0).color(lineR, lineG, lineB, lineAlpha).endVertex();
+        }
+
+        tesselator.end();
+
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
     }
 
 

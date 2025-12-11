@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.Optional;
