@@ -60,8 +60,8 @@ public class MightTreeFruitItem extends Item {
                     data.getResources().addEnergy(energyAmount);
                 }
 
-                // TODO: Hacer efectos xd
-                // data.getEffects().addEffect("mightfruit", EFFECT_DURATION_TICKS);
+                double effectPower = ConfigManager.getServerConfig().getGameplay().getMightFruitPower() - 1.0;
+                data.getEffects().addEffect("mightfruit", effectPower, EFFECT_DURATION_TICKS);
             });
 
             player.getFoodData().eat(HUNGER, SATURATION);

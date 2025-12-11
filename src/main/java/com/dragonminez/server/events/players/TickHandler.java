@@ -51,6 +51,8 @@ public class TickHandler {
                 return;
             }
 
+            data.getEffects().tick();
+
             boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
             boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
             boolean isChargingKi = data.getStatus().isChargingKi();

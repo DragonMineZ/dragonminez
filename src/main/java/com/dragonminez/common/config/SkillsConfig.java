@@ -113,25 +113,20 @@ public class SkillsConfig {
 		kaiokenCosts.add(17000);
 		kaiokenCosts.add(19000);
 		kaiokenCosts.add(21000);
-		skills.put("kaioken", new SkillCosts(kaiokenCosts));
 
-		List<Integer> superFormCosts = new ArrayList<>();
-		for (int i = 1; i <= 20; i++) {
-			superFormCosts.add(10000 * i);
-		}
-		skills.put("superform", new SkillCosts(superFormCosts));
+		List<Double> kaiokenMultipliers = new ArrayList<>();
+		kaiokenMultipliers.add(1.1);
+		kaiokenMultipliers.add(1.2);
+		kaiokenMultipliers.add(1.3);
+		kaiokenMultipliers.add(1.4);
+		kaiokenMultipliers.add(1.5);
+		kaiokenMultipliers.add(1.6);
+		kaiokenMultipliers.add(1.7);
+		kaiokenMultipliers.add(1.8);
+		kaiokenMultipliers.add(1.9);
+		kaiokenMultipliers.add(2.0);
 
-		List<Integer> godFormCosts = new ArrayList<>();
-		for (int i = 1; i <= 10; i++) {
-			godFormCosts.add(50000 * i);
-		}
-		skills.put("godform", new SkillCosts(godFormCosts));
-
-		List<Integer> legendaryFormsCosts = new ArrayList<>();
-		for (int i = 1; i <= 5; i++) {
-			legendaryFormsCosts.add(100000 * i);
-		}
-		skills.put("legendaryforms", new SkillCosts(legendaryFormsCosts));
+		skills.put("kaioken", new SkillCosts(kaiokenCosts, kaiokenMultipliers));
     }
 
     public Map<String, SkillCosts> getSkills() {
@@ -150,6 +145,17 @@ public class SkillsConfig {
         return skillCosts.costs.get(level - 1);
     }
 
+    public double getMultiplierForLevel(String skillName, int level) {
+        SkillCosts skillCosts = getSkillCosts(skillName);
+        if (skillCosts.multipliers == null || skillCosts.multipliers.isEmpty()) {
+            return 0.0;
+        }
+        if (level < 1 || level > skillCosts.multipliers.size()) {
+            return 0.0;
+        }
+        return skillCosts.multipliers.get(level - 1);
+    }
+
     public boolean canPurchaseLevel(String skillName, int level) {
         int cost = getCostForLevel(skillName, level);
         return cost >= 0;
@@ -159,12 +165,25 @@ public class SkillsConfig {
         @SerializedName("costs")
         private List<Integer> costs;
 
+        @SerializedName("multipliers")
+        private List<Double> multipliers;
+
         public SkillCosts(List<Integer> costs) {
             this.costs = costs;
+            this.multipliers = null;
+        }
+
+        public SkillCosts(List<Integer> costs, List<Double> multipliers) {
+            this.costs = costs;
+            this.multipliers = multipliers;
         }
 
         public List<Integer> getCosts() {
             return costs;
+        }
+
+        public List<Double> getMultipliers() {
+            return multipliers;
         }
 
         public int getMaxLevel() {

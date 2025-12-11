@@ -1,6 +1,7 @@
 package com.dragonminez.common.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.commands.EffectsCommand;
 import com.dragonminez.common.commands.PointsCommand;
 import com.dragonminez.common.commands.SkillsCommand;
 import com.dragonminez.common.commands.StatsCommand;
@@ -16,7 +17,7 @@ public class ForgeCommonEvents {
         StatsCommand.register(event.getDispatcher());
         PointsCommand.register(event.getDispatcher());
         SkillsCommand.register(event.getDispatcher());
-
+        EffectsCommand.register(event.getDispatcher());
     }
 }
 

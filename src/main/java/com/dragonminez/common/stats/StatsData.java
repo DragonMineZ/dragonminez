@@ -14,6 +14,7 @@ public class StatsData {
     private final Character character;
     private final Resources resources;
     private final Skills skills;
+    private final Effects effects;
 
     private boolean hasInitializedHealth = false;
 
@@ -26,6 +27,7 @@ public class StatsData {
         this.character = new Character();
         this.resources = new Resources();
         this.skills = new Skills();
+        this.effects = new Effects();
     }
 
     public Stats getStats() { return stats; }
@@ -34,6 +36,7 @@ public class StatsData {
     public Character getCharacter() { return character; }
     public Resources getResources() { return resources; }
     public Skills getSkills() { return skills; }
+    public Effects getEffects() { return effects; }
     public Player getPlayer() { return player; }
 
     public boolean hasInitializedHealth() { return hasInitializedHealth; }
@@ -151,6 +154,7 @@ public class StatsData {
         nbt.put("Character", character.save());
         nbt.put("Resources", resources.save());
         nbt.put("Skills", skills.save());
+        nbt.put("Effects", effects.save());
         nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
         return nbt;
     }
@@ -174,6 +178,9 @@ public class StatsData {
         if (nbt.contains("Skills")) {
             skills.load(nbt.getCompound("Skills"));
         }
+        if (nbt.contains("Effects")) {
+            effects.load(nbt.getCompound("Effects"));
+        }
         if (nbt.contains("HasInitializedHealth")) {
             hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
         }
@@ -190,6 +197,7 @@ public class StatsData {
         this.character.copyFrom(other.character);
         this.resources.copyFrom(other.resources);
         this.skills.copyFrom(other.skills);
+        this.effects.copyFrom(other.effects);
         this.hasInitializedHealth = other.hasInitializedHealth;
 
         if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
@@ -315,7 +323,7 @@ public class StatsData {
     }
 
     public double getTotalMultiplier(String statName) {
-        return getFormMultiplier(statName) + getKaiokenMultiplier(statName);
+        return getFormMultiplier(statName) + getKaiokenMultiplier(statName) + getEffectsMultiplier();
     }
 
     public double getFormMultiplier(String statName) {
@@ -365,12 +373,21 @@ public class StatsData {
             return 0.0;
         }
 
-        double baseMultiplier = kaiokenLevel * 0.5;
+        var skillsConfig = ConfigManager.getSkillsConfig();
+        if (skillsConfig == null) {
+            return 0.0;
+        }
+
+        double baseMultiplier = skillsConfig.getMultiplierForLevel("kaioken", kaiokenLevel) - 1.0;
 
         return switch (statName.toUpperCase()) {
             case "STR", "SKP", "PWR" -> baseMultiplier;
-            case "RES", "DEF", "VIT", "ENE" -> baseMultiplier * 0.5;
+            case "DEF" -> baseMultiplier * 0.5;
             default -> 0.0;
         };
+    }
+
+    public double getEffectsMultiplier() {
+        return effects.getTotalEffectMultiplier();
     }
 }

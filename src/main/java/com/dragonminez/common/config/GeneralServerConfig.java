@@ -52,6 +52,12 @@ public class GeneralServerConfig {
         @SerializedName("food_regenerations")
         private Map<String, float[]> foodRegenerations = createDefaultFoodRegenerations();
 
+        @SerializedName("might_fruit_power")
+        private double mightFruitPower = 1.2;
+
+        @SerializedName("majin_power")
+        private double majinPower = 1.3;
+
         public double getTpsMultiplier() { return tpGainMultiplier; }
         public void setTpsMultiplier(double multiplier) { this.tpGainMultiplier = multiplier; }
 		public double getTpCostMultiplier() { return tpCostMultiplier; }
@@ -75,6 +81,12 @@ public class GeneralServerConfig {
         public float[] getFoodRegeneration(String itemId) {
             return foodRegenerations.getOrDefault(itemId, new float[]{0.0f, 0.0f, 0.0f});
         }
+
+        public double getMightFruitPower() { return mightFruitPower; }
+        public void setMightFruitPower(double power) { this.mightFruitPower = power; }
+
+        public double getMajinPower() { return majinPower; }
+        public void setMajinPower(double power) { this.majinPower = power; }
 
         private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();
