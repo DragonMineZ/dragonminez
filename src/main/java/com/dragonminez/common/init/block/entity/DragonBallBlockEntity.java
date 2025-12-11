@@ -45,9 +45,7 @@ public class DragonBallBlockEntity extends BlockEntity implements GeoBlockEntity
     }
 
     private String getAnimationName() {
-        String prefix = isNamekian ? "dball_namek" : "dball";
-        int starNumber = ballType.getStars();
-        return "animation." + prefix + starNumber + ".idle";
+        return "animation.dball1.idle";
     }
 
     @Override

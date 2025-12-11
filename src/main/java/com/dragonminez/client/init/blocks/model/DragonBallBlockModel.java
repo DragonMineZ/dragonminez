@@ -22,6 +22,6 @@ public class DragonBallBlockModel extends GeoModel<DragonBallBlockEntity> {
 	@Override
 	public ResourceLocation getAnimationResource(DragonBallBlockEntity dballBlockEntity) {
 		String animName = dballBlockEntity.isNamekian() ? "dballnamek" : "dball";
-		return new ResourceLocation(Reference.MOD_ID, "animations/block/" + animName + ".animation.json");
+		return new ResourceLocation(Reference.MOD_ID, "animations/block/dball.animation.json");
 	}
 }
