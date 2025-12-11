@@ -175,7 +175,7 @@ public class TickHandler {
         }
 
         if (hasActiveForm && activeForm != null) {
-            double drainRate = activeForm.getEnergyDrain();
+            double drainRate = data.getAdjustedEnergyDrain();
             double drainAmount = maxEnergy * (drainRate / 100.0);
             energyChange -= drainAmount;
         }

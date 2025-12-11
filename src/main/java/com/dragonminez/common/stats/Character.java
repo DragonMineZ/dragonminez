@@ -15,6 +15,7 @@ public class Character {
     private String selectedFormGroup = "";
     private String currentFormGroup = "";
     private String currentForm = "";
+    private final FormMasteries formMasteries = new FormMasteries();
 
     public static final String GENDER_MALE = "male";
     public static final String GENDER_FEMALE = "female";
@@ -79,6 +80,7 @@ public class Character {
     public String getEye1Color() { return eye1Color; }
     public String getEye2Color() { return eye2Color; }
     public String getAuraColor() { return auraColor; }
+    public FormMasteries getFormMasteries() { return formMasteries; }
 
     public void setRace(String race) {
         if (race != null && ConfigManager.isRaceLoaded(race)) {
@@ -149,6 +151,7 @@ public class Character {
         tag.putString("SelectedFormGroup", selectedFormGroup);
         tag.putString("CurrentFormGroup", currentFormGroup);
         tag.putString("CurrentForm", currentForm);
+        tag.put("FormMasteries", formMasteries.save());
         return tag;
     }
 
@@ -180,6 +183,9 @@ public class Character {
         this.selectedFormGroup = tag.getString("SelectedFormGroup");
         this.currentFormGroup = tag.getString("CurrentFormGroup");
         this.currentForm = tag.getString("CurrentForm");
+        if (tag.contains("FormMasteries")) {
+            formMasteries.load(tag.getCompound("FormMasteries"));
+        }
     }
 
     public boolean hasActiveForm() {
@@ -222,5 +228,6 @@ public class Character {
         this.selectedFormGroup = other.selectedFormGroup;
         this.currentFormGroup = other.currentFormGroup;
         this.currentForm = other.currentForm;
+        this.formMasteries.copyFrom(other.formMasteries);
     }
 }

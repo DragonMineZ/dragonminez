@@ -72,13 +72,7 @@ public class CombatEvent {
 
             int baseStaminaRequired = (int) Math.ceil(dmzDamage * STAMINA_CONSUMPTION_RATIO);
 
-            double staminaDrainMultiplier = 1.0;
-            if (attackerData.getCharacter().hasActiveForm()) {
-                FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-                if (activeForm != null) {
-                    staminaDrainMultiplier = activeForm.getStaminaDrain();
-                }
-            }
+            double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
 
             int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
             int currentStamina = attackerData.getResources().getCurrentStamina();
@@ -97,6 +91,20 @@ public class CombatEvent {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             }
 
+            if (attackerData.getCharacter().hasActiveForm()) {
+                FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+                if (activeForm != null) {
+                    String formGroup = attackerData.getCharacter().getCurrentFormGroup();
+                    String formName = attackerData.getCharacter().getCurrentForm();
+                    attackerData.getCharacter().getFormMasteries().addMastery(
+                        formGroup,
+                        formName,
+                        activeForm.getMasteryPerHit(),
+                        activeForm.getMaxMastery()
+                    );
+                }
+            }
+
             double totalDamage;
             if (isEmptyHandOrNoDamageItem(attacker)) {
                 totalDamage = finalDmzDamage;
@@ -113,6 +121,24 @@ public class CombatEvent {
                     if (targetData.getStatus().hasCreatedCharacter()) {
                         double defense = targetData.getDefense();
                         adjustedDamage[0] = Math.max(1.0, adjustedDamage[0] - defense);
+
+                        if (targetData.getCharacter().hasActiveForm()) {
+                            FormConfig.FormData activeForm = targetData.getCharacter().getActiveFormData();
+                            if (activeForm != null) {
+                                String formGroup = targetData.getCharacter().getCurrentFormGroup();
+                                String formName = targetData.getCharacter().getCurrentForm();
+                                targetData.getCharacter().getFormMasteries().addMastery(
+                                    formGroup,
+                                    formName,
+                                    activeForm.getMasteryPerDamageReceived(),
+                                    activeForm.getMaxMastery()
+                                );
+
+                                if (target instanceof ServerPlayer serverPlayer) {
+                                    NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+                                }
+                            }
+                        }
                     }
                 });
 

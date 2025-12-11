@@ -350,7 +350,7 @@ public class StatsData {
             return 0.0;
         }
 
-        return switch (statName.toUpperCase()) {
+        double baseMult = switch (statName.toUpperCase()) {
             case "STR" -> formData.getStrMultiplier() - 1.0;
             case "SKP" -> formData.getSkpMultiplier() - 1.0;
 			case "STM" -> formData.getStmMultiplier() - 1.0;
@@ -360,6 +360,11 @@ public class StatsData {
             case "ENE" -> formData.getEneMultiplier() - 1.0;
             default -> 0.0;
         };
+
+        double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
+        double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
+
+        return baseMult + masteryBonus;
     }
 
     public double getKaiokenMultiplier(String statName) {
@@ -389,5 +394,45 @@ public class StatsData {
 
     public double getEffectsMultiplier() {
         return effects.getTotalEffectMultiplier();
+    }
+
+    public double getAdjustedEnergyDrain() {
+        if (!character.hasActiveForm()) {
+            return 0.0;
+        }
+
+        var formData = character.getActiveFormData();
+        if (formData == null) {
+            return 0.0;
+        }
+
+        double baseDrain = formData.getEnergyDrain();
+        double mastery = character.getFormMasteries().getMastery(
+            character.getCurrentFormGroup(),
+            character.getCurrentForm()
+        );
+        double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
+
+        return Math.max(0.0, baseDrain - reduction);
+    }
+
+    public double getAdjustedStaminaDrain() {
+        if (!character.hasActiveForm()) {
+            return 1.0;
+        }
+
+        var formData = character.getActiveFormData();
+        if (formData == null) {
+            return 1.0;
+        }
+
+        double baseDrain = formData.getStaminaDrain();
+        double mastery = character.getFormMasteries().getMastery(
+            character.getCurrentFormGroup(),
+            character.getCurrentForm()
+        );
+        double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
+
+        return Math.max(1.0, baseDrain - reduction);
     }
 }
