@@ -126,6 +126,21 @@ public class FormConfig {
         @SerializedName("attack_speed")
         private double attackSpeed = 1.0;
 
+        @SerializedName("max_mastery")
+        private double maxMastery = 100.0;
+
+        @SerializedName("mastery_per_hit")
+        private double masteryPerHit = 0.1;
+
+        @SerializedName("mastery_per_damage_received")
+        private double masteryPerDamageReceived = 0.1;
+
+        @SerializedName("stat_mult_per_mastery_point")
+        private double statMultPerMasteryPoint = 0.02;
+
+        @SerializedName("cost_decrease_per_mastery_point")
+        private double costDecreasePerMasteryPoint = 0.02;
+
         public FormData() {}
 
         public String getName() { return name; }
@@ -151,6 +166,11 @@ public class FormConfig {
         public double getEnergyDrain() { return energyDrain; }
         public double getStaminaDrain() { return staminaDrain; }
         public double getAttackSpeed() { return attackSpeed; }
+        public double getMaxMastery() { return maxMastery; }
+        public double getMasteryPerHit() { return masteryPerHit; }
+        public double getMasteryPerDamageReceived() { return masteryPerDamageReceived; }
+        public double getStatMultPerMasteryPoint() { return statMultPerMasteryPoint; }
+        public double getCostDecreasePerMasteryPoint() { return costDecreasePerMasteryPoint; }
 
         public void setName(String name) { this.name = name; }
         public void setUnlockOnSuperformLevel(int level) { this.unlockOnSuperformLevel = level; }
@@ -175,6 +195,11 @@ public class FormConfig {
         public void setEnergyDrain(double energyDrain) { this.energyDrain = energyDrain; }
         public void setStaminaDrain(double staminaDrain) { this.staminaDrain = staminaDrain; }
         public void setAttackSpeed(double attackSpeed) { this.attackSpeed = attackSpeed; }
+        public void setMaxMastery(double maxMastery) { this.maxMastery = maxMastery; }
+        public void setMasteryPerHit(double masteryPerHit) { this.masteryPerHit = masteryPerHit; }
+        public void setMasteryPerDamageReceived(double masteryPerDamageReceived) { this.masteryPerDamageReceived = masteryPerDamageReceived; }
+        public void setStatMultPerMasteryPoint(double statMultPerMasteryPoint) { this.statMultPerMasteryPoint = statMultPerMasteryPoint; }
+        public void setCostDecreasePerMasteryPoint(double costDecreasePerMasteryPoint) { this.costDecreasePerMasteryPoint = costDecreasePerMasteryPoint; }
 
         public boolean hasCustomModel() {
             return customModel != null && !customModel.isEmpty();

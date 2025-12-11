@@ -51,6 +51,8 @@ public class TickHandler {
                 return;
             }
 
+            data.getEffects().tick();
+
             boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
             boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
             boolean isChargingKi = data.getStatus().isChargingKi();
@@ -173,7 +175,7 @@ public class TickHandler {
         }
 
         if (hasActiveForm && activeForm != null) {
-            double drainRate = activeForm.getEnergyDrain();
+            double drainRate = data.getAdjustedEnergyDrain();
             double drainAmount = maxEnergy * (drainRate / 100.0);
             energyChange -= drainAmount;
         }

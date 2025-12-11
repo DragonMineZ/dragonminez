@@ -20,6 +20,14 @@ public class DefaultFormsFactory {
         this.loader = loader;
     }
 
+    private void setDefaultMasteryValues(FormConfig.FormData form) {
+        form.setMaxMastery(100.0);
+        form.setMasteryPerHit(0.05);
+        form.setMasteryPerDamageReceived(0.05);
+        form.setStatMultPerMasteryPoint(0.02);
+        form.setCostDecreasePerMasteryPoint(0.02);
+    }
+
     public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
         switch (raceName.toLowerCase()) {
 			case "human" -> createDefaultHumanForms(formsPath, forms);
@@ -63,6 +71,7 @@ public class DefaultFormsFactory {
         oozaru.setEnergyDrain(1.5);
         oozaru.setStaminaDrain(1.2);
         oozaru.setAttackSpeed(0.9);
+        setDefaultMasteryValues(oozaru);
 
         FormConfig.FormData goldenOozaru = new FormConfig.FormData();
         goldenOozaru.setName("goldenoozaru");
@@ -81,6 +90,7 @@ public class DefaultFormsFactory {
         goldenOozaru.setEnergyDrain(1.5);
         goldenOozaru.setStaminaDrain(1.3);
         goldenOozaru.setAttackSpeed(1.1);
+        setDefaultMasteryValues(goldenOozaru);
 
         FormConfig.FormData ssj4 = new FormConfig.FormData();
         ssj4.setName("supersaiyan4");
@@ -100,6 +110,7 @@ public class DefaultFormsFactory {
         ssj4.setEnergyDrain(1.5);
         ssj4.setStaminaDrain(1.1);
         ssj4.setAttackSpeed(1.2);
+        setDefaultMasteryValues(ssj4);
 
         Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
         oozaruFormData.put("oozaru", oozaru);
@@ -130,6 +141,7 @@ public class DefaultFormsFactory {
         ssj1.setEnergyDrain(1.5);
         ssj1.setStaminaDrain(1.1);
         ssj1.setAttackSpeed(1.1);
+        setDefaultMasteryValues(ssj1);
 
         FormConfig.FormData ssg2 = new FormConfig.FormData();
         ssg2.setName("supersaiyangrade2");
@@ -148,6 +160,7 @@ public class DefaultFormsFactory {
         ssg2.setEnergyDrain(1.5);
         ssg2.setStaminaDrain(1.3);
         ssg2.setAttackSpeed(1.15);
+        setDefaultMasteryValues(ssg2);
 
         FormConfig.FormData ssg3 = new FormConfig.FormData();
         ssg3.setName("supersaiyangrade3");
@@ -164,6 +177,7 @@ public class DefaultFormsFactory {
         ssg3.setEnergyDrain(1.5);
         ssg3.setStaminaDrain(1.5);
         ssg3.setAttackSpeed(1.3);
+        setDefaultMasteryValues(ssg3);
 
         Map<String, FormConfig.FormData> ssGradeForms = new LinkedHashMap<>();
         ssGradeForms.put("ssj1", ssj1);
@@ -194,6 +208,7 @@ public class DefaultFormsFactory {
         ssj1Mastered.setEnergyDrain(0.5);
         ssj1Mastered.setStaminaDrain(0.8);
         ssj1Mastered.setAttackSpeed(1.1);
+        setDefaultMasteryValues(ssj1Mastered);
 
         FormConfig.FormData ssj2 = new FormConfig.FormData();
         ssj2.setName("supersaiyan2");
@@ -214,6 +229,7 @@ public class DefaultFormsFactory {
         ssj2.setEnergyDrain(1.5);
         ssj2.setStaminaDrain(1.1);
         ssj2.setAttackSpeed(1.2);
+        setDefaultMasteryValues(ssj2);
 
         FormConfig.FormData ssj3 = new FormConfig.FormData();
         ssj3.setName("supersaiyan3");
@@ -235,6 +251,7 @@ public class DefaultFormsFactory {
         ssj3.setEnergyDrain(1.5);
         ssj3.setStaminaDrain(1.2);
         ssj3.setAttackSpeed(1.25);
+        setDefaultMasteryValues(ssj3);
 
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
         superSaiyanForms.put("ssj1mastered", ssj1Mastered);
@@ -272,6 +289,7 @@ public class DefaultFormsFactory {
         giantForm.setEnergyDrain(1.5);
         giantForm.setStaminaDrain(1.3);
         giantForm.setAttackSpeed(0.85);
+        setDefaultMasteryValues(giantForm);
 
         FormConfig.FormData superNamekian = new FormConfig.FormData();
         superNamekian.setName("supernamekian");
@@ -286,6 +304,7 @@ public class DefaultFormsFactory {
         superNamekian.setEnergyDrain(1.5);
         superNamekian.setStaminaDrain(1.1);
         superNamekian.setAttackSpeed(1.1);
+        setDefaultMasteryValues(superNamekian);
 
         Map<String, FormConfig.FormData> namekianFormData = new LinkedHashMap<>();
         namekianFormData.put("giant", giantForm);
