@@ -1,6 +1,7 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.entities.animal.Dino1Entity;
 import com.dragonminez.common.init.entities.masters.MasterKarinEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -20,6 +21,13 @@ public class MainEntities {
                     () -> EntityType.Builder.of(MasterKarinEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 0.8f)
                             .build(new ResourceLocation(Reference.MOD_ID, "master_karin").toString()));
+
+    public static final RegistryObject<EntityType<Dino1Entity>> DINOSAUR1 =
+            ENTITY_TYPES.register("dino1",
+                    () -> EntityType.Builder.of(Dino1Entity::new, MobCategory.CREATURE)
+                            .sized(2.2f, 5.1f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "dino1").toString()));
+
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
