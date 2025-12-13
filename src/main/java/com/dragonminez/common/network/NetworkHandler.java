@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.C2S.IncreaseStatC2S;
 import com.dragonminez.common.network.C2S.UpdateStatC2S;
+import com.dragonminez.common.network.C2S.UpgradeSkillC2S;
 import com.dragonminez.common.network.S2C.PlayerAnimationsSync;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
@@ -52,6 +53,12 @@ public class NetworkHandler {
                 .decoder(IncreaseStatC2S::decode)
                 .encoder(IncreaseStatC2S::encode)
                 .consumerMainThread(IncreaseStatC2S::handle)
+                .add();
+
+		net.messageBuilder(UpgradeSkillC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(UpgradeSkillC2S::new)
+                .encoder(UpgradeSkillC2S::encode)
+                .consumerMainThread(UpgradeSkillC2S::handle)
                 .add();
 
 		/*

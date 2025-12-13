@@ -2,9 +2,8 @@ package com.dragonminez.common.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.commands.EffectsCommand;
-import com.dragonminez.common.commands.PointsCommand;
-import com.dragonminez.common.commands.SkillsCommand;
-import com.dragonminez.common.commands.StatsCommand;
+import com.dragonminez.common.commands.PartyCommand;
+import com.dragonminez.common.commands.*;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -18,6 +17,7 @@ public class ForgeCommonEvents {
         PointsCommand.register(event.getDispatcher());
         SkillsCommand.register(event.getDispatcher());
         EffectsCommand.register(event.getDispatcher());
+        PartyCommand.register(event.getDispatcher());
     }
 }
 

@@ -6,6 +6,8 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
+import com.dragonminez.common.quest.QuestData;
+import com.dragonminez.common.quest.SagaManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -76,6 +78,16 @@ public class StatsCapability {
                 ),
                 serverPlayer
             );
+
+            SagaManager.loadSagas(serverPlayer.getServer());
+
+            // Desbloquear la primera saga si el jugador no tiene ninguna saga desbloqueada
+            StatsProvider.get(INSTANCE, serverPlayer).ifPresent(stats -> {
+                QuestData questData = stats.getQuestData();
+                if (!questData.isSagaUnlocked("saiyan_saga")) {
+                    questData.unlockSaga("saiyan_saga");
+                }
+            });
         }
         event.getEntity().refreshDimensions();
     }
