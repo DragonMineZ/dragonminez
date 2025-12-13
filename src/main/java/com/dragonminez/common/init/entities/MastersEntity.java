@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities;
 
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -50,6 +51,15 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     protected void doPush(Entity p_20971_) {
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (source.is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD)) { //Solo dano del vacio wa
+            return super.hurt(source, amount);
+        }
+
+        return false;
     }
 
     @Override
