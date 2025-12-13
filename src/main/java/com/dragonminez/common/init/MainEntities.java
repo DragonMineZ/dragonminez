@@ -5,6 +5,7 @@ import com.dragonminez.common.init.entities.animal.Dino1Entity;
 import com.dragonminez.common.init.entities.animal.Dino2Entity;
 import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.masters.MasterKarinEntity;
+import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -44,6 +45,12 @@ public class MainEntities {
                     () -> EntityType.Builder.of(Dino1Entity::new, MobCategory.CREATURE)
                             .sized(1.0f, 1.0f)
                             .build(new ResourceLocation(Reference.MOD_ID, "dinokid").toString()));
+
+    public static final RegistryObject<EntityType<BanditEntity>> BANDIT =
+            ENTITY_TYPES.register("bandit",
+                    () -> EntityType.Builder.of(BanditEntity::new, MobCategory.CREATURE)
+                            .sized(1.4f, 3.2f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "bandit").toString()));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
