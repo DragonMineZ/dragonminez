@@ -18,12 +18,12 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class DinoEntity extends Monster implements GeoEntity {
+public class DinoGlobalEntity extends Monster implements GeoEntity {
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
     private boolean isAttacking = false;
 
-    protected DinoEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+    protected DinoGlobalEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
@@ -64,7 +64,7 @@ public class DinoEntity extends Monster implements GeoEntity {
     }
 
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
-        DinoEntity entity = (DinoEntity) event.getAnimatable();
+        DinoGlobalEntity entity = (DinoGlobalEntity) event.getAnimatable();
 
         if (entity.swingTime > 0 && !isAttacking) {
             isAttacking = true;

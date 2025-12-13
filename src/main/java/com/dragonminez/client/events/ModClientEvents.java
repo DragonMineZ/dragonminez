@@ -3,7 +3,9 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
+import com.dragonminez.client.init.entities.renderer.DinoFlyRenderer;
 import com.dragonminez.client.init.entities.renderer.DinosRenderer;
+import com.dragonminez.client.init.entities.renderer.GranDinoRenderer;
 import com.dragonminez.client.init.entities.renderer.MasterEntityRenderer;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainBlockEntities;
@@ -43,7 +45,11 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(MainEntities.MASTER_KARIN.get(), MasterEntityRenderer::new);
+
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
+        event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
+        event.registerEntityRenderer(MainEntities.DINOSAUR3.get(), DinoFlyRenderer::new);
+        event.registerEntityRenderer(MainEntities.DINO_KID.get(), DinosRenderer::new);
 
     }
 

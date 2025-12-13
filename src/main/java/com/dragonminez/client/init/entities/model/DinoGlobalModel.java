@@ -1,8 +1,7 @@
 package com.dragonminez.client.init.entities.model;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.entities.MastersEntity;
-import com.dragonminez.common.init.entities.animal.DinoEntity;
+import com.dragonminez.common.init.entities.animal.DinoGlobalEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -12,7 +11,7 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
-public class DinoGlobalModel<T extends DinoEntity> extends GeoModel<T> {
+public class DinoGlobalModel<T extends DinoGlobalEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {

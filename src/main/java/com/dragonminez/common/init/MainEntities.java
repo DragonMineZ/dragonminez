@@ -2,6 +2,8 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.animal.Dino1Entity;
+import com.dragonminez.common.init.entities.animal.Dino2Entity;
+import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.masters.MasterKarinEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -27,7 +29,21 @@ public class MainEntities {
                     () -> EntityType.Builder.of(Dino1Entity::new, MobCategory.CREATURE)
                             .sized(2.2f, 5.1f)
                             .build(new ResourceLocation(Reference.MOD_ID, "dino1").toString()));
-
+    public static final RegistryObject<EntityType<Dino2Entity>> DINOSAUR2 =
+            ENTITY_TYPES.register("dino2",
+                    () -> EntityType.Builder.of(Dino2Entity::new, MobCategory.CREATURE)
+                            .sized(3.3f, 5.2f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "dino2").toString()));
+    public static final RegistryObject<EntityType<DinoFlyEntity>> DINOSAUR3 =
+            ENTITY_TYPES.register("dino3",
+                    () -> EntityType.Builder.of(DinoFlyEntity::new, MobCategory.CREATURE)
+                            .sized(1.8f, 1.5f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "dino3").toString()));
+    public static final RegistryObject<EntityType<Dino1Entity>> DINO_KID =
+            ENTITY_TYPES.register("dinokid",
+                    () -> EntityType.Builder.of(Dino1Entity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 1.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "dinokid").toString()));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
