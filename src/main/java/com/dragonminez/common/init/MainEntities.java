@@ -6,6 +6,7 @@ import com.dragonminez.common.init.entities.animal.Dino2Entity;
 import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.masters.MasterKarinEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
+import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -51,6 +52,21 @@ public class MainEntities {
                     () -> EntityType.Builder.of(BanditEntity::new, MobCategory.CREATURE)
                             .sized(1.4f, 3.2f)
                             .build(new ResourceLocation(Reference.MOD_ID, "bandit").toString()));
+    public static final RegistryObject<EntityType<RobotEntity>> RED_RIBBON_ROBOT1 =
+            ENTITY_TYPES.register("robot1",
+                    () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)
+                            .sized(1.7f, 4.5f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "robot1").toString()));
+    public static final RegistryObject<EntityType<RobotEntity>> RED_RIBBON_ROBOT2 =
+            ENTITY_TYPES.register("robot2",
+                    () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)
+                            .sized(1.7f, 4.5f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "robot2").toString()));
+    public static final RegistryObject<EntityType<RobotEntity>> RED_RIBBON_ROBOT3 =
+            ENTITY_TYPES.register("robot3",
+                    () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)
+                            .sized(1.7f, 4.5f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "robot3").toString()));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

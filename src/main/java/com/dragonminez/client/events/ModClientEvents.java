@@ -49,6 +49,9 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.DINO_KID.get(), DinosRenderer::new);
 
         event.registerEntityRenderer(MainEntities.BANDIT.get(), RedRibbonRenderer::new);
+        event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT1.get(), RobotRRRenderer::new);
+        event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT2.get(), RobotRRRenderer::new);
+        event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT3.get(), RobotRRRenderer::new);
 
     }
 

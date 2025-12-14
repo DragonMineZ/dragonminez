@@ -8,6 +8,7 @@ import com.dragonminez.common.init.entities.animal.Dino2Entity;
 import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.animal.DinoKidEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
+import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -25,6 +26,9 @@ public class ModEventBusEvents {
         event.put(MainEntities.DINO_KID.get(), DinoKidEntity.createAttributes().build());
 
         event.put(MainEntities.BANDIT.get(), BanditEntity.createAttributes().build());
+        event.put(MainEntities.RED_RIBBON_ROBOT1.get(), RobotEntity.createAttributes().build());
+        event.put(MainEntities.RED_RIBBON_ROBOT2.get(), RobotEntity.createAttributes().build());
+        event.put(MainEntities.RED_RIBBON_ROBOT3.get(), RobotEntity.createAttributes().build());
 
 
     }
