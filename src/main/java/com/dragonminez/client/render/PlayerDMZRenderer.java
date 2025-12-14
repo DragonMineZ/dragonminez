@@ -570,7 +570,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         var stats = statsCap.orElse(null);
         if (stats == null) return;
-        if (!stats.getSkills().getSkill("kaioken").isActive()) return;
+        if (stats.getSkills().getSkill("kaioken") == null || !stats.getSkills().getSkill("kaioken").isActive()) return;
 
         var character = stats.getCharacter();
         String raceName = character.getRace().toLowerCase();

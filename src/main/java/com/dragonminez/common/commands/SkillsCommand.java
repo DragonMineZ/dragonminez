@@ -24,12 +24,12 @@ public class SkillsCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzskill")
-                .requires(source -> source.hasPermission(2)) // Permiso de OP nivel 2
+                .requires(source -> source.hasPermission(2))
 
                 .then(Commands.argument("player", EntityArgument.player())
                         .then(Commands.literal("set")
                                 .then(Commands.argument("skill", StringArgumentType.word())
-                                        .suggests(SKILL_SUGGESTIONS) // Sugiere las skills disponibles
+                                        .suggests(SKILL_SUGGESTIONS)
                                         .then(Commands.argument("active", BoolArgumentType.bool())
                                                 .executes(ctx -> setSkillActive(ctx,
                                                         EntityArgument.getPlayer(ctx, "player"),
@@ -105,7 +105,7 @@ public class SkillsCommand {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             source.sendSuccess(() -> Component.literal("§6Skills for " + player.getName().getString() + ":"), false);
             data.getSkills().getAllSkills().forEach((id, skill) -> {
-                String status = skill.isActive() ? "§a[ON]" : "§c[OFF]"; // Asumiendo que Skill tiene .isActive()
+                String status = skill.isActive() ? "§a[ON]" : "§c[OFF]";
                 source.sendSuccess(() -> Component.literal(" - " + id + " " + status), false);
             });
         });
@@ -127,7 +127,6 @@ public class SkillsCommand {
 
     private static int removeSkill(CommandSourceStack source, ServerPlayer player, String skillId) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            // data.getSkills().removeSkill(skillId);
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
         });
         source.sendSuccess(() -> Component.literal("§cRemoved skill " + skillId + " from " + player.getName().getString()), true);

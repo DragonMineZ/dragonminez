@@ -3,6 +3,7 @@ package com.dragonminez.common;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.quest.SagaManager;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import software.bernie.geckolib.GeckoLib;
@@ -11,6 +12,7 @@ public class DMZCommon {
 
     public static void init() {
         ConfigManager.initialize();
+        SagaManager.init();
         NetworkHandler.register();
         GeckoLib.initialize();
 

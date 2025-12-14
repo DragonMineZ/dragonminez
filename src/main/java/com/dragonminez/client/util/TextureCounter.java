@@ -152,13 +152,13 @@ public class TextureCounter {
             ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + suffix);
 
             if (resourceManager.getResource(location).isPresent()) {
-                count = i + 1;
+                count++;
             } else {
                 break;
             }
         }
 
-        return count;
+        return count > 0 ? count - 1 : 0;
     }
 
     private static int countTattooTextures() {
@@ -171,13 +171,13 @@ public class TextureCounter {
             ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + ".png");
 
             if (resourceManager.getResource(location).isPresent()) {
-                count = i + 1;
+                count++;
             } else {
                 break;
             }
         }
 
-        return count;
+        return count > 0 ? count - 1 : 0;
     }
 
     private static String getBasePathForBodyType(String race, String gender) {

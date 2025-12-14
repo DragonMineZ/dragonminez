@@ -141,6 +141,7 @@ public class Character {
         tag.putInt("EyesType", eyesType);
         tag.putInt("NoseType", noseType);
         tag.putInt("MouthType", mouthType);
+        tag.putInt("TattooType", tattooType);
         tag.putString("BodyColor", bodyColor);
         tag.putString("BodyColor2", bodyColor2);
         tag.putString("BodyColor3", bodyColor3);
@@ -173,6 +174,7 @@ public class Character {
         this.eyesType = tag.getInt("EyesType");
         this.noseType = tag.getInt("NoseType");
         this.mouthType = tag.getInt("MouthType");
+        this.tattooType = tag.getInt("TattooType");
         this.bodyColor = tag.getString("BodyColor");
         this.bodyColor2 = tag.getString("BodyColor2");
         this.bodyColor3 = tag.getString("BodyColor3");
@@ -218,6 +220,7 @@ public class Character {
         this.eyesType = other.eyesType;
         this.noseType = other.noseType;
         this.mouthType = other.mouthType;
+        this.tattooType = other.tattooType;
         this.bodyColor = other.bodyColor;
         this.bodyColor2 = other.bodyColor2;
         this.bodyColor3 = other.bodyColor3;

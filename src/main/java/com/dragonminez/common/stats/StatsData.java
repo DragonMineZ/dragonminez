@@ -3,6 +3,7 @@ package com.dragonminez.common.stats;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.quest.QuestData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 
@@ -15,6 +16,7 @@ public class StatsData {
     private final Resources resources;
     private final Skills skills;
     private final Effects effects;
+    private final QuestData questData;
 
     private boolean hasInitializedHealth = false;
 
@@ -28,6 +30,7 @@ public class StatsData {
         this.resources = new Resources();
         this.skills = new Skills();
         this.effects = new Effects();
+        this.questData = new QuestData();
     }
 
     public Stats getStats() { return stats; }
@@ -37,6 +40,7 @@ public class StatsData {
     public Resources getResources() { return resources; }
     public Skills getSkills() { return skills; }
     public Effects getEffects() { return effects; }
+    public QuestData getQuestData() { return questData; }
     public Player getPlayer() { return player; }
 
     public boolean hasInitializedHealth() { return hasInitializedHealth; }
@@ -155,6 +159,7 @@ public class StatsData {
         nbt.put("Resources", resources.save());
         nbt.put("Skills", skills.save());
         nbt.put("Effects", effects.save());
+        nbt.put("QuestData", questData.serializeNBT());
         nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
         return nbt;
     }
@@ -181,6 +186,9 @@ public class StatsData {
         if (nbt.contains("Effects")) {
             effects.load(nbt.getCompound("Effects"));
         }
+        if (nbt.contains("QuestData")) {
+            questData.deserializeNBT(nbt.getCompound("QuestData"));
+        }
         if (nbt.contains("HasInitializedHealth")) {
             hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
         }
@@ -198,6 +206,7 @@ public class StatsData {
         this.resources.copyFrom(other.resources);
         this.skills.copyFrom(other.skills);
         this.effects.copyFrom(other.effects);
+        this.questData.deserializeNBT(other.questData.serializeNBT());
         this.hasInitializedHealth = other.hasInitializedHealth;
 
         if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {

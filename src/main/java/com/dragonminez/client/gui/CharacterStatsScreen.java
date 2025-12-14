@@ -3,6 +3,7 @@ package com.dragonminez.client.gui;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.IncreaseStatC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -10,11 +11,15 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
@@ -37,6 +42,8 @@ public class CharacterStatsScreen extends Screen {
             "textures/gui/menu/menupequeno.png");
     private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID,
+			"textures/gui/buttons/menubuttons.png");
 
 
     private StatsData statsData;
@@ -54,16 +61,86 @@ public class CharacterStatsScreen extends Screen {
     private CustomTextureButton multiplierButton;
     private SwitchButton viewSwitchButton;
 
-    public CharacterStatsScreen() {
+	private int oldGuiScale;
+
+    public CharacterStatsScreen(int oldGuiScale) {
         super(Component.translatable("gui.dragonminez.character_stats.title"));
+		this.oldGuiScale = oldGuiScale;
     }
 
     @Override
     protected void init() {
         super.init();
+
         updateStatsData();
         initStatButtons();
         initViewSwitchButton();
+        initNavigationButtons();
+    }
+
+    private void initNavigationButtons() {
+        int centerX = this.width / 2;
+        int bottomY = this.height - 30;
+
+        this.addRenderableWidget(
+            new CustomTextureButton.Builder()
+                .position(centerX - 70, bottomY)
+                .size(20, 20)
+                .texture(SCREEN_BUTTONS)
+                .textureSize(20, 20)
+                .textureCoords(0, 0, 0, 20)
+                .onPress(btn -> {
+					if (this.minecraft != null) {
+						this.minecraft.setScreen(new CharacterStatsScreen(oldGuiScale));
+					}
+				})
+                .build()
+        );
+
+        this.addRenderableWidget(
+            new CustomTextureButton.Builder()
+                .position(centerX - 30, bottomY)
+                .size(20, 20)
+                .texture(SCREEN_BUTTONS)
+                .textureSize(20, 20)
+                .textureCoords(20, 0, 20, 20)
+                .onPress(btn -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new SkillsMenuScreen(oldGuiScale));
+                    }
+                })
+                .build()
+        );
+
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
+						.position(centerX + 10, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(60, 0, 60, 20)
+						.onPress(btn -> {
+							if (this.minecraft != null) {
+								this.minecraft.setScreen(new QuestsMenuScreen(oldGuiScale));
+							}
+						})
+						.build()
+		);
+
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
+						.position(centerX + 50, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(100, 0, 100, 20)
+						.onPress(btn -> {
+							if (this.minecraft != null) {
+								this.minecraft.setScreen(new ConfigMenuScreen(oldGuiScale));
+							}
+						})
+						.build()
+		);
     }
 
     @Override
@@ -113,7 +190,7 @@ public class CharacterStatsScreen extends Screen {
         if (statsData == null) return;
 
         int centerY = this.height / 2;
-        int buttonX = 17;
+        int buttonX = 27;
         int startY = centerY + 2;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
@@ -220,8 +297,8 @@ public class CharacterStatsScreen extends Screen {
 
         Component tpcValue = Component.literal(numberFormatter.format(tpCost));
 
-        drawStringWithBorder2(graphics, tpcValue, 58, tpcY, 0xFFCE41, 0x000000);
-        drawStringWithBorder2(graphics, Component.literal("x" + tpMultiplier), 95, tpcY, 0x2BFFE2, 0x000000);
+        drawStringWithBorder2(graphics, tpcValue, 68, tpcY, 0xFFCE41, 0x000000);
+        drawStringWithBorder2(graphics, Component.literal("x" + tpMultiplier), 105, tpcY, 0x2BFFE2, 0x000000);
     }
 
     private void renderMenuPanels(GuiGraphics graphics) {
@@ -231,11 +308,11 @@ public class CharacterStatsScreen extends Screen {
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        graphics.blit(MENU_GRANDE, 2, centerY - 105, 0, 0, 146, 219, 256, 256);
+        graphics.blit(MENU_GRANDE, 12, centerY - 105, 0, 0, 148, 219, 256, 256);
 
         graphics.blit(MENU_PEQUENO, centerX - 70, 5, 0, 93, 145, 60, 256, 256);
 
-        graphics.blit(MENU_GRANDE, this.width - 148, centerY - 105, 0, 0, 146, 219, 256, 256);
+        graphics.blit(MENU_GRANDE, this.width - 158, centerY - 105, 0, 0, 148, 219, 256, 256);
 
         RenderSystem.disableBlend();
     }
@@ -290,7 +367,7 @@ public class CharacterStatsScreen extends Screen {
         int centerY = this.height / 2;
         int titleY = centerY - 83;
 
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), 75, titleY, 0xFBC51C, 0x000000);
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), 85, titleY, 0xFBC51C, 0x000000);
 
         int level = statsData.getLevel();
         int tps = statsData.getResources().getTrainingPoints();
@@ -300,8 +377,8 @@ public class CharacterStatsScreen extends Screen {
             form = "base";
         }
 
-        int labelX = 25;
-        int valueX = 70;
+        int labelX = 35;
+        int valueX = 80;
         int startY = centerY - 67;
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.level").withStyle(style -> style.withBold(true)), labelX, startY, 0xD7FEF5, 0x000000);
@@ -315,10 +392,10 @@ public class CharacterStatsScreen extends Screen {
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
         Component classComponent = Component.translatable("class.dragonminez." + characterClass);
-        drawStringWithBorder2(graphics, classComponent, 70, startY + 33, 0xFFFFFF, 0x000000);
+        drawStringWithBorder2(graphics, classComponent, 80, startY + 33, 0xFFFFFF, 0x000000);
 
         int statsStartY = centerY - 16;
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 72, statsStartY, 0x68CCFF, 0x000000);
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 82, statsStartY, 0x68CCFF, 0x000000);
 
         String[] statNames = {"str", "skp", "res", "vit", "pwr", "ene"};
         String[] statNamesUpper = {"STR", "SKP", "RES", "VIT", "PWR", "ENE"};
@@ -333,7 +410,7 @@ public class CharacterStatsScreen extends Screen {
 
         int statY = centerY + 2;
         for (int i = 0; i < statNames.length; i++) {
-            int statLabelX = 32;
+            int statLabelX = 42;
             int yPos = statY + (i * 12);
 
             double totalMult = statsData.getTotalMultiplier(statNamesUpper[i]);
@@ -369,7 +446,7 @@ public class CharacterStatsScreen extends Screen {
         }
 
         Component tpcComponent = Component.translatable("gui.dragonminez.character_stats.tpc").withStyle(style -> style.withBold(true));
-        drawStringWithBorder2(graphics, tpcComponent, 28, statY + 76, 0x2BFFE2, 0x000000);
+        drawStringWithBorder2(graphics, tpcComponent, 38, statY + 76, 0x2BFFE2, 0x000000);
     }
 
     private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -381,14 +458,14 @@ public class CharacterStatsScreen extends Screen {
     }
 
     private void renderStatisticsInfoList(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightX = this.width - 127;
+        int rightX = this.width - 137;
         int centerY = this.height / 2;
         int titleY = centerY - 83;
 
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), this.width - 75, titleY, 0xF91E64, 0x000000);
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), this.width - 85, titleY, 0xF91E64, 0x000000);
 
         int labelStartY = centerY - 64;
-        int valueX = this.width - 55;
+        int valueX = this.width - 65;
 
         double meleeDamage = statsData.getMeleeDamage();
         double maxMeleeDamage = statsData.getMaxMeleeDamage();
@@ -583,8 +660,8 @@ public class CharacterStatsScreen extends Screen {
 
     private void initViewSwitchButton() {
         int centerY = this.height / 2;
-        int buttonX = this.width - 30;
-        int buttonY = centerY + 95;
+        int buttonX = this.width - 45;
+        int buttonY = centerY + 90;
 
         viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
             useHexagonView = !useHexagonView;
@@ -596,7 +673,7 @@ public class CharacterStatsScreen extends Screen {
     private void renderStatisticsInfoHexagon(GuiGraphics graphics, int mouseX, int mouseY) {
         int centerY = this.height / 2;
         int titleY = centerY - 83;
-        int centerX = this.width - 75;
+        int centerX = this.width - 85;
 
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), centerX, titleY, 0xF91E64, 0x000000);
 
@@ -799,10 +876,6 @@ public class CharacterStatsScreen extends Screen {
                 .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             graphics.renderTooltip(font, tooltip, mouseX, mouseY);
         }
-
-        int battlePowerY = this.height / 2 + 105;
-        int battlePower = statsData.getBattlePower();
-        drawStringWithBorder(graphics, Component.literal("BP: " + numberFormatter.format(battlePower)), centerX, battlePowerY, 0xfebc0d, 0x000000);
     }
 
     private void drawHexagon(GuiGraphics graphics, int centerX, int centerY, float[] pointsX, float[] pointsY, float[] maxPointsX, float[] maxPointsY) {
@@ -811,18 +884,21 @@ public class CharacterStatsScreen extends Screen {
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.disableCull();
 
-        var tesselator = com.mojang.blaze3d.vertex.Tesselator.getInstance();
+        var tesselator = Tesselator.getInstance();
         var buffer = tesselator.getBuilder();
 
-        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.TRIANGLES, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
+        String auraColorHex = statsData.getCharacter().getAuraColor();
+        float[] auraRgb = ColorUtils.hexToRgb(auraColorHex);
 
-        float fillR = 0.82f;
-        float fillG = 0.08f;
-        float fillB = 0.2f;
+        float fillR = auraRgb[0];
+        float fillG = auraRgb[1];
+        float fillB = auraRgb[2];
         float fillAlpha = 0.3f;
+
+        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (int i = 0; i < 6; i++) {
             int next = (i + 1) % 6;
@@ -833,26 +909,44 @@ public class CharacterStatsScreen extends Screen {
 
         tesselator.end();
 
-        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.DEBUG_LINES, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
+        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        float outlineR = 0.82f;
-        float outlineG = 0.08f;
-        float outlineB = 0.2f;
-        float outlineAlpha = 0.5f;
+        float outlineR = 0.0f;
+        float outlineG = 0.0f;
+        float outlineB = 0.0f;
+        float outlineAlpha = 1.0f;
+        float borderWidth = 0.5f;
 
         for (int i = 0; i < 6; i++) {
             int next = (i + 1) % 6;
-            buffer.vertex(matrix, maxPointsX[i], maxPointsY[i], 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
-            buffer.vertex(matrix, maxPointsX[next], maxPointsY[next], 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+
+            float x1 = maxPointsX[i];
+            float y1 = maxPointsY[i];
+            float x2 = maxPointsX[next];
+            float y2 = maxPointsY[next];
+
+            float dx = x2 - x1;
+            float dy = y2 - y1;
+            float length = (float) Math.sqrt(dx * dx + dy * dy);
+            float perpX = -dy / length * borderWidth;
+            float perpY = dx / length * borderWidth;
+
+            buffer.vertex(matrix, x1 + perpX, y1 + perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+            buffer.vertex(matrix, x1 - perpX, y1 - perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+            buffer.vertex(matrix, x2 + perpX, y2 + perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+            buffer.vertex(matrix, x2 + perpX, y2 + perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+            buffer.vertex(matrix, x1 - perpX, y1 - perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
+            buffer.vertex(matrix, x2 - perpX, y2 - perpY, 0).color(outlineR, outlineG, outlineB, outlineAlpha).endVertex();
         }
 
         tesselator.end();
 
-        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.DEBUG_LINES, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
 
-        float lineR = 0.82f;
-        float lineG = 0.08f;
-        float lineB = 0.2f;
+        buffer.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+
+        float lineR = auraRgb[0];
+        float lineG = auraRgb[1];
+        float lineB = auraRgb[2];
         float lineAlpha = 0.8f;
 
         for (int i = 0; i < 6; i++) {
@@ -860,6 +954,7 @@ public class CharacterStatsScreen extends Screen {
             buffer.vertex(matrix, pointsX[i], pointsY[i], 0).color(lineR, lineG, lineB, lineAlpha).endVertex();
             buffer.vertex(matrix, pointsX[next], pointsY[next], 0).color(lineR, lineG, lineB, lineAlpha).endVertex();
         }
+
 
         tesselator.end();
 
@@ -872,5 +967,13 @@ public class CharacterStatsScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
-}
 
+    @Override
+    public void onClose() {
+        if (this.minecraft != null) {
+            this.minecraft.options.guiScale().set(oldGuiScale);
+            this.minecraft.resizeDisplay();
+        }
+        super.onClose();
+    }
+}
