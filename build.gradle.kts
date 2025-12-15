@@ -83,6 +83,8 @@ minecraft {
         enable()
     }
 
+    accessTransformer(file("src/main/resources/META-INF/accesstransformer.cfg"))
+
     runs {
         configureEach {
             workingDirectory(project.file("run"))

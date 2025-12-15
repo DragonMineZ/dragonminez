@@ -5,15 +5,13 @@ import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.TextureCounter;
+import com.dragonminez.client.util.ResourceCache;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -433,7 +431,7 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void changeHair(int delta) {
-        int maxHair = TextureCounter.getMaxHairTypes(character.getRace());
+        int maxHair = ResourceCache.getMaxHairTypes(character.getRace());
         if (maxHair == 0) maxHair = 5;
 
         int newHair = character.getHairId() + delta;
@@ -450,7 +448,7 @@ public class CharacterCustomizationScreen extends Screen {
 
 
     private void changeBodyType(int delta) {
-        int maxType = TextureCounter.getMaxBodyTypes(character.getRace(), character.getGender());
+        int maxType = ResourceCache.getMaxBodyTypes(character.getRace(), character.getGender());
         if (maxType < 0) {
             if (character.getRace().equals("human") || character.getRace().equals("saiyan")) {
                 maxType = 1;
@@ -488,7 +486,7 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void changeEyes(int delta) {
-        int maxEyes = TextureCounter.getMaxEyesTypes(character.getRace());
+        int maxEyes = ResourceCache.getMaxEyesTypes(character.getRace());
         if (maxEyes == 0) maxEyes = 1;
 
         int newEyes = character.getEyesType() + delta;
@@ -499,7 +497,7 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void changeNose(int delta) {
-        int maxNose = TextureCounter.getMaxNoseTypes(character.getRace());
+        int maxNose = ResourceCache.getMaxNoseTypes(character.getRace());
         if (maxNose == 0) maxNose = 1;
 
         int newNose = character.getNoseType() + delta;
@@ -510,7 +508,7 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void changeMouth(int delta) {
-        int maxMouth = TextureCounter.getMaxMouthTypes(character.getRace());
+        int maxMouth = ResourceCache.getMaxMouthTypes(character.getRace());
         if (maxMouth == 0) maxMouth = 1;
 
         int newMouth = character.getMouthType() + delta;
@@ -521,7 +519,7 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
 	private void changeTattoo(int delta) {
-		int maxTattoo = TextureCounter.getMaxTattooTypes(character.getRace());
+		int maxTattoo = ResourceCache.getMaxTattooTypes(character.getRace());
 		if (maxTattoo == 0) maxTattoo = 1;
 
 		int newTattoo = character.getTattooType() + delta;

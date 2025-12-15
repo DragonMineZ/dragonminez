@@ -4,11 +4,12 @@
   "package": "com.dragonminez.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "dragonminez.refmap.json",
-  "mixins": [],
+  "mixins": [
+    "common.RangedAttributeMixin"
+  ],
   "client": [
-    "client.PlayerGeoAnimatableMixin",
     "client.EntityRenderDispatcherMixin",
-    "client.HeldItemRendererMixin"
+    "client.PlayerGeoAnimatableMixin"
   ],
   "server": [],
   "injectors": {
