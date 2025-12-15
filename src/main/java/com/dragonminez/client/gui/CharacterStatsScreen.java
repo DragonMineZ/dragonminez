@@ -72,6 +72,8 @@ public class CharacterStatsScreen extends Screen {
     protected void init() {
         super.init();
 
+        useHexagonView = ConfigManager.getUserConfig().getHud().isHexagonStatsDisplay();
+
         updateStatsData();
         initStatButtons();
         initViewSwitchButton();
@@ -388,7 +390,30 @@ public class CharacterStatsScreen extends Screen {
         drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(tps)), valueX, startY + 11, 0xFFE593, 0x000000);
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.form").withStyle(style -> style.withBold(true)), labelX, startY + 22, 0xD7FEF5, 0x000000);
-        drawStringWithBorder2(graphics, Component.translatable("forms.dragonminez." + form), valueX, startY + 22, 0xC7EAFC, 0x000000);
+        Component formComponent = Component.translatable("forms.dragonminez." + form);
+        drawStringWithBorder2(graphics, formComponent, valueX, startY + 22, 0xC7EAFC, 0x000000);
+
+        if (!form.equals("base") && mouseX >= valueX && mouseX <= valueX + 60 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
+            String currentFormGroup = statsData.getCharacter().getCurrentFormGroup();
+            if (currentFormGroup != null && !currentFormGroup.isEmpty()) {
+                var formConfig = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), currentFormGroup);
+                if (formConfig != null) {
+                    var formData = formConfig.getForm(form);
+                    if (formData != null) {
+                        double mastery = statsData.getCharacter().getFormMasteries().getMastery(currentFormGroup, form);
+                        double maxMastery = formData.getMaxMastery();
+
+                        List<FormattedCharSequence> tooltip = new ArrayList<>();
+                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.form.mastery",
+                            String.format(Locale.US, "%.2f", mastery),
+                            String.format(Locale.US, "%.0f", maxMastery))
+                            .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+
+                        graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+                    }
+                }
+            }
+        }
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
         Component classComponent = Component.translatable("class.dragonminez." + characterClass);
@@ -439,6 +464,19 @@ public class CharacterStatsScreen extends Screen {
                     tooltip.add(Component.translatable("gui.dragonminez.character_stats.modified_value")
                         .append(": " + numberFormatter.format((int)modifiedValue))
                         .withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                }
+
+                var bonuses = statsData.getBonusStats().getBonuses(statNamesUpper[i]);
+                if (!bonuses.isEmpty()) {
+                    tooltip.add(Component.literal("").getVisualOrderText());
+                    tooltip.add(Component.translatable("gui.dragonminez.character_stats.bonus")
+                        .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    for (var bonus : bonuses) {
+                        String bonusText = bonus.name + ": " + bonus.operation +
+                            (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
+                        tooltip.add(Component.literal("  " + bonusText)
+                            .withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                    }
                 }
 
                 graphics.renderTooltip(font, tooltip, mouseX, mouseY);
@@ -665,6 +703,8 @@ public class CharacterStatsScreen extends Screen {
 
         viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
             useHexagonView = !useHexagonView;
+            ConfigManager.getUserConfig().getHud().setHexagonStatsDisplay(useHexagonView);
+            ConfigManager.saveGeneralUserConfig();
             ((SwitchButton) button).toggle();
         });
         this.addRenderableWidget(viewSwitchButton);

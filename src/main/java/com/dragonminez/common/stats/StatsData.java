@@ -17,6 +17,7 @@ public class StatsData {
     private final Skills skills;
     private final Effects effects;
     private final QuestData questData;
+    private final BonusStats bonusStats;
 
     private boolean hasInitializedHealth = false;
 
@@ -31,6 +32,7 @@ public class StatsData {
         this.skills = new Skills();
         this.effects = new Effects();
         this.questData = new QuestData();
+        this.bonusStats = new BonusStats();
     }
 
     public Stats getStats() { return stats; }
@@ -41,6 +43,7 @@ public class StatsData {
     public Skills getSkills() { return skills; }
     public Effects getEffects() { return effects; }
     public QuestData getQuestData() { return questData; }
+    public BonusStats getBonusStats() { return bonusStats; }
     public Player getPlayer() { return player; }
 
     public boolean hasInitializedHealth() { return hasInitializedHealth; }
@@ -78,32 +81,37 @@ public class StatsData {
     public int getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
         double vitMult = 1.0 + getTotalMultiplier("VIT");
-        return (int) (20 + (stats.getVitality() * vitScaling * vitMult));
+        double bonusVit = bonusStats.calculateBonus("VIT", 0);
+        return (int) (20 + (stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
         double eneMult = 1.0 + getTotalMultiplier("ENE");
-        return (int) (100 + (stats.getEnergy() * eneScaling * eneMult));
+        double bonusEne = bonusStats.calculateBonus("ENE", 0);
+        return (int) (100 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
     }
 
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
         double resMult = 1.0 + getTotalMultiplier("RES");
-        return (int) (100 + (stats.getResistance() * stmScaling * resMult));
+        double bonusRes = bonusStats.calculateBonus("RES", 0);
+        return (int) (100 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
     }
 
 	public double getMaxMeleeDamage() {
 		double strScaling = getStatScaling("STR");
 		double strMult = 1.0 + getTotalMultiplier("STR");
-		return (1 + stats.getStrength() * strScaling) * strMult;
+		double bonusStr = bonusStats.calculateBonus("STR", 0);
+		return (1 + (stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling));
 	}
 
     public double getMeleeDamage() {
         double strScaling = getStatScaling("STR");
         double strMult = 1.0 + getTotalMultiplier("STR");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-        return (1 + ((stats.getStrength() * strScaling) * releaseMultiplier)) * strMult;
+        double bonusStr = bonusStats.calculateBonus("STR", 0);
+        return (1 + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * releaseMultiplier);
     }
 
 	public double getMaxStrikeDamage() {
@@ -111,7 +119,9 @@ public class StatsData {
 		double strScaling = getStatScaling("STR");
 		double skpMult = 1.0 + getTotalMultiplier("SKP");
 		double strMult = 1.0 + getTotalMultiplier("STR");
-		return (1 + (stats.getStrikePower() * skpScaling * skpMult + (stats.getStrength() * strScaling * strMult) * 0.25));
+		double bonusSkp = bonusStats.calculateBonus("SKP", 0);
+		double bonusStr = bonusStats.calculateBonus("STR", 0);
+		return (1 + (stats.getStrikePower() * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * 0.25);
 	}
 
 	public double getStrikeDamage() {
@@ -120,34 +130,40 @@ public class StatsData {
 		double skpMult = 1.0 + getTotalMultiplier("SKP");
 		double strMult = 1.0 + getTotalMultiplier("STR");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double baseDamage = stats.getStrikePower() * skpScaling * skpMult + (stats.getStrength() * strScaling * strMult) * 0.25;
+		double bonusSkp = bonusStats.calculateBonus("SKP", 0);
+		double bonusStr = bonusStats.calculateBonus("STR", 0);
+		double baseDamage = (stats.getStrikePower() * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * 0.25;
         return 1 + baseDamage * releaseMultiplier;
 	}
 
 	public double getMaxKiDamage() {
 		double pwrScaling = getStatScaling("PWR");
 		double pwrMult = 1.0 + getTotalMultiplier("PWR");
-		return stats.getKiPower() * pwrScaling * pwrMult;
+		double bonusPwr = bonusStats.calculateBonus("PWR", 0);
+		return (stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling);
 	}
 
     public double getKiDamage() {
         double pwrScaling = getStatScaling("PWR");
         double pwrMult = 1.0 + getTotalMultiplier("PWR");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-        return (stats.getKiPower() * pwrScaling * pwrMult) * releaseMultiplier;
+        double bonusPwr = bonusStats.calculateBonus("PWR", 0);
+        return ((stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling)) * releaseMultiplier;
     }
 
 	public double getMaxDefense() {
 		double defScaling = getStatScaling("DEF");
 		double resMult = 1.0 + getTotalMultiplier("RES");
-		return stats.getResistance() * defScaling * resMult;
+		double bonusRes = bonusStats.calculateBonus("RES", 0);
+		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling);
 	}
 
     public double getDefense() {
         double defScaling = getStatScaling("DEF");
         double resMult = 1.0 + getTotalMultiplier("RES");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
-        return (stats.getResistance() * defScaling * resMult) * releaseMultiplier;
+        double bonusRes = bonusStats.calculateBonus("RES", 0);
+        return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling)) * releaseMultiplier;
     }
 
     public CompoundTag save() {
@@ -160,6 +176,7 @@ public class StatsData {
         nbt.put("Skills", skills.save());
         nbt.put("Effects", effects.save());
         nbt.put("QuestData", questData.serializeNBT());
+        nbt.put("BonusStats", bonusStats.save());
         nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
         return nbt;
     }
@@ -189,6 +206,9 @@ public class StatsData {
         if (nbt.contains("QuestData")) {
             questData.deserializeNBT(nbt.getCompound("QuestData"));
         }
+        if (nbt.contains("BonusStats")) {
+            bonusStats.load(nbt.getCompound("BonusStats"));
+        }
         if (nbt.contains("HasInitializedHealth")) {
             hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
         }
@@ -207,6 +227,7 @@ public class StatsData {
         this.skills.copyFrom(other.skills);
         this.effects.copyFrom(other.effects);
         this.questData.deserializeNBT(other.questData.serializeNBT());
+        this.bonusStats.copyFrom(other.bonusStats);
         this.hasInitializedHealth = other.hasInitializedHealth;
 
         if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {

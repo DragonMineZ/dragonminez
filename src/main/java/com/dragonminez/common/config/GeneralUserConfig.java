@@ -19,6 +19,7 @@ public class GeneralUserConfig {
 		private boolean advancedDescription = true;
 		private boolean advancedDescriptionPercentage = true;
 		private boolean alternativeHud = false;
+		private boolean hexagonStatsDisplay = false;
         private int healthBarPosX = 10;
         private int healthBarPosY = 50;
         private int energyBarPosX = 10;
@@ -39,6 +40,9 @@ public class GeneralUserConfig {
 
 		public boolean isAlternativeHud() { return alternativeHud; }
 		public void setAlternativeHud(boolean alternativeHud) { this.alternativeHud = alternativeHud; }
+
+		public boolean isHexagonStatsDisplay() { return hexagonStatsDisplay; }
+		public void setHexagonStatsDisplay(boolean hexagonStatsDisplay) { this.hexagonStatsDisplay = hexagonStatsDisplay; }
 
         public int getHealthBarPosX() { return healthBarPosX; }
         public void setHealthBarPosX(int healthBarPosX) { this.healthBarPosX = healthBarPosX; }

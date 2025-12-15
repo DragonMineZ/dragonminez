@@ -93,6 +93,10 @@ public class ConfigMenuScreen extends Screen {
             ConfigType.BOOLEAN, hudConfig.isAlternativeHud() ? 1 : 0, 0, 1,
             v -> hudConfig.setAlternativeHud(v > 0)));
 
+        configOptions.add(new ConfigOption("config.hexagonStatsDisplay",
+            ConfigType.BOOLEAN, hudConfig.isHexagonStatsDisplay() ? 1 : 0, 0, 1,
+            v -> hudConfig.setHexagonStatsDisplay(v > 0)));
+
         configOptions.add(new ConfigOption("config.healthBarPosX",
             ConfigType.INT, hudConfig.getHealthBarPosX(), -1000, 2000,
             v -> hudConfig.setHealthBarPosX(v.intValue())));

@@ -18,6 +18,7 @@ public class ForgeCommonEvents {
         SkillsCommand.register(event.getDispatcher());
         EffectsCommand.register(event.getDispatcher());
         PartyCommand.register(event.getDispatcher());
+        BonusCommand.register(event.getDispatcher());
     }
 }
 
