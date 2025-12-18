@@ -41,7 +41,7 @@ public class XenoverseHUD {
 			Resources resources = data.getResources();
 
 			if (status.hasCreatedCharacter()) {
-				float maxHP = data.getMaxHealth();
+				float maxHP = Minecraft.getInstance().player.getMaxHealth();
 				int maxKi = data.getMaxEnergy();
 				int maxStm = data.getMaxStamina();
 				int powerRelease = resources.getPowerRelease();

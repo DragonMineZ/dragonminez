@@ -225,6 +225,8 @@
   "skill.dragonminez.legendaryforms": "Legendary Forms",
   "skill.dragonminez.legendaryforms.desc": "Access to rare and legendary transformations.",
 
+  "attribute.dragonminez.dmz_health": "DMZ Health",
+
   "gui.dragonminez.nav.stats": "Statistics",
   "gui.dragonminez.nav.skills": "Skills"
 }

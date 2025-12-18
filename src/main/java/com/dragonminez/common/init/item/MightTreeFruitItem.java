@@ -50,14 +50,24 @@ public class MightTreeFruitItem extends Item {
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 if (regens != null && regens.length >= 3) {
-                    int maxHealth = data.getMaxHealth();
-                    int maxEnergy = data.getMaxEnergy();
+					float maxHealth = data.getMaxHealth();
+					int maxEnergy = data.getMaxEnergy();
+					int maxStamina = data.getMaxStamina();
 
-                    int healAmount = (int) (maxHealth * regens[0]);
-                    int energyAmount = (int) (maxEnergy * regens[1]);
+					int currentEnergy = data.getResources().getCurrentEnergy();
+					int currentStamina = data.getResources().getCurrentStamina();
 
-                    player.heal(healAmount);
-                    data.getResources().addEnergy(energyAmount);
+					float healAmount = (maxHealth * regens[0]);
+					int energyAmount = (int) (maxEnergy * regens[1]);
+					int staminaAmount = (int) (maxStamina * regens[2]);
+
+					player.heal(healAmount);
+
+					int newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
+					int newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
+
+					data.getResources().setCurrentEnergy(newEnergy);
+					data.getResources().setCurrentStamina(newStamina);
                 }
 
                 double effectPower = ConfigManager.getServerConfig().getGameplay().getMightFruitPower() - 1.0;

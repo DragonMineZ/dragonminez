@@ -56,17 +56,24 @@ public class FoodItem extends Item {
                 float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
 
                 if (regens != null && regens.length >= 3) {
-                    int maxHealth = data.getMaxHealth();
+					float maxHealth = data.getMaxHealth();
                     int maxEnergy = data.getMaxEnergy();
                     int maxStamina = data.getMaxStamina();
 
-                    int healAmount = (int) (maxHealth * regens[0]);
+                    int currentEnergy = data.getResources().getCurrentEnergy();
+                    int currentStamina = data.getResources().getCurrentStamina();
+
+					float healAmount = (maxHealth * regens[0]);
                     int energyAmount = (int) (maxEnergy * regens[1]);
                     int staminaAmount = (int) (maxStamina * regens[2]);
 
                     player.heal(healAmount);
-                    data.getResources().addEnergy(energyAmount);
-                    data.getResources().addStamina(staminaAmount);
+
+                    int newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
+                    int newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
+
+                    data.getResources().setCurrentEnergy(newEnergy);
+                    data.getResources().setCurrentStamina(newStamina);
 
                     if (isSenzu) {
                         int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();

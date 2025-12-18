@@ -132,7 +132,7 @@ public class ConfigManager {
 
             if (needsUpdate) {
                 LOADER.saveConfig(characterPath, characterConfig);
-                LogUtil.info(Env.COMMON, "Character config for '{}' updated with new fields", raceName);
+                LogUtil.info(Env.COMMON, "Character config for '{}' updated with missing fields", raceName);
             }
         } else {
             characterConfig = createDefaultCharacterConfig(raceName, isDefault);
@@ -205,6 +205,7 @@ public class ConfigManager {
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
         config.setDefaultBodyColor("#FFD3C9");
         config.setDefaultBodyColor2("#FFD3C9");
         config.setDefaultBodyColor3("#FFD3C9");
@@ -224,6 +225,7 @@ public class ConfigManager {
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
         config.setDefaultBodyColor("#FFD3C9");
         config.setDefaultBodyColor2("#FFD3C9");
         config.setDefaultBodyColor3("#FFD3C9");
@@ -243,6 +245,7 @@ public class ConfigManager {
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
         config.setDefaultBodyColor("#1FAA24");
         config.setDefaultBodyColor2("#BB2024");
         config.setDefaultBodyColor3("#FF86A6");
@@ -262,6 +265,7 @@ public class ConfigManager {
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
         config.setDefaultBodyColor("#FFFFFF");
         config.setDefaultBodyColor2("#E8A2FF");
         config.setDefaultBodyColor3("#FF39A9");
@@ -281,6 +285,7 @@ public class ConfigManager {
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
         config.setDefaultBodyColor("#187600");
         config.setDefaultBodyColor2("#9FE321");
         config.setDefaultBodyColor3("#FF7600");
@@ -300,6 +305,7 @@ public class ConfigManager {
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
         config.setDefaultBodyColor("#FFA4FF");
         config.setDefaultBodyColor2("#FFA4FF");
         config.setDefaultBodyColor3("#FFA4FF");
@@ -319,6 +325,7 @@ public class ConfigManager {
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
 		config.setDefaultBodyColor("#FFD3C9");
 		config.setDefaultBodyColor2("#FFD3C9");
 		config.setDefaultBodyColor3("#FFD3C9");
@@ -421,16 +428,6 @@ public class ConfigManager {
     private static boolean mergeCharacterConfig(RaceCharacterConfig existing, RaceCharacterConfig defaults) {
         boolean updated = false;
 
-        if (existing.getDefaultNoseType() == 0 && defaults.getDefaultNoseType() != 0) {
-            existing.setDefaultNoseType(defaults.getDefaultNoseType());
-            updated = true;
-        }
-
-        if (existing.getDefaultMouthType() == 0 && defaults.getDefaultMouthType() != 0) {
-            existing.setDefaultMouthType(defaults.getDefaultMouthType());
-            updated = true;
-        }
-
         if (existing.getDefaultBodyColor() == null && defaults.getDefaultBodyColor() != null) {
             existing.setDefaultBodyColor(defaults.getDefaultBodyColor());
             updated = true;
@@ -463,6 +460,21 @@ public class ConfigManager {
 
         if (existing.getDefaultAuraColor() == null && defaults.getDefaultAuraColor() != null) {
             existing.setDefaultAuraColor(defaults.getDefaultAuraColor());
+            updated = true;
+        }
+
+        if (existing.getSuperformTpCost() == null && defaults.getSuperformTpCost() != null) {
+            existing.setSuperformTpCost(defaults.getSuperformTpCost());
+            updated = true;
+        }
+
+        if (existing.getGodformTpCost() == null && defaults.getGodformTpCost() != null) {
+            existing.setGodformTpCost(defaults.getGodformTpCost());
+            updated = true;
+        }
+
+        if (existing.getLegendaryformsTpCost() == null && defaults.getLegendaryformsTpCost() != null) {
+            existing.setLegendaryformsTpCost(defaults.getLegendaryformsTpCost());
             updated = true;
         }
 

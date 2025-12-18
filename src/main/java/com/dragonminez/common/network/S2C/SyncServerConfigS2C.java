@@ -221,7 +221,7 @@ public class SyncServerConfigS2C {
         public boolean hasGender;
         public boolean useVanillaSkin;
         public String customModel;
-        public int defaultBodyType, defaultHairType, defaultEyesType, defaultNoseType, defaultMouthType;
+        public int defaultBodyType, defaultHairType, defaultEyesType, defaultNoseType, defaultMouthType, defaultTattooType;
         public String defaultBodyColor, defaultBodyColor2, defaultBodyColor3;
         public String defaultHairColor, defaultEye1Color, defaultEye2Color, defaultAuraColor;
         public int[] superformTpCost, godformTpCost, legendaryformsTpCost;
@@ -236,6 +236,7 @@ public class SyncServerConfigS2C {
             this.defaultEyesType = config.getDefaultEyesType();
             this.defaultNoseType = config.getDefaultNoseType();
             this.defaultMouthType = config.getDefaultMouthType();
+			this.defaultTattooType = config.getDefaultTattooType();
             this.defaultBodyColor = config.getDefaultBodyColor();
             this.defaultBodyColor2 = config.getDefaultBodyColor2();
             this.defaultBodyColor3 = config.getDefaultBodyColor3();
@@ -258,6 +259,7 @@ public class SyncServerConfigS2C {
             this.defaultEyesType = buf.readInt();
             this.defaultNoseType = buf.readInt();
             this.defaultMouthType = buf.readInt();
+			this.defaultTattooType = buf.readInt();
             this.defaultBodyColor = buf.readUtf();
             this.defaultBodyColor2 = buf.readUtf();
             this.defaultBodyColor3 = buf.readUtf();
@@ -295,6 +297,7 @@ public class SyncServerConfigS2C {
             buf.writeInt(defaultEyesType);
             buf.writeInt(defaultNoseType);
             buf.writeInt(defaultMouthType);
+			buf.writeInt(defaultTattooType);
             buf.writeUtf(defaultBodyColor);
             buf.writeUtf(defaultBodyColor2);
             buf.writeUtf(defaultBodyColor3);
@@ -336,6 +339,7 @@ public class SyncServerConfigS2C {
             config.setDefaultEyesType(defaultEyesType);
             config.setDefaultNoseType(defaultNoseType);
             config.setDefaultMouthType(defaultMouthType);
+			config.setDefaultTattooType(defaultTattooType);
             config.setDefaultBodyColor(defaultBodyColor);
             config.setDefaultBodyColor2(defaultBodyColor2);
             config.setDefaultBodyColor3(defaultBodyColor3);

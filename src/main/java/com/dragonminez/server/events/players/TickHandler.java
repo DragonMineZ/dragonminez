@@ -72,9 +72,9 @@ public class TickHandler {
                     double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
                     boolean activeCharging = isChargingKi && !isDescending;
                     
-                    regenerateHealth(serverPlayer, data, classStats, meditationBonus);
+                    regenerateHealth(serverPlayer, data, classStats);
                     regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
-                    regenerateStamina(data, classStats, meditationBonus, activeCharging);
+                    regenerateStamina(data, classStats, meditationBonus);
                 }
 
                 playerTickCounters.put(playerId, 0);
@@ -136,15 +136,16 @@ public class TickHandler {
     }
 
     private static void regenerateHealth(ServerPlayer player, StatsData data, 
-                                        RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+                                        RaceStatsConfig.ClassStats classStats) {
         int currentHealth = (int) player.getHealth();
-        int maxHealth = data.getMaxHealth();
+        float maxHealth = data.getMaxHealth();
         
         if (currentHealth < maxHealth) {
             double baseRegen = classStats.getHealthRegenRate();
-            double regenAmount = maxHealth * baseRegen * meditationBonus;
-            
-            int newHealth = (int) Math.min(maxHealth, currentHealth + Math.ceil(regenAmount));
+            double regenAmount = maxHealth * baseRegen;
+			if (regenAmount <= 1.0) return;
+
+			float newHealth = (float) Math.min(maxHealth, currentHealth + Math.ceil(regenAmount));
             player.setHealth(newHealth);
         }
     }
@@ -162,6 +163,7 @@ public class TickHandler {
         if (activeCharging) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			if (regenAmount <= 1.0) return;
             energyChange += regenAmount;
 
             DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
@@ -171,6 +173,7 @@ public class TickHandler {
         } else if (!hasActiveForm && currentEnergy < maxEnergy) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			if (regenAmount <= 1.0) return;
             energyChange += regenAmount;
         }
 
@@ -191,14 +194,14 @@ public class TickHandler {
     }
 
     private static void regenerateStamina(StatsData data,
-                                         RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+                                         RaceStatsConfig.ClassStats classStats, double meditationBonus) {
         int currentStamina = data.getResources().getCurrentStamina();
         int maxStamina = data.getMaxStamina();
         
         if (currentStamina < maxStamina) {
             double baseRegen = classStats.getStaminaRegenRate();
-            double multiplier = activeCharging ? ACTIVE_CHARGE_MULTIPLIER : 1.0;
-            double regenAmount = maxStamina * baseRegen * meditationBonus * multiplier;
+            double regenAmount = maxStamina * baseRegen * meditationBonus;
+			if (regenAmount <= 1.0) return;
             
             int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
             data.getResources().setCurrentStamina(newStamina);

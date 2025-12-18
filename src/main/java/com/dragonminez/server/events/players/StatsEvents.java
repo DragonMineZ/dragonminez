@@ -1,21 +1,23 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.UUID;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
+
+    private static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("7a3f8b2c-4d5e-6f7a-8b9c-0d1e2f3a4b5c");
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -30,21 +32,34 @@ public class StatsEvents {
                 return;
             }
 
+            AttributeInstance dmzHealthAttr = player.getAttribute(MainAttributes.DMZ_HEALTH.get());
             AttributeInstance maxHealthAttr = player.getAttribute(Attributes.MAX_HEALTH);
-            if (maxHealthAttr != null) {
-                int calculatedMaxHealth = data.getMaxHealth();
-                double currentMaxHealth = maxHealthAttr.getBaseValue();
 
-                if (currentMaxHealth != calculatedMaxHealth) {
-                    maxHealthAttr.setBaseValue(calculatedMaxHealth);
+            if (dmzHealthAttr != null && maxHealthAttr != null) {
+				float dmzHealthBonus = data.getMaxHealth();
 
-                    if (player.getHealth() > calculatedMaxHealth) {
-                        player.setHealth(calculatedMaxHealth);
+                AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
+
+                if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
+                    maxHealthAttr.removeModifier(DMZ_HEALTH_MODIFIER_UUID);
+
+                    if (dmzHealthBonus > 0) {
+                        AttributeModifier healthModifier = new AttributeModifier(
+                            DMZ_HEALTH_MODIFIER_UUID,
+                            "DMZ Health Bonus",
+                            dmzHealthBonus,
+                            AttributeModifier.Operation.ADDITION
+                        );
+                        maxHealthAttr.addPermanentModifier(healthModifier);
+                    }
+
+                    if (player.getHealth() > maxHealthAttr.getValue()) {
+                        player.setHealth((float) maxHealthAttr.getValue());
                     }
                 }
 
                 if (!data.hasInitializedHealth()) {
-                    player.setHealth(calculatedMaxHealth);
+                    player.setHealth((float) maxHealthAttr.getValue());
                     data.setInitializedHealth(true);
                 }
             }

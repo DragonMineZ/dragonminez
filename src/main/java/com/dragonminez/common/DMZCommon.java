@@ -18,6 +18,7 @@ public class DMZCommon {
 
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+		MainAttributes.ATTRIBUTES.register(modEventBus);
 		MainBlocks.register(modEventBus);
 		MainBlockEntities.register(modEventBus);
 		MainItems.register(modEventBus);

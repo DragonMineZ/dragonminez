@@ -1,6 +1,7 @@
 package com.dragonminez.common.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.animal.Dino1Entity;
@@ -9,7 +10,9 @@ import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.animal.DinoKidEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -29,7 +32,10 @@ public class ModEventBusEvents {
         event.put(MainEntities.RED_RIBBON_ROBOT1.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT2.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT3.get(), RobotEntity.createAttributes().build());
+    }
 
-
+    @SubscribeEvent
+    public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
+        event.add(EntityType.PLAYER, MainAttributes.DMZ_HEALTH.get());
     }
 }

@@ -78,25 +78,25 @@ public class StatsData {
         return (int) ((str + skp + res + vit + pwr) * releaseMultiplier);
     }
 
-    public int getMaxHealth() {
+    public float getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
         double vitMult = 1.0 + getTotalMultiplier("VIT");
         double bonusVit = bonusStats.calculateBonus("VIT", 0);
-        return (int) (20 + (stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
+        return (float) ((stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
         double eneMult = 1.0 + getTotalMultiplier("ENE");
         double bonusEne = bonusStats.calculateBonus("ENE", 0);
-        return (int) (100 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
+        return (int) (20 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
     }
 
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
         double resMult = 1.0 + getTotalMultiplier("RES");
         double bonusRes = bonusStats.calculateBonus("RES", 0);
-        return (int) (100 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
+        return (int) (20 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
     }
 
 	public double getMaxMeleeDamage() {

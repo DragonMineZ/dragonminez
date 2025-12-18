@@ -512,7 +512,7 @@ public class CharacterStatsScreen extends Screen {
         int stamina = statsData.getMaxStamina();
         double defense = statsData.getDefense();
         double maxDefense = statsData.getMaxDefense();
-        int health = statsData.getMaxHealth();
+        double health = statsData.getMaxHealth();
         double kiDamage = statsData.getKiDamage();
         double maxKiDamage = statsData.getMaxKiDamage();
         int energy = statsData.getMaxEnergy();
@@ -724,7 +724,7 @@ public class CharacterStatsScreen extends Screen {
         int stamina = statsData.getMaxStamina();
         double defense = statsData.getDefense();
         double maxDefense = statsData.getMaxDefense();
-        int health = statsData.getMaxHealth();
+		float health = statsData.getMaxHealth();
         double kiDamage = statsData.getKiDamage();
         double maxKiDamage = statsData.getMaxKiDamage();
         int energy = statsData.getMaxEnergy();
