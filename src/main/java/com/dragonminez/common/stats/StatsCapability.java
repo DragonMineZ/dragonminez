@@ -8,6 +8,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.dragonminez.common.quest.QuestData;
 import com.dragonminez.common.quest.SagaManager;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -59,10 +60,6 @@ public class StatsCapability {
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-                NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
-            });
-
             Map<String, Map<String, FormConfig>> allForms = new HashMap<>();
             ConfigManager.getLoadedRaces().forEach(raceName -> {
                 allForms.put(raceName, ConfigManager.getAllFormsForRace(raceName));
@@ -81,15 +78,38 @@ public class StatsCapability {
 
             SagaManager.loadSagas(serverPlayer.getServer());
 
-            // Desbloquear la primera saga si el jugador no tiene ninguna saga desbloqueada
-            StatsProvider.get(INSTANCE, serverPlayer).ifPresent(stats -> {
-                QuestData questData = stats.getQuestData();
-                if (!questData.isSagaUnlocked("saiyan_saga")) {
-                    questData.unlockSaga("saiyan_saga");
-                }
-            });
         }
         event.getEntity().refreshDimensions();
+    }
+
+    private static boolean hasInitializedPlayer = false;
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
+            if (event.player instanceof ServerPlayer serverPlayer && !hasInitializedPlayer) {
+                hasInitializedPlayer = true;
+
+                StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
+                    QuestData questData = data.getQuestData();
+
+                    boolean saiyanUnlocked = questData.isSagaUnlocked("saiyan_saga");
+                    boolean quest1Completed = questData.isQuestCompleted("saiyan_saga", 1);
+                    serverPlayer.sendSystemMessage(Component.literal("§e[DEBUG FIRST TICK] Saga unlocked: " + saiyanUnlocked + ", Quest 1 completed: " + quest1Completed));
+
+                    if (!questData.isSagaUnlocked("saiyan_saga")) {
+                        questData.unlockSaga("saiyan_saga");
+                        serverPlayer.sendSystemMessage(Component.literal("§e[DEBUG] Unlocking saiyan_saga (was locked)"));
+                    } else {
+                        serverPlayer.sendSystemMessage(Component.literal("§e[DEBUG] saiyan_saga already unlocked, not touching it"));
+                    }
+
+                    NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+                });
+            }
+
+            StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
+        }
     }
 
     @SubscribeEvent
@@ -107,13 +127,6 @@ public class StatsCapability {
             StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             });
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
-            StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
         }
     }
 }

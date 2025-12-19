@@ -13,6 +13,7 @@ import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -695,8 +696,8 @@ public class CharacterCustomizationScreen extends Screen {
         } else if (currentPage == 1) {
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.class").getString(), textX, centerY - 70, 0xFF9B9B);
 
-            String className = Component.translatable("class.dragonminez." + character.getCharacterClass()).getString();
-            drawCenteredStringWithBorder(graphics, className, textX, centerY - 58, 0xFFFFFF);
+            Component className = Component.translatable("class.dragonminez." + character.getCharacterClass());
+            drawCenteredStringWithBorder2(graphics, className, textX, centerY - 58, 0xFFFFFF);
 
             int labelX = 84;
             int labelStartY = centerY - 40;
@@ -800,6 +801,29 @@ public class CharacterCustomizationScreen extends Screen {
         graphics.drawString(this.font, text, x, y + 1, 0x000000);
         graphics.drawString(this.font, text, x, y, textColor);
     }
+
+	private void drawCenteredStringWithBorder2(GuiGraphics graphics, Component text, int centerX, int y, int color) {
+		drawCenteredStringWithBorder2(graphics, text, centerX, y, color, 0x000000);
+	}
+
+	private void drawCenteredStringWithBorder2(GuiGraphics graphics, Component text, int centerX, int y, int textColor, int borderColor) {
+		String stripped = ChatFormatting.stripFormatting(text.getString());
+		Component borderComponent = Component.literal(stripped != null ? stripped : text.getString());
+
+		if (text.getStyle().isBold()) {
+			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
+		}
+
+		int textWidth = this.font.width(borderComponent);
+		int x = centerX - textWidth / 2;
+
+		graphics.drawString(font, borderComponent, x + 1, y, borderColor, false);
+		graphics.drawString(font, borderComponent, x - 1, y, borderColor, false);
+		graphics.drawString(font, borderComponent, x, y + 1, borderColor, false);
+		graphics.drawString(font, borderComponent, x, y - 1, borderColor, false);
+
+		graphics.drawString(font, text, x, y, textColor, false);
+	}
 
     private void renderBaseStats(GuiGraphics graphics, int centerY) {
         RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());

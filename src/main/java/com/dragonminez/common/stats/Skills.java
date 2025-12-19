@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -55,9 +56,29 @@ public class Skills {
     }
 
     public void setSkillLevel(String name, int level) {
-        Skill skill = skillMap.get(name.toLowerCase());
-        if (skill != null) {
-            skill.setLevel(level);
+        String lowerName = name.toLowerCase();
+        if (!skillMap.containsKey(lowerName)) {
+            var skillConfig = ConfigManager.getSkillsConfig().getSkills().get(lowerName);
+            if (skillConfig != null) {
+                int maxLevel = skillConfig.getMaxLevel();
+                skillMap.put(lowerName, new Skill(name, 0, false, maxLevel));
+            } else {
+                return;
+            }
+        }
+        skillMap.get(lowerName).setLevel(level);
+    }
+
+    public void removeSkill(String name) {
+        String lowerName = name.toLowerCase();
+        if (lowerName.equals("superform") || lowerName.equals("godform") || lowerName.equals("legendaryforms")) {
+            Skill skill = skillMap.get(lowerName);
+            if (skill != null) {
+                skill.setLevel(0);
+                skill.setActive(false);
+            }
+        } else {
+            skillMap.remove(lowerName);
         }
     }
 
@@ -106,7 +127,7 @@ public class Skills {
     public void load(CompoundTag nbt) {
         if (nbt.contains("SkillsList", Tag.TAG_LIST)) {
             ListTag skillsList = nbt.getList("SkillsList", Tag.TAG_COMPOUND);
-
+            skillMap.clear();
             for (int i = 0; i < skillsList.size(); i++) {
                 CompoundTag skillTag = skillsList.getCompound(i);
                 Skill skill = Skill.load(skillTag);
@@ -144,4 +165,3 @@ public class Skills {
         }
     }
 }
-

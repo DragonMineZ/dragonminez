@@ -33,6 +33,6 @@ public class DatagenManager {
 				blockTagGenerator.contentsGetter(), existingFileHelper));
 		generator.addProvider(event.includeServer(), new DMZAdvancementsProvider(packOutput, lookupProvider));
 
-		//generator.addProvider(event.includeServer(), new DMZWorldGenProvider(packOutput, lookupProvider));
+		generator.addProvider(event.includeServer(), new DMZWorldGenProvider(packOutput, lookupProvider));
 	}
 }

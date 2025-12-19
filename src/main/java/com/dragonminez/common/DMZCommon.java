@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.SagaManager;
+import com.dragonminez.common.world.structure.placement.MainStructurePlacements;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import software.bernie.geckolib.GeckoLib;
@@ -26,6 +27,8 @@ public class DMZCommon {
 		MainSounds.register(modEventBus);
 		MainTabs.register(modEventBus);
         MainEntities.register(modEventBus);
+		// Solo registramos el placement personalizado, no las estructuras
+		MainStructurePlacements.register(modEventBus);
     }
 }
 

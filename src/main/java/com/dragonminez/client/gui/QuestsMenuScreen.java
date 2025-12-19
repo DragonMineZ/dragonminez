@@ -217,7 +217,10 @@ public class QuestsMenuScreen extends Screen {
     private void updateStatsData() {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> this.statsData = data);
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                this.statsData = data;
+                updateQuestsList();
+            });
         }
     }
 
@@ -239,15 +242,15 @@ public class QuestsMenuScreen extends Screen {
 
         QuestData questData = statsData.getQuestData();
 
-        boolean foundIncomplete = false;
-        for (Quest quest : allQuests) {
-            if (questData.isQuestCompleted(currentSaga.getId(), quest.getId())) {
-                visibleQuests.add(quest);
-            } else if (!foundIncomplete) {
-                visibleQuests.add(quest);
-                foundIncomplete = true;
+        for (int i = 0; i < allQuests.size(); i++) {
+            Quest quest = allQuests.get(i);
+            boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), quest.getId());
 
-                if (allQuests.indexOf(quest) < allQuests.size() - 1) {
+            if (isCompleted) {
+                visibleQuests.add(quest);
+            } else {
+                visibleQuests.add(quest);
+                if (i < allQuests.size() - 1) {
                     visibleQuests.add(null);
                 }
                 break;
@@ -508,7 +511,7 @@ public class QuestsMenuScreen extends Screen {
             int progress = questData.getQuestObjectiveProgress(currentSaga.getId(), selectedQuest.getId(), i);
             boolean objCompleted = progress >= objective.getRequired();
 
-            String objText = getObjectiveText(objective);
+            String objText = getObjectiveText(objective, progress);
             String marker = objCompleted ? "✓" : "✕";
             int markerColor = objCompleted ? 0xFF00FF00 : 0xFFFF0000;
 
@@ -526,12 +529,13 @@ public class QuestsMenuScreen extends Screen {
         }
     }
 
-    private String getObjectiveText(QuestObjective objective) {
+    private String getObjectiveText(QuestObjective objective, int currentProgress) {
         String description = Component.translatable(objective.getDescription()).getString();
         int required = objective.getRequired();
 
-        if (objective.getType() == QuestObjective.ObjectiveType.KILL && required > 1) {
-            return description + " (" + required + ")";
+        if (objective.getType() == QuestObjective.ObjectiveType.KILL ||
+            objective.getType() == QuestObjective.ObjectiveType.ITEM) {
+            return description + " (" + currentProgress + "/" + required + ")";
         }
 
         return description;
@@ -700,5 +704,9 @@ public class QuestsMenuScreen extends Screen {
         }
         super.onClose();
     }
+
+	public int getOldGuiScale() {
+		return oldGuiScale;
+	}
 }
 

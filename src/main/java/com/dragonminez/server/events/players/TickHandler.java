@@ -163,7 +163,7 @@ public class TickHandler {
         if (activeCharging) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
-			if (regenAmount <= 1.0) return;
+			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
 
             DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
@@ -173,7 +173,7 @@ public class TickHandler {
         } else if (!hasActiveForm && currentEnergy < maxEnergy) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus;
-			if (regenAmount <= 1.0) return;
+			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
         }
 
@@ -201,7 +201,7 @@ public class TickHandler {
         if (currentStamina < maxStamina) {
             double baseRegen = classStats.getStaminaRegenRate();
             double regenAmount = maxStamina * baseRegen * meditationBonus;
-			if (regenAmount <= 1.0) return;
+			if (regenAmount <= 1.0) regenAmount = 0.5;
             
             int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
             data.getResources().setCurrentStamina(newStamina);

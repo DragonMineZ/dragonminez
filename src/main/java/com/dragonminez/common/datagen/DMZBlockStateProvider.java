@@ -21,6 +21,7 @@ public class DMZBlockStateProvider extends net.minecraftforge.client.model.gener
 		blockWithItem(MainBlocks.NAMEK_BLOCK);
 		blockWithItem(MainBlocks.NAMEK_DIRT);
 		grassBlock(MainBlocks.NAMEK_GRASS_BLOCK);
+		grassBlock(MainBlocks.NAMEK_SACRED_GRASS_BLOCK);
 		blockWithItem(MainBlocks.NAMEK_STONE);
 		blockWithItem(MainBlocks.NAMEK_COBBLESTONE);
 		blockWithItem(MainBlocks.ROCKY_DIRT);

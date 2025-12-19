@@ -110,7 +110,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     JsonObject obj3_2 = new JsonObject();
                     obj3_2.addProperty("type", "KILL");
                     obj3_2.addProperty("description", "dmz.quest.saiyan3.obj2");
-                    obj3_2.addProperty("entity", "dragonminez:saibaman");
+                    obj3_2.addProperty("entity", "dragonminez:saga_saibaman1");
                     obj3_2.addProperty("count", 6);
                     objectives3.add(obj3_2);
                     quest3.add("objectives", objectives3);

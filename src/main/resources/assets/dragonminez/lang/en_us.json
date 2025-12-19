@@ -116,6 +116,11 @@
   "command.dragonminez.bonus.invalid_stat": "Invalid stat! Use: STR, SKP, RES, VIT, PWR, ENE, or ALL",
   "command.dragonminez.bonus.invalid_operation": "Invalid operation! Use: +, -, or *",
 
+  "command.dragonminez.locate.success": "The nearest %s is at %s (%s blocks away)",
+  "command.dragonminez.locate.not_found": "Could not find a location for %s nearby.",
+  "command.dragonminez.locate.wrong_dimension": "You cannot locate a structure from another dimension.",
+  "command.dragonminez.locate.invalid": "Unknown structure '%s'.",
+
   "gui.dragonminez.customization.eyes": "Eyes",
   "gui.dragonminez.customization.nose": "Nose",
   "gui.dragonminez.customization.mouth": "Mouth",

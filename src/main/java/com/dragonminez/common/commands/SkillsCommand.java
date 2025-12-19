@@ -1,13 +1,13 @@
 package com.dragonminez.common.commands;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -16,120 +16,122 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-
 public class SkillsCommand {
 
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("dmzskill")
-                .requires(source -> source.hasPermission(2))
+	private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (ctx, builder) ->
+			SharedSuggestionProvider.suggest(ConfigManager.getSkillsConfig().getSkills().keySet(), builder);
 
-                .then(Commands.argument("player", EntityArgument.player())
-                        .then(Commands.literal("set")
-                                .then(Commands.argument("skill", StringArgumentType.word())
-                                        .suggests(SKILL_SUGGESTIONS)
-                                        .then(Commands.argument("active", BoolArgumentType.bool())
-                                                .executes(ctx -> setSkillActive(ctx,
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        StringArgumentType.getString(ctx, "skill"),
-                                                        BoolArgumentType.getBool(ctx, "active"))))))
+	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("dmzskill")
+				.requires(source -> source.hasPermission(2))
+				.then(Commands.literal("set")
+						.then(Commands.argument("player", EntityArgument.player())
+								.then(Commands.argument("skill", StringArgumentType.string()).suggests(SKILL_SUGGESTIONS)
+										.then(Commands.argument("level", IntegerArgumentType.integer(0))
+												.executes(ctx -> setSkill(
+														ctx.getSource(),
+														EntityArgument.getPlayer(ctx, "player"),
+														StringArgumentType.getString(ctx, "skill"),
+														IntegerArgumentType.getInteger(ctx, "level")
+												))))))
+				.then(Commands.literal("remove")
+						.then(Commands.argument("player", EntityArgument.player())
+								.then(Commands.argument("skill", StringArgumentType.string()).suggests(SKILL_SUGGESTIONS)
+										.executes(ctx -> removeSkill(
+												ctx.getSource(),
+												EntityArgument.getPlayer(ctx, "player"),
+												StringArgumentType.getString(ctx, "skill")
+										)))))
+				.then(Commands.literal("list")
+						.then(Commands.argument("player", EntityArgument.player())
+								.executes(ctx -> listSkills(
+										ctx.getSource(),
+										EntityArgument.getPlayer(ctx, "player")
+								)))));
+	}
 
-                        .then(Commands.literal("list")
-                                .executes(ctx -> listSkills(ctx.getSource(),
-                                        EntityArgument.getPlayer(ctx, "player"))))
+	private static int setSkill(CommandSourceStack source, ServerPlayer target, String skillName, int level) {
+		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(skillName.toLowerCase())) {
+			source.sendFailure(Component.literal("Unknown skill: " + skillName));
+			return 0;
+		}
 
-                        .then(Commands.literal("add")
-                                .then(Commands.argument("skill", StringArgumentType.word())
-                                        .suggests(SKILL_SUGGESTIONS)
-                                        .executes(ctx -> addSkill(ctx.getSource(),
-                                                EntityArgument.getPlayer(ctx, "player"),
-                                                StringArgumentType.getString(ctx, "skill")))))
+		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
+			data.getSkills().setSkillLevel(skillName, level);
+			NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
+			source.sendSuccess(() -> Component.literal("Set skill '" + skillName +
+					"' to level " + level + " for " + target.getName().getString()), true);
+		});
 
-                        .then(Commands.literal("remove")
-                                .then(Commands.argument("skill", StringArgumentType.word())
-                                        .suggests(SKILL_SUGGESTIONS)
-                                        .executes(ctx -> removeSkill(ctx.getSource(),
-                                                EntityArgument.getPlayer(ctx, "player"),
-                                                StringArgumentType.getString(ctx, "skill")))))
-                )
-        );
-    }
+		return 1;
+	}
 
-    private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (context, builder) -> {
-        ServerPlayer player = null;
-        try {
-            player = EntityArgument.getPlayer(context, "player");
-        } catch (Exception e) {
-            if (context.getSource().getEntity() instanceof ServerPlayer sp) {
-                player = sp;
-            }
-        }
+	private static int removeSkill(CommandSourceStack source, ServerPlayer target, String skillName) {
+		String lowerName = skillName.toLowerCase();
 
-        if (player != null) {
-            AtomicReference<Set<String>> skillKeys = new AtomicReference<>();
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                skillKeys.set(data.getSkills().getAllSkills().keySet());
-            });
+		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(lowerName)) {
+			source.sendFailure(Component.literal("§c[DMZ] Unknown skill: " + skillName));
+			return 0;
+		}
 
-            if (skillKeys.get() != null) {
-                return SharedSuggestionProvider.suggest(skillKeys.get(), builder);
-            }
-        }
-        return SharedSuggestionProvider.suggest(new ArrayList<>(), builder);
-    };
+		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
+			boolean hadSkill = data.getSkills().hasSkill(lowerName);
+			int currentLevel = data.getSkills().getSkillLevel(lowerName);
 
-    private static int setSkillActive(CommandContext<CommandSourceStack> ctx, ServerPlayer player, String skillId, boolean active) {
-        AtomicReference<Boolean> success = new AtomicReference<>(false);
+			if (!hadSkill || currentLevel == 0) {
+				source.sendFailure(Component.literal("§c[DMZ] " + target.getName().getString() +
+						" doesn't have skill '" + skillName + "' or it's already at level 0"));
+				return;
+			}
 
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            if (data.getSkills().getAllSkills().containsKey(skillId)) {
-                data.getSkills().setSkillActive(skillId, active);
-                NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
-                success.set(true);
-            }
-        });
+			data.getSkills().removeSkill(skillName);
+			NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
 
-        if (success.get()) {
-            String status = active ? "activated" : "deactivated";
-            ctx.getSource().sendSuccess(() -> Component.literal("§aSkill " + skillId + " " + status + " for " + player.getName().getString()), true);
-            return 1;
-        } else {
-            ctx.getSource().sendFailure(Component.literal("§cSkill " + skillId + " not found or could not be modified for " + player.getName().getString()));
-            return 0;
-        }
-    }
 
-    private static int listSkills(CommandSourceStack source, ServerPlayer player) {
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            source.sendSuccess(() -> Component.literal("§6Skills for " + player.getName().getString() + ":"), false);
-            data.getSkills().getAllSkills().forEach((id, skill) -> {
-                String status = skill.isActive() ? "§a[ON]" : "§c[OFF]";
-                source.sendSuccess(() -> Component.literal(" - " + id + " " + status), false);
-            });
-        });
-        return 1;
-    }
+			boolean isTransformationSkill = lowerName.equals("superform") ||
+											lowerName.equals("godform") ||
+											lowerName.equals("legendaryforms");
 
-    private static int addSkill(CommandSourceStack source, ServerPlayer player, String skillId) {
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (isTransformationSkill) {
+				source.sendSuccess(() -> Component.literal("§a[DMZ] Reset transformation skill '" + skillName +
+						"' to level 0 for " + target.getName().getString()), true);
+			} else {
+				source.sendSuccess(() -> Component.literal("§a[DMZ] Removed skill '" + skillName +
+						"' from " + target.getName().getString()), true);
+			}
+		});
 
-            if (!data.getSkills().hasSkill(skillId)) {
-                 data.getSkills().addSkillLevel(skillId, 1);
-             }
+		return 1;
+	}
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
-        });
-        source.sendSuccess(() -> Component.literal("§aAdded/Unlocked skill " + skillId + " for " + player.getName().getString()), true);
-        return 1;
-    }
+	private static int listSkills(CommandSourceStack source, ServerPlayer target) {
+		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
+			var skills = data.getSkills().getAllSkills();
 
-    private static int removeSkill(CommandSourceStack source, ServerPlayer player, String skillId) {
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
-        });
-        source.sendSuccess(() -> Component.literal("§cRemoved skill " + skillId + " from " + player.getName().getString()), true);
-        return 1;
-    }
+			if (skills.isEmpty()) {
+				source.sendSuccess(() -> Component.literal(target.getName().getString() +
+						" has no skills"), false);
+				return;
+			}
+
+			source.sendSuccess(() -> Component.literal("Skills for " +
+					target.getName().getString() + ":"), false);
+
+			boolean hasSkills = false;
+			for (var entry : skills.entrySet()) {
+				if (entry.getValue().getLevel() > 0) {
+					hasSkills = true;
+					source.sendSuccess(() -> Component.literal("  - " + entry.getKey() +
+							": " + entry.getValue().getLevel()), false);
+				}
+			}
+
+			if (!hasSkills) {
+				source.sendSuccess(() -> Component.literal(target.getName().getString() +
+						" has no learned skills"), false);
+			}
+		});
+
+		return 1;
+	}
 }

@@ -137,6 +137,8 @@ dependencies {
     runtimeOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
+    runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
+    runtimeOnly(fg.deobf("curse.maven:naturecompass-252848:4712189"))
 }
 
 sourceSets.main {

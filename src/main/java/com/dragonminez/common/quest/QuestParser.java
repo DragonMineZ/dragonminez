@@ -1,6 +1,5 @@
 package com.dragonminez.common.quest;
 
-import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
@@ -100,26 +99,42 @@ public class QuestParser {
     private static QuestReward parseReward(JsonObject json) {
         String type = json.get("type").getAsString();
 
+        QuestReward.DifficultyType difficultyType = QuestReward.DifficultyType.ALL;
+        if (type.toLowerCase().startsWith("hard:")) {
+            difficultyType = QuestReward.DifficultyType.HARD;
+            type = type.substring(5);
+        } else if (type.toLowerCase().startsWith("normal:")) {
+            difficultyType = QuestReward.DifficultyType.NORMAL;
+            type = type.substring(7);
+        }
+
+        QuestReward reward = null;
         switch (type.toUpperCase()) {
             case "ITEM":
                 String itemId = json.get("item").getAsString();
                 int count = json.has("count") ? json.get("count").getAsInt() : 1;
                 Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
                 if (item != Items.AIR) {
-                    return new ItemReward(new ItemStack(item, count));
+                    reward = new ItemReward(new ItemStack(item, count));
                 }
                 break;
 
             case "TPS":
                 int amount = json.get("amount").getAsInt();
-                return new TPSReward(amount);
+                reward = new TPSReward(amount);
+                break;
 
             case "COMMAND":
                 String command = json.get("command").getAsString();
-                return new CommandReward(command);
+                reward = new CommandReward(command);
+                break;
         }
 
-        return null;
+        if (reward != null) {
+            reward.setDifficultyType(difficultyType);
+        }
+
+        return reward;
     }
 }
 
