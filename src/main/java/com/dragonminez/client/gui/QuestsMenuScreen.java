@@ -4,6 +4,9 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
+import com.dragonminez.common.config.GeneralUserConfig;
+import com.dragonminez.common.network.C2S.StartQuestC2S;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -305,6 +308,17 @@ public class QuestsMenuScreen extends Screen {
 
         Button actionButton = Button.builder(buttonText, btn -> {
             // TO-DO: Enviar packet
+            boolean isHard = GeneralUserConfig.HudConfig.isStoryHardDifficulty();
+
+            System.out.println("Enviando Quest Packet. Hard Mode: " + isHard);
+
+            NetworkHandler.sendToServer(new StartQuestC2S(
+                    currentSaga.getId(),
+                    selectedQuest.getId(),
+                    isHard
+            ));
+
+            this.onClose();
         })
         .bounds(rightPanelX + 16, rightPanelY + 200, 117, 20)
         .build();

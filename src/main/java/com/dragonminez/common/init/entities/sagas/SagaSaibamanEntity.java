@@ -24,7 +24,7 @@ public class SagaSaibamanEntity extends DBSagasEntity{
 
     private boolean isAttacking = false;
     private int fuseTimer = 0;
-    private int explodeTimer = 5;
+    private int explodeTimer = 3;
 
     private boolean hasCheckedExplosionChance = false;
 
@@ -45,12 +45,13 @@ public class SagaSaibamanEntity extends DBSagasEntity{
         super.tick();
 
         if (!this.isAlive()) return;
-
-        float healthThreshold = this.getMaxHealth() * 0.25F;
+        //25% health
+        float healthThreshold = this.getMaxHealth() * 0.25f;
 
         if (this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
 
             this.hasCheckedExplosionChance = true;
+            //5% explode
             if (this.random.nextFloat() < 0.05F) {
                 this.setExploding(true);
             }
