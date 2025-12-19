@@ -7,6 +7,8 @@ import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.sagas.SagaSaibamanEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -92,6 +94,37 @@ public class MainEntities {
                     () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)
                             .sized(1.7f, 4.5f)
                             .build(new ResourceLocation(Reference.MOD_ID, "robot3").toString()));
+
+    public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
+            ENTITY_TYPES.register("saga_saibaman1",
+                    () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.6f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman1").toString()));
+    public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN2 =
+            ENTITY_TYPES.register("saga_saibaman2",
+                    () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.6f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman2").toString()));
+    public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN3 =
+            ENTITY_TYPES.register("saga_saibaman3",
+                    () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.6f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman3").toString()));
+    public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN4 =
+            ENTITY_TYPES.register("saga_saibaman4",
+                    () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.6f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman4").toString()));
+    public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN5 =
+            ENTITY_TYPES.register("saga_saibaman5",
+                    () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.6f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman5").toString()));
+    public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN6 =
+            ENTITY_TYPES.register("saga_saibaman6",
+                    () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.6f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman6").toString()));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

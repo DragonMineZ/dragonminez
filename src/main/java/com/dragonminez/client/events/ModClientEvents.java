@@ -4,6 +4,10 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.entities.renderer.*;
+import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
+import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
+import com.dragonminez.client.init.entities.renderer.sagas.DBSagasRenderer;
+import com.dragonminez.client.init.entities.renderer.sagas.SagaSaibamanRenderer;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.MainEntities;
@@ -47,6 +51,13 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.MASTER_ROSHI.get(), MasterEntityRenderer::new);
         event.registerEntityRenderer(MainEntities.MASTER_URANAI.get(), MasterEntityRenderer::new);
         event.registerEntityRenderer(MainEntities.MASTER_ENMA.get(), MasterEntityRenderer::new);
+
+        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN3.get(), SagaSaibamanRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN4.get(), SagaSaibamanRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN5.get(), SagaSaibamanRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN6.get(), SagaSaibamanRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);

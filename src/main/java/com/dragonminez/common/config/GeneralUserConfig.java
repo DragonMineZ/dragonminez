@@ -26,6 +26,7 @@ public class GeneralUserConfig {
         private int energyBarPosY = 10;
         private int staminaBarPosX = 10;
         private int staminaBarPosY = 30;
+        private boolean storyHardDifficulty = false;
 
 		public int getXenoverseHudPosX() { return xenoverseHudPosX; }
 		public void setXenoverseHudPosX(int xenoverseHudPosX) { this.xenoverseHudPosX = xenoverseHudPosX; }
@@ -61,6 +62,9 @@ public class GeneralUserConfig {
 
         public int getStaminaBarPosY() { return staminaBarPosY; }
         public void setStaminaBarPosY(int staminaBarPosY) { this.staminaBarPosY = staminaBarPosY; }
+
+        public boolean isStoryHardDifficulty() { return storyHardDifficulty; }
+        public void setStoryHardDifficulty(boolean storyHardDifficulty) { this.storyHardDifficulty = storyHardDifficulty; }
     }
 }
 

@@ -1,7 +1,6 @@
-package com.dragonminez.client.init.entities.renderer;
+package com.dragonminez.client.init.entities.renderer.rr;
 
-import com.dragonminez.client.init.entities.model.RedRibbonModel;
-import com.dragonminez.client.init.entities.model.RedRibbonRobotModel;
+import com.dragonminez.client.init.entities.model.rr.RedRibbonRobotModel;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;

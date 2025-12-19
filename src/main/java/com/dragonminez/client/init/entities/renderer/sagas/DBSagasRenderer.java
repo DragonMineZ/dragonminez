@@ -1,9 +1,9 @@
-package com.dragonminez.client.init.entities.renderer;
+package com.dragonminez.client.init.entities.renderer.sagas;
 
 import com.dragonminez.client.init.entities.model.MasterGlobalModel;
-import com.dragonminez.client.init.entities.model.RedRibbonModel;
+import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.common.init.entities.MastersEntity;
-import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -11,11 +11,11 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
-public class RedRibbonRenderer<T extends RedRibbonEntity> extends GeoEntityRenderer<T> {
+public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<T> {
 
-    public RedRibbonRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, new RedRibbonModel<>());
-        this.shadowRadius = 0.8f;
+    public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
+        super(renderManager, new DBSagaModel<>());
+        this.shadowRadius = 0.4f;
     }
 
     @Override

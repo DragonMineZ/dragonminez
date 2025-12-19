@@ -1,36 +1,34 @@
-package com.dragonminez.client.init.entities.model;
+package com.dragonminez.client.init.entities.model.sagas;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
-import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
-public class RedRibbonModel<T extends RedRibbonEntity> extends GeoModel<T> {
+public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/enemies/" + name + ".geo.json");
+        return new ResourceLocation(Reference.MOD_ID, "geo/entity/sagas/" + name + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/" + name + ".png");
+        return new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/" + name + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/enemies/" + name + ".animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/sagas/"+ name +".animation.json");
     }
 
     @Override
