@@ -42,6 +42,11 @@ public class ModClientEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(MainEntities.MASTER_KARIN.get(), MasterEntityRenderer::new);
+        event.registerEntityRenderer(MainEntities.MASTER_GOKU.get(), MasterEntityRenderer::new);
+        event.registerEntityRenderer(MainEntities.MASTER_KAIOSAMA.get(), MasterEntityRenderer::new);
+        event.registerEntityRenderer(MainEntities.MASTER_ROSHI.get(), MasterEntityRenderer::new);
+        event.registerEntityRenderer(MainEntities.MASTER_URANAI.get(), MasterEntityRenderer::new);
+        event.registerEntityRenderer(MainEntities.MASTER_ENMA.get(), MasterEntityRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);

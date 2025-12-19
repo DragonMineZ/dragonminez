@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.animal.Dino1Entity;
 import com.dragonminez.common.init.entities.animal.Dino2Entity;
 import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
-import com.dragonminez.common.init.entities.masters.MasterKarinEntity;
+import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import net.minecraft.resources.ResourceLocation;
@@ -25,6 +25,31 @@ public class MainEntities {
                     () -> EntityType.Builder.of(MasterKarinEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 0.8f)
                             .build(new ResourceLocation(Reference.MOD_ID, "master_karin").toString()));
+    public static final RegistryObject<EntityType<MasterGokuEntity>> MASTER_GOKU =
+            ENTITY_TYPES.register("master_goku",
+                    () -> EntityType.Builder.of(MasterGokuEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "master_goku").toString()));
+    public static final RegistryObject<EntityType<MasterKaiosamaEntity>> MASTER_KAIOSAMA =
+            ENTITY_TYPES.register("master_kaiosama",
+                    () -> EntityType.Builder.of(MasterKaiosamaEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.5f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "master_kaiosama").toString()));
+    public static final RegistryObject<EntityType<MasterRoshiEntity>> MASTER_ROSHI =
+            ENTITY_TYPES.register("master_roshi",
+                    () -> EntityType.Builder.of(MasterRoshiEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.8f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "master_roshi").toString()));
+    public static final RegistryObject<EntityType<MasterUranaiEntity>> MASTER_URANAI =
+            ENTITY_TYPES.register("master_uranai",
+                    () -> EntityType.Builder.of(MasterUranaiEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 1.4f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "master_uranai").toString()));
+    public static final RegistryObject<EntityType<MasterEnmaEntity>> MASTER_ENMA =
+            ENTITY_TYPES.register("master_enma",
+                    () -> EntityType.Builder.of(MasterEnmaEntity::new, MobCategory.CREATURE)
+                            .sized(5.5f, 7.5f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "master_enma").toString()));
 
     public static final RegistryObject<EntityType<Dino1Entity>> DINOSAUR1 =
             ENTITY_TYPES.register("dino1",

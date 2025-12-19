@@ -30,7 +30,7 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/master/masterentity.animation.json");
+        return new ResourceLocation(Reference.MOD_ID, "animations/entity/master/" + name +".animation.json");
     }
 
     @Override

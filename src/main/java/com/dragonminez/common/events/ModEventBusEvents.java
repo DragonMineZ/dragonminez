@@ -22,6 +22,11 @@ public class ModEventBusEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(MainEntities.MASTER_KARIN.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.MASTER_GOKU.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.MASTER_KAIOSAMA.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.MASTER_ROSHI.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.MASTER_URANAI.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.MASTER_ENMA.get(), MastersEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());

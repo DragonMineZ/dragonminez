@@ -14,7 +14,7 @@ public class MasterEntityRenderer <T extends MastersEntity> extends GeoEntityRen
 
     public MasterEntityRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new MasterGlobalModel<>());
-        this.shadowRadius = 0.8f;
+        this.shadowRadius = 0.4f;
     }
 
     @Override

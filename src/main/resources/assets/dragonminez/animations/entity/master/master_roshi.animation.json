@@ -1,0 +1,126 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"loop": true,
+			"bones": {
+				"right_arm": {
+					"rotation": {
+						"vector": [30.41123, -0.65581, 12.44726]
+					},
+					"position": {
+						"vector": [1, "-0.2+math.sin(query.anim_time *160) *0.15", 0]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [30, 0, -10]
+					},
+					"position": {
+						"vector": [-1, "-0.2+math.sin(query.anim_time *160) *0.15", 0]
+					}
+				},
+				"Righthand": {
+					"rotation": {
+						"vector": [0, 0, -50]
+					},
+					"position": {
+						"vector": [0.5, 3, -0.01]
+					}
+				},
+				"Lefthand": {
+					"rotation": {
+						"vector": [0, 0, 50]
+					},
+					"position": {
+						"vector": [-0.45, 3, -0.01]
+					}
+				},
+				"head": {
+					"position": {
+						"vector": [0, -0.5, -0.5]
+					}
+				},
+				"body": {
+					"rotation": {
+						"vector": [7.5, 0, 0]
+					},
+					"position": {
+						"vector": [0, -0.25, -1.25]
+					}
+				},
+				"waist": {
+					"position": {
+						"vector": [0, "-0.2+math.sin(query.anim_time *160) *0.15", 0]
+					}
+				}
+			}
+		},
+		"walk": {
+			"loop": true,
+			"bones": {
+				"right_arm": {
+					"rotation": {
+						"vector": [30.41123, -0.65581, 12.44726]
+					},
+					"position": {
+						"vector": [1, "-0.2+math.sin(query.anim_time *620) *0.1", 0]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [30, 0, -10]
+					},
+					"position": {
+						"vector": [-1, "-0.2+math.sin(query.anim_time *620) *0.1", 0]
+					}
+				},
+				"Righthand": {
+					"rotation": {
+						"vector": [0, 0, -50]
+					},
+					"position": {
+						"vector": [0.5, 3, -0.01]
+					}
+				},
+				"Lefthand": {
+					"rotation": {
+						"vector": [0, 0, 50]
+					},
+					"position": {
+						"vector": [-0.45, 3, -0.01]
+					}
+				},
+				"head": {
+					"position": {
+						"vector": [0, -0.5, -0.5]
+					}
+				},
+				"body": {
+					"rotation": {
+						"vector": [7.5, 0, 0]
+					},
+					"position": {
+						"vector": [0, -0.25, -1.25]
+					}
+				},
+				"right_leg": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time *360) *-30", 0, 0]
+					}
+				},
+				"left_leg": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time *360) *30", 0, 0]
+					}
+				},
+				"waist": {
+					"position": {
+						"vector": [0, "-0.2+math.sin(query.anim_time *620) *0.1", 0]
+					}
+				}
+			}
+		}
+	},
+	"geckolib_format_version": 2
+}
