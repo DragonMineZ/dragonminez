@@ -1,0 +1,60 @@
+package com.dragonminez.client.util;
+
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.Util;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
+
+import java.util.function.Function;
+
+public class ModRenderTypes extends RenderType {
+    public ModRenderTypes(String pName, VertexFormat pFormat, VertexFormat.Mode pMode, int pBufferSize, boolean pAffectsCrumbling, boolean pSortOnUpload, Runnable pSetupState, Runnable pClearState) {
+        super(pName, pFormat, pMode, pBufferSize, pAffectsCrumbling, pSortOnUpload, pSetupState, pClearState);
+    }
+    private static final Function<ResourceLocation, RenderType> GLOW = Util.memoize((pLocation) ->
+            create("glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENERGY_SWIRL_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(false)));
+    private static final Function<ResourceLocation, RenderType> ENERGY = Util.memoize((pLocation) ->
+            create("energy", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, true, true))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(false)));
+
+    public static RenderType kiBlast(ResourceLocation location) {
+        return create("ki_blast",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                256,
+                true,
+                true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeEntityTranslucentEmissiveShader))
+                        .setTextureState(new RenderStateShard.TextureStateShard(location, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(LIGHTMAP)
+                        .setOverlayState(NO_OVERLAY)
+                        .createCompositeState(true));
+    }
+
+    public static RenderType glow(ResourceLocation pLocation) {
+        return GLOW.apply(pLocation);
+    }
+    public static RenderType energy(ResourceLocation pLocation) {
+        return ENERGY.apply(pLocation);
+    }
+
+}

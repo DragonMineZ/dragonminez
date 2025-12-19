@@ -20,6 +20,13 @@ public class ColorUtils {
         }
     }
 
+    public static float[] rgbIntToFloat(int color) {
+        float r = ((color >> 16) & 0xFF) / 255.0f;
+        float g = ((color >> 8) & 0xFF) / 255.0f;
+        float b = (color & 0xFF) / 255.0f;
+        return new float[]{r, g, b};
+    }
+
     public static String rgbToHex(int r, int g, int b) {
         return String.format("#%02X%02X%02X", r, g, b);
     }

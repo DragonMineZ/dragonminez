@@ -27,7 +27,8 @@ public class DMZCommon {
 		MainSounds.register(modEventBus);
 		MainTabs.register(modEventBus);
         MainEntities.register(modEventBus);
-		// Solo registramos el placement personalizado, no las estructuras
+        MainParticles.register(modEventBus);
+        // Solo registramos el placement personalizado, no las estructuras
 		MainStructurePlacements.register(modEventBus);
     }
 }

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.animal.Dino1Entity;
 import com.dragonminez.common.init.entities.animal.Dino2Entity;
 import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
@@ -125,6 +126,13 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 1.6f)
                             .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman6").toString()));
+
+    public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
+            () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)
+                    .sized(0.8F, 0.8F)
+                    .clientTrackingRange(4)
+                    .updateInterval(10)
+                    .build("ki_blast"));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

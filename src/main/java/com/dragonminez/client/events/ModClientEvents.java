@@ -3,7 +3,9 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
+import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.init.entities.renderer.*;
+import com.dragonminez.client.init.entities.renderer.ki.KiProjectileRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.DBSagasRenderer;
@@ -11,12 +13,17 @@ import com.dragonminez.client.init.entities.renderer.sagas.SagaSaibamanRenderer;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
+import com.dragonminez.common.init.particles.KiFlashParticle;
+import com.dragonminez.common.init.particles.KiSplashParticle;
+import com.dragonminez.common.init.particles.KiTrailParticle;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -69,11 +76,21 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT2.get(), RobotRRRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT3.get(), RobotRRRenderer::new);
 
+        event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
     }
 
     @SubscribeEvent
     public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions e) {
         e.registerLayerDefinition(ArmorBaseModel.LAYER_LOCATION, ArmorBaseModel::createBodyLayer);
+        e.registerLayerDefinition(KiBallPlaneModel.LAYER_LOCATION, KiBallPlaneModel::createBodyLayer);
+
+    }
+
+    @SubscribeEvent
+    public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(MainParticles.KI_FLASH.get(), KiFlashParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_SPLASH.get(), KiSplashParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_TRAIL.get(), KiTrailParticle.Provider::new);
 
     }
 }
