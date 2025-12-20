@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -29,8 +30,17 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     //0; none, 1; kiblast, 2; rugido
-    private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+
+    private double roarDamage = 50.0D;
+    private double roarRange = 15.0D;
+    private double flySpeed = 0.45D;
+    private float kiBlastDamage = 20.0F;
+    private float kiBlastSpeed = 0.6F;
+
     private boolean isAttacking = false;
+
+
+    private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -134,6 +144,41 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     public boolean isBattleDamaged() {
         return this.getHealth() <= this.getMaxHealth() / 2.0F;
     }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putDouble("RoarDamage", this.roarDamage);
+        pCompound.putDouble("RoarRange", this.roarRange);
+        pCompound.putDouble("FlySpeed", this.flySpeed);
+        pCompound.putFloat("KiBlastDamage", this.kiBlastDamage);
+        pCompound.putFloat("KiBlastSpeed", this.kiBlastSpeed);
+    }
+    @Override
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        if (pCompound.contains("RoarDamage")) this.roarDamage = pCompound.getDouble("RoarDamage");
+        if (pCompound.contains("RoarRange")) this.roarRange = pCompound.getDouble("RoarRange");
+        if (pCompound.contains("FlySpeed")) this.flySpeed = pCompound.getDouble("FlySpeed");
+        if (pCompound.contains("KiBlastDamage")) this.kiBlastDamage = pCompound.getFloat("KiBlastDamage");
+        if (pCompound.contains("KiBlastSpeed")) this.kiBlastSpeed = pCompound.getFloat("KiBlastSpeed");
+
+    }
+
+    public double getRoarDamage() { return roarDamage;}
+    public void setRoarDamage(double roarDamage) {this.roarDamage = roarDamage;}
+
+    public double getRoarRange() {return roarRange;}
+    public void setRoarRange(double roarRange) {this.roarRange = roarRange;}
+
+    public float getKiBlastDamage() {return kiBlastDamage;}
+    public void setKiBlastDamage(float kiBlastDamage) {this.kiBlastDamage = kiBlastDamage;}
+
+    public double getFlySpeed() {return flySpeed;}
+    public void setFlySpeed(double flySpeed) {this.flySpeed = flySpeed;}
+
+    public float getKiBlastSpeed() {return kiBlastSpeed;}
+    public void setKiBlastSpeed(float kiBlastSpeed) {this.kiBlastSpeed = kiBlastSpeed;}
 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {

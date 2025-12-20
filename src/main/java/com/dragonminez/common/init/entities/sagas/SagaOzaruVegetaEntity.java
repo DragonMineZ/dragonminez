@@ -3,7 +3,6 @@ package com.dragonminez.common.init.entities.sagas;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -11,7 +10,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -107,6 +105,7 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
             }
         }
     }
+
     private void startKiBlast() {
         this.setCasting(true);
         this.setSkillType(1);
@@ -153,14 +152,14 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
         kiBlast.setPos(sx, sy, sz);
         kiBlast.setColors(0xEE9EFF, 0xDD3DFF);
         kiBlast.setSize(8.5f);
-        kiBlast.setKiDamage(20.0f);
+        kiBlast.setKiDamage(this.getKiBlastDamage());
         kiBlast.setOwner(this);
 
         double tx = target.getX() - sx;
         double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
         double tz = target.getZ() - sz;
 
-        kiBlast.shoot(tx, ty, tz, 0.98F, 1.0F);
+        kiBlast.shoot(tx, ty, tz, this.getKiBlastSpeed(), 1.0F);
 
         this.level().addFreshEntity(kiBlast);
     }
@@ -188,13 +187,13 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
     }
 
     private void performRoarDamage() {
-        double range = 25.0D;
+        double range = this.getRoarRange();
         AABB area = this.getBoundingBox().inflate(range, 8.0D, range);
         List<LivingEntity> victims = this.level().getEntitiesOfClass(LivingEntity.class, area);
 
         for (LivingEntity victim : victims) {
             if (victim != this) {
-                victim.hurt(this.damageSources().mobAttack(this), 20.0F); //damage rugido
+                victim.hurt(this.damageSources().mobAttack(this), (float) this.getRoarDamage()); //damage rugido
                 // Empujar
                 double dx = victim.getX() - this.getX();
                 double dz = victim.getZ() - this.getZ();

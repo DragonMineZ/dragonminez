@@ -129,7 +129,7 @@ public class SagaRaditzEntity extends DBSagasEntity{
     }
     private void moveTowardsTargetInAir(LivingEntity target) {
         if (this.isCasting()) return;
-        double flyspeed = 0.15D;
+        double flyspeed = this.getFlySpeed();
         double dx = target.getX() - this.getX();
         double dy = (target.getY() + 1.0D) - this.getY();
         double dz = target.getZ() - this.getZ();
@@ -150,15 +150,15 @@ public class SagaRaditzEntity extends DBSagasEntity{
 
         kiBlast.setPos(sx, sy, sz);
         kiBlast.setColors(0xF157FF, 0x850491);
-        kiBlast.setSize(2.5f);
-        kiBlast.setKiDamage(20.0f);
+        kiBlast.setSize(1.5f);
+        kiBlast.setKiDamage(this.getKiBlastDamage());
         kiBlast.setOwner(this);
 
         double tx = target.getX() - sx;
         double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
         double tz = target.getZ() - sz;
 
-        kiBlast.shoot(tx, ty, tz, 0.6F, 1.0F);
+        kiBlast.shoot(tx, ty, tz, this.getKiBlastSpeed(), 1.0F);
 
         this.level().addFreshEntity(kiBlast);
     }

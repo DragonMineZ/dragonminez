@@ -18,8 +18,8 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaVegetaEntity extends DBSagasEntity{
 
-    private int kiBlastCooldown = 0;
     private int castTimer = 0;
+    private int kiBlastCooldown = 0;
 
     public SagaVegetaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -124,7 +124,7 @@ public class SagaVegetaEntity extends DBSagasEntity{
     }
     private void moveTowardsTargetInAir(LivingEntity target) {
         if (this.isCasting()) return;
-        double flyspeed = 0.45D;
+        double flyspeed = this.getFlySpeed();
         double dx = target.getX() - this.getX();
         double dy = (target.getY() + 1.0D) - this.getY();
         double dz = target.getZ() - this.getZ();
@@ -146,14 +146,14 @@ public class SagaVegetaEntity extends DBSagasEntity{
         kiBlast.setPos(sx, sy, sz);
         kiBlast.setColors(0xEE9EFF, 0xDD3DFF);
         kiBlast.setSize(3.5f);
-        kiBlast.setKiDamage(20.0f);
+        kiBlast.setKiDamage(this.getKiBlastDamage());
         kiBlast.setOwner(this);
 
         double tx = target.getX() - sx;
         double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
         double tz = target.getZ() - sz;
 
-        kiBlast.shoot(tx, ty, tz, 0.98F, 1.0F);
+        kiBlast.shoot(tx, ty, tz, this.getKiBlastSpeed(), 1.0F);
 
         this.level().addFreshEntity(kiBlast);
     }
