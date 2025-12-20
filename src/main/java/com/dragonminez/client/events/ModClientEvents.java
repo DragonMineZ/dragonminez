@@ -7,6 +7,7 @@ import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.init.entities.renderer.*;
 import com.dragonminez.client.init.entities.renderer.ki.KiProjectileRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
+import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.DBSagasRenderer;
 import com.dragonminez.client.init.entities.renderer.sagas.SagaSaibamanRenderer;
@@ -83,6 +84,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT1.get(), RobotRRRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT2.get(), RobotRRRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT3.get(), RobotRRRenderer::new);
+        event.registerEntityRenderer(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierRenderer::new);
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
     }

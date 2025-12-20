@@ -7,6 +7,8 @@ import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
+import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
+import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.*;
 import net.minecraft.resources.ResourceLocation;
@@ -94,6 +96,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)
                             .sized(1.7f, 4.5f)
                             .build(new ResourceLocation(Reference.MOD_ID, "robot3").toString()));
+    public static final RegistryObject<EntityType<RedRibbonSoldierEntity>> RED_RIBBON_SOLDIER =
+            ENTITY_TYPES.register("red_ribbon_soldier",
+                    () -> EntityType.Builder.of(RedRibbonSoldierEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "red_ribbon_soldier").toString()));
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",
