@@ -27,8 +27,8 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
-
-
+    private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    //0; none, 1; kiblast, 2; rugido
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
     private boolean isAttacking = false;
 
@@ -115,6 +115,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         super.defineSynchedData();
         this.entityData.define(IS_CASTING, false);
         this.entityData.define(IS_FLYING, false);
+        this.entityData.define(SKILL_TYPE, 0);
     }
 
     public void setCasting(boolean casting) { this.entityData.set(IS_CASTING, casting); }
@@ -122,6 +123,9 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     public void setFlying(boolean flying) { this.entityData.set(IS_FLYING, flying); }
     public boolean isFlying() { return this.entityData.get(IS_FLYING); }
+
+    public int getSkillType() { return this.entityData.get(SKILL_TYPE); }
+    public void setSkillType(int type) { this.entityData.set(SKILL_TYPE, type); }
 
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {

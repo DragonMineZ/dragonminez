@@ -140,6 +140,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaVegetaEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(new ResourceLocation(Reference.MOD_ID, "saga_vegeta").toString()));
+    public static final RegistryObject<EntityType<SagaOzaruVegetaEntity>> SAGA_OZARU_VEGETA =
+            ENTITY_TYPES.register("saga_ozaruvegeta",
+                    () -> EntityType.Builder.of(SagaOzaruVegetaEntity::new, MobCategory.CREATURE)
+                            .sized(3.0f, 6.5f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_ozaruvegeta").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)

@@ -10,10 +10,7 @@ import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
 import com.dragonminez.common.init.entities.animal.DinoKidEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
-import com.dragonminez.common.init.entities.sagas.SagaNappaEntity;
-import com.dragonminez.common.init.entities.sagas.SagaRaditzEntity;
-import com.dragonminez.common.init.entities.sagas.SagaSaibamanEntity;
-import com.dragonminez.common.init.entities.sagas.SagaVegetaEntity;
+import com.dragonminez.common.init.entities.sagas.*;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
@@ -41,6 +38,7 @@ public class ModEventBusEvents {
         event.put(MainEntities.SAGA_RADITZ.get(), SagaRaditzEntity.createAttributes().build());
         event.put(MainEntities.SAGA_NAPPA.get(), SagaNappaEntity.createAttributes().build());
         event.put(MainEntities.SAGA_VEGETA.get(), SagaVegetaEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_OZARU_VEGETA.get(), SagaOzaruVegetaEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());
