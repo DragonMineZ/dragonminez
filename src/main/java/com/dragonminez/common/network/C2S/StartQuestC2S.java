@@ -77,21 +77,46 @@ public class StartQuestC2S {
             double health = hardMode ? 100.0 : 20.0;
             double damage = hardMode ? 10.0 : 3.0;
 
-            // Modificar Daño
             if (entity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
                 entity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(damage);
             }
-
-            // Modificar Vida
             if (entity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
-                // Primero subimos el techo máximo
                 entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
-                // Luego rellenamos la vida hasta ese nuevo techo
                 entity.setHealth((float) health);
             }
 
-            // Debug: Confirma en consola que el servidor tiene el valor correcto
             LogUtil.info(Env.SERVER, "Saibaman Spawneado. HardMode: " + hardMode + " | Vida: " + entity.getHealth() + "/" + entity.getMaxHealth());
         }
     }
+    private void spawnRaditz(ServerPlayer player, boolean hardMode) {
+        var entity = MainEntities.SAGA_RADITZ.get().create(player.level());
+
+        if (entity != null) {
+            entity.setPos(player.getX() + 2, player.getY(), player.getZ());
+            //PONER STATS IMPORTANTEEEE (por cierto los saibamans no tienen ni pincho xxdd solo explotan)
+            entity.setFlySpeed(0.45); //recomendable
+            entity.setKiBlastDamage(20.0f); //Si pones 20, son 10 corazones.
+            entity.setKiBlastSpeed(0.6f); //Te recomiendo no poner más de 1.0f es demasiado rapido xdxxd
+            //Esto de aca es por si la entidad es ozaru, si no lo es no pongas esto :v
+            entity.setRoarDamage(100.0); //Aca es igual, si es 100 son 50 corazones y asi. este es el rugido del ozaru
+            entity.setRoarRange(15.0); //este es el rango del rugido al impactar
+
+            //Ahora spawnea la entidad
+            player.level().addFreshEntity(entity);
+
+            //Como la entidad ya esta en el mundo se comprueba si esta en hard y se cambia vida y damage
+            double health = hardMode ? 100.0 : 20.0;
+            double damage = hardMode ? 10.0 : 3.0;
+
+            if (entity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
+                entity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(damage);
+            }
+            if (entity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+                entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+                entity.setHealth((float) health);
+            }
+
+        }
+    }
+
 }
