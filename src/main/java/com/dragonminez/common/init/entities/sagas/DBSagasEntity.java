@@ -1,9 +1,14 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
@@ -20,6 +25,10 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class DBSagasEntity extends Monster implements GeoEntity {
 
+    private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+
+
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
     private boolean isAttacking = false;
 
@@ -30,17 +39,15 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
-
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.6D, false));
-
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 15.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
 
     }
 
@@ -53,6 +60,14 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     private <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
+
+        if (isCasting()) {
+            return PlayState.STOP;
+        }
+        if (entity.isFlying()) {
+            event.getController().setAnimation(RawAnimation.begin().thenLoop("fly"));
+            return PlayState.CONTINUE;
+        }
 
         if (event.isMoving()) {
             if (entity.isAggressive() || entity.getTarget() != null) {
@@ -70,16 +85,20 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
-        if (entity.swingTime > 0 && !isAttacking) {
-            isAttacking = true;
-
-            event.getController().forceAnimationReset();
-
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("attack"));
-
-            return PlayState.CONTINUE;
+        if (isCasting()) {
+            return PlayState.STOP;
         }
 
+        if (entity.swingTime > 0 && !isAttacking) {
+            isAttacking = true;
+            event.getController().forceAnimationReset();
+            if (this.random.nextBoolean()) {
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("attack1"));
+            } else {
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("attack2"));
+            }
+            return PlayState.CONTINUE;
+        }
         if (isAttacking) {
             if (event.getController().getAnimationState() == AnimationController.State.STOPPED) {
                 isAttacking = false;
@@ -89,6 +108,24 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         }
 
         return PlayState.STOP;
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(IS_CASTING, false);
+        this.entityData.define(IS_FLYING, false);
+    }
+
+    public void setCasting(boolean casting) { this.entityData.set(IS_CASTING, casting); }
+    public boolean isCasting() { return this.entityData.get(IS_CASTING); }
+
+    public void setFlying(boolean flying) { this.entityData.set(IS_FLYING, flying); }
+    public boolean isFlying() { return this.entityData.get(IS_FLYING); }
+
+    @Override
+    public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
+        return false;
     }
 
     @Override

@@ -65,6 +65,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN4.get(), SagaSaibamanRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN5.get(), SagaSaibamanRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN6.get(), SagaSaibamanRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_RADITZ.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);

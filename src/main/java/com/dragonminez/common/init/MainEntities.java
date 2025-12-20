@@ -9,6 +9,7 @@ import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.sagas.SagaRaditzEntity;
 import com.dragonminez.common.init.entities.sagas.SagaSaibamanEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -126,6 +127,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 1.6f)
                             .build(new ResourceLocation(Reference.MOD_ID, "saga_saibaman6").toString()));
+    public static final RegistryObject<EntityType<SagaRaditzEntity>> SAGA_RADITZ =
+            ENTITY_TYPES.register("saga_raditz",
+                    () -> EntityType.Builder.of(SagaRaditzEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_raditz").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)

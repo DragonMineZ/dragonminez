@@ -52,7 +52,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (!this.level().isClientSide) {
             HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
             if (hitResult.getType() != HitResult.Type.MISS) {
-                this.onHit(hitResult); //hitentity o hitblock
+                this.onHit(hitResult);
             }
         }
 

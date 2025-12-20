@@ -56,8 +56,8 @@ public class KiBlastEntity extends AbstractKiProjectile{
 
             this.level().addParticle(
                     MainParticles.KI_SPLASH.get(),
-                    this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(), // Posición
-                    rgb[0], rgb[1], rgb[2] // Color: Rojo, Verde, Azul
+                    this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(),
+                    rgb[0], rgb[1], rgb[2]
             );
 
             this.hasSpawnedSplash = true;
