@@ -127,6 +127,9 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
         return false;
     }
+    public boolean isBattleDamaged() {
+        return this.getHealth() <= this.getMaxHealth() / 2.0F;
+    }
 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {

@@ -8,9 +8,7 @@ import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
-import com.dragonminez.common.init.entities.sagas.SagaRaditzEntity;
-import com.dragonminez.common.init.entities.sagas.SagaSaibamanEntity;
+import com.dragonminez.common.init.entities.sagas.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -132,6 +130,16 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaRaditzEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(new ResourceLocation(Reference.MOD_ID, "saga_raditz").toString()));
+    public static final RegistryObject<EntityType<SagaNappaEntity>> SAGA_NAPPA =
+            ENTITY_TYPES.register("saga_nappa",
+                    () -> EntityType.Builder.of(SagaNappaEntity::new, MobCategory.CREATURE)
+                            .sized(1.5f, 2.8f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_nappa").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaEntity>> SAGA_VEGETA =
+            ENTITY_TYPES.register("saga_vegeta",
+                    () -> EntityType.Builder.of(SagaVegetaEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_vegeta").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)
