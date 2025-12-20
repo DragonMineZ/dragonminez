@@ -145,6 +145,26 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaOzaruVegetaEntity::new, MobCategory.CREATURE)
                             .sized(3.0f, 6.5f)
                             .build(new ResourceLocation(Reference.MOD_ID, "saga_ozaruvegeta").toString()));
+    public static final RegistryObject<EntityType<SagaFriezaSoldier01Entity>> SAGA_FRIEZA_SOLDIER =
+            ENTITY_TYPES.register("saga_friezasoldier01",
+                    () -> EntityType.Builder.of(SagaFriezaSoldier01Entity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_friezasoldier01").toString()));
+    public static final RegistryObject<EntityType<SagaFriezaSoldier02Entity>> SAGA_FRIEZA_SOLDIER2 =
+            ENTITY_TYPES.register("saga_friezasoldier02",
+                    () -> EntityType.Builder.of(SagaFriezaSoldier02Entity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_friezasoldier02").toString()));
+    public static final RegistryObject<EntityType<SagaFriezaSoldier02Entity>> SAGA_FRIEZA_SOLDIER3 =
+            ENTITY_TYPES.register("saga_friezasoldier03",
+                    () -> EntityType.Builder.of(SagaFriezaSoldier02Entity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_friezasoldier03").toString()));
+    public static final RegistryObject<EntityType<SagaFriezaSoldier01Entity>> SAGA_MORO_SOLDIER =
+            ENTITY_TYPES.register("saga_morosoldier",
+                    () -> EntityType.Builder.of(SagaFriezaSoldier01Entity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "saga_morosoldier").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)

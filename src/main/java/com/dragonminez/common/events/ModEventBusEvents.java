@@ -39,6 +39,10 @@ public class ModEventBusEvents {
         event.put(MainEntities.SAGA_NAPPA.get(), SagaNappaEntity.createAttributes().build());
         event.put(MainEntities.SAGA_VEGETA.get(), SagaVegetaEntity.createAttributes().build());
         event.put(MainEntities.SAGA_OZARU_VEGETA.get(), SagaOzaruVegetaEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_FRIEZA_SOLDIER.get(), SagaFriezaSoldier01Entity.createAttributes().build());
+        event.put(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), SagaFriezaSoldier02Entity.createAttributes().build());
+        event.put(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), SagaFriezaSoldier02Entity.createAttributes().build());
+        event.put(MainEntities.SAGA_MORO_SOLDIER.get(), SagaFriezaSoldier01Entity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());
