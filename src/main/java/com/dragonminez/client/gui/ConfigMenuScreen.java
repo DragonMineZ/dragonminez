@@ -122,8 +122,8 @@ public class ConfigMenuScreen extends Screen {
             v -> hudConfig.setStaminaBarPosY(v.intValue())));
 
         configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
-                ConfigType.BOOLEAN, GeneralUserConfig.HudConfig.isStoryHardDifficulty() ? 1 : 0, 0, 1,
-                v -> GeneralUserConfig.HudConfig.setStoryHardDifficulty(v > 0)));
+                ConfigType.BOOLEAN, hudConfig.isStoryHardDifficulty() ? 1 : 0, 0, 1,
+                v -> hudConfig.setStoryHardDifficulty(v > 0)));
     }
 
     private void initNavigationButtons() {
