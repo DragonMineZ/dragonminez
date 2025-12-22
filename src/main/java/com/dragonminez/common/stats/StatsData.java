@@ -443,6 +443,12 @@ public class StatsData {
         );
         double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
 
+        int kiControlLevel = skills.getSkillLevel("kicontrol");
+        if (kiControlLevel > 0) {
+            double kiControlReduction = (kiControlLevel * 2.0) / 100.0;
+            reduction += baseDrain * kiControlReduction;
+        }
+
         return Math.max(0.0, baseDrain - reduction);
     }
 

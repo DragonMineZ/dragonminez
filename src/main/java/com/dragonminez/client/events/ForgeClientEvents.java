@@ -42,14 +42,14 @@ public class ForgeClientEvents {
         }
 
         if (KeyBinds.OPEN_CHARACTER_MENU.consumeClick()) {
+			int oldGuiScale = mc.options.guiScale().get();
+			mc.options.guiScale().set(3);
+			mc.resizeDisplay();
             StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
                 if (data.getStatus().hasCreatedCharacter()) {
-                    int oldGuiScale = mc.options.guiScale().get();
-                    mc.options.guiScale().set(3);
-                    mc.resizeDisplay();
                     mc.setScreen(new CharacterStatsScreen(oldGuiScale));
                 } else {
-                    mc.setScreen(new RaceSelectionScreen(null, data.getCharacter()));
+                    mc.setScreen(new RaceSelectionScreen(data.getCharacter(), oldGuiScale));
                 }
             });
         }

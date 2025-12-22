@@ -2,13 +2,15 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.C2S.UpdateStatC2S;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.stats.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -39,6 +41,21 @@ public class ClientStatsEvents {
 
 			if (isTransformKeyPressed != data.getStatus().isTransforming()) {
 				NetworkHandler.sendToServer(new UpdateStatC2S("isTransforming", isTransformKeyPressed));
+			}
+
+			if (KeyBinds.KI_SENSE.consumeClick()) {
+				Skill kiSense = data.getSkills().getSkill("kisense");
+				if (kiSense == null) return;
+				int kiSenseLevel = kiSense.getLevel();
+				if (kiSenseLevel > 0) {
+					NetworkHandler.sendToServer(new UpdateSkillC2S("toggle", kiSense.getName(), 0));
+				}
+			}
+
+			if (KeyBinds.LOCK_ON_TARGET.consumeClick()) {
+				Skill kiSense = data.getSkills().getSkill("kisense");
+				if (kiSense == null) return;
+				LockOnEvent.toggleLock();
 			}
 		});
 	}

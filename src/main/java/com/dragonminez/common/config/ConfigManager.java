@@ -72,8 +72,10 @@ public class ConfigManager {
         if (Files.exists(serverConfigPath)) {
             serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
         } else {
-			LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
-			serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
+			//LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
+			//serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
+			serverConfig = new GeneralServerConfig();
+			LOADER.saveConfig(serverConfigPath, serverConfig);
         }
 
         Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");

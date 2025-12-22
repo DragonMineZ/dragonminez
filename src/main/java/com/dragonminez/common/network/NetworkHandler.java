@@ -52,10 +52,10 @@ public class NetworkHandler {
                 .consumerMainThread(IncreaseStatC2S::handle)
                 .add();
 
-		net.messageBuilder(UpgradeSkillC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-                .decoder(UpgradeSkillC2S::new)
-                .encoder(UpgradeSkillC2S::encode)
-                .consumerMainThread(UpgradeSkillC2S::handle)
+		net.messageBuilder(UpdateSkillC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(UpdateSkillC2S::new)
+                .encoder(UpdateSkillC2S::encode)
+                .consumerMainThread(UpdateSkillC2S::handle)
                 .add();
         net.messageBuilder(StartQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
                 .decoder(StartQuestC2S::new)

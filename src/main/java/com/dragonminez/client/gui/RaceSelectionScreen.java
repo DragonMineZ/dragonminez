@@ -46,20 +46,20 @@ public class RaceSelectionScreen extends Screen {
     private final PanoramaRenderer panoramaCold = new PanoramaRenderer(new CubeMap(PANORAMA_COLD));
     private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
 
-    private final Screen previousScreen;
     private final Character character;
     private final String[] availableRaces;
     private int selectedRaceIndex = 0;
+	private int oldGuiScale = 0;
 
     private CustomTextureButton leftButton;
     private CustomTextureButton rightButton;
     private TexturedTextButton selectButton;
 
-    public RaceSelectionScreen(Screen previousScreen, Character character) {
+    public RaceSelectionScreen(Character character, int oldGuiScale) {
         super(Component.literal("Race Selection"));
-        this.previousScreen = previousScreen;
         this.character = character;
         this.availableRaces = Character.getRaceNames();
+		this.oldGuiScale = oldGuiScale;
 
         for (int i = 0; i < availableRaces.length; i++) {
             if (availableRaces[i].equals(character.getRace())) {
@@ -309,7 +309,7 @@ public class RaceSelectionScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256 && this.minecraft != null) {
-            this.minecraft.setScreen(previousScreen);
+            this.minecraft.setScreen(null);
             return true;
         }
 
@@ -328,7 +328,8 @@ public class RaceSelectionScreen extends Screen {
     @Override
     public void onClose() {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(previousScreen);
+			this.minecraft.options.guiScale().set(oldGuiScale);
+			this.minecraft.resizeDisplay();
         }
     }
 
@@ -336,4 +337,8 @@ public class RaceSelectionScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
+
+	public int getOldGuiScale() {
+		return oldGuiScale;
+	}
 }

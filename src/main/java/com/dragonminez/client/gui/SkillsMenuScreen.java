@@ -5,7 +5,7 @@ import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.C2S.UpgradeSkillC2S;
+import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.stats.Skill;
 import com.dragonminez.common.stats.Skills;
 import com.dragonminez.common.stats.StatsCapability;
@@ -277,7 +277,7 @@ public class SkillsMenuScreen extends Screen {
         int currentTPS = statsData.getResources().getTrainingPoints();
         boolean canUpgrade = skill.getLevel() < skill.getMaxLevel() && currentTPS >= cost;
 
-        if (cost != Integer.MAX_VALUE) {
+        if (cost != Integer.MAX_VALUE && skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel()) {
 			upgradeButton = Button.builder(
 							Component.translatable("gui.dragonminez.skills.upgrade")
 									.append(" (")
@@ -285,8 +285,9 @@ public class SkillsMenuScreen extends Screen {
 									.append(" TPS)"),
 							btn -> {
 								if (canUpgrade) {
-									NetworkHandler.INSTANCE.sendToServer(new UpgradeSkillC2S(selectedSkill));
+									NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("upgrade", selectedSkill, cost));
 									updateStatsData();
+									refreshButtons();
 								}
 							})
 					.bounds(rightPanelX + 25, rightPanelY + 199, 100, 15)
@@ -365,7 +366,7 @@ public class SkillsMenuScreen extends Screen {
     private void renderSkillsList(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
         List<String> skillNames = getVisibleSkillNames();
 
-        int startY = panelY + 40;
+        int startY = panelY + 30;
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_SKILLS, skillNames.size());
 
@@ -526,7 +527,7 @@ public class SkillsMenuScreen extends Screen {
             int itemY = startY + ((i - visibleStart) * SKILL_ITEM_HEIGHT);
 
             if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 100 &&
-                mouseY >= itemY && mouseY <= itemY + SKILL_ITEM_HEIGHT) {
+                mouseY >= itemY && mouseY <= itemY + SKILL_ITEM_HEIGHT - 5) {
 
                 selectedSkill = skillNames.get(i);
                 refreshButtons();

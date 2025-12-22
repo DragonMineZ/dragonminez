@@ -17,6 +17,7 @@ public class KeyBinds {
 	public static final KeyMapping SPACEPOD_MENU = registerKey("spacepod_menu", GLFW.GLFW_KEY_H);
 	public static final KeyMapping UTILITY_MENU = registerKey("utility_menu", GLFW.GLFW_KEY_X);
 	public static final KeyMapping LOCK_ON_TARGET = registerKey("lock_on_target", GLFW.GLFW_KEY_Z);
+	public static final KeyMapping KI_SENSE = registerKey("ki_sense", GLFW.GLFW_KEY_F4);
 
     private static KeyMapping registerKey(String name, int keyCode) {
         return new KeyMapping(

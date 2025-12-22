@@ -84,8 +84,12 @@ public class TickHandler {
 
 			if (isChargingKi && tickCounter % 20 == 0) {
 				int currentRelease = data.getResources().getPowerRelease();
-				if (!isDescending && currentRelease < 100) {
-					int newRelease = Math.min(100, currentRelease + 5);
+
+				int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
+				int maxRelease = 50 + (potentialUnlockLevel * 5);
+
+				if (!isDescending && currentRelease < maxRelease) {
+					int newRelease = Math.min(maxRelease, currentRelease + 5);
 					data.getResources().setPowerRelease(newRelease);
 				} else if (isDescending && currentRelease > 0) {
 					int newRelease = Math.max(0, currentRelease - 5);
