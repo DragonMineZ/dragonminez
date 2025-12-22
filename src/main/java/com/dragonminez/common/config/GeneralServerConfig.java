@@ -9,22 +9,16 @@ public class GeneralServerConfig {
 
     private WorldGenConfig worldGen = new WorldGenConfig();
     private GameplayConfig gameplay = new GameplayConfig();
+	private StorageConfig storage = new StorageConfig();
 
-    public WorldGenConfig getWorldGen() {
-        return worldGen;
-    }
+    public WorldGenConfig getWorldGen() { return worldGen; }
+    public void setWorldGen(WorldGenConfig worldGen) { this.worldGen = worldGen; }
 
-    public void setWorldGen(WorldGenConfig worldGen) {
-        this.worldGen = worldGen;
-    }
+    public GameplayConfig getGameplay() { return gameplay; }
+    public void setGameplay(GameplayConfig gameplay) { this.gameplay = gameplay; }
 
-    public GameplayConfig getGameplay() {
-        return gameplay;
-    }
-
-    public void setGameplay(GameplayConfig gameplay) {
-        this.gameplay = gameplay;
-    }
+	public StorageConfig getStorage() {return storage; }
+	public void setStorage(StorageConfig storage) { this.storage = storage; }
 
     public static class WorldGenConfig {
         private boolean generateCustomStructures = true;
@@ -106,5 +100,33 @@ public class GeneralServerConfig {
             return defaults;
         }
     }
+
+	public static class StorageConfig {
+		public enum StorageType {
+			NBT, JSON, DATABASE
+		}
+
+		@SerializedName("storage_type")
+		private StorageType storageType = StorageType.NBT;
+
+		private String host = "localhost";
+		private int port = 3306;
+		private String database = "dragonminez";
+		private String table = "player_data";
+		private String username = "root";
+		private String password = "password";
+
+		@SerializedName("pool_size")
+		private int poolSize = 10;
+
+		public StorageType getStorageType() { return storageType; }
+		public String getHost() { return host; }
+		public int getPort() { return port; }
+		public String getDatabase() { return database; }
+		public String getTable() { return table; }
+		public String getUsername() { return username; }
+		public String getPassword() { return password; }
+		public int getPoolSize() { return poolSize; }
+	}
 }
 

@@ -121,15 +121,22 @@ dependencies {
     minecraft("net.minecraftforge:forge:$minecraft_version-$forge_version")
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
+    // Vulnerability corrections
     implementation("com.google.guava:guava:33.4.8-jre")
     implementation("io.netty:netty-codec:4.2.0.Final")
     implementation("io.netty:netty-handler:4.2.0.Final")
     implementation("org.apache.commons:commons-compress:1.27.1")
 
+    // GeckoLib & Terrablender
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2"))
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.7"))
 
+    // Database Libraries
+    implementation(jarJar("org.mariadb.jdbc:mariadb-java-client:3.3.2")!!)
+    implementation(jarJar("com.zaxxer:HikariCP:5.1.0")!!)
+
+    // Dev utility mods (not included while building)
     compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-common-api:$jei_version"))
     compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-forge-api:$jei_version"))
     compileOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))

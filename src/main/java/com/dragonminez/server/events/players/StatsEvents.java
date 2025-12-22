@@ -17,7 +17,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
 
-    private static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("7a3f8b2c-4d5e-6f7a-8b9c-0d1e2f3a4b5c");
+    private static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {

@@ -56,6 +56,19 @@ public class ConfigLoader {
         return forms;
     }
 
+	public void saveDefaultFromTemplate(Path target, String templateName) {
+		try (var inputStream = getClass().getResourceAsStream("/assets/dragonminez/config_defaults/" + templateName)) {
+			if (inputStream != null) {
+				Files.copy(inputStream, target);
+				LogUtil.info(Env.COMMON, "Created default config from template: {}", templateName);
+			} else {
+				LogUtil.error(Env.COMMON, "Template not found: {}", templateName);
+			}
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Could not copy default config: {}", e.getMessage());
+		}
+	}
+
     public boolean hasExistingFiles(Path directory) throws IOException {
         if (!Files.exists(directory)) {
             return false;

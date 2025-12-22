@@ -63,31 +63,25 @@ public class ConfigManager {
         Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
         if (Files.exists(userConfigPath)) {
             userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
-            LogUtil.info(Env.COMMON, "User configuration loaded from: {}", userConfigPath);
         } else {
             userConfig = new GeneralUserConfig();
             LOADER.saveConfig(userConfigPath, userConfig);
-            LogUtil.info(Env.COMMON, "Default user configuration created at: {}", userConfigPath);
         }
 
         Path serverConfigPath = CONFIG_DIR.resolve("general-server.json");
         if (Files.exists(serverConfigPath)) {
             serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-            LogUtil.info(Env.COMMON, "Server configuration loaded from: {}", serverConfigPath);
         } else {
-            serverConfig = new GeneralServerConfig();
-            LOADER.saveConfig(serverConfigPath, serverConfig);
-            LogUtil.info(Env.COMMON, "Default server configuration created at: {}", serverConfigPath);
+			LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
+			serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
         }
 
         Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
         if (Files.exists(skillsConfigPath)) {
             skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-            LogUtil.info(Env.COMMON, "Skills configuration loaded from: {}", skillsConfigPath);
         } else {
             skillsConfig = new SkillsConfig();
             LOADER.saveConfig(skillsConfigPath, skillsConfig);
-            LogUtil.info(Env.COMMON, "Default skills configuration created at: {}", skillsConfigPath);
         }
     }
 
@@ -125,29 +119,24 @@ public class ConfigManager {
         RaceCharacterConfig characterConfig;
         if (Files.exists(characterPath)) {
             characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
-            LogUtil.info(Env.COMMON, "Character config for '{}' loaded", raceName);
 
             RaceCharacterConfig defaultConfig = createDefaultCharacterConfig(raceName, isDefault);
             boolean needsUpdate = mergeCharacterConfig(characterConfig, defaultConfig);
 
             if (needsUpdate) {
                 LOADER.saveConfig(characterPath, characterConfig);
-                LogUtil.info(Env.COMMON, "Character config for '{}' updated with missing fields", raceName);
             }
         } else {
             characterConfig = createDefaultCharacterConfig(raceName, isDefault);
             LOADER.saveConfig(characterPath, characterConfig);
-            LogUtil.info(Env.COMMON, "Character config for '{}' created", raceName);
         }
 
         RaceStatsConfig statsConfig;
         if (Files.exists(statsPath)) {
             statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
-            LogUtil.info(Env.COMMON, "Stats config for '{}' loaded", raceName);
         } else {
             statsConfig = createDefaultStatsConfig(raceName, isDefault);
             LOADER.saveConfig(statsPath, statsConfig);
-            LogUtil.info(Env.COMMON, "Stats config for '{}' created", raceName);
         }
 
         Map<String, FormConfig> raceForms = LOADER.loadRaceForms(raceName, formsPath);
@@ -521,7 +510,6 @@ public class ConfigManager {
         try {
             Path path = CONFIG_DIR.resolve("general-user.json");
             LOADER.saveConfig(path, userConfig);
-            LogUtil.info(Env.COMMON, "User configuration saved to: {}", path);
         } catch (IOException e) {
             LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage());
         }
@@ -531,7 +519,6 @@ public class ConfigManager {
         try {
             Path path = CONFIG_DIR.resolve("general-server.json");
             LOADER.saveConfig(path, serverConfig);
-            LogUtil.info(Env.COMMON, "Server configuration saved to: {}", path);
         } catch (IOException e) {
             LogUtil.error(Env.COMMON, "Error saving server configuration: {}", e.getMessage());
         }
@@ -543,7 +530,6 @@ public class ConfigManager {
             RaceStatsConfig config = RACE_STATS.get(raceName);
             if (config != null) {
                 LOADER.saveConfig(path, config);
-                LogUtil.info(Env.COMMON, "Stats config for '{}' saved", raceName);
             }
         } catch (IOException e) {
             LogUtil.error(Env.COMMON, "Error saving stats for '{}': {}", raceName, e.getMessage());
@@ -556,7 +542,6 @@ public class ConfigManager {
             RaceCharacterConfig config = RACE_CHARACTER.get(raceName);
             if (config != null) {
                 LOADER.saveConfig(path, config);
-                LogUtil.info(Env.COMMON, "Character config for '{}' saved", raceName);
             }
         } catch (IOException e) {
             LogUtil.error(Env.COMMON, "Error saving character for '{}': {}", raceName, e.getMessage());
@@ -601,16 +586,11 @@ public class ConfigManager {
 
         if (generalServerData instanceof SyncServerConfigS2C.GeneralServerData generalData) {
             serverConfig = generalData.toConfig();
-            LogUtil.info(Env.COMMON, "Applied general server configuration from sync");
         }
 
         if (skillsData instanceof SyncServerConfigS2C.SkillsData syncedSkills) {
             SERVER_SYNCED_SKILLS = syncedSkills.toConfig();
-            LogUtil.info(Env.COMMON, "Applied skills configuration from sync");
         }
-
-        LogUtil.info(Env.COMMON, "Server configuration synced: {} stats, {} characters, {} form groups",
-            SERVER_SYNCED_STATS.size(), SERVER_SYNCED_CHARACTER.size(), RACE_FORMS.size());
     }
 
     public static void clearServerSync() {
@@ -618,7 +598,6 @@ public class ConfigManager {
         SERVER_SYNCED_CHARACTER.clear();
         RACE_FORMS.clear();
         SERVER_SYNCED_SKILLS = null;
-        LogUtil.info(Env.COMMON, "Server configuration sync cleared, using local config");
     }
 
     public static boolean isUsingServerConfig() {
