@@ -52,7 +52,16 @@ public final class MainItems {
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
 			ITEM_REGISTER.register("green_pothala_right", () -> new Item(properties.stacksTo(1).fireResistant()));
 
-	//ARMAS
+    public static final RegistryObject<Item> RED_SCOUTER =
+            ITEM_REGISTER.register("red_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
+    public static final RegistryObject<Item> BLUE_SCOUTER =
+            ITEM_REGISTER.register("blue_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
+    public static final RegistryObject<Item> GREEN_SCOUTER =
+            ITEM_REGISTER.register("green_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
+    public static final RegistryObject<Item> YELLOW_SCOUTER =
+            ITEM_REGISTER.register("yellow_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
+
+    //ARMAS
 	// 0 + X = Daño | 4 +/- X = Velocidad de ataque | 0 + X = Durabilidad (0 = Irrompible)
 //	public static final RegistryObject<Item> BACULO_SAGRADO =
 //			ITEM_REGISTER.register("baculo_item", () -> new DMZWeaponItem(8, -1.6F, 0, "baculo_item"));

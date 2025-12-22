@@ -102,7 +102,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
             return PlayState.STOP;
         }
 
-        System.out.println(swingTime);
         if (entity.swingTime > 0 && !isAttacking) {
             isAttacking = true;
             event.getController().forceAnimationReset();
