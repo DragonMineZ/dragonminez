@@ -4,10 +4,9 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.MastersEntity;
-import com.dragonminez.common.init.entities.animal.Dino1Entity;
-import com.dragonminez.common.init.entities.animal.Dino2Entity;
-import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
-import com.dragonminez.common.init.entities.animal.DinoKidEntity;
+import com.dragonminez.common.init.entities.animal.*;
+import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
+import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
@@ -50,6 +49,10 @@ public class ModEventBusEvents {
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR3.get(), DinoFlyEntity.createAttributes().build());
         event.put(MainEntities.DINO_KID.get(), DinoKidEntity.createAttributes().build());
+        event.put(MainEntities.NAMEK_FROG.get(), NamekFrogEntity.createAttributes());
+        event.put(MainEntities.NAMEK_FROG_GINYU.get(), NamekFrogGinyuEntity.createAttributes());
+        event.put(MainEntities.NAMEK_TRADER.get(), NamekTraderEntity.createAttributes().build());
+        event.put(MainEntities.NAMEK_WARRIOR.get(), NamekWarriorEntity.createAttributes().build());
 
         event.put(MainEntities.BANDIT.get(), BanditEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT1.get(), RobotEntity.createAttributes().build());

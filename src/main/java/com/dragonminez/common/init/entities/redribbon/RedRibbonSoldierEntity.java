@@ -66,7 +66,6 @@ public class RedRibbonSoldierEntity extends RedRibbonEntity{
     public int getVariant() {
         return this.entityData.get(VARIANT);
     }
-
     public void setVariant(int variant) {
         this.entityData.set(VARIANT, variant);
     }

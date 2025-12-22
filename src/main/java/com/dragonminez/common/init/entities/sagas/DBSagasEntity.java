@@ -5,6 +5,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
@@ -29,6 +30,8 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+
     //0; none, 1; kiblast, 2; rugido
 
     private double roarDamage = 50.0D;
@@ -99,6 +102,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
             return PlayState.STOP;
         }
 
+        System.out.println(swingTime);
         if (entity.swingTime > 0 && !isAttacking) {
             isAttacking = true;
             event.getController().forceAnimationReset();
@@ -126,6 +130,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(IS_CASTING, false);
         this.entityData.define(IS_FLYING, false);
         this.entityData.define(SKILL_TYPE, 0);
+        this.entityData.define(BATTLE_POWER, 20);
     }
 
     public void setCasting(boolean casting) { this.entityData.set(IS_CASTING, casting); }
@@ -136,6 +141,9 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     public int getSkillType() { return this.entityData.get(SKILL_TYPE); }
     public void setSkillType(int type) { this.entityData.set(SKILL_TYPE, type); }
+
+    public int getBattlePower() { return this.entityData.get(BATTLE_POWER); }
+    public void setBattlePower(int type) { this.entityData.set(BATTLE_POWER, type); }
 
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
@@ -162,7 +170,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         if (pCompound.contains("FlySpeed")) this.flySpeed = pCompound.getDouble("FlySpeed");
         if (pCompound.contains("KiBlastDamage")) this.kiBlastDamage = pCompound.getFloat("KiBlastDamage");
         if (pCompound.contains("KiBlastSpeed")) this.kiBlastSpeed = pCompound.getFloat("KiBlastSpeed");
-
     }
 
     public double getRoarDamage() { return roarDamage;}
@@ -179,6 +186,16 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     public float getKiBlastSpeed() {return kiBlastSpeed;}
     public void setKiBlastSpeed(float kiBlastSpeed) {this.kiBlastSpeed = kiBlastSpeed;}
+
+    @Override
+    public boolean doHurtTarget(Entity pEntity) {
+
+        if (this.isCasting()) {
+            return false;
+        }
+
+        return super.doHurtTarget(pEntity);
+    }
 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {

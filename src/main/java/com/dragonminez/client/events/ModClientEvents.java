@@ -9,8 +9,7 @@ import com.dragonminez.client.init.entities.renderer.ki.KiProjectileRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
-import com.dragonminez.client.init.entities.renderer.sagas.DBSagasRenderer;
-import com.dragonminez.client.init.entities.renderer.sagas.SagaSaibamanRenderer;
+import com.dragonminez.client.init.entities.renderer.sagas.*;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.MainEntities;
@@ -79,6 +78,10 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR3.get(), DinoFlyRenderer::new);
         event.registerEntityRenderer(MainEntities.DINO_KID.get(), DinosRenderer::new);
+        event.registerEntityRenderer(MainEntities.NAMEK_FROG.get(), NamekFrogRenderer::new);
+        event.registerEntityRenderer(MainEntities.NAMEK_FROG_GINYU.get(), NamekFrogRenderer::new);
+        event.registerEntityRenderer(MainEntities.NAMEK_TRADER.get(), NamekianRenderer::new);
+        event.registerEntityRenderer(MainEntities.NAMEK_WARRIOR.get(), NamekianWarriorRenderer::new);
 
         event.registerEntityRenderer(MainEntities.BANDIT.get(), RedRibbonRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT1.get(), RobotRRRenderer::new);

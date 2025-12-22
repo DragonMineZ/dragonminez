@@ -1,11 +1,11 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.entities.animal.Dino1Entity;
-import com.dragonminez.common.init.entities.animal.Dino2Entity;
-import com.dragonminez.common.init.entities.animal.DinoFlyEntity;
+import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.masters.*;
+import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
+import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
@@ -75,6 +75,16 @@ public class MainEntities {
                     () -> EntityType.Builder.of(Dino1Entity::new, MobCategory.CREATURE)
                             .sized(1.0f, 1.0f)
                             .build(new ResourceLocation(Reference.MOD_ID, "dinokid").toString()));
+    public static final RegistryObject<EntityType<NamekFrogEntity>> NAMEK_FROG =
+            ENTITY_TYPES.register("namek_frog",
+                    () -> EntityType.Builder.of(NamekFrogEntity::new, MobCategory.CREATURE)
+                            .sized(0.4f, 0.4f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "namek_frog").toString()));
+    public static final RegistryObject<EntityType<NamekFrogGinyuEntity>> NAMEK_FROG_GINYU =
+            ENTITY_TYPES.register("namek_frog_ginyu",
+                    () -> EntityType.Builder.of(NamekFrogGinyuEntity::new, MobCategory.CREATURE)
+                            .sized(0.4f, 0.4f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "namek_frog_ginyu").toString()));
 
     public static final RegistryObject<EntityType<BanditEntity>> BANDIT =
             ENTITY_TYPES.register("bandit",
@@ -101,6 +111,16 @@ public class MainEntities {
                     () -> EntityType.Builder.of(RedRibbonSoldierEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(new ResourceLocation(Reference.MOD_ID, "red_ribbon_soldier").toString()));
+    public static final RegistryObject<EntityType<NamekTraderEntity>> NAMEK_TRADER =
+            ENTITY_TYPES.register("namek_trader",
+                    () -> EntityType.Builder.of(NamekTraderEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "namek_trader").toString()));
+    public static final RegistryObject<EntityType<NamekWarriorEntity>> NAMEK_WARRIOR =
+            ENTITY_TYPES.register("namek_warrior",
+                    () -> EntityType.Builder.of(NamekWarriorEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "namek_warrior").toString()));
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",

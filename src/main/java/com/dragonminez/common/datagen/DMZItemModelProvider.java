@@ -59,7 +59,10 @@ public class DMZItemModelProvider extends net.minecraftforge.client.model.genera
 		simpleItem(MainItems.T2_RADAR_CHIP);
 		simpleItem(MainItems.T1_RADAR_CPU);
 		simpleItem(MainItems.T2_RADAR_CPU);
-
+        simpleItem(MainItems.GREEN_SCOUTER);
+        simpleItem(MainItems.RED_SCOUTER);
+        simpleItem(MainItems.BLUE_SCOUTER);
+        simpleItem(MainItems.YELLOW_SCOUTER);
 		// Spawn Eggs
 //		withExistingParent(MainItems.DINO_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 //		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
