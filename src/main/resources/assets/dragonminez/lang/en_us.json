@@ -181,7 +181,6 @@
   "dmz.quest.saiyan3.obj2": "Defeat 6 Saibamen",
 
   "gui.dragonminez.quests.title": "Quests",
-  "gui.dragonminez.quests.information": "Information",
   "gui.dragonminez.quests.objectives": "Objectives",
   "gui.dragonminez.quests.status.complete": "Complete",
   "gui.dragonminez.quests.status.incomplete": "Incomplete",
@@ -208,8 +207,8 @@
   "gui.dragonminez.config.off": "OFF",
 
   "gui.dragonminez.skills.tab.skills": "Skills",
+  "gui.dragonminez.skills.tab.kiattacks": "Ki Attacks",
   "gui.dragonminez.skills.tab.forms": "Forms",
-  "gui.dragonminez.skills.information": "Information",
   "gui.dragonminez.skills.level": "Level: %s/%s",
   "gui.dragonminez.skills.upgrade": "Upgrade",
 

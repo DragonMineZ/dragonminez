@@ -5,7 +5,6 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.network.C2S.StartQuestC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.*;
@@ -33,8 +32,8 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class QuestsMenuScreen extends Screen {
 
-    private static final ResourceLocation MENU_GRANDE = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/menu/menugrande.png");
+    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/menu/menubig.png");
     private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
     private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID,
@@ -93,8 +92,6 @@ public class QuestsMenuScreen extends Screen {
 
             return 0;
         });
-
-        LogUtil.info(Env.CLIENT, "Loaded {} saga(s) for display", availableSagas.size());
 
         if (currentSagaIndex >= availableSagas.size()) {
             currentSagaIndex = Math.max(0, availableSagas.size() - 1);
@@ -172,9 +169,10 @@ public class QuestsMenuScreen extends Screen {
         int leftPanelX = 12;
         int centerY = this.height / 2;
         int leftPanelY = centerY - 105;
+        int bottomPanelY = leftPanelY + 213;
 
         if (currentSagaIndex > 0) {
-            CustomTextureButton leftArrow = createArrowButton(leftPanelX + 5, leftPanelY + 10, true, btn -> {
+            CustomTextureButton leftArrow = createArrowButton(leftPanelX + 5, bottomPanelY - 25, true, btn -> {
                 currentSagaIndex--;
                 selectedQuest = null;
                 scrollOffset = 0;
@@ -184,8 +182,8 @@ public class QuestsMenuScreen extends Screen {
             this.addRenderableWidget(leftArrow);
         }
 
-        if (currentSagaIndex < availableSagas.size() - 2) {
-            CustomTextureButton rightArrow = createArrowButton(leftPanelX + 135, leftPanelY + 10, false, btn -> {
+        if (currentSagaIndex < availableSagas.size() - 1) {
+            CustomTextureButton rightArrow = createArrowButton(leftPanelX + 122, bottomPanelY - 25, false, btn -> {
                 currentSagaIndex++;
                 selectedQuest = null;
                 scrollOffset = 0;
@@ -201,7 +199,7 @@ public class QuestsMenuScreen extends Screen {
                 .position(x, y)
                 .size(14, 18)
                 .texture(BUTTONS_TEXTURE)
-                .textureSize(256, 256)
+                .textureSize(14, 18)
                 .textureCoords(isLeft ? 14 : 0, 20, isLeft ? 14 : 0, 38)
                 .onPress(onPress)
                 .build();
@@ -308,17 +306,12 @@ public class QuestsMenuScreen extends Screen {
         }
 
         Button actionButton = Button.builder(buttonText, btn -> {
-            // TO-DO: Enviar packet
             boolean isHard = ConfigManager.getUserConfig().getHud().isStoryHardDifficulty();
-
-            System.out.println("Enviando Quest Packet. Hard Mode: " + isHard);
-
             NetworkHandler.sendToServer(new StartQuestC2S(
                     currentSaga.getId(),
                     selectedQuest.getId(),
                     isHard
             ));
-
             this.onClose();
         })
         .bounds(rightPanelX + 16, rightPanelY + 200, 117, 20)
@@ -367,55 +360,31 @@ public class QuestsMenuScreen extends Screen {
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        graphics.blit(MENU_GRANDE, leftPanelX, leftPanelY, 0, 0, 148, 219, 256, 256);
+		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-        renderSagaTabs(graphics, leftPanelX, leftPanelY);
+        renderSagaTitle(graphics, leftPanelX, leftPanelY);
         renderQuestsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
     }
 
-    private void renderSagaTabs(GuiGraphics graphics, int panelX, int panelY) {
+    private void renderSagaTitle(GuiGraphics graphics, int panelX, int panelY) {
         if (availableSagas.isEmpty()) return;
 
-        int tabY = panelY + 10;
-        int tab1X = panelX + 24;
-        int tab1Width = 60;
+        int titleY = panelY + 10;
+        Saga currentSaga = availableSagas.get(currentSagaIndex);
+        String sagaName = Component.translatable("dmz.saga." + currentSaga.getId()).withStyle(ChatFormatting.BOLD).getString();
 
-        Saga saga1 = availableSagas.get(currentSagaIndex);
-        String saga1Name = Component.translatable("saga.dragonminez." + saga1.getId()).getString();
+        boolean sagaUnlocked = statsData != null && statsData.getQuestData().isSagaUnlocked(currentSaga.getId());
+        int sagaColor = sagaUnlocked ? 0xFFFFFFFF : 0xFF888888;
 
-        boolean saga1Unlocked = statsData != null && statsData.getQuestData().isSagaUnlocked(saga1.getId());
-        int saga1Color = saga1Unlocked ? 0xFFFFFFFF : 0xFF888888;
-
-        drawCenteredStringWithBorder(graphics, Component.literal(saga1Name),
-                tab1X + 30, tabY + 4, saga1Color);
-
-        if (currentSagaIndex + 1 < availableSagas.size()) {
-            int tab2X = panelX + 86;
-            int tab2Width = 48;
-            Saga saga2 = availableSagas.get(currentSagaIndex + 1);
-            String saga2Name = Component.translatable("saga.dragonminez." + saga2.getId()).getString();
-
-            boolean saga2Unlocked = statsData != null && statsData.getQuestData().isSagaUnlocked(saga2.getId());
-
-            boolean isHovered = false;
-            if (saga2Unlocked && minecraft != null) {
-                int mouseX = (int) minecraft.mouseHandler.xpos() * this.width / minecraft.getWindow().getWidth();
-                int mouseY = (int) minecraft.mouseHandler.ypos() * this.height / minecraft.getWindow().getHeight();
-                isHovered = mouseX >= tab2X && mouseX <= tab2X + tab2Width &&
-                        mouseY >= tabY && mouseY <= tabY + 18;
-            }
-
-            int saga2Color = saga2Unlocked ? (isHovered ? 0xFFFFFF00 : 0xFFFFFFFF) : 0xFF888888;
-
-            drawCenteredStringWithBorder(graphics, Component.literal(saga2Name),
-                    tab2X + 24, tabY + 4, saga2Color);
-        }
+        drawCenteredStringWithBorder(graphics, Component.literal(sagaName),
+                panelX + 70, titleY + 6, sagaColor);
     }
 
     private void renderQuestsList(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
         List<Quest> quests = getVisibleQuests();
 
-        int startY = panelY + 40;
+        int startY = panelY + 30;
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_QUESTS, quests.size());
 
@@ -432,8 +401,8 @@ public class QuestsMenuScreen extends Screen {
             }
 
             boolean isSelected = selectedQuest != null && selectedQuest.getId() == quest.getId();
-            boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 139 &&
-                    mouseY >= itemY && mouseY <= itemY + QUEST_ITEM_HEIGHT;
+            boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 110 &&
+                    mouseY >= itemY && mouseY <= itemY + QUEST_ITEM_HEIGHT - 5;
 
             int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
@@ -477,10 +446,11 @@ public class QuestsMenuScreen extends Screen {
         int rightPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        graphics.blit(MENU_GRANDE, rightPanelX, rightPanelY, 0, 0, 148, 219, 256, 256);
+		graphics.blit(MENU_BIG, this.width - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-        drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.quests.information"),
-                rightPanelX + 74, rightPanelY + 22, 0xFFFFD700);
+        drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(ChatFormatting.BOLD),
+                rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
         if (selectedQuest != null && statsData != null) {
             renderQuestDetails(graphics, rightPanelX, rightPanelY);
@@ -497,17 +467,17 @@ public class QuestsMenuScreen extends Screen {
         String displayName = Component.translatable(selectedQuest.getTitle()).getString();
         String description = Component.translatable(selectedQuest.getDescription()).getString();
 
-        int startY = panelY + 40;
+        int startY = panelY + 35;
 
         drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
-                panelX + 74, startY, 0xFFFFFFFF);
+                panelX + 70, startY, 0xFFFFFFFF);
 
         String statusKey = isCompleted ? "gui.dragonminez.quests.status.complete" : "gui.dragonminez.quests.status.incomplete";
         String statusText = Component.translatable(statusKey).getString();
         int statusColor = isCompleted ? 0xFF00FF00 : 0xFFFFFF00;
 
         drawCenteredStringWithBorder(graphics, Component.literal(statusText),
-                panelX + 74, startY + 15, statusColor);
+                panelX + 70, startY + 15, statusColor);
 
         int descY = startY + 32;
         List<String> wrappedDesc = wrapText(description, 130);
@@ -605,43 +575,15 @@ public class QuestsMenuScreen extends Screen {
         int centerY = this.height / 2;
         int leftPanelY = centerY - 105;
 
-        int tabY = leftPanelY + 10;
-        int tab1X = leftPanelX + 24;
-        int tab1Width = 60;
-
-        if (mouseX >= tab1X && mouseX <= tab1X + tab1Width &&
-            mouseY >= tabY && mouseY <= tabY + 18) {
-            return true;
-        }
-
-        if (currentSagaIndex + 1 < availableSagas.size()) {
-            int tab2X = leftPanelX + 86;
-            int tab2Width = 48;
-
-            if (mouseX >= tab2X && mouseX <= tab2X + tab2Width &&
-                mouseY >= tabY && mouseY <= tabY + 18) {
-
-                Saga nextSaga = availableSagas.get(currentSagaIndex + 1);
-                if (statsData != null && statsData.getQuestData().isSagaUnlocked(nextSaga.getId())) {
-                    currentSagaIndex++;
-                    selectedQuest = null;
-                    scrollOffset = 0;
-                    updateQuestsList();
-                    refreshButtons();
-                }
-                return true;
-            }
-        }
-
         List<Quest> quests = getVisibleQuests();
-        int startY = leftPanelY + 40;
+        int startY = leftPanelY + 30;
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_QUESTS, quests.size());
 
         for (int i = visibleStart; i < visibleEnd; i++) {
             int itemY = startY + ((i - visibleStart) * QUEST_ITEM_HEIGHT);
 
-            if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 139 &&
+            if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 110 &&
                     mouseY >= itemY && mouseY <= itemY + QUEST_ITEM_HEIGHT) {
 
                 Quest quest = quests.get(i);
@@ -724,4 +666,3 @@ public class QuestsMenuScreen extends Screen {
 		return oldGuiScale;
 	}
 }
-

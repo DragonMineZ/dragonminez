@@ -7,6 +7,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -28,10 +29,8 @@ public class RaceSelectionScreen extends Screen {
 
     private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
-
-
-    private static final ResourceLocation TEXTO_TEXTURE = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/menu/menutexto.png");
+    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/menu/menubig.png");
 
     private static final ResourceLocation PANORAMA_HUMAN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/panorama");
     private static final ResourceLocation PANORAMA_SAIYAN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/s_panorama");
@@ -78,23 +77,31 @@ public class RaceSelectionScreen extends Screen {
         int centerY = this.height / 2;
 
         leftButton = new CustomTextureButton.Builder()
-                .position(centerX - 60 - 65, centerY + 87)
+                .position(centerX - 60 - 25, centerY + 88)
                 .size(20, 20)
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(32, 0, 32, 14)
                 .textureSize(8, 14)
                 .message(Component.literal("<"))
-                .onPress(btn -> previousRace())
+                .onPress(btn -> {
+					previousRace();
+					clearWidgets();
+					init();
+				})
                 .build();
 
         rightButton = new CustomTextureButton.Builder()
-                .position(centerX - 60 + 130, centerY + 87)
+                .position(centerX - 60 + 145, centerY + 88)
                 .size(20, 20)
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(20, 0, 20, 14)
                 .textureSize(8, 14)
                 .message(Component.literal(">"))
-                .onPress(btn -> nextRace())
+                .onPress(btn -> {
+					nextRace();
+					clearWidgets();
+					init();
+				})
                 .build();
 
         selectButton = new TexturedTextButton.Builder()
@@ -119,8 +126,8 @@ public class RaceSelectionScreen extends Screen {
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        graphics.blit(TEXTO_TEXTURE, (this.width / 2) - 60, (this.height / 2) + 85, 0, 16, 130, 18);
-        RenderSystem.disableBlend();
+        graphics.blit(MENU_BIG, (this.width / 2) - 70, (this.height / 2) + 85, 0, 215, 149, 21);
+		RenderSystem.disableBlend();
 
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
 
@@ -150,12 +157,12 @@ public class RaceSelectionScreen extends Screen {
         int centerY = this.height / 2;
 
         Component raceName = Component.translatable("race." + Reference.MOD_ID + "." + currentRace);
-        graphics.drawCenteredString(this.font, raceName, centerX, centerY + 90, 0x7CFDD6);
+		drawCenteredStringWithBorder(graphics, raceName, centerX + 3, centerY + 92, 0x7CFDD6);
 
         Component description = Component.translatable("race." + Reference.MOD_ID + "." + currentRace + ".desc");
 
-        int descX = 84;
-        int descStartY = centerY - 90;
+        int descX = 68;
+        int descStartY = centerY - 50;
         int maxWidth = 130;
 
         List<String> wrappedLines = wrapText(description.getString(), maxWidth);
@@ -165,16 +172,38 @@ public class RaceSelectionScreen extends Screen {
         }
     }
 
-    private void drawStringWithBorder(GuiGraphics graphics, String text, int centerX, int y, int color) {
-        int textWidth = this.font.width(text);
-        int x = centerX - textWidth / 2;
+	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
+		int textWidth = this.font.width(text);
+		int x = centerX - (textWidth / 2);
+		drawStringWithBorder(graphics, text, x, y, textColor);
+	}
 
-        graphics.drawString(this.font, text, x - 1, y, 0x000000);
-        graphics.drawString(this.font, text, x + 1, y, 0x000000);
-        graphics.drawString(this.font, text, x, y - 1, 0x000000);
-        graphics.drawString(this.font, text, x, y + 1, 0x000000);
-        graphics.drawString(this.font, text, x, y, color);
-    }
+    private void drawStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int color) {
+		String stripped = ChatFormatting.stripFormatting(text.getString());
+		Component borderComponent = Component.literal(stripped != null ? stripped : text.getString());
+
+		if (text.getStyle().isBold()) {
+			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
+		}
+
+		graphics.drawString(font, borderComponent, centerX + 1, y, 0x000000, false);
+		graphics.drawString(font, borderComponent, centerX - 1, y, 0x000000, false);
+		graphics.drawString(font, borderComponent, centerX, y + 1, 0x000000, false);
+		graphics.drawString(font, borderComponent, centerX, y - 1, 0x000000, false);
+
+		graphics.drawString(font, text, centerX, y, color, false);
+	}
+
+	private void drawStringWithBorder(GuiGraphics graphics, String text, int centerX, int y, int color) {
+		int textWidth = this.font.width(text);
+		int x = centerX - textWidth / 2;
+
+		graphics.drawString(this.font, text, x - 1, y, 0x000000);
+		graphics.drawString(this.font, text, x + 1, y, 0x000000);
+		graphics.drawString(this.font, text, x, y - 1, 0x000000);
+		graphics.drawString(this.font, text, x, y + 1, 0x000000);
+		graphics.drawString(this.font, text, x, y, color);
+	}
 
     private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
         LivingEntity player = Minecraft.getInstance().player;
@@ -237,18 +266,12 @@ public class RaceSelectionScreen extends Screen {
     }
 
     private void previousRace() {
-        selectedRaceIndex--;
-        if (selectedRaceIndex < 0) {
-            selectedRaceIndex = availableRaces.length - 1;
-        }
+        selectedRaceIndex = (selectedRaceIndex - 1 + availableRaces.length) % availableRaces.length;
         updateCharacterRace();
     }
 
     private void nextRace() {
-        selectedRaceIndex++;
-        if (selectedRaceIndex >= availableRaces.length) {
-            selectedRaceIndex = 0;
-        }
+        selectedRaceIndex = (selectedRaceIndex + 1) % availableRaces.length;
         updateCharacterRace();
     }
 
@@ -314,4 +337,3 @@ public class RaceSelectionScreen extends Screen {
         return false;
     }
 }
-

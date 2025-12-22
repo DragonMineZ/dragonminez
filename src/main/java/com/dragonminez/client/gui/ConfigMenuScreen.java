@@ -9,8 +9,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractSliderButton;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
@@ -26,8 +24,8 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class ConfigMenuScreen extends Screen {
 
-    private static final ResourceLocation MENU_GRANDE = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/menu/menugrande.png");
+    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/menu/menubig.png");
     private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID,
             "textures/gui/buttons/menubuttons.png");
     private static final ResourceLocation STAT_BUTTONS = new ResourceLocation(Reference.MOD_ID,
@@ -194,10 +192,10 @@ public class ConfigMenuScreen extends Screen {
     private void initConfigButtons() {
         clearConfigButtons();
 
-        int rightPanelX = this.width - 158;
+        int rightPanelX = this.width - 163;
         int centerY = this.height / 2;
         int rightPanelY = centerY - 105;
-        int startY = rightPanelY + 40;
+        int startY = rightPanelY + 35;
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
 
@@ -287,16 +285,17 @@ public class ConfigMenuScreen extends Screen {
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        graphics.blit(MENU_GRANDE, leftPanelX, leftPanelY, 0, 0, 148, 219, 256, 256);
+		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
-                leftPanelX + 74, leftPanelY + 22, 0xFFFFD700);
+                leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
 
         renderConfigsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
     }
 
     private void renderConfigsList(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
-        int startY = panelY + 40;
+        int startY = panelY + 35;
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
 
@@ -340,16 +339,17 @@ public class ConfigMenuScreen extends Screen {
         int rightPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        graphics.blit(MENU_GRANDE, rightPanelX, rightPanelY, 0, 0, 148, 219, 256, 256);
+		graphics.blit(MENU_BIG, this.width - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
-                rightPanelX + 74, rightPanelY + 22, 0xFFFFD700);
+                rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
 
         renderConfigValues(graphics, rightPanelX, rightPanelY);
     }
 
     private void renderConfigValues(GuiGraphics graphics, int panelX, int panelY) {
-        int startY = panelY + 40;
+        int startY = panelY + 35;
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
 
@@ -368,7 +368,7 @@ public class ConfigMenuScreen extends Screen {
                 graphics.pose().pushPose();
                 graphics.pose().scale(0.75f, 0.75f, 0.75f);
                 drawCenteredStringWithBorder(graphics, Component.literal(valueText),
-                        (int)((panelX + 74) / 0.75f), (int)((itemY + 5) / 0.75f), 0xFFFFFFFF);
+                        (int)((panelX + 69) / 0.75f), (int)((itemY + 5) / 0.75f), 0xFFFFFFFF);
                 graphics.pose().popPose();
             }
         }

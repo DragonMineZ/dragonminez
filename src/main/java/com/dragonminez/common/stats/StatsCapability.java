@@ -95,13 +95,9 @@ public class StatsCapability {
 
                     boolean saiyanUnlocked = questData.isSagaUnlocked("saiyan_saga");
                     boolean quest1Completed = questData.isQuestCompleted("saiyan_saga", 1);
-                    serverPlayer.sendSystemMessage(Component.literal("§e[DEBUG FIRST TICK] Saga unlocked: " + saiyanUnlocked + ", Quest 1 completed: " + quest1Completed));
 
                     if (!questData.isSagaUnlocked("saiyan_saga")) {
                         questData.unlockSaga("saiyan_saga");
-                        serverPlayer.sendSystemMessage(Component.literal("§e[DEBUG] Unlocking saiyan_saga (was locked)"));
-                    } else {
-                        serverPlayer.sendSystemMessage(Component.literal("§e[DEBUG] saiyan_saga already unlocked, not touching it"));
                     }
 
                     NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);

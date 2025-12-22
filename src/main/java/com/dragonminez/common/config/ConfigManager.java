@@ -162,7 +162,7 @@ public class ConfigManager {
         LOADED_RACES.add(raceName);
     }
 
-    private static boolean isDefaultRace(String raceName) {
+    public static boolean isDefaultRace(String raceName) {
         for (String vanilla : DEFAULT_RACES) {
             if (vanilla.equalsIgnoreCase(raceName)) {
                 return true;

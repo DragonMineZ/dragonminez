@@ -36,10 +36,10 @@ import java.util.Locale;
 @OnlyIn(Dist.CLIENT)
 public class CharacterStatsScreen extends Screen {
 
-    private static final ResourceLocation MENU_GRANDE = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/menu/menugrande.png");
-    private static final ResourceLocation MENU_PEQUENO = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/menu/menupequeno.png");
+    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/menu/menubig.png");
+    private static final ResourceLocation MENU_SMALL = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/menu/menusmall.png");
     private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID,
@@ -181,9 +181,9 @@ public class CharacterStatsScreen extends Screen {
         renderMenuPanels(graphics);
 
        renderPlayerInfo(graphics, mouseX, mouseY);
-        renderStatsInfo(graphics, mouseX, mouseY);
-        renderStatisticsInfo(graphics, mouseX, mouseY);
-        renderTPCost(graphics);
+       renderStatsInfo(graphics, mouseX, mouseY);
+       renderStatisticsInfo(graphics, mouseX, mouseY);
+       renderTPCost(graphics);
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -193,7 +193,7 @@ public class CharacterStatsScreen extends Screen {
 
         int centerY = this.height / 2;
         int buttonX = 27;
-        int startY = centerY + 2;
+        int startY = centerY - 3;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         int availableTPs = statsData.getResources().getTrainingPoints();
@@ -203,7 +203,7 @@ public class CharacterStatsScreen extends Screen {
         int tpCost = statsData.calculateRecursiveCost(tpMultiplier, baseCost, maxStats, multiplier);
 
         multiplierButton = new CustomTextureButton.Builder()
-                .position(buttonX - 3, startY + 75)
+                .position(buttonX, startY + 75)
                 .size(14, 11)
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(0, 0, 0, 10)
@@ -289,7 +289,7 @@ public class CharacterStatsScreen extends Screen {
         if (statsData == null) return;
 
         int centerY = this.height / 2;
-        int tpcY = centerY + 78;
+        int tpcY = centerY + 73;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
@@ -299,8 +299,8 @@ public class CharacterStatsScreen extends Screen {
 
         Component tpcValue = Component.literal(numberFormatter.format(tpCost));
 
-        drawStringWithBorder2(graphics, tpcValue, 68, tpcY, 0xFFCE41, 0x000000);
-        drawStringWithBorder2(graphics, Component.literal("x" + tpMultiplier), 105, tpcY, 0x2BFFE2, 0x000000);
+        drawStringWithBorder2(graphics, tpcValue, 80, tpcY, 0xFFCE41, 0x000000);
+        drawStringWithBorder2(graphics, Component.literal("x" + tpMultiplier), 80, tpcY + 10, 0x2BFFE2, 0x000000);
     }
 
     private void renderMenuPanels(GuiGraphics graphics) {
@@ -310,11 +310,14 @@ public class CharacterStatsScreen extends Screen {
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        graphics.blit(MENU_GRANDE, 12, centerY - 105, 0, 0, 148, 219, 256, 256);
+        graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, 43, centerY - 28, 142, 0, 79, 21, 256, 256);
 
-        graphics.blit(MENU_PEQUENO, centerX - 70, 5, 0, 93, 145, 60, 256, 256);
+        graphics.blit(MENU_SMALL, centerX - 70, 8, 0, 95, 145, 58, 256, 256);
 
-        graphics.blit(MENU_GRANDE, this.width - 158, centerY - 105, 0, 0, 148, 219, 256, 256);
+        graphics.blit(MENU_BIG, this.width - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         RenderSystem.disableBlend();
     }
@@ -367,7 +370,7 @@ public class CharacterStatsScreen extends Screen {
 
     private void renderStatsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
         int centerY = this.height / 2;
-        int titleY = centerY - 83;
+        int titleY = centerY - 88;
 
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), 85, titleY, 0xFBC51C, 0x000000);
 
@@ -381,7 +384,7 @@ public class CharacterStatsScreen extends Screen {
 
         int labelX = 35;
         int valueX = 80;
-        int startY = centerY - 67;
+        int startY = centerY - 72;
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.level").withStyle(style -> style.withBold(true)), labelX, startY, 0xD7FEF5, 0x000000);
         drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(level)), valueX, startY, 0xFFFFFF, 0x000000);
@@ -419,7 +422,7 @@ public class CharacterStatsScreen extends Screen {
         Component classComponent = Component.translatable("class.dragonminez." + characterClass);
         drawStringWithBorder2(graphics, classComponent, 80, startY + 33, 0xFFFFFF, 0x000000);
 
-        int statsStartY = centerY - 16;
+        int statsStartY = centerY - 21;
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 82, statsStartY, 0x68CCFF, 0x000000);
 
         String[] statNames = {"str", "skp", "res", "vit", "pwr", "ene"};
@@ -433,7 +436,7 @@ public class CharacterStatsScreen extends Screen {
             statsData.getStats().getEnergy()
         };
 
-        int statY = centerY + 2;
+        int statY = centerY - 3;
         for (int i = 0; i < statNames.length; i++) {
             int statLabelX = 42;
             int yPos = statY + (i * 12);
@@ -484,7 +487,7 @@ public class CharacterStatsScreen extends Screen {
         }
 
         Component tpcComponent = Component.translatable("gui.dragonminez.character_stats.tpc").withStyle(style -> style.withBold(true));
-        drawStringWithBorder2(graphics, tpcComponent, 38, statY + 76, 0x2BFFE2, 0x000000);
+        drawStringWithBorder2(graphics, tpcComponent, 42, statY + 76, 0x2BFFE2, 0x000000);
     }
 
     private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -498,7 +501,7 @@ public class CharacterStatsScreen extends Screen {
     private void renderStatisticsInfoList(GuiGraphics graphics, int mouseX, int mouseY) {
         int rightX = this.width - 137;
         int centerY = this.height / 2;
-        int titleY = centerY - 83;
+        int titleY = centerY - 88;
 
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), this.width - 85, titleY, 0xF91E64, 0x000000);
 
@@ -538,7 +541,7 @@ public class CharacterStatsScreen extends Screen {
         for (int i = 0; i < labels.length; i++) {
             int yPos = labelStartY + (i * 12);
             Component labelComponent = Component.translatable(labels[i]);
-            drawStringWithBorder2(graphics, labelComponent, rightX, yPos, 0xFFAA00, 0x000000);
+            drawStringWithBorder2(graphics, labelComponent, rightX, yPos, 0x7CFDD6, 0x000000);
 
             if (mouseX >= rightX && mouseX <= rightX + 60 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
                 List<FormattedCharSequence> tooltip = new ArrayList<>();
@@ -712,7 +715,7 @@ public class CharacterStatsScreen extends Screen {
 
     private void renderStatisticsInfoHexagon(GuiGraphics graphics, int mouseX, int mouseY) {
         int centerY = this.height / 2;
-        int titleY = centerY - 83;
+        int titleY = centerY - 88;
         int centerX = this.width - 85;
 
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), centerX, titleY, 0xF91E64, 0x000000);

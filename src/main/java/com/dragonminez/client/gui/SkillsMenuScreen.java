@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
@@ -19,6 +20,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -30,29 +32,32 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class SkillsMenuScreen extends Screen {
 
-    private static final ResourceLocation MENU_GRANDE = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/menu/menugrande.png");
-    private static final ResourceLocation MENU_PEQUENO = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/menu/menupequeno.png");
-    private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
-            "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID,
-			"textures/gui/buttons/menubuttons.png");
+    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/menu/menubig.png");
+    private static final ResourceLocation MENU_SMALL = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/menu/menusmall.png");
+    private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID,
+            "textures/gui/buttons/menubuttons.png");
 
     private static final int SKILL_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_SKILLS = 8;
+    private static final int BUTTON_ANIM_TIME = 5;
+
+    private enum SkillCategory { SKILLS, KI, FORMS }
+    private SkillCategory currentCategory = SkillCategory.SKILLS;
 
     private StatsData statsData;
     private int oldGuiScale;
     private int tickCount = 0;
 
-    private boolean showingSkills = true;
     private String selectedSkill = null;
     private int scrollOffset = 0;
     private int maxScroll = 0;
 
-    private Button skillsTabButton;
-    private Button formsTabButton;
+    private ClippableTextureButton skillsButton, kiButton, formsButton;
+    private int animTick = 0;
+    private boolean isHotZoneHovered = false;
+
     private Button upgradeButton;
 
     public SkillsMenuScreen(int oldGuiScale) {
@@ -64,7 +69,7 @@ public class SkillsMenuScreen extends Screen {
     protected void init() {
         super.init();
         updateStatsData();
-        initTabButtons();
+        initDynamicButtons();
         initNavigationButtons();
         updateSkillsList();
     }
@@ -143,6 +148,12 @@ public class SkillsMenuScreen extends Screen {
             tickCount = 0;
             updateStatsData();
         }
+
+        if (isHotZoneHovered) {
+            if (animTick < BUTTON_ANIM_TIME) animTick++;
+        } else {
+            if (animTick > 0) animTick--;
+        }
     }
 
     private void updateStatsData() {
@@ -154,33 +165,63 @@ public class SkillsMenuScreen extends Screen {
         }
     }
 
-    private void initTabButtons() {
+    private void initDynamicButtons() {
         int leftPanelX = 12;
         int centerY = this.height / 2;
         int leftPanelY = centerY - 105;
 
-        skillsTabButton = Button.builder(Component.translatable("gui.dragonminez.skills.tab.skills"), btn -> {
-            showingSkills = true;
-            selectedSkill = null;
-            scrollOffset = 0;
-            updateSkillsList();
-            refreshButtons();
-        })
-        .bounds(leftPanelX + 10, leftPanelY + 10, 60, 18)
-        .build();
+        int buttonY = leftPanelY + 6;
+        int hiddenX = leftPanelX + 122;
+        int scissorX = leftPanelX + 141;
 
-        formsTabButton = Button.builder(Component.translatable("gui.dragonminez.skills.tab.forms"), btn -> {
-            showingSkills = false;
-            selectedSkill = null;
-            scrollOffset = 0;
-            updateSkillsList();
-            refreshButtons();
-        })
-        .bounds(leftPanelX + 75, leftPanelY + 10, 60, 18)
-        .build();
+        skillsButton = new ClippableTextureButton.Builder()
+                .position(hiddenX, buttonY)
+                .size(26, 32)
+                .texture(MENU_BIG)
+                .textureCoords(142, 44, 142, 44)
+                .clipping(true, scissorX, 0, this.width, this.height)
+                .onPress(btn -> {
+                    currentCategory = SkillCategory.SKILLS;
+                    selectedSkill = null;
+                    scrollOffset = 0;
+                    updateSkillsList();
+                    refreshButtons();
+                })
+                .build();
 
-        this.addRenderableWidget(skillsTabButton);
-        this.addRenderableWidget(formsTabButton);
+        kiButton = new ClippableTextureButton.Builder()
+                .position(hiddenX, buttonY + 32)
+                .size(26, 32)
+                .texture(MENU_BIG)
+                .textureCoords(170, 44, 170, 44)
+                .clipping(true, scissorX, 0, this.width, this.height)
+                .onPress(btn -> {
+                    currentCategory = SkillCategory.KI;
+                    selectedSkill = null;
+                    scrollOffset = 0;
+                    updateSkillsList();
+                    refreshButtons();
+                })
+                .build();
+
+        formsButton = new ClippableTextureButton.Builder()
+                .position(hiddenX, buttonY + 64)
+                .size(26, 32)
+                .texture(MENU_BIG)
+                .textureCoords(198, 44, 198, 44)
+                .clipping(true, scissorX, 0, this.width, this.height)
+                .onPress(btn -> {
+                    currentCategory = SkillCategory.FORMS;
+                    selectedSkill = null;
+                    scrollOffset = 0;
+                    updateSkillsList();
+                    refreshButtons();
+                })
+                .build();
+
+        this.addRenderableWidget(skillsButton);
+        this.addRenderableWidget(kiButton);
+        this.addRenderableWidget(formsButton);
     }
 
     private void updateSkillsList() {
@@ -194,16 +235,22 @@ public class SkillsMenuScreen extends Screen {
         Skills skills = statsData.getSkills();
         List<String> skillNames = new ArrayList<>();
 
-        if (showingSkills) {
-            skills.getAllSkills().forEach((name, skill) -> {
-                if (!name.equals("superform") && !name.equals("godform") && !name.equals("legendaryforms")) {
-                    skillNames.add(name);
-                }
-            });
-        } else {
-            if (skills.hasSkill("superform")) skillNames.add("superform");
-            if (skills.hasSkill("godform")) skillNames.add("godform");
-            if (skills.hasSkill("legendaryforms")) skillNames.add("legendaryforms");
+        switch (currentCategory) {
+            case SKILLS:
+                skills.getAllSkills().forEach((name, skill) -> {
+                    if (!name.equals("superform") && !name.equals("godform") && !name.equals("legendaryforms")) {
+                        skillNames.add(name);
+                    }
+                });
+                break;
+            case KI:
+                // KI skills can be added here in the future
+                break;
+            case FORMS:
+                if (skills.hasSkill("superform")) skillNames.add("superform");
+                if (skills.hasSkill("godform")) skillNames.add("godform");
+                if (skills.hasSkill("legendaryforms")) skillNames.add("legendaryforms");
+                break;
         }
 
         return skillNames;
@@ -211,7 +258,7 @@ public class SkillsMenuScreen extends Screen {
 
     private void refreshButtons() {
         this.clearWidgets();
-        initTabButtons();
+        initDynamicButtons();
         initNavigationButtons();
         initUpgradeButton();
     }
@@ -230,22 +277,24 @@ public class SkillsMenuScreen extends Screen {
         int currentTPS = statsData.getResources().getTrainingPoints();
         boolean canUpgrade = skill.getLevel() < skill.getMaxLevel() && currentTPS >= cost;
 
-        upgradeButton = Button.builder(
-            Component.translatable("gui.dragonminez.skills.upgrade")
-                .append(" (")
-                .append(String.valueOf(cost))
-                .append(" TPS)"),
-            btn -> {
-                if (canUpgrade) {
-                    NetworkHandler.INSTANCE.sendToServer(new UpgradeSkillC2S(selectedSkill));
-                    updateStatsData();
-                }
-            })
-        .bounds(rightPanelX + 25, rightPanelY + 199, 100, 15)
-        .build();
+        if (cost != Integer.MAX_VALUE) {
+			upgradeButton = Button.builder(
+							Component.translatable("gui.dragonminez.skills.upgrade")
+									.append(" (")
+									.append(String.valueOf(cost))
+									.append(" TPS)"),
+							btn -> {
+								if (canUpgrade) {
+									NetworkHandler.INSTANCE.sendToServer(new UpgradeSkillC2S(selectedSkill));
+									updateStatsData();
+								}
+							})
+					.bounds(rightPanelX + 25, rightPanelY + 199, 100, 15)
+					.build();
 
-        upgradeButton.active = canUpgrade;
-        this.addRenderableWidget(upgradeButton);
+			upgradeButton.active = canUpgrade;
+			this.addRenderableWidget(upgradeButton);
+		}
     }
 
     private int getUpgradeCost(String skillName, int currentLevel) {
@@ -266,6 +315,8 @@ public class SkillsMenuScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
 
+        updateButtonAnimations(mouseX, mouseY, partialTick);
+
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
 
         renderLeftPanel(graphics, mouseX, mouseY);
@@ -274,13 +325,39 @@ public class SkillsMenuScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
+    private void updateButtonAnimations(int mouseX, int mouseY, float partialTick) {
+        int leftPanelX = 12;
+        int centerY = this.height / 2;
+        int leftPanelY = centerY - 105;
+
+        int hotZoneX = leftPanelX + 122;
+        int hotZoneY = leftPanelY + 6;
+        int hotZoneWidth = 48;
+        int hotZoneHeight = 100;
+
+        isHotZoneHovered = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
+                           mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
+
+        float animProgress = (animTick + (isHotZoneHovered ? partialTick : -partialTick)) / BUTTON_ANIM_TIME;
+        animProgress = Mth.clamp(animProgress, 0.0f, 1.0f);
+
+        int hiddenX = leftPanelX + 122;
+        int visibleX = leftPanelX + 141;
+
+        int newX = hiddenX + (int)((visibleX - hiddenX) * animProgress);
+        skillsButton.setX(newX);
+        kiButton.setX(newX);
+        formsButton.setX(newX);
+    }
+
     private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
         int leftPanelX = 12;
         int centerY = this.height / 2;
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        graphics.blit(MENU_GRANDE, leftPanelX, leftPanelY, 0, 0, 149, 239, 256, 256);
+		graphics.blit(MENU_BIG, leftPanelX, leftPanelY, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         renderSkillsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
     }
@@ -299,7 +376,7 @@ public class SkillsMenuScreen extends Screen {
             int itemY = startY + ((i - visibleStart) * SKILL_ITEM_HEIGHT);
 
             boolean isSelected = skillName.equals(selectedSkill);
-            boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 174 &&
+            boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 100 &&
                               mouseY >= itemY && mouseY <= itemY + SKILL_ITEM_HEIGHT;
 
             int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
@@ -335,6 +412,16 @@ public class SkillsMenuScreen extends Screen {
 
             graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
         }
+
+		String title = "";
+		switch (currentCategory) {
+			case SKILLS -> title = "gui.dragonminez.skills.tab.skills";
+			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
+			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
+		}
+
+		drawStringWithBorder(graphics, Component.translatable(title)
+				.withStyle(style -> style.withBold(true)), 65, this.height/2 - 88, 0xFBC51C);
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -343,14 +430,16 @@ public class SkillsMenuScreen extends Screen {
         int rightPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        graphics.blit(MENU_PEQUENO, rightPanelX, rightPanelY, 0, 0, 145, 92, 256, 256);
-		graphics.blit(MENU_PEQUENO, rightPanelX, rightPanelY + 94, 0, 0, 145, 92, 256, 256);
-		graphics.blit(MENU_PEQUENO, rightPanelX, rightPanelY + 188, 0, 171, 145, 37, 256, 256);
+        graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
+		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
+		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.skills.information"),
-            rightPanelX + 74, rightPanelY + 18, 0xFFFFD700);
+		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info")
+						.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
-        if (selectedSkill != null && statsData != null) {
+
+		if (selectedSkill != null && statsData != null) {
             renderSkillDetails(graphics, rightPanelX, rightPanelY);
         }
     }
@@ -365,11 +454,11 @@ public class SkillsMenuScreen extends Screen {
         int startY = panelY + 40;
 
         drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
-            panelX + 78, startY, 0xFFFFFFFF);
+            panelX + 72, startY, 0xFFFFFFFF);
 
         drawCenteredStringWithBorder(graphics,
             Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()),
-            panelX + 78, startY + 20, 0xFFAAAAAA);
+            panelX + 72, startY + 20, 0xFFAAAAAA);
 
         List<String> wrappedDesc = wrapText(description, 130);
         int descY = startY + 70;
@@ -429,14 +518,14 @@ public class SkillsMenuScreen extends Screen {
         int leftPanelY = centerY - 105;
 
         List<String> skillNames = getVisibleSkillNames();
-        int startY = leftPanelY + 40;
+        int startY = leftPanelY + 30;
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_SKILLS, skillNames.size());
 
         for (int i = visibleStart; i < visibleEnd; i++) {
             int itemY = startY + ((i - visibleStart) * SKILL_ITEM_HEIGHT);
 
-            if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 174 &&
+            if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 100 &&
                 mouseY >= itemY && mouseY <= itemY + SKILL_ITEM_HEIGHT) {
 
                 selectedSkill = skillNames.get(i);
@@ -516,4 +605,3 @@ public class SkillsMenuScreen extends Screen {
         return oldGuiScale;
     }
 }
-

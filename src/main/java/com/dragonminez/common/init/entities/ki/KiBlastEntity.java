@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import net.minecraft.world.entity.EntityType;
@@ -108,9 +109,9 @@ public class KiBlastEntity extends AbstractKiProjectile{
     }
 
     private void explodeAndDie() {
-        // Aquí spawnear una explosión real o partículas
-        // Level.ExplosionInteraction.NONE para que no rompa bloques no olvidar
-        this.level().explode(this, this.getX(), this.getY(), this.getZ(), 2.0F, Level.ExplosionInteraction.NONE);
+        boolean shouldDestroyBlocks = ConfigManager.getServerConfig().getGameplay().isKiDestroyBlocks();
+        Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE;
+        this.level().explode(this, this.getX(), this.getY(), this.getZ(), 3.0F, interaction);
         this.discard();
     }
 }

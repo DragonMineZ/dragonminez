@@ -42,6 +42,7 @@ public class GeneralServerConfig {
 		private double tpCostMultiplier = 1.0;
         private boolean respectAttackCooldown = true;
         private int maxStatValue = 10000;
+		private boolean kiDestroyBlocks = true;
 
         @SerializedName("kaioken_stackable")
         private boolean kaiokenStackable = true;
@@ -68,6 +69,9 @@ public class GeneralServerConfig {
 
         public int getMaxStatValue() { return maxStatValue; }
         public void setMaxStatValue(int maxStatValue) { this.maxStatValue = maxStatValue; }
+
+		public boolean isKiDestroyBlocks() { return kiDestroyBlocks; }
+		public void setKiDestroyBlocks(boolean kiDestroyBlocks) { this.kiDestroyBlocks = kiDestroyBlocks; }
 
         public boolean isKaiokenStackable() { return kaiokenStackable; }
         public void setKaiokenStackable(boolean stackable) { this.kaiokenStackable = stackable; }
