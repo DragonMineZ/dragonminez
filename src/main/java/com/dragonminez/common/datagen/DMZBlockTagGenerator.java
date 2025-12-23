@@ -2,6 +2,7 @@ package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
+import com.dragonminez.common.init.MainTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
@@ -325,5 +326,21 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())
 				.add(MainBlocks.NAMEK_SACRED_GRASS_BLOCK.get())
 				.add(MainBlocks.ROCKY_DIRT.get());
+
+		this.tag(MainTags.Blocks.NAMEK_ALOG)
+				.add(MainBlocks.NAMEK_AJISSA_LOG.get())
+				.add(MainBlocks.NAMEK_STRIPPED_AJISSA_LOG.get());
+
+		this.tag(MainTags.Blocks.NAMEK_SLOG)
+				.add(MainBlocks.NAMEK_SACRED_LOG.get())
+				.add(MainBlocks.NAMEK_STRIPPED_SACRED_LOG.get());
+
+		this.tag(MainTags.Blocks.NAMEKSTONE_REPLACEABLES)
+				.replace(false)
+				.add(MainBlocks.NAMEK_STONE.get());
+
+		this.tag(MainTags.Blocks.NAMEKDEEPSLATE_REPLACEABLES)
+				.replace(false)
+				.add(MainBlocks.NAMEK_DEEPSLATE.get());
 	}
 }

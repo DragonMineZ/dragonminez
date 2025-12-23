@@ -123,7 +123,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
 
                     JsonObject reward3_2 = new JsonObject();
                     reward3_2.addProperty("type", "COMMAND");
-                    reward3_2.addProperty("command", "dmzskill unlock %player% fly");
+                    reward3_2.addProperty("command", "dmzpoints %player% add 500");
                     rewards3.add(reward3_2);
                     quest3.add("rewards", rewards3);
 

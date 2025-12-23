@@ -1,0 +1,23 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": [
+    "dragonminez:ajissa_plains",
+    "dragonminez:sacred_land"
+  ],
+  "spawners": [{
+    "type": "dragonminez:saga_friezasoldier01",
+    "weight": 30,
+    "minCount": 2,
+    "maxCount": 3
+  },{
+    "type": "dragonminez:saga_friezasoldier02",
+    "weight": 30,
+    "minCount": 2,
+    "maxCount": 3
+  },{
+    "type": "dragonminez:saga_friezasoldier03",
+    "weight": 30,
+    "minCount": 2,
+    "maxCount": 3
+  }]
+}

@@ -2,8 +2,8 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.block.custom.*;
-import com.dragonminez.server.worldgen.tree.NamekAjissaGrower;
-import com.dragonminez.server.worldgen.tree.NamekSacredGrower;
+import com.dragonminez.server.world.tree.NamekAjissaGrower;
+import com.dragonminez.server.world.tree.NamekSacredGrower;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -30,7 +30,6 @@ public final class MainBlocks {
 		return (IsThisOn) -> (Boolean) IsThisOn.getValue(BlockStateProperties.LIT) ? pLightValue : 0;
 	}
 
-	//INICIO DE ITEMS SIN NECESIDADES ESPECIALES **NO** TIENEN SU CLASE EN INIT.BLOCKS.CUSTOM:
 	//BLOQUES
 	public static final RegistryObject<Block> INVISIBLE_LADDER_BLOCK = registerBlock("invisible_ladder_block",
 			() -> new ClimbableBlock(BlockBehaviour.Properties.of().noOcclusion().forceSolidOff()

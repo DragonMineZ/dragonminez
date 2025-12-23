@@ -1,0 +1,13 @@
+{
+  "name": "dragonminez:village_ajissa/ajissa_center",
+  "fallback": "minecraft:empty",
+  "elements": [{
+    "weight": 1,
+    "element": {
+      "location": "dragonminez:village_ajissa/ajissa_center/ajissa_center",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  }]
+}

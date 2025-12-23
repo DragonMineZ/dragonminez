@@ -3,6 +3,7 @@ package com.dragonminez.common.datagen;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.MainTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.ItemTagsProvider;
@@ -114,6 +115,14 @@ public class DMZItemTagGenerator extends ItemTagsProvider {
 				.add(MainBlocks.SACRED_AMARYLLIS_FLOWER.get().asItem())
 				.add(MainBlocks.SACRED_CATHARANTHUS_ROSEUS_FLOWER.get().asItem())
 				.add(MainBlocks.SACRED_TRILLIUM_FLOWER.get().asItem());
+
+		this.tag(MainTags.Items.NAMEK_ALOG)
+				.add(MainBlocks.NAMEK_AJISSA_LOG.get().asItem())
+				.add(MainBlocks.NAMEK_STRIPPED_AJISSA_LOG.get().asItem());
+
+		this.tag(MainTags.Items.NAMEK_SLOG)
+				.add(MainBlocks.NAMEK_SACRED_LOG.get().asItem())
+				.add(MainBlocks.NAMEK_STRIPPED_SACRED_LOG.get().asItem());
 
 //		this.tag(ItemTags.SWORDS)
 //				.add(MainItems.BACULO_SAGRADO.get())

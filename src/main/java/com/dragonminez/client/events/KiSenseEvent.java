@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -18,10 +19,13 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
+import java.text.NumberFormat;
+import java.util.Locale;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class KiSenseEvent {
-
-	private static final ResourceLocation HUD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
+	private static final ResourceLocation HUD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
+	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	@SubscribeEvent
 	public static void onRenderNameTag(RenderNameTagEvent event) {
@@ -67,25 +71,35 @@ public class KiSenseEvent {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		RenderSystem.setShaderTexture(0, HUD_TEXTURE);
 
-		float x = -141 / 2.0f;
+		float width = 83;
+		float x = -width / 2.0f;
 		float y = 0;
 
-		drawTexture(poseStack, x, y, 141, 9, 14, 2);
+		drawTexture(poseStack, x, y, (int)width, 9, 0, 0);
 
-		int currentBarWidth = (int) (137 * healthPercent);
+		int currentBarWidth = (int) (76 * healthPercent);
+
 		int fillV;
 		if (healthPercent < 0.33f) {
-			fillV = 48;
+			fillV = 33;
 		} else if (healthPercent < 0.66f) {
-			fillV = 35;
+			fillV = 22;
 		} else {
-			fillV = 21;
+			fillV = 11;
 		}
 
 		if (currentBarWidth > 0) {
-			drawTexture(poseStack, x + 1, y + 2, currentBarWidth, 5, 15, fillV);
+			drawTexture(poseStack, x + 2, y + 3, 7+ currentBarWidth, 5, 2, fillV);
 		}
 
+		poseStack.pushPose();
+		String text = numberFormat.format(health) + " / " + numberFormat.format(maxHealth);
+		float textScale = 0.6f;
+		poseStack.scale(textScale, textScale, textScale);
+		float textY = 3.0f;
+		drawBorderedText(poseStack, bufferSource, mc.font, text, 0, textY);
+
+		poseStack.popPose();
 		poseStack.popPose();
 	}
 
@@ -94,10 +108,12 @@ public class KiSenseEvent {
 		Tesselator tesselator = Tesselator.getInstance();
 		BufferBuilder buffer = tesselator.getBuilder();
 
-		float minU = (float) u / 256;
-		float maxU = (float) (u + width) / 256;
-		float minV = (float) v / 256;
-		float maxV = (float) (v + height) / 256;
+		float textureSize = 128.0f;
+
+		float minU = (float) u / textureSize;
+		float maxU = (float) (u + width) / textureSize;
+		float minV = (float) v / textureSize;
+		float maxV = (float) (v + height) / textureSize;
 
 		buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
@@ -107,5 +123,31 @@ public class KiSenseEvent {
 		buffer.vertex(matrix, x, y, 0).uv(minU, minV).endVertex();
 
 		tesselator.end();
+	}
+
+	private static void drawBorderedText(PoseStack poseStack, MultiBufferSource buffer, Font font, String text, float x, float y) {
+		float textWidth = font.width(text);
+		float centeredX = x - (textWidth / 2.0f);
+
+		int black = 0x000000;
+		int white = 0xFFFFFF;
+		int packedLight = 0xF000F0;
+
+		poseStack.pushPose();
+		poseStack.translate(0.0f, 0.0f, 0.025f);
+		drawTextRaw(poseStack, buffer, font, text, centeredX - 1, y, black, packedLight);
+		drawTextRaw(poseStack, buffer, font, text, centeredX + 1, y, black, packedLight);
+		drawTextRaw(poseStack, buffer, font, text, centeredX, y - 1, black, packedLight);
+		drawTextRaw(poseStack, buffer, font, text, centeredX, y + 1, black, packedLight);
+		poseStack.popPose();
+
+		poseStack.pushPose();
+		poseStack.translate(0.0f, 0.0f, -0.15f);
+		drawTextRaw(poseStack, buffer, font, text, centeredX, y, white, packedLight);
+		poseStack.popPose();
+	}
+
+	private static void drawTextRaw(PoseStack poseStack, MultiBufferSource buffer, Font font, String text, float x, float y, int color, int packedLight) {
+		font.drawInBatch(text, x, y, color, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, packedLight);
 	}
 }

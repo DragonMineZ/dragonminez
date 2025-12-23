@@ -1,9 +1,7 @@
 package com.dragonminez.common.events;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.commands.EffectsCommand;
-import com.dragonminez.common.commands.PartyCommand;
-import com.dragonminez.common.commands.*;
+import com.dragonminez.server.commands.*;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;

@@ -64,24 +64,27 @@ public class DMZItemModelProvider extends net.minecraftforge.client.model.genera
         simpleItem(MainItems.BLUE_SCOUTER);
         simpleItem(MainItems.YELLOW_SCOUTER);
 		// Spawn Eggs
-//		withExistingParent(MainItems.DINO_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.GINYU_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.PINK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.YELLOW_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SOLDIER01_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.MORO_SOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.NWARRIOR1_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.NWARRIOR2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SAIBAMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.KAIWAREMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.KYUKONMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.COPYMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.TENNENMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.JINKOUMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.REDRIBBONSOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DINO_1.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DINO_2.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DINO_3.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DINO_KID.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.GINYU_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SOLDIER01_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.NWARRIOR_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SAIBAMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.KAIWAREMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.KYUKONMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.COPYMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.TENNENMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.JINKOUMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONSOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONROBOT1_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONROBOT2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONROBOT3_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.BANDIT_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 
 		//Comidas
 		simpleItem(MainItems.COMIDA_DINO_RAW);

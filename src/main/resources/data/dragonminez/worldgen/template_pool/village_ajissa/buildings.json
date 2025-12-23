@@ -1,0 +1,21 @@
+{
+  "name": "dragonminez:village_ajissa/buildings",
+  "fallback": "minecraft:empty",
+  "elements": [{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_ajissa/houses/residence/ajissa_house_small",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 2,
+    "element": {
+      "location": "dragonminez:village_ajissa/houses/residence/ajissa_house_big",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  }]
+}

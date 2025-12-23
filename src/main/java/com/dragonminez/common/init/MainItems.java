@@ -5,6 +5,7 @@ import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.ModArmorMaterials;
 import com.dragonminez.common.init.item.*;
 import net.minecraft.world.item.*;
+import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -350,42 +351,49 @@ public final class MainItems {
 			() -> new BlockItem(MainBlocks.DBALL7_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
 
 	// SPAWN EGGS
-	//public static final RegistryObject<Item> DINO_SE = ITEM_REGISTER.register("dino_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.DINO1, 0xED5B18, 0x6ED610, new Item.Properties()));
-	//public static final RegistryObject<Item> NAMEK_FROG_SE = ITEM_REGISTER.register("namek_frog_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.NAMEK_FROG, 0x22C96B, 0xD62B52, new Item.Properties()));
-	//public static final RegistryObject<Item> GINYU_FROG_SE = ITEM_REGISTER.register("ginyu_frog_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.GINYU_FROG, 0x22C96B, 0x6D0480, new Item.Properties()));
-	//public static final RegistryObject<Item> PINK_FROG_SE = ITEM_REGISTER.register("pink_frog_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.PINK_FROG, 0xF7B1C1, 0xD62B52, new Item.Properties()));
-	//public static final RegistryObject<Item> YELLOW_FROG_SE = ITEM_REGISTER.register("yellow_frog_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.YELLOW_FROG, 0xF7F71C, 0xD62B52, new Item.Properties()));
-	//public static final RegistryObject<Item> SOLDIER01_SE = ITEM_REGISTER.register("soldier01_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.FRIEZA_SOLDIER01, 0x010714, 0xE6E7EB, new Item.Properties()));
-	//public static final RegistryObject<Item> SOLDIER02_SE = ITEM_REGISTER.register("soldier02_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.FRIEZA_SOLDIER02, 0X5D1066, 0xA18B33, new Item.Properties()));
-	//public static final RegistryObject<Item> SOLDIER03_SE = ITEM_REGISTER.register("soldier03_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.FRIEZA_SOLDIER03, 0x95F0CB, 0xDABAE6, new Item.Properties()));
-	//public static final RegistryObject<Item> MORO_SOLDIER_SE = ITEM_REGISTER.register("moro_soldier_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.MORO_SOLDIER, 0x051942, 0xE6E7EB, new Item.Properties()));
-	//public static final RegistryObject<Item> NWARRIOR1_SE = ITEM_REGISTER.register("nwarrior1_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.NAMEKNPC_WARRIOR1, 0x246E18, 0x12848A, new Item.Properties()));
-	//public static final RegistryObject<Item> NWARRIOR2_SE = ITEM_REGISTER.register("nwarrior2_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.NAMEKNPC_WARRIOR2, 0x246E18, 0x6ED610, new Item.Properties()));
-	//public static final RegistryObject<Item> SAIBAMAN_SE = ITEM_REGISTER.register("saibaman_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.SAIBAMAN, 0x6ED610, 0x2A6E18, new Item.Properties()));
-	//public static final RegistryObject<Item> KAIWAREMAN_SE = ITEM_REGISTER.register("kaiwareman_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.KAIWAREMAN, 0x54e8b2, 0x298ba3, new Item.Properties()));
-	//public static final RegistryObject<Item> KYUKONMAN_SE = ITEM_REGISTER.register("kyukonman_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.KYUKONMAN, 0xe6d575, 0x6b5e12, new Item.Properties()));
-	//public static final RegistryObject<Item> COPYMAN_SE = ITEM_REGISTER.register("copyman_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.COPYMAN, 0x47463d, 0x242321, new Item.Properties()));
-	//public static final RegistryObject<Item> TENNENMAN_SE = ITEM_REGISTER.register("tennenman_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.TENNENMAN, 0xb971d1, 0x298ba3, new Item.Properties()));
-	//public static final RegistryObject<Item> JINKOUMAN_SE = ITEM_REGISTER.register("jinkouman_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.JINKOUMAN, 0xb3acb5, 0x242321, new Item.Properties()));
-	//public static final RegistryObject<Item> REDRIBBONSOLDIER_SE = ITEM_REGISTER.register("redribbon_soldier_spawn_egg", () ->
-	//		new ForgeSpawnEggItem(MainEntity.REDRIBBON_SOLDIER, 0xe6975e, 0xe63c29, new Item.Properties()));
+	public static final RegistryObject<Item> DINO_1 = ITEM_REGISTER.register("dino1_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.DINOSAUR1, 0xED5B18, 0x6ED610, new Item.Properties()));
+	public static final RegistryObject<Item> DINO_2 = ITEM_REGISTER.register("dino2_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.DINOSAUR2, 0xED5B18, 0x6ED610, new Item.Properties()));
+	public static final RegistryObject<Item> DINO_3 = ITEM_REGISTER.register("dino3_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.DINOSAUR3, 0xED5B18, 0x6ED610, new Item.Properties()));
+	public static final RegistryObject<Item> DINO_KID = ITEM_REGISTER.register("dinokid_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.DINO_KID, 0xED5B18, 0x6ED610, new Item.Properties()));
+	public static final RegistryObject<Item> NAMEK_FROG_SE = ITEM_REGISTER.register("namek_frog_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.NAMEK_FROG, 0x22C96B, 0xD62B52, new Item.Properties()));
+	public static final RegistryObject<Item> GINYU_FROG_SE = ITEM_REGISTER.register("ginyu_frog_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.NAMEK_FROG_GINYU, 0x22C96B, 0x6D0480, new Item.Properties()));
+	public static final RegistryObject<Item> SOLDIER01_SE = ITEM_REGISTER.register("soldier01_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_FRIEZA_SOLDIER, 0x010714, 0xE6E7EB, new Item.Properties()));
+	public static final RegistryObject<Item> SOLDIER02_SE = ITEM_REGISTER.register("soldier02_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_FRIEZA_SOLDIER2, 0X5D1066, 0xA18B33, new Item.Properties()));
+	public static final RegistryObject<Item> SOLDIER03_SE = ITEM_REGISTER.register("soldier03_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_FRIEZA_SOLDIER3, 0x95F0CB, 0xDABAE6, new Item.Properties()));
+	public static final RegistryObject<Item> NWARRIOR_SE = ITEM_REGISTER.register("nwarrior_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.NAMEK_WARRIOR, 0x246E18, 0x12848A, new Item.Properties()));
+	public static final RegistryObject<Item> SAIBAMAN_SE = ITEM_REGISTER.register("saibaman_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN, 0x6ED610, 0x2A6E18, new Item.Properties()));
+	public static final RegistryObject<Item> KAIWAREMAN_SE = ITEM_REGISTER.register("kaiwareman_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN2, 0x54e8b2, 0x298ba3, new Item.Properties()));
+	public static final RegistryObject<Item> KYUKONMAN_SE = ITEM_REGISTER.register("kyukonman_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN3, 0xe6d575, 0x6b5e12, new Item.Properties()));
+	public static final RegistryObject<Item> COPYMAN_SE = ITEM_REGISTER.register("copyman_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN4, 0x47463d, 0x242321, new Item.Properties()));
+	public static final RegistryObject<Item> TENNENMAN_SE = ITEM_REGISTER.register("tennenman_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN5, 0xb971d1, 0x298ba3, new Item.Properties()));
+	public static final RegistryObject<Item> JINKOUMAN_SE = ITEM_REGISTER.register("jinkouman_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.SAGA_SAIBAMAN6, 0xb3acb5, 0x242321, new Item.Properties()));
+	public static final RegistryObject<Item> REDRIBBONSOLDIER_SE = ITEM_REGISTER.register("redribbon_soldier_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.RED_RIBBON_SOLDIER, 0xe6975e, 0xe63c29, new Item.Properties()));
+	public static final RegistryObject<Item> REDRIBBONROBOT1_SE = ITEM_REGISTER.register("redribbon_robot1_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.RED_RIBBON_ROBOT1, 0xe6975e, 0xe63c29, new Item.Properties()));
+	public static final RegistryObject<Item> REDRIBBONROBOT2_SE = ITEM_REGISTER.register("redribbon_robot2_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.RED_RIBBON_ROBOT2, 0xe6975e, 0xe63c29, new Item.Properties()));
+	public static final RegistryObject<Item> REDRIBBONROBOT3_SE = ITEM_REGISTER.register("redribbon_robot3_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.RED_RIBBON_ROBOT3, 0xe6975e, 0xe63c29, new Item.Properties()));
+	public static final RegistryObject<Item> BANDIT_SE = ITEM_REGISTER.register("bandit_spawn_egg", () ->
+			new ForgeSpawnEggItem(MainEntities.BANDIT, 0x8B4513, 0xFFFF00, new Item.Properties()));
+
 
 	public static RegistryObject<Item> regItem(String name) {
 		return ITEM_REGISTER.register(name, () -> new Item(properties.stacksTo(64)));
