@@ -98,7 +98,9 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 		//this.dropSelf(MainBlocks.GETE_FURNACE.get());
 		this.dropSelf(MainBlocks.GETE_ORE.get());
 		this.dropSelf(MainBlocks.TIME_CHAMBER_BLOCK.get());
-		//this.dropSelf(MainBlocks.KIKONO_ARMOR_STATION.get());
+		this.dropSelf(MainBlocks.KIKONO_STATION.get());
+		this.dropSelf(MainBlocks.ENERGY_CABLE.get());
+		this.dropSelf(MainBlocks.FUEL_GENERATOR.get());
 
 
 		//Bloques que Dropean otros items

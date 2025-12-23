@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.WoodType;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -221,9 +222,15 @@ public final class MainBlocks {
 	//                .mapColor(MapColor.STONE).requiresCorrectToolForDrops().strength(3.5F)
 	//                .lightLevel(litBlockEmission(13))));
 
-	//public static final RegistryObject<Block> KIKONO_ARMOR_STATION = registerBlock("kikono_armor_station",
-	//		() -> new KikonoArmorStationBlock(BlockBehaviour.Properties.copy(Blocks.SMITHING_TABLE)
-	//				.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
+	public static final RegistryObject<Block> KIKONO_STATION = registerBlock("kikono_station",
+			() -> new KikonoStationBlock(BlockBehaviour.Properties.copy(Blocks.SMITHING_TABLE)
+					.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
+	public static final RegistryObject<Block> FUEL_GENERATOR = registerBlock("fuel_generator",
+			() -> new FuelGeneratorBlock(BlockBehaviour.Properties.copy(Blocks.FURNACE)
+					.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
+	public static final RegistryObject<Block> ENERGY_CABLE = registerBlock("energy_cable",
+			() -> new EnergyCableBlock(BlockBehaviour.Properties.copy(Blocks.WHITE_WOOL)
+					.mapColor(MapColor.STONE).noOcclusion()));
 
 	//Plantas Namek 1
 	public static final RegistryObject<Block> NAMEK_GRASS = registerBlock("namek_grass",

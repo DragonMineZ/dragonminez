@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
-	private static final ResourceLocation LOCK_ICON = new ResourceLocation(Reference.MOD_ID, "textures/gui/lock_on.png");
+	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
 	private static LivingEntity lockedTarget = null;
 
 	public static void toggleLock() {

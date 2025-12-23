@@ -17,9 +17,9 @@ import java.util.List;
 import java.util.Locale;
 
 public class AlternativeHUD {
-	private static final ResourceLocation hud = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/alternativehud.png"),
-			xvhud = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png"),
-			racialIcons = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
+	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png"),
+			xvhud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png"),
+			racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;

@@ -63,7 +63,7 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> VEGETA_OOZARU_DEATH = registerSoundEvent("vegeta_oozaru_death");
 
 	private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
-		ResourceLocation id = new ResourceLocation(Reference.MOD_ID, name);
+		ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name);
 
 		return SOUND_EVENTS_REGISTER.register(name, () -> SoundEvent.createVariableRangeEvent(id));
 	}

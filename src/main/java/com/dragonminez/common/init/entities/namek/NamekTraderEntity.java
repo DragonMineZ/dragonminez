@@ -42,7 +42,7 @@ public class NamekTraderEntity extends NamekVillagerEntity{
 
     static {
         for (int i = 0; i < VARIANT_COUNT; i++) {
-            TEXTURES[i] = new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/namek_trader_" + i + ".png");
+            TEXTURES[i] = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/namek_trader_" + i + ".png");
         }
     }
     public NamekTraderEntity(EntityType<? extends Villager> pEntityType, Level pLevel) {

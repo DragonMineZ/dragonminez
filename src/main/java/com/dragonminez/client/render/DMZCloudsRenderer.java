@@ -12,7 +12,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 public class DMZCloudsRenderer {
-	private static final ResourceLocation CLOUDS_LOCATION = new ResourceLocation("textures/environment/clouds.png");
+	private static final ResourceLocation CLOUDS_LOCATION = ResourceLocation.withDefaultNamespace("textures/environment/clouds.png");
 
 	private VertexBuffer cloudBuffer;
 	private int prevCloudX = Integer.MIN_VALUE;

@@ -16,17 +16,17 @@ public class NamekianModel<T extends PathfinderMob & GeoAnimatable> extends GeoM
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/enemies/namekian.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/namekian.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/namek_trader_0.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/namek_trader_0.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/enemies/namekian.animation.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/enemies/namekian.animation.json");
     }
 
     @Override

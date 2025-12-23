@@ -12,9 +12,9 @@ import net.minecraft.world.level.biome.*;
 import net.minecraft.world.level.levelgen.GenerationStep;
 
 public class NamekBiomes {
-	public static final ResourceKey<Biome> AJISSA_PLAINS = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "ajissa_plains"));
-	public static final ResourceKey<Biome> SACRED_LAND = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "sacred_land"));
-	public static final ResourceKey<Biome> NAMEKIAN_RIVERS = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "namekian_rivers"));
+	public static final ResourceKey<Biome> AJISSA_PLAINS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ajissa_plains"));
+	public static final ResourceKey<Biome> SACRED_LAND = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "sacred_land"));
+	public static final ResourceKey<Biome> NAMEKIAN_RIVERS = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namekian_rivers"));
 
 	public static void bootstrap(BootstapContext<Biome> context) {
 		context.register(AJISSA_PLAINS, ajissaPlains(context));

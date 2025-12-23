@@ -26,7 +26,7 @@ public class DMZStructureSets {
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
 			ELDER_GURU = createKey("elder_guru");
 
-	private static final TagKey<Biome> VILLAGE_PLAINS_TAG = TagKey.create(Registries.BIOME, new ResourceLocation("minecraft", "has_structure/village_plains"));
+	private static final TagKey<Biome> VILLAGE_PLAINS_TAG = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("minecraft", "has_structure/village_plains"));
 
 	public static void bootstrap(BootstapContext<StructureSet> context) {
 		HolderGetter<Structure> structures = context.lookup(Registries.STRUCTURE);
@@ -82,6 +82,6 @@ public class DMZStructureSets {
 	}
 
 	private static ResourceKey<StructureSet> createKey(String name) {
-		return ResourceKey.create(Registries.STRUCTURE_SET, new ResourceLocation(Reference.MOD_ID, name));
+		return ResourceKey.create(Registries.STRUCTURE_SET, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 }

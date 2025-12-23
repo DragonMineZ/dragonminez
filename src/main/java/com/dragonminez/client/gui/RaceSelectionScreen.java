@@ -27,17 +27,17 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class RaceSelectionScreen extends Screen {
 
-    private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
-    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
 
-    private static final ResourceLocation PANORAMA_HUMAN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/panorama");
-    private static final ResourceLocation PANORAMA_SAIYAN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/s_panorama");
-    private static final ResourceLocation PANORAMA_NAMEK = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/n_panorama");
-    private static final ResourceLocation PANORAMA_BIO = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-    private static final ResourceLocation PANORAMA_COLD = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/c_panorama");
-    private static final ResourceLocation PANORAMA_MAJIN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/buu_panorama");
+    private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
+    private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
+    private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
+    private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
+    private static final ResourceLocation PANORAMA_COLD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
+    private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
 
     private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
     private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
@@ -56,7 +56,7 @@ public class RaceSelectionScreen extends Screen {
     private TexturedTextButton selectButton;
 
     public RaceSelectionScreen(Character character, int oldGuiScale) {
-        super(Component.literal("Race Selection"));
+        super(Component.translatable("gui.dragonminez.character_creation.title"));
         this.character = character;
         this.availableRaces = Character.getRaceNames();
 		this.oldGuiScale = oldGuiScale;

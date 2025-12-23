@@ -28,7 +28,7 @@ public class RedRibbonSoldierEntity extends RedRibbonEntity{
 
     static {
         for (int i = 0; i < VARIANT_COUNT; i++) {
-            TEXTURES[i] = new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/redribbon_" + i + ".png");
+            TEXTURES[i] = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/redribbon_" + i + ".png");
         }
     }
 

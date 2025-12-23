@@ -17,8 +17,8 @@ import net.minecraft.resources.ResourceLocation;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
-    private static final ResourceLocation TEXTURE_BORDER = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kiball1_border.png");
-    private static final ResourceLocation TEXTURE_CORE = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/kiball1.png");
+    private static final ResourceLocation TEXTURE_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1_border.png");
+    private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1.png");
 
     private final KiBallPlaneModel model;
 

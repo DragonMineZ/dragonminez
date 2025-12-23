@@ -14,7 +14,7 @@ public class MainTags {
 		IS_OTHERWORLD = create("is_otherworld");
 
 		private static TagKey<Biome> create(String name) {
-			return TagKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, name));
+			return TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 		}
 	}
 
@@ -23,7 +23,7 @@ public class MainTags {
 		NAMEKSTONE_REPLACEABLES = create("namek_stone_ore_replaceables");
 
 		private static TagKey<Block> create(String name) {
-		    return TagKey.create(Registries.BLOCK, new ResourceLocation(Reference.MOD_ID, name));
+		    return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 		}
 	}
 
@@ -31,7 +31,7 @@ public class MainTags {
 		public static final TagKey<Item> NAMEK_ALOG = create("namek_alog"), NAMEK_SLOG = create("namek_slog");
 
 		private static TagKey<Item> create(String name) {
-		    return TagKey.create(Registries.ITEM, new ResourceLocation(Reference.MOD_ID, name));
+		    return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 		}
 	}
 }

@@ -56,7 +56,7 @@ public class EffectsCommand {
             double power = getEffectPower(effectName);
 
             if (power == 0.0) {
-                source.sendFailure(Component.literal("Unknown effect: " + effectName));
+                source.sendFailure(Component.translatable("command.dragonminez.effects.unknown_effect", effectName));
                 return;
             }
 
@@ -67,9 +67,7 @@ public class EffectsCommand {
             NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
 
             String durationText = duration == -1 ? "permanent" : duration + " seconds";
-            source.sendSuccess(() -> Component.literal("Given effect '" + effectName +
-                    "' (x" + (1.0 + power) + ") to " + target.getName().getString() +
-                    " for " + durationText), true);
+            source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.give_success", effectName, (1.0 + power), target.getName().getString(), durationText), true);
         });
 
         return 1;
@@ -80,11 +78,9 @@ public class EffectsCommand {
             if (data.getEffects().hasEffect(effectName)) {
                 data.getEffects().removeEffect(effectName);
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
-                source.sendSuccess(() -> Component.literal("Removed effect '" + effectName +
-                        "' from " + target.getName().getString()), true);
+                source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.remove_success", effectName, target.getName().getString()), true);
             } else {
-                source.sendFailure(Component.literal(target.getName().getString() +
-                        " doesn't have effect '" + effectName + "'"));
+                source.sendFailure(Component.translatable("command.dragonminez.effects.no_effect", target.getName().getString(), effectName));
             }
         });
 
@@ -95,8 +91,7 @@ public class EffectsCommand {
         StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
             data.getEffects().clear();
             NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
-            source.sendSuccess(() -> Component.literal("Cleared all effects from " +
-                    target.getName().getString()), true);
+            source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.clear_success", target.getName().getString()), true);
         });
 
         return 1;
@@ -107,17 +102,14 @@ public class EffectsCommand {
             var effects = data.getEffects().getEffectsSortedByDuration();
 
             if (effects.isEmpty()) {
-                source.sendSuccess(() -> Component.literal(target.getName().getString() +
-                        " has no active effects"), false);
+                source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.no_active_effects", target.getName().getString()), false);
             } else {
-                source.sendSuccess(() -> Component.literal("Active effects on " +
-                        target.getName().getString() + ":"), false);
+                source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.list_header", target.getName().getString()), false);
 
                 for (var effect : effects) {
                     String duration = effect.isPermanent() ? "permanent" :
                             (effect.getDuration() / 20) + "s";
-                    source.sendSuccess(() -> Component.literal("  - " + effect.getName() +
-                            " (x" + (1.0 + effect.getPower()) + ") - " + duration), false);
+                    source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.list_entry", effect.getName(), (1.0 + effect.getPower()), duration), false);
                 }
             }
         });

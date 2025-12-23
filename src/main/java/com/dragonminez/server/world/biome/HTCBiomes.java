@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.*;
 
 public class HTCBiomes {
-	public static final ResourceKey<Biome> TIME_CHAMBER = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "hyperbolic_time_chamber"));
+	public static final ResourceKey<Biome> TIME_CHAMBER = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "hyperbolic_time_chamber"));
 
 	public static void bootstrap(BootstapContext<Biome> context) {
 		context.register(TIME_CHAMBER, timeChamber(context));

@@ -66,6 +66,10 @@ repositories {
     maven {
         url = uri("https://cursemaven.com")
     }
+    maven {
+        name = "ModMaven"
+        url = uri("https://modmaven.dev")
+    }
     mavenCentral()
 }
 
@@ -139,8 +143,8 @@ dependencies {
     // Dev utility mods (not included while building)
     compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-common-api:$jei_version"))
     compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-forge-api:$jei_version"))
-    compileOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
     runtimeOnly(fg.deobf("mezz.jei:jei-$minecraft_version-forge:$jei_version"))
+    compileOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
     runtimeOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))

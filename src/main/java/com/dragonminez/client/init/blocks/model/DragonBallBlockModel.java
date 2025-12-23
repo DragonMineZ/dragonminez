@@ -9,19 +9,19 @@ public class DragonBallBlockModel extends GeoModel<DragonBallBlockEntity> {
 	@Override
 	public ResourceLocation getModelResource(DragonBallBlockEntity dballBlockEntity) {
 		String modelName = dballBlockEntity.isNamekian() ? "dballnamek" : "dball";
-		return new ResourceLocation(Reference.MOD_ID, "geo/block/" + modelName + ".geo.json");
+		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/block/" + modelName + ".geo.json");
 	}
 
 	@Override
 	public ResourceLocation getTextureResource(DragonBallBlockEntity dballBlockEntity) {
 		String prefix = dballBlockEntity.isNamekian() ? "dballnamekblock" : "dballblock";
 		int starNumber = dballBlockEntity.getBallType().getStars();
-		return new ResourceLocation(Reference.MOD_ID, "textures/block/custom/" + prefix + starNumber + ".png");
+		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/custom/" + prefix + starNumber + ".png");
 	}
 
 	@Override
 	public ResourceLocation getAnimationResource(DragonBallBlockEntity dballBlockEntity) {
 		String animName = dballBlockEntity.isNamekian() ? "dballnamek" : "dball";
-		return new ResourceLocation(Reference.MOD_ID, "animations/block/dball.animation.json");
+		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/block/dball.animation.json");
 	}
 }

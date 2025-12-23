@@ -76,7 +76,7 @@ public class PartyCommand {
 
             return 1;
         } catch (Exception e) {
-            inviter.sendSystemMessage(Component.literal("Error: " + e.getMessage())
+            inviter.sendSystemMessage(Component.translatable("command.dragonminez.party.error", e.getMessage())
                     .withStyle(ChatFormatting.RED));
             return 0;
         }

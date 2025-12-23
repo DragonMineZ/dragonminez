@@ -101,7 +101,7 @@ public class StoryCommand {
 
             Saga saga = SagaManager.getSaga(sagaId);
             if (saga == null) {
-                context.getSource().sendFailure(Component.literal("§c[Story] Saga '" + sagaId + "' no encontrada."));
+                context.getSource().sendFailure(Component.translatable("command.dragonminez.story.saga_not_found", sagaId));
                 return 0;
             }
 
@@ -111,14 +111,14 @@ public class StoryCommand {
                     .orElse(null);
 
             if (quest == null) {
-                context.getSource().sendFailure(Component.literal("§c[Story] Quest " + questId + " no encontrada en la saga '" + sagaId + "'."));
+                context.getSource().sendFailure(Component.translatable("command.dragonminez.story.quest_not_found", questId, sagaId));
                 return 0;
             }
 
             List<ServerPlayer> targetPlayers = getTargetPlayers(context, targetPlayer);
 
             if (targetPlayers.isEmpty()) {
-                context.getSource().sendFailure(Component.literal("§c[Story] No se encontraron jugadores válidos."));
+                context.getSource().sendFailure(Component.translatable("command.dragonminez.story.no_valid_players"));
                 return 0;
             }
 
@@ -134,7 +134,7 @@ public class StoryCommand {
 
                         questData.setQuestObjectiveProgress(saga.getId(), quest.getId(), i, required);
 
-                        player.sendSystemMessage(Component.literal("§7[DEBUG] Objetivo " + i + " completado: " + required + "/" + required));
+                        player.sendSystemMessage(Component.translatable("command.dragonminez.story.objective_completed", i, required, required));
                     }
 
                     questData.completeQuest(saga.getId(), quest.getId());
@@ -144,12 +144,12 @@ public class StoryCommand {
                     questProgress.setCompleted(true);
 
                     boolean isCompleted = questData.isQuestCompleted(saga.getId(), quest.getId());
-                    player.sendSystemMessage(Component.literal("§7[DEBUG] Quest completada en NBT: " + isCompleted));
+                    player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed_nbt", isCompleted));
 
                     NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 
-                    player.sendSystemMessage(Component.literal("§a[Story] §7Quest completada: §e" + quest.getTitle()));
-                    player.sendSystemMessage(Component.literal("§7Objetivos completados: §e" + objectives.size()));
+                    player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed", quest.getTitle()));
+                    player.sendSystemMessage(Component.translatable("command.dragonminez.story.objectives_completed", objectives.size()));
                 });
                 successCount++;
             }
@@ -157,14 +157,14 @@ public class StoryCommand {
             final int finalCount = successCount;
             final int totalPlayers = targetPlayers.size();
             context.getSource().sendSuccess(() ->
-                    Component.literal("§7Saga: §b" + saga.getName()), false);
+                    Component.translatable("command.dragonminez.story.saga_info", saga.getName()), false);
             context.getSource().sendSuccess(() ->
-                    Component.literal("§7Jugadores afectados: §e" + finalCount + "/" + totalPlayers), false);
+                    Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
 
             return successCount;
 
         } catch (Exception e) {
-            context.getSource().sendFailure(Component.literal("§c[Story] Error: " + e.getMessage()));
+            context.getSource().sendFailure(Component.translatable("command.dragonminez.story.error", e.getMessage()));
             return 0;
         }
     }
@@ -176,14 +176,14 @@ public class StoryCommand {
 
             Saga saga = SagaManager.getSaga(sagaId);
             if (saga == null) {
-                context.getSource().sendFailure(Component.literal("§c[Story] Saga '" + sagaId + "' no encontrada."));
+                context.getSource().sendFailure(Component.translatable("command.dragonminez.story.saga_not_found", sagaId));
                 return 0;
             }
 
             List<ServerPlayer> targetPlayers = getTargetPlayers(context, targetPlayer);
 
             if (targetPlayers.isEmpty()) {
-                context.getSource().sendFailure(Component.literal("§c[Story] No se encontraron jugadores válidos."));
+                context.getSource().sendFailure(Component.translatable("command.dragonminez.story.no_valid_players"));
                 return 0;
             }
 
@@ -215,14 +215,14 @@ public class StoryCommand {
             final int finalCount = successCount;
             final int totalPlayers = targetPlayers.size();
             context.getSource().sendSuccess(() ->
-                    Component.literal("§a[Story] §7Quest removida: §e" + sagaId + " - Quest " + questId), false);
+                    Component.translatable("command.dragonminez.story.quest_removed", sagaId, questId), false);
             context.getSource().sendSuccess(() ->
-                    Component.literal("§7Jugadores afectados: §e" + finalCount + "/" + totalPlayers), false);
+                    Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
 
             return successCount;
 
         } catch (Exception e) {
-            context.getSource().sendFailure(Component.literal("§c[Story] Error: " + e.getMessage()));
+            context.getSource().sendFailure(Component.translatable("command.dragonminez.story.error", e.getMessage()));
             return 0;
         }
     }
@@ -235,7 +235,7 @@ public class StoryCommand {
                 QuestData questData = stats.getQuestData();
 
                 context.getSource().sendSuccess(() ->
-                        Component.literal("§a§l[Story Progress] §7" + player.getName().getString()), false);
+                        Component.translatable("command.dragonminez.story.progress_header", player.getName().getString()), false);
 
                 context.getSource().sendSuccess(() ->
                         Component.literal("§7§m                                    "), false);
@@ -245,18 +245,18 @@ public class StoryCommand {
                     boolean unlocked = sagaProgress.isUnlocked();
 
                     context.getSource().sendSuccess(() ->
-                            Component.literal("§e" + saga.getName() + " §7(" + sagaId + ")"), false);
+                            Component.translatable("command.dragonminez.story.saga_entry", saga.getName(), sagaId), false);
 
                     if (unlocked) {
                         for (Quest quest : saga.getQuests()) {
                             boolean completed = sagaProgress.isQuestCompleted(quest.getId());
                             String status = completed ? "§a✓" : "§c✗";
                             context.getSource().sendSuccess(() ->
-                                    Component.literal("  " + status + " §7Quest " + quest.getId() + ": §f" + quest.getTitle()), false);
+                                    Component.translatable("command.dragonminez.story.quest_entry", status, quest.getId(), quest.getTitle()), false);
                         }
                     } else {
                         context.getSource().sendSuccess(() ->
-                                Component.literal("  §8[Bloqueada]"), false);
+                                Component.translatable("command.dragonminez.story.saga_locked"), false);
                     }
                 });
             });
@@ -264,7 +264,7 @@ public class StoryCommand {
             return 1;
 
         } catch (Exception e) {
-            context.getSource().sendFailure(Component.literal("§c[Story] Error: " + e.getMessage()));
+            context.getSource().sendFailure(Component.translatable("command.dragonminez.story.error", e.getMessage()));
             return 0;
         }
     }

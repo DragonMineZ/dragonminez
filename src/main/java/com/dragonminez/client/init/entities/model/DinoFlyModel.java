@@ -14,17 +14,17 @@ public class DinoFlyModel extends GeoModel<DinoFlyEntity> {
 
     @Override
     public ResourceLocation getModelResource(DinoFlyEntity animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/animal/dino3.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/animal/dino3.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(DinoFlyEntity animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "textures/entity/animal/dino3.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/animal/dino3.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(DinoFlyEntity animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/animal/dino3.animation.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/animal/dino3.animation.json");
     }
 
     @Override

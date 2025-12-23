@@ -38,7 +38,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							MainItems.DBALL4_BLOCK_ITEM.get(), // Ítem de muestra
 							Component.translatable("advancements.dragonminez.root.title"), // Título
 							Component.translatable("advancements.dragonminez.root.description"), // Descripción
-							new ResourceLocation(Reference.MOD_ID, "textures/block/rocky_stone.png"), // Textura de fondo
+							ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/rocky_stone.png"), // Textura de fondo
 							FrameType.TASK, true, true, false
 					) // Tipo de marco, si se muestra en la esquina superior derecha, si se muestra en el chat y si se oculta en los Logros ("Logro Oculto/Secreto")
 					.addCriterion("first_spawn_in_world", // Nombre del criterio

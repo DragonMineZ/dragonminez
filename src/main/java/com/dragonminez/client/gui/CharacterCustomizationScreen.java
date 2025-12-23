@@ -33,18 +33,18 @@ import java.util.Locale;
 @OnlyIn(Dist.CLIENT)
 public class CharacterCustomizationScreen extends Screen {
 
-    private static final ResourceLocation BUTTONS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
 
-    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
 
-    private static final ResourceLocation PANORAMA_HUMAN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/panorama");
-    private static final ResourceLocation PANORAMA_SAIYAN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/s_panorama");
-    private static final ResourceLocation PANORAMA_NAMEK = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/n_panorama");
-    private static final ResourceLocation PANORAMA_BIO = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-    private static final ResourceLocation PANORAMA_COLD = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/c_panorama");
-    private static final ResourceLocation PANORAMA_MAJIN = new ResourceLocation(Reference.MOD_ID, "textures/gui/background/buu_panorama");
+    private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
+    private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
+    private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
+    private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
+    private static final ResourceLocation PANORAMA_COLD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
+    private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
 
     private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
     private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
@@ -64,7 +64,7 @@ public class CharacterCustomizationScreen extends Screen {
     private String currentColorField = "";
 
     public CharacterCustomizationScreen(Screen previousScreen, Character character) {
-        super(Component.literal("Character Customization"));
+        super(Component.translatable("gui.dragonminez.customization.title"));
         this.previousScreen = previousScreen;
         this.character = character;
 
@@ -316,7 +316,7 @@ public class CharacterCustomizationScreen extends Screen {
                 .size(sliderWidth, 10)
                 .range(0, 360)
                 .value(0)
-                .message(Component.literal("Hue"))
+                .message(Component.translatable("gui.dragonminez.customization.hue"))
                 .onValueChange(val -> updateColorFromSliders())
                 .build();
 
@@ -325,7 +325,7 @@ public class CharacterCustomizationScreen extends Screen {
                 .size(sliderWidth, 10)
                 .range(100, 0)
                 .value(100)
-                .message(Component.literal("Saturation"))
+                .message(Component.translatable("gui.dragonminez.customization.saturation"))
                 .onValueChange(val -> updateColorFromSliders())
                 .build();
 
@@ -334,7 +334,7 @@ public class CharacterCustomizationScreen extends Screen {
                 .size(sliderWidth, 10)
                 .range(100, 0)
                 .value(100)
-                .message(Component.literal("Value"))
+                .message(Component.translatable("gui.dragonminez.customization.value"))
                 .onValueChange(val -> updateColorFromSliders())
                 .build();
 

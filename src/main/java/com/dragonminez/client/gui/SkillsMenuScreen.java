@@ -32,11 +32,11 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class SkillsMenuScreen extends Screen {
 
-    private static final ResourceLocation MENU_BIG = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
-    private static final ResourceLocation MENU_SMALL = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menusmall.png");
-    private static final ResourceLocation SCREEN_BUTTONS = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/menubuttons.png");
 
     private static final int SKILL_ITEM_HEIGHT = 20;

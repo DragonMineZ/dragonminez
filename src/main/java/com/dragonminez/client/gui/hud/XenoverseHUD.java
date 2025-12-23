@@ -17,10 +17,10 @@ import java.util.List;
 import java.util.Locale;
 
 public class XenoverseHUD {
-	private static final ResourceLocation efectos = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/efectosperma.png"),
-			efectostemp = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/efectostemp.png"),
-			hud = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png"),
-			racialIcons = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
+	private static final ResourceLocation efectos = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/efectosperma.png"),
+			efectostemp = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/efectostemp.png"),
+			hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png"),
+			racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;

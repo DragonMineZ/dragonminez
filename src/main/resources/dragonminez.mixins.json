@@ -10,7 +10,12 @@
   "client": [
     "client.PlayerGeoAnimatableMixin",
     "client.EntityRenderDispatcherMixin",
-    "client.HeldItemRendererMixin"
+    "client.HeldItemRendererMixin",
+    "client.PrimaryLevelDataMixin",
+    "client.SoundManagerMixin",
+    "client.WorldOpenFlowsMixin",
+    "client.WorldSelectionListMixin",
+    "client.TitleScreenMixin"
   ],
   "server": [],
   "injectors": {

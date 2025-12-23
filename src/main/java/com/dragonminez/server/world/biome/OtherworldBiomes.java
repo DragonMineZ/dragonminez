@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.*;
 
 public class OtherworldBiomes {
-	public static final ResourceKey<Biome> OTHERWORLD = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "other_world"));
+	public static final ResourceKey<Biome> OTHERWORLD = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "other_world"));
 
 	public static void bootstrap(BootstapContext<Biome> context) {
 		context.register(OTHERWORLD, otherworld(context));

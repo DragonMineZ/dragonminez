@@ -3,6 +3,9 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.block.custom.DragonBallBlock;
 import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
+import com.dragonminez.common.init.block.entity.EnergyCableBlockEntity;
+import com.dragonminez.common.init.block.entity.FuelGeneratorBlockEntity;
+import com.dragonminez.common.init.block.entity.KikonoStationBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -34,6 +37,24 @@ public final class MainBlockEntities {
 							MainBlocks.DBALL5_NAMEK_BLOCK.get(),
 							MainBlocks.DBALL6_NAMEK_BLOCK.get(),
 							MainBlocks.DBALL7_NAMEK_BLOCK.get()
+					).build(null));
+
+	public static final RegistryObject<BlockEntityType<KikonoStationBlockEntity>> KIKONO_STATION_BE =
+			BLOCK_ENTITY_TYPES_REGISTER.register("kikono_station", () ->
+					BlockEntityType.Builder.of(KikonoStationBlockEntity::new,
+							MainBlocks.KIKONO_STATION.get()
+					).build(null));
+
+	public static final RegistryObject<BlockEntityType<FuelGeneratorBlockEntity>> FUEL_GENERATOR_BE =
+			BLOCK_ENTITY_TYPES_REGISTER.register("fuel_generator", () ->
+					BlockEntityType.Builder.of(FuelGeneratorBlockEntity::new,
+							MainBlocks.FUEL_GENERATOR.get()
+					).build(null));
+
+	public static final RegistryObject<BlockEntityType<EnergyCableBlockEntity>> ENERGY_CABLE_BE =
+			BLOCK_ENTITY_TYPES_REGISTER.register("energy_cable", () ->
+					BlockEntityType.Builder.of(EnergyCableBlockEntity::new,
+							MainBlocks.ENERGY_CABLE.get()
 					).build(null));
 
 	public static void register(IEventBus bus) {

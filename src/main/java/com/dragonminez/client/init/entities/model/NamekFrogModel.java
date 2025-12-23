@@ -16,17 +16,17 @@ public class NamekFrogModel<T extends NamekFrogEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/animal/namekfrog.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/animal/namekfrog.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "textures/entity/animal/namekfrog_0.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/animal/namekfrog_0.png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/animal/namekfrog.animation.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/animal/namekfrog.animation.json");
     }
 
     @Override

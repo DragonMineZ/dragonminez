@@ -16,19 +16,19 @@ public class RedRibbonModel<T extends RedRibbonEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getModelResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/enemies/" + name + ".geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/enemies/" + name + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "textures/entity/enemies/" + name + ".png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/enemies/" + name + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/enemies/" + name + ".animation.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/enemies/" + name + ".animation.json");
     }
 
     @Override

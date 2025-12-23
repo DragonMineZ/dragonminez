@@ -15,10 +15,10 @@ import software.bernie.geckolib.model.data.EntityModelData;
 
 public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
-    private static final ResourceLocation BASE_DEFAULT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/dmzbase.geo.json");
-    private static final ResourceLocation BASE_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/dmzbaseslim.geo.json");
-    private static final ResourceLocation MAJIN_FAT = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/majinfat.geo.json");
-    private static final ResourceLocation MAJIN_SLIM = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/majinslim.geo.json");
+    private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/dmzbase.geo.json");
+    private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/dmzbaseslim.geo.json");
+    private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majinfat.geo.json");
+    private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majinslim.geo.json");
 
     private final ResourceLocation textureLocation;
     private final ResourceLocation animationLocation;
@@ -29,8 +29,8 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         this.raceName = raceName.toLowerCase();
         this.customModel = customModel;
 
-        this.textureLocation = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/krillin.png");
-        this.animationLocation = new ResourceLocation(Reference.MOD_ID, "animations/entity/races/base.animation.json");
+        this.textureLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/krillin.png");
+        this.animationLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/base.animation.json");
     }
 
     public PlayerDMZModel() {
@@ -41,7 +41,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     public ResourceLocation getModelResource(T player) {
 
         if (this.customModel != null && !this.customModel.isEmpty()) {
-            return new ResourceLocation(Reference.MOD_ID, "geo/entity/races/" + this.customModel);
+            return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.customModel);
         }
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
@@ -76,7 +76,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                         yield MAJIN_FAT;
 
                     }
-                    default -> new ResourceLocation(Reference.MOD_ID, "geo/entity/races/" + this.raceName + ".geo.json");
+                    default -> ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.raceName + ".geo.json");
                 };
             }
 

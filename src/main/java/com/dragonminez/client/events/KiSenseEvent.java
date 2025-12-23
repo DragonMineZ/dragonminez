@@ -24,7 +24,7 @@ import java.util.Locale;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class KiSenseEvent {
-	private static final ResourceLocation HUD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
+	private static final ResourceLocation HUD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	@SubscribeEvent

@@ -23,7 +23,7 @@ public class NetworkHandler {
 
     public static void register() {
         SimpleChannel net = NetworkRegistry.ChannelBuilder
-                .named(new ResourceLocation(Reference.MOD_ID, "network"))
+                .named(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "network"))
                 .networkProtocolVersion(() -> "1.0")
                 .clientAcceptedVersions(s -> true)
                 .serverAcceptedVersions(s -> true)

@@ -18,7 +18,7 @@ import javax.naming.Name;
 
 public class NamekFrogRenderer<T extends NamekFrogEntity> extends GeoEntityRenderer<T> {
 
-    private static final ResourceLocation GINYU_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/animal/namekfrog_0.png");
+    private static final ResourceLocation GINYU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/animal/namekfrog_0.png");
 
     public NamekFrogRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new NamekFrogModel<>());

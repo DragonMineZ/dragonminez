@@ -13,8 +13,8 @@ import net.minecraft.world.level.dimension.DimensionType;
 import java.util.OptionalLong;
 
 public class OtherworldDimension {
-	public static final ResourceKey<Level> OTHERWORLD_KEY = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(Reference.MOD_ID, "otherworld"));
-	public static final ResourceKey<DimensionType> OTHERWORLD_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE, new ResourceLocation(Reference.MOD_ID, "otherworld"));
+	public static final ResourceKey<Level> OTHERWORLD_KEY = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "otherworld"));
+	public static final ResourceKey<DimensionType> OTHERWORLD_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "otherworld"));
 
 	public static void bootstrap(BootstapContext<DimensionType> context) {
 		context.register(OTHERWORLD_TYPE, new DimensionType(

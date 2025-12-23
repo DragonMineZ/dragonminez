@@ -25,8 +25,8 @@ import net.minecraft.world.level.levelgen.synth.NormalNoise;
 import java.util.List;
 
 public class NamekGeneration {
-	public static final ResourceKey<LevelStem> NAMEK_STEM = ResourceKey.create(Registries.LEVEL_STEM, new ResourceLocation(Reference.MOD_ID, "namek"));
-	public static final ResourceKey<NoiseGeneratorSettings> NAMEK_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, new ResourceLocation(Reference.MOD_ID, "namek"));
+	public static final ResourceKey<LevelStem> NAMEK_STEM = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek"));
+	public static final ResourceKey<NoiseGeneratorSettings> NAMEK_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek"));
 
 	public static void bootstrap(BootstapContext<LevelStem> context) {
 		HolderGetter<Biome> biomeRegistry = context.lookup(Registries.BIOME);

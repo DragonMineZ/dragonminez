@@ -16,9 +16,9 @@ import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import org.joml.Matrix4f;
 
 public class CustomSpecialEffects extends DimensionSpecialEffects {
-	public static final ResourceLocation NAMEK_EFFECTS = new ResourceLocation(Reference.MOD_ID, "namek_effects");
-	public static final ResourceLocation OTHERWORLD_EFFECTS = new ResourceLocation(Reference.MOD_ID, "otherworld_effects");
-	public static final ResourceLocation HTC_EFFECT = new ResourceLocation(Reference.MOD_ID, "htc_effects");
+	public static final ResourceLocation NAMEK_EFFECTS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek_effects");
+	public static final ResourceLocation OTHERWORLD_EFFECTS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "otherworld_effects");
+	public static final ResourceLocation HTC_EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "htc_effects");
 	final DMZCloudsRenderer cloudRenderer;
 
 	public CustomSpecialEffects(float cloudLevel, boolean hasGround, SkyType skyType, boolean forceBrightLightMap, boolean constantAmbientLight) {

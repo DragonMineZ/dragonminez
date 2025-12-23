@@ -46,6 +46,6 @@ public class DMZPools {
 	}
 
 	private static ResourceKey<StructureTemplatePool> createKey(String name) {
-		return ResourceKey.create(Registries.TEMPLATE_POOL, new ResourceLocation(Reference.MOD_ID, name));
+		return ResourceKey.create(Registries.TEMPLATE_POOL, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 }

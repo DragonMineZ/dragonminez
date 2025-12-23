@@ -21,8 +21,8 @@ import net.minecraft.world.level.levelgen.*;
 import java.util.List;
 
 public class HTCGeneration {
-	public static final ResourceKey<LevelStem> HTC_STEM = ResourceKey.create(Registries.LEVEL_STEM, new ResourceLocation(Reference.MOD_ID, "time_chamber"));
-	public static final ResourceKey<NoiseGeneratorSettings> HTC_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, new ResourceLocation(Reference.MOD_ID, "time_chamber"));
+	public static final ResourceKey<LevelStem> HTC_STEM = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "time_chamber"));
+	public static final ResourceKey<NoiseGeneratorSettings> HTC_NOISE_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "time_chamber"));
 
 	public static void bootstrap(BootstapContext<LevelStem> context) {
 		HolderGetter<Biome> biomeRegistry = context.lookup(Registries.BIOME);

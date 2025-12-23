@@ -15,8 +15,8 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<T> {
 
-    private static final ResourceLocation NAPPA_NORMAL = new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/saga_nappa.png");
-    private static final ResourceLocation NAPPA_DAMAGED = new ResourceLocation(Reference.MOD_ID, "textures/entity/sagas/saga_nappa2.png");
+    private static final ResourceLocation NAPPA_NORMAL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa.png");
+    private static final ResourceLocation NAPPA_DAMAGED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa2.png");
 
     public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSagaModel<>());

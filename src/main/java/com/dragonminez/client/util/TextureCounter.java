@@ -89,7 +89,7 @@ public class TextureCounter {
         if (isLayeredRace) {
             for (int i = 0; i <= 100; i++) {
                 String basePath = "textures/entity/races/" + race + "/bodytype_" + i + "_layer1.png";
-                ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath);
+                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath);
 
                 if (resourceManager.getResource(location).isPresent()) {
                     count++;
@@ -104,7 +104,7 @@ public class TextureCounter {
 
             String basePath = getBasePathForBodyType(race, gender);
             for (int i = startIndex; i <= 100; i++) {
-                ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + ".png");
+                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + ".png");
 
                 if (resourceManager.getResource(location).isPresent()) {
                     count++;
@@ -126,7 +126,7 @@ public class TextureCounter {
 
         String basePath = getBasePathForRace(race, type);
         for (int i = 1; i <= 100; i++) {
-            ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + ".png");
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + ".png");
 
             if (resourceManager.getResource(location).isPresent()) {
                 count = i;
@@ -149,7 +149,7 @@ public class TextureCounter {
         String suffix = isEyes ? "_0.png" : ".png";
 
         for (int i = 0; i <= 100; i++) {
-            ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + suffix);
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + suffix);
 
             if (resourceManager.getResource(location).isPresent()) {
                 count++;
@@ -168,7 +168,7 @@ public class TextureCounter {
         String basePath = "textures/entity/races/tattoos/tattoo_";
 
         for (int i = 0; i <= 100; i++) {
-            ResourceLocation location = new ResourceLocation(Reference.MOD_ID, basePath + i + ".png");
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + ".png");
 
             if (resourceManager.getResource(location).isPresent()) {
                 count++;

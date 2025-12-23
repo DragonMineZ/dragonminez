@@ -52,15 +52,14 @@ public class SkillsCommand {
 
 	private static int setSkill(CommandSourceStack source, ServerPlayer target, String skillName, int level) {
 		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(skillName.toLowerCase())) {
-			source.sendFailure(Component.literal("Unknown skill: " + skillName));
+			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
 			data.getSkills().setSkillLevel(skillName, level);
 			NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
-			source.sendSuccess(() -> Component.literal("Set skill '" + skillName +
-					"' to level " + level + " for " + target.getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_success", skillName, level, target.getName().getString()), true);
 		});
 
 		return 1;
@@ -70,7 +69,7 @@ public class SkillsCommand {
 		String lowerName = skillName.toLowerCase();
 
 		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(lowerName)) {
-			source.sendFailure(Component.literal("§c[DMZ] Unknown skill: " + skillName));
+			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
 
@@ -79,8 +78,7 @@ public class SkillsCommand {
 			int currentLevel = data.getSkills().getSkillLevel(lowerName);
 
 			if (!hadSkill || currentLevel == 0) {
-				source.sendFailure(Component.literal("§c[DMZ] " + target.getName().getString() +
-						" doesn't have skill '" + skillName + "' or it's already at level 0"));
+				source.sendFailure(Component.translatable("command.dragonminez.skills.no_skill", target.getName().getString(), skillName));
 				return;
 			}
 
@@ -93,11 +91,9 @@ public class SkillsCommand {
 											lowerName.equals("legendaryforms");
 
 			if (isTransformationSkill) {
-				source.sendSuccess(() -> Component.literal("§a[DMZ] Reset transformation skill '" + skillName +
-						"' to level 0 for " + target.getName().getString()), true);
+				source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.reset_success", skillName, target.getName().getString()), true);
 			} else {
-				source.sendSuccess(() -> Component.literal("§a[DMZ] Removed skill '" + skillName +
-						"' from " + target.getName().getString()), true);
+				source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_success", skillName, target.getName().getString()), true);
 			}
 		});
 
@@ -109,26 +105,22 @@ public class SkillsCommand {
 			var skills = data.getSkills().getAllSkills();
 
 			if (skills.isEmpty()) {
-				source.sendSuccess(() -> Component.literal(target.getName().getString() +
-						" has no skills"), false);
+				source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.no_skills", target.getName().getString()), false);
 				return;
 			}
 
-			source.sendSuccess(() -> Component.literal("Skills for " +
-					target.getName().getString() + ":"), false);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.list_header", target.getName().getString()), false);
 
 			boolean hasSkills = false;
 			for (var entry : skills.entrySet()) {
 				if (entry.getValue().getLevel() > 0) {
 					hasSkills = true;
-					source.sendSuccess(() -> Component.literal("  - " + entry.getKey() +
-							": " + entry.getValue().getLevel()), false);
+					source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.list_entry", entry.getKey(), entry.getValue().getLevel()), false);
 				}
 			}
 
 			if (!hasSkills) {
-				source.sendSuccess(() -> Component.literal(target.getName().getString() +
-						" has no learned skills"), false);
+				source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.no_learned_skills", target.getName().getString()), false);
 			}
 		});
 
