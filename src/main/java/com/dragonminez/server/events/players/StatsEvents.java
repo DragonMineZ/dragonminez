@@ -1,6 +1,7 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
 
-    private static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
+    public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -31,6 +32,10 @@ public class StatsEvents {
             if (!data.getStatus().hasCreatedCharacter()) {
                 return;
             }
+
+			if (ForgeClientEvents.hasCreatedCharacterCache != data.getStatus().hasCreatedCharacter()) {
+				ForgeClientEvents.hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+			}
 
             AttributeInstance dmzHealthAttr = player.getAttribute(MainAttributes.DMZ_HEALTH.get());
             AttributeInstance maxHealthAttr = player.getAttribute(Attributes.MAX_HEALTH);

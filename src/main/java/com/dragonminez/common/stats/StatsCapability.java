@@ -111,6 +111,7 @@ public class StatsCapability {
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         StatsProvider.get(INSTANCE, event.getEntity()).ifPresent(data -> {
+			event.getEntity().setHealth(data.getMaxHealth());
             data.getResources().setCurrentEnergy(data.getMaxEnergy());
             data.getResources().setCurrentStamina(data.getMaxStamina());
             data.getStatus().setAlive(true);

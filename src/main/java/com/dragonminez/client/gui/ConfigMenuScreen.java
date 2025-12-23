@@ -76,8 +76,8 @@ public class ConfigMenuScreen extends Screen {
             v -> hudConfig.setXenoverseHudPosY(v.intValue())));
 
         configOptions.add(new ConfigOption("config.xenoverseHudScale",
-            ConfigType.FLOAT, hudConfig.getXenoverseHudScale(), 0.5f, 3.0f,
-            v -> hudConfig.setXenoverseHudScale(v)));
+            ConfigType.FLOAT, hudConfig.getHudScale(), 0.5f, 3.0f,
+            v -> hudConfig.setHudScale(v)));
 
         configOptions.add(new ConfigOption("config.advancedDescription",
             ConfigType.BOOLEAN, hudConfig.isAdvancedDescription() ? 1 : 0, 0, 1,

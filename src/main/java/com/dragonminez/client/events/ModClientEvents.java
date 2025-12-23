@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.hud.AlternativeHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
@@ -33,7 +34,8 @@ public class ModClientEvents {
 
 	@SubscribeEvent
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent e) {
-		e.registerAboveAll("playerhud", XenoverseHUD.HUD_XENOVERSE);
+		e.registerAboveAll("xenoversehud", XenoverseHUD.HUD_XENOVERSE);
+		e.registerAboveAll("alternativehud", AlternativeHUD.HUD_ALTERNATIVE);
 	}
 
     @SubscribeEvent

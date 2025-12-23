@@ -22,6 +22,10 @@ public class Effects {
         effectMap.remove(name.toLowerCase());
     }
 
+	public void removeAllEffects() {
+		effectMap.clear();
+	}
+
     public boolean hasEffect(String name) {
         return effectMap.containsKey(name.toLowerCase());
     }

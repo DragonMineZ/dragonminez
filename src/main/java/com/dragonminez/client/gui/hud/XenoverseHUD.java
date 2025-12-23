@@ -3,10 +3,8 @@ package com.dragonminez.client.gui.hud;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
-import com.eliotlash.mclib.math.functions.limit.Min;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,6 +32,8 @@ public class XenoverseHUD {
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
 		if (ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
+
+		HUDManager.setHudGuiScale();
 
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			Character character = data.getCharacter();
@@ -89,8 +89,10 @@ public class XenoverseHUD {
 				RenderSystem.setShaderTexture(0, hud);
 
 				guiGraphics.pose().pushPose();
-				float scale = ConfigManager.getUserConfig().getHud().getXenoverseHudScale();
-				guiGraphics.pose().scale(scale, scale, 1.0f);
+				float configScale = ConfigManager.getUserConfig().getHud().getHudScale();
+				float correctionFactor = HUDManager.getScaleFactor();
+				float finalScale = configScale * correctionFactor;
+				guiGraphics.pose().scale(finalScale, finalScale, 1.0f);
 
 				int initialX = ConfigManager.getUserConfig().getHud().getXenoverseHudPosX();
 				int initialY = ConfigManager.getUserConfig().getHud().getXenoverseHudPosY();

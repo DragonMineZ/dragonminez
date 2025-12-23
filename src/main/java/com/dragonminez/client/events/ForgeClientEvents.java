@@ -19,18 +19,24 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
+	public static boolean hasCreatedCharacterCache = false;
 
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
-					if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
-						event.setCanceled(true);
-					}
-				}
-			});
+			if (hasCreatedCharacterCache) {
+				if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
+					event.setCanceled(true);}
+			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+		if (Minecraft.getInstance().player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+			hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+		});
 	}
 
     @SubscribeEvent

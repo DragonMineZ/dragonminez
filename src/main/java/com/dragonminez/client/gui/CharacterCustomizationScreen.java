@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -593,6 +594,7 @@ public class CharacterCustomizationScreen extends Screen {
     private void finish() {
         if (this.minecraft != null) {
             NetworkHandler.sendToServer(new CreateCharacterC2S(character));
+			ForgeClientEvents.hasCreatedCharacterCache = true;
             this.minecraft.setScreen(null);
         }
     }

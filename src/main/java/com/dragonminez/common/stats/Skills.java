@@ -82,6 +82,11 @@ public class Skills {
         }
     }
 
+	public void removeAllSkills() {
+		skillMap.clear();
+		registerDefaultSkills();
+	}
+
     public void addSkillLevel(String name, int amount) {
         Skill skill = skillMap.get(name.toLowerCase());
         if (skill != null) {

@@ -1,10 +1,13 @@
 package com.dragonminez.common.commands;
 
+import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.players.StatsEvents;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.minecraft.commands.CommandSourceStack;
@@ -12,6 +15,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public class StatsCommand {
 
@@ -215,7 +219,15 @@ public class StatsCommand {
             stats.setKiPower(5);
             stats.setEnergy(5);
             data.getStatus().setCreatedCharacter(false);
+			data.getResources().setTrainingPoints(0);
+			data.getSkills().removeAllSkills();
+			data.getEffects().removeAllEffects();
 
+			player.setHealth(20.0F);
+			player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0D);
+			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
+			player.setHealth(20.0F);
+			ForgeClientEvents.hasCreatedCharacterCache = false;
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
         });
 
