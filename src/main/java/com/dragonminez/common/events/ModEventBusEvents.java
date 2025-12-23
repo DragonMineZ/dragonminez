@@ -53,6 +53,7 @@ public class ModEventBusEvents {
         event.put(MainEntities.NAMEK_FROG_GINYU.get(), NamekFrogGinyuEntity.createAttributes());
         event.put(MainEntities.NAMEK_TRADER.get(), NamekTraderEntity.createAttributes().build());
         event.put(MainEntities.NAMEK_WARRIOR.get(), NamekWarriorEntity.createAttributes().build());
+        event.put(MainEntities.SABERTOOTH.get(), SabertoothEntity.createAttributes().build());
 
         event.put(MainEntities.BANDIT.get(), BanditEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT1.get(), RobotEntity.createAttributes().build());

@@ -75,6 +75,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(Dino1Entity::new, MobCategory.CREATURE)
                             .sized(1.0f, 1.0f)
                             .build(new ResourceLocation(Reference.MOD_ID, "dinokid").toString()));
+    public static final RegistryObject<EntityType<SabertoothEntity>> SABERTOOTH =
+            ENTITY_TYPES.register("sabertooth",
+                    () -> EntityType.Builder.of(SabertoothEntity::new, MobCategory.CREATURE)
+                            .sized(1.8f, 1.2f)
+                            .build(new ResourceLocation(Reference.MOD_ID, "sabertooth").toString()));
     public static final RegistryObject<EntityType<NamekFrogEntity>> NAMEK_FROG =
             ENTITY_TYPES.register("namek_frog",
                     () -> EntityType.Builder.of(NamekFrogEntity::new, MobCategory.CREATURE)
