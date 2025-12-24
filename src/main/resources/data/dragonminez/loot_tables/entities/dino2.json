@@ -4,7 +4,45 @@
     {
       "rolls": 1,
       "bonus_rolls": 0,
-      "entries": []
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "dragonminez:dino_tail_raw",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 0,
+                "max": 1
+              },
+              "add": false
+            },
+            {
+              "function": "minecraft:furnace_smelt",
+              "conditions": [
+                {
+                  "condition": "minecraft:entity_properties",
+                  "entity": "this",
+                  "predicate": {
+                    "flags": {
+                      "is_on_fire": true
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "function": "minecraft:looting_enchant",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 0,
+                "max": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "rolls": 1,
@@ -12,7 +50,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "dragonminez:frog_legs_raw",
+          "name": "dragonminez:raw_dino_meat",
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -50,5 +88,5 @@
       ]
     }
   ],
-  "random_sequence": "dragonminez:entities/pink_frog"
+  "random_sequence": "dragonminez:entities/dino2"
 }
