@@ -15,7 +15,7 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 public class DMZPools {
 	public static final ResourceKey<StructureTemplatePool> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
 
 	public static void bootstrap(BootstapContext<StructureTemplatePool> context) {
 		Holder<StructureTemplatePool> empty = context.lookup(Registries.TEMPLATE_POOL).getOrThrow(Pools.EMPTY);
@@ -41,6 +41,12 @@ public class DMZPools {
 		context.register(ELDER_GURU, new StructureTemplatePool(
 				empty,
 				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:elder_guru"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(KAMILOOKOUT, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:kamilookout"), 1)),
 				StructureTemplatePool.Projection.RIGID
 		));
 	}

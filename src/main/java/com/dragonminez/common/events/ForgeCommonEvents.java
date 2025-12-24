@@ -19,11 +19,14 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeCommonEvents {
 	private static final List<String> ALLOWED_USERNAMES = Arrays.asList(
+			// Staff
 			"Dev", "ImYuseix", "ezShokkoh", "Toji71", "KyoSleep", "InmortalPx",
 
+			// Patreons
 			"iLalox", "Athrizel", "InmoYT",
 
-			"grillo78", "Ducco123", "EsePibe01"
+			// Beta Testers
+			"grillo78", "Ducco123", "EsePibe01", "ImmortalHemp", "werff", "Lucasispedroche", "LemmeInPeace", "RemiBuster17", "Pokimons123", "Billufi"
 	);
 
 	@SubscribeEvent
