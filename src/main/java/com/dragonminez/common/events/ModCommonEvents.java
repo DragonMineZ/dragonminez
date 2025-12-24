@@ -3,6 +3,7 @@ package com.dragonminez.common.events;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.entities.FlyingNimbusEntity;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
@@ -62,6 +63,7 @@ public class ModCommonEvents {
         event.put(MainEntities.RED_RIBBON_ROBOT3.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierEntity.createAttributes().build());
         event.put(MainEntities.SPACE_POD.get(), SpacePodEntity.createAttributes());
+        event.put(MainEntities.FLYING_NIMUS.get(), FlyingNimbusEntity.createAttributes());
 
     }
 

@@ -22,6 +22,7 @@ import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
 import com.dragonminez.common.init.particles.KiFlashParticle;
 import com.dragonminez.common.init.particles.KiSplashParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import com.dragonminez.common.init.particles.KintonParticle;
 import com.dragonminez.server.world.dimension.CustomSpecialEffects;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -140,6 +141,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT3.get(), RobotRRRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierRenderer::new);
         event.registerEntityRenderer(MainEntities.SPACE_POD.get(), SpacePodRenderer::new);
+        event.registerEntityRenderer(MainEntities.FLYING_NIMUS.get(), FlyingNimbusRenderer::new);
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
     }
@@ -156,6 +158,8 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.KI_FLASH.get(), KiFlashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_SPLASH.get(), KiSplashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_TRAIL.get(), KiTrailParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KINTON.get(), KintonParticle.Provider::new);
+
     }
 
 	@SubscribeEvent

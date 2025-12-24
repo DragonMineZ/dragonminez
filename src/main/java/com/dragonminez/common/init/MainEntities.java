@@ -1,6 +1,7 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.entities.FlyingNimbusEntity;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
@@ -142,6 +143,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SpacePodEntity::new, MobCategory.CREATURE)
                             .sized(2.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "spacepod").toString()));
+    public static final RegistryObject<EntityType<FlyingNimbusEntity>> FLYING_NIMUS =
+            ENTITY_TYPES.register("flying_nimbus",
+                    () -> EntityType.Builder.of(FlyingNimbusEntity::new, MobCategory.CREATURE)
+                            .sized(2.0f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "flying_nimbus").toString()));
 
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =

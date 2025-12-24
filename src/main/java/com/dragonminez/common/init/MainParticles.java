@@ -19,6 +19,8 @@ public class MainParticles {
             PARTICLE_TYPES.register("ki_splash", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> KI_TRAIL =
             PARTICLE_TYPES.register("ki_trail", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> KINTON =
+            PARTICLE_TYPES.register("kinton", () -> new SimpleParticleType(true));
 
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
