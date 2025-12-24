@@ -26,7 +26,7 @@ import java.util.Map;
 public class DMZStructures {
 	public static final ResourceKey<Structure> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -36,12 +36,12 @@ public class DMZStructures {
 				new Structure.StructureSettings(
 						biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
 						Map.of(),
-						GenerationStep.Decoration.RAW_GENERATION,
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
 				),
 				pools.getOrThrow(DMZPools.GOKU_HOUSE),
 				1,
-				ConstantHeight.of(VerticalAnchor.absolute(65)),
+				ConstantHeight.of(VerticalAnchor.absolute(0)),
 				false,
 				Heightmap.Types.WORLD_SURFACE_WG
 		));
@@ -50,12 +50,12 @@ public class DMZStructures {
 				new Structure.StructureSettings(
 						biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
 						Map.of(),
-						GenerationStep.Decoration.RAW_GENERATION,
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
 				),
 				pools.getOrThrow(DMZPools.ROSHI_HOUSE),
 				1,
-				ConstantHeight.of(VerticalAnchor.absolute(65)),
+				ConstantHeight.of(VerticalAnchor.absolute(0)),
 				false,
 				Heightmap.Types.WORLD_SURFACE_WG
 		));
@@ -69,7 +69,7 @@ public class DMZStructures {
 				),
 				pools.getOrThrow(DMZPools.TIMECHAMBER),
 				1,
-				ConstantHeight.of(VerticalAnchor.absolute(31)),
+				ConstantHeight.of(VerticalAnchor.absolute(0)),
 				false,
 				Heightmap.Types.WORLD_SURFACE_WG
 		));
@@ -78,12 +78,26 @@ public class DMZStructures {
 				new Structure.StructureSettings(
 						biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND),
 						Map.of(),
-						GenerationStep.Decoration.RAW_GENERATION,
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
 						TerrainAdjustment.NONE
 				),
 				pools.getOrThrow(DMZPools.ELDER_GURU),
 				1,
-				ConstantHeight.of(VerticalAnchor.absolute(65)),
+				ConstantHeight.of(VerticalAnchor.absolute(0)),
+				false,
+				Heightmap.Types.WORLD_SURFACE_WG
+		));
+
+		context.register(KAMILOOKOUT, new JigsawStructure(
+				new Structure.StructureSettings(
+						biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.NONE
+				),
+				pools.getOrThrow(DMZPools.KAMILOOKOUT),
+				1,
+				ConstantHeight.of(VerticalAnchor.absolute(0)),
 				false,
 				Heightmap.Types.WORLD_SURFACE_WG
 		));

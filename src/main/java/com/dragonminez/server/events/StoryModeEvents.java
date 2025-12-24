@@ -184,7 +184,7 @@ public class StoryModeEvents {
                                 questData.setQuestObjectiveProgress(sagaId, quest.getId(), i, totalCount);
                                 progressUpdated = true;
                             }
-                        }else if (objective instanceof BiomeObjective biomeObjective) {
+                        } else if (objective instanceof BiomeObjective biomeObjective) {
                             ResourceKey<Biome> playerBiome = player.level().getBiome(playerPos).unwrapKey().orElse(null);
                             if (playerBiome != null && playerBiome.location().toString().contains(biomeObjective.getBiomeId())) {
                                 questData.setQuestObjectiveProgress(sagaId, quest.getId(), i, required);

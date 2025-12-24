@@ -35,7 +35,8 @@ public class LocateCommand {
 			"goku_house", Pair.of(DMZStructures.GOKU_HOUSE, Level.OVERWORLD),
 			"roshi_house", Pair.of(DMZStructures.ROSHI_HOUSE, Level.OVERWORLD),
 			"elder_guru", Pair.of(DMZStructures.ELDER_GURU, NamekDimension.NAMEK_KEY),
-			"timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY)
+			"timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY),
+			"kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD)
 	);
 
 	private static final SuggestionProvider<CommandSourceStack> SUGGESTIONS = (context, builder) ->
@@ -65,6 +66,13 @@ public class LocateCommand {
 		ServerLevel targetLevel = source.getServer().getLevel(targetDimKey);
 		if (targetLevel == null) {
 			source.sendFailure(Component.literal("Error: Dimension not found: " + targetDimKey.location()));
+			return 0;
+		}
+
+		String playerDim = source.getLevel().dimension().location().toString();
+
+		if (!targetDimKey.location().toString().equals(playerDim)) {
+			source.sendFailure(Component.literal("Error: You can't locate structures in another dimension."));
 			return 0;
 		}
 
@@ -127,7 +135,7 @@ public class LocateCommand {
 		).withStyle(style -> style
 				.withColor(ChatFormatting.GREEN)
 				.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/execute in " + targetDimKey.location() + " run tp @s " + finalPos.getX() + " " + finalPos.getY() + " " + finalPos.getZ()))
-				.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Click para TP")))
+				.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Click -> TP")))
 		);
 
 		source.sendSuccess(() -> Component.translatable(

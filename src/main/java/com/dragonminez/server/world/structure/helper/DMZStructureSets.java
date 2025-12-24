@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
+import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Vec3i;
@@ -24,7 +25,7 @@ import java.util.Optional;
 public class DMZStructureSets {
 	public static final ResourceKey<StructureSet> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
 
 	private static final TagKey<Biome> VILLAGE_PLAINS_TAG = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("minecraft", "has_structure/village_plains"));
 
@@ -77,6 +78,17 @@ public class DMZStructureSets {
 						44332211,
 						Optional.empty(),
 						biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND)
+				)
+		));
+
+		context.register(KAMILOOKOUT, new StructureSet(
+				structures.getOrThrow(DMZStructures.KAMILOOKOUT),
+				new UniqueNearSpawnPlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						25.0f,
+						55667788,
+						Optional.empty()
 				)
 		));
 	}
