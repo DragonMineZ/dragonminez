@@ -1,0 +1,135 @@
+{
+  // Configuration file for skill costs and Kaioken multipliers
+  // Each cost represents a level, with -1 indicating the skill can't be leveled at that stage
+  // If you remove a cost, you also remove a max level for that skill, but skills cannot
+  // have more than 10 levels, except potential unlock which can have 13 levels.
+  "skills": {
+    "fly": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "kicontrol": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "potentialunlock": {
+      "costs": [
+        -1,
+        4000,
+        6000,
+        8000,
+        10000,
+        12000,
+        14000,
+        16000,
+        18000,
+        20000,
+        -1,
+        22000,
+        24000
+      ]
+    },
+    "kaioken": {
+      "costs": [
+        -1,
+        5000,
+        7000,
+        9000,
+        11000,
+        13000,
+        15000,
+        17000,
+        19000,
+        21000
+      ],
+      "multipliers": [
+        1.1,
+        1.2,
+        1.3,
+        1.4,
+        1.5,
+        1.6,
+        1.7,
+        1.8,
+        1.9,
+        2.0
+      ]
+    },
+    "meditation": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "kimanipulation": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "kisense": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "jump": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    }
+  }
+}

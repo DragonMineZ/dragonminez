@@ -72,18 +72,28 @@ public class ConfigManager {
         if (Files.exists(serverConfigPath)) {
             serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
         } else {
-			//LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
-			//serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-			serverConfig = new GeneralServerConfig();
-			LOADER.saveConfig(serverConfigPath, serverConfig);
+			try {
+				LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
+				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
+			} catch (Exception e) {
+				serverConfig = new GeneralServerConfig();
+				LOADER.saveConfig(serverConfigPath, serverConfig);
+				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
+			}
         }
 
         Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
         if (Files.exists(skillsConfigPath)) {
             skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
         } else {
-            skillsConfig = new SkillsConfig();
-            LOADER.saveConfig(skillsConfigPath, skillsConfig);
+			try {
+				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
+				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+			} catch (Exception e) {
+				skillsConfig = new SkillsConfig();
+				LOADER.saveConfig(skillsConfigPath, skillsConfig);
+				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
+			}
         }
     }
 
