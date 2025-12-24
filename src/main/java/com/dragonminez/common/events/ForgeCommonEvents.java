@@ -3,13 +3,19 @@ package com.dragonminez.common.events;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.server.commands.*;
 import com.dragonminez.server.database.DatabaseManager;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -64,4 +70,18 @@ public class ForgeCommonEvents {
         LocateCommand.register(event.getDispatcher());
 		StoryCommand.register(event.getDispatcher());
     }
+
+	@SubscribeEvent
+	public static void onMobSpawn(MobSpawnEvent.FinalizeSpawn event) {
+		Mob mob = event.getEntity();
+		if (mob.getType().getCategory() == MobCategory.MONSTER) {
+			List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class,
+					new AABB(mob.blockPosition()).inflate(40));
+
+			if (!masters.isEmpty()) {
+				event.setSpawnCancelled(true);
+				event.setResult(Event.Result.DENY);
+			}
+		}
+	}
 }
