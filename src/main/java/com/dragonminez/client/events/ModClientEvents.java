@@ -139,6 +139,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT2.get(), RobotRRRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_ROBOT3.get(), RobotRRRenderer::new);
         event.registerEntityRenderer(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierRenderer::new);
+        event.registerEntityRenderer(MainEntities.SPACE_POD.get(), SpacePodRenderer::new);
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
     }

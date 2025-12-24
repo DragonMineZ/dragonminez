@@ -1,13 +1,13 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
-import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.*;
@@ -131,6 +131,12 @@ public class MainEntities {
                     () -> EntityType.Builder.of(NamekWarriorEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "namek_warrior").toString()));
+    public static final RegistryObject<EntityType<SpacePodEntity>> SPACE_POD =
+            ENTITY_TYPES.register("spacepod",
+                    () -> EntityType.Builder.of(SpacePodEntity::new, MobCategory.CREATURE)
+                            .sized(2.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "spacepod").toString()));
+
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",

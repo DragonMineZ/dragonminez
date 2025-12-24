@@ -1,0 +1,38 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"open": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1.0417,
+			"bones": {
+				"puerta": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.0417": {
+							"vector": [90, 0, 0]
+						}
+					}
+				}
+			}
+		},
+		"close": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 1.0417,
+			"bones": {
+				"puerta": {
+					"rotation": {
+						"0.0": {
+							"vector": [90, 0, 0]
+						},
+						"1.0417": {
+							"vector": [0, 0, 0]
+						}
+					}
+				}
+			}
+		}
+	},
+	"geckolib_format_version": 2
+}

@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -60,7 +61,10 @@ public class ModCommonEvents {
         event.put(MainEntities.RED_RIBBON_ROBOT2.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_ROBOT3.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierEntity.createAttributes().build());
+        event.put(MainEntities.SPACE_POD.get(), SpacePodEntity.createAttributes());
+
     }
+
 
     @SubscribeEvent
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
