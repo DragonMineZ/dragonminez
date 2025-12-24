@@ -28,6 +28,7 @@ public class ModCommonEvents {
         event.put(MainEntities.MASTER_ROSHI.get(), MastersEntity.createAttributes().build());
         event.put(MainEntities.MASTER_URANAI.get(), MastersEntity.createAttributes().build());
         event.put(MainEntities.MASTER_ENMA.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.MASTER_DENDE.get(), MastersEntity.createAttributes().build());
 
         event.put(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanEntity.createAttributes().build());
         event.put(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanEntity.createAttributes().build());
