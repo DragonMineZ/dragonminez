@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.item;
 
+import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.entities.FlyingNimbusEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,14 +33,14 @@ public class FlyingNimbusItem extends Item {
 		BlockPos spawnPos = pos.above();
 
 		if (player != null && level != null) {
-//			NubeEntity nube = new NubeEntity(MainEntity.NUBE_VOLADORA.get(), level);
-//			nube.setPos(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
-//
-//			level.addFreshEntity(nube);
-//
-//			pContext.getItemInHand().shrink(1);
-//
-//			return InteractionResult.sidedSuccess(level.isClientSide);
+			FlyingNimbusEntity nube = new FlyingNimbusEntity(MainEntities.FLYING_NIMUS.get(), level);
+			nube.setPos(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+
+			level.addFreshEntity(nube);
+
+			pContext.getItemInHand().shrink(1);
+
+			return InteractionResult.sidedSuccess(level.isClientSide);
 		}
 
 		return super.useOn(pContext);
