@@ -34,6 +34,9 @@ public class GeneralServerConfig {
     public static class GameplayConfig {
         private double tpGainMultiplier = 1.0;
 		private double tpCostMultiplier = 1.0;
+		private int tpHealthRatio = 10;
+		private int tpPerHit = 2;
+		private double HTCTpMultiplier = 2.5;
         private boolean respectAttackCooldown = true;
         private int maxStatValue = 10000;
 		private boolean kiDestroyBlocks = true;
@@ -57,6 +60,12 @@ public class GeneralServerConfig {
         public void setTpsMultiplier(double multiplier) { this.tpGainMultiplier = multiplier; }
 		public double getTpCostMultiplier() { return tpCostMultiplier; }
 		public void setTpCostMultiplier(double multiplier) { this.tpCostMultiplier = multiplier; }
+		public int getTpHealthRatio() { return tpHealthRatio; }
+		public void setTpHealthRatio(int ratio) { this.tpHealthRatio = ratio; }
+		public int getTpPerHit() { return tpPerHit; }
+		public void setTpPerHit(int tpPerHit) { this.tpPerHit = tpPerHit; }
+		public double getHTCTpMultiplier() { return HTCTpMultiplier; }
+		public void setHTCTpMultiplier(double multiplier) { this.HTCTpMultiplier = multiplier; }
 
         public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
         public void setRespectAttackCooldown(boolean respectAttackCooldown) { this.respectAttackCooldown = respectAttackCooldown; }

@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.hud.AlternativeHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
+import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.KikonoStationBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.init.entities.renderer.*;
@@ -53,6 +54,7 @@ public class ModClientEvents {
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.ENERGY_CABLE_BE.get(), EnergyCableBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.KIKONO_STATION_BE.get(), KikonoStationBlockRenderer::new);
+			BlockEntityRenderers.register(MainBlockEntities.FUEL_GENERATOR_BE.get(), FuelGeneratorBlockRenderer::new);
 			//ItemBlockRenderTypes.setRenderLayer(MainBlocks.KIKONO_ARMOR_STATION.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_AJISSA_LOG.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_STRIPPED_AJISSA_LOG.get(), RenderType.cutout());

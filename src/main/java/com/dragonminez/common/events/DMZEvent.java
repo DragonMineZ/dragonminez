@@ -76,6 +76,40 @@ public abstract class DMZEvent extends Event {
 			return currentEnergy >= maxEnergy;
 		}
 	}
+
+	@Cancelable
+	public static class TPGainEvent extends Event {
+
+		private final Player player;
+		private final int oldValue;
+		private int tpGain;
+
+		public TPGainEvent(Player player, int oldValue, int tpGain) {
+			this.player = player;
+			this.oldValue = oldValue;
+			this.tpGain = tpGain;
+		}
+
+		public Player getPlayer() {
+			return player;
+		}
+
+		public int getOldValue() {
+			return oldValue;
+		}
+
+		public int getTpGain() {
+			return tpGain;
+		}
+
+		public void setTpGain(int tpGain) {
+			this.tpGain = tpGain;
+		}
+
+		public int getNewValue() {
+			return oldValue + tpGain;
+		}
+	}
 }
 
 

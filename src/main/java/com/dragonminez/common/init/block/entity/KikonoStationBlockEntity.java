@@ -5,7 +5,6 @@ import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.menu.menutypes.KikonoStationMenu;
 import com.dragonminez.server.energy.StarEnergyStorage;
 import com.dragonminez.server.recipes.KikonoRecipe;
-import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -198,9 +197,9 @@ public class KikonoStationBlockEntity extends BlockEntity implements MenuProvide
 
 	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> tAnimationState) {
 		if (this.progress > 0) {
-			return tAnimationState.setAndContinue(RawAnimation.begin().then("animation.kikono_station.working", Animation.LoopType.LOOP));
+			return tAnimationState.setAndContinue(RawAnimation.begin().then("work", Animation.LoopType.LOOP));
 		}
-		return tAnimationState.setAndContinue(RawAnimation.begin().then("animation.kikono_station.idle", Animation.LoopType.LOOP));
+		return tAnimationState.setAndContinue(RawAnimation.begin().then("idle", Animation.LoopType.LOOP));
 	}
 
 	@Override

@@ -1,7 +1,8 @@
 {
-  "parent": "minecraft:block/cross",
-  "textures": {
-    "cross": "dragonminez:block/namek_grass"
-  },
-  "render_type": "cutout"
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    64,
+    64
+  ]
 }

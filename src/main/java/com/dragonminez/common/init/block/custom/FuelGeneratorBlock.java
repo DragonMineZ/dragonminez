@@ -38,7 +38,7 @@ public class FuelGeneratorBlock extends BaseEntityBlock {
 
 	@Override
 	public RenderShape getRenderShape(BlockState pState) {
-		return RenderShape.MODEL;
+		return RenderShape.ENTITYBLOCK_ANIMATED;
 	}
 
 	@Override
@@ -115,9 +115,9 @@ public class FuelGeneratorBlock extends BaseEntityBlock {
 			}
 
 
-			double d0 = (double)pPos.getX() + 0.5D;
-			double d1 = (double)pPos.getY();
-			double d2 = (double)pPos.getZ() + 0.5D;
+			double d0 = (double) pPos.getX() + 0.5D;
+			double d1 = (double) pPos.getY();
+			double d2 = (double) pPos.getZ() + 0.5D;
 			if (pRandom.nextDouble() < 0.1D) {
 				pLevel.addParticle(ParticleTypes.SMOKE, d0, d1 + 1.1D, d2, 0.0D, 0.0D, 0.0D);
 			}

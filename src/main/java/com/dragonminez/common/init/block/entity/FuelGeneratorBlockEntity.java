@@ -6,12 +6,8 @@ import com.dragonminez.common.init.menu.menutypes.FuelGeneratorMenu;
 import com.dragonminez.server.energy.StarEnergyStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -31,8 +27,16 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.*;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.RenderUtils;
 
-public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvider {
+public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvider, GeoBlockEntity {
+	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
 	private final ItemStackHandler itemHandler = new ItemStackHandler(1) {
 		@Override
 		protected void onContentsChanged(int slot) { setChanged(); }
@@ -194,6 +198,25 @@ public class FuelGeneratorBlockEntity extends BlockEntity implements MenuProvide
 		if(cap == ForgeCapabilities.ITEM_HANDLER) return lazyItemHandler.cast();
 		if(cap == ForgeCapabilities.ENERGY) return lazyEnergyHandler.cast();
 		return super.getCapability(cap, side);
+	}
+
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
+		controllerRegistrar.add(new AnimationController<>(this, "controller", 0, this::predicate));
+	}
+
+	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> tAnimationState) {
+		return tAnimationState.setAndContinue(RawAnimation.begin().then("animation.fuel_generator.idle", Animation.LoopType.LOOP));
+	}
+
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return cache;
+	}
+
+	@Override
+	public double getTick(Object blockEntity) {
+		return RenderUtils.getCurrentTick();
 	}
 
 	@Nullable

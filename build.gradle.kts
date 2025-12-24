@@ -137,8 +137,15 @@ dependencies {
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.7"))
 
     // Database Libraries
-    implementation(jarJar("org.mariadb.jdbc:mariadb-java-client:3.3.2")!!)
-    implementation(jarJar("com.zaxxer:HikariCP:5.1.0")!!)
+    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.0.8,3.1)") {
+        jarJar.ranged(this, "[3.0.8,3.1)")
+    }
+    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[4.0.3,5.0)") {
+        jarJar.ranged(this, "[4.0.3,5.0)")
+    }
+
+    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.0.8")
+    compileOnly("com.zaxxer:HikariCP:4.0.3")
 
     // Dev utility mods (not included while building)
     compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-common-api:$jei_version"))

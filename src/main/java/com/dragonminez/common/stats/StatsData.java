@@ -29,6 +29,7 @@ public class StatsData {
         this.cooldowns = new Cooldowns();
         this.character = new Character();
         this.resources = new Resources();
+        this.resources.setPlayer(player);
         this.skills = new Skills();
         this.effects = new Effects();
         this.questData = new QuestData();

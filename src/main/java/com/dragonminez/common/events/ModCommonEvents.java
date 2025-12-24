@@ -8,7 +8,6 @@ import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
-import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.*;
@@ -19,7 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class ModEventBusEvents {
+public class ModCommonEvents {
 
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
