@@ -70,16 +70,16 @@ public class SpacePodEntity extends Mob implements GeoEntity {
                 this.yBodyRot = this.getYRot();
                 this.yHeadRot = this.getYRot();
 
-                double speed = this.getAttributeValue(Attributes.FLYING_SPEED) * 0.8D;
+                double speed = this.getAttributeValue(Attributes.FLYING_SPEED) * 0.45D;
 
                 double verticalSpeed = 0;
 
                 if (this.level().isClientSide) {
                     if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) {
-                        verticalSpeed = 0.5; // Subida rápida
+                        verticalSpeed = 0.35; // Subida rápida
                     }
                     else if (KeyBinds.DESCEND_KEY.isDown()) {
-                        verticalSpeed = -0.5;
+                        verticalSpeed = -0.35;
                     }
                 }
 

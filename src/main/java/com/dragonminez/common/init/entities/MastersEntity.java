@@ -29,6 +29,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
     }
 
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));

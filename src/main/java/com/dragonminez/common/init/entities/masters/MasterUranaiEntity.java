@@ -13,6 +13,8 @@ public class MasterUranaiEntity extends MastersEntity {
 
     public MasterUranaiEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+
+        this.setPersistenceRequired();
     }
 
     @Override

@@ -13,6 +13,7 @@ public class MasterEnmaEntity extends MastersEntity {
 
     public MasterEnmaEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.setPersistenceRequired();
     }
 
     @Override
