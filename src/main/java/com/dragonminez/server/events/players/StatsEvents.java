@@ -12,9 +12,13 @@ import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
+import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.FlyingMob;
 import net.minecraft.world.entity.Mob;
@@ -25,12 +29,16 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.Map;
@@ -49,18 +57,15 @@ public class StatsEvents {
         }
 
         Player player = event.player;
+		if (!(player instanceof ServerPlayer serverPlayer)) return;
 
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+        StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
             if (!data.getStatus().hasCreatedCharacter()) {
                 return;
             }
 
-			if (ForgeClientEvents.hasCreatedCharacterCache != data.getStatus().hasCreatedCharacter()) {
-				ForgeClientEvents.hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
-			}
-
-            AttributeInstance dmzHealthAttr = player.getAttribute(MainAttributes.DMZ_HEALTH.get());
-            AttributeInstance maxHealthAttr = player.getAttribute(Attributes.MAX_HEALTH);
+            AttributeInstance dmzHealthAttr = serverPlayer.getAttribute(MainAttributes.DMZ_HEALTH.get());
+            AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
 
             if (dmzHealthAttr != null && maxHealthAttr != null) {
 				float dmzHealthBonus = data.getMaxHealth();
@@ -80,13 +85,13 @@ public class StatsEvents {
                         maxHealthAttr.addPermanentModifier(healthModifier);
                     }
 
-                    if (player.getHealth() > maxHealthAttr.getValue()) {
-                        player.setHealth((float) maxHealthAttr.getValue());
+                    if (serverPlayer.getHealth() > maxHealthAttr.getValue()) {
+                        serverPlayer.setHealth((float) maxHealthAttr.getValue());
                     }
                 }
 
                 if (!data.hasInitializedHealth()) {
-                    player.setHealth((float) maxHealthAttr.getValue());
+                    serverPlayer.setHealth((float) maxHealthAttr.getValue());
                     data.setInitializedHealth(true);
                 }
             }
@@ -249,5 +254,83 @@ public class StatsEvents {
 			player.clearFire();
 		}
 	}
-}
 
+    @SubscribeEvent
+    public static void onItemRightClick(PlayerInteractEvent.RightClickItem event) {
+        if (event.getLevel().isClientSide) return;
+
+        Player player = event.getEntity();
+        ItemStack stack = event.getItemStack();
+        String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+
+        float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+        if (regens != null && regens.length >= 3) {
+            player.startUsingItem(event.getHand());
+            event.setCancellationResult(InteractionResult.CONSUME);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onItemUseFinish(LivingEntityUseItemEvent.Finish event) {
+        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        ItemStack stack = event.getItem();
+        String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+        float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+
+        if (regens != null && regens.length >= 3) {
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
+                boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
+
+                if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) {
+                    return;
+                }
+
+                float maxHealth = data.getMaxHealth();
+                int maxEnergy = data.getMaxEnergy();
+                int maxStamina = data.getMaxStamina();
+
+                int currentEnergy = data.getResources().getCurrentEnergy();
+                int currentStamina = data.getResources().getCurrentStamina();
+
+                float healAmount = (maxHealth * regens[0]);
+                int energyAmount = (int) (maxEnergy * regens[1]);
+                int staminaAmount = (int) (maxStamina * regens[2]);
+
+                player.heal(healAmount);
+
+                int newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
+                int newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
+
+                data.getResources().setCurrentEnergy(newEnergy);
+                data.getResources().setCurrentStamina(newStamina);
+
+                if (isSenzu || isHeartMedicine) {
+                    int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
+                    player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+                }
+            });
+        }
+    }
+
+    @SubscribeEvent
+    public static void onItemUseStart(LivingEntityUseItemEvent.Start event) {
+        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        ItemStack stack = event.getItem();
+        String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+
+        if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
+            if (player.getCooldowns().isOnCooldown(stack.getItem())) {
+                event.setCanceled(true);
+            } else {
+                event.setDuration(1);
+            }
+        }
+    }
+}

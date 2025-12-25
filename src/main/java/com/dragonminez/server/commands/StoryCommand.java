@@ -45,16 +45,18 @@ public class StoryCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzstory")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> DMZPermissions.check(source, DMZPermissions.STORY_LIST_SELF, DMZPermissions.STORY_LIST_OTHERS))
 
-                // /dmzstory finish <saga> <quest> [player]
+                // finish <saga> <quest> [player]
                 .then(Commands.literal("finish")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STORY_FINISH_SELF, DMZPermissions.STORY_FINISH_OTHERS))
                         .then(Commands.argument("saga", StringArgumentType.word())
                                 .suggests(SAGA_SUGGESTIONS)
                                 .then(Commands.argument("quest", IntegerArgumentType.integer(1))
                                         .suggests(QUEST_SUGGESTIONS)
                                         .executes(context -> finishQuest(context, null))
                                         .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STORY_FINISH_OTHERS))
                                                 .executes(context -> finishQuest(
                                                         context,
                                                         EntityArgument.getPlayer(context, "player")
@@ -64,31 +66,22 @@ public class StoryCommand {
                         )
                 )
 
-                // /dmzstory remove <saga> <quest> [player]
+                // remove <saga> <quest> [player]
                 .then(Commands.literal("remove")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STORY_REMOVE_SELF, DMZPermissions.STORY_REMOVE_OTHERS))
                         .then(Commands.argument("saga", StringArgumentType.word())
                                 .suggests(SAGA_SUGGESTIONS)
                                 .then(Commands.argument("quest", IntegerArgumentType.integer(1))
                                         .suggests(QUEST_SUGGESTIONS)
                                         .executes(context -> removeQuest(context, null))
                                         .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STORY_REMOVE_OTHERS))
                                                 .executes(context -> removeQuest(
                                                         context,
                                                         EntityArgument.getPlayer(context, "player")
                                                 ))
                                         )
                                 )
-                        )
-                )
-
-                // /dmzstory list [player]
-                .then(Commands.literal("list")
-                        .executes(context -> listProgress(context, null))
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .executes(context -> listProgress(
-                                        context,
-                                        EntityArgument.getPlayer(context, "player")
-                                ))
                         )
                 )
         );
@@ -220,48 +213,6 @@ public class StoryCommand {
                     Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
 
             return successCount;
-
-        } catch (Exception e) {
-            context.getSource().sendFailure(Component.translatable("command.dragonminez.story.error", e.getMessage()));
-            return 0;
-        }
-    }
-
-    private static int listProgress(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
-        try {
-            ServerPlayer player = targetPlayer != null ? targetPlayer : context.getSource().getPlayerOrException();
-
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                QuestData questData = stats.getQuestData();
-
-                context.getSource().sendSuccess(() ->
-                        Component.translatable("command.dragonminez.story.progress_header", player.getName().getString()), false);
-
-                context.getSource().sendSuccess(() ->
-                        Component.literal("§7§m                                    "), false);
-
-                SagaManager.getAllSagas().forEach((sagaId, saga) -> {
-                    QuestData.SagaProgress sagaProgress = questData.getSagaProgress(sagaId);
-                    boolean unlocked = sagaProgress.isUnlocked();
-
-                    context.getSource().sendSuccess(() ->
-                            Component.translatable("command.dragonminez.story.saga_entry", saga.getName(), sagaId), false);
-
-                    if (unlocked) {
-                        for (Quest quest : saga.getQuests()) {
-                            boolean completed = sagaProgress.isQuestCompleted(quest.getId());
-                            String status = completed ? "§a✓" : "§c✗";
-                            context.getSource().sendSuccess(() ->
-                                    Component.translatable("command.dragonminez.story.quest_entry", status, quest.getId(), quest.getTitle()), false);
-                        }
-                    } else {
-                        context.getSource().sendSuccess(() ->
-                                Component.translatable("command.dragonminez.story.saga_locked"), false);
-                    }
-                });
-            });
-
-            return 1;
 
         } catch (Exception e) {
             context.getSource().sendFailure(Component.translatable("command.dragonminez.story.error", e.getMessage()));

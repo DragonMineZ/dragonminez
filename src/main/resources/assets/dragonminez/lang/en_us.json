@@ -28,7 +28,7 @@
   "gui.dragonminez.character_stats.str": "STR",
   "gui.dragonminez.character_stats.str.desc": "§7Increases your melee damage. At more damage, more Stamina you will spend.",
   "gui.dragonminez.character_stats.skp": "SKP",
-  "gui.dragonminez.character_stats.skp.desc": "&7Increases your damage with Strike attacks.",
+  "gui.dragonminez.character_stats.skp.desc": "§7Increases your damage with Strike attacks.",
   "gui.dragonminez.character_stats.res": "RES",
   "gui.dragonminez.character_stats.res.desc": "§7Increases you maximum Stamina and reduces the damage you take from enemies.",
   "gui.dragonminez.character_stats.vit": "VIT",

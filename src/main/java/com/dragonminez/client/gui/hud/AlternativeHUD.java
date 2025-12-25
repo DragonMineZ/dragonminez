@@ -98,7 +98,7 @@ public class AlternativeHUD {
 				guiGraphics.blit(hud, - 16, - 14, 2, hpTextureV, 7 + (int) currentHPBarWidth, 5, 128, 128);
 
 				drawTinyText(guiGraphics, powerRelease + "%", -20, 24, ColorUtils.hexToInt("#FACAF7"));
-				drawBarValues(guiGraphics, currentKi, maxKi, 24, -14);
+				drawBarValues(guiGraphics, currentHP, maxHP, 24, -14);
 
 				guiGraphics.pose().popPose();
 

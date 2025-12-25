@@ -157,8 +157,14 @@ public class XenoverseHUD {
 					guiGraphics.blit(hud, initialX + 10, initialY + 20 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight);
 				}
 
-				guiGraphics.pose().scale(0.5f, 0.5f, 1.0f);
-				drawStringWithBorder(guiGraphics, powerRelease + "%", initialX + 14, initialY + 64, ColorUtils.hexToInt("#FACAF7"));
+				float baseTextScale = 0.5f;
+				float textCorrectionFactor = HUDManager.getScaleFactor();
+				float finalTextScale = baseTextScale * textCorrectionFactor;
+
+				guiGraphics.pose().pushPose();
+				guiGraphics.pose().scale(finalTextScale, finalTextScale, 1.0f);
+
+				drawStringWithBorder(guiGraphics, powerRelease + "%", (initialX + 14), (initialY + 64), ColorUtils.hexToInt("#FACAF7"));
 
 				if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
 					String plainHP = numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
@@ -177,6 +183,7 @@ public class XenoverseHUD {
 					drawStringWithBorder(guiGraphics, stmText, initialX + 160, initialY + 64, ColorUtils.hexToInt("#FFFFFF"));
 				}
 
+				guiGraphics.pose().popPose();
 				guiGraphics.pose().popPose();
 			}
 		});

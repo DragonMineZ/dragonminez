@@ -7,6 +7,12 @@
   "gameplay": {
     "tpGainMultiplier": 1.0,
     "tpCostMultiplier": 1.0,
+    // How much TP in percentage is gained by killing an entity, based on their max health
+    "tpHealthRatio": 10,
+    // How much TP is gained per hit landed on an entity
+    "tpPerHit": 2,
+    // TP Multiplier while being in the Hyperbolic Time Chamber
+    "HTCTpMultiplier": 2.5,
     // Enable to make attacks respect attack cooldown like in vanilla Minecraft.
     // Disable to make attacks not respect attack cooldown, allowing for faster attacks, like 1.8 PvP.
     "respectAttackCooldown": true,
@@ -19,29 +25,29 @@
     "food_regenerations": {
       // Food item registry name : [health, ki, stamina] restored
       "dragonminez:frog_legs_cooked": [
-        0.15,
-        0.25,
-        0.15
+        0.10,
+        0.10,
+        0.10
       ],
       "dragonminez:might_tree_fruit": [
-        0.05,
         0.35,
-        0.0
+        0.35,
+        0.35
       ],
       "dragonminez:raw_dino_meat": [
-        0.15,
-        0.1,
-        0.1
+        0.10,
+        0.10,
+        0.10
       ],
       "dragonminez:dino_tail_raw": [
-        0.12,
-        0.08,
-        0.08
+        0.15,
+        0.15,
+        0.15
       ],
       "dragonminez:frog_legs_raw": [
-        0.08,
-        0.12,
-        0.08
+        0.05,
+        0.05,
+        0.05
       ],
       "dragonminez:heart_medicine": [
         1.0,
@@ -49,14 +55,14 @@
         1.0
       ],
       "dragonminez:cooked_dino_meat": [
-        0.3,
-        0.2,
-        0.2
-      ],
-      "dragonminez:dino_tail_cooked": [
-        0.25,
+        0.15,
         0.15,
         0.15
+      ],
+      "dragonminez:dino_tail_cooked": [
+        0.20,
+        0.20,
+        0.20
       ],
       "dragonminez:senzu_bean": [
         1.0,
@@ -68,6 +74,7 @@
     "majin_power": 1.3
   },
   // Storage configuration
+  // Available storage types: NBT, JSON, DATABASE
   "storage": {
     "storage_type": "NBT",
     "host": "localhost",

@@ -97,15 +97,15 @@ public class GeneralServerConfig {
 
         private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();
-            defaults.put("dragonminez:raw_dino_meat", new float[]{0.15f, 0.10f, 0.10f});
-            defaults.put("dragonminez:cooked_dino_meat", new float[]{0.30f, 0.20f, 0.20f});
-            defaults.put("dragonminez:dino_tail_raw", new float[]{0.12f, 0.08f, 0.08f});
-            defaults.put("dragonminez:dino_tail_cooked", new float[]{0.25f, 0.15f, 0.15f});
-            defaults.put("dragonminez:frog_legs_raw", new float[]{0.08f, 0.12f, 0.08f});
-            defaults.put("dragonminez:frog_legs_cooked", new float[]{0.15f, 0.25f, 0.15f});
+            defaults.put("dragonminez:raw_dino_meat", new float[]{0.10f, 0.10f, 0.10f});
+            defaults.put("dragonminez:cooked_dino_meat", new float[]{0.15f, 0.15f, 0.15f});
+            defaults.put("dragonminez:dino_tail_raw", new float[]{0.15f, 0.15f, 0.15f});
+            defaults.put("dragonminez:dino_tail_cooked", new float[]{0.20f, 0.20f, 0.20f});
+            defaults.put("dragonminez:frog_legs_raw", new float[]{0.05f, 0.05f, 0.05f});
+            defaults.put("dragonminez:frog_legs_cooked", new float[]{0.10f, 0.10f, 0.10f});
             defaults.put("dragonminez:senzu_bean", new float[]{1.0f, 1.0f, 1.0f});
 			defaults.put("dragonminez:heart_medicine", new float[]{1.0f, 1.0f, 1.0f});
-            defaults.put("dragonminez:might_tree_fruit", new float[]{0.05f, 0.35f, 0.0f});
+            defaults.put("dragonminez:might_tree_fruit", new float[]{0.035f, 0.35f, 0.35f});
             return defaults;
         }
     }

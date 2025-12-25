@@ -2,7 +2,6 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -21,105 +20,147 @@ public class StatsCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzstats")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_INFO_SELF, DMZPermissions.STATS_INFO_OTHERS))
 
-                .then(Commands.argument("player", EntityArgument.player())
-                        .then(Commands.literal("set")
-                                .then(Commands.literal("str")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
-                                                .executes(ctx -> setStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "str",
-                                                        IntegerArgumentType.getInteger(ctx, "value")))))
-                                .then(Commands.literal("skp")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
-                                                .executes(ctx -> setStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "skp",
-                                                        IntegerArgumentType.getInteger(ctx, "value")))))
-                                .then(Commands.literal("res")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
-                                                .executes(ctx -> setStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "res",
-                                                        IntegerArgumentType.getInteger(ctx, "value")))))
-                                .then(Commands.literal("vit")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
-                                                .executes(ctx -> setStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "vit",
-                                                        IntegerArgumentType.getInteger(ctx, "value")))))
-                                .then(Commands.literal("pwr")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
-                                                .executes(ctx -> setStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "pwr",
-                                                        IntegerArgumentType.getInteger(ctx, "value")))))
-                                .then(Commands.literal("ene")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
-                                                .executes(ctx -> setStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "ene",
-                                                        IntegerArgumentType.getInteger(ctx, "value"))))))
-
-                        .then(Commands.literal("add")
-                                .then(Commands.literal("str")
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
-                                                .executes(ctx -> addStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "str",
-                                                        IntegerArgumentType.getInteger(ctx, "amount")))))
-                                .then(Commands.literal("skp")
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
-                                                .executes(ctx -> addStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "skp",
-                                                        IntegerArgumentType.getInteger(ctx, "amount")))))
-                                .then(Commands.literal("res")
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
-                                                .executes(ctx -> addStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "res",
-                                                        IntegerArgumentType.getInteger(ctx, "amount")))))
-                                .then(Commands.literal("vit")
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
-                                                .executes(ctx -> addStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "vit",
-                                                        IntegerArgumentType.getInteger(ctx, "amount")))))
-                                .then(Commands.literal("pwr")
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
-                                                .executes(ctx -> addStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "pwr",
-                                                        IntegerArgumentType.getInteger(ctx, "amount")))))
-                                .then(Commands.literal("ene")
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
-                                                .executes(ctx -> addStat(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        "ene",
-                                                        IntegerArgumentType.getInteger(ctx, "amount"))))))
-
-                        .then(Commands.literal("info")
-                                .executes(ctx -> showInfo(ctx.getSource(),
-                                        EntityArgument.getPlayer(ctx, "player"))))
-
-                        .then(Commands.literal("reset")
-                                .executes(ctx -> resetStats(ctx.getSource(),
-                                        EntityArgument.getPlayer(ctx, "player"))))
-
-                        .then(Commands.literal("transform")
-                                .then(Commands.argument("group", com.mojang.brigadier.arguments.StringArgumentType.string())
-                                        .then(Commands.argument("form", com.mojang.brigadier.arguments.StringArgumentType.string())
-                                                .executes(ctx -> setTransform(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "group"),
-                                                        com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "form"))))))
-
-                        .then(Commands.literal("untransform")
-                                .executes(ctx -> clearTransform(ctx.getSource(),
-                                        EntityArgument.getPlayer(ctx, "player"))))
+                // set <stat> <value> [player]
+                .then(Commands.literal("set")
+                        .then(Commands.literal("str")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                        .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "str", IntegerArgumentType.getInteger(ctx, "value")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
+                                                .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "str", IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("skp")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                        .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "skp", IntegerArgumentType.getInteger(ctx, "value")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
+                                                .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "skp", IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("res")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                        .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "res", IntegerArgumentType.getInteger(ctx, "value")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
+                                                .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "res", IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("vit")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                        .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "vit", IntegerArgumentType.getInteger(ctx, "value")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
+                                                .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "vit", IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("pwr")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                        .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "pwr", IntegerArgumentType.getInteger(ctx, "value")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
+                                                .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "pwr", IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("ene")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                        .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "ene", IntegerArgumentType.getInteger(ctx, "value")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
+                                                .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "ene", IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("all")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                        .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "all", IntegerArgumentType.getInteger(ctx, "value")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
+                                                .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "all", IntegerArgumentType.getInteger(ctx, "value"))))))
                 )
+
+                // add <stat> <amount> [player]
+                .then(Commands.literal("add")
+                        .then(Commands.literal("str")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                        .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "str", IntegerArgumentType.getInteger(ctx, "amount")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
+                                                .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "str", IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(Commands.literal("skp")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                        .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "skp", IntegerArgumentType.getInteger(ctx, "amount")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
+                                                .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "skp", IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(Commands.literal("res")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                        .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "res", IntegerArgumentType.getInteger(ctx, "amount")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
+                                                .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "res", IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(Commands.literal("vit")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                        .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "vit", IntegerArgumentType.getInteger(ctx, "amount")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
+                                                .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "vit", IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(Commands.literal("pwr")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                        .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "pwr", IntegerArgumentType.getInteger(ctx, "amount")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
+                                                .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "pwr", IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(Commands.literal("ene")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                        .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "ene", IntegerArgumentType.getInteger(ctx, "amount")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
+                                                .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "ene", IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(Commands.literal("all")
+                                .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                        .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "all", IntegerArgumentType.getInteger(ctx, "amount")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
+                                                .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "all", IntegerArgumentType.getInteger(ctx, "amount"))))))
+                )
+
+                // info [player]
+                .then(Commands.literal("info")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_INFO_SELF, DMZPermissions.STATS_INFO_OTHERS))
+                        .executes(ctx -> showInfo(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_INFO_OTHERS))
+                                .executes(ctx -> showInfo(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
+
+                // reset [player]
+                .then(Commands.literal("reset")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
+                        .executes(ctx -> resetStats(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
+                                .executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
+
+                // transform <group> <form> [player]
+                .then(Commands.literal("transform")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_TRANSFORM_SELF, DMZPermissions.STATS_TRANSFORM_OTHERS))
+                        .then(Commands.argument("group", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                .then(Commands.argument("form", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                        .executes(ctx -> setTransform(ctx.getSource(), ctx.getSource().getPlayerOrException(), com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "group"), com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "form")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_TRANSFORM_OTHERS))
+                                                .executes(ctx -> setTransform(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "group"), com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "form")))))))
+
+                // untransform [player]
+                .then(Commands.literal("untransform")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_TRANSFORM_SELF, DMZPermissions.STATS_TRANSFORM_OTHERS))
+                        .executes(ctx -> clearTransform(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_TRANSFORM_OTHERS))
+                                .executes(ctx -> clearTransform(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
         );
     }
 
@@ -128,13 +169,22 @@ public class StatsCommand {
         int finalValue = Math.min(value, maxStat);
 
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            switch (stat.toLowerCase()) {
-                case "str" -> data.getStats().setStrength(finalValue);
-                case "skp" -> data.getStats().setStrikePower(finalValue);
-                case "res" -> data.getStats().setResistance(finalValue);
-                case "vit" -> data.getStats().setVitality(finalValue);
-                case "pwr" -> data.getStats().setKiPower(finalValue);
-                case "ene" -> data.getStats().setEnergy(finalValue);
+            if (stat.equalsIgnoreCase("all")) {
+                data.getStats().setStrength(finalValue);
+                data.getStats().setStrikePower(finalValue);
+                data.getStats().setResistance(finalValue);
+                data.getStats().setVitality(finalValue);
+                data.getStats().setKiPower(finalValue);
+                data.getStats().setEnergy(finalValue);
+            } else {
+                switch (stat.toLowerCase()) {
+                    case "str" -> data.getStats().setStrength(finalValue);
+                    case "skp" -> data.getStats().setStrikePower(finalValue);
+                    case "res" -> data.getStats().setResistance(finalValue);
+                    case "vit" -> data.getStats().setVitality(finalValue);
+                    case "pwr" -> data.getStats().setKiPower(finalValue);
+                    case "ene" -> data.getStats().setEnergy(finalValue);
+                }
             }
 
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
@@ -149,30 +199,39 @@ public class StatsCommand {
         int maxStat = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
 
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            switch (stat.toLowerCase()) {
-                case "str" -> {
-                    int newValue = Math.min(data.getStats().getStrength() + amount, maxStat);
-                    data.getStats().setStrength(Math.max(0, newValue));
-                }
-                case "skp" -> {
-                    int newValue = Math.min(data.getStats().getStrikePower() + amount, maxStat);
-                    data.getStats().setStrikePower(Math.max(0, newValue));
-                }
-                case "res" -> {
-                    int newValue = Math.min(data.getStats().getResistance() + amount, maxStat);
-                    data.getStats().setResistance(Math.max(0, newValue));
-                }
-                case "vit" -> {
-                    int newValue = Math.min(data.getStats().getVitality() + amount, maxStat);
-                    data.getStats().setVitality(Math.max(0, newValue));
-                }
-                case "pwr" -> {
-                    int newValue = Math.min(data.getStats().getKiPower() + amount, maxStat);
-                    data.getStats().setKiPower(Math.max(0, newValue));
-                }
-                case "ene" -> {
-                    int newValue = Math.min(data.getStats().getEnergy() + amount, maxStat);
-                    data.getStats().setEnergy(Math.max(0, newValue));
+            if (stat.equalsIgnoreCase("all")) {
+                data.getStats().setStrength(Math.max(0, Math.min(data.getStats().getStrength() + amount, maxStat)));
+                data.getStats().setStrikePower(Math.max(0, Math.min(data.getStats().getStrikePower() + amount, maxStat)));
+                data.getStats().setResistance(Math.max(0, Math.min(data.getStats().getResistance() + amount, maxStat)));
+                data.getStats().setVitality(Math.max(0, Math.min(data.getStats().getVitality() + amount, maxStat)));
+                data.getStats().setKiPower(Math.max(0, Math.min(data.getStats().getKiPower() + amount, maxStat)));
+                data.getStats().setEnergy(Math.max(0, Math.min(data.getStats().getEnergy() + amount, maxStat)));
+            } else {
+                switch (stat.toLowerCase()) {
+                    case "str" -> {
+                        int newValue = Math.min(data.getStats().getStrength() + amount, maxStat);
+                        data.getStats().setStrength(Math.max(0, newValue));
+                    }
+                    case "skp" -> {
+                        int newValue = Math.min(data.getStats().getStrikePower() + amount, maxStat);
+                        data.getStats().setStrikePower(Math.max(0, newValue));
+                    }
+                    case "res" -> {
+                        int newValue = Math.min(data.getStats().getResistance() + amount, maxStat);
+                        data.getStats().setResistance(Math.max(0, newValue));
+                    }
+                    case "vit" -> {
+                        int newValue = Math.min(data.getStats().getVitality() + amount, maxStat);
+                        data.getStats().setVitality(Math.max(0, newValue));
+                    }
+                    case "pwr" -> {
+                        int newValue = Math.min(data.getStats().getKiPower() + amount, maxStat);
+                        data.getStats().setKiPower(Math.max(0, newValue));
+                    }
+                    case "ene" -> {
+                        int newValue = Math.min(data.getStats().getEnergy() + amount, maxStat);
+                        data.getStats().setEnergy(Math.max(0, newValue));
+                    }
                 }
             }
 

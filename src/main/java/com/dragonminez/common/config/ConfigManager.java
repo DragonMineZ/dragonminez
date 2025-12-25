@@ -39,7 +39,6 @@ public class ConfigManager {
     private static GeneralUserConfig userConfig;
     private static GeneralServerConfig serverConfig;
     private static SkillsConfig skillsConfig;
-
     private static SkillsConfig SERVER_SYNCED_SKILLS;
 
     public static void initialize() {
@@ -98,6 +97,11 @@ public class ConfigManager {
     }
 
     private static void loadAllRaces() throws IOException {
+        RACE_STATS.clear();
+        RACE_CHARACTER.clear();
+        RACE_FORMS.clear();
+        LOADED_RACES.clear();
+
         for (String raceName : DEFAULT_RACES) {
             createOrLoadRace(raceName, true);
         }

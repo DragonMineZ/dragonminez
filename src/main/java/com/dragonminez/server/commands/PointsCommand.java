@@ -16,31 +16,42 @@ public class PointsCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzpoints")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_INFO_SELF, DMZPermissions.POINTS_INFO_OTHERS))
 
-                .then(Commands.argument("player", EntityArgument.player())
-                        .then(Commands.literal("set")
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(0))
-                                        .executes(ctx -> setPoints(ctx.getSource(),
-                                                EntityArgument.getPlayer(ctx, "player"),
-                                                IntegerArgumentType.getInteger(ctx, "amount")))))
+                // set <amount> [player]
+                .then(Commands.literal("set")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_SET_SELF, DMZPermissions.POINTS_SET_OTHERS))
+                        .then(Commands.argument("amount", IntegerArgumentType.integer(0))
+                                .executes(ctx -> setPoints(ctx.getSource(), ctx.getSource().getPlayerOrException(), IntegerArgumentType.getInteger(ctx, "amount")))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_SET_OTHERS))
+                                        .executes(ctx -> setPoints(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), IntegerArgumentType.getInteger(ctx, "amount"))))))
 
-                        .then(Commands.literal("add")
-                                .then(Commands.argument("amount", IntegerArgumentType.integer())
-                                        .executes(ctx -> addPoints(ctx.getSource(),
-                                                EntityArgument.getPlayer(ctx, "player"),
-                                                IntegerArgumentType.getInteger(ctx, "amount")))))
+                // add <amount> [player]
+                .then(Commands.literal("add")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_ADD_SELF, DMZPermissions.POINTS_ADD_OTHERS))
+                        .then(Commands.argument("amount", IntegerArgumentType.integer())
+                                .executes(ctx -> addPoints(ctx.getSource(), ctx.getSource().getPlayerOrException(), IntegerArgumentType.getInteger(ctx, "amount")))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_ADD_OTHERS))
+                                        .executes(ctx -> addPoints(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), IntegerArgumentType.getInteger(ctx, "amount"))))))
 
-                        .then(Commands.literal("remove")
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(0))
-                                        .executes(ctx -> removePoints(ctx.getSource(),
-                                                EntityArgument.getPlayer(ctx, "player"),
-                                                IntegerArgumentType.getInteger(ctx, "amount")))))
+                // remove <amount> [player]
+                .then(Commands.literal("remove")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_REMOVE_SELF, DMZPermissions.POINTS_REMOVE_OTHERS))
+                        .then(Commands.argument("amount", IntegerArgumentType.integer(0))
+                                .executes(ctx -> removePoints(ctx.getSource(), ctx.getSource().getPlayerOrException(), IntegerArgumentType.getInteger(ctx, "amount")))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_REMOVE_OTHERS))
+                                        .executes(ctx -> removePoints(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), IntegerArgumentType.getInteger(ctx, "amount"))))))
 
-                        .then(Commands.literal("info")
-                                .executes(ctx -> showPoints(ctx.getSource(),
-                                        EntityArgument.getPlayer(ctx, "player"))))
-                )
+                // info [player]
+                .then(Commands.literal("info")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_INFO_SELF, DMZPermissions.POINTS_INFO_OTHERS))
+                        .executes(ctx -> showPoints(ctx.getSource(), ctx.getSource().getPlayerOrException()))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_INFO_OTHERS))
+                                .executes(ctx -> showPoints(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
         );
     }
 
@@ -92,4 +103,3 @@ public class PointsCommand {
         return 1;
     }
 }
-

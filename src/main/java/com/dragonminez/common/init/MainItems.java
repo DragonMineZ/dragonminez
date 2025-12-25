@@ -27,24 +27,24 @@ public final class MainItems {
 	public static final RegistryObject<Item> ORANGE_CAPSULE = ITEM_REGISTER.register("orange_capsule", () -> new CapsuleItem(CapsuleType.ORANGE));
 	public static final RegistryObject<Item> BLUE_CAPSULE = ITEM_REGISTER.register("blue_capsule", () -> new CapsuleItem(CapsuleType.BLUE));
 	public static final RegistryObject<Item> SENZU_BEAN = ITEM_REGISTER.register("senzu_bean",
-			() -> new FoodItem(20, 20.0f, false, true));
+			() -> new FoodItem(20, 0.0f));
 
 	public static final RegistryObject<Item> MIGHT_TREE_FRUIT = ITEM_REGISTER.register("might_tree_fruit",
 			MightTreeFruitItem::new);
 	public static final RegistryObject<Item> COMIDA_DINO_RAW = ITEM_REGISTER.register("raw_dino_meat",
-			() -> new FoodItem(4, 4.8f, true));
+			() -> new FoodItem(4, 3.6f));
 	public static final RegistryObject<Item> COMIDA_DINO_COOKED = ITEM_REGISTER.register("cooked_dino_meat",
-			() -> new FoodItem(8, 12.8f, true));
+			() -> new FoodItem(8, 12.8f));
 	public static final RegistryObject<Item> HEART_MEDICINE = ITEM_REGISTER.register("heart_medicine",
-			() -> new FoodItem(20, 20.0f, false, false));
+			() -> new FoodItem(0, 0.0f));
 	public static final RegistryObject<Item> DINO_TAIL_RAW = ITEM_REGISTER.register("dino_tail_raw",
-			() -> new FoodItem(3, 3.6f, true));
+			() -> new FoodItem(6, 4.8f));
 	public static final RegistryObject<Item> DINO_TAIL_COOKED = ITEM_REGISTER.register("dino_tail_cooked",
-			() -> new FoodItem(6, 9.6f, true));
+			() -> new FoodItem(12, 9.6f));
 	public static final RegistryObject<Item> FROG_LEGS_RAW = ITEM_REGISTER.register("frog_legs_raw",
-			() -> new FoodItem(2, 2.4f, true));
+			() -> new FoodItem(2, 2.4f));
 	public static final RegistryObject<Item> FROG_LEGS_COOKED = ITEM_REGISTER.register("frog_legs_cooked",
-			() -> new FoodItem(5, 7.2f, true));
+			() -> new FoodItem(5, 4.8f));
 
 	//POTHALAS
 	public static final RegistryObject<Item> POTHALA_LEFT =

@@ -44,7 +44,7 @@ public class LocateCommand {
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzlocate")
-				.requires(source -> source.hasPermission(2))
+				.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.LOCATE))
 				.then(Commands.argument("structure", StringArgumentType.string())
 						.suggests(SUGGESTIONS)
 						.executes(context -> {

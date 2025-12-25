@@ -17,31 +17,33 @@ public class BonusCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzbonus")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> DMZPermissions.check(source, DMZPermissions.BONUS_ADD_SELF, DMZPermissions.BONUS_ADD_OTHERS))
 
-                .then(Commands.argument("player", EntityArgument.player())
-                        .then(Commands.literal("add")
-                                .then(Commands.argument("stat", StringArgumentType.word())
-                                        .then(Commands.argument("operation", StringArgumentType.word())
-                                                .then(Commands.argument("value", DoubleArgumentType.doubleArg())
-                                                        .then(Commands.argument("bonusName", StringArgumentType.word())
-                                                                .executes(ctx -> addBonus(ctx.getSource(),
-                                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                                        StringArgumentType.getString(ctx, "stat"),
-                                                                        StringArgumentType.getString(ctx, "operation"),
-                                                                        DoubleArgumentType.getDouble(ctx, "value"),
-                                                                        StringArgumentType.getString(ctx, "bonusName"))))))))
+                // add <stat> <operation> <value> <bonusName> [player]
+                .then(Commands.literal("add")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.BONUS_ADD_SELF, DMZPermissions.BONUS_ADD_OTHERS))
+                        .then(Commands.argument("stat", StringArgumentType.word())
+                                .then(Commands.argument("operation", StringArgumentType.word())
+                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg())
+                                                .then(Commands.argument("bonusName", StringArgumentType.word())
+                                                        .executes(ctx -> addBonus(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName")))
+                                                        .then(Commands.argument("player", EntityArgument.player())
+                                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.BONUS_ADD_OTHERS))
+                                                                .executes(ctx -> addBonus(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName")))))))))
 
-                        .then(Commands.literal("clear")
-                                .then(Commands.argument("stat", StringArgumentType.word())
-                                        .executes(ctx -> clearStat(ctx.getSource(),
-                                                EntityArgument.getPlayer(ctx, "player"),
-                                                StringArgumentType.getString(ctx, "stat")))
-                                        .then(Commands.argument("bonusName", StringArgumentType.word())
-                                                .executes(ctx -> clearBonus(ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        StringArgumentType.getString(ctx, "stat"),
-                                                        StringArgumentType.getString(ctx, "bonusName")))))))
+                // clear <stat> [bonusName] [player]
+                .then(Commands.literal("clear")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.BONUS_CLEAR_SELF, DMZPermissions.BONUS_CLEAR_OTHERS))
+                        .then(Commands.argument("stat", StringArgumentType.word())
+                                .executes(ctx -> clearStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "stat")))
+                                .then(Commands.argument("bonusName", StringArgumentType.word())
+                                        .executes(ctx -> clearBonus(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "bonusName")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.BONUS_CLEAR_OTHERS))
+                                                .executes(ctx -> clearBonus(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "bonusName")))))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.BONUS_CLEAR_OTHERS))
+                                        .executes(ctx -> clearStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "stat"))))))
         );
     }
 
@@ -138,4 +140,3 @@ public class BonusCommand {
         return 1;
     }
 }
-

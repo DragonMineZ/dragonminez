@@ -110,6 +110,18 @@ public abstract class DMZEvent extends Event {
 			return oldValue + tpGain;
 		}
 	}
+
+	public static class QuestCompleteEvent extends Event {
+
+	}
+
+	public static class DataSaveEvent extends Event {
+
+	}
+
+	public static class DataLoadEvent extends Event {
+
+	}
 }
 
 

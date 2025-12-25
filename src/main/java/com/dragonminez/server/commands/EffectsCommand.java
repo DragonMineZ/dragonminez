@@ -18,37 +18,36 @@ public class EffectsCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzeffect")
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_LIST_SELF, DMZPermissions.EFFECTS_LIST_OTHERS))
+
+                // give <effect> <duration> [player]
                 .then(Commands.literal("give")
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("effect", StringArgumentType.string())
-                                        .then(Commands.argument("duration", IntegerArgumentType.integer(-1))
-                                                .executes(ctx -> giveEffect(
-                                                        ctx.getSource(),
-                                                        EntityArgument.getPlayer(ctx, "player"),
-                                                        StringArgumentType.getString(ctx, "effect"),
-                                                        IntegerArgumentType.getInteger(ctx, "duration")
-                                                ))))))
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_GIVE_SELF, DMZPermissions.EFFECTS_GIVE_OTHERS))
+                        .then(Commands.argument("effect", StringArgumentType.string())
+                                .then(Commands.argument("duration", IntegerArgumentType.integer(-1))
+                                        .executes(ctx -> giveEffect(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "effect"), IntegerArgumentType.getInteger(ctx, "duration")))
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.EFFECTS_GIVE_OTHERS))
+                                                .executes(ctx -> giveEffect(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "effect"), IntegerArgumentType.getInteger(ctx, "duration")))))))
+
+                // remove <effect> [player]
                 .then(Commands.literal("remove")
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("effect", StringArgumentType.string())
-                                        .executes(ctx -> removeEffect(
-                                                ctx.getSource(),
-                                                EntityArgument.getPlayer(ctx, "player"),
-                                                StringArgumentType.getString(ctx, "effect")
-                                        )))))
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_REMOVE_SELF, DMZPermissions.EFFECTS_REMOVE_OTHERS))
+                        .then(Commands.argument("effect", StringArgumentType.string())
+                                .executes(ctx -> removeEffect(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "effect")))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.EFFECTS_REMOVE_OTHERS))
+                                        .executes(ctx -> removeEffect(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "effect"))))))
+
+                // clear [player]
                 .then(Commands.literal("clear")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_CLEAR_SELF, DMZPermissions.EFFECTS_CLEAR_OTHERS))
+                        .executes(ctx -> clearEffects(ctx.getSource(), ctx.getSource().getPlayerOrException()))
                         .then(Commands.argument("player", EntityArgument.player())
-                                .executes(ctx -> clearEffects(
-                                        ctx.getSource(),
-                                        EntityArgument.getPlayer(ctx, "player")
-                                ))))
-                .then(Commands.literal("list")
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .executes(ctx -> listEffects(
-                                        ctx.getSource(),
-                                        EntityArgument.getPlayer(ctx, "player")
-                                )))));
+                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.EFFECTS_CLEAR_OTHERS))
+                                .executes(ctx -> clearEffects(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
+
+		);
     }
 
     private static int giveEffect(CommandSourceStack source, ServerPlayer target, String effectName, int duration) {
@@ -97,26 +96,6 @@ public class EffectsCommand {
         return 1;
     }
 
-    private static int listEffects(CommandSourceStack source, ServerPlayer target) {
-        StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
-            var effects = data.getEffects().getEffectsSortedByDuration();
-
-            if (effects.isEmpty()) {
-                source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.no_active_effects", target.getName().getString()), false);
-            } else {
-                source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.list_header", target.getName().getString()), false);
-
-                for (var effect : effects) {
-                    String duration = effect.isPermanent() ? "permanent" :
-                            (effect.getDuration() / 20) + "s";
-                    source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.list_entry", effect.getName(), (1.0 + effect.getPower()), duration), false);
-                }
-            }
-        });
-
-        return 1;
-    }
-
     private static double getEffectPower(String effectName) {
         var serverConfig = ConfigManager.getServerConfig();
         if (serverConfig == null) {
@@ -130,4 +109,3 @@ public class EffectsCommand {
         };
     }
 }
-

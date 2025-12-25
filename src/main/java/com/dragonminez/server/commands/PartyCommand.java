@@ -185,4 +185,3 @@ public class PartyCommand {
         return 1;
     }
 }
-

@@ -78,6 +78,11 @@ public class ForgeClientEvents {
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
             tickCounter = 0;
+            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+                if (hasCreatedCharacterCache != data.getStatus().hasCreatedCharacter()) {
+                    hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+                }
+            });
         }
     }
 
@@ -86,4 +91,3 @@ public class ForgeClientEvents {
         ConfigManager.clearServerSync();
     }
 }
-
