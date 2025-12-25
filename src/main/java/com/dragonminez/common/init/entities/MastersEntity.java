@@ -30,6 +30,11 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
     }
 
     @Override
+    public void setPersistenceRequired() {
+        super.setPersistenceRequired();
+    }
+
+    @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F));

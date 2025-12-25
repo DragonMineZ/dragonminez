@@ -13,6 +13,8 @@ public class MasterGokuEntity extends MastersEntity {
 
     public MasterGokuEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+
+        this.setPersistenceRequired();
     }
 
     @Override

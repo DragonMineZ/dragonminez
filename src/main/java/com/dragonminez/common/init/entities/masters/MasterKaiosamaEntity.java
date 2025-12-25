@@ -13,6 +13,8 @@ public class MasterKaiosamaEntity extends MastersEntity {
 
     public MasterKaiosamaEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+
+        this.setPersistenceRequired();
     }
 
     @Override

@@ -88,16 +88,16 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
                 this.yBodyRot = this.getYRot();
                 this.yHeadRot = this.getYRot();
 
-                double speed = this.getAttributeValue(Attributes.FLYING_SPEED) * 0.9D;
+                double speed = this.getAttributeValue(Attributes.FLYING_SPEED) * 0.5D;
                 double verticalSpeed = 0;
 
                 // Control Vertical (Cliente)
                 if (this.level().isClientSide) {
                     if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) {
-                        verticalSpeed = 0.7;
+                        verticalSpeed = 0.4;
                     }
                     else if (KeyBinds.DESCEND_KEY.isDown()) {
-                        verticalSpeed = -0.7;
+                        verticalSpeed = -0.4;
                     }
                 }
 

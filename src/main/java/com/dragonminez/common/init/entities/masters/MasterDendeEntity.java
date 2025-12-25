@@ -13,6 +13,8 @@ public class MasterDendeEntity extends MastersEntity {
 
     public MasterDendeEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+
+        this.setPersistenceRequired();
     }
 
     @Override

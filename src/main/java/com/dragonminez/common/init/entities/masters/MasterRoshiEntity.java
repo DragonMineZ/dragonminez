@@ -13,6 +13,9 @@ public class MasterRoshiEntity extends MastersEntity {
 
     public MasterRoshiEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+
+        this.setPersistenceRequired();
+
     }
 
     @Override
