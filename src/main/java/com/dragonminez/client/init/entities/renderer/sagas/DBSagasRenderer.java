@@ -25,7 +25,7 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
     @Override
     public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-        return RenderType.entityCutout(texture);
+        return RenderType.entityCutoutNoCull(texture);
     }
 
     @Override
