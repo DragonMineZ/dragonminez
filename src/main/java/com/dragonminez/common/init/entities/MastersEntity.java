@@ -29,10 +29,6 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
     }
 
-    @Override
-    public void setPersistenceRequired() {
-        super.setPersistenceRequired();
-    }
 
     @Override
     protected void registerGoals() {
