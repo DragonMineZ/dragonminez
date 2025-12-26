@@ -31,6 +31,11 @@ public class KiBlastEntity extends AbstractKiProjectile{
     @Override
     protected void onKiTick() {
 
+        if (!this.level().isClientSide && this.getOwner() == null) {
+            this.discard();
+            return;
+        }
+
         if (this.level().isClientSide) {
 
             float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());

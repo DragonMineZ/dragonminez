@@ -186,7 +186,7 @@
 				}
 			}
 		},
-		"attack1": {
+		"attack": {
 			"animation_length": 0.4167,
 			"bones": {
 				"right_forearm": {
