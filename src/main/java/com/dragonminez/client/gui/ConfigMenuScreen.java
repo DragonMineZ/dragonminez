@@ -7,9 +7,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -22,19 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class ConfigMenuScreen extends Screen {
+public class ConfigMenuScreen extends BaseMenuScreen {
 
     private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
-    private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/buttons/menubuttons.png");
     private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
 
     private static final int CONFIG_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_CONFIGS = 7;
 
-    private final int oldGuiScale;
     private int tickCount = 0;
     private int scrollOffset = 0;
     private int maxScroll = 0;
@@ -46,8 +41,7 @@ public class ConfigMenuScreen extends Screen {
     private final List<SwitchButton> switchButtons = new ArrayList<>();
 
     public ConfigMenuScreen(int oldGuiScale) {
-        super(Component.translatable("gui.dragonminez.config.title"));
-        this.oldGuiScale = oldGuiScale;
+        super(Component.translatable("gui.dragonminez.config.title"), oldGuiScale);
     }
 
     @Override
@@ -55,7 +49,6 @@ public class ConfigMenuScreen extends Screen {
         super.init();
         loadConfig();
         initializeConfigOptions();
-        initNavigationButtons();
         initConfigButtons();
         updateConfigsList();
     }
@@ -74,10 +67,6 @@ public class ConfigMenuScreen extends Screen {
         configOptions.add(new ConfigOption("config.xenoverseHudPosY",
             ConfigType.INT, hudConfig.getXenoverseHudPosY(), -1000, 2000,
             v -> hudConfig.setXenoverseHudPosY(v.intValue())));
-
-        configOptions.add(new ConfigOption("config.xenoverseHudScale",
-            ConfigType.FLOAT, hudConfig.getHudScale(), 0.5f, 3.0f,
-            v -> hudConfig.setHudScale(v)));
 
         configOptions.add(new ConfigOption("config.advancedDescription",
             ConfigType.BOOLEAN, hudConfig.isAdvancedDescription() ? 1 : 0, 0, 1,
@@ -122,71 +111,6 @@ public class ConfigMenuScreen extends Screen {
         configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
                 ConfigType.BOOLEAN, hudConfig.isStoryHardDifficulty() ? 1 : 0, 0, 1,
                 v -> hudConfig.setStoryHardDifficulty(v > 0)));
-    }
-
-    private void initNavigationButtons() {
-		int centerX = this.width / 2;
-		int bottomY = this.height - 30;
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX - 70, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(0, 0, 0, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new CharacterStatsScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX - 30, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(20, 0, 20, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new SkillsMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 10, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(60, 0, 60, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new QuestsMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 50, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(100, 0, 100, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new ConfigMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
     }
 
     private void initConfigButtons() {
@@ -409,7 +333,7 @@ public class ConfigMenuScreen extends Screen {
     }
 
     private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-        LivingEntity player = Minecraft.getInstance().player;
+        LivingEntity player = this.minecraft.player;
         if (player == null) return;
 
         float xRotation = (float) Math.atan((y - mouseY) / 40.0F);
@@ -459,18 +383,11 @@ public class ConfigMenuScreen extends Screen {
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    @Override
-    public void onClose() {
+    public void removed() {
         if (this.minecraft != null) {
             ConfigManager.saveGeneralUserConfig();
-            this.minecraft.options.guiScale().set(oldGuiScale);
-            this.minecraft.resizeDisplay();
         }
-        super.onClose();
+        super.removed();
     }
 
     private enum ConfigType {
@@ -495,4 +412,3 @@ public class ConfigMenuScreen extends Screen {
         }
     }
 }
-

@@ -16,7 +16,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -30,20 +29,17 @@ import java.util.List;
 import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
-public class QuestsMenuScreen extends Screen {
+public class QuestsMenuScreen extends BaseMenuScreen {
 
     private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
     private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
-    private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/buttons/menubuttons.png");
 
     private static final int QUEST_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_QUESTS = 8;
 
     private StatsData statsData;
-    private final int oldGuiScale;
     private int tickCount = 0;
 
     private int currentSagaIndex = 0;
@@ -53,8 +49,7 @@ public class QuestsMenuScreen extends Screen {
     private int maxScroll = 0;
 
     public QuestsMenuScreen(int oldGuiScale) {
-        super(Component.translatable("gui.dragonminez.quests.title"));
-        this.oldGuiScale = oldGuiScale;
+        super(Component.translatable("gui.dragonminez.quests.title"), oldGuiScale);
     }
 
     @Override
@@ -63,7 +58,6 @@ public class QuestsMenuScreen extends Screen {
         updateStatsData();
         loadAvailableSagas();
         initSagaNavigationButtons();
-        initNavigationButtons();
         updateQuestsList();
     }
 
@@ -71,7 +65,7 @@ public class QuestsMenuScreen extends Screen {
         availableSagas.clear();
         if (statsData == null) return;
 
-        Map<String, Saga> allSagas = SagaManager.getAllSagas();
+        Map<String, Saga> allSagas = SagaManager.getClientSagas();
 
         if (allSagas.isEmpty()) {
             LogUtil.warn(Env.CLIENT, "No sagas loaded from SagaManager");
@@ -96,71 +90,6 @@ public class QuestsMenuScreen extends Screen {
         if (currentSagaIndex >= availableSagas.size()) {
             currentSagaIndex = Math.max(0, availableSagas.size() - 1);
         }
-    }
-
-    private void initNavigationButtons() {
-		int centerX = this.width / 2;
-		int bottomY = this.height - 30;
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX - 70, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(0, 0, 0, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new CharacterStatsScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX - 30, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(20, 0, 20, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new SkillsMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 10, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(60, 0, 60, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new QuestsMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 50, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(100, 0, 100, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new ConfigMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
     }
 
     private void initSagaNavigationButtons() {
@@ -647,22 +576,4 @@ public class QuestsMenuScreen extends Screen {
         int x = centerX - (textWidth / 2);
         drawStringWithBorder(graphics, text, x, y, textColor);
     }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    @Override
-    public void onClose() {
-        if (this.minecraft != null) {
-            this.minecraft.options.guiScale().set(oldGuiScale);
-            this.minecraft.resizeDisplay();
-        }
-        super.onClose();
-    }
-
-	public int getOldGuiScale() {
-		return oldGuiScale;
-	}
 }

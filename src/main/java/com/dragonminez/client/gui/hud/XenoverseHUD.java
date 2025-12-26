@@ -89,7 +89,7 @@ public class XenoverseHUD {
 				RenderSystem.setShaderTexture(0, hud);
 
 				guiGraphics.pose().pushPose();
-				float configScale = ConfigManager.getUserConfig().getHud().getHudScale();
+				float configScale = 1.8f;
 				float correctionFactor = HUDManager.getScaleFactor();
 				float finalScale = configScale * correctionFactor;
 				guiGraphics.pose().scale(finalScale, finalScale, 1.0f);

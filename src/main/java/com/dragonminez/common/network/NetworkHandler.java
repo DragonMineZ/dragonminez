@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.S2C.PlayerAnimationsSync;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.SyncSagasS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -82,6 +83,12 @@ public class NetworkHandler {
                 .encoder(SyncServerConfigS2C::encode)
                 .consumerMainThread(SyncServerConfigS2C::handle)
                 .add();
+
+		net.messageBuilder(SyncSagasS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncSagasS2C::new)
+				.encoder(SyncSagasS2C::encode)
+				.consumerMainThread(SyncSagasS2C::handle)
+				.add();
     }
 
     public static <MSG> void sendToServer(MSG message) {

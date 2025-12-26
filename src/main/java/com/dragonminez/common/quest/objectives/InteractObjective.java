@@ -1,21 +1,23 @@
 package com.dragonminez.common.quest.objectives;
 
 import com.dragonminez.common.quest.QuestObjective;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 
 public class InteractObjective extends QuestObjective {
-    private final EntityType<?> entityType;
+    private final String entityTypeId;
     private final String entityName;
 
     public InteractObjective(String description, EntityType<?> entityType, String entityName) {
         super(ObjectiveType.INTERACT, description, 1);
-        this.entityType = entityType;
+        this.entityTypeId = entityType != null ? BuiltInRegistries.ENTITY_TYPE.getKey(entityType).toString() : null;
         this.entityName = entityName;
     }
 
-    public EntityType<?> getEntityType() {
-        return entityType;
+    public String getEntityTypeId() {
+        return entityTypeId;
     }
 
     public String getEntityName() {
@@ -25,7 +27,8 @@ public class InteractObjective extends QuestObjective {
     @Override
     public boolean checkProgress(Object... params) {
         if (params.length > 0 && params[0] instanceof Entity entity) {
-            if (entityType == null || entity.getType().equals(entityType)) {
+            EntityType<?> requiredType = entityTypeId != null ? BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(entityTypeId)) : null;
+            if (requiredType == null || entity.getType().equals(requiredType)) {
                 if (entityName == null || entity.getName().getString().equals(entityName)) {
                     setProgress(1);
                     return true;
@@ -35,4 +38,3 @@ public class InteractObjective extends QuestObjective {
         return false;
     }
 }
-

@@ -286,7 +286,6 @@ public class StatsCommand {
 			player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0D);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 			player.setHealth(20.0F);
-			ForgeClientEvents.hasCreatedCharacterCache = false;
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
         });
 

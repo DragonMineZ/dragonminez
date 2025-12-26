@@ -17,7 +17,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -34,7 +33,7 @@ import java.util.List;
 import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
-public class CharacterStatsScreen extends Screen {
+public class CharacterStatsScreen extends BaseMenuScreen {
 
     private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
@@ -42,9 +41,6 @@ public class CharacterStatsScreen extends Screen {
             "textures/gui/menu/menusmall.png");
     private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-			"textures/gui/buttons/menubuttons.png");
-
 
     private StatsData statsData;
     private int tickCount = 0;
@@ -61,11 +57,8 @@ public class CharacterStatsScreen extends Screen {
     private CustomTextureButton multiplierButton;
     private SwitchButton viewSwitchButton;
 
-	private int oldGuiScale;
-
     public CharacterStatsScreen(int oldGuiScale) {
-        super(Component.translatable("gui.dragonminez.character_stats.title"));
-		this.oldGuiScale = oldGuiScale;
+        super(Component.translatable("gui.dragonminez.character_stats.title"), oldGuiScale);
     }
 
     @Override
@@ -77,72 +70,6 @@ public class CharacterStatsScreen extends Screen {
         updateStatsData();
         initStatButtons();
         initViewSwitchButton();
-        initNavigationButtons();
-    }
-
-    private void initNavigationButtons() {
-        int centerX = this.width / 2;
-        int bottomY = this.height - 30;
-
-        this.addRenderableWidget(
-            new CustomTextureButton.Builder()
-                .position(centerX - 70, bottomY)
-                .size(20, 20)
-                .texture(SCREEN_BUTTONS)
-                .textureSize(20, 20)
-                .textureCoords(0, 0, 0, 20)
-                .onPress(btn -> {
-					if (this.minecraft != null) {
-						this.minecraft.setScreen(new CharacterStatsScreen(oldGuiScale));
-					}
-				})
-                .build()
-        );
-
-        this.addRenderableWidget(
-            new CustomTextureButton.Builder()
-                .position(centerX - 30, bottomY)
-                .size(20, 20)
-                .texture(SCREEN_BUTTONS)
-                .textureSize(20, 20)
-                .textureCoords(20, 0, 20, 20)
-                .onPress(btn -> {
-                    if (this.minecraft != null) {
-                        this.minecraft.setScreen(new SkillsMenuScreen(oldGuiScale));
-                    }
-                })
-                .build()
-        );
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 10, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(60, 0, 60, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new QuestsMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 50, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(100, 0, 100, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new ConfigMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
     }
 
     @Override
@@ -314,12 +241,12 @@ public class CharacterStatsScreen extends Screen {
 		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 		graphics.blit(MENU_BIG, 43, centerY - 28, 142, 0, 79, 21, 256, 256);
 
-        graphics.blit(MENU_SMALL, centerX - 70, 8, 0, 95, 145, 58, 256, 256);
-
         graphics.blit(MENU_BIG, this.width - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-        RenderSystem.disableBlend();
+		graphics.blit(MENU_SMALL, centerX - 70, 8, 0, 95, 145, 58, 256, 256);
+
+		RenderSystem.disableBlend();
     }
 
     private void renderPlayerInfo(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -1003,20 +930,5 @@ public class CharacterStatsScreen extends Screen {
 
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
-    }
-
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    @Override
-    public void onClose() {
-        if (this.minecraft != null) {
-            this.minecraft.options.guiScale().set(oldGuiScale);
-            this.minecraft.resizeDisplay();
-        }
-        super.onClose();
     }
 }

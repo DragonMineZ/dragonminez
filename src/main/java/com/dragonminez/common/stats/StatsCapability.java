@@ -2,13 +2,12 @@ package com.dragonminez.common.stats;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.SyncSagasS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
 import com.dragonminez.common.quest.QuestData;
 import com.dragonminez.common.quest.SagaManager;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -21,9 +20,6 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StatsCapability {
@@ -60,24 +56,19 @@ public class StatsCapability {
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            Map<String, Map<String, FormConfig>> allForms = new HashMap<>();
-            ConfigManager.getLoadedRaces().forEach(raceName -> {
-                allForms.put(raceName, ConfigManager.getAllFormsForRace(raceName));
-            });
-
             NetworkHandler.sendToPlayer(
                 new SyncServerConfigS2C(
-                    ConfigManager.getAllRaceStats(),
-                    ConfigManager.getAllRaceCharacters(),
-                    allForms,
                     ConfigManager.getServerConfig(),
-                    ConfigManager.getSkillsConfig()
+                    ConfigManager.getSkillsConfig(),
+                    ConfigManager.getAllForms(),
+                    ConfigManager.getAllRaceStats(),
+                    ConfigManager.getAllRaceCharacters()
                 ),
                 serverPlayer
             );
 
             SagaManager.loadSagas(serverPlayer.getServer());
-
+            NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), serverPlayer);
         }
         event.getEntity().refreshDimensions();
     }
@@ -92,14 +83,9 @@ public class StatsCapability {
 
                 StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
                     QuestData questData = data.getQuestData();
-
-                    boolean saiyanUnlocked = questData.isSagaUnlocked("saiyan_saga");
-                    boolean quest1Completed = questData.isQuestCompleted("saiyan_saga", 1);
-
                     if (!questData.isSagaUnlocked("saiyan_saga")) {
                         questData.unlockSaga("saiyan_saga");
                     }
-
                     NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
                 });
             }
@@ -127,4 +113,3 @@ public class StatsCapability {
         }
     }
 }
-

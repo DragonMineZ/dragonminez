@@ -85,7 +85,7 @@ public class AlternativeHUD {
 				int stmX = rightBaseX + ConfigManager.getUserConfig().getHud().getStaminaBarPosX();
 				int stmY = row2Y + ConfigManager.getUserConfig().getHud().getStaminaBarPosY();
 
-				float userScale = ConfigManager.getUserConfig().getHud().getHudScale();
+				float userScale = 1.8f;
 
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().translate(hpX, hpY, 0);

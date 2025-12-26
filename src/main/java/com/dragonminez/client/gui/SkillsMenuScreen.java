@@ -2,7 +2,6 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ClippableTextureButton;
-import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
@@ -16,7 +15,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -30,14 +28,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class SkillsMenuScreen extends Screen {
+public class SkillsMenuScreen extends BaseMenuScreen {
 
     private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
     private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menusmall.png");
-    private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/buttons/menubuttons.png");
 
     private static final int SKILL_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_SKILLS = 8;
@@ -47,7 +43,6 @@ public class SkillsMenuScreen extends Screen {
     private SkillCategory currentCategory = SkillCategory.SKILLS;
 
     private StatsData statsData;
-    private int oldGuiScale;
     private int tickCount = 0;
 
     private String selectedSkill = null;
@@ -61,8 +56,7 @@ public class SkillsMenuScreen extends Screen {
     private Button upgradeButton;
 
     public SkillsMenuScreen(int oldGuiScale) {
-        super(Component.translatable("gui.dragonminez.skills.title"));
-        this.oldGuiScale = oldGuiScale;
+        super(Component.translatable("gui.dragonminez.skills.title"), oldGuiScale);
     }
 
     @Override
@@ -70,74 +64,8 @@ public class SkillsMenuScreen extends Screen {
         super.init();
         updateStatsData();
         initDynamicButtons();
-        initNavigationButtons();
         updateSkillsList();
     }
-
-	private void initNavigationButtons() {
-		int centerX = this.width / 2;
-		int bottomY = this.height - 30;
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX - 70, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(0, 0, 0, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new CharacterStatsScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX - 30, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(20, 0, 20, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new SkillsMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 10, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(60, 0, 60, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new QuestsMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-
-		this.addRenderableWidget(
-				new CustomTextureButton.Builder()
-						.position(centerX + 50, bottomY)
-						.size(20, 20)
-						.texture(SCREEN_BUTTONS)
-						.textureSize(20, 20)
-						.textureCoords(100, 0, 100, 20)
-						.onPress(btn -> {
-							if (this.minecraft != null) {
-								this.minecraft.setScreen(new ConfigMenuScreen(oldGuiScale));
-							}
-						})
-						.build()
-		);
-	}
 
     @Override
     public void tick() {
@@ -426,7 +354,7 @@ public class SkillsMenuScreen extends Screen {
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightPanelX = this.width - 157;
+        int rightPanelX = this.width - 158;
         int centerY = this.height / 2;
         int rightPanelY = centerY - 105;
 
@@ -586,23 +514,5 @@ public class SkillsMenuScreen extends Screen {
         int textWidth = this.font.width(text);
         int x = centerX - (textWidth / 2);
         drawStringWithBorder(graphics, text, x, y, textColor);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    @Override
-    public void onClose() {
-        if (this.minecraft != null) {
-            this.minecraft.options.guiScale().set(oldGuiScale);
-            this.minecraft.resizeDisplay();
-        }
-        super.onClose();
-    }
-
-    public int getOldGuiScale() {
-        return oldGuiScale;
     }
 }

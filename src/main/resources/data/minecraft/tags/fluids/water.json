@@ -3,8 +3,6 @@
     "dragonminez:namek_water_fluid",
     "dragonminez:healing_fluid",
     "dragonminez:flowing_namek_water_fluid",
-    "dragonminez:flowing_healing_fluid",
-    "dragonminez:namek_water_liquid",
-    "dragonminez:healing_liquid"
+    "dragonminez:flowing_healing_fluid"
   ]
 }

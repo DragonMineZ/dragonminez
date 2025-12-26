@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -55,7 +56,7 @@ public class KiSenseEvent {
 	private static void renderHealthBar(PoseStack poseStack, LivingEntity entity, MultiBufferSource bufferSource) {
 		poseStack.pushPose();
 
-		poseStack.translate(0.0D, entity.getBbHeight() + 0.5D, 0.0D);
+		poseStack.translate(0.0D, entity.getBbHeight() + 0.8D, 0.0D);
 
 		Minecraft mc = Minecraft.getInstance();
 		poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
@@ -93,7 +94,12 @@ public class KiSenseEvent {
 		}
 
 		poseStack.pushPose();
-		String text = numberFormat.format(health) + " / " + numberFormat.format(maxHealth);
+		String text = "";
+		if (ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage()) {
+			text = String.format("%.0f", health/maxHealth * 100) + "%";
+		} else {
+			text = numberFormat.format(health) + " / " + numberFormat.format(maxHealth);
+		}
 		float textScale = 0.6f;
 		poseStack.scale(textScale, textScale, textScale);
 		float textY = 3.0f;

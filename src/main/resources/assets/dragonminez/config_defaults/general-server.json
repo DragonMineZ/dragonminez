@@ -6,6 +6,9 @@
   },
   "gameplay": {
     "tpGainMultiplier": 1.0,
+    // TP Cost multiplier is not lineal, it increases exponentially.
+    // Formula: tpCost = (level * tpCostMultiplier) * tpCostMultiplier * 1.5
+    // In addition, leveling up a stat with a x10 does not cost 10 times more TP, it is recursive.
     "tpCostMultiplier": 1.0,
     // How much TP in percentage is gained by killing an entity, based on their max health
     "tpHealthRatio": 10,

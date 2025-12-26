@@ -12,11 +12,6 @@ import org.joml.Vector3f;
 
 import java.util.function.Consumer;
 
-/**
- * @author Original author: Choonster <a href="https://github.com/Choonster-Minecraft-Mods/TestMod3">...</a>
- * <p>
- * Edited by MineAcademy
- */
 public class SimpleFluid extends FluidType {
 	private final ResourceLocation stillTexture;
 	private final ResourceLocation flowTexture;

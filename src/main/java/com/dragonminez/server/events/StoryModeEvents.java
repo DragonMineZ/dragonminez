@@ -12,11 +12,14 @@ import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -58,7 +61,8 @@ public class StoryModeEvents {
                         QuestObjective objective = quest.getObjectives().get(i);
 
                         if (objective instanceof KillObjective killObjective) {
-                            if (killedEntity.getType().equals(killObjective.getEntityType())) {
+                            EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(killObjective.getEntityId()));
+                            if (killedEntity.getType().equals(requiredType)) {
                                 int currentProgress = questData.getQuestObjectiveProgress(sagaId, quest.getId(), i);
                                 int required = killObjective.getRequired();
 
@@ -105,7 +109,8 @@ public class StoryModeEvents {
                         QuestObjective objective = quest.getObjectives().get(i);
 
                         if (objective instanceof InteractObjective interactObjective) {
-                            if (event.getTarget().getType().equals(interactObjective.getEntityType())) {
+                            EntityType<?> requiredType = interactObjective.getEntityTypeId() != null ? BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(interactObjective.getEntityTypeId())) : null;
+                            if (requiredType != null && event.getTarget().getType().equals(requiredType)) {
                                 int currentProgress = questData.getQuestObjectiveProgress(sagaId, quest.getId(), i);
                                 int required = interactObjective.getRequired();
 
@@ -171,9 +176,10 @@ public class StoryModeEvents {
                         }
 
                         if (objective instanceof ItemObjective itemObjective) {
+                            Item requiredItem = BuiltInRegistries.ITEM.get(new ResourceLocation(itemObjective.getItemId()));
                             int totalCount = 0;
                             for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
-                                if (stack.is(itemObjective.getItem())) {
+                                if (stack.is(requiredItem)) {
                                     totalCount += stack.getCount();
                                 }
                             }
@@ -221,4 +227,3 @@ public class StoryModeEvents {
         });
     }
 }
-

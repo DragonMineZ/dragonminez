@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -131,7 +132,7 @@ public class CombatEvent {
             return true;
         }
 
-        var attackDamageModifier = mainHand.getAttributeModifiers(net.minecraft.world.entity.EquipmentSlot.MAINHAND)
+        var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND)
                 .get(Attributes.ATTACK_DAMAGE);
 
         return attackDamageModifier.isEmpty();

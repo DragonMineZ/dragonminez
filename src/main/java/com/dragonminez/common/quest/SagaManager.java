@@ -20,6 +20,7 @@ import java.util.*;
 public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga>> {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<String, Saga> LOADED_SAGAS = new HashMap<>();
+    private static final Map<String, Saga> CLIENT_SAGAS = new HashMap<>();
     private static final String SAGA_FOLDER = "dragonminez" + File.separator + "sagas";
 
     public static void init() {
@@ -179,7 +180,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
             Saga saga = parseSaga(root);
             if (saga != null) {
                 LOADED_SAGAS.put(saga.getId(), saga);
-                LogUtil.debug(Env.COMMON, "Loaded saga: {}", saga.getName());
+                LogUtil.info(Env.COMMON, "Loaded saga: {}", saga.getName());
             }
         } catch (Exception e) {
             LogUtil.error(Env.COMMON, "Failed to load saga file: {}", file, e);
@@ -221,6 +222,20 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         return LOADED_SAGAS.get(id);
     }
 
+    public static Map<String, Saga> getClientSagas() {
+        return new HashMap<>(CLIENT_SAGAS);
+    }
+
+    public static Saga getClientSaga(String id) {
+        return CLIENT_SAGAS.get(id);
+    }
+
+    public static void applySyncedSagas(Map<String, Saga> sagas) {
+        CLIENT_SAGAS.clear();
+        CLIENT_SAGAS.putAll(sagas);
+        LogUtil.info(Env.CLIENT, "Loaded {} saga(s) from server", sagas.size());
+    }
+
     @Override
     protected @NotNull Map<String, Saga> prepare(@NotNull ResourceManager pResourceManager, @NotNull ProfilerFiller pProfiler) {
         return new HashMap<>(LOADED_SAGAS);
@@ -232,4 +247,3 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         LOADED_SAGAS.putAll(pObject);
     }
 }
-

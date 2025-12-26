@@ -325,13 +325,14 @@ public class RaceSelectionScreen extends Screen {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-    @Override
-    public void onClose() {
-        if (this.minecraft != null) {
+	@Override
+	public void removed() {
+		if (this.minecraft != null) {
 			this.minecraft.options.guiScale().set(oldGuiScale);
 			this.minecraft.resizeDisplay();
-        }
-    }
+		}
+		super.removed();
+	}
 
     @Override
     public boolean isPauseScreen() {

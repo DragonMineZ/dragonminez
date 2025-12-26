@@ -15,7 +15,6 @@ public class GeneralUserConfig {
     public static class HudConfig {
 		private int xenoverseHudPosX = 5;
 		private int xenoverseHudPosY = 5;
-		private float hudScale = 1.8f;
 		private boolean advancedDescription = true;
 		private boolean advancedDescriptionPercentage = true;
 		private boolean alternativeHud = false;
@@ -32,8 +31,6 @@ public class GeneralUserConfig {
 		public void setXenoverseHudPosX(int xenoverseHudPosX) { this.xenoverseHudPosX = xenoverseHudPosX; }
 		public int getXenoverseHudPosY() { return xenoverseHudPosY; }
 		public void setXenoverseHudPosY(int xenoverseHudPosY) { this.xenoverseHudPosY = xenoverseHudPosY; }
-		public float getHudScale() { return hudScale; }
-		public void setHudScale(float hudScale) { this.hudScale = hudScale; }
 		public boolean isAdvancedDescription() { return advancedDescription; }
 		public void setAdvancedDescription(boolean advancedDescription) { this.advancedDescription = advancedDescription; }
 		public boolean isAdvancedDescriptionPercentage() { return advancedDescriptionPercentage; }

@@ -1,7 +1,6 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainFluids;
@@ -12,11 +11,8 @@ import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
-import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -156,7 +152,7 @@ public class StatsEvents {
 			}
 
 			if (dropTps(event.getEntity())) {
-				int tpsHealth = (int) event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio();
+				int tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
 
 				data.getResources().addTrainingPoints(tpsHealth);
 			}
