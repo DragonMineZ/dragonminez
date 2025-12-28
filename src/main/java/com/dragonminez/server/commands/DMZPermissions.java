@@ -81,6 +81,9 @@ public class DMZPermissions {
     // Locate
     public static final PermissionNode<Boolean> LOCATE = register("dmzlocate", "Allows locating special structures.", (player, uuid, context) -> false);
 
+    public static void init() {
+    }
+
     private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {
         PermissionNode<Boolean> permissionNode = new PermissionNode<>(Reference.MOD_ID, node, PermissionTypes.BOOLEAN, defaultResolver);
         permissionNode.setInformation(Component.literal(description), Component.literal(description));
