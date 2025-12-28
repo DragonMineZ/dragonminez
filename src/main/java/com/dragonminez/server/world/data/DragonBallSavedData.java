@@ -32,10 +32,19 @@ public class DragonBallSavedData extends SavedData {
 		return combined;
 	}
 
+	public Map<Integer, BlockPos> getActiveBallsCopy(boolean isNamek) {
+		return new HashMap<>(isNamek ? activeNamekBalls : activeEarthBalls);
+	}
+
 	public void addActiveBall(int star, BlockPos pos, boolean isNamek) {
 		Map<Integer, BlockPos> map = isNamek ? activeNamekBalls : activeEarthBalls;
 		map.put(star, pos);
 		(isNamek ? pendingNamekBalls : pendingEarthBalls).remove(star);
+		setDirty();
+	}
+
+	public void clearActive(boolean isNamek) {
+		(isNamek ? activeNamekBalls : activeEarthBalls).clear();
 		setDirty();
 	}
 

@@ -17,6 +17,7 @@ import com.dragonminez.server.world.dimension.NamekDimension;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
@@ -79,7 +80,7 @@ public class ForgeCommonEvents {
 			if (overworld != null) {
 				DragonBallSavedData data = DragonBallSavedData.get(overworld);
 				if (!data.hasFirstSpawnHappened(false)) {
-					DragonBallsHandler.scatterDragonBalls(overworld, false, true);
+					DragonBallsHandler.scatterDragonBalls(overworld, false);
 					data.setFirstSpawnHappened(false);
 					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for Earth.");
 				}
@@ -88,7 +89,7 @@ public class ForgeCommonEvents {
 			if (namek != null) {
 				DragonBallSavedData data = DragonBallSavedData.get(namek);
 				if (!data.hasFirstSpawnHappened(true)) {
-					DragonBallsHandler.scatterDragonBalls(namek, true, true);
+					DragonBallsHandler.scatterDragonBalls(namek, true);
 					data.setFirstSpawnHappened(true);
 					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for Namek.");
 				}

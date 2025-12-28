@@ -1,0 +1,28 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": [
+    "minecraft:stony_peaks",
+    "minecraft:meadow",
+    "minecraft:grove",
+    "minecraft:eroded_badlands",
+    "minecraft:windswept_hills",
+    "minecraft:badlands",
+    "minecraft:windswept_gravelly_hills"
+  ],
+  "spawners": [{
+    "type": "dragonminez:dino1",
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 3
+  },{
+    "type": "dragonminez:dino2",
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 3
+  },{
+    "type": "dragonminez:dino3",
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 3
+  }]
+}

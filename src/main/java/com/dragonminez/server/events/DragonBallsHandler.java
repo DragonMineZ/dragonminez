@@ -31,11 +31,22 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class DragonBallsHandler {
 	private static final Queue<Runnable> generationQueue = new ConcurrentLinkedQueue<>();
 
-	public static void scatterDragonBalls(ServerLevel level, boolean isNamek, boolean skipFourStar) {
+	public static void scatterDragonBalls(ServerLevel level, boolean isNamek) {
 		DragonBallSavedData data = DragonBallSavedData.get(level);
 		Random random = new Random();
 		int range = ConfigManager.getServerConfig().getWorldGen().getDBSpawnRange();
 		BlockPos spawnPos = level.getSharedSpawnPos();
+
+		Map<Integer, BlockPos> activeBalls = data.getActiveBallsCopy(isNamek);
+
+		activeBalls.forEach((star, pos) -> {
+			if (level.isLoaded(pos)) {
+				BlockState state = level.getBlockState(pos);
+				if (getStarFromBlock(state.getBlock()) != -1) {
+					level.removeBlock(pos, false);
+				}
+			}
+		});
 
 		data.clearPending(isNamek);
 
@@ -47,7 +58,7 @@ public class DragonBallsHandler {
 			BlockPos targetPos = new BlockPos(x, 0, z);
 
 			data.addPendingBall(star, targetPos, isNamek);
-			LogUtil.debug(Env.SERVER, "Dragon Ball (pending) [" + star + "] assigned to " + targetPos + " on " + (isNamek ? "Namek" : "Earth"));
+			LogUtil.debug(Env.SERVER, "Dragon Ball (pending) [" + star + "] assigned to " + targetPos + " on " + (isNamek ? "Namek" : "Earth") + " (Y is a dummy value)");
 		}
 
 		syncRadar(level);

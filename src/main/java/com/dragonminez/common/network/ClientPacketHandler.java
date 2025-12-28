@@ -1,7 +1,5 @@
 package com.dragonminez.common.network;
 
-import com.dragonminez.client.gui.QuestsMenuScreen;
-import com.dragonminez.client.gui.SkillsMenuScreen;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;

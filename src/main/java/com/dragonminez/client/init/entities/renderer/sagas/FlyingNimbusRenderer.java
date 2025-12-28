@@ -1,10 +1,7 @@
 package com.dragonminez.client.init.entities.renderer.sagas;
 
 import com.dragonminez.client.init.entities.model.FlyingNimbusModel;
-import com.dragonminez.client.init.entities.model.SpacePodModel;
 import com.dragonminez.common.init.entities.FlyingNimbusEntity;
-import com.dragonminez.common.init.entities.SpacePodEntity;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;

@@ -5,6 +5,7 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.quest.QuestData;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
 public class StatsData {
@@ -156,7 +157,9 @@ public class StatsData {
 		double defScaling = getStatScaling("DEF");
 		double resMult = 1.0 + getTotalMultiplier("RES");
 		double bonusRes = bonusStats.calculateBonus("RES", 0);
-		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling);
+		double armor = player.getArmorValue();
+		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
+		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.75 + toughness;
 	}
 
     public double getDefense() {
@@ -164,7 +167,9 @@ public class StatsData {
         double resMult = 1.0 + getTotalMultiplier("RES");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
         double bonusRes = bonusStats.calculateBonus("RES", 0);
-        return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling)) * releaseMultiplier;
+		double armor = player.getArmorValue();
+		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
+        return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
     }
 
     public CompoundTag save() {

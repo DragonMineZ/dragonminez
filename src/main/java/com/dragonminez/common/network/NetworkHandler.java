@@ -55,11 +55,18 @@ public class NetworkHandler {
                 .encoder(UpdateSkillC2S::encode)
                 .consumerMainThread(UpdateSkillC2S::handle)
                 .add();
+
         net.messageBuilder(StartQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
                 .decoder(StartQuestC2S::new)
                 .encoder(StartQuestC2S::toBytes)
                 .consumerMainThread(StartQuestC2S::handle)
                 .add();
+
+		net.messageBuilder(GrantWishC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(GrantWishC2S::decode)
+				.encoder(GrantWishC2S::encode)
+				.consumerMainThread(GrantWishC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */

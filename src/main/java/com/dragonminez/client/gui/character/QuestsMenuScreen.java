@@ -1,4 +1,4 @@
-package com.dragonminez.client.gui;
+package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;

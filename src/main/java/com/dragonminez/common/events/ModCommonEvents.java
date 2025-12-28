@@ -4,9 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.entities.FlyingNimbusEntity;
-import com.dragonminez.common.init.entities.MastersEntity;
-import com.dragonminez.common.init.entities.SpacePodEntity;
+import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -37,6 +35,9 @@ public class ModCommonEvents {
         event.put(MainEntities.MASTER_URANAI.get(), MastersEntity.createAttributes().build());
         event.put(MainEntities.MASTER_ENMA.get(), MastersEntity.createAttributes().build());
         event.put(MainEntities.MASTER_DENDE.get(), MastersEntity.createAttributes().build());
+
+		event.put(MainEntities.Shenron.get(), ShenronEntity.createAttributes().build());
+		event.put(MainEntities.PORUNGA.get(), PorungaEntity.createAttributes().build());
 
         event.put(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanEntity.createAttributes().build());
         event.put(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanEntity.createAttributes().build());

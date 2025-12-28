@@ -2,6 +2,8 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.FlyingNimbusEntity;
+import com.dragonminez.common.init.entities.PorungaEntity;
+import com.dragonminez.common.init.entities.ShenronEntity;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
@@ -30,6 +32,17 @@ public class MainEntities {
 
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Reference.MOD_ID);
+
+	public static final RegistryObject<EntityType<ShenronEntity>> Shenron =
+			ENTITY_TYPES.register("shenron",
+					() -> EntityType.Builder.of(ShenronEntity::new, MobCategory.AMBIENT)
+							.sized(3.0f, 20.0f)
+							.build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shenron").toString()));
+	public static final RegistryObject<EntityType<PorungaEntity>> PORUNGA =
+			ENTITY_TYPES.register("porunga",
+					() -> EntityType.Builder.of(PorungaEntity::new, MobCategory.CREATURE)
+							.sized(4.0f, 25.0f)
+							.build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "porunga").toString()));
 
     public static final RegistryObject<EntityType<MasterKarinEntity>> MASTER_KARIN =
             ENTITY_TYPES.register("master_karin",
