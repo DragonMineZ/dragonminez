@@ -19,10 +19,7 @@ import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
 import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
-import com.dragonminez.common.init.particles.KiFlashParticle;
-import com.dragonminez.common.init.particles.KiSplashParticle;
-import com.dragonminez.common.init.particles.KiTrailParticle;
-import com.dragonminez.common.init.particles.KintonParticle;
+import com.dragonminez.common.init.particles.*;
 import com.dragonminez.server.world.dimension.CustomSpecialEffects;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -162,7 +159,7 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.KI_SPLASH.get(), KiSplashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_TRAIL.get(), KiTrailParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KINTON.get(), KintonParticle.Provider::new);
-        event.registerSpriteSet(MainParticles.PUNCH_PARTICLE.get(), KiSplashParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.PUNCH_PARTICLE.get(), PunchParticle.Provider::new);
 
     }
 
