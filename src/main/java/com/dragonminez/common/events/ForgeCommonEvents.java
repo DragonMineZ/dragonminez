@@ -6,6 +6,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
@@ -21,6 +22,7 @@ import com.dragonminez.server.world.dimension.NamekDimension;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.Mob;
@@ -38,6 +40,7 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.List;
 
@@ -94,6 +97,25 @@ public class ForgeCommonEvents {
             float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
 
             serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
+
+            RegistryObject<SoundEvent>[] sonidosGolpe = new RegistryObject[] {
+                    MainSounds.GOLPE1,
+                    MainSounds.GOLPE2,
+                    MainSounds.GOLPE3,
+                    MainSounds.GOLPE4,
+                    MainSounds.GOLPE5,
+                    MainSounds.GOLPE6
+            };
+
+            int indiceRandom = level.random.nextInt(sonidosGolpe.length);
+            SoundEvent sonidoElegido = sonidosGolpe[indiceRandom].get();
+
+            level.playSound(
+                    null, attacker.getX(), attacker.getY(), attacker.getZ(), sonidoElegido,
+                    net.minecraft.sounds.SoundSource.PLAYERS,
+                    1.0F,
+                    1.0F                      
+            );
         }
     }
 
