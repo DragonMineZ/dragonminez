@@ -64,7 +64,8 @@ public final class MainItems {
             ITEM_REGISTER.register("green_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
     public static final RegistryObject<Item> YELLOW_SCOUTER =
             ITEM_REGISTER.register("yellow_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
-
+    public static final RegistryObject<Item> MERUS_LASER =
+            ITEM_REGISTER.register("laser_merus", () -> new Item(properties.stacksTo(1).fireResistant()));
     //ARMAS
 	// 0 + X = Daño | 4 +/- X = Velocidad de ataque | 0 + X = Durabilidad (0 = Irrompible)
 //	public static final RegistryObject<Item> BACULO_SAGRADO =
