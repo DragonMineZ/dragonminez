@@ -4,6 +4,8 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.MainSounds;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -26,6 +28,16 @@ public class KiBlastEntity extends AbstractKiProjectile{
     public KiBlastEntity(Level level, LivingEntity owner) {
         this(MainEntities.KI_BLAST.get(), level);
         this.setOwner(owner);
+        level.playSound(
+                null,
+                owner.getX(),
+                owner.getY(),
+                owner.getZ(),
+                MainSounds.KIBLAST_ATTACK.get(),
+                SoundSource.PLAYERS,
+                0.3F,
+                1.0F + (this.random.nextFloat() * 0.2F)
+        );
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -92,6 +93,7 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
                     else if (this.castTimer == 40) {
                         performRoarDamage();
                         spawnExplosionParticles();
+                        this.playSound(MainSounds.VEGETA_OOZARU_GROWL.get(), 5.0F, 1.0F);
                     }
                     // Saca las particulas
                     else if (this.castTimer > 40 && this.castTimer < 80) {
@@ -120,7 +122,6 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
         this.setCasting(true);
         this.setSkillType(2);
         this.castTimer = 0;
-
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
         this.getNavigation().stop();
         this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
