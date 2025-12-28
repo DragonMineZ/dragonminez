@@ -1,32 +1,12 @@
 {
 	"format_version": "1.8.0",
 	"animations": {
-		"animation.shenron.idle": {
+		"idle": {
 			"loop": true,
 			"bones": {
 				"root": {
 					"position": {
 						"vector": [0, "math.sin(query.anim_time*180)*0.5", 0]
-					}
-				},
-				"brazoderecho": {
-					"rotation": {
-						"vector": [0, 0, "math.sin(query.anim_time*180)*1.5"]
-					}
-				},
-				"brazoizquierdo": {
-					"rotation": {
-						"vector": [0, 0, "math.sin(query.anim_time*180)*-1.5"]
-					}
-				},
-				"brazoizquierdo2": {
-					"rotation": {
-						"vector": [0, 0, "math.sin(query.anim_time*180)*-1.5"]
-					}
-				},
-				"brazoderecho2": {
-					"rotation": {
-						"vector": [0, 0, "math.sin(query.anim_time*180)*1.5"]
 					}
 				}
 			}

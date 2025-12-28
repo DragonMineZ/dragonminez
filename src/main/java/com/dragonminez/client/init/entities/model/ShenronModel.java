@@ -14,7 +14,7 @@ public class ShenronModel <T extends ShenronEntity> extends GeoModel<T> {
 
 	@Override
 	public ResourceLocation getTextureResource(T animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/shenron.png");
+		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/dragon/shenron.png");
 	}
 
 	@Override

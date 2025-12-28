@@ -14,7 +14,7 @@ public class PorungaModel<T extends PorungaEntity> extends GeoModel<T> {
 
 	@Override
 	public ResourceLocation getTextureResource(T animatable) {
-		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/porunga.png");
+		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/dragon/porunga.png");
 	}
 
 	@Override

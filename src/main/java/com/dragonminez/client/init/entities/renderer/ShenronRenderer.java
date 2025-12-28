@@ -19,13 +19,13 @@ public class ShenronRenderer extends GeoEntityRenderer<ShenronEntity> {
 	@Override
 	public void render(ShenronEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
 		poseStack.pushPose();
-		poseStack.scale(1.1f,1.1f,1.1f);
+		poseStack.scale(1.5f,1.5f,1.5f);
 		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 		poseStack.popPose();
 	}
 
 	@Override
 	public RenderType getRenderType(ShenronEntity animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-		return RenderType.entityTranslucent(texture);
+		return RenderType.entityCutoutNoCull(texture);
 	}
 }
