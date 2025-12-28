@@ -235,59 +235,59 @@ public class MainEntities {
     @SubscribeEvent
     public static void registerSpawnPlacements(SpawnPlacementRegisterEvent event) {
         event.register(SAGA_SAIBAMAN.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_SAIBAMAN2.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_SAIBAMAN3.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_SAIBAMAN4.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_SAIBAMAN5.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_SAIBAMAN6.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_RADITZ.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_NAPPA.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_VEGETA.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_OZARU_VEGETA.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_FRIEZA_SOLDIER.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_FRIEZA_SOLDIER2.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_FRIEZA_SOLDIER3.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
 
         event.register(SAGA_MORO_SOLDIER.get(), SpawnPlacements.Type.ON_GROUND,
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnInAnyLight,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, DBSagasEntity::canSpawnHere,
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
     }
 }

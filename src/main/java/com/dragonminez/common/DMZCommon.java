@@ -1,9 +1,11 @@
 package com.dragonminez.common;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.events.ModCommonEvents;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.SagaManager;
+import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.world.structure.placement.MainStructurePlacements;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -14,6 +16,7 @@ public class DMZCommon {
     public static void init() {
         ConfigManager.initialize();
         SagaManager.init();
+		WishManager.init();
         NetworkHandler.register();
         GeckoLib.initialize();
 
@@ -31,6 +34,7 @@ public class DMZCommon {
 		MainRecipes.register(modEventBus);
 		MainMenus.register(modEventBus);
 		MainStructurePlacements.register(modEventBus);
+		modEventBus.addListener(ModCommonEvents::commonSetup);
     }
 }
 

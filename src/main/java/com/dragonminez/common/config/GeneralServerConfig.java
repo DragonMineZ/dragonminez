@@ -23,11 +23,14 @@ public class GeneralServerConfig {
     public static class WorldGenConfig {
         private boolean generateCustomStructures = true;
         private boolean generateDragonBalls = true;
+		private int dbSpawnRange = 3000;
 
         public boolean isGenerateCustomStructures() { return generateCustomStructures; }
         public void setGenerateCustomStructures(boolean generate) { this.generateCustomStructures = generate; }
         public boolean isGenerateDragonBalls() { return generateDragonBalls; }
         public void setGenerateDragonBalls(boolean generate) { this.generateDragonBalls = generate; }
+		public int getDBSpawnRange() { return dbSpawnRange; }
+		public void setDBSpawnRange(int range) { this.dbSpawnRange = range; }
 
     }
 

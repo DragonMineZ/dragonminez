@@ -49,16 +49,20 @@ public class ForgeClientEvents {
         }
 
         if (KeyBinds.OPEN_CHARACTER_MENU.consumeClick()) {
+			if (mc.player == null || mc.screen != null) return;
 			int oldGuiScale = mc.options.guiScale().get();
-			mc.options.guiScale().set(3);
-			mc.resizeDisplay();
-            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-                if (data.getStatus().hasCreatedCharacter()) {
-                    mc.setScreen(new CharacterStatsScreen(oldGuiScale));
-                } else {
-                    mc.setScreen(new RaceSelectionScreen(data.getCharacter(), oldGuiScale));
-                }
-            });
+			if (oldGuiScale != 3) {
+				mc.options.guiScale().set(3);
+				mc.resizeDisplay();
+			}
+
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+				if (data.getStatus().hasCreatedCharacter()) {
+					mc.setScreen(new CharacterStatsScreen(oldGuiScale));
+				} else {
+					mc.setScreen(new RaceSelectionScreen(data.getCharacter(), oldGuiScale));
+				}
+			});
         }
     }
 

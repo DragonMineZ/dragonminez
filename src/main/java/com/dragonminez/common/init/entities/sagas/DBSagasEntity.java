@@ -206,7 +206,10 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         return geoCache;
     }
 
-    public static boolean canSpawnInAnyLight(EntityType<? extends Monster> pType, ServerLevelAccessor pLevel, MobSpawnType pSpawnType, BlockPos pPos, RandomSource pRandom) {
-        return pLevel.getDifficulty() != Difficulty.PEACEFUL && checkMobSpawnRules(pType, pLevel, pSpawnType, pPos, pRandom);
-    }
+	public static boolean canSpawnHere(EntityType<? extends DBSagasEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
+		if (world.getDifficulty() != Difficulty.PEACEFUL) {
+			return world.getBlockState(pos.below()).isValidSpawn(world, pos.below(), entity);
+		}
+		return false;
+	}
 }
