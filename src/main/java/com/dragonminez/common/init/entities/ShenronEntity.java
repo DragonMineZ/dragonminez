@@ -109,7 +109,7 @@ public class ShenronEntity extends Mob implements GeoEntity {
 	}
 
 	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> tAnimationState) {
-		tAnimationState.getController().setAnimation(RawAnimation.begin().then("animation.Shenron.idle", Animation.LoopType.LOOP));
+		tAnimationState.getController().setAnimation(RawAnimation.begin().then("animation.shenron.idle", Animation.LoopType.LOOP));
 		return PlayState.CONTINUE;
 	}
 

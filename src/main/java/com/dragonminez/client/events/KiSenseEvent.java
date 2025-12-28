@@ -44,7 +44,7 @@ public class KiSenseEvent {
 			int skillLevel = kiSense.getLevel();
 
 			if (skillLevel > 0) {
-				double maxDistance = 3.0 * skillLevel;
+				double maxDistance = 5 + 3.0 * skillLevel;
 				if (entity.distanceToSqr(player) <= (maxDistance * maxDistance)) {
 
 					renderHealthBar(event.getPoseStack(), entity, event.getMultiBufferSource());

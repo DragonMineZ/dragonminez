@@ -67,6 +67,12 @@ public class NetworkHandler {
 				.encoder(GrantWishC2S::encode)
 				.consumerMainThread(GrantWishC2S::handle)
 				.add();
+
+		net.messageBuilder(TravelToPlanetC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TravelToPlanetC2S::decode)
+				.encoder(TravelToPlanetC2S::encode)
+				.consumerMainThread(TravelToPlanetC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */

@@ -76,7 +76,7 @@ public class SpacePodEntity extends Mob implements GeoEntity {
 
                 if (this.level().isClientSide) {
                     if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) {
-                        verticalSpeed = 0.35; // Subida rápida
+                        verticalSpeed = 0.35;
                     }
                     else if (KeyBinds.DESCEND_KEY.isDown()) {
                         verticalSpeed = -0.35;
@@ -122,10 +122,9 @@ public class SpacePodEntity extends Mob implements GeoEntity {
             if (!isOpen()) {
                 if (!player.isPassenger()) {
                     setOpenNave(true);
-                    //Sonido epicardo de la nave abriendose
                     player.level().playSound(null, this.getOnPos(), MainSounds.NAVE_OPEN.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);
                 }
-            } else { // Si la nave está abierta, el jugador se puede montar y cierra la nave
+            } else {
                 setOpenNave(false);
                 if (!player.isPassenger()) {
                     player.startRiding(this);

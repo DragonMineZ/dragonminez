@@ -1,8 +1,16 @@
 {
   "worldGen": {
-    // These configs does nothing yet.
+    // Should DMZ structures be generated?
     "generateCustomStructures": true,
-    "generateDragonBalls": true
+    // Should Dragon Balls be generated in the world?
+    // This also disable the Dragon Ball rescattering from Shenron/Porunga
+    "generateDragonBalls": true,
+    // Is otherworld dimension active?
+    // Note: Dimension generates always, but this disables
+    // the events to it, like SpacePod travel, death system, etc.
+    "otherworldActive": true,
+    // Dragon Ball spawn range from world origin (0,0)
+    "dbSpawnRange": 3000
   },
   "gameplay": {
     "tpGainMultiplier": 1.0,
@@ -11,7 +19,7 @@
     // In addition, leveling up a stat with a x10 does not cost 10 times more TP, it is recursive.
     "tpCostMultiplier": 1.0,
     // How much TP in percentage is gained by killing an entity, based on their max health
-    "tpHealthRatio": 10,
+    "tpHealthRatio": 0.1,
     // How much TP is gained per hit landed on an entity
     "tpPerHit": 2,
     // TP Multiplier while being in the Hyperbolic Time Chamber
@@ -19,6 +27,7 @@
     // Enable to make attacks respect attack cooldown like in vanilla Minecraft.
     // Disable to make attacks not respect attack cooldown, allowing for faster attacks, like 1.8 PvP.
     "respectAttackCooldown": true,
+    // Self explanatory
     "maxStatValue": 10000,
     // Should Ki Attacks destroy blocks?
     "kiDestroyBlocks": true,

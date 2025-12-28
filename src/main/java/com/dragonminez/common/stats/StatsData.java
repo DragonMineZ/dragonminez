@@ -82,14 +82,14 @@ public class StatsData {
 
     public float getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
-        double vitMult = 1.0 + getTotalMultiplier("VIT");
+        double vitMult = 1.0 + getFormMultiplier("VIT");
         double bonusVit = bonusStats.calculateBonus("VIT", 0);
         return (float) ((stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
-        double eneMult = 1.0 + getTotalMultiplier("ENE");
+        double eneMult = 1.0 + getFormMultiplier("ENE");
         double bonusEne = bonusStats.calculateBonus("ENE", 0);
         return (int) (20 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
     }

@@ -109,13 +109,13 @@ public class WishManager {
         JsonArray wishesArray = new JsonArray();
 
         if (dragonName.equals("shenron")) {
-            wishesArray.add(new ItemWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc", "dragonminez:senzu_bean", 5).toJson());
+            wishesArray.add(new ItemWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc", "dragonminez:senzu_bean", 6).toJson());
             wishesArray.add(new TPSWish("wish.shenron.tps.name", "wish.shenron.tps.desc", 5000).toJson());
-            wishesArray.add(new CommandWish("wish.shenron.spawn.name", "wish.shenron.spawn.desc", "weather clear").toJson());
+            wishesArray.add(new CommandWish("wish.shenron.materials.name", "wish.shenron.materials.desc", "give %player% dragonminez:kikono_shard 32", "give %player% minecraft:iron_ingot 64").toJson());
         } else if (dragonName.equals("porunga")) {
-            wishesArray.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 20).toJson());
-            wishesArray.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 10000).toJson());
-            wishesArray.add(new CommandWish("wish.porunga.weather.name", "wish.porunga.weather.desc", "weather clear").toJson());
+            wishesArray.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 16).toJson());
+            wishesArray.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000).toJson());
+            wishesArray.add(new CommandWish("wish.porunga.materials.name", "wish.porunga.materials.desc", "give %player% dragonminez:kikono_shard 64", "give %player% minecraft:iron_ingot 128").toJson());
         }
 
         json.add("wishes", wishesArray);

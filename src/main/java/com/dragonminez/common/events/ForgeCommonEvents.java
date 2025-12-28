@@ -7,6 +7,8 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.commands.*;
@@ -24,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -57,6 +60,19 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
 			DragonBallsHandler.syncRadar(player.serverLevel());
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerDeath(LivingDeathEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			DragonBallsHandler.syncRadar(player.serverLevel());
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
+					data.getStatus().setAlive(false);
+					if (!data.getStatus().isInKaioPlanet()) data.getStatus().isInKaioPlanet();
+				}
+			});
 		}
 	}
 

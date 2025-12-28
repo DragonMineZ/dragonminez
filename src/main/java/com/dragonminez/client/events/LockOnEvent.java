@@ -50,7 +50,7 @@ public class LockOnEvent {
 			int level = data.getSkills().getSkillLevel("kisense");
 			if (level <= 0) return;
 
-			double range = 2.0 * level;
+			double range = 5.0 + 3.0 * level;
 
 			findTargetInFront(player, range).ifPresent(target -> {
 				lockedTarget = target;

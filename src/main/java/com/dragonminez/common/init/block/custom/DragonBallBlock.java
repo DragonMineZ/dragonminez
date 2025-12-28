@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
 import com.dragonminez.common.init.entities.PorungaEntity;
 import com.dragonminez.common.init.entities.ShenronEntity;
+import com.dragonminez.server.world.dimension.NamekDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -45,7 +46,7 @@ public class DragonBallBlock extends BaseEntityBlock {
 
 	static {
 		VoxelShape earthBase = box(4.0D, 0.0D, 4.0D, 12.0D, 7.0D, 12.0D);
-		VoxelShape namekBase = box(-4.0D, 0.0D, -4.0D, 20.0D, 21.0D, 20.0D);
+		VoxelShape namekBase = box(-4.0D, 0.0D, -4.0D, 16.0D, 11.0D, 16.0D);
 		for (Direction direction : Direction.Plane.HORIZONTAL) {
 			EARTH_SHAPES.put(direction, calculateShape(direction, earthBase));
 			NAMEK_SHAPES.put(direction, calculateShape(direction, namekBase));
@@ -118,7 +119,8 @@ public class DragonBallBlock extends BaseEntityBlock {
 	@Override
 	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
 		if (pLevel.isClientSide) return InteractionResult.SUCCESS;
-		if (areAllDragonBallsNearby(pLevel, pPos)) {
+		if (areAllDragonBallsNearby(pLevel, pPos) && ((isNamekian && pLevel.dimension().equals(NamekDimension.NAMEK_KEY))
+				|| (!isNamekian && pLevel.dimension().equals(Level.OVERWORLD)))) {
 			removeAllDragonBalls(pLevel, pPos);
 			spawnDragon((ServerLevel) pLevel, pPos, pPlayer);
 			return InteractionResult.CONSUME;
@@ -130,14 +132,14 @@ public class DragonBallBlock extends BaseEntityBlock {
 		long currentTime = serverLevel.getDayTime();
 		serverLevel.setDayTime(16000);
 
-		if (isNamekian) {
+		if (isNamekian && serverLevel.dimension().equals(NamekDimension.NAMEK_KEY)) {
 			PorungaEntity porunga = new PorungaEntity(MainEntities.PORUNGA.get(), serverLevel);
 			porunga.setOwnerName(pPlayer.getName().getString());
 			porunga.setInvokingTime(currentTime);
 			porunga.setGrantedWish(false);
 			porunga.moveTo(pPos.getX() + 0.5, pPos.getY(), pPos.getZ() + 0.5, 0.0F, 0.0F);
 			serverLevel.addFreshEntity(porunga);
-		} else {
+		} else if (!isNamekian && serverLevel.dimension().equals(Level.OVERWORLD)) {
 			ShenronEntity Shenron = new ShenronEntity(MainEntities.Shenron.get(), serverLevel);
 			Shenron.setOwnerName(pPlayer.getName().getString());
 			Shenron.setInvokingTime(currentTime);
