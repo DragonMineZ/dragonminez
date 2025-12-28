@@ -8,6 +8,7 @@ import com.dragonminez.common.config.GeneralUserConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -302,13 +303,15 @@ public class ConfigMenuScreen extends BaseMenuScreen {
         if (index < 0 || index >= configOptions.size()) return;
 
         ConfigOption option = configOptions.get(index);
+        boolean isShiftDown = Screen.hasShiftDown();
 
         if (option.type == ConfigType.BOOLEAN) {
             option.value = option.value > 0 ? 0 : 1;
         } else if (option.type == ConfigType.INT) {
-            option.value = Math.max(option.min, Math.min(option.max, option.value + delta));
+            int step = isShiftDown ? 5 : 1;
+            option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
         } else if (option.type == ConfigType.FLOAT) {
-            float step = 0.1f;
+            float step = isShiftDown ? 1.0f : 0.1f;
             option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
         }
 

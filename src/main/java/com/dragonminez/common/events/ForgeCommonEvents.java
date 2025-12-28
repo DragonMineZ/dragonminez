@@ -88,6 +88,7 @@ public class ForgeCommonEvents {
 		DatabaseManager.init();
 		BetaWhitelist.reload();
 		WishManager.loadWishes(event.getServer());
+		DMZPermissions.init();
 
 		ServerLevel overworld = event.getServer().getLevel(Level.OVERWORLD);
 		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);

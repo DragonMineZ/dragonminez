@@ -32,9 +32,6 @@ public class XenoverseHUD {
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
 		if (ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
-
-		HUDManager.setHudGuiScale();
-
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			Character character = data.getCharacter();
 			Status status = data.getStatus();
@@ -157,30 +154,24 @@ public class XenoverseHUD {
 					guiGraphics.blit(hud, initialX + 10, initialY + 20 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight);
 				}
 
-				float baseTextScale = 0.5f;
-				float textCorrectionFactor = HUDManager.getScaleFactor();
-				float finalTextScale = baseTextScale * textCorrectionFactor;
+				float finalTextScale = 0.5f;
 
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().scale(finalTextScale, finalTextScale, 1.0f);
 
-				drawStringWithBorder(guiGraphics, powerRelease + "%", (initialX + 14), (initialY + 64), ColorUtils.hexToInt("#FACAF7"));
+				drawStringWithBorder(guiGraphics, powerRelease + "%", (int)((initialX + 7) / finalTextScale), (int)((initialY + 32) / finalTextScale), ColorUtils.hexToInt("#FACAF7"));
 
 				if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
-					String plainHP = numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
-					String percentHP = String.format("%.0f", (currentHP / maxHP) * 100) + "%";
-					String hpText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentHP : plainHP;
-					drawStringWithBorder(guiGraphics, hpText, initialX + 200, initialY + 36, ColorUtils.hexToInt("#FFFFFF"));
+					boolean showPercent = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage();
 
-					String plainKi = numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
-					String percentKi = String.format("%.0f", (currentKi / (float) maxKi) * 100) + "%";
-					String kiText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentKi : plainKi;
-					drawStringWithBorder(guiGraphics, kiText, initialX + 180, initialY + 51, ColorUtils.hexToInt("#FFFFFF"));
+					String hpText = showPercent ? String.format("%.0f", (currentHP / maxHP) * 100) + "%" : numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
+					drawStringWithBorder(guiGraphics, hpText, (int)((initialX + 100) / finalTextScale), (int)((initialY + 15) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
 
-					String plainStm = numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
-					String percentStm = String.format("%.0f", (currentStm / (float) maxStm) * 100) + "%";
-					String stmText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentStm : plainStm;
-					drawStringWithBorder(guiGraphics, stmText, initialX + 160, initialY + 64, ColorUtils.hexToInt("#FFFFFF"));
+					String kiText = showPercent ? String.format("%.0f", (currentKi / (float) maxKi) * 100) + "%" : numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
+					drawStringWithBorder(guiGraphics, kiText, (int)((initialX + 90) / finalTextScale), (int)((initialY + 23) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
+
+					String stmText = showPercent ? String.format("%.0f", (currentStm / (float) maxStm) * 100) + "%" : numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
+					drawStringWithBorder(guiGraphics, stmText, (int)((initialX + 80) / finalTextScale), (int)((initialY + 30) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
 				}
 
 				guiGraphics.pose().popPose();

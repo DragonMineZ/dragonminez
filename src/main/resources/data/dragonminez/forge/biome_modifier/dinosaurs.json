@@ -1,14 +1,6 @@
 {
   "type": "forge:add_spawns",
-  "biomes": [
-    "minecraft:stony_peaks",
-    "minecraft:meadow",
-    "minecraft:grove",
-    "minecraft:eroded_badlands",
-    "minecraft:windswept_hills",
-    "minecraft:badlands",
-    "minecraft:windswept_gravelly_hills"
-  ],
+  "biomes": "#dragonminez:has_dinosaurs",
   "spawners": [{
     "type": "dragonminez:dino1",
     "weight": 10,

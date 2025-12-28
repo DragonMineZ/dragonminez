@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -17,6 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public class StatsCommand {
+	private static final int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzstats")
@@ -26,49 +28,49 @@ public class StatsCommand {
                 .then(Commands.literal("set")
                         .then(Commands.literal("str")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, MAX_STAT_VALUE))
                                         .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "str", IntegerArgumentType.getInteger(ctx, "value")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
                                                 .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "str", IntegerArgumentType.getInteger(ctx, "value"))))))
                         .then(Commands.literal("skp")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, MAX_STAT_VALUE))
                                         .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "skp", IntegerArgumentType.getInteger(ctx, "value")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
                                                 .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "skp", IntegerArgumentType.getInteger(ctx, "value"))))))
                         .then(Commands.literal("res")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, MAX_STAT_VALUE))
                                         .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "res", IntegerArgumentType.getInteger(ctx, "value")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
                                                 .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "res", IntegerArgumentType.getInteger(ctx, "value"))))))
                         .then(Commands.literal("vit")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, MAX_STAT_VALUE))
                                         .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "vit", IntegerArgumentType.getInteger(ctx, "value")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
                                                 .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "vit", IntegerArgumentType.getInteger(ctx, "value"))))))
                         .then(Commands.literal("pwr")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, MAX_STAT_VALUE))
                                         .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "pwr", IntegerArgumentType.getInteger(ctx, "value")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
                                                 .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "pwr", IntegerArgumentType.getInteger(ctx, "value"))))))
                         .then(Commands.literal("ene")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, MAX_STAT_VALUE))
                                         .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "ene", IntegerArgumentType.getInteger(ctx, "value")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
                                                 .executes(ctx -> setStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "ene", IntegerArgumentType.getInteger(ctx, "value"))))))
                         .then(Commands.literal("all")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_SET_SELF, DMZPermissions.STATS_SET_OTHERS))
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10000))
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, MAX_STAT_VALUE))
                                         .executes(ctx -> setStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "all", IntegerArgumentType.getInteger(ctx, "value")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_SET_OTHERS))
@@ -79,62 +81,54 @@ public class StatsCommand {
                 .then(Commands.literal("add")
                         .then(Commands.literal("str")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-MAX_STAT_VALUE, MAX_STAT_VALUE))
                                         .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "str", IntegerArgumentType.getInteger(ctx, "amount")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
                                                 .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "str", IntegerArgumentType.getInteger(ctx, "amount"))))))
                         .then(Commands.literal("skp")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-MAX_STAT_VALUE, MAX_STAT_VALUE))
                                         .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "skp", IntegerArgumentType.getInteger(ctx, "amount")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
                                                 .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "skp", IntegerArgumentType.getInteger(ctx, "amount"))))))
                         .then(Commands.literal("res")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-MAX_STAT_VALUE, MAX_STAT_VALUE))
                                         .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "res", IntegerArgumentType.getInteger(ctx, "amount")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
                                                 .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "res", IntegerArgumentType.getInteger(ctx, "amount"))))))
                         .then(Commands.literal("vit")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-MAX_STAT_VALUE, MAX_STAT_VALUE))
                                         .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "vit", IntegerArgumentType.getInteger(ctx, "amount")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
                                                 .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "vit", IntegerArgumentType.getInteger(ctx, "amount"))))))
                         .then(Commands.literal("pwr")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-MAX_STAT_VALUE, MAX_STAT_VALUE))
                                         .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "pwr", IntegerArgumentType.getInteger(ctx, "amount")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
                                                 .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "pwr", IntegerArgumentType.getInteger(ctx, "amount"))))))
                         .then(Commands.literal("ene")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-MAX_STAT_VALUE, MAX_STAT_VALUE))
                                         .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "ene", IntegerArgumentType.getInteger(ctx, "amount")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
                                                 .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "ene", IntegerArgumentType.getInteger(ctx, "amount"))))))
                         .then(Commands.literal("all")
                                 .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_ADD_SELF, DMZPermissions.STATS_ADD_OTHERS))
-                                .then(Commands.argument("amount", IntegerArgumentType.integer(-1000, 1000))
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(-MAX_STAT_VALUE, MAX_STAT_VALUE))
                                         .executes(ctx -> addStat(ctx.getSource(), ctx.getSource().getPlayerOrException(), "all", IntegerArgumentType.getInteger(ctx, "amount")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_ADD_OTHERS))
                                                 .executes(ctx -> addStat(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), "all", IntegerArgumentType.getInteger(ctx, "amount"))))))
                 )
-
-                // info [player]
-                .then(Commands.literal("info")
-                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_INFO_SELF, DMZPermissions.STATS_INFO_OTHERS))
-                        .executes(ctx -> showInfo(ctx.getSource(), ctx.getSource().getPlayerOrException()))
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_INFO_OTHERS))
-                                .executes(ctx -> showInfo(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
 
                 // reset [player]
                 .then(Commands.literal("reset")
@@ -147,8 +141,8 @@ public class StatsCommand {
                 // transform <group> <form> [player]
                 .then(Commands.literal("transform")
                         .requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_TRANSFORM_SELF, DMZPermissions.STATS_TRANSFORM_OTHERS))
-                        .then(Commands.argument("group", com.mojang.brigadier.arguments.StringArgumentType.string())
-                                .then(Commands.argument("form", com.mojang.brigadier.arguments.StringArgumentType.string())
+                        .then(Commands.argument("group", StringArgumentType.string())
+                                .then(Commands.argument("form", StringArgumentType.string())
                                         .executes(ctx -> setTransform(ctx.getSource(), ctx.getSource().getPlayerOrException(), com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "group"), com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "form")))
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_TRANSFORM_OTHERS))
@@ -241,30 +235,6 @@ public class StatsCommand {
         String key = amount >= 0 ? "command.dragonminez.stats.add.success.added" : "command.dragonminez.stats.add.success.removed";
         source.sendSuccess(() -> Component.translatable(key,
                 Math.abs(amount), stat.toUpperCase(), player.getName().getString()), true);
-        return 1;
-    }
-
-    private static int showInfo(CommandSourceStack source, ServerPlayer player) {
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            var stats = data.getStats();
-            var status = data.getStatus();
-
-            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.title",
-                    player.getName().getString()), false);
-            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.level",
-                    data.getLevel(), data.getBattlePower()), false);
-            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.stats_line1",
-                    stats.getStrength(), stats.getStrikePower(), stats.getResistance()), false);
-            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.stats_line2",
-                    stats.getVitality(), stats.getKiPower(), stats.getEnergy()), false);
-            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.max_values",
-                    data.getMaxHealth(), data.getMaxEnergy(), data.getMaxStamina()), false);
-
-            String aliveKey = status.isAlive() ? "command.dragonminez.stats.info.status.alive" : "command.dragonminez.stats.info.status.dead";
-            String charKey = status.hasCreatedCharacter() ? "command.dragonminez.stats.info.character.created" : "command.dragonminez.stats.info.character.not_created";
-            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.info.status",
-                    Component.translatable(aliveKey), Component.translatable(charKey)), false);
-        });
         return 1;
     }
 

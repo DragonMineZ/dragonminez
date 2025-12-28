@@ -44,14 +44,6 @@ public class PointsCommand {
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_REMOVE_OTHERS))
                                         .executes(ctx -> removePoints(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), IntegerArgumentType.getInteger(ctx, "amount"))))))
-
-                // info [player]
-                .then(Commands.literal("info")
-                        .requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_INFO_SELF, DMZPermissions.POINTS_INFO_OTHERS))
-                        .executes(ctx -> showPoints(ctx.getSource(), ctx.getSource().getPlayerOrException()))
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_INFO_OTHERS))
-                                .executes(ctx -> showPoints(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
         );
     }
 
@@ -90,16 +82,6 @@ public class PointsCommand {
 
         source.sendSuccess(() -> Component.translatable("command.dragonminez.points.remove.success",
                 amount, player.getName().getString()), true);
-        return 1;
-    }
-
-    private static int showPoints(CommandSourceStack source, ServerPlayer player) {
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            int trainingPoints = data.getResources().getTrainingPoints();
-            source.sendSuccess(() -> Component.translatable("command.dragonminez.points.info",
-                    player.getName().getString(), trainingPoints), false);
-        });
-
         return 1;
     }
 }
