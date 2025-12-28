@@ -162,6 +162,7 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.KI_SPLASH.get(), KiSplashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_TRAIL.get(), KiTrailParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KINTON.get(), KintonParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.PUNCH_PARTICLE.get(), KiSplashParticle.Provider::new);
 
     }
 
