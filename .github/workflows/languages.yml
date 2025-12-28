@@ -5,6 +5,8 @@ on:
       - main
     paths:
       - src/main/resources/assets/dragonminez/lang/**
+  schedule:
+    - cron: '0 * * * *'   # cada horita
 
 permissions:
   contents: write
@@ -24,23 +26,35 @@ jobs:
       - name: Check for unauthorized files
         id: check_files
         run: |
-          # Get changed files in the lang directory
-          changed_files=$(git diff --name-only HEAD~1 HEAD -- 'src/main/resources/assets/dragonminez/lang/')
+              # Get changed files in the lang directory
+              changed_files=$(git diff --name-only HEAD~1 HEAD -- 'src/main/resources/assets/dragonminez/lang/')
           
-          # Filter out en_us.json - only unauthorized files remain
-          unauthorized=$(echo "$changed_files" | grep -v 'en_us.json' || true)
+              # Filter:
+              #  - Keep only non-en_us.json
+              #  - Exclude files whose last commit author is the Crowdin bot
+              unauthorized=""
+              for file in $changed_files; do
+                [ "$(basename "$file")" = "en_us.json" ] && continue
           
-          if [ -n "$unauthorized" ]; then
-            echo "has_unauthorized=true" >> $GITHUB_OUTPUT
-            echo "unauthorized_files<<EOF" >> $GITHUB_OUTPUT
-            echo "$unauthorized" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "⚠️ Unauthorized translation files detected:"
-            echo "$unauthorized"
-          else
-            echo "has_unauthorized=false" >> $GITHUB_OUTPUT
-            echo "✓ No unauthorized files detected"
-          fi
+                author=$(git log -1 --pretty=format:'%an' -- "$file")
+                if [ "$author" != "crowdin-bot" ] && [ "$author" != "Crowdin Bot" ]; then
+                  unauthorized="$unauthorized"$'\n'"$file"
+                fi
+              done
+          
+              unauthorized=$(echo "$unauthorized" | sed '/^$/d' || true)
+          
+              if [ -n "$unauthorized" ]; then
+                echo "has_unauthorized=true" >> $GITHUB_OUTPUT
+                echo "unauthorized_files<<EOF" >> $GITHUB_OUTPUT
+                echo "$unauthorized" >> $GITHUB_OUTPUT
+                echo "EOF" >> $GITHUB_OUTPUT
+                echo "⚠️ Unauthorized translation files detected:"
+                echo "$unauthorized"
+              else
+                echo "has_unauthorized=false" >> $GITHUB_OUTPUT
+                echo "✓ No unauthorized files detected"
+              fi
 
   remove-unauthorized:
     runs-on: ubuntu-latest
