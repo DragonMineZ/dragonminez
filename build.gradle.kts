@@ -126,7 +126,7 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
     // Vulnerability corrections
-    implementation("com.google.guava:guava:33.4.8-jre")
+    implementation("com.google.guava:guava:33.5.-jre")
     implementation("io.netty:netty-codec:4.2.7.Final")
     implementation("io.netty:netty-handler:4.2.7.Final")
     implementation("org.apache.commons:commons-compress:1.27.1")
