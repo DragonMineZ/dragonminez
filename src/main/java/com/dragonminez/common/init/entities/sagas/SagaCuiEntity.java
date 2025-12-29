@@ -1,6 +1,8 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -98,48 +100,17 @@ public class SagaCuiEntity extends DBSagasEntity {
     }
 
     private void performVolleyAttack(LivingEntity target) {
-
-        Vec3 origin = this.getEyePosition();
-
-        Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.6, 0);
-
-        Vec3 viewVector = targetPos.subtract(origin).normalize();
-
-        Vec3 globalUp = new Vec3(0, 1, 0);
-        Vec3 rightVector = viewVector.cross(globalUp).normalize();
-        Vec3 upVector = rightVector.cross(viewVector).normalize();
-
-        double[][] offsets = {
-                {0.0, 0.0},
-                {5.0, 0.0},
-                {-5.0, 0.0},
-                {1.2, 3.5},
-                {-1.2, 3.5}
-        };
-
-        for (double[] offset : offsets) {
-            KiVolleyEntity volley = new KiVolleyEntity(this.level(), this);
-
-            volley.setup(this, 5.0F, 0.5F, 0xFF8FFF, 0xC069FF);
-
-            volley.setKiDamage(this.getKiBlastDamage());
-
-            Vec3 spawnPos = origin
-                    .add(rightVector.scale(offset[0]))
-                    .add(upVector.scale(offset[1]));
-
-            volley.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
-
-            Vec3 direction = targetPos.subtract(spawnPos).normalize();
-            double speed = this.getKiBlastSpeed();
-            volley.setDeltaMovement(direction.scale(speed));
-
-            volley.setConvergeTarget(targetPos, viewVector, 0);
-
-            this.level().addFreshEntity(volley);
-        }
+        KiVolleyEntity.shootVolley(
+                this,
+                target,
+                this.getKiBlastSpeed(),
+                this.getKiBlastDamage(),
+                0xFF8FFF,
+                0xC069FF
+        );
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                MainSounds.KIBLAST_ATTACK.get(), SoundSource.HOSTILE, 1.0F, 1.5F);
     }
-
     private void rotateBodyToTarget(LivingEntity target) {
         double d0 = target.getX() - this.getX();
         double d2 = target.getZ() - this.getZ();

@@ -28,6 +28,14 @@ public class KiVolleyEntity extends AbstractKiProjectile {
     private boolean hasSpawnedFlash = false;
     private boolean hasSpawnedSplash = false;
 
+    private static final double[][] VOLLEY_OFFSETS = {
+            {0.0, 0.0},
+            {5.0, 0.0},
+            {-5.0, 0.0},
+            {1.2, 3.5},
+            {-1.2, 3.5}
+    };
+
     public KiVolleyEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
@@ -38,6 +46,36 @@ public class KiVolleyEntity extends AbstractKiProjectile {
         this.setOwner(owner);
         level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
                 MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.5F);
+    }
+
+    public static void shootVolley(LivingEntity attacker, LivingEntity target, float speed, float damage, int colorMain, int colorBorder) {
+        Level level = attacker.level();
+
+        Vec3 origin = attacker.getEyePosition();
+        Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.6, 0);
+
+        Vec3 viewVector = targetPos.subtract(origin).normalize();
+        Vec3 globalUp = new Vec3(0, 1, 0);
+        Vec3 rightVector = viewVector.cross(globalUp).normalize();
+        Vec3 upVector = rightVector.cross(viewVector).normalize();
+
+        for (double[] offset : VOLLEY_OFFSETS) {
+            KiVolleyEntity volley = new KiVolleyEntity(level, attacker);
+
+            volley.setup(attacker, damage, 0.4F, colorMain, colorBorder);
+
+            Vec3 spawnPos = origin
+                    .add(rightVector.scale(offset[0]))
+                    .add(upVector.scale(offset[1]));
+            volley.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
+
+            Vec3 direction = targetPos.subtract(spawnPos).normalize();
+            volley.setDeltaMovement(direction.scale(speed));
+
+            volley.setConvergeTarget(targetPos, viewVector, 0);
+
+            level.addFreshEntity(volley);
+        }
     }
 
     public void setConvergeTarget(Vec3 point, Vec3 forwardDirection, int delayTicks) {
@@ -52,7 +90,6 @@ public class KiVolleyEntity extends AbstractKiProjectile {
             this.discard();
             return;
         }
-
         if (this.level().isClientSide) {
             float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
 
@@ -76,10 +113,9 @@ public class KiVolleyEntity extends AbstractKiProjectile {
         }
 
         if (!this.level().isClientSide) {
-
             if (this.tickCount > 100) this.discard();
 
-            if (this.tickCount % 60 == 0) {
+            if (this.tickCount % 30 == 0) {
                 pulseAreaDamage();
             }
 
@@ -88,7 +124,7 @@ public class KiVolleyEntity extends AbstractKiProjectile {
                 Vec3 currentVel = this.getDeltaMovement();
                 double speed = currentVel.length();
 
-                if (distSqr < 2.25D) {
+                if (distSqr < 4.25D) {
                     this.setDeltaMovement(this.finalForward.scale(speed));
                     this.focalPoint = null;
                     this.hasImpulse = true;
@@ -149,7 +185,6 @@ public class KiVolleyEntity extends AbstractKiProjectile {
         }
     }
 
-    // --- NBT ---
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
