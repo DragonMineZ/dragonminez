@@ -1,7 +1,6 @@
 project_id_env: CROWDIN_PROJECT_ID
 api_token_env: CROWDIN_PERSONAL_TOKEN
 base_path: .
-
 preserve_hierarchy: true
 
 files:
@@ -25,7 +24,7 @@ files:
         it: it_it
         ja: ja_jp
         ko: ko_kr
-        nb: no_no
+        nb: nb_no
         pl: pl_pl
         pt-PT: pt_pt
         pt-BR: pt_br
