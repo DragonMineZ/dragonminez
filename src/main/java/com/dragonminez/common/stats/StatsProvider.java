@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class StatsProvider implements ICapabilityProvider, INBTSerializable<CompoundTag> {
-    public static final ResourceLocation ID = new ResourceLocation(Reference.MOD_ID, "stats");
+    public static final ResourceLocation ID = new ResourceLocation(Reference.MOD_ID);
 
     private final StatsData data;
     private final LazyOptional<StatsData> optional;

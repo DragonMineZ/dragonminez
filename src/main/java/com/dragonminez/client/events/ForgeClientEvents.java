@@ -1,21 +1,45 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.SpacePodScreen;
+import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.client.gui.CharacterCreationScreen;
-import com.dragonminez.client.gui.CharacterStatsScreen;
+import com.dragonminez.client.gui.character.CharacterStatsScreen;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
+	public static boolean hasCreatedCharacterCache = false;
+
+	@SubscribeEvent
+	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
+		if (Minecraft.getInstance().player != null) {
+			if (hasCreatedCharacterCache) {
+				if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
+					event.setCanceled(true);}
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+		if (Minecraft.getInstance().player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+			hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+		});
+	}
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
@@ -26,14 +50,25 @@ public class ForgeClientEvents {
         }
 
         if (KeyBinds.OPEN_CHARACTER_MENU.consumeClick()) {
-            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-                if (data.getStatus().hasCreatedCharacter()) {
-                    mc.setScreen(new CharacterStatsScreen());
-                } else {
-                    mc.setScreen(new CharacterCreationScreen());
-                }
-            });
+			if (mc.player == null || mc.screen != null) return;
+			int oldGuiScale = mc.options.guiScale().get();
+			if (oldGuiScale != 3) {
+				mc.options.guiScale().set(3);
+				mc.resizeDisplay();
+			}
+
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+				if (data.getStatus().hasCreatedCharacter()) {
+					mc.setScreen(new CharacterStatsScreen(oldGuiScale));
+				} else {
+					mc.setScreen(new RaceSelectionScreen(data.getCharacter(), oldGuiScale));
+				}
+			});
         }
+
+		if (KeyBinds.SPACEPOD_MENU.consumeClick() && mc.player.isPassenger() && mc.player.getVehicle() instanceof SpacePodEntity) {
+			mc.setScreen(new SpacePodScreen());
+		}
     }
 
     private static int tickCounter = 0;
@@ -53,24 +88,16 @@ public class ForgeClientEvents {
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
             tickCounter = 0;
-            updateActionBar(mc);
+            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+                if (hasCreatedCharacterCache != data.getStatus().hasCreatedCharacter()) {
+                    hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+                }
+            });
         }
     }
 
-    private static void updateActionBar(Minecraft mc) {
-        StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-            if (data.getStatus().hasCreatedCharacter()) {
-                int currentStamina = data.getResources().getCurrentStamina();
-                int maxStamina = data.getMaxStamina();
-                int currentEnergy = data.getResources().getCurrentEnergy();
-                int maxEnergy = data.getMaxEnergy();
-
-                String text = "§2STM: §f" + currentStamina + " §7/ §f" + maxStamina +
-                        "     §bKI: §f" + currentEnergy + " §7/ §f" + maxEnergy;
-
-                mc.player.displayClientMessage(Component.literal(text), true);
-            }
-        });
+    @SubscribeEvent
+    public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
+        ConfigManager.clearServerSync();
     }
 }
-

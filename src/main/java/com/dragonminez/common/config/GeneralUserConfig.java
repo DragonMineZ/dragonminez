@@ -13,23 +13,40 @@ public class GeneralUserConfig {
     }
 
     public static class HudConfig {
-        private boolean showStats = true;
-        private boolean showEnergyBar = true;
-        private boolean showStaminaBar = true;
+		private int xenoverseHudPosX = 5;
+		private int xenoverseHudPosY = 5;
+		private boolean advancedDescription = true;
+		private boolean advancedDescriptionPercentage = true;
+		private boolean alternativeHud = false;
+		private boolean hexagonStatsDisplay = false;
+        private int healthBarPosX = 10;
+        private int healthBarPosY = 20;
         private int energyBarPosX = 10;
         private int energyBarPosY = 10;
         private int staminaBarPosX = 10;
-        private int staminaBarPosY = 30;
-        private boolean compactHud = false;
+        private int staminaBarPosY = 10;
+        private boolean storyHardDifficulty = false;
 
-        public boolean isShowStats() { return showStats; }
-        public void setShowStats(boolean showStats) { this.showStats = showStats; }
+		public int getXenoverseHudPosX() { return xenoverseHudPosX; }
+		public void setXenoverseHudPosX(int xenoverseHudPosX) { this.xenoverseHudPosX = xenoverseHudPosX; }
+		public int getXenoverseHudPosY() { return xenoverseHudPosY; }
+		public void setXenoverseHudPosY(int xenoverseHudPosY) { this.xenoverseHudPosY = xenoverseHudPosY; }
+		public boolean isAdvancedDescription() { return advancedDescription; }
+		public void setAdvancedDescription(boolean advancedDescription) { this.advancedDescription = advancedDescription; }
+		public boolean isAdvancedDescriptionPercentage() { return advancedDescriptionPercentage; }
+		public void setAdvancedDescriptionPercentage(boolean advancedDescriptionPercentage) { this.advancedDescriptionPercentage = advancedDescriptionPercentage; }
 
-        public boolean isShowEnergyBar() { return showEnergyBar; }
-        public void setShowEnergyBar(boolean showEnergyBar) { this.showEnergyBar = showEnergyBar; }
+		public boolean isAlternativeHud() { return alternativeHud; }
+		public void setAlternativeHud(boolean alternativeHud) { this.alternativeHud = alternativeHud; }
 
-        public boolean isShowStaminaBar() { return showStaminaBar; }
-        public void setShowStaminaBar(boolean showStaminaBar) { this.showStaminaBar = showStaminaBar; }
+		public boolean isHexagonStatsDisplay() { return hexagonStatsDisplay; }
+		public void setHexagonStatsDisplay(boolean hexagonStatsDisplay) { this.hexagonStatsDisplay = hexagonStatsDisplay; }
+
+        public int getHealthBarPosX() { return healthBarPosX; }
+        public void setHealthBarPosX(int healthBarPosX) { this.healthBarPosX = healthBarPosX; }
+
+		public int getHealthBarPosY() { return healthBarPosY; }
+		public void setHealthBarPosY(int healthBarPosY) { this.healthBarPosY = healthBarPosY; }
 
         public int getEnergyBarPosX() { return energyBarPosX; }
         public void setEnergyBarPosX(int energyBarPosX) { this.energyBarPosX = energyBarPosX; }
@@ -43,8 +60,8 @@ public class GeneralUserConfig {
         public int getStaminaBarPosY() { return staminaBarPosY; }
         public void setStaminaBarPosY(int staminaBarPosY) { this.staminaBarPosY = staminaBarPosY; }
 
-        public boolean isCompactHud() { return compactHud; }
-        public void setCompactHud(boolean compactHud) { this.compactHud = compactHud; }
+        public boolean isStoryHardDifficulty() { return storyHardDifficulty; }
+        public void setStoryHardDifficulty(boolean storyHardDifficulty) { this.storyHardDifficulty = storyHardDifficulty; }
     }
 }
 

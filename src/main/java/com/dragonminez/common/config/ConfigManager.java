@@ -2,20 +2,14 @@ package com.dragonminez.common.config;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.stats.Character;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.stream.JsonReader;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.*;
 
 public class ConfigManager {
 
@@ -24,227 +18,497 @@ public class ConfigManager {
             .setLenient()
             .create();
 
+    private static final ConfigLoader LOADER = new ConfigLoader(GSON);
+    private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory(GSON, LOADER);
+
     private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
     private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
 
-    private static final Map<String, RaceStatsConfig> RACE_CONFIGS = new HashMap<>();
+    private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin"};
+    private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
+
+    private static final Map<String, RaceStatsConfig> RACE_STATS = new HashMap<>();
+    private static final Map<String, RaceCharacterConfig> RACE_CHARACTER = new HashMap<>();
+    private static final Map<String, Map<String, FormConfig>> RACE_FORMS = new HashMap<>();
+    private static final List<String> LOADED_RACES = new ArrayList<>();
+
+    private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
+    private static SkillsConfig SERVER_SYNCED_SKILLS;
+    private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
+    private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
+    private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
+
+
     private static GeneralUserConfig userConfig;
     private static GeneralServerConfig serverConfig;
+    private static SkillsConfig skillsConfig;
 
-    private static final Pattern SINGLE_LINE_COMMENT = Pattern.compile("//.*");
-    private static final Pattern MULTI_LINE_COMMENT = Pattern.compile("/\\*.*?\\*/", Pattern.DOTALL);
-    private static final Pattern TRAILING_COMMA = Pattern.compile(",\\s*([}\\]])");
-
-    private static String cleanJson5(String json5) {
-        String json = json5;
-        json = MULTI_LINE_COMMENT.matcher(json).replaceAll("");
-        json = SINGLE_LINE_COMMENT.matcher(json).replaceAll("");
-        json = TRAILING_COMMA.matcher(json).replaceAll("$1");
-        return json;
-    }
 
     public static void initialize() {
-        LogUtil.info(Env.COMMON, "Inicializando sistema de configuración de DragonMineZ...");
+        LogUtil.info(Env.COMMON, "Initializing DragonMineZ configuration system...");
 
         try {
             Files.createDirectories(CONFIG_DIR);
             Files.createDirectories(RACES_DIR);
 
             loadGeneralConfigs();
-            loadRaceConfigs();
+            loadAllRaces();
 
-            LogUtil.info(Env.COMMON, "Sistema de configuración inicializado correctamente");
+            LogUtil.info(Env.COMMON, "Configuration system initialized successfully");
+            LogUtil.info(Env.COMMON, "Loaded races: {}", LOADED_RACES);
         } catch (IOException e) {
-            LogUtil.error(Env.COMMON, "Error al inicializar el sistema de configuración: {}", e.getMessage());
+            LogUtil.error(Env.COMMON, "Error initializing configuration system: {}", e.getMessage());
         }
     }
 
     private static void loadGeneralConfigs() throws IOException {
-        Path userConfigPath = CONFIG_DIR.resolve("general-user.json5");
+        Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
         if (Files.exists(userConfigPath)) {
-            String content = Files.readString(userConfigPath, StandardCharsets.UTF_8);
-            String cleanedJson = cleanJson5(content);
-            JsonReader reader = new JsonReader(new StringReader(cleanedJson));
-            reader.setLenient(true);
-            userConfig = GSON.fromJson(reader, GeneralUserConfig.class);
-            LogUtil.info(Env.COMMON, "Configuración de usuario cargada desde: {}", userConfigPath);
+            userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
         } else {
             userConfig = new GeneralUserConfig();
-            saveGeneralUserConfig();
-            LogUtil.info(Env.COMMON, "Configuración de usuario creada por defecto en: {}", userConfigPath);
+            LOADER.saveConfig(userConfigPath, userConfig);
         }
 
-        Path serverConfigPath = CONFIG_DIR.resolve("general-server.json5");
+        Path serverConfigPath = CONFIG_DIR.resolve("general-server.json");
         if (Files.exists(serverConfigPath)) {
-            String content = Files.readString(serverConfigPath, StandardCharsets.UTF_8);
-            String cleanedJson = cleanJson5(content);
-            JsonReader reader = new JsonReader(new StringReader(cleanedJson));
-            reader.setLenient(true);
-            serverConfig = GSON.fromJson(reader, GeneralServerConfig.class);
-            LogUtil.info(Env.COMMON, "Configuración del servidor cargada desde: {}", serverConfigPath);
+            serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
         } else {
-            serverConfig = new GeneralServerConfig();
-            saveGeneralServerConfig();
-            LogUtil.info(Env.COMMON, "Configuración del servidor creada por defecto en: {}", serverConfigPath);
+			try {
+				LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
+				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
+			} catch (Exception e) {
+				serverConfig = new GeneralServerConfig();
+				LOADER.saveConfig(serverConfigPath, serverConfig);
+				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
+			}
+        }
+
+        Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
+        if (Files.exists(skillsConfigPath)) {
+            skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+        } else {
+			try {
+				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
+				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+			} catch (Exception e) {
+				skillsConfig = new SkillsConfig();
+				LOADER.saveConfig(skillsConfigPath, skillsConfig);
+				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
+			}
         }
     }
 
-    private static void loadRaceConfigs() throws IOException {
-        for (String raceName : Character.RACE_NAMES) {
-            loadRaceConfig(raceName);
+    private static void loadAllRaces() throws IOException {
+        RACE_STATS.clear();
+        RACE_CHARACTER.clear();
+        RACE_FORMS.clear();
+        LOADED_RACES.clear();
+
+        for (String raceName : DEFAULT_RACES) {
+            createOrLoadRace(raceName, true);
+        }
+
+        try (var stream = Files.list(RACES_DIR)) {
+            stream.forEach(racePath -> {
+                if (Files.isDirectory(racePath)) {
+                    String raceName = racePath.getFileName().toString();
+                    if (!isDefaultRace(raceName)) {
+                        try {
+                            createOrLoadRace(raceName, false);
+                            LogUtil.info(Env.COMMON, "Custom race detected: {}", raceName);
+                        } catch (IOException e) {
+                            LogUtil.error(Env.COMMON, "Error loading custom race '{}': {}", raceName, e.getMessage());
+                        }
+                    }
+                }
+            });
         }
     }
 
-    private static void loadRaceConfig(String raceName) throws IOException {
+    private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
         Path racePath = RACES_DIR.resolve(raceName);
         Files.createDirectories(racePath);
 
-        Path statsPath = racePath.resolve("stats.json5");
+        Path characterPath = racePath.resolve("character.json");
+        Path statsPath = racePath.resolve("stats.json");
         Path formsPath = racePath.resolve("forms");
         Files.createDirectories(formsPath);
 
-        RaceStatsConfig config;
-        if (Files.exists(statsPath)) {
-            String content = Files.readString(statsPath, StandardCharsets.UTF_8);
-            String cleanedJson = cleanJson5(content);
-            JsonReader reader = new JsonReader(new StringReader(cleanedJson));
-            reader.setLenient(true);
-            config = GSON.fromJson(reader, RaceStatsConfig.class);
-            LogUtil.info(Env.COMMON, "Configuración de raza '{}' cargada desde: {}", raceName, statsPath);
+        RaceCharacterConfig characterConfig;
+        if (Files.exists(characterPath)) {
+            characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
+
+            RaceCharacterConfig defaultConfig = createDefaultCharacterConfig(raceName, isDefault);
+            boolean needsUpdate = mergeCharacterConfig(characterConfig, defaultConfig);
+
+            if (needsUpdate) {
+                LOADER.saveConfig(characterPath, characterConfig);
+            }
         } else {
-            config = createDefaultRaceConfig(raceName);
-            String json5Content = GSON.toJson(config);
-            Files.writeString(statsPath, json5Content, StandardCharsets.UTF_8);
-            LogUtil.info(Env.COMMON, "Configuración de raza '{}' creada por defecto en: {}", raceName, statsPath);
+            characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+            LOADER.saveConfig(characterPath, characterConfig);
         }
 
-        RACE_CONFIGS.put(raceName, config);
-
-        Path superformPath = formsPath.resolve("superform.json5");
-        if (!Files.exists(superformPath)) {
-            Files.writeString(superformPath, "{\n  // Configuración de transformaciones - Próximamente\n}", StandardCharsets.UTF_8);
+        RaceStatsConfig statsConfig;
+        if (Files.exists(statsPath)) {
+            statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
+        } else {
+            statsConfig = createDefaultStatsConfig(raceName, isDefault);
+            LOADER.saveConfig(statsPath, statsConfig);
         }
+
+        Map<String, FormConfig> raceForms = LOADER.loadRaceForms(raceName, formsPath);
+
+        if (isDefault && !LOADER.hasExistingFiles(formsPath)) {
+            FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
+        }
+
+        RACE_FORMS.put(raceName.toLowerCase(), raceForms);
+        RACE_CHARACTER.put(raceName.toLowerCase(), characterConfig);
+        RACE_STATS.put(raceName.toLowerCase(), statsConfig);
+        LOADED_RACES.add(raceName);
     }
 
-    private static RaceStatsConfig createDefaultRaceConfig(String raceName) {
-        RaceStatsConfig config = new RaceStatsConfig();
+    public static boolean isDefaultRace(String raceName) {
+        for (String vanilla : DEFAULT_RACES) {
+            if (vanilla.equalsIgnoreCase(raceName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static RaceCharacterConfig createDefaultCharacterConfig(String raceName, boolean isDefault) {
+        RaceCharacterConfig config = new RaceCharacterConfig();
         config.setRaceName(raceName);
+        config.setUseVanillaSkin(false);
+        config.setCustomModel("");
+		config.setDefaultModelScaling(0.9375f);
 
-        int raceId = Character.getRaceIdByName(raceName);
-        config.setHasGender(raceId >= 0 && raceId < Character.HAS_GENDER.length
-            ? Character.HAS_GENDER[raceId]
-            : true);
+        if (isDefault) {
+            boolean hasGender = RACES_WITH_GENDER.contains(raceName.toLowerCase());
+            config.setHasGender(hasGender);
 
-        switch (raceName) {
-            case "human" -> {
-                config.setDescription("Los humanos son versátiles y equilibrados, con buen potencial en todas las áreas.");
-                setupHumanStats(config);
+            switch (raceName.toLowerCase()) {
+                case "human" -> setupHumanCharacter(config);
+                case "saiyan" -> setupSaiyanCharacter(config);
+                case "namekian" -> setupNamekianCharacter(config);
+                case "frostdemon" -> setupFrostDemonCharacter(config);
+                case "bioandroid" -> setupBioAndroidCharacter(config);
+                case "majin" -> setupMajinCharacter(config);
+                default -> setupDefaultCharacter(config);
             }
-            case "saiyan" -> {
-                config.setDescription("Los Saiyans son guerreros natos con gran poder físico y potencial de transformación.");
-                setupSaiyanStats(config);
+        } else {
+            config.setHasGender(true);
+            setupDefaultCharacter(config);
+        }
+
+        return config;
+    }
+
+    private static void setupHumanCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+        config.setDefaultBodyColor("#FFD3C9");
+        config.setDefaultBodyColor2("#FFD3C9");
+        config.setDefaultBodyColor3("#FFD3C9");
+        config.setDefaultHairColor("#0E1011");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
+        config.setDefaultAuraColor("#7FFFFF");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
+    }
+
+    private static void setupSaiyanCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+        config.setDefaultBodyColor("#FFD3C9");
+        config.setDefaultBodyColor2("#FFD3C9");
+        config.setDefaultBodyColor3("#FFD3C9");
+        config.setDefaultHairColor("#0E1011");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
+        config.setDefaultAuraColor("#7FFFFF");
+
+        config.setSuperformTpCost(new int[]{1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000});
+        config.setGodformTpCost(new int[]{10000, 20000, 30000});
+        config.setLegendaryformsTpCost(new int[]{50000, 100000});
+    }
+
+    private static void setupNamekianCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+        config.setDefaultBodyColor("#1FAA24");
+        config.setDefaultBodyColor2("#BB2024");
+        config.setDefaultBodyColor3("#FF86A6");
+        config.setDefaultHairColor("#1FAA24");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
+        config.setDefaultAuraColor("#7FFF00");
+
+        config.setSuperformTpCost(new int[]{1000, 2000});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
+    }
+
+    private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+        config.setDefaultBodyColor("#FFFFFF");
+        config.setDefaultBodyColor2("#E8A2FF");
+        config.setDefaultBodyColor3("#FF39A9");
+        config.setDefaultHairColor("#FF001D");
+        config.setDefaultEye1Color("#FF001D");
+        config.setDefaultEye2Color("#000000");
+        config.setDefaultAuraColor("#5F00FF");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
+    }
+
+    private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+        config.setDefaultBodyColor("#187600");
+        config.setDefaultBodyColor2("#9FE321");
+        config.setDefaultBodyColor3("#FF7600");
+        config.setDefaultHairColor("#187600");
+        config.setDefaultEye1Color("#0E1011");
+        config.setDefaultEye2Color("#0E1011");
+        config.setDefaultAuraColor("#1AA700");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
+    }
+
+    private static void setupMajinCharacter(RaceCharacterConfig config) {
+        config.setDefaultBodyType(0);
+        config.setDefaultHairType(0);
+        config.setDefaultEyesType(0);
+        config.setDefaultNoseType(0);
+        config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+        config.setDefaultBodyColor("#FFA4FF");
+        config.setDefaultBodyColor2("#FFA4FF");
+        config.setDefaultBodyColor3("#FFA4FF");
+        config.setDefaultHairColor("#FFA4FF");
+        config.setDefaultEye1Color("#B40000");
+        config.setDefaultEye2Color("#B40000");
+        config.setDefaultAuraColor("#FF6DFF");
+
+        config.setSuperformTpCost(new int[]{});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
+    }
+
+    private static void setupDefaultCharacter(RaceCharacterConfig config) {
+		config.setDefaultBodyType(0);
+		config.setDefaultHairType(0);
+		config.setDefaultEyesType(0);
+		config.setDefaultNoseType(0);
+		config.setDefaultMouthType(0);
+		config.setDefaultTattooType(0);
+		config.setDefaultBodyColor("#FFD3C9");
+		config.setDefaultBodyColor2("#FFD3C9");
+		config.setDefaultBodyColor3("#FFD3C9");
+		config.setDefaultHairColor("#0E1011");
+		config.setDefaultEye1Color("#0E1011");
+		config.setDefaultEye2Color("#0E1011");
+		config.setDefaultAuraColor("#7FFFFF");
+
+		config.setSuperformTpCost(new int[]{});
+		config.setGodformTpCost(new int[]{});
+		config.setLegendaryformsTpCost(new int[]{});
+    }
+
+    private static RaceStatsConfig createDefaultStatsConfig(String raceName, boolean isVanilla) {
+        RaceStatsConfig config = new RaceStatsConfig();
+
+        if (isVanilla) {
+            switch (raceName.toLowerCase()) {
+                case "human" -> setupHumanStats(config);
+                case "saiyan" -> setupSaiyanStats(config);
+                case "namekian" -> setupNamekianStats(config);
+                case "frostdemon" -> setupFrostDemonStats(config);
+                case "bioandroid" -> setupBioAndroidStats(config);
+                case "majin" -> setupMajinStats(config);
             }
-            case "namekian" -> {
-                config.setDescription("Los Namekianos destacan en regeneración y técnicas espirituales.");
-                setupNamekianStats(config);
-            }
-            case "colddemon" -> {
-                config.setDescription("Los Cold Demons poseen inmenso poder natural y alta resistencia.");
-                setupColdDemonStats(config);
-            }
-            case "bioandroid" -> {
-                config.setDescription("Los Bio Androides son adaptables con capacidad de absorber poder.");
-                setupBioAndroidStats(config);
-            }
-            case "majin" -> {
-                config.setDescription("Los Majin tienen gran energía mágica y habilidades de regeneración.");
-                setupMajinStats(config);
-            }
+        } else {
+            setupDefaultStats(config);
         }
 
         return config;
     }
 
     private static void setupHumanStats(RaceStatsConfig config) {
-        setupDefaultClassStats(config);
+        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 5, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 5, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 5, 5, 0.0035, 0.008, 0.009);
     }
 
     private static void setupSaiyanStats(RaceStatsConfig config) {
-        setupDefaultClassStats(config);
+        setupClassStats(config.getWarrior(), 6, 6, 5, 5, 5, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 6, 6, 5, 5, 5, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 6, 6, 5, 5, 5, 5, 0.0035, 0.008, 0.009);
     }
 
     private static void setupNamekianStats(RaceStatsConfig config) {
-        setupDefaultClassStats(config);
+        setupClassStats(config.getWarrior(), 4, 4, 6, 6, 6, 6, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 4, 4, 6, 6, 6, 6, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 4, 4, 6, 6, 6, 6, 0.0035, 0.008, 0.009);
     }
 
-    private static void setupColdDemonStats(RaceStatsConfig config) {
-        setupDefaultClassStats(config);
+    private static void setupFrostDemonStats(RaceStatsConfig config) {
+        setupClassStats(config.getWarrior(), 7, 7, 6, 5, 6, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 7, 7, 6, 5, 6, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 7, 7, 6, 5, 6, 5, 0.0035, 0.008, 0.009);
     }
 
     private static void setupBioAndroidStats(RaceStatsConfig config) {
-        setupDefaultClassStats(config);
+        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 6, 6, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 6, 6, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 6, 6, 0.0035, 0.008, 0.009);
     }
 
     private static void setupMajinStats(RaceStatsConfig config) {
-        setupDefaultClassStats(config);
+        setupClassStats(config.getWarrior(), 5, 5, 6, 6, 6, 7, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 6, 6, 6, 7, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 6, 6, 6, 7, 0.0035, 0.008, 0.009);
     }
 
-    private static void setupDefaultClassStats(RaceStatsConfig config) {
-        var warrior = config.getClassConfig("warrior");
-        warrior.getBaseStats().setStrength(5);
-        warrior.getBaseStats().setStrikePower(5);
-        warrior.getBaseStats().setResistance(5);
-        warrior.getBaseStats().setVitality(5);
-        warrior.getBaseStats().setKiPower(5);
-        warrior.getBaseStats().setEnergy(5);
-        warrior.getStatScaling().setStrengthScaling(1.5);
-        warrior.getStatScaling().setStrikePowerScaling(1.5);
-        warrior.getStatScaling().setStaminaScaling(2.5);
-        warrior.getStatScaling().setDefenseScaling(0.6);
-        warrior.getStatScaling().setVitalityScaling(1.2);
-        warrior.getStatScaling().setKiPowerScaling(0.8);
-        warrior.getStatScaling().setEnergyScaling(0.8);
-
-        var spiritualist = config.getClassConfig("spiritualist");
-        spiritualist.getBaseStats().setStrength(5);
-        spiritualist.getBaseStats().setStrikePower(5);
-        spiritualist.getBaseStats().setResistance(5);
-        spiritualist.getBaseStats().setVitality(5);
-        spiritualist.getBaseStats().setKiPower(5);
-        spiritualist.getBaseStats().setEnergy(5);
-        spiritualist.getStatScaling().setStrengthScaling(0.8);
-        spiritualist.getStatScaling().setStrikePowerScaling(0.8);
-        spiritualist.getStatScaling().setStaminaScaling(2.0);
-        spiritualist.getStatScaling().setDefenseScaling(0.5);
-        spiritualist.getStatScaling().setVitalityScaling(1.0);
-        spiritualist.getStatScaling().setKiPowerScaling(1.5);
-        spiritualist.getStatScaling().setEnergyScaling(1.5);
-
-        var martialartist = config.getClassConfig("martialartist");
-        martialartist.getBaseStats().setStrength(5);
-        martialartist.getBaseStats().setStrikePower(5);
-        martialartist.getBaseStats().setResistance(5);
-        martialartist.getBaseStats().setVitality(5);
-        martialartist.getBaseStats().setKiPower(5);
-        martialartist.getBaseStats().setEnergy(5);
-        martialartist.getStatScaling().setStrengthScaling(1.2);
-        martialartist.getStatScaling().setStrikePowerScaling(1.2);
-        martialartist.getStatScaling().setStaminaScaling(2.2);
-        martialartist.getStatScaling().setDefenseScaling(0.55);
-        martialartist.getStatScaling().setVitalityScaling(1.1);
-        martialartist.getStatScaling().setKiPowerScaling(1.2);
-        martialartist.getStatScaling().setEnergyScaling(1.2);
+    private static void setupDefaultStats(RaceStatsConfig config) {
+        setupClassStats(config.getWarrior(), 5, 5, 5, 5, 5, 5, 0.003, 0.008, 0.012);
+        setupClassStats(config.getSpiritualist(), 5, 5, 5, 5, 5, 5, 0.002, 0.015, 0.008);
+        setupClassStats(config.getMartialArtist(), 5, 5, 5, 5, 5, 5, 0.0035, 0.008, 0.009);
     }
 
-    public static RaceStatsConfig getRaceConfig(String raceName) {
-        return RACE_CONFIGS.getOrDefault(raceName, RACE_CONFIGS.get("human"));
+    private static void setupClassStats(RaceStatsConfig.ClassStats classStats,
+                                        int str, int skp, int res, int vit, int pwr, int ene,
+                                        double healthRegen, double energyRegen, double staminaRegen) {
+        RaceStatsConfig.BaseStats base = classStats.getBaseStats();
+        base.setStrength(str);
+        base.setStrikePower(skp);
+        base.setResistance(res);
+        base.setVitality(vit);
+        base.setKiPower(pwr);
+        base.setEnergy(ene);
+
+        classStats.setHealthRegenRate(healthRegen);
+        classStats.setEnergyRegenRate(energyRegen);
+        classStats.setStaminaRegenRate(staminaRegen);
+
+        RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
+        scaling.setStrengthScaling(1.0);
+        scaling.setStrikePowerScaling(1.0);
+        scaling.setStaminaScaling(1.0);
+        scaling.setDefenseScaling(1.0);
+        scaling.setVitalityScaling(1.0);
+        scaling.setKiPowerScaling(1.0);
+        scaling.setEnergyScaling(1.0);
     }
 
-    public static RaceStatsConfig getRaceConfig(int raceId) {
-        if (raceId >= 0 && raceId < Character.RACE_NAMES.length) {
-            return getRaceConfig(Character.RACE_NAMES[raceId]);
+    private static boolean mergeCharacterConfig(RaceCharacterConfig existing, RaceCharacterConfig defaults) {
+        boolean updated = false;
+
+        if (existing.getDefaultBodyColor() == null && defaults.getDefaultBodyColor() != null) {
+            existing.setDefaultBodyColor(defaults.getDefaultBodyColor());
+            updated = true;
         }
-        return getRaceConfig("human");
+
+        if (existing.getDefaultBodyColor2() == null && defaults.getDefaultBodyColor2() != null) {
+            existing.setDefaultBodyColor2(defaults.getDefaultBodyColor2());
+            updated = true;
+        }
+
+        if (existing.getDefaultBodyColor3() == null && defaults.getDefaultBodyColor3() != null) {
+            existing.setDefaultBodyColor3(defaults.getDefaultBodyColor3());
+            updated = true;
+        }
+
+        if (existing.getDefaultHairColor() == null && defaults.getDefaultHairColor() != null) {
+            existing.setDefaultHairColor(defaults.getDefaultHairColor());
+            updated = true;
+        }
+
+        if (existing.getDefaultEye1Color() == null && defaults.getDefaultEye1Color() != null) {
+            existing.setDefaultEye1Color(defaults.getDefaultEye1Color());
+            updated = true;
+        }
+
+        if (existing.getDefaultEye2Color() == null && defaults.getDefaultEye2Color() != null) {
+            existing.setDefaultEye2Color(defaults.getDefaultEye2Color());
+            updated = true;
+        }
+
+        if (existing.getDefaultAuraColor() == null && defaults.getDefaultAuraColor() != null) {
+            existing.setDefaultAuraColor(defaults.getDefaultAuraColor());
+            updated = true;
+        }
+
+        if (existing.getSuperformTpCost() == null && defaults.getSuperformTpCost() != null) {
+            existing.setSuperformTpCost(defaults.getSuperformTpCost());
+            updated = true;
+        }
+
+        if (existing.getGodformTpCost() == null && defaults.getGodformTpCost() != null) {
+            existing.setGodformTpCost(defaults.getGodformTpCost());
+            updated = true;
+        }
+
+        if (existing.getLegendaryformsTpCost() == null && defaults.getLegendaryformsTpCost() != null) {
+            existing.setLegendaryformsTpCost(defaults.getLegendaryformsTpCost());
+            updated = true;
+        }
+
+        return updated;
+    }
+
+    public static RaceStatsConfig getRaceStats(String raceName) {
+        if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(raceName.toLowerCase())) {
+            return SERVER_SYNCED_STATS.get(raceName.toLowerCase());
+        }
+        return RACE_STATS.getOrDefault(raceName.toLowerCase(), RACE_STATS.get("human"));
+    }
+
+    public static RaceCharacterConfig getRaceCharacter(String raceName) {
+        if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase())) {
+            return SERVER_SYNCED_CHARACTER.get(raceName.toLowerCase());
+        }
+        return RACE_CHARACTER.getOrDefault(raceName.toLowerCase(), RACE_CHARACTER.get("human"));
+    }
+
+    public static List<String> getLoadedRaces() {
+        return new ArrayList<>(LOADED_RACES);
+    }
+
+    public static boolean isRaceLoaded(String raceName) {
+        return LOADED_RACES.contains(raceName.toLowerCase());
     }
 
     public static GeneralUserConfig getUserConfig() {
@@ -252,43 +516,136 @@ public class ConfigManager {
     }
 
     public static GeneralServerConfig getServerConfig() {
+        if (SERVER_SYNCED_GENERAL_SERVER != null) {
+            return SERVER_SYNCED_GENERAL_SERVER;
+        }
         return serverConfig != null ? serverConfig : new GeneralServerConfig();
     }
 
     public static void saveGeneralUserConfig() {
         try {
-            Path path = CONFIG_DIR.resolve("general-user.json5");
-            String json5Content = GSON.toJson(userConfig);
-            Files.writeString(path, json5Content, StandardCharsets.UTF_8);
-            LogUtil.info(Env.COMMON, "Configuración de usuario guardada en: {}", path);
+            Path path = CONFIG_DIR.resolve("general-user.json");
+            LOADER.saveConfig(path, userConfig);
         } catch (IOException e) {
-            LogUtil.error(Env.COMMON, "Error al guardar la configuración de usuario: {}", e.getMessage());
+            LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage());
         }
     }
 
     public static void saveGeneralServerConfig() {
         try {
-            Path path = CONFIG_DIR.resolve("general-server.json5");
-            String json5Content = GSON.toJson(serverConfig);
-            Files.writeString(path, json5Content, StandardCharsets.UTF_8);
-            LogUtil.info(Env.COMMON, "Configuración del servidor guardada en: {}", path);
+            Path path = CONFIG_DIR.resolve("general-server.json");
+            LOADER.saveConfig(path, serverConfig);
         } catch (IOException e) {
-            LogUtil.error(Env.COMMON, "Error al guardar la configuración del servidor: {}", e.getMessage());
+            LogUtil.error(Env.COMMON, "Error saving server configuration: {}", e.getMessage());
         }
     }
 
-    public static void saveRaceConfig(String raceName) {
+    public static void saveRaceStats(String raceName) {
         try {
-            Path path = RACES_DIR.resolve(raceName).resolve("stats.json5");
-            RaceStatsConfig config = RACE_CONFIGS.get(raceName);
+            Path path = RACES_DIR.resolve(raceName).resolve("stats.json");
+            RaceStatsConfig config = RACE_STATS.get(raceName);
             if (config != null) {
-                String json5Content = GSON.toJson(config);
-                Files.writeString(path, json5Content, StandardCharsets.UTF_8);
-                LogUtil.info(Env.COMMON, "Configuración de raza '{}' guardada en: {}", raceName, path);
+                LOADER.saveConfig(path, config);
             }
         } catch (IOException e) {
-            LogUtil.error(Env.COMMON, "Error al guardar la configuración de la raza '{}': {}", raceName, e.getMessage());
+            LogUtil.error(Env.COMMON, "Error saving stats for '{}': {}", raceName, e.getMessage());
         }
     }
-}
 
+    public static void saveRaceCharacter(String raceName) {
+        try {
+            Path path = RACES_DIR.resolve(raceName).resolve("character.json");
+            RaceCharacterConfig config = RACE_CHARACTER.get(raceName);
+            if (config != null) {
+                LOADER.saveConfig(path, config);
+            }
+        } catch (IOException e) {
+            LogUtil.error(Env.COMMON, "Error saving character for '{}': {}", raceName, e.getMessage());
+        }
+    }
+
+    public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters) {
+        SERVER_SYNCED_GENERAL_SERVER = syncedServerConfig;
+        SERVER_SYNCED_SKILLS = syncedSkillsConfig;
+        SERVER_SYNCED_FORMS = syncedForms;
+        SERVER_SYNCED_STATS = syncedStats;
+        SERVER_SYNCED_CHARACTER = syncedCharacters;
+    }
+
+    public static void clearServerSync() {
+        SERVER_SYNCED_GENERAL_SERVER = null;
+        SERVER_SYNCED_SKILLS = null;
+        SERVER_SYNCED_FORMS = null;
+        SERVER_SYNCED_STATS = null;
+        SERVER_SYNCED_CHARACTER = null;
+    }
+
+    public static boolean isUsingServerConfig() {
+        return SERVER_SYNCED_GENERAL_SERVER != null || SERVER_SYNCED_SKILLS != null || SERVER_SYNCED_FORMS != null || SERVER_SYNCED_STATS != null || SERVER_SYNCED_CHARACTER != null;
+    }
+
+    public static Map<String, RaceStatsConfig> getAllRaceStats() {
+        if (SERVER_SYNCED_STATS != null) {
+            return SERVER_SYNCED_STATS;
+        }
+        return new HashMap<>(RACE_STATS);
+    }
+
+    public static Map<String, RaceCharacterConfig> getAllRaceCharacters() {
+        if (SERVER_SYNCED_CHARACTER != null) {
+            return SERVER_SYNCED_CHARACTER;
+        }
+        return new HashMap<>(RACE_CHARACTER);
+    }
+
+    public static FormConfig getFormGroup(String raceName, String groupName) {
+        Map<String, FormConfig> raceForms = getAllFormsForRace(raceName);
+        if (raceForms != null) {
+            return raceForms.get(groupName.toLowerCase());
+        }
+        return null;
+    }
+
+    public static FormConfig.FormData getForm(String raceName, String groupName, String formName) {
+        FormConfig group = getFormGroup(raceName, groupName);
+        if (group != null) {
+            return group.getForm(formName);
+        }
+        return null;
+    }
+
+    public static Map<String, Map<String, FormConfig>> getAllForms() {
+        if (SERVER_SYNCED_FORMS != null) {
+            return SERVER_SYNCED_FORMS;
+        }
+        return RACE_FORMS;
+    }
+
+    public static Map<String, FormConfig> getAllFormsForRace(String raceName) {
+        Map<String, Map<String, FormConfig>> forms = getAllForms();
+        return forms.getOrDefault(raceName.toLowerCase(), new HashMap<>());
+    }
+
+    public static boolean hasFormGroup(String raceName, String groupName) {
+        return getFormGroup(raceName, groupName) != null;
+    }
+
+    public static boolean hasForm(String raceName, String groupName, String formName) {
+        return getForm(raceName, groupName, formName) != null;
+    }
+
+    public static SkillsConfig getSkillsConfig() {
+        if (SERVER_SYNCED_SKILLS != null) {
+            return SERVER_SYNCED_SKILLS;
+        }
+        return skillsConfig != null ? skillsConfig : new SkillsConfig();
+    }
+
+    public static void setServerSyncedSkills(SkillsConfig config) {
+        SERVER_SYNCED_SKILLS = config;
+    }
+
+    public static void clearServerSyncedSkills() {
+        SERVER_SYNCED_SKILLS = null;
+    }
+}

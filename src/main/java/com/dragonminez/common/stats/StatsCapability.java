@@ -1,8 +1,13 @@
 package com.dragonminez.common.stats;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.SyncSagasS2C;
+import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
+import com.dragonminez.common.quest.QuestData;
+import com.dragonminez.common.quest.SagaManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -51,16 +56,48 @@ public class StatsCapability {
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-                NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
-            });
+            NetworkHandler.sendToPlayer(
+                new SyncServerConfigS2C(
+                    ConfigManager.getServerConfig(),
+                    ConfigManager.getSkillsConfig(),
+                    ConfigManager.getAllForms(),
+                    ConfigManager.getAllRaceStats(),
+                    ConfigManager.getAllRaceCharacters()
+                ),
+                serverPlayer
+            );
+
+            SagaManager.loadSagas(serverPlayer.getServer());
+            NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), serverPlayer);
         }
         event.getEntity().refreshDimensions();
+    }
+
+    private static boolean hasInitializedPlayer = false;
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
+            if (event.player instanceof ServerPlayer serverPlayer && !hasInitializedPlayer) {
+                hasInitializedPlayer = true;
+
+                StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
+                    QuestData questData = data.getQuestData();
+                    if (!questData.isSagaUnlocked("saiyan_saga")) {
+                        questData.unlockSaga("saiyan_saga");
+                    }
+                    NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+                });
+            }
+
+            StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
+        }
     }
 
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         StatsProvider.get(INSTANCE, event.getEntity()).ifPresent(data -> {
+			event.getEntity().setHealth(data.getMaxHealth());
             data.getResources().setCurrentEnergy(data.getMaxEnergy());
             data.getResources().setCurrentStamina(data.getMaxStamina());
             data.getStatus().setAlive(true);
@@ -75,12 +112,4 @@ public class StatsCapability {
             });
         }
     }
-
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
-            StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
-        }
-    }
 }
-

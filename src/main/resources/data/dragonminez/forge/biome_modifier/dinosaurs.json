@@ -1,0 +1,20 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#dragonminez:has_dinosaurs",
+  "spawners": [{
+    "type": "dragonminez:dino1",
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 3
+  },{
+    "type": "dragonminez:dino2",
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 3
+  },{
+    "type": "dragonminez:dino3",
+    "weight": 10,
+    "minCount": 1,
+    "maxCount": 3
+  }]
+}

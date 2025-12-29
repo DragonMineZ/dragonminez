@@ -8,10 +8,11 @@ import java.util.Map;
 public class Cooldowns {
     private final Map<String, Integer> cooldowns;
 
-    public static final String SENZU_DAILY = "SenzuDaily";
+    public static final String SENZU_KARIN = "SenzuKarin";
     public static final String BABA = "Baba";
     public static final String BABA_ALIVE = "BabaAlive";
     public static final String ZENKAI = "Zenkai";
+	public static final String SENZU_CD = "SenzuCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

@@ -1,0 +1,21 @@
+{
+  "name": "dragonminez:village_sacred/namek_warrior",
+  "fallback": "minecraft:empty",
+  "elements": [{
+    "weight": 2,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_warriors/namek_warrior1",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 2,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_warriors/namek_warrior2",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  }]
+}

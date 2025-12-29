@@ -1,0 +1,42 @@
+{
+  "name": "dragonminez:village_sacred/streets",
+  "fallback": "minecraft:empty",
+  "elements": [{
+    "weight": 3,
+    "element": {
+      "element_type": "minecraft:empty_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "element_type": "minecraft:single_pool_element",
+      "location": "dragonminez:village_sacred/streets/street_straight",
+      "processors": "minecraft:empty",
+      "projection": "terrain_matching"
+    }
+  },{
+    "weight": 2,
+    "element": {
+      "element_type": "minecraft:single_pool_element",
+      "location": "dragonminez:village_sacred/streets/street_curve",
+      "processors": "minecraft:empty",
+      "projection": "terrain_matching"
+    }
+  },{
+    "weight": 2,
+    "element": {
+      "element_type": "minecraft:single_pool_element",
+      "location": "dragonminez:village_sacred/streets/street_t",
+      "processors": "minecraft:empty",
+      "projection": "terrain_matching"
+    }
+  },{
+    "weight": 1,
+    "element": {
+      "element_type": "minecraft:single_pool_element",
+      "location": "dragonminez:village_sacred/streets/street_cross",
+      "processors": "minecraft:empty",
+      "projection": "terrain_matching"
+    }
+  }]
+}

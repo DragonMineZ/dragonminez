@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "dragonminez:block/invisible_ladder_block",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "dragonminez:block/invisible_ladder_block"
+    },
+    "facing=south": {
+      "model": "dragonminez:block/invisible_ladder_block",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "dragonminez:block/invisible_ladder_block",
+      "y": 270
+    }
+  }
+}

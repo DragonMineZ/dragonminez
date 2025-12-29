@@ -1,28 +1,123 @@
 name: Crowdin Check & Sync
-
 on:
   push:
     branches:
       - main
     paths:
       - src/main/resources/assets/dragonminez/lang/**
+  schedule:
+    - cron: '0 * * * *'   # cada horita
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  crowdin-sync-check:
+  validate-files:
     runs-on: ubuntu-latest
+    outputs:
+      has_unauthorized: ${{ steps.check_files.outputs.has_unauthorized }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check for unauthorized files
+        id: check_files
+        run: |
+              # Get changed files in the lang directory
+              changed_files=$(git diff --name-only HEAD~1 HEAD -- 'src/main/resources/assets/dragonminez/lang/')
+          
+              # Filter:
+              #  - Keep only non-en_us.json
+              #  - Exclude files whose last commit author is the Crowdin bot
+              unauthorized=""
+              for file in $changed_files; do
+                [ "$(basename "$file")" = "en_us.json" ] && continue
+          
+                author=$(git log -1 --pretty=format:'%an' -- "$file")
+                if [ "$author" != "crowdin-bot" ] && [ "$author" != "Crowdin Bot" ]; then
+                  unauthorized="$unauthorized"$'\n'"$file"
+                fi
+              done
+          
+              unauthorized=$(echo "$unauthorized" | sed '/^$/d' || true)
+          
+              if [ -n "$unauthorized" ]; then
+                echo "has_unauthorized=true" >> $GITHUB_OUTPUT
+                echo "unauthorized_files<<EOF" >> $GITHUB_OUTPUT
+                echo "$unauthorized" >> $GITHUB_OUTPUT
+                echo "EOF" >> $GITHUB_OUTPUT
+                echo "⚠️ Unauthorized translation files detected:"
+                echo "$unauthorized"
+              else
+                echo "has_unauthorized=false" >> $GITHUB_OUTPUT
+                echo "✓ No unauthorized files detected"
+              fi
 
+  remove-unauthorized:
+    runs-on: ubuntu-latest
+    needs: validate-files
+    if: needs.validate-files.outputs.has_unauthorized == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Remove unauthorized files
+        run: |
+          # Get unauthorized files from previous job
+          unauthorized=$(git diff --name-only HEAD~1 HEAD -- 'src/main/resources/assets/dragonminez/lang/' | grep -v 'en_us.json' || true)
+          
+          # Remove each unauthorized file
+          echo "$unauthorized" | while read -r file; do
+            if [ -f "$file" ]; then
+              git rm "$file"
+              echo "Removed: $file"
+            fi
+          done
+      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'Remove unauthorized translation files'
+          title: '🚨 Remove Unauthorized Translation Files'
+          body: |
+            ## Unauthorized Translation Upload Detected
+            
+            This PR automatically removes translation files that were manually uploaded.
+            
+            **⚠️ Important:** All translations must be uploaded exclusively through Crowdin.
+            
+            ### Files Removed:
+            The following files were detected and removed because they bypass the Crowdin translation workflow:
+            
+            - Only `en_us.json` should be modified directly in the repository
+            - All other language files are managed by Crowdin
+            
+            ### Action Required:
+            - Upload your translations to Crowdin instead
+            - Do not manually push translation files to the repository
+            
+            ---
+            *This is an automated PR created by the translation validation workflow*
+          branch: remove-unauthorized-translations
+          delete-branch: true
+
+  crowdin-sync:
+    runs-on: ubuntu-latest
+    needs: validate-files
+    if: needs.validate-files.outputs.has_unauthorized == 'false'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Localization Syntax Check
         run: ./scripts/check_lang.sh
-
+      
       - name: Crowdin Sync
-        uses: crowdin/github-action@v2
+        uses: crowdin/github-action@v2.13.0
         with:
           upload_sources: true
           upload_translations: true

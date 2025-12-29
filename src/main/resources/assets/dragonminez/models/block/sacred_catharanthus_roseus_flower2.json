@@ -1,0 +1,8 @@
+{
+	"credit": "Made with Blockbench",
+	"parent": "dragonminez:block/sacred_marigold_flower2",
+	"textures": {
+		"0": "dragonminez:block/sacred_catharanthus_roseus_flower",
+		"particle": "dragonminez:block/sacred_catharanthus_roseus_flower"
+	}
+}

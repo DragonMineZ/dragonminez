@@ -1,0 +1,23 @@
+{
+  "raceName": "majin",
+  "hasGender": true,
+  "useVanillaSkin": false,
+  "customModel": "",
+  "defaultModelScaling": 0.9375,
+  "defaultBodyType": 0,
+  "defaultHairType": 0,
+  "defaultEyesType": 0,
+  "defaultNoseType": 0,
+  "defaultMouthType": 0,
+  "defaultTattooType": 0,
+  "defaultBodyColor": "#FFA4FF",
+  "defaultBodyColor2": "#FFA4FF",
+  "defaultBodyColor3": "#FFA4FF",
+  "defaultHairColor": "#FFA4FF",
+  "defaultEye1Color": "#B40000",
+  "defaultEye2Color": "#B40000",
+  "defaultAuraColor": "#FF6DFF",
+  "superform_tpcost": [],
+  "godform_tpcost": [],
+  "legendaryforms_tpcost": []
+}

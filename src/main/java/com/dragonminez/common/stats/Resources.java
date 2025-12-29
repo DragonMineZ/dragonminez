@@ -1,6 +1,9 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.events.DMZEvent;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.common.MinecraftForge;
 
 public class Resources {
     private int currentEnergy;
@@ -10,6 +13,7 @@ public class Resources {
     private int alignment;
     private int trainingPoints;
     private int zenkaiCount;
+    private Player player;
 
     public Resources() {
         this.currentEnergy = 0;
@@ -21,9 +25,13 @@ public class Resources {
         this.zenkaiCount = 0;
     }
 
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
     public int getCurrentEnergy() { return currentEnergy; }
     public int getCurrentStamina() { return currentStamina; }
-    public int getRelease() { return release; }
+    public int getPowerRelease() { return release; }
     public int getFormRelease() { return formRelease; }
     public int getAlignment() { return alignment; }
     public int getTrainingPoints() { return trainingPoints; }
@@ -31,7 +39,7 @@ public class Resources {
 
     public void setCurrentEnergy(int energy) { this.currentEnergy = Math.max(0, energy); }
     public void setCurrentStamina(int stamina) { this.currentStamina = Math.max(0, stamina); }
-    public void setRelease(int release) { this.release = Math.max(0, release); }
+    public void setPowerRelease(int release) { this.release = Math.max(0, release); }
     public void setFormRelease(int formRelease) { this.formRelease = Math.max(0, Math.min(100, formRelease)); }
     public void setAlignment(int alignment) { this.alignment = Math.max(0, Math.min(100, alignment)); }
     public void setTrainingPoints(int points) { this.trainingPoints = Math.max(0, points); }
@@ -40,7 +48,21 @@ public class Resources {
     public void addEnergy(int amount) { setCurrentEnergy(currentEnergy + amount); }
     public void addStamina(int amount) { setCurrentStamina(currentStamina + amount); }
     public void addAlignment(int amount) { setAlignment(alignment + amount); }
-    public void addTrainingPoints(int amount) { setTrainingPoints(trainingPoints + amount); }
+
+    public void addTrainingPoints(int amount) {
+        if (amount <= 0 || player == null) {
+            setTrainingPoints(trainingPoints + amount);
+            return;
+        }
+
+        int oldValue = this.trainingPoints;
+        DMZEvent.TPGainEvent event = new DMZEvent.TPGainEvent(player, oldValue, amount);
+
+        if (!MinecraftForge.EVENT_BUS.post(event)) {
+            setTrainingPoints(oldValue + event.getTpGain());
+        }
+    }
+
     public void addZenkaiCount(int amount) { setZenkaiCount(zenkaiCount + amount); }
 
     public void removeEnergy(int amount) { setCurrentEnergy(currentEnergy - amount); }

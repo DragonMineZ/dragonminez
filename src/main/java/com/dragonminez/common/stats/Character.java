@@ -1,21 +1,21 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import net.minecraft.nbt.CompoundTag;
 
+import java.util.List;
+
 public class Character {
-    private int race;
+    private String race;
     private String gender;
     private String characterClass;
 
-    public static final int RACE_HUMAN = 0;
-    public static final int RACE_SAIYAN = 1;
-    public static final int RACE_NAMEKIAN = 2;
-    public static final int RACE_COLD_DEMON = 3;
-    public static final int RACE_BIO_ANDROID = 4;
-    public static final int RACE_MAJIN = 5;
-
-    public static final String[] RACE_NAMES = {"human", "saiyan", "namekian", "colddemon", "bioandroid", "majin"};
-    public static final boolean[] HAS_GENDER = {true, true, false, false, false, true};
+    private String selectedFormGroup = "";
+    private String currentFormGroup = "";
+    private String currentForm = "";
+    private final FormMasteries formMasteries = new FormMasteries();
 
     public static final String GENDER_MALE = "male";
     public static final String GENDER_FEMALE = "female";
@@ -27,113 +27,188 @@ public class Character {
     private int hairId;
     private int bodyType;
     private int eyesType;
-    private int bodyColor;
-    private int bodyColor2;
-    private int bodyColor3;
-    private int hairColor;
-    private int eye1Color;
-    private int eye2Color;
-    private int auraColor;
+    private int noseType;
+    private int mouthType;
+	private int tattooType;
+    private String bodyColor;
+    private String bodyColor2;
+    private String bodyColor3;
+    private String hairColor;
+    private String eye1Color;
+    private String eye2Color;
+    private String auraColor;
 
     public Character() {
-        this.race = RACE_HUMAN;
+        this.race = "human";
         this.gender = GENDER_MALE;
         this.characterClass = CLASS_WARRIOR;
-        this.hairId = 0;
-        this.bodyType = 0;
-        this.eyesType = 0;
-        this.bodyColor = 0;
-        this.bodyColor2 = 0;
-        this.bodyColor3 = 0;
-        this.hairColor = 921617;
-        this.eye1Color = 0;
-        this.eye2Color = 0;
-        this.auraColor = 8388607;
+
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter("human");
+        this.hairId = config.getDefaultHairType();
+        this.bodyType = config.getDefaultBodyType();
+        this.eyesType = config.getDefaultEyesType();
+        this.noseType = config.getDefaultNoseType();
+        this.mouthType = config.getDefaultMouthType();
+		this.tattooType = config.getDefaultTattooType();
+        this.bodyColor = config.getDefaultBodyColor() != null ? config.getDefaultBodyColor() : "#F5D5A6";
+        this.bodyColor2 = config.getDefaultBodyColor2() != null ? config.getDefaultBodyColor2() : "#F5D5A6";
+        this.bodyColor3 = config.getDefaultBodyColor3() != null ? config.getDefaultBodyColor3() : "#F5D5A6";
+        this.hairColor = config.getDefaultHairColor() != null ? config.getDefaultHairColor() : "#000000";
+        this.eye1Color = config.getDefaultEye1Color() != null ? config.getDefaultEye1Color() : "#000000";
+        this.eye2Color = config.getDefaultEye2Color() != null ? config.getDefaultEye2Color() : "#000000";
+        this.auraColor = config.getDefaultAuraColor() != null ? config.getDefaultAuraColor() : "#FFFFFF";
     }
 
-    public int getRace() { return race; }
+    public String getRace() { return race; }
     public String getGender() { return gender; }
     public String getCharacterClass() { return characterClass; }
+    public String getSelectedFormGroup() { return selectedFormGroup; }
+    public String getActiveFormGroup() { return currentFormGroup; }
+    public String getActiveFormName() { return currentForm; }
+    public String getCurrentFormGroup() { return currentFormGroup; }
+    public String getCurrentForm() { return currentForm; }
     public int getHairId() { return hairId; }
     public int getBodyType() { return bodyType; }
     public int getEyesType() { return eyesType; }
-    public int getBodyColor() { return bodyColor; }
-    public int getBodyColor2() { return bodyColor2; }
-    public int getBodyColor3() { return bodyColor3; }
-    public int getHairColor() { return hairColor; }
-    public int getEye1Color() { return eye1Color; }
-    public int getEye2Color() { return eye2Color; }
-    public int getAuraColor() { return auraColor; }
+    public int getNoseType() { return noseType; }
+    public int getMouthType() { return mouthType; }
+	public int getTattooType() { return tattooType; }
+    public String getBodyColor() { return bodyColor; }
+    public String getBodyColor2() { return bodyColor2; }
+    public String getBodyColor3() { return bodyColor3; }
+    public String getHairColor() { return hairColor; }
+    public String getEye1Color() { return eye1Color; }
+    public String getEye2Color() { return eye2Color; }
+    public String getAuraColor() { return auraColor; }
+    public FormMasteries getFormMasteries() { return formMasteries; }
 
-    public void setRace(int race) { this.race = Math.max(0, Math.min(5, race)); }
+    public void setRace(String race) {
+        if (race != null && ConfigManager.isRaceLoaded(race)) {
+            this.race = race.toLowerCase();
+        } else {
+            this.race = "human";
+        }
+        if (!canHaveGender() && !gender.equals(GENDER_MALE)) {
+            this.gender = GENDER_MALE;
+        }
+    }
     public void setGender(String gender) { this.gender = gender; }
     public void setCharacterClass(String characterClass) { this.characterClass = characterClass; }
     public void setHairId(int hairId) { this.hairId = hairId; }
     public void setBodyType(int bodyType) { this.bodyType = bodyType; }
     public void setEyesType(int eyesType) { this.eyesType = eyesType; }
-    public void setBodyColor(int bodyColor) { this.bodyColor = bodyColor; }
-    public void setBodyColor2(int bodyColor2) { this.bodyColor2 = bodyColor2; }
-    public void setBodyColor3(int bodyColor3) { this.bodyColor3 = bodyColor3; }
-    public void setHairColor(int hairColor) { this.hairColor = hairColor; }
-    public void setEye1Color(int eye1Color) { this.eye1Color = eye1Color; }
-    public void setEye2Color(int eye2Color) { this.eye2Color = eye2Color; }
-    public void setAuraColor(int auraColor) { this.auraColor = auraColor; }
+    public void setNoseType(int noseType) { this.noseType = noseType; }
+    public void setMouthType(int mouthType) { this.mouthType = mouthType; }
+	public void setTattooType(int tattooType) { this.tattooType = tattooType; }
+    public void setBodyColor(String bodyColor) { this.bodyColor = bodyColor; }
+    public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
+    public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
+    public void setHairColor(String hairColor) { this.hairColor = hairColor; }
+    public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
+    public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
+    public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
+    public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
+    public void setCurrentFormGroup(String currentFormGroup) { this.currentFormGroup = currentFormGroup; }
+    public void setCurrentForm(String currentForm) { this.currentForm = currentForm; }
 
     public String getRaceName() {
-        if (race >= 0 && race < RACE_NAMES.length) {
-            return RACE_NAMES[race];
-        }
-        return RACE_NAMES[0];
+        return race != null && !race.isEmpty() ? race : "human";
+    }
+
+    public static String[] getRaceNames() {
+        List<String> raceNames = ConfigManager.getLoadedRaces();
+        return raceNames.toArray(new String[0]);
     }
 
     public boolean canHaveGender() {
-        if (race >= 0 && race < HAS_GENDER.length) {
-            return HAS_GENDER[race];
-        }
-        return true;
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
+        return raceConfig.hasGender();
     }
 
-    public static int getRaceIdByName(String name) {
-        for (int i = 0; i < RACE_NAMES.length; i++) {
-            if (RACE_NAMES[i].equalsIgnoreCase(name)) {
-                return i;
-            }
-        }
-        return RACE_HUMAN;
+    public double getModelScaling() {
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
+        return raceConfig.getDefaultModelScaling();
     }
+
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Race", race);
+        tag.putString("Race", race);
         tag.putString("Gender", gender);
         tag.putString("Class", characterClass);
         tag.putInt("HairId", hairId);
         tag.putInt("BodyType", bodyType);
         tag.putInt("EyesType", eyesType);
-        tag.putInt("BodyColor", bodyColor);
-        tag.putInt("BodyColor2", bodyColor2);
-        tag.putInt("BodyColor3", bodyColor3);
-        tag.putInt("HairColor", hairColor);
-        tag.putInt("Eye1Color", eye1Color);
-        tag.putInt("Eye2Color", eye2Color);
-        tag.putInt("AuraColor", auraColor);
+        tag.putInt("NoseType", noseType);
+        tag.putInt("MouthType", mouthType);
+        tag.putInt("TattooType", tattooType);
+        tag.putString("BodyColor", bodyColor);
+        tag.putString("BodyColor2", bodyColor2);
+        tag.putString("BodyColor3", bodyColor3);
+        tag.putString("HairColor", hairColor);
+        tag.putString("Eye1Color", eye1Color);
+        tag.putString("Eye2Color", eye2Color);
+        tag.putString("AuraColor", auraColor);
+        tag.putString("SelectedFormGroup", selectedFormGroup);
+        tag.putString("CurrentFormGroup", currentFormGroup);
+        tag.putString("CurrentForm", currentForm);
+        tag.put("FormMasteries", formMasteries.save());
         return tag;
     }
 
     public void load(CompoundTag tag) {
-        this.race = tag.getInt("Race");
+        if (tag.contains("Race", 8)) {
+            this.race = tag.getString("Race");
+        } else if (tag.contains("Race", 3)) {
+            int oldRaceId = tag.getInt("Race");
+            List<String> races = ConfigManager.getLoadedRaces();
+            this.race = (oldRaceId >= 0 && oldRaceId < races.size()) ? races.get(oldRaceId) : "human";
+        } else {
+            this.race = "human";
+        }
+
         this.gender = tag.getString("Gender");
         this.characterClass = tag.getString("Class");
         this.hairId = tag.getInt("HairId");
         this.bodyType = tag.getInt("BodyType");
         this.eyesType = tag.getInt("EyesType");
-        this.bodyColor = tag.getInt("BodyColor");
-        this.bodyColor2 = tag.getInt("BodyColor2");
-        this.bodyColor3 = tag.getInt("BodyColor3");
-        this.hairColor = tag.getInt("HairColor");
-        this.eye1Color = tag.getInt("Eye1Color");
-        this.eye2Color = tag.getInt("Eye2Color");
-        this.auraColor = tag.getInt("AuraColor");
+        this.noseType = tag.getInt("NoseType");
+        this.mouthType = tag.getInt("MouthType");
+        this.tattooType = tag.getInt("TattooType");
+        this.bodyColor = tag.getString("BodyColor");
+        this.bodyColor2 = tag.getString("BodyColor2");
+        this.bodyColor3 = tag.getString("BodyColor3");
+        this.hairColor = tag.getString("HairColor");
+        this.eye1Color = tag.getString("Eye1Color");
+        this.eye2Color = tag.getString("Eye2Color");
+        this.auraColor = tag.getString("AuraColor");
+        this.selectedFormGroup = tag.getString("SelectedFormGroup");
+        this.currentFormGroup = tag.getString("CurrentFormGroup");
+        this.currentForm = tag.getString("CurrentForm");
+        if (tag.contains("FormMasteries")) {
+            formMasteries.load(tag.getCompound("FormMasteries"));
+        }
+    }
+
+    public boolean hasActiveForm() {
+        return !currentFormGroup.isEmpty() && !currentForm.isEmpty();
+    }
+
+    public void setActiveForm(String groupName, String formName) {
+        this.currentFormGroup = groupName != null ? groupName : "";
+        this.currentForm = formName != null ? formName : "";
+    }
+
+    public void clearActiveForm() {
+        this.currentFormGroup = "";
+        this.currentForm = "";
+    }
+
+    public FormConfig.FormData getActiveFormData() {
+        if (!hasActiveForm()) {
+            return null;
+        }
+        return ConfigManager.getForm(getRaceName(), currentFormGroup, currentForm);
     }
 
     public void copyFrom(Character other) {
@@ -143,6 +218,9 @@ public class Character {
         this.hairId = other.hairId;
         this.bodyType = other.bodyType;
         this.eyesType = other.eyesType;
+        this.noseType = other.noseType;
+        this.mouthType = other.mouthType;
+        this.tattooType = other.tattooType;
         this.bodyColor = other.bodyColor;
         this.bodyColor2 = other.bodyColor2;
         this.bodyColor3 = other.bodyColor3;
@@ -150,6 +228,9 @@ public class Character {
         this.eye1Color = other.eye1Color;
         this.eye2Color = other.eye2Color;
         this.auraColor = other.auraColor;
+        this.selectedFormGroup = other.selectedFormGroup;
+        this.currentFormGroup = other.currentFormGroup;
+        this.currentForm = other.currentForm;
+        this.formMasteries.copyFrom(other.formMasteries);
     }
 }
-

@@ -1,0 +1,100 @@
+{
+  "worldGen": {
+    // Should DMZ structures be generated?
+    "generateCustomStructures": true,
+    // Should Dragon Balls be generated in the world?
+    // This also disable the Dragon Ball rescattering from Shenron/Porunga
+    "generateDragonBalls": true,
+    // Is otherworld dimension active?
+    // Note: Dimension generates always, but this disables
+    // the events to it, like SpacePod travel, death system, etc.
+    "otherworldActive": true,
+    // Dragon Ball spawn range from world origin (0,0)
+    "dbSpawnRange": 3000
+  },
+  "gameplay": {
+    "tpGainMultiplier": 1.0,
+    // TP Cost multiplier is not lineal, it increases exponentially.
+    // Formula: tpCost = (level * tpCostMultiplier) * tpCostMultiplier * 1.5
+    // In addition, leveling up a stat with a x10 does not cost 10 times more TP, it is recursive.
+    "tpCostMultiplier": 1.0,
+    // How much TP in percentage is gained by killing an entity, based on their max health
+    "tpHealthRatio": 0.1,
+    // How much TP is gained per hit landed on an entity
+    "tpPerHit": 2,
+    // TP Multiplier while being in the Hyperbolic Time Chamber
+    "HTCTpMultiplier": 2.5,
+    // Enable to make attacks respect attack cooldown like in vanilla Minecraft.
+    // Disable to make attacks not respect attack cooldown, allowing for faster attacks, like 1.8 PvP.
+    "respectAttackCooldown": true,
+    // Self explanatory
+    "maxStatValue": 10000,
+    // Should Ki Attacks destroy blocks?
+    "kiDestroyBlocks": true,
+    // Is Kaioken stackable with transformations?
+    "kaioken_stackable": true,
+    "senzu_cooldown_ticks": 240,
+    "food_regenerations": {
+      // Food item registry name : [health, ki, stamina] restored
+      "dragonminez:frog_legs_cooked": [
+        0.10,
+        0.10,
+        0.10
+      ],
+      "dragonminez:might_tree_fruit": [
+        0.35,
+        0.35,
+        0.35
+      ],
+      "dragonminez:raw_dino_meat": [
+        0.10,
+        0.10,
+        0.10
+      ],
+      "dragonminez:dino_tail_raw": [
+        0.15,
+        0.15,
+        0.15
+      ],
+      "dragonminez:frog_legs_raw": [
+        0.05,
+        0.05,
+        0.05
+      ],
+      "dragonminez:heart_medicine": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dragonminez:cooked_dino_meat": [
+        0.15,
+        0.15,
+        0.15
+      ],
+      "dragonminez:dino_tail_cooked": [
+        0.20,
+        0.20,
+        0.20
+      ],
+      "dragonminez:senzu_bean": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "might_fruit_power": 1.2,
+    "majin_power": 1.3
+  },
+  // Storage configuration
+  // Available storage types: NBT, JSON, DATABASE
+  "storage": {
+    "storage_type": "NBT",
+    "host": "localhost",
+    "port": 3306,
+    "database": "dragonminez",
+    "table": "player_data",
+    "username": "root",
+    "password": "password",
+    "pool_size": 10
+  }
+}

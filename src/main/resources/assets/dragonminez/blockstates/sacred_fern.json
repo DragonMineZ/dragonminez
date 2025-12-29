@@ -1,0 +1,11 @@
+{
+    "variants": {
+        "": [
+	    { "model": "dragonminez:block/sacred_fern", "weight": 3 },
+		{ "model": "dragonminez:block/sacred_fern_0", "weight": 1 },
+		{ "model": "dragonminez:block/sacred_fern_1", "weight": 1 },
+		{ "model": "dragonminez:block/sacred_fern_2", "weight": 1 },
+		{ "model": "dragonminez:block/sacred_fern_2_mirrored", "weight": 1 }
+		]
+    }
+}

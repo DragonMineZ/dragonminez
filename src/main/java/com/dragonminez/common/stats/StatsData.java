@@ -1,9 +1,11 @@
 package com.dragonminez.common.stats;
 
-import com.dragonminez.common.config.ClassStatsConfig;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.quest.QuestData;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
 public class StatsData {
@@ -13,16 +15,26 @@ public class StatsData {
     private final Cooldowns cooldowns;
     private final Character character;
     private final Resources resources;
+    private final Skills skills;
+    private final Effects effects;
+    private final QuestData questData;
+    private final BonusStats bonusStats;
 
     private boolean hasInitializedHealth = false;
 
     public StatsData(Player player) {
         this.player = player;
         this.stats = new Stats();
+        this.stats.setPlayer(player);
         this.status = new Status();
         this.cooldowns = new Cooldowns();
         this.character = new Character();
         this.resources = new Resources();
+        this.resources.setPlayer(player);
+        this.skills = new Skills();
+        this.effects = new Effects();
+        this.questData = new QuestData();
+        this.bonusStats = new BonusStats();
     }
 
     public Stats getStats() { return stats; }
@@ -30,6 +42,10 @@ public class StatsData {
     public Cooldowns getCooldowns() { return cooldowns; }
     public Character getCharacter() { return character; }
     public Resources getResources() { return resources; }
+    public Skills getSkills() { return skills; }
+    public Effects getEffects() { return effects; }
+    public QuestData getQuestData() { return questData; }
+    public BonusStats getBonusStats() { return bonusStats; }
     public Player getPlayer() { return player; }
 
     public boolean hasInitializedHealth() { return hasInitializedHealth; }
@@ -38,12 +54,12 @@ public class StatsData {
     public int getLevel() {
         int totalStats = stats.getTotalStats();
 
-        int raceId = character.getRace();
-        String className = character.getCharacterClass();
+        String raceName = character.getRaceName();
+        String characterClass = character.getCharacterClass();
 
-        RaceStatsConfig raceConfig = ConfigManager.getRaceConfig(raceId);
-        ClassStatsConfig classConfig = raceConfig.getClassConfig(className);
-        ClassStatsConfig.BaseStats baseStats = classConfig.getBaseStats();
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
         int initialStats = baseStats.getStrength() + baseStats.getStrikePower() +
                           baseStats.getResistance() + baseStats.getVitality() +
@@ -59,40 +75,101 @@ public class StatsData {
         int vit = stats.getVitality();
         int pwr = stats.getKiPower();
 
-        double releaseMultiplier = (double) resources.getRelease() / 100.0;
+        double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
 
         return (int) ((str + skp + res + vit + pwr) * releaseMultiplier);
     }
 
-    public int getMaxHealth() {
+    public float getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
-        return 20 + (int)(stats.getVitality() * vitScaling);
+        double vitMult = 1.0 + getFormMultiplier("VIT");
+        double bonusVit = bonusStats.calculateBonus("VIT", 0);
+        return (float) ((stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
-        return 100 + (int)(stats.getEnergy() * eneScaling);
+        double eneMult = 1.0 + getFormMultiplier("ENE");
+        double bonusEne = bonusStats.calculateBonus("ENE", 0);
+        return (int) (20 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
     }
 
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
-        return 100 + (int)(stats.getResistance() * stmScaling);
+        double resMult = 1.0 + getTotalMultiplier("RES");
+        double bonusRes = bonusStats.calculateBonus("RES", 0);
+        return (int) (20 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
     }
 
-    public double getAttackDamage() {
+	public double getMaxMeleeDamage() {
+		double strScaling = getStatScaling("STR");
+		double strMult = 1.0 + getTotalMultiplier("STR");
+		double bonusStr = bonusStats.calculateBonus("STR", 0);
+		return (1 + (stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling));
+	}
+
+    public double getMeleeDamage() {
         double strScaling = getStatScaling("STR");
-        double skpScaling = getStatScaling("SKP");
-        return (stats.getStrength() * strScaling) + (stats.getStrikePower() * skpScaling);
+        double strMult = 1.0 + getTotalMultiplier("STR");
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+        double bonusStr = bonusStats.calculateBonus("STR", 0);
+        return (1 + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * releaseMultiplier);
     }
+
+	public double getMaxStrikeDamage() {
+		double skpScaling = getStatScaling("SKP");
+		double strScaling = getStatScaling("STR");
+		double skpMult = 1.0 + getTotalMultiplier("SKP");
+		double strMult = 1.0 + getTotalMultiplier("STR");
+		double bonusSkp = bonusStats.calculateBonus("SKP", 0);
+		double bonusStr = bonusStats.calculateBonus("STR", 0);
+		return (1 + (stats.getStrikePower() * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * 0.25);
+	}
+
+	public double getStrikeDamage() {
+		double skpScaling = getStatScaling("SKP");
+		double strScaling = getStatScaling("STR");
+		double skpMult = 1.0 + getTotalMultiplier("SKP");
+		double strMult = 1.0 + getTotalMultiplier("STR");
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		double bonusSkp = bonusStats.calculateBonus("SKP", 0);
+		double bonusStr = bonusStats.calculateBonus("STR", 0);
+		double baseDamage = (stats.getStrikePower() * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * 0.25;
+        return 1 + baseDamage * releaseMultiplier;
+	}
+
+	public double getMaxKiDamage() {
+		double pwrScaling = getStatScaling("PWR");
+		double pwrMult = 1.0 + getTotalMultiplier("PWR");
+		double bonusPwr = bonusStats.calculateBonus("PWR", 0);
+		return (stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling);
+	}
 
     public double getKiDamage() {
         double pwrScaling = getStatScaling("PWR");
-        return stats.getKiPower() * pwrScaling;
+        double pwrMult = 1.0 + getTotalMultiplier("PWR");
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+        double bonusPwr = bonusStats.calculateBonus("PWR", 0);
+        return ((stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling)) * releaseMultiplier;
     }
+
+	public double getMaxDefense() {
+		double defScaling = getStatScaling("DEF");
+		double resMult = 1.0 + getTotalMultiplier("RES");
+		double bonusRes = bonusStats.calculateBonus("RES", 0);
+		double armor = player.getArmorValue();
+		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
+		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.75 + toughness;
+	}
 
     public double getDefense() {
         double defScaling = getStatScaling("DEF");
-        return stats.getResistance() * defScaling;
+        double resMult = 1.0 + getTotalMultiplier("RES");
+        double releaseMultiplier = resources.getPowerRelease() / 100.0;
+        double bonusRes = bonusStats.calculateBonus("RES", 0);
+		double armor = player.getArmorValue();
+		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
+        return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
     }
 
     public CompoundTag save() {
@@ -102,6 +179,10 @@ public class StatsData {
         nbt.put("Cooldowns", cooldowns.save());
         nbt.put("Character", character.save());
         nbt.put("Resources", resources.save());
+        nbt.put("Skills", skills.save());
+        nbt.put("Effects", effects.save());
+        nbt.put("QuestData", questData.serializeNBT());
+        nbt.put("BonusStats", bonusStats.save());
         nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
         return nbt;
     }
@@ -122,8 +203,24 @@ public class StatsData {
         if (nbt.contains("Resources")) {
             resources.load(nbt.getCompound("Resources"));
         }
+        if (nbt.contains("Skills")) {
+            skills.load(nbt.getCompound("Skills"));
+        }
+        if (nbt.contains("Effects")) {
+            effects.load(nbt.getCompound("Effects"));
+        }
+        if (nbt.contains("QuestData")) {
+            questData.deserializeNBT(nbt.getCompound("QuestData"));
+        }
+        if (nbt.contains("BonusStats")) {
+            bonusStats.load(nbt.getCompound("BonusStats"));
+        }
         if (nbt.contains("HasInitializedHealth")) {
             hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
+        }
+
+        if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+            updateTransformationSkillLimits(character.getRaceName());
         }
     }
 
@@ -133,19 +230,43 @@ public class StatsData {
         this.cooldowns.copyFrom(other.cooldowns);
         this.character.copyFrom(other.character);
         this.resources.copyFrom(other.resources);
+        this.skills.copyFrom(other.skills);
+        this.effects.copyFrom(other.effects);
+        this.questData.deserializeNBT(other.questData.serializeNBT());
+        this.bonusStats.copyFrom(other.bonusStats);
         this.hasInitializedHealth = other.hasInitializedHealth;
+
+        if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+            updateTransformationSkillLimits(character.getRaceName());
+        }
     }
 
-    public void initializeWithRaceAndClass(int raceId, String characterClass, String gender) {
-        character.setRace(raceId);
+    public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
+                                           int hairId, int bodyType, int eyesType, int noseType, int mouthType, int tattooType,
+                                           String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
+                                           String eye1Color, String eye2Color, String auraColor) {
+        character.setRace(raceName);
         character.setGender(gender);
         character.setCharacterClass(characterClass);
+        character.setHairId(hairId);
+        character.setBodyType(bodyType);
+        character.setEyesType(eyesType);
+        character.setNoseType(noseType);
+        character.setMouthType(mouthType);
+		character.setTattooType(tattooType);
+        character.setHairColor(hairColor);
+        character.setBodyColor(bodyColor);
+        character.setBodyColor2(bodyColor2);
+        character.setBodyColor3(bodyColor3);
+        character.setEye1Color(eye1Color);
+        character.setEye2Color(eye2Color);
+        character.setAuraColor(auraColor);
         status.setCreatedCharacter(true);
 
-        RaceStatsConfig raceConfig = ConfigManager.getRaceConfig(raceId);
-        ClassStatsConfig classConfig = raceConfig.getClassConfig(characterClass);
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
-        ClassStatsConfig.BaseStats baseStats = classConfig.getBaseStats();
         stats.setStrength(baseStats.getStrength());
         stats.setStrikePower(baseStats.getStrikePower());
         stats.setResistance(baseStats.getResistance());
@@ -155,17 +276,30 @@ public class StatsData {
 
         resources.setCurrentEnergy(getMaxEnergy());
         resources.setCurrentStamina(getMaxStamina());
-        resources.setRelease(5);
+        resources.setPowerRelease(5);
         resources.setAlignment(100);
+
+        updateTransformationSkillLimits(raceName);
+    }
+
+    public void updateTransformationSkillLimits(String raceName) {
+        RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
+        if (charConfig != null) {
+            int superformMax = charConfig.getSuperformTpCost() != null ? charConfig.getSuperformTpCost().length : 0;
+            int godformMax = charConfig.getGodformTpCost() != null ? charConfig.getGodformTpCost().length : 0;
+            int legendaryMax = charConfig.getLegendaryformsTpCost() != null ? charConfig.getLegendaryformsTpCost().length : 0;
+
+            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax);
+        }
     }
 
     public double getStatScaling(String statName) {
-        int raceId = character.getRace();
-        String className = character.getCharacterClass();
+        String raceName = character.getRaceName();
+        String characterClass = character.getCharacterClass();
 
-        RaceStatsConfig raceConfig = ConfigManager.getRaceConfig(raceId);
-        ClassStatsConfig classConfig = raceConfig.getClassConfig(className);
-        ClassStatsConfig.StatScaling scaling = classConfig.getStatScaling();
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 
         return switch (statName.toUpperCase()) {
             case "STR" -> scaling.getStrengthScaling();
@@ -179,8 +313,168 @@ public class StatsData {
         };
     }
 
+    private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
+        return switch (characterClass.toLowerCase()) {
+            case "warrior" -> config.getWarrior();
+            case "spiritualist" -> config.getSpiritualist();
+            case "martialartist" -> config.getMartialArtist();
+            default -> config.getWarrior();
+        };
+    }
+
+    public int calculateRecursiveCost(int statsToAdd, int baseMultiplier, int maxStats, double multiplier) {
+        int totalCost = 0;
+        int currentTotalStats = stats.getTotalStats();
+
+        for (int i = 0; i < statsToAdd; i++) {
+            if (currentTotalStats + i >= maxStats * 6) break;
+            int statLevel = (currentTotalStats + i) / 6;
+            totalCost += (int) Math.round(baseMultiplier + (multiplier * statLevel));
+        }
+        return totalCost;
+    }
+
+    public int calculateStatIncrease(int baseMultiplier, int statsToAdd, int availableTPs, int maxStats, double multiplier) {
+        int statsIncreased = 0;
+        int costAccumulated = 0;
+        int currentTotalStats = stats.getTotalStats();
+
+        while (statsIncreased < statsToAdd) {
+            if (currentTotalStats + statsIncreased >= maxStats * 6) break;
+
+            int statLevel = (currentTotalStats + statsIncreased) / 6;
+            int costForStat = (int) Math.round(baseMultiplier + (multiplier * statLevel));
+
+            if (costAccumulated + costForStat > availableTPs) break;
+
+            costAccumulated += costForStat;
+            statsIncreased++;
+        }
+
+        return statsIncreased;
+    }
+
     public void tick() {
         cooldowns.tick();
     }
-}
 
+    public double getTotalMultiplier(String statName) {
+        return getFormMultiplier(statName) + getKaiokenMultiplier(statName) + getEffectsMultiplier();
+    }
+
+    public double getFormMultiplier(String statName) {
+        String currentForm = character.getCurrentForm();
+        String currentFormGroup = character.getCurrentFormGroup();
+
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) {
+            return 0.0;
+        }
+
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) {
+            return 0.0;
+        }
+
+        var formConfig = ConfigManager.getFormGroup(
+            character.getRaceName(), currentFormGroup);
+
+        if (formConfig == null) {
+            return 0.0;
+        }
+
+        var formData = formConfig.getForm(currentForm);
+        if (formData == null) {
+            return 0.0;
+        }
+
+        double baseMult = switch (statName.toUpperCase()) {
+            case "STR" -> formData.getStrMultiplier() - 1.0;
+            case "SKP" -> formData.getSkpMultiplier() - 1.0;
+			case "STM" -> formData.getStmMultiplier() - 1.0;
+			case "RES" -> (formData.getDefMultiplier() - 1.0 + formData.getStmMultiplier() - 1.0) / 2.0;
+            case "VIT" -> formData.getVitMultiplier() - 1.0;
+            case "PWR" -> formData.getPwrMultiplier() - 1.0;
+            case "ENE" -> formData.getEneMultiplier() - 1.0;
+            default -> 0.0;
+        };
+
+        double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
+        double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
+
+        return baseMult + masteryBonus;
+    }
+
+    public double getKaiokenMultiplier(String statName) {
+        var skill = skills.getSkill("kaioken");
+        if (skill == null || !skill.isActive()) {
+            return 0.0;
+        }
+
+        int kaiokenLevel = skill.getLevel();
+        if (kaiokenLevel <= 0) {
+            return 0.0;
+        }
+
+        var skillsConfig = ConfigManager.getSkillsConfig();
+        if (skillsConfig == null) {
+            return 0.0;
+        }
+
+        double baseMultiplier = skillsConfig.getMultiplierForLevel("kaioken", kaiokenLevel) - 1.0;
+
+        return switch (statName.toUpperCase()) {
+            case "STR", "SKP", "PWR" -> baseMultiplier;
+            case "DEF" -> baseMultiplier * 0.5;
+            default -> 0.0;
+        };
+    }
+
+    public double getEffectsMultiplier() {
+        return effects.getTotalEffectMultiplier();
+    }
+
+    public double getAdjustedEnergyDrain() {
+        if (!character.hasActiveForm()) {
+            return 0.0;
+        }
+
+        var formData = character.getActiveFormData();
+        if (formData == null) {
+            return 0.0;
+        }
+
+        double baseDrain = formData.getEnergyDrain();
+        double mastery = character.getFormMasteries().getMastery(
+            character.getCurrentFormGroup(),
+            character.getCurrentForm()
+        );
+        double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
+
+        int kiControlLevel = skills.getSkillLevel("kicontrol");
+        if (kiControlLevel > 0) {
+            double kiControlReduction = (kiControlLevel * 2.0) / 100.0;
+            reduction += baseDrain * kiControlReduction;
+        }
+
+        return Math.max(0.0, baseDrain - reduction);
+    }
+
+    public double getAdjustedStaminaDrain() {
+        if (!character.hasActiveForm()) {
+            return 1.0;
+        }
+
+        var formData = character.getActiveFormData();
+        if (formData == null) {
+            return 1.0;
+        }
+
+        double baseDrain = formData.getStaminaDrain();
+        double mastery = character.getFormMasteries().getMastery(
+            character.getCurrentFormGroup(),
+            character.getCurrentForm()
+        );
+        double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
+
+        return Math.max(1.0, baseDrain - reduction);
+    }
+}

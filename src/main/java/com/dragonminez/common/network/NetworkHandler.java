@@ -1,8 +1,8 @@
 package com.dragonminez.common.network;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.network.C2S.CreateCharacterC2S;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.C2S.*;
+import com.dragonminez.common.network.S2C.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
@@ -21,7 +21,7 @@ public class NetworkHandler {
 
     public static void register() {
         SimpleChannel net = NetworkRegistry.ChannelBuilder
-                .named(new ResourceLocation(Reference.MOD_ID, "network"))
+                .named(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "network"))
                 .networkProtocolVersion(() -> "1.0")
                 .clientAcceptedVersions(s -> true)
                 .serverAcceptedVersions(s -> true)
@@ -38,6 +38,41 @@ public class NetworkHandler {
                 .consumerMainThread(CreateCharacterC2S::handle)
                 .add();
 
+		net.messageBuilder(UpdateStatC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(UpdateStatC2S::decode)
+                .encoder(UpdateStatC2S::encode)
+                .consumerMainThread(UpdateStatC2S::handle)
+                .add();
+
+		net.messageBuilder(IncreaseStatC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(IncreaseStatC2S::decode)
+                .encoder(IncreaseStatC2S::encode)
+                .consumerMainThread(IncreaseStatC2S::handle)
+                .add();
+
+		net.messageBuilder(UpdateSkillC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(UpdateSkillC2S::new)
+                .encoder(UpdateSkillC2S::encode)
+                .consumerMainThread(UpdateSkillC2S::handle)
+                .add();
+
+        net.messageBuilder(StartQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(StartQuestC2S::new)
+                .encoder(StartQuestC2S::toBytes)
+                .consumerMainThread(StartQuestC2S::handle)
+                .add();
+
+		net.messageBuilder(GrantWishC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(GrantWishC2S::decode)
+				.encoder(GrantWishC2S::encode)
+				.consumerMainThread(GrantWishC2S::handle)
+				.add();
+
+		net.messageBuilder(TravelToPlanetC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TravelToPlanetC2S::decode)
+				.encoder(TravelToPlanetC2S::encode)
+				.consumerMainThread(TravelToPlanetC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */
@@ -46,6 +81,36 @@ public class NetworkHandler {
                 .encoder(StatsSyncS2C::encode)
                 .consumerMainThread(StatsSyncS2C::handle)
                 .add();
+
+		net.messageBuilder(PlayerAnimationsSync.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(PlayerAnimationsSync::new)
+                .encoder(PlayerAnimationsSync::encode)
+                .consumerMainThread(PlayerAnimationsSync::handle)
+                .add();
+
+		net.messageBuilder(SyncServerConfigS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(SyncServerConfigS2C::new)
+                .encoder(SyncServerConfigS2C::encode)
+                .consumerMainThread(SyncServerConfigS2C::handle)
+                .add();
+
+		net.messageBuilder(SyncSagasS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncSagasS2C::new)
+				.encoder(SyncSagasS2C::encode)
+				.consumerMainThread(SyncSagasS2C::handle)
+				.add();
+
+		net.messageBuilder(SyncWishesS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncWishesS2C::new)
+				.encoder(SyncWishesS2C::encode)
+				.consumerMainThread(SyncWishesS2C::handle)
+				.add();
+
+		net.messageBuilder(RadarSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(RadarSyncS2C::decode)
+				.encoder(RadarSyncS2C::encode)
+				.consumerMainThread(RadarSyncS2C::handle)
+				.add();
     }
 
     public static <MSG> void sendToServer(MSG message) {

@@ -1,0 +1,62 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 64,
+				"texture_height": 32,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 3.5,
+				"visible_bounds_offset": [0, 1.25, 0]
+			},
+			"bones": [
+				{
+					"name": "body",
+					"pivot": [0, 24, 0]
+				},
+				{
+					"name": "armorBody",
+					"parent": "body",
+					"pivot": [0, 24, 0],
+					"cubes": [
+						{
+							"origin": [-4, 12, -2],
+							"size": [8, 12, 4],
+							"uv": {
+								"north": {"uv": [20, 20], "uv_size": [8, 12]},
+								"east": {"uv": [16, 20], "uv_size": [4, 12]},
+								"south": {"uv": [32, 20], "uv_size": [8, 12]},
+								"west": {"uv": [28, 20], "uv_size": [4, 12]},
+								"up": {"uv": [20, 16], "uv_size": [8, 4]},
+								"down": {"uv": [28, 20], "uv_size": [8, -4]}
+							}
+						}
+					]
+				},
+				{
+					"name": "boobas",
+					"parent": "body",
+					"pivot": [0, 24, 0],
+					"cubes": [
+						{
+							"origin": [-3.99, 20, -2.25],
+							"size": [7.9, 2, 2],
+							"inflate": 0.1,
+							"pivot": [0, 20, -1.25],
+							"rotation": [42.5, 0, 0],
+							"uv": {
+								"north": {"uv": [20, 23], "uv_size": [8, 2]},
+								"east": {"uv": [18, 22], "uv_size": [2, 2]},
+								"south": {"uv": [20, 23], "uv_size": [8, 2]},
+								"west": {"uv": [27, 22], "uv_size": [2, 2]},
+								"up": {"uv": [20, 21], "uv_size": [8, 2]},
+								"down": {"uv": [20, 25], "uv_size": [8, -2]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}
