@@ -7,6 +7,7 @@ import com.dragonminez.common.init.entities.ShenronEntity;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -233,6 +234,16 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaFriezaSoldier01Entity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_morosoldier").toString()));
+    public static final RegistryObject<EntityType<SagaCuiEntity>> SAGA_CUI =
+            ENTITY_TYPES.register("saga_cui",
+                    () -> EntityType.Builder.of(SagaCuiEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cui").toString()));
+    public static final RegistryObject<EntityType<SagaDodoriaEntity>> SAGA_DODORIA =
+            ENTITY_TYPES.register("saga_dodoria",
+                    () -> EntityType.Builder.of(SagaDodoriaEntity::new, MobCategory.CREATURE)
+                            .sized(1.3f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_dodoria").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)
@@ -240,6 +251,12 @@ public class MainEntities {
                     .clientTrackingRange(4)
                     .updateInterval(10)
                     .build("ki_blast"));
+    public static final RegistryObject<EntityType<KiVolleyEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
+            () -> EntityType.Builder.<KiVolleyEntity>of(KiVolleyEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.5f)
+                    .clientTrackingRange(4)
+                    .updateInterval(10)
+                    .build("ki_volley"));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

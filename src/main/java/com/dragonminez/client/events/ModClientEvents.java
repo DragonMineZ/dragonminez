@@ -121,6 +121,8 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_MORO_SOLDIER.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_CUI.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_DODORIA.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
@@ -144,6 +146,8 @@ public class ModClientEvents {
 		event.registerEntityRenderer(MainEntities.PORUNGA.get(), PorungaRenderer::new);
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);
+
     }
 
     @SubscribeEvent

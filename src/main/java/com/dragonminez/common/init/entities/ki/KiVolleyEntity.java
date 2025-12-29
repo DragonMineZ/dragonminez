@@ -1,0 +1,180 @@
+package com.dragonminez.common.init.entities.ki;
+
+import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.MainSounds;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
+
+public class KiVolleyEntity extends AbstractKiProjectile {
+
+    private Vec3 focalPoint = null;
+    private Vec3 finalForward = null;
+    private int curveDelay = 0;
+
+    private boolean hasSpawnedFlash = false;
+    private boolean hasSpawnedSplash = false;
+
+    public KiVolleyEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
+        super(pEntityType, pLevel);
+        this.setNoGravity(true);
+    }
+
+    public KiVolleyEntity(Level level, LivingEntity owner) {
+        this(MainEntities.KI_VOLLEY.get(), level);
+        this.setOwner(owner);
+        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+                MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.5F);
+    }
+
+    public void setConvergeTarget(Vec3 point, Vec3 forwardDirection, int delayTicks) {
+        this.focalPoint = point;
+        this.finalForward = forwardDirection.normalize();
+        this.curveDelay = delayTicks;
+    }
+
+    @Override
+    protected void onKiTick() {
+        if (!this.level().isClientSide && this.getOwner() == null) {
+            this.discard();
+            return;
+        }
+
+        if (this.level().isClientSide) {
+            float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
+
+            if (!hasSpawnedSplash) {
+                this.level().addParticle(MainParticles.KI_SPLASH.get(), this.getX(), this.getY(), this.getZ(), rgb[0], rgb[1], rgb[2]);
+                this.hasSpawnedSplash = true;
+            }
+
+            if (!hasSpawnedFlash) {
+                this.level().addParticle(MainParticles.KI_FLASH.get(), this.getX(), this.getY(), this.getZ(), (double) this.getId(), 0.0D, 0.0D);
+                this.hasSpawnedFlash = true;
+            }
+
+            for (int i = 0; i < 2; i++) {
+                this.level().addParticle(MainParticles.KI_TRAIL.get(),
+                        this.getX() + (this.random.nextDouble() - 0.5) * 0.3,
+                        this.getY() + (this.random.nextDouble() - 0.5) * 0.3,
+                        this.getZ() + (this.random.nextDouble() - 0.5) * 0.3,
+                        rgb[0], rgb[1], rgb[2]);
+            }
+        }
+
+        if (!this.level().isClientSide) {
+
+            if (this.tickCount > 100) this.discard();
+
+            if (this.tickCount % 60 == 0) {
+                pulseAreaDamage();
+            }
+
+            if (this.focalPoint != null && this.finalForward != null && this.tickCount >= this.curveDelay) {
+                double distSqr = this.position().distanceToSqr(this.focalPoint);
+                Vec3 currentVel = this.getDeltaMovement();
+                double speed = currentVel.length();
+
+                if (distSqr < 2.25D) {
+                    this.setDeltaMovement(this.finalForward.scale(speed));
+                    this.focalPoint = null;
+                    this.hasImpulse = true;
+                    return;
+                }
+
+                Vec3 directionToFocus = this.focalPoint.subtract(this.position()).normalize();
+                double turnSpeed = 0.5;
+                Vec3 newVelocity = currentVel.normalize().lerp(directionToFocus, turnSpeed).normalize().scale(speed);
+                this.setDeltaMovement(newVelocity);
+                this.hasImpulse = true;
+            }
+        }
+    }
+
+    private void pulseAreaDamage() {
+        double radius = this.getSize();
+        AABB area = this.getBoundingBox().inflate(radius);
+        List<LivingEntity> nearby = this.level().getEntitiesOfClass(LivingEntity.class, area);
+
+        for (LivingEntity target : nearby) {
+            if (this.shouldDamage(target)) {
+                target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), this.getKiDamage() * 0.2F);
+            }
+        }
+    }
+
+    @Override
+    public boolean isPushable() { return false; }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) { return false; }
+
+    @Override
+    protected boolean canHitEntity(Entity entity) {
+        if (entity instanceof KiVolleyEntity) return false;
+        return super.canHitEntity(entity);
+    }
+
+    @Override
+    protected void onHitEntity(EntityHitResult pResult) {
+        if (pResult.getEntity() instanceof KiVolleyEntity) return;
+
+        super.onHitEntity(pResult);
+        if (!this.level().isClientSide) {
+            pResult.getEntity().hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
+            this.discard();
+        }
+    }
+
+    @Override
+    protected void onHitBlock(BlockHitResult pResult) {
+        super.onHitBlock(pResult);
+        if (!this.level().isClientSide) {
+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
+            this.discard();
+        }
+    }
+
+    // --- NBT ---
+    @Override
+    public void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putInt("CurveDelay", this.curveDelay);
+        if (this.focalPoint != null) {
+            pCompound.putDouble("FocalX", this.focalPoint.x);
+            pCompound.putDouble("FocalY", this.focalPoint.y);
+            pCompound.putDouble("FocalZ", this.focalPoint.z);
+        }
+        if (this.finalForward != null) {
+            pCompound.putDouble("ForwardX", this.finalForward.x);
+            pCompound.putDouble("ForwardY", this.finalForward.y);
+            pCompound.putDouble("ForwardZ", this.finalForward.z);
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        this.curveDelay = pCompound.getInt("CurveDelay");
+        if (pCompound.contains("FocalX")) {
+            this.focalPoint = new Vec3(pCompound.getDouble("FocalX"), pCompound.getDouble("FocalY"), pCompound.getDouble("FocalZ"));
+        }
+        if (pCompound.contains("ForwardX")) {
+            this.finalForward = new Vec3(pCompound.getDouble("ForwardX"), pCompound.getDouble("ForwardY"), pCompound.getDouble("ForwardZ"));
+        }
+    }
+}
