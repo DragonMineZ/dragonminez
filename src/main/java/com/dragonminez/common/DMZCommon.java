@@ -6,6 +6,7 @@ import com.dragonminez.common.init.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.wish.WishManager;
+import com.dragonminez.server.world.feature.OverworldFeatures;
 import com.dragonminez.server.world.structure.placement.MainStructurePlacements;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -35,6 +36,7 @@ public class DMZCommon {
 		MainMenus.register(modEventBus);
 		MainStructurePlacements.register(modEventBus);
 		modEventBus.addListener(ModCommonEvents::commonSetup);
+		OverworldFeatures.register(modEventBus);
     }
 }
 

@@ -1,6 +1,6 @@
 package com.dragonminez.server.world.tree;
 
-import com.dragonminez.server.world.gen.NamekConfiguredFeatures;
+import com.dragonminez.server.world.feature.NamekConfiguredFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.grower.AbstractTreeGrower;

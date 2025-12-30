@@ -1,4 +1,4 @@
-package com.dragonminez.server.world.gen;
+package com.dragonminez.server.world.feature;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;

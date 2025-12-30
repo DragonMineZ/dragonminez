@@ -86,7 +86,7 @@ public class LockOnEvent {
 				return;
 			}
 
-			double maxRange = 3.0 * level;
+			double maxRange = 5 + 3.0 * level;
 
 			if (player.distanceTo(lockedTarget) > maxRange) {
 				shouldUnlock.set(true);
@@ -98,8 +98,12 @@ public class LockOnEvent {
 			return;
 		}
 
-		Vec3 targetPos = lockedTarget.position().add(0, lockedTarget.getBbHeight() * 0.5, 0);
-		Vec3 playerPos = player.getEyePosition(event.renderTickTime);
+		float partialTick = event.renderTickTime;
+		double targetX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());
+		double targetY = Mth.lerp(partialTick, lockedTarget.yo, lockedTarget.getY()) + lockedTarget.getBbHeight() * 0.5;
+		double targetZ = Mth.lerp(partialTick, lockedTarget.zo, lockedTarget.getZ());
+		Vec3 targetPos = new Vec3(targetX, targetY, targetZ);
+		Vec3 playerPos = player.getEyePosition(partialTick);
 
 		double dX = targetPos.x - playerPos.x;
 		double dY = targetPos.y - playerPos.y;
@@ -109,16 +113,13 @@ public class LockOnEvent {
 		float targetYaw = (float) (Mth.atan2(dZ, dX) * (180 / Math.PI)) - 90.0F;
 		float targetPitch = (float) -(Mth.atan2(dY, dist) * (180 / Math.PI));
 
-		float smoothFactor = 0.25F;
+		float smoothFactor = 0.15F;
 
 		float newYaw = rotlerp(player.getYRot(), targetYaw, smoothFactor);
 		float newPitch = rotlerp(player.getXRot(), targetPitch, smoothFactor);
 
 		player.setYRot(newYaw);
 		player.setXRot(newPitch);
-
-		player.yRotO = newYaw;
-		player.xRotO = newPitch;
 	}
 
 	@SubscribeEvent

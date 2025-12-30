@@ -46,7 +46,7 @@ public class DragonBallBlock extends BaseEntityBlock {
 
 	static {
 		VoxelShape earthBase = box(4.0D, 0.0D, 4.0D, 12.0D, 7.0D, 12.0D);
-		VoxelShape namekBase = box(-4.0D, 0.0D, -4.0D, 16.0D, 11.0D, 16.0D);
+		VoxelShape namekBase = box(2.0D, 0.0D, 2.0D, 14.0D, 12.0D, 14.0D);
 		for (Direction direction : Direction.Plane.HORIZONTAL) {
 			EARTH_SHAPES.put(direction, calculateShape(direction, earthBase));
 			NAMEK_SHAPES.put(direction, calculateShape(direction, namekBase));

@@ -1,7 +1,7 @@
 package com.dragonminez.server.world.biome;
 
 import com.dragonminez.Reference;
-import com.dragonminez.server.world.gen.NamekPlacedFeatures;
+import com.dragonminez.server.world.feature.NamekPlacedFeatures;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;

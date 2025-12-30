@@ -126,7 +126,7 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
     // Vulnerability corrections
-    implementation("com.google.guava:guava:33.5.-jre")
+    implementation("com.google.guava:guava:33.5.0-jre")
     implementation("io.netty:netty-codec:4.2.7.Final")
     implementation("io.netty:netty-handler:4.2.7.Final")
     implementation("org.apache.commons:commons-compress:1.27.1")
@@ -134,7 +134,7 @@ dependencies {
     // GeckoLib & Terrablender
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2"))
     implementation("com.eliotlash.mclib:mclib:20")
-    implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.7"))
+    implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
 
     // Database Libraries
     jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.0.8,3.1)") {
