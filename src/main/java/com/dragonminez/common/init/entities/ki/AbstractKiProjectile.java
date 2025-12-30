@@ -31,6 +31,21 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
     }
 
+	public boolean shouldDamage(Entity target) {
+		if (target == this) return false;
+		if (this.getOwner() != null && target == this.getOwner()) return false;
+		if (this.getOwner() != null && target.is(this.getOwner())) return false;
+		if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == this.getOwner()) return false;
+
+
+		// Esto maybe puede ser util para futuras misiones ejemplo "Equipo Ginyu completo" xd
+		if (this.getOwner() instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
+			return !ownerLiving.isAlliedTo(targetLiving);
+		}
+
+		return true;
+	}
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(COLOR_MAIN, 0xFFFFFF);
@@ -59,17 +74,6 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.onKiTick();
 
         if (this.tickCount > 10*20) this.discard();
-    }
-
-    public boolean shouldDamage(LivingEntity target) {
-        Entity owner = this.getOwner();
-        if (target == owner) return false;
-        if (owner instanceof LivingEntity livingOwner) {
-            if (livingOwner.isAlliedTo(target)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     protected void onKiTick() {}

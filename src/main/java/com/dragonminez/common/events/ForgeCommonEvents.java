@@ -70,6 +70,18 @@ public class ForgeCommonEvents {
 	}
 
 	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			DragonBallsHandler.syncRadar(player.serverLevel());
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				player.setHealth(data.getMaxHealth());
+				data.getResources().setCurrentEnergy(data.getMaxEnergy());
+				data.getResources().setCurrentStamina(data.getMaxStamina());
+			});
+		}
+	}
+
+	@SubscribeEvent
 	public static void onPlayerDeath(LivingDeathEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			DragonBallsHandler.syncRadar(player.serverLevel());

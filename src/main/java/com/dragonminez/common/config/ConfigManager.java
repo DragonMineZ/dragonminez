@@ -2,14 +2,23 @@ package com.dragonminez.common.config;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ConfigManager {
 
@@ -42,6 +51,7 @@ public class ConfigManager {
     private static GeneralUserConfig userConfig;
     private static GeneralServerConfig serverConfig;
     private static SkillsConfig skillsConfig;
+    private static EntitiesConfig entitiesConfig;
 
 
     public static void initialize() {
@@ -97,7 +107,49 @@ public class ConfigManager {
 				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
 			}
         }
+
+        Path entitiesConfigPath = CONFIG_DIR.resolve("entities.json");
+        if (Files.exists(entitiesConfigPath)) {
+            entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
+        } else {
+            entitiesConfig = createDefaultEntitiesConfig();
+            LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
+        }
     }
+
+	private static EntitiesConfig createDefaultEntitiesConfig() {
+		EntitiesConfig config = new EntitiesConfig();
+
+		EntitiesConfig.HardModeSettings hardMode = config.getHardModeSettings();
+		hardMode.setHpMultiplier(3.0);
+		hardMode.setDamageMultiplier(2.0);
+
+		Map<String, EntitiesConfig.EntityStats> statsMap = config.getEntityStats();
+
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN, 200.0, 10.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN2, 200.0, 10.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN3, 200.0, 10.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN4, 200.0, 10.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN5, 200.0, 10.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN6, 200.0, 10.0, 20.0);
+
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_RADITZ, 200.0, 20.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_NAPPA, 400.0, 40.0, 100.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_VEGETA, 500.0, 50.0, 150.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_OZARU_VEGETA, 1000.0, 100.0, 200.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_CUI, 300.0, 30.0, 80.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_DODORIA, 350.0, 35.0, 90.0);
+
+		return config;
+	}
+
+	private static void addDefaultEntityStats(Map<String, EntitiesConfig.EntityStats> map, RegistryObject<? extends EntityType<?>> entityType, double health, double meleeDamage, double kiDamage) {
+		EntitiesConfig.EntityStats stats = new EntitiesConfig.EntityStats();
+		stats.setHealth(health);
+		stats.setMeleeDamage(meleeDamage);
+		stats.setKiDamage(kiDamage);
+		map.put(entityType.getKey().location().toString(), stats);
+	}
 
     private static void loadAllRaces() throws IOException {
         RACE_STATS.clear();
@@ -648,4 +700,15 @@ public class ConfigManager {
     public static void clearServerSyncedSkills() {
         SERVER_SYNCED_SKILLS = null;
     }
+
+    public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
+        if (entitiesConfig != null && entitiesConfig.getEntityStats() != null) {
+            return entitiesConfig.getEntityStats().get(registryName);
+        }
+        return null;
+    }
+
+	public static EntitiesConfig getEntitiesConfig() {
+		return entitiesConfig;
+	}
 }

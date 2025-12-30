@@ -1,10 +1,13 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -164,26 +167,59 @@ public class KiVolleyEntity extends AbstractKiProjectile {
         return super.canHitEntity(entity);
     }
 
-    @Override
-    protected void onHitEntity(EntityHitResult pResult) {
-        if (pResult.getEntity() instanceof KiVolleyEntity) return;
+	@Override
+	protected void onHitEntity(EntityHitResult pResult) {
+		if (pResult.getEntity() instanceof KiVolleyEntity) return;
+		super.onHitEntity(pResult);
+		if (!this.level().isClientSide) {
+			if (this.shouldDamage(pResult.getEntity())) {
+				pResult.getEntity().hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
+			}
+			explodeAndDie();
+		}
+	}
 
-        super.onHitEntity(pResult);
-        if (!this.level().isClientSide) {
-            pResult.getEntity().hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
-            this.discard();
-        }
-    }
+	@Override
+	protected void onHitBlock(BlockHitResult pResult) {
+		super.onHitBlock(pResult);
+		if (!this.level().isClientSide) {
+			explodeAndDie();
+		}
+	}
 
-    @Override
-    protected void onHitBlock(BlockHitResult pResult) {
-        super.onHitBlock(pResult);
-        if (!this.level().isClientSide) {
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, Level.ExplosionInteraction.NONE);
-            this.discard();
-        }
-    }
+	private void explodeAndDie() {
+		boolean shouldDestroyBlocks = ConfigManager.getServerConfig().getGameplay().isKiDestroyBlocks();
+		float radius = 2.0F;
+
+		AABB area = this.getBoundingBox().inflate(radius);
+		List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
+
+		for (LivingEntity target : entities) {
+			if (this.shouldDamage(target)) {
+				if (this.distanceToSqr(target) <= radius * radius) {
+					target.hurt(this.damageSources().explosion(this, this.getOwner()), this.getKiDamage());
+				}
+			}
+		}
+
+		this.level().addParticle(ParticleTypes.EXPLOSION, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+		this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.0F, 1.5F);
+
+		Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
+
+		this.level().explode(
+				this,
+				this.damageSources().explosion(this, this.getOwner()),
+				null,
+				this.getX(), this.getY(), this.getZ(),
+				radius,
+				false,
+				interaction,
+				false
+		);
+
+		this.discard();
+	}
 
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {

@@ -46,6 +46,8 @@ public class GeneralServerConfig {
         private boolean respectAttackCooldown = true;
         private int maxStatValue = 10000;
 		private boolean kiDestroyBlocks = true;
+		private boolean storyModeEnabled = true;
+		private boolean createDefaultSagas = true;
 
         @SerializedName("kaioken_stackable")
         private boolean kaiokenStackable = true;
@@ -81,6 +83,10 @@ public class GeneralServerConfig {
 
 		public boolean isKiDestroyBlocks() { return kiDestroyBlocks; }
 		public void setKiDestroyBlocks(boolean kiDestroyBlocks) { this.kiDestroyBlocks = kiDestroyBlocks; }
+		public boolean isStoryModeEnabled() { return storyModeEnabled; }
+		public void setStoryModeEnabled(boolean storyModeEnabled) { this.storyModeEnabled = storyModeEnabled; }
+		public boolean isCreateDefaultSagas() { return createDefaultSagas; }
+		public void setCreateDefaultSagas(boolean createDefaultSagas) { this.createDefaultSagas = createDefaultSagas; }
 
         public boolean isKaiokenStackable() { return kaiokenStackable; }
         public void setKaiokenStackable(boolean stackable) { this.kaiokenStackable = stackable; }

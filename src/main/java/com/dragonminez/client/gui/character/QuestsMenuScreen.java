@@ -41,6 +41,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
     private StatsData statsData;
     private int tickCount = 0;
+	private long lastClickTime = 0;
+	private static final long COOLDOWN_MS = 30000;
 
     private int currentSagaIndex = 0;
     private final List<Saga> availableSagas = new ArrayList<>();
@@ -229,12 +231,15 @@ public class QuestsMenuScreen extends BaseMenuScreen {
             }
         } else if (canStart) {
             buttonText = Component.translatable("gui.dragonminez.quests.start");
-			// TO-DO: Revisar cooldown
         } else {
             return;
         }
 
         Button actionButton = Button.builder(buttonText, btn -> {
+			long now = System.currentTimeMillis();
+			if (now - lastClickTime < COOLDOWN_MS) return;
+			lastClickTime = now;
+
             boolean isHard = ConfigManager.getUserConfig().getHud().isStoryHardDifficulty();
             NetworkHandler.sendToServer(new StartQuestC2S(
                     currentSaga.getId(),

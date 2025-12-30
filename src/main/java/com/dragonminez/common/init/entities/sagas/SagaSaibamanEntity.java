@@ -1,8 +1,10 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -10,6 +12,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -17,6 +20,8 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
+
+import java.util.List;
 
 public class SagaSaibamanEntity extends DBSagasEntity{
 
@@ -73,7 +78,7 @@ public class SagaSaibamanEntity extends DBSagasEntity{
                 double y = target.getY();
 
                 this.setPos(behindX, y, behindZ);
-                this.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+                this.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
                 this.setYBodyRot(this.getYRot());
                 this.setYHeadRot(this.getYRot());
 
@@ -138,12 +143,29 @@ public class SagaSaibamanEntity extends DBSagasEntity{
         return PlayState.STOP;
     }
 
-    private void explode() {
-        if (!this.level().isClientSide) {
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), 4.0F, Level.ExplosionInteraction.MOB);
-            this.discard();
-        }
-    }
+	private void explode() {
+		if (!this.level().isClientSide) {
+			float radius = 4.0F;
+
+			double baseDamage = this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+			float finalDamage = (float) (baseDamage * 3.0);
+
+			DamageSource damageSource = this.level().damageSources().explosion(this, this);
+
+			AABB area = this.getBoundingBox().inflate(radius);
+			List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
+
+			for (LivingEntity target : entities) {
+				if (target != this && this.distanceToSqr(target) <= radius * radius) {
+					target.hurt(damageSource, finalDamage);
+				}
+			}
+
+			this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, Level.ExplosionInteraction.MOB);
+
+			this.discard();
+		}
+	}
 
     @Override
     public boolean doHurtTarget(Entity pEntity) {
