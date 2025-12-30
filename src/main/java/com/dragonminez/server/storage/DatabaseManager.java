@@ -1,4 +1,4 @@
-package com.dragonminez.server.database;
+package com.dragonminez.server.storage;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
@@ -10,21 +10,24 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Base64;
+import java.sql.*;
 import java.util.UUID;
 
-public class DatabaseManager {
-	private static HikariDataSource dataSource;
-	private static boolean isConnected = false;
+public class DatabaseManager implements IDataStorage {
+	private HikariDataSource dataSource;
+	private boolean isConnected = false;
+	private final GeneralServerConfig.StorageConfig config;
 
-	public static void init() {
-		GeneralServerConfig.StorageConfig config = ConfigManager.getServerConfig().getStorage();
+	public DatabaseManager() {
+		this.config = ConfigManager.getServerConfig().getStorage();
+	}
 
-		if (config.getStorageType() != GeneralServerConfig.StorageConfig.StorageType.DATABASE) {
+	@Override
+	public void init() {
+		if (!hasValidCredentials()) {
+			LogUtil.error(Env.SERVER, "DATABASE ERROR: Missing credentials (Host, DB Name, User or Password).");
+			LogUtil.error(Env.SERVER, "FALLBACK: System will use Default Local NBT Storage.");
+			isConnected = false;
 			return;
 		}
 
@@ -42,23 +45,32 @@ public class DatabaseManager {
 		hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
 		hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
 		hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+		hikariConfig.setConnectionTimeout(5000);
 
 		try {
 			dataSource = new HikariDataSource(hikariConfig);
-			isConnected = true;
 			createTable(config.getTable());
+			isConnected = true;
 			LogUtil.info(Env.SERVER, "Database connected successfully!");
 		} catch (Exception e) {
-			LogUtil.error(Env.SERVER, "Failed to connect to database: " + e.getMessage());
+			LogUtil.error(Env.SERVER, "CRITICAL: Failed to connect to database: " + e.getMessage());
+			LogUtil.error(Env.SERVER, "FALLBACK: System will use Default Local NBT Storage to prevent data loss.");
 			isConnected = false;
 		}
 	}
 
-	private static void createTable(String tableName) {
+	private boolean hasValidCredentials() {
+		return !config.getHost().isEmpty() &&
+				!config.getDatabase().isEmpty() &&
+				!config.getUsername().isEmpty() &&
+				!config.getPassword().isEmpty();
+	}
+
+	private void createTable(String tableName) {
 		String sql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
 				"uuid VARCHAR(36) PRIMARY KEY, " +
 				"name VARCHAR(64), " +
-				"data MEDIUMTEXT, " +
+				"data MEDIUMBLOB, " +
 				"last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" +
 				");";
 
@@ -67,36 +79,43 @@ public class DatabaseManager {
 			stmt.execute();
 		} catch (SQLException e) {
 			LogUtil.error(Env.SERVER, "Error creating table: " + e.getMessage());
+			isConnected = false;
 		}
 	}
 
-	public static void savePlayer(UUID uuid, String name, CompoundTag tag) {
-		if (!isConnected || dataSource == null) return;
+	@Override
+	public boolean saveData(UUID uuid, String name, CompoundTag tag) {
+		if (!isConnected || dataSource == null) return false;
 
-		String tableName = ConfigManager.getServerConfig().getStorage().getTable();
-		String dataString = nbtToString(tag);
+		String tableName = config.getTable();
 
 		String sql = "INSERT INTO " + tableName + " (uuid, name, data) VALUES (?, ?, ?) " +
 				"ON DUPLICATE KEY UPDATE name = ?, data = ?, last_updated = CURRENT_TIMESTAMP";
 
 		try (Connection conn = dataSource.getConnection();
 			 PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			byte[] dataBytes = nbtToBytes(tag);
+
 			stmt.setString(1, uuid.toString());
 			stmt.setString(2, name);
-			stmt.setString(3, dataString);
+			stmt.setBytes(3, dataBytes);
 			stmt.setString(4, name);
-			stmt.setString(5, dataString);
+			stmt.setBytes(5, dataBytes);
 
 			stmt.executeUpdate();
+			return true;
 		} catch (SQLException e) {
-			LogUtil.error(Env.SERVER, "Failed to save player " + name + ": " + e.getMessage());
+			LogUtil.error(Env.SERVER, "Failed to save player " + name + " to DB: " + e.getMessage());
+			return false;
 		}
 	}
 
-	public static CompoundTag loadPlayer(UUID uuid) {
+	@Override
+	public CompoundTag loadData(UUID uuid) {
 		if (!isConnected || dataSource == null) return null;
 
-		String tableName = ConfigManager.getServerConfig().getStorage().getTable();
+		String tableName = config.getTable();
 		String sql = "SELECT data FROM " + tableName + " WHERE uuid = ?";
 
 		try (Connection conn = dataSource.getConnection();
@@ -105,38 +124,41 @@ public class DatabaseManager {
 
 			try (ResultSet rs = stmt.executeQuery()) {
 				if (rs.next()) {
-					String dataString = rs.getString("data");
-					return stringToNbt(dataString);
+					try (InputStream is = rs.getBinaryStream("data")) {
+						if (is != null) {
+							return NbtIo.readCompressed(is);
+						}
+					} catch (IOException e) {
+						LogUtil.error(Env.SERVER, "Error decompressing NBT for " + uuid + ": " + e.getMessage());
+					}
 				}
 			}
 		} catch (SQLException e) {
-			LogUtil.error(Env.SERVER, "Failed to load player " + uuid + ": " + e.getMessage());
+			LogUtil.error(Env.SERVER, "Failed to load player " + uuid + " from DB: " + e.getMessage());
 		}
 		return null;
 	}
 
-	public static void close() {
+	@Override
+	public void shutdown() {
 		if (dataSource != null && !dataSource.isClosed()) {
 			dataSource.close();
+			LogUtil.info(Env.SERVER, "Database connection closed.");
 		}
 	}
 
-	private static String nbtToString(CompoundTag tag) {
+	@Override
+	public String getName() {
+		return "DATABASE (MariaDB/MySQL)";
+	}
+
+	private byte[] nbtToBytes(CompoundTag tag) {
 		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 			NbtIo.writeCompressed(tag, outputStream);
-			return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+			return outputStream.toByteArray();
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Error serializing NBT: " + e.getMessage());
-			return "";
-		}
-	}
-
-	private static CompoundTag stringToNbt(String str) {
-		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(str))) {
-			return NbtIo.readCompressed(inputStream);
-		} catch (Exception e) {
-			LogUtil.error(Env.SERVER, "Error deserializing NBT: " + e.getMessage());
-			return null;
+			return new byte[0];
 		}
 	}
 }

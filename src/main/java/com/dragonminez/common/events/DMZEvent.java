@@ -2,6 +2,7 @@ package com.dragonminez.common.events;
 
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.Saga;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Cancelable;
@@ -146,12 +147,40 @@ public abstract class DMZEvent extends Event {
 		}
 	}
 
-	public static class DataSaveEvent extends Event {
+	public static class PlayerDataSaveEvent extends Event {
+		private final ServerPlayer player;
+		private final CompoundTag data;
 
+		public PlayerDataSaveEvent(ServerPlayer player, CompoundTag data) {
+			this.player = player;
+			this.data = data;
+		}
+
+		public ServerPlayer getPlayer() {
+			return player;
+		}
+
+		public CompoundTag getData() {
+			return data;
+		}
 	}
 
-	public static class DataLoadEvent extends Event {
+	public static class PlayerDataLoadEvent extends Event {
+		private final ServerPlayer player;
+		private final CompoundTag data;
 
+		public PlayerDataLoadEvent(ServerPlayer player, CompoundTag data) {
+			this.player = player;
+			this.data = data;
+		}
+
+		public ServerPlayer getPlayer() {
+			return player;
+		}
+
+		public CompoundTag getData() {
+			return data;
+		}
 	}
 }
 

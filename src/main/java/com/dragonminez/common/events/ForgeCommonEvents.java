@@ -15,8 +15,8 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.commands.*;
-import com.dragonminez.server.database.DatabaseManager;
 import com.dragonminez.server.events.DragonBallsHandler;
+import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import net.minecraft.network.chat.Component;
@@ -24,7 +24,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
@@ -128,7 +127,7 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public static void onServerStarting(ServerStartingEvent event) {
-		DatabaseManager.init();
+		StorageManager.init();
 		BetaWhitelist.reload();
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
@@ -161,7 +160,7 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public void onServerStopping(ServerStoppingEvent event) {
-		DatabaseManager.close();
+		StorageManager.shutdown();
 	}
 
     @SubscribeEvent
