@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainTags;
 import com.dragonminez.server.world.biome.HTCBiomes;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.biome.OtherworldBiomes;
+import com.dragonminez.server.world.biome.OverworldBiomes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -46,7 +47,8 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.HAS_VILLAGE_SAVANNA)
 				.addTag(BiomeTags.IS_BADLANDS)
 				.addTag(BiomeTags.IS_MOUNTAIN)
-				.addTag(BiomeTags.IS_HILL);
+				.addTag(BiomeTags.IS_HILL)
+				.add(OverworldBiomes.ROCKY);
 
 		this.tag(MainTags.Biomes.HAS_SABERTOOTH)
 				.replace(false)
@@ -56,5 +58,13 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.IS_FOREST)
 				.addTag(BiomeTags.HAS_WOODLAND_MANSION)
 				.addTag(BiomeTags.IS_JUNGLE);
+
+		this.tag(MainTags.Biomes.HAS_ROBOTS)
+				.replace(false)
+				.addTag(BiomeTags.HAS_VILLAGE_SAVANNA)
+				.addTag(BiomeTags.HAS_VILLAGE_PLAINS)
+				.addTag(BiomeTags.HAS_VILLAGE_SNOWY);
+
+
 	}
 }

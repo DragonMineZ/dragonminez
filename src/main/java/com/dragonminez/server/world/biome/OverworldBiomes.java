@@ -1,15 +1,12 @@
 package com.dragonminez.server.world.biome;
 
 import com.dragonminez.Reference;
-import com.dragonminez.server.world.feature.OverworldConfiguredFeatures;
 import com.dragonminez.server.world.feature.OverworldPlacedFeatures;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BiomeDefaultFeatures;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.Musics;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.*;
@@ -19,10 +16,10 @@ public class OverworldBiomes {
 	public static final ResourceKey<Biome> ROCKY = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "rocky"));
 
 	public static void bootstrap(BootstapContext<Biome> context) {
-		context.register(ROCKY, rockyWasteland(context));
+		context.register(ROCKY, rockyBiome(context));
 	}
 
-	public static Biome rockyWasteland(BootstapContext<Biome> context) {
+	public static Biome rockyBiome(BootstapContext<Biome> context) {
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
 		BiomeDefaultFeatures.commonSpawns(spawnBuilder);
 		spawnBuilder.addSpawn(MobCategory.MONSTER, new MobSpawnSettings.SpawnerData(EntityType.SKELETON, 100, 4, 4));

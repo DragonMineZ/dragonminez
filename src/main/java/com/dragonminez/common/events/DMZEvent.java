@@ -1,8 +1,13 @@
 package com.dragonminez.common.events;
 
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.Saga;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
+
+import java.util.List;
 
 public abstract class DMZEvent extends Event {
 
@@ -112,7 +117,33 @@ public abstract class DMZEvent extends Event {
 	}
 
 	public static class QuestCompleteEvent extends Event {
+		private final ServerPlayer player;
+		private final Saga saga;
+		private final Quest quest;
+		private final List<ServerPlayer> partyMembers;
 
+		public QuestCompleteEvent(ServerPlayer player, Saga saga, Quest quest, List<ServerPlayer> partyMembers) {
+			this.player = player;
+			this.saga = saga;
+			this.quest = quest;
+			this.partyMembers = partyMembers;
+		}
+
+		public ServerPlayer getPlayer() {
+			return player;
+		}
+
+		public Saga getSaga() {
+			return saga;
+		}
+
+		public Quest getQuest() {
+			return quest;
+		}
+
+		public List<ServerPlayer> getPartyMembers() {
+			return partyMembers;
+		}
 	}
 
 	public static class DataSaveEvent extends Event {
