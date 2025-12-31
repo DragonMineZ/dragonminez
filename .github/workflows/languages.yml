@@ -6,7 +6,7 @@ on:
     paths:
       - src/main/resources/assets/dragonminez/lang/**
   schedule:
-    - cron: '0 * * * *'   # cada horita
+    - cron: '0 0 * * 1'   # cada lunes a media noche
 
 permissions:
   contents: write
