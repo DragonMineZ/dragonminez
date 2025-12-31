@@ -156,6 +156,23 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         }
     }
 
+    @Override
+    public boolean shouldDamage(Entity target) {
+        Entity owner = this.getOwner();
+
+        if (target == owner) return false;
+
+        if (owner instanceof LivingEntity livingOwner) {
+            if (livingOwner.isAlliedTo(target)) {
+                return false;
+            }
+            if (target.getType() == livingOwner.getType()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void spawnParticles(float radius) {
         if (this.level() instanceof ServerLevel serverLevel) {
             int color = this.getColor();
