@@ -64,6 +64,7 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_ZARBON_TRANSF.get(), SagaZarbonT1Entity.createAttributes().build());
         event.put(MainEntities.SAGA_RECOOME.get(), SagaRecoomeEntity.createAttributes().build());
         event.put(MainEntities.SAGA_GULDO.get(), SagaGuldoEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_BURTER.get(), SagaBurterEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());

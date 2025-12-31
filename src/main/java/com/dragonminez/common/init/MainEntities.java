@@ -9,6 +9,7 @@ import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
+import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -270,6 +271,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaRecoomeEntity::new, MobCategory.CREATURE)
                             .sized(1.2f, 2.1f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_recoome").toString()));
+    public static final RegistryObject<EntityType<SagaBurterEntity>> SAGA_BURTER =
+            ENTITY_TYPES.register("saga_burter",
+                    () -> EntityType.Builder.of(SagaBurterEntity::new, MobCategory.CREATURE)
+                            .sized(1.2f, 2.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_burter").toString()));
 
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
@@ -284,6 +290,12 @@ public class MainEntities {
                     .clientTrackingRange(4)
                     .updateInterval(10)
                     .build("ki_explosion"));
+    public static final RegistryObject<EntityType<SPBlueHurricaneEntity>> SP_BLUE_HURRICANE = ENTITY_TYPES.register("sp_blue_hurricane",
+            () -> EntityType.Builder.<SPBlueHurricaneEntity>of(SPBlueHurricaneEntity::new, MobCategory.MISC)
+                    .sized(0.8F, 0.8F)
+                    .clientTrackingRange(4)
+                    .updateInterval(10)
+                    .build("sp_blue_hurricane"));
     public static final RegistryObject<EntityType<KiVolleyEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
             () -> EntityType.Builder.<KiVolleyEntity>of(KiVolleyEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.5f)

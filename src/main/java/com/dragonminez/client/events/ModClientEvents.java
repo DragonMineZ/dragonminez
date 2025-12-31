@@ -11,6 +11,7 @@ import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.init.entities.renderer.*;
 import com.dragonminez.client.init.entities.renderer.ki.KiExplosionRenderer;
 import com.dragonminez.client.init.entities.renderer.ki.KiProjectileRenderer;
+import com.dragonminez.client.init.entities.renderer.ki.SPSkillsRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
@@ -129,6 +130,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_ZARBON_TRANSF.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_GULDO.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_RECOOME.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_BURTER.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
@@ -154,6 +156,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_EXPLOSION.get(), KiExplosionRenderer::new);
+        event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
 
     }
 
