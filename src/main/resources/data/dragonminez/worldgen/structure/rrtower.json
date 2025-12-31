@@ -40,7 +40,7 @@
   ],
   "spawn_overrides": {},
   "type": "minecraft:jigsaw",
-  "start_pool": "dragonminez:rrtower/rrtower",
+  "start_pool": "dragonminez:rrtower",
   "size": 7,
   "step": "surface_structures",
   "start_height": {

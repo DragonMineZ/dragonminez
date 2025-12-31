@@ -184,6 +184,7 @@ public class StatsCommand {
                     case "ene" -> data.getStats().setEnergy(finalValue);
                 }
             }
+			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 
 			float newMaxHealth = data.getMaxHealth();
 			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
@@ -191,6 +192,7 @@ public class StatsCommand {
 			if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
 			int newMaxStamina = data.getMaxStamina();
 			if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
 
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
         });
@@ -243,6 +245,7 @@ public class StatsCommand {
                     }
                 }
             }
+			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 
 			float newMaxHealth = data.getMaxHealth();
 			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
@@ -250,6 +253,7 @@ public class StatsCommand {
 			if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
 			int newMaxStamina = data.getMaxStamina();
 			if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
 
 
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);

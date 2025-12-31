@@ -55,7 +55,7 @@ public class StoneSpikeFeature extends Feature<NoneFeatureConfiguration> {
 						boolean placeBlock = true;
 						boolean isEdge = distSq >= (currentRadius - 1.2) * (currentRadius - 1.2);
 						if (i >= 4 && isEdge) {
-							if (random.nextFloat() < 0.15F) {
+							if (random.nextFloat() < 0.05F) {
 								placeBlock = false;
 							}
 						}

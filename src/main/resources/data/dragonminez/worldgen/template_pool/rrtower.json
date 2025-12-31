@@ -1,10 +1,10 @@
 {
-  "name": "dragonminez:rrtower/rrtower",
+  "name": "dragonminez:rrtower",
   "fallback": "minecraft:empty",
   "elements": [{
     "weight": 1,
     "element": {
-      "location": "dragonminez:rrtower/rrtower",
+      "location": "dragonminez:rrtower",
       "processors": "minecraft:empty",
       "projection": "rigid",
       "element_type": "minecraft:single_pool_element"
