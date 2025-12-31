@@ -22,7 +22,7 @@ public class RedRibbonSoldierEntity extends RedRibbonEntity{
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(RedRibbonSoldierEntity.class, EntityDataSerializers.INT);
 
-    public static final int VARIANT_COUNT = 5;
+    public static final int VARIANT_COUNT = 6;
 
     public static final ResourceLocation[] TEXTURES = new ResourceLocation[VARIANT_COUNT];
 
