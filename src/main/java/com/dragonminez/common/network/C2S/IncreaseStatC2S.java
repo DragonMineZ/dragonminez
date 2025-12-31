@@ -85,26 +85,35 @@ public class IncreaseStatC2S {
             case "STR" -> data.getStats().addStrength(amount);
             case "SKP" -> data.getStats().addStrikePower(amount);
             case "RES" -> {
-                double stmScaling = data.getStatScaling("STM");
-                int staminaIncrease = (int) (amount * stmScaling);
+				int oldMaxStamina = data.getMaxStamina();
 
-                data.getStats().addResistance(amount);
-                data.getResources().addStamina(staminaIncrease);
+				data.getStats().addResistance(amount);
+
+				int newMaxStamina = data.getMaxStamina();
+				if (newMaxStamina > oldMaxStamina) {
+					data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+				}
             }
             case "VIT" -> {
-                double vitScaling = data.getStatScaling("VIT");
-                int healthIncrease = (int) (amount * vitScaling);
+				float oldMaxHealth = data.getMaxHealth();
 
-                data.getStats().addVitality(amount);
-                player.heal(healthIncrease);
+				data.getStats().addVitality(amount);
+
+				float newMaxHealth = data.getMaxHealth();
+				if (newMaxHealth > oldMaxHealth) {
+					player.heal(newMaxHealth - oldMaxHealth);
+				}
             }
             case "PWR" -> data.getStats().addKiPower(amount);
             case "ENE" -> {
-                double eneScaling = data.getStatScaling("ENE");
-                int energyIncrease = (int) (amount * eneScaling);
+				int oldMaxEnergy = data.getMaxEnergy();
 
-                data.getStats().addEnergy(amount);
-                data.getResources().addEnergy(energyIncrease);
+				data.getStats().addEnergy(amount);
+
+				int newMaxEnergy = data.getMaxEnergy();
+				if (newMaxEnergy > oldMaxEnergy) {
+					data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
+				}
             }
         }
     }

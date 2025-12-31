@@ -62,7 +62,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(2, "dmz.quest.saiyan2.name", "dmz.quest.saiyan2.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.saiyan2.obj1", "minecraft:plains", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.saiyan2.obj2", null, "dragonminez:raditz", 1)}
+                                    {createObjective("KILL", "dmz.quest.saiyan2.obj2", null, "dragonminez:saga_raditz", 1)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 1000, null, 0, null)}
@@ -95,7 +95,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(5, "dmz.quest.saiyan5.name", "dmz.quest.saiyan5.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.saiyan5.obj1", "dragonminez:plains", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.saiyan5.obj2", null, "dragonminez:saibaman", 6)}
+                                    {createObjective("KILL", "dmz.quest.saiyan5.obj2", null, "dragonminez:saga_saibaman1", 6)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 2500, null, 0, null)}
@@ -106,7 +106,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(6, "dmz.quest.saiyan6.name", "dmz.quest.saiyan6.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.saiyan6.obj1", "dragonminez:plains", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.saiyan6.obj2", null, "dragonminez:nappa", 1)}
+                                    {createObjective("KILL", "dmz.quest.saiyan6.obj2", null, "dragonminez:saga_nappa", 1)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 3000, null, 0, null)}
@@ -117,7 +117,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(7, "dmz.quest.saiyan7.name", "dmz.quest.saiyan7.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.saiyan7.obj1", "dragonminez:rocky", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.saiyan7.obj2", null, "dragonminez:vegeta", 1)}
+                                    {createObjective("KILL", "dmz.quest.saiyan7.obj2", null, "dragonminez:saga_vegeta", 1)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 3500, null, 0, null)}
@@ -128,7 +128,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(8, "dmz.quest.saiyan8.name", "dmz.quest.saiyan8.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.saiyan8.obj1", "dragonminez:rocky", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.saiyan8.obj2", null, "dragonminez:oozaru_vegeta", 1)}
+                                    {createObjective("KILL", "dmz.quest.saiyan8.obj2", null, "dragonminez:saga_ozaruvegeta", 1)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 4000, null, 0, null)}
@@ -175,7 +175,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(1, "dmz.quest.frieza1.name", "dmz.quest.frieza1.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.frieza1.obj1", "dragonminez:ajissa_plains", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.frieza1.obj2", null, "dragonminez:cui", 1)}
+                                    {createObjective("KILL", "dmz.quest.frieza1.obj2", null, "dragonminez:saga_cui", 1)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 5000, null, 0, null)}
@@ -196,7 +196,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(3, "dmz.quest.frieza3.name", "dmz.quest.frieza3.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.frieza3.obj1", "dragonminez:ajissa_plains", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.frieza3.obj2", null, "dragonminez:dodoria", 1)}
+                                    {createObjective("KILL", "dmz.quest.frieza3.obj2", null, "dragonminez:saga_dodoria", 1)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 6000, null, 0, null)}
@@ -324,9 +324,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         if (json.has("requirements")) {
             JsonObject reqJson = json.getAsJsonObject("requirements");
             String prevSaga = reqJson.has("previousSaga") ? reqJson.get("previousSaga").getAsString() : "";
-            int minLevel = reqJson.has("minLevel") ? reqJson.get("minLevel").getAsInt() : 0;
-            String race = reqJson.has("requiredRace") ? reqJson.get("requiredRace").getAsString() : "";
-            requirements = new Saga.SagaRequirements(prevSaga, minLevel, race);
+            requirements = new Saga.SagaRequirements(prevSaga);
         }
 
         List<Quest> quests = new ArrayList<>();

@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ClippableTextureButton;
+import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
@@ -34,6 +35,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
             "textures/gui/menu/menubig.png");
     private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menusmall.png");
+	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"textures/gui/buttons/characterbuttons.png");
 
     private static final int SKILL_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_SKILLS = 8;
@@ -53,7 +56,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     private int animTick = 0;
     private boolean isHotZoneHovered = false;
 
-    private Button upgradeButton;
+    private TexturedTextButton upgradeButton;
 
     public SkillsMenuScreen(int oldGuiScale) {
         super(Component.translatable("gui.dragonminez.skills.title"), oldGuiScale);
@@ -206,19 +209,20 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         boolean canUpgrade = skill.getLevel() < skill.getMaxLevel() && currentTPS >= cost;
 
         if (cost != Integer.MAX_VALUE && skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel()) {
-			upgradeButton = Button.builder(
-							Component.translatable("gui.dragonminez.skills.upgrade")
-									.append(" (")
-									.append(String.valueOf(cost))
-									.append(" TPS)"),
-							btn -> {
-								if (canUpgrade) {
-									NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("upgrade", selectedSkill, cost));
-									updateStatsData();
-									refreshButtons();
-								}
-							})
-					.bounds(rightPanelX + 25, rightPanelY + 199, 100, 15)
+			upgradeButton = new TexturedTextButton.Builder()
+					.position(rightPanelX + 35, rightPanelY + 196)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable("gui.dragonminez.skills.upgrade"))
+					.onPress(btn -> {
+						if (canUpgrade) {
+							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("upgrade", selectedSkill, cost));
+							updateStatsData();
+							refreshButtons();
+						}
+					})
 					.build();
 
 			upgradeButton.active = canUpgrade;
@@ -232,8 +236,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
         if (skillData != null && skillData.getCosts() != null) {
             var costs = skillData.getCosts();
-            if (currentLevel < costs.size()) {
-                return costs.get(currentLevel);
+            if (currentLevel+1 < costs.size()) {
+                return costs.get(currentLevel+1);
             }
         }
 
@@ -387,12 +391,17 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
         drawCenteredStringWithBorder(graphics,
             Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()),
-            panelX + 72, startY + 20, 0xFFAAAAAA);
+            panelX + 72, startY + 12, 0xFFAAAAAA);
+		if (getUpgradeCost(selectedSkill, skill.getLevel()) != Integer.MAX_VALUE) {
+			drawCenteredStringWithBorder(graphics,
+					Component.literal("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))),
+					panelX + 72, startY + 24, 0xFFAAAAAA);
+		}
 
         List<String> wrappedDesc = wrapText(description, 130);
         int descY = startY + 70;
         for (String line : wrappedDesc) {
-            drawStringWithBorder(graphics, Component.literal(line), panelX + 15, descY, 0xFFCCCCCC);
+            drawStringWithBorder(graphics, Component.literal(line), panelX + 13, descY, 0xFFCCCCCC);
             descY += 12;
         }
     }

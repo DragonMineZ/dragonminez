@@ -55,6 +55,7 @@ public class StartQuestC2S {
 					String entityIdStr = killObjective.getEntityId();
 					ResourceLocation resLoc = new ResourceLocation(entityIdStr);
 					EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(resLoc);
+					System.out.println("Spawning entity for Kill Objective: " + entityIdStr);
 
 					if (entityType != null) {
 						Entity entity = entityType.create(player.level());

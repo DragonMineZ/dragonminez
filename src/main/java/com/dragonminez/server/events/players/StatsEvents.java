@@ -91,6 +91,9 @@ public class StatsEvents {
                     data.setInitializedHealth(true);
                 }
             }
+
+			if (data.getResources().getCurrentEnergy() > data.getMaxEnergy()) data.getResources().setCurrentEnergy(data.getMaxEnergy());
+			if (data.getResources().getCurrentStamina() > data.getMaxStamina()) data.getResources().setCurrentStamina(data.getMaxStamina());
         });
     }
 

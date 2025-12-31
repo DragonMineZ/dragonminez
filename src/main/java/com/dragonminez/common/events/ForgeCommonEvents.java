@@ -74,9 +74,10 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			DragonBallsHandler.syncRadar(player.serverLevel());
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				player.setHealth(data.getMaxHealth());
+				player.setHealth(player.getMaxHealth());
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 				data.getResources().setCurrentStamina(data.getMaxStamina());
+				player.setHealth(player.getMaxHealth());
 			});
 		}
 	}

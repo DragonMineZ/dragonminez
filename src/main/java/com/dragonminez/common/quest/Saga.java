@@ -81,25 +81,13 @@ public class Saga {
 
     public static class SagaRequirements {
         private final String previousSagaId;
-        private final int minLevel;
-        private final String requiredRace;
 
-        public SagaRequirements(String previousSagaId, int minLevel, String requiredRace) {
+        public SagaRequirements(String previousSagaId) {
             this.previousSagaId = previousSagaId;
-            this.minLevel = minLevel;
-            this.requiredRace = requiredRace;
         }
 
         public String getPreviousSagaId() {
             return previousSagaId;
-        }
-
-        public int getMinLevel() {
-            return minLevel;
-        }
-
-        public String getRequiredRace() {
-            return requiredRace;
         }
     }
 }

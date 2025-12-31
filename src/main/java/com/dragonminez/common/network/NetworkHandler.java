@@ -62,6 +62,18 @@ public class NetworkHandler {
                 .consumerMainThread(StartQuestC2S::handle)
                 .add();
 
+		net.messageBuilder(ClaimRewardC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ClaimRewardC2S::new)
+				.encoder(ClaimRewardC2S::encode)
+				.consumerMainThread(ClaimRewardC2S::handle)
+				.add();
+
+		net.messageBuilder(UnlockSagaC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(UnlockSagaC2S::new)
+				.encoder(UnlockSagaC2S::encode)
+				.consumerMainThread(UnlockSagaC2S::handle)
+				.add();
+
 		net.messageBuilder(GrantWishC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(GrantWishC2S::decode)
 				.encoder(GrantWishC2S::encode)

@@ -112,7 +112,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
        renderStatisticsInfo(graphics, mouseX, mouseY);
        renderTPCost(graphics);
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+       super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void initStatButtons() {
@@ -442,7 +442,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int stamina = statsData.getMaxStamina();
         double defense = statsData.getDefense();
         double maxDefense = statsData.getMaxDefense();
-        double health = statsData.getMaxHealth();
+        double health = Minecraft.getInstance().player.getMaxHealth();
         double kiDamage = statsData.getKiDamage();
         double maxKiDamage = statsData.getMaxKiDamage();
         int energy = statsData.getMaxEnergy();

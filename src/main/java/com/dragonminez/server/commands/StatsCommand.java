@@ -163,6 +163,10 @@ public class StatsCommand {
         int finalValue = Math.min(value, maxStat);
 
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			float oldMaxHealth = data.getMaxHealth();
+			int oldMaxEnergy = data.getMaxEnergy();
+			int oldMaxStamina = data.getMaxStamina();
+
             if (stat.equalsIgnoreCase("all")) {
                 data.getStats().setStrength(finalValue);
                 data.getStats().setStrikePower(finalValue);
@@ -181,6 +185,13 @@ public class StatsCommand {
                 }
             }
 
+			float newMaxHealth = data.getMaxHealth();
+			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
+			int newMaxEnergy = data.getMaxEnergy();
+			if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
+			int newMaxStamina = data.getMaxStamina();
+			if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
         });
 
@@ -193,6 +204,10 @@ public class StatsCommand {
         int maxStat = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
 
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			float oldMaxHealth = data.getMaxHealth();
+			int oldMaxEnergy = data.getMaxEnergy();
+			int oldMaxStamina = data.getMaxStamina();
+
             if (stat.equalsIgnoreCase("all")) {
                 data.getStats().setStrength(Math.max(0, Math.min(data.getStats().getStrength() + amount, maxStat)));
                 data.getStats().setStrikePower(Math.max(0, Math.min(data.getStats().getStrikePower() + amount, maxStat)));
@@ -229,6 +244,14 @@ public class StatsCommand {
                 }
             }
 
+			float newMaxHealth = data.getMaxHealth();
+			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
+			int newMaxEnergy = data.getMaxEnergy();
+			if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
+			int newMaxStamina = data.getMaxStamina();
+			if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
+
+
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
         });
 
@@ -253,7 +276,6 @@ public class StatsCommand {
 			data.getEffects().removeAllEffects();
 
 			player.setHealth(20.0F);
-			player.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0D);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 			player.setHealth(20.0F);
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);

@@ -142,7 +142,7 @@ public class TickHandler {
     private static void regenerateHealth(ServerPlayer player, StatsData data, 
                                         RaceStatsConfig.ClassStats classStats) {
         int currentHealth = (int) player.getHealth();
-        float maxHealth = data.getMaxHealth();
+        float maxHealth = player.getMaxHealth();
         
         if (currentHealth < maxHealth) {
             double baseRegen = classStats.getHealthRegenRate();
