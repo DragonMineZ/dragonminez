@@ -203,6 +203,18 @@
       "dragonminez:kiblast_shoot"
     ]
   },
+  "ki_explosion_impact": {
+    "subtitle": "sounds.dragonminez.ki_explosion_impact",
+    "sounds": [
+      "dragonminez:ki_explosion_impact"
+    ]
+  },
+  "ki_explosion_charge": {
+    "subtitle": "sounds.dragonminez.ki_explosion_charge",
+    "sounds": [
+      "dragonminez:ki_explosion_charge"
+    ]
+  },
   "oozaru_heartbeat": {
     "subtitle": "sounds.dragonminez.oozaru_heartbeat",
     "sounds": [
