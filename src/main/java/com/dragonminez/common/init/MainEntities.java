@@ -276,6 +276,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaBurterEntity::new, MobCategory.CREATURE)
                             .sized(1.2f, 2.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_burter").toString()));
+    public static final RegistryObject<EntityType<SagaJeiceEntity>> SAGA_JEICE =
+            ENTITY_TYPES.register("saga_jeice",
+                    () -> EntityType.Builder.of(SagaJeiceEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_jeice").toString()));
 
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
