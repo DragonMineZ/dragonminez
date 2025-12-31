@@ -59,9 +59,11 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_MORO_SOLDIER.get(), SagaFriezaSoldier01Entity.createAttributes().build());
         event.put(MainEntities.SAGA_CUI.get(), SagaCuiEntity.createAttributes().build());
         event.put(MainEntities.SAGA_DODORIA.get(), SagaDodoriaEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_VEGETA_NAMEK.get(), SagaVegetaNamekEntity.createAttributes().build());
         event.put(MainEntities.SAGA_ZARBON.get(), SagaZarbonEntity.createAttributes().build());
         event.put(MainEntities.SAGA_ZARBON_TRANSF.get(), SagaZarbonT1Entity.createAttributes().build());
         event.put(MainEntities.SAGA_RECOOME.get(), SagaRecoomeEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_GULDO.get(), SagaGuldoEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());

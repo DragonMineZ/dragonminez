@@ -245,6 +245,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaDodoriaEntity::new, MobCategory.CREATURE)
                             .sized(1.3f, 2.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_dodoria").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaNamekEntity>> SAGA_VEGETA_NAMEK =
+            ENTITY_TYPES.register("saga_vegeta_namek",
+                    () -> EntityType.Builder.of(SagaVegetaNamekEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_vegeta_namek").toString()));
     public static final RegistryObject<EntityType<SagaZarbonEntity>> SAGA_ZARBON =
             ENTITY_TYPES.register("saga_zarbon",
                     () -> EntityType.Builder.of(SagaZarbonEntity::new, MobCategory.CREATURE)
@@ -255,6 +260,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaZarbonT1Entity::new, MobCategory.CREATURE)
                             .sized(1.3f, 2.1f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_zarbont1").toString()));
+    public static final RegistryObject<EntityType<SagaGuldoEntity>> SAGA_GULDO =
+            ENTITY_TYPES.register("saga_guldo",
+                    () -> EntityType.Builder.of(SagaGuldoEntity::new, MobCategory.CREATURE)
+                            .sized(1.2f, 1.6f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_guldo").toString()));
     public static final RegistryObject<EntityType<SagaRecoomeEntity>> SAGA_RECOOME =
             ENTITY_TYPES.register("saga_recoome",
                     () -> EntityType.Builder.of(SagaRecoomeEntity::new, MobCategory.CREATURE)
@@ -274,7 +284,6 @@ public class MainEntities {
                     .clientTrackingRange(4)
                     .updateInterval(10)
                     .build("ki_explosion"));
-
     public static final RegistryObject<EntityType<KiVolleyEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
             () -> EntityType.Builder.<KiVolleyEntity>of(KiVolleyEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.5f)

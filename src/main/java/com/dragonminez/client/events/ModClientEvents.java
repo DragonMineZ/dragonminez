@@ -124,8 +124,10 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_MORO_SOLDIER.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_CUI.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_DODORIA.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_VEGETA_NAMEK.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_ZARBON.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_ZARBON_TRANSF.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_GULDO.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_RECOOME.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
