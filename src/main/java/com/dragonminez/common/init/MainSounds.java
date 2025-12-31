@@ -56,6 +56,8 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> NAMEKIAN_VILLAGER_DEATH = registerSoundEvent("entity.namekian.vill.death");
 
 	public static final RegistryObject<SoundEvent> KIBLAST_ATTACK = registerSoundEvent("kiblast_shoot");
+    public static final RegistryObject<SoundEvent> KI_EXPLOSION_IMPACT = registerSoundEvent("ki_explosion_impact");
+    public static final RegistryObject<SoundEvent> KI_EXPLOSION_CHARGE = registerSoundEvent("ki_explosion_charge");
 
 	public static final RegistryObject<SoundEvent> OOZARU_HEARTBEAT = registerSoundEvent("oozaru_heartbeat");
 	public static final RegistryObject<SoundEvent> OOZARU_GROWL_PLAYER = registerSoundEvent("oozaru_growl_player");

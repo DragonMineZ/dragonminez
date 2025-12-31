@@ -19,8 +19,14 @@ public class MainParticles {
             PARTICLE_TYPES.register("ki_splash", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> KI_TRAIL =
             PARTICLE_TYPES.register("ki_trail", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> KI_EXPLOSION_FLASH =
+            PARTICLE_TYPES.register("ki_explosion_flash", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> KI_EXPLOSION_SPLASH =
+            PARTICLE_TYPES.register("ki_explosion_splash", () -> new SimpleParticleType(true));
+
     public static final RegistryObject<SimpleParticleType> KINTON =
             PARTICLE_TYPES.register("kinton", () -> new SimpleParticleType(true));
+
     public static final RegistryObject<SimpleParticleType> PUNCH_PARTICLE =
             PARTICLE_TYPES.register("punch_particle", () -> new SimpleParticleType(true));
 

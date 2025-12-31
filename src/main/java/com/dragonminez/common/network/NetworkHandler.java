@@ -58,7 +58,7 @@ public class NetworkHandler {
 
         net.messageBuilder(StartQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
                 .decoder(StartQuestC2S::new)
-                .encoder(StartQuestC2S::toBytes)
+                .encoder(StartQuestC2S::encode)
                 .consumerMainThread(StartQuestC2S::handle)
                 .add();
 

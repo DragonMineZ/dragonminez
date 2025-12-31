@@ -35,10 +35,11 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);    //0; none, 1; kiblast, 2; rugido
 
-    //0; none, 1; kiblast, 2; rugido
+    private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+
 
     private double roarDamage = 50.0D;
     private double roarRange = 15.0D;
@@ -107,6 +108,9 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         if (isCasting()) {
             return PlayState.STOP;
         }
+        if (isTransforming()) {
+            return PlayState.STOP;
+        }
 
         if (entity.swingTime > 0 && !isAttacking) {
             isAttacking = true;
@@ -136,6 +140,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(IS_FLYING, false);
         this.entityData.define(SKILL_TYPE, 0);
         this.entityData.define(BATTLE_POWER, 20);
+        this.entityData.define(TRANSFORMING, false);
     }
 
     public void setCasting(boolean casting) { this.entityData.set(IS_CASTING, casting); }
@@ -149,6 +154,9 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     public int getBattlePower() { return this.entityData.get(BATTLE_POWER); }
     public void setBattlePower(int type) { this.entityData.set(BATTLE_POWER, type); }
+
+    public boolean isTransforming() {return this.entityData.get(TRANSFORMING);}
+    public void setTransforming(boolean transforming) {this.entityData.set(TRANSFORMING, transforming);}
 
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
@@ -193,7 +201,19 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     public void setKiBlastSpeed(float kiBlastSpeed) {this.kiBlastSpeed = kiBlastSpeed;}
 
     @Override
+    public boolean hurt(DamageSource pSource, float pAmount) {
+        if (this.isTransforming()) {
+            return false;
+        }
+
+        return super.hurt(pSource, pAmount);
+    }
+
+    @Override
     public boolean doHurtTarget(Entity pEntity) {
+        if (this.isTransforming()) {
+            return false;
+        }
 
         if (this.isCasting()) {
             return false;

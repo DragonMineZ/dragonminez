@@ -7,6 +7,7 @@ import com.dragonminez.common.init.entities.ShenronEntity;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
@@ -242,8 +243,24 @@ public class MainEntities {
     public static final RegistryObject<EntityType<SagaDodoriaEntity>> SAGA_DODORIA =
             ENTITY_TYPES.register("saga_dodoria",
                     () -> EntityType.Builder.of(SagaDodoriaEntity::new, MobCategory.CREATURE)
-                            .sized(1.3f, 2.0f)
+                            .sized(1.3f, 2.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_dodoria").toString()));
+    public static final RegistryObject<EntityType<SagaZarbonEntity>> SAGA_ZARBON =
+            ENTITY_TYPES.register("saga_zarbon",
+                    () -> EntityType.Builder.of(SagaZarbonEntity::new, MobCategory.CREATURE)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_zarbon").toString()));
+    public static final RegistryObject<EntityType<SagaZarbonT1Entity>> SAGA_ZARBON_TRANSF =
+            ENTITY_TYPES.register("saga_zarbont1",
+                    () -> EntityType.Builder.of(SagaZarbonT1Entity::new, MobCategory.CREATURE)
+                            .sized(1.3f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_zarbont1").toString()));
+    public static final RegistryObject<EntityType<SagaRecoomeEntity>> SAGA_RECOOME =
+            ENTITY_TYPES.register("saga_recoome",
+                    () -> EntityType.Builder.of(SagaRecoomeEntity::new, MobCategory.CREATURE)
+                            .sized(1.2f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_recoome").toString()));
+
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)
@@ -251,6 +268,13 @@ public class MainEntities {
                     .clientTrackingRange(4)
                     .updateInterval(10)
                     .build("ki_blast"));
+    public static final RegistryObject<EntityType<KiExplosionEntity>> KI_EXPLOSION = ENTITY_TYPES.register("ki_explosion",
+            () -> EntityType.Builder.<KiExplosionEntity>of(KiExplosionEntity::new, MobCategory.MISC)
+                    .sized(0.8F, 0.8F)
+                    .clientTrackingRange(4)
+                    .updateInterval(10)
+                    .build("ki_explosion"));
+
     public static final RegistryObject<EntityType<KiVolleyEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
             () -> EntityType.Builder.<KiVolleyEntity>of(KiVolleyEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.5f)

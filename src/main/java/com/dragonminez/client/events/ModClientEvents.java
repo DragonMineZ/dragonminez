@@ -9,6 +9,7 @@ import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.KikonoStationBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.init.entities.renderer.*;
+import com.dragonminez.client.init.entities.renderer.ki.KiExplosionRenderer;
 import com.dragonminez.client.init.entities.renderer.ki.KiProjectileRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
@@ -123,6 +124,9 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_MORO_SOLDIER.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_CUI.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_DODORIA.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_ZARBON.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_ZARBON_TRANSF.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_RECOOME.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
@@ -147,6 +151,7 @@ public class ModClientEvents {
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_EXPLOSION.get(), KiExplosionRenderer::new);
 
     }
 
@@ -162,6 +167,8 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.KI_FLASH.get(), KiFlashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_SPLASH.get(), KiSplashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_TRAIL.get(), KiTrailParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_EXPLOSION_FLASH.get(), KiExplosionFlashParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_EXPLOSION_SPLASH.get(), KiExplosionSplashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KINTON.get(), KintonParticle.Provider::new);
         event.registerSpriteSet(MainParticles.PUNCH_PARTICLE.get(), PunchParticle.Provider::new);
 
