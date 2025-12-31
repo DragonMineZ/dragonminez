@@ -14,7 +14,7 @@
 				},
 				"part2": {
 					"rotation": {
-						"vector": [0, "-query.anim_time * -560", 0]
+						"vector": [0, "-query.anim_time * -560", 7.5]
 					},
 					"scale": {
 						"vector": ["1.2+ Math.sin(query.anim_time * 600) * 0.2", "1.2+ Math.sin(query.anim_time * 600) * 0.2", "1.2+ Math.sin(query.anim_time * 600) * 0.2"]
@@ -22,7 +22,7 @@
 				},
 				"part3": {
 					"rotation": {
-						"vector": [0, "-query.anim_time * 560", 0]
+						"vector": [0, "-query.anim_time * 560", -7.5]
 					},
 					"scale": {
 						"vector": ["1.2+ Math.sin(query.anim_time * 600) * 0.1", "1.2+ Math.sin(query.anim_time * 600) * 0.1", "1.2+ Math.sin(query.anim_time * 600) * 0.1"]
@@ -30,7 +30,7 @@
 				},
 				"part4": {
 					"rotation": {
-						"vector": [0, "-query.anim_time * -560", 0]
+						"vector": [0, "-query.anim_time * -560", 5]
 					},
 					"scale": {
 						"vector": ["1.2+ Math.sin(query.anim_time * 600) * 0.2", "1.2+ Math.sin(query.anim_time * 600) * 0.2", "1.2+ Math.sin(query.anim_time * 600) * 0.2"]
@@ -38,7 +38,7 @@
 				},
 				"part5": {
 					"rotation": {
-						"vector": [0, "-query.anim_time * 560", 0]
+						"vector": [0, "-query.anim_time * 560", -7.5]
 					},
 					"scale": {
 						"vector": ["1.2+ Math.sin(query.anim_time * 600) * 0.1", "1.2+ Math.sin(query.anim_time * 600) * 0.1", "1.2+ Math.sin(query.anim_time * 600) * 0.1"]
