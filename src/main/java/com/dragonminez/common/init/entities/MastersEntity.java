@@ -25,9 +25,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
     protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-
         this.setPersistenceRequired();
-
     }
 
 
@@ -46,10 +44,26 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
     }
 
 
-    @Override
-    public boolean isPushable() {
-        return false;
-    }
+	@Override
+	public boolean canBeCollidedWith() {
+		return false;
+	}
+
+	@Override
+	public boolean canCollideWith(Entity entity) {
+		return !(entity instanceof Player);
+	}
+
+	@Override
+	public boolean canBeHitByProjectile() {
+		return false;
+	}
+
+
+	@Override
+	public boolean isPushable() {
+		return false;
+	}
 
     @Override
     protected void doPush(Entity p_20971_) {
@@ -75,4 +89,9 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return geoCache;
     }
+
+	@Override
+	public boolean isPersistenceRequired() {
+		return true;
+	}
 }
