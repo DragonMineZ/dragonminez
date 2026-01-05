@@ -134,16 +134,10 @@ public class StoryModeEvents {
 
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) {
-			return;
-		}
-		if (!(event.player instanceof ServerPlayer player)) {
-			return;
-		}
+		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
+		if (!(event.player instanceof ServerPlayer player)) return;
 
-		tickCounter++;
-		if (tickCounter < 20) { return; }
-		tickCounter = 0;
+		if (player.tickCount % 20 != 0) return;
 
 		BlockPos playerPos = player.blockPosition();
 
@@ -161,68 +155,50 @@ public class StoryModeEvents {
 					for (int i = 0; i < quest.getObjectives().size(); i++) {
 						QuestObjective objective = quest.getObjectives().get(i);
 
-						if (objective instanceof BiomeObjective biomeObjective) {
-							ResourceKey<Biome> playerBiomeKey = player.level().getBiome(playerPos).unwrapKey().orElse(null);
-							boolean inBiome = false;
-							if (playerBiomeKey != null) {
-								ResourceLocation targetBiome = new ResourceLocation(biomeObjective.getBiomeId());
-								if (playerBiomeKey.location().equals(targetBiome)) {
-									inBiome = true;
-								}
-							}
-
-							int current = qd.getQuestObjectiveProgress(sagaId, quest.getId(), i);
-							int target = inBiome ? 1 : 0;
-
-							if (current != target) {
-								qd.setQuestObjectiveProgress(sagaId, quest.getId(), i, target);
-								NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
-
-								boolean isQuestNowComplete = true;
-								for (int j = 0; j < quest.getObjectives().size(); j++) {
-									if (qd.getQuestObjectiveProgress(sagaId, quest.getId(), j) < quest.getObjectives().get(j).getRequired()) {
-										isQuestNowComplete = false;
-										break;
-									}
-								}
-
-								if (isQuestNowComplete) {
-									qd.completeQuest(sagaId, quest.getId());
-									MinecraftForge.EVENT_BUS.post(new DMZEvent.QuestCompleteEvent(player, SagaManager.getSaga(sagaId), quest, PartyManager.getAllPartyMembers(player)));
-								}
-							}
-							continue;
-						}
-
 						if (qd.getQuestObjectiveProgress(sagaId, quest.getId(), i) >= objective.getRequired()) continue;
 
 						boolean conditionMet = false;
 						int progressToSet = objective.getRequired();
 
 						if (objective instanceof ItemObjective itemObjective) {
-							Item requiredItem = BuiltInRegistries.ITEM.get(new ResourceLocation(itemObjective.getItemId()));
-							int totalCount = 0;
-							for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
-								if (stack.is(requiredItem)) {
-									totalCount += stack.getCount();
+							try {
+								Item requiredItem = BuiltInRegistries.ITEM.get(new ResourceLocation(itemObjective.getItemId()));
+								int totalCount = 0;
+								for (net.minecraft.world.item.ItemStack stack : player.getInventory().items) {
+									if (stack.is(requiredItem)) totalCount += stack.getCount();
 								}
-							}
-							if (totalCount >= objective.getRequired()) {
-								conditionMet = true;
-							}
-							else if (totalCount > qd.getQuestObjectiveProgress(sagaId, quest.getId(), i)) {
-								conditionMet = true;
-								progressToSet = totalCount;
-							}
+								if (totalCount >= objective.getRequired()) {
+									conditionMet = true;
+								} else if (totalCount > qd.getQuestObjectiveProgress(sagaId, quest.getId(), i)) {
+									conditionMet = true;
+									progressToSet = totalCount;
+								}
+							} catch (Exception ignored) {}
+						}
+
+						else if (objective instanceof BiomeObjective biomeObjective) {
+							try {
+								ResourceKey<Biome> playerBiomeKey = player.level().getBiome(playerPos).unwrapKey().orElse(null);
+								if (playerBiomeKey != null) {
+									ResourceLocation targetBiome = new ResourceLocation(biomeObjective.getBiomeId());
+									if (playerBiomeKey.location().equals(targetBiome)) {
+										conditionMet = true;
+									}
+								}
+							} catch (Exception ignored) {}
 						}
 
 						else if (objective instanceof StructureObjective structureObjective) {
-							ResourceKey<net.minecraft.world.level.levelgen.structure.Structure> structureKey =
-									ResourceKey.create(Registries.STRUCTURE, new ResourceLocation(structureObjective.getStructureId()));
-							var structureManager = player.serverLevel().structureManager();
-							if (structureManager.getStructureWithPieceAt(playerPos, structureKey).isValid()) {
-								conditionMet = true;
-							}
+							try {
+								ResourceLocation structLoc = new ResourceLocation(structureObjective.getStructureId());
+								ResourceKey<net.minecraft.world.level.levelgen.structure.Structure> structureKey =
+										ResourceKey.create(Registries.STRUCTURE, structLoc);
+
+								var structureManager = player.serverLevel().structureManager();
+								if (structureManager.getStructureWithPieceAt(playerPos, structureKey).isValid()) {
+									conditionMet = true;
+								}
+							} catch (Exception ignored) {}
 						}
 
 						else if (objective instanceof CoordsObjective coordsObjective) {
@@ -235,6 +211,7 @@ public class StoryModeEvents {
 							updatePartyProgress(player, sagaId, quest, i, progressToSet);
 						}
 					}
+					break;
 				}
 			});
 		}

@@ -28,6 +28,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +48,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
     private StatsData statsData;
     private int tickCount = 0;
-	private static long lastQuestStartTime = 0;
+	private static final Map<String, Long> QUEST_COOLDOWNS = new HashMap<>();
 	private static final long START_QUEST_COOLDOWN = 30000;
 	private long lastClickTime = 0;
 
@@ -253,6 +254,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		boolean buttonActive = true;
 		boolean isClaimAction = false;
 
+		String cooldownKey = currentSaga.getId() + ":" + selectedQuest.getId();
+
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
@@ -274,9 +277,9 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			isClaimAction = false;
 
 			long now = System.currentTimeMillis();
-			long timeSinceLastStart = now - lastQuestStartTime;
+			long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
 
-			if (timeSinceLastStart < START_QUEST_COOLDOWN) {
+			if (now - lastRun < START_QUEST_COOLDOWN) {
 				buttonActive = false;
 			} else {
 				buttonActive = true;
@@ -306,7 +309,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 						));
 						this.onClose();
 					} else {
-						lastQuestStartTime = now;
+						QUEST_COOLDOWNS.put(cooldownKey, now);
 
 						boolean isHard = ConfigManager.getUserConfig().getHud().isStoryHardDifficulty();
 						NetworkHandler.sendToServer(new StartQuestC2S(
