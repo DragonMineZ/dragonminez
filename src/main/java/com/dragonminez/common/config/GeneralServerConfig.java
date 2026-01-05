@@ -139,6 +139,8 @@ public class GeneralServerConfig {
 
 		@SerializedName("pool_size")
 		private int poolSize = 10;
+		@SerializedName("io_thread_pool_size")
+		private int threadPoolSize = 4;
 
 		public StorageType getStorageType() { return storageType; }
 		public String getHost() { return host; }
@@ -148,6 +150,7 @@ public class GeneralServerConfig {
 		public String getUsername() { return username; }
 		public String getPassword() { return password; }
 		public int getPoolSize() { return poolSize; }
+		public int getThreadPoolSize() { return Math.max(1, threadPoolSize); }
 	}
 }
 

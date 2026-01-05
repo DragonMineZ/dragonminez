@@ -14,13 +14,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
+import java.util.concurrent.*;
 
 public class StorageManager {
 	private static IDataStorage activeStorage;
 	private static ScheduledExecutorService autoSaveScheduler;
+	private static ExecutorService dbExecutor;
 
 	public static void init() {
 		GeneralServerConfig.StorageConfig.StorageType type = ConfigManager.getServerConfig().getStorage().getStorageType();
@@ -36,6 +36,9 @@ public class StorageManager {
 
 		if (activeStorage != null) {
 			activeStorage.init();
+			int threads = ConfigManager.getServerConfig().getStorage().getThreadPoolSize();
+			dbExecutor = Executors.newFixedThreadPool(threads);
+			LogUtil.info(Env.SERVER, "Storage initialized with " + threads + " async threads.");
 			startAutoSave();
 		}
 	}
@@ -52,23 +55,35 @@ public class StorageManager {
 	public static void loadPlayer(ServerPlayer player) {
 		if (activeStorage == null) return;
 
-		CompoundTag loadedData = activeStorage.loadData(player.getUUID());
+		final UUID uuid = player.getUUID();
 
-		if (loadedData != null) {
-			MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
+		CompletableFuture.supplyAsync(() -> activeStorage.loadData(uuid), dbExecutor)
+				.thenAccept(loadedData -> {
+					ServerLifecycleHooks.getCurrentServer().execute(() -> {
+						if (loadedData != null && player.connection != null) {
+							applyLoadedData(player, loadedData);
+						}
+					});
+				})
+				.exceptionally(ex -> {
+					LogUtil.error(Env.SERVER, "Error loading data async for " + player.getName().getString(), ex);
+					return null;
+				});
+	}
 
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-				stats.load(loadedData);
+	private static void applyLoadedData(ServerPlayer player, CompoundTag loadedData) {
+		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
 
-				if (!stats.getQuestData().isSagaUnlocked("saiyan_saga")) {
-					stats.getQuestData().unlockSaga("saiyan_saga");
-				}
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			stats.load(loadedData);
 
-				NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
-			});
+			if (!stats.getQuestData().isSagaUnlocked("saiyan_saga")) {
+				stats.getQuestData().unlockSaga("saiyan_saga");
+			}
 
-			LogUtil.info(Env.SERVER, "Loaded data for " + player.getName().getString() + " from " + activeStorage.getName());
-		}
+			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString());
+		});
 	}
 
 	public static void savePlayer(ServerPlayer player) {
@@ -79,7 +94,16 @@ public class StorageManager {
 
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));
 
-			activeStorage.saveData(player.getUUID(), player.getScoreboardName(), dataToSave);
+			String name = player.getScoreboardName();
+			UUID uuid = player.getUUID();
+
+			dbExecutor.submit(() -> {
+				try {
+					activeStorage.saveData(uuid, name, dataToSave);
+				} catch (Exception e) {
+					LogUtil.error(Env.SERVER, "Failed to save data async for " + name, e);
+				}
+			});
 		});
 	}
 

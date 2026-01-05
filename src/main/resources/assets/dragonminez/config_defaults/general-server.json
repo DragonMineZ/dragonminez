@@ -65,6 +65,7 @@
     "table": "player_data",
     "username": "root",
     "password": "password",
-    "pool_size": 10
+    "pool_size": 10,
+    "io_thread_pool_size": 4
   }
 }
