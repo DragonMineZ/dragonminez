@@ -24,19 +24,19 @@ public class Skills {
 
     public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax) {
         Skill superform = skillMap.get("superform");
-        if (superform != null && superformMax > 0) {
+        if (superform != null) {
             Skill updated = new Skill("superform", superform.getLevel(), superform.isActive(), superformMax);
             skillMap.put("superform", updated);
         }
 
         Skill godform = skillMap.get("godform");
-        if (godform != null && godformMax > 0) {
+        if (godform != null) {
             Skill updated = new Skill("godform", godform.getLevel(), godform.isActive(), godformMax);
             skillMap.put("godform", updated);
         }
 
         Skill legendaryforms = skillMap.get("legendaryforms");
-        if (legendaryforms != null && legendaryformsMax > 0) {
+        if (legendaryforms != null) {
             Skill updated = new Skill("legendaryforms", legendaryforms.getLevel(), legendaryforms.isActive(), legendaryformsMax);
             skillMap.put("legendaryforms", updated);
         }
@@ -58,13 +58,14 @@ public class Skills {
     public void setSkillLevel(String name, int level) {
         String lowerName = name.toLowerCase();
         if (!skillMap.containsKey(lowerName)) {
-            var skillConfig = ConfigManager.getSkillsConfig().getSkills().get(lowerName);
-            if (skillConfig != null) {
-                int maxLevel = skillConfig.getMaxLevel();
-                skillMap.put(lowerName, new Skill(name, 0, false, maxLevel));
+            int costBasedMaxLevel = ConfigManager.getSkillsConfig().getSkillCosts(lowerName).getCosts().size();
+            int finalMaxLevel;
+            if (lowerName.equalsIgnoreCase("potentialunlock")) {
+                finalMaxLevel = Math.min(costBasedMaxLevel, 30);
             } else {
-                return;
+                finalMaxLevel = Math.min(costBasedMaxLevel, 50);
             }
+            skillMap.put(lowerName, new Skill(name, 0, false, finalMaxLevel));
         }
         skillMap.get(lowerName).setLevel(level);
     }

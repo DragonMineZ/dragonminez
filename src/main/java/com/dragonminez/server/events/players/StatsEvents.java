@@ -13,6 +13,7 @@ import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.events.DragonBallsHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -33,6 +34,7 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -60,43 +62,58 @@ public class StatsEvents {
         StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
             if (!data.getStatus().hasCreatedCharacter()) return;
 
-			// Max Health Handling
-            AttributeInstance dmzHealthAttr = serverPlayer.getAttribute(MainAttributes.DMZ_HEALTH.get());
-            AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
-
-            if (dmzHealthAttr != null && maxHealthAttr != null) {
-				float dmzHealthBonus = data.getMaxHealth();
-
-                AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
-
-                if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
-                    maxHealthAttr.removeModifier(DMZ_HEALTH_MODIFIER_UUID);
-
-                    if (dmzHealthBonus > 0) {
-                        AttributeModifier healthModifier = new AttributeModifier(
-                            DMZ_HEALTH_MODIFIER_UUID,
-                            "DMZ Health Bonus",
-                            dmzHealthBonus,
-                            AttributeModifier.Operation.ADDITION
-                        );
-                        maxHealthAttr.addPermanentModifier(healthModifier);
-                    }
-
-                    if (serverPlayer.getHealth() > maxHealthAttr.getValue()) {
-                        serverPlayer.setHealth((float) maxHealthAttr.getValue());
-                    }
-                }
-
-                if (!data.hasInitializedHealth()) {
-                    serverPlayer.setHealth((float) maxHealthAttr.getValue());
-                    data.setInitializedHealth(true);
-                }
-            }
+			applyHealthBonus(serverPlayer);
 
 			if (data.getResources().getCurrentEnergy() > data.getMaxEnergy()) data.getResources().setCurrentEnergy(data.getMaxEnergy());
 			if (data.getResources().getCurrentStamina() > data.getMaxStamina()) data.getResources().setCurrentStamina(data.getMaxStamina());
         });
     }
+
+    public static void applyHealthBonus(ServerPlayer serverPlayer) {
+        StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+            AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
+            if (maxHealthAttr == null) return;
+
+            float dmzHealthBonus = data.getMaxHealth();
+            AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
+
+            if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
+                maxHealthAttr.removeModifier(DMZ_HEALTH_MODIFIER_UUID);
+
+                if (dmzHealthBonus > 0) {
+                    AttributeModifier healthModifier = new AttributeModifier(
+                        DMZ_HEALTH_MODIFIER_UUID,
+                        "DMZ Health Bonus",
+                        dmzHealthBonus,
+                        AttributeModifier.Operation.ADDITION
+                    );
+                    maxHealthAttr.addPermanentModifier(healthModifier);
+                }
+
+                if (serverPlayer.getHealth() > maxHealthAttr.getValue()) {
+                    serverPlayer.setHealth((float) maxHealthAttr.getValue());
+                }
+            }
+
+            if (!data.hasInitializedHealth()) {
+                serverPlayer.setHealth((float) maxHealthAttr.getValue());
+                data.setInitializedHealth(true);
+            }
+        });
+    }
+
+	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			DragonBallsHandler.syncRadar(player.serverLevel());
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				applyHealthBonus(player);
+				player.setHealth(player.getMaxHealth());
+				data.getResources().setCurrentEnergy(data.getMaxEnergy());
+				data.getResources().setCurrentStamina(data.getMaxStamina());
+			});
+		}
+	}
 
 	private static boolean dropTps(Entity entity) {
 		List<Class<?>> listaEnemigos = List.of(

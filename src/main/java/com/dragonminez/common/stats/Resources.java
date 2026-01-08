@@ -19,6 +19,7 @@ public class Resources {
     public Resources() {
         this.currentEnergy = 0;
         this.currentStamina = 0;
+		this.currentPoise = 0;
         this.release = 5;
         this.formRelease = 0;
         this.alignment = 100;

@@ -92,4 +92,3 @@ public class Skill {
         this.isActive = other.isActive;
     }
 }
-

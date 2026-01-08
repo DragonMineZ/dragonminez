@@ -70,19 +70,6 @@ public class ForgeCommonEvents {
 	}
 
 	@SubscribeEvent
-	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-		if (event.getEntity() instanceof ServerPlayer player) {
-			DragonBallsHandler.syncRadar(player.serverLevel());
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				player.setHealth(player.getMaxHealth());
-				data.getResources().setCurrentEnergy(data.getMaxEnergy());
-				data.getResources().setCurrentStamina(data.getMaxStamina());
-				player.setHealth(player.getMaxHealth());
-			});
-		}
-	}
-
-	@SubscribeEvent
 	public static void onPlayerDeath(LivingDeathEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			DragonBallsHandler.syncRadar(player.serverLevel());
@@ -90,6 +77,7 @@ public class ForgeCommonEvents {
 				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
 					data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().isInKaioPlanet();
+					data.getEffects().removeAllEffects();
 				}
 			});
 		}
