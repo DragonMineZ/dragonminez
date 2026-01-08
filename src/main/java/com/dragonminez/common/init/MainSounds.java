@@ -21,8 +21,14 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> GOLPE6 = registerSoundEvent("punch6");
 	public static final RegistryObject<SoundEvent> CRITICO1 = registerSoundEvent("critic_punch1");
 	public static final RegistryObject<SoundEvent> CRITICO2 = registerSoundEvent("critic_punch2");
+    public static final RegistryObject<SoundEvent> BLOCK1 = registerSoundEvent("block1");
+    public static final RegistryObject<SoundEvent> BLOCK2 = registerSoundEvent("block2");
+    public static final RegistryObject<SoundEvent> BLOCK3 = registerSoundEvent("block3");
+    public static final RegistryObject<SoundEvent> PARRY = registerSoundEvent("parry");
+    public static final RegistryObject<SoundEvent> UNBLOCK = registerSoundEvent("unblock");
 
-	public static final RegistryObject<SoundEvent> DRAGONRADAR = registerSoundEvent("dragonradar");
+
+    public static final RegistryObject<SoundEvent> DRAGONRADAR = registerSoundEvent("dragonradar");
 	public static final RegistryObject<SoundEvent> NUBE = registerSoundEvent("nube");
 	public static final RegistryObject<SoundEvent> SENZU_BEAN = registerSoundEvent("senzu");
 	public static final RegistryObject<SoundEvent> DRAGONBALLS = registerSoundEvent("dragonballssound");

@@ -5,6 +5,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Cooldowns;
@@ -12,6 +13,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -145,6 +147,11 @@ public class CombatEvent {
 									currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 
 									// Acá pondríamos sonido de Rotura de Guardia
+                                    target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+                                            MainSounds.UNBLOCK.get(),
+                                            net.minecraft.sounds.SoundSource.PLAYERS,
+                                            1.0F,
+                                            0.9F + target.getRandom().nextFloat() * 0.1F);
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
 									blocked = true;
@@ -162,14 +169,39 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 										}
 										System.out.println("Parry!");
-									} else {
+                                        //SONIDO PARRY
+                                        target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+                                                MainSounds.PARRY.get(),
+                                                net.minecraft.sounds.SoundSource.PLAYERS,
+                                                1.0F,
+                                                0.9F + target.getRandom().nextFloat() * 0.1F);
+
+                                    } else {
 										double reductionCap = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionCap();
 										double reductionMin = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionMin();
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
 										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
 
 										finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
-										System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+                                        int randomSound = target.getRandom().nextInt(3);
+                                        SoundEvent soundToPlay;
+
+                                        if (randomSound == 0) {
+                                            soundToPlay = MainSounds.BLOCK1.get();
+                                        } else if (randomSound == 1) {
+                                            soundToPlay = MainSounds.BLOCK2.get();
+                                        } else {
+                                            soundToPlay = MainSounds.BLOCK3.get();
+                                        }
+
+                                        System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+
+                                        target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+                                                soundToPlay,
+                                                net.minecraft.sounds.SoundSource.PLAYERS,
+                                                1.0F,
+                                                0.9F + target.getRandom().nextFloat() * 0.1F);
+
                                         //EFECTOS
                                         if (target.level() instanceof ServerLevel serverLevel) {
                                             double maxPoise = victimData.getMaxPoise();

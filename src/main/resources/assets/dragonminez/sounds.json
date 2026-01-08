@@ -238,5 +238,35 @@
     "sounds": [
       "dragonminez:vegeta_oozaru_death"
     ]
+  },
+  "block1": {
+    "subtitle": "sounds.dragonminez.block1",
+    "sounds": [
+      "dragonminez:block1"
+    ]
+  },
+  "block2": {
+    "subtitle": "sounds.dragonminez.block2",
+    "sounds": [
+      "dragonminez:block2"
+    ]
+  },
+  "block3": {
+    "subtitle": "sounds.dragonminez.block3",
+    "sounds": [
+      "dragonminez:block3"
+    ]
+  },
+  "parry": {
+    "subtitle": "sounds.dragonminez.parry",
+    "sounds": [
+      "dragonminez:parry"
+    ]
+  },
+  "unblock": {
+    "subtitle": "sounds.dragonminez.unblock",
+    "sounds": [
+      "dragonminez:unblock"
+    ]
   }
 }
