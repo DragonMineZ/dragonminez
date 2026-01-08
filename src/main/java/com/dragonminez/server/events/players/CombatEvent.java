@@ -3,16 +3,21 @@ package com.dragonminez.server.events.players;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -21,23 +26,20 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
 
-    private static final double STAMINA_CONSUMPTION_RATIO = 0.125; // 1/8
-
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onLivingHurt(LivingHurtEvent event) {
         DamageSource source = event.getSource();
         final double[] currentDamage = {event.getAmount()};
 
+		// Attacker Damage Event
         if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
             StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-                if (!attackerData.getStatus().hasCreatedCharacter()) {
-                    return;
-                }
+                if (!attackerData.getStatus().hasCreatedCharacter()) return;
 
                 double mcBaseDamage = currentDamage[0];
                 double dmzDamage = attackerData.getMeleeDamage();
 
-                if (ConfigManager.getServerConfig().getGameplay().isRespectAttackCooldown()) {
+                if (ConfigManager.getServerConfig().getCombat().isRespectAttackCooldown()) {
                     float attackStrength = attacker.getAttackStrengthScale(0.5F);
                     float adjustedStrength = attackStrength;
 
@@ -54,7 +56,7 @@ public class CombatEvent {
                     dmzDamage *= damageScale;
                 }
 
-                int baseStaminaRequired = (int) Math.ceil(dmzDamage * STAMINA_CONSUMPTION_RATIO);
+                int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
                 double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
                 int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
                 int currentStamina = attackerData.getResources().getCurrentStamina();
@@ -67,10 +69,6 @@ public class CombatEvent {
                     double staminaRatio = (double) currentStamina / staminaRequired;
                     finalDmzDamage = dmzDamage * staminaRatio;
                     attackerData.getResources().setCurrentStamina(0);
-                }
-
-                if (attacker instanceof ServerPlayer serverPlayer) {
-                    NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
                 }
 
                 if (attackerData.getCharacter().hasActiveForm()) {
@@ -87,6 +85,10 @@ public class CombatEvent {
                     }
                 }
 
+				if (attacker instanceof ServerPlayer serverPlayer) {
+					NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+				}
+
                 if (isEmptyHandOrNoDamageItem(attacker)) {
                     currentDamage[0] = finalDmzDamage;
                 } else {
@@ -95,32 +97,130 @@ public class CombatEvent {
             });
         }
 
+		// Victim Defense Event
         if (event.getEntity() instanceof Player target) {
             StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
                 if (targetData.getStatus().hasCreatedCharacter()) {
-                    double defense = targetData.getDefense();
-                    currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
+					double defense = targetData.getDefense();
+					boolean blocked = false;
 
-                    if (targetData.getCharacter().hasActiveForm()) {
-                        FormConfig.FormData activeForm = targetData.getCharacter().getActiveFormData();
-                        if (activeForm != null) {
-                            String formGroup = targetData.getCharacter().getCurrentFormGroup();
-                            String formName = targetData.getCharacter().getCurrentForm();
-                            targetData.getCharacter().getFormMasteries().addMastery(
-                                    formGroup,
-                                    formName,
-                                    activeForm.getMasteryPerDamageReceived(),
-                                    activeForm.getMaxMastery()
-                            );
+					if (targetData.getStatus().isBlocking() && !targetData.getStatus().isStunned() && source.getEntity() != null) {
+						Vec3 targetLook = target.getLookAngle();
+						Vec3 sourceLoc = source.getEntity().position();
+						Vec3 targetLoc = target.position();
+						Vec3 directionToSource = sourceLoc.subtract(targetLoc).normalize();
 
-                            if (target instanceof ServerPlayer serverPlayer) {
-                                NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
-                            }
-                        }
-                    }
-                }
-            });
-        }
+						if (targetLook.dot(directionToSource) > 0.0) {
+							long currentTime = System.currentTimeMillis();
+							long blockTime = targetData.getStatus().getLastBlockTime();
+							int parryWindow = ConfigManager.getServerConfig().getCombat().getParryWindowMs();
+							boolean isParry = (currentTime - blockTime) <= parryWindow;
+
+							double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
+							if (!(source.getEntity() instanceof Player)) {
+								poiseMultiplier *= 5.0;
+							}
+							float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
+
+							if (isParry) poiseDamage *= 0.75f;
+							int currentPoise = targetData.getResources().getCurrentPoise();
+							System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
+
+							if (currentPoise - poiseDamage <= 0) {
+								targetData.getResources().setCurrentPoise(0);
+								targetData.getStatus().setBlocking(false);
+								targetData.getStatus().setStunned(true);
+
+								int stunDuration = ConfigManager.getServerConfig().getCombat().getStunDurationTicks();
+								targetData.getCooldowns().setCooldown("StunTimer", stunDuration);
+								int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
+								targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+
+								int currentStamina = targetData.getResources().getCurrentStamina();
+								targetData.getResources().setCurrentStamina(currentStamina / 2);
+
+								currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
+
+								// Acá pondríamos sonido de Rotura de Guardia
+							} else {
+								targetData.getResources().removePoise((int) poiseDamage);
+								blocked = true;
+
+								int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
+								targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+
+								float originalDmg = (float) currentDamage[0];
+								float finalDmg;
+
+								if (isParry) {
+									finalDmg = 0;
+									if (source.getEntity() instanceof LivingEntity attackerLiving) {
+										attackerLiving.knockback(1.5F, target.getX() - attackerLiving.getX(), target.getZ() - attackerLiving.getZ());
+										attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
+									}
+									System.out.println("Parry!");
+								} else {
+									double reductionCap = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionCap();
+									double reductionMin = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionMin();
+									double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
+									mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
+
+									finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
+									System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+								}
+
+								if (target instanceof ServerPlayer sPlayer) {
+									DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(
+											sPlayer,
+											source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null,
+											originalDmg,
+											finalDmg,
+											isParry,
+											poiseDamage
+									);
+									MinecraftForge.EVENT_BUS.post(blockEvent);
+
+									if (!blockEvent.isCanceled()) {
+										currentDamage[0] = blockEvent.getFinalDamage();
+									} else {
+										blocked = false;
+										currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
+									}
+								} else {
+									currentDamage[0] = finalDmg;
+								}
+							}
+						}
+					}
+
+					if (!blocked) {
+						if (!targetData.getStatus().isStunned() || targetData.getResources().getCurrentPoise() > 0) {
+							if (!targetData.getStatus().isBlocking()) {
+								currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
+							}
+						}
+					}
+
+					if (targetData.getCharacter().hasActiveForm()) {
+						FormConfig.FormData activeForm = targetData.getCharacter().getActiveFormData();
+						if (activeForm != null) {
+							String formGroup = targetData.getCharacter().getCurrentFormGroup();
+							String formName = targetData.getCharacter().getCurrentForm();
+							targetData.getCharacter().getFormMasteries().addMastery(
+									formGroup,
+									formName,
+									activeForm.getMasteryPerDamageReceived(),
+									activeForm.getMaxMastery()
+							);
+
+							if (target instanceof ServerPlayer serverPlayer) {
+								NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+							}
+						}
+					}
+				}
+			});
+		}
 
         event.setAmount((float) currentDamage[0]);
     }

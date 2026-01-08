@@ -102,8 +102,8 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
         MolangParser parser = MolangParser.INSTANCE;
-        parser.setValue("query.head_x_rotation", () -> (double) entityData.headPitch());
-        parser.setValue("query.head_y_rotation", () -> (double) entityData.netHeadYaw());
+        parser.setValue("query.head_x_rotation", () -> (double) (entityData.headPitch() * 0.75f));
+        parser.setValue("query.head_y_rotation", () -> (double) (entityData.netHeadYaw() * 0.75f));
 
 //        if (head != null) {
 //            head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);

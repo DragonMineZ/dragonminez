@@ -101,6 +101,10 @@ public class StatsData {
         return (int) (20 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
     }
 
+	public int getMaxPoise() {
+		return (int) (100 + stats.getResistance() * 0.1);
+	}
+
 	public double getMaxMeleeDamage() {
 		double strScaling = getStatScaling("STR");
 		double strMult = 1.0 + getTotalMultiplier("STR");
@@ -207,6 +211,7 @@ public class StatsData {
 
         resources.setCurrentEnergy(getMaxEnergy());
         resources.setCurrentStamina(getMaxStamina());
+		resources.setCurrentPoise(getMaxPoise());
         resources.setPowerRelease(5);
         resources.setAlignment(100);
 

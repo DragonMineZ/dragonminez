@@ -12,23 +12,50 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
+	@SubscribeEvent
+	public static void onClientTick(TickEvent.ClientTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) return;
+
+		Minecraft mc = Minecraft.getInstance();
+		LocalPlayer player = mc.player;
+
+		if (player == null || mc.screen != null) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getStatus().hasCreatedCharacter()) return;
+
+			boolean isStunned = data.getStatus().isStunned();
+			boolean mainHandEmpty = player.getMainHandItem().isEmpty();
+
+			boolean isRightClickDown = mc.options.keyUse.isDown();
+
+			boolean shouldBlock = isRightClickDown && mainHandEmpty && !isStunned;
+
+			if (shouldBlock != data.getStatus().isBlocking()) {
+				data.getStatus().setBlocking(shouldBlock);
+				NetworkHandler.sendToServer(new UpdateStatC2S("isBlocking", shouldBlock));
+			}
+		});
+	}
 
 	@SubscribeEvent
 	public static void onKeyPressed(InputEvent.Key event) {
-		boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown();
-		boolean isDescendKeyPressed = KeyBinds.DESCEND_KEY.isDown();
-		boolean isTransformKeyPressed = KeyBinds.TRANSFORM_KEY.isDown();
-
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (player == null) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().hasCreatedCharacter()) return;
+			boolean isStunned = data.getStatus().isStunned();
+
+			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
+			boolean isDescendKeyPressed = KeyBinds.DESCEND_KEY.isDown() && !isStunned;
+			boolean isTransformKeyPressed = KeyBinds.TRANSFORM_KEY.isDown() && !isStunned;
 
 			if (isKiChargeKeyPressed != data.getStatus().isChargingKi()) {
 				NetworkHandler.sendToServer(new UpdateStatC2S("isChargingKi", isKiChargeKeyPressed));
@@ -51,7 +78,7 @@ public class ClientStatsEvents {
 				}
 			}
 
-			if (KeyBinds.LOCK_ON_TARGET.consumeClick()) {
+			if (KeyBinds.LOCK_ON_TARGET.consumeClick() && !isStunned) {
 				Skill kiSense = data.getSkills().getSkill("kisense");
 				if (kiSense == null) return;
 				LockOnEvent.toggleLock();

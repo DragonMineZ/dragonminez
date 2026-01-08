@@ -39,6 +39,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     private static final RawAnimation CRAWLING = RawAnimation.begin().thenLoop("animation.base.crawling");
     private static final RawAnimation CRAWLING_MOVE = RawAnimation.begin().thenLoop("animation.base.crawling_move");
     private static final RawAnimation TAIL = RawAnimation.begin().thenLoop("animation.base.tail");
+	private static final RawAnimation BLOCK = RawAnimation.begin().thenLoop("animation.base.block");
 
     @Unique
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
@@ -155,6 +156,23 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         }).orElse(PlayState.STOP);
     }
 
+	@Unique
+	private <T extends GeoAnimatable> PlayState blockPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) state.getAnimatable();
+		AnimationController<T> ctl = state.getController();
+
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			if (data.getStatus().isBlocking()) {
+				if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(BLOCK)) {
+					ctl.setAnimation(BLOCK);
+					ctl.forceAnimationReset();
+				}
+				return PlayState.CONTINUE;
+			}
+			return PlayState.STOP;
+		}).orElse(PlayState.STOP);
+	}
+
     @Unique
     private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
 
@@ -164,7 +182,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
             String race = data.getCharacter().getRace();
 
-            boolean hasTail = race.equals("saiyan") ||
+            boolean hasTail = (race.equals("saiyan") && data.getStatus().isTailVisible()) ||
                     race.equals("frostdemon") ||
                     race.equals("bioandroid");
 
@@ -183,7 +201,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 //            // Si tiene cola y está quieto, reproducimos la animación definida.
             // Si NO tiene cola, paramos la animación para ahorrar recursos.
 
-            return state.setAndContinue(TAIL);
+            //return state.setAndContinue(TAIL);
+			return PlayState.STOP;
 
         }).orElse(PlayState.STOP);
     }
@@ -218,21 +237,19 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         boolean offHandIsShield = offHand.getItem() instanceof ShieldItem;
 
         if (player.isUsingItem()) {
-            if (mainHandIsShield) {
-                if (player.getMainArm() == HumanoidArm.RIGHT) {
-                    ctl.setAnimation(SHIELD_RIGHT);
-                } else {
-                    ctl.setAnimation(SHIELD_LEFT);
-                }
-                return PlayState.CONTINUE;
-            } else if (offHandIsShield) {
-                if (player.getMainArm() == HumanoidArm.RIGHT) {
-                    ctl.setAnimation(SHIELD_LEFT);
-                } else {
-                    ctl.setAnimation(SHIELD_RIGHT);
-                }
-                return PlayState.CONTINUE;
-            }
+            if (mainHandIsShield || offHandIsShield) {
+				RawAnimation targetAnimation;
+				boolean isRightHanded = player.getMainArm() == HumanoidArm.RIGHT;
+
+				if (mainHandIsShield) targetAnimation = isRightHanded ? SHIELD_RIGHT : SHIELD_LEFT;
+				else targetAnimation = isRightHanded ? SHIELD_LEFT : SHIELD_RIGHT;
+
+				if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(targetAnimation)) {
+					ctl.setAnimation(targetAnimation);
+					ctl.forceAnimationReset();
+				}
+				return PlayState.CONTINUE;
+			}
         }
 
         return PlayState.STOP;
@@ -241,8 +258,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
+		registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
         registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
-        registrar.add(new AnimationController<>(this, "shield_controller", 0, this::shieldPredicate));
+        registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
         registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
 
     }

@@ -9,16 +9,13 @@ public class GeneralServerConfig {
 
     private WorldGenConfig worldGen = new WorldGenConfig();
     private GameplayConfig gameplay = new GameplayConfig();
+	private CombatConfig combat = new CombatConfig();
 	private StorageConfig storage = new StorageConfig();
 
     public WorldGenConfig getWorldGen() { return worldGen; }
-    public void setWorldGen(WorldGenConfig worldGen) { this.worldGen = worldGen; }
-
     public GameplayConfig getGameplay() { return gameplay; }
-    public void setGameplay(GameplayConfig gameplay) { this.gameplay = gameplay; }
-
+	public CombatConfig getCombat() { return combat; }
 	public StorageConfig getStorage() {return storage; }
-	public void setStorage(StorageConfig storage) { this.storage = storage; }
 
     public static class WorldGenConfig {
         private boolean generateCustomStructures = true;
@@ -27,13 +24,9 @@ public class GeneralServerConfig {
 		private int dbSpawnRange = 3000;
 
         public boolean isGenerateCustomStructures() { return generateCustomStructures; }
-        public void setGenerateCustomStructures(boolean generate) { this.generateCustomStructures = generate; }
         public boolean isGenerateDragonBalls() { return generateDragonBalls; }
-        public void setGenerateDragonBalls(boolean generate) { this.generateDragonBalls = generate; }
 		public boolean isOtherworldActive() { return otherworldActive; }
-		public void setOtherworldActive(boolean active) { this.otherworldActive = active; }
 		public int getDBSpawnRange() { return dbSpawnRange; }
-		public void setDBSpawnRange(int range) { this.dbSpawnRange = range; }
 
     }
 
@@ -43,69 +36,31 @@ public class GeneralServerConfig {
 		private double tpHealthRatio = 0.10;
 		private int tpPerHit = 2;
 		private double HTCTpMultiplier = 2.5;
-        private boolean respectAttackCooldown = true;
         private int maxStatValue = 10000;
 		private boolean kiDestroyBlocks = true;
 		private boolean storyModeEnabled = true;
 		private boolean createDefaultSagas = true;
-
-        @SerializedName("kaioken_stackable")
         private boolean kaiokenStackable = true;
-
-        @SerializedName("senzu_cooldown_ticks")
         private int senzuCooldownTicks = 240;
-
-        @SerializedName("food_regenerations")
         private Map<String, float[]> foodRegenerations = createDefaultFoodRegenerations();
-
-        @SerializedName("might_fruit_power")
         private double mightFruitPower = 1.2;
-
-        @SerializedName("majin_power")
         private double majinPower = 1.3;
 
         public double getTpsMultiplier() { return tpGainMultiplier; }
-        public void setTpsMultiplier(double multiplier) { this.tpGainMultiplier = multiplier; }
 		public double getTpCostMultiplier() { return tpCostMultiplier; }
-		public void setTpCostMultiplier(double multiplier) { this.tpCostMultiplier = multiplier; }
 		public double getTpHealthRatio() { return tpHealthRatio; }
-		public void setTpHealthRatio(double ratio) { this.tpHealthRatio = ratio; }
 		public int getTpPerHit() { return tpPerHit; }
-		public void setTpPerHit(int tpPerHit) { this.tpPerHit = tpPerHit; }
 		public double getHTCTpMultiplier() { return HTCTpMultiplier; }
-		public void setHTCTpMultiplier(double multiplier) { this.HTCTpMultiplier = multiplier; }
-
-        public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
-        public void setRespectAttackCooldown(boolean respectAttackCooldown) { this.respectAttackCooldown = respectAttackCooldown; }
-
         public int getMaxStatValue() { return maxStatValue; }
-        public void setMaxStatValue(int maxStatValue) { this.maxStatValue = maxStatValue; }
-
 		public boolean isKiDestroyBlocks() { return kiDestroyBlocks; }
-		public void setKiDestroyBlocks(boolean kiDestroyBlocks) { this.kiDestroyBlocks = kiDestroyBlocks; }
-		public boolean isStoryModeEnabled() { return storyModeEnabled; }
-		public void setStoryModeEnabled(boolean storyModeEnabled) { this.storyModeEnabled = storyModeEnabled; }
-		public boolean isCreateDefaultSagas() { return createDefaultSagas; }
-		public void setCreateDefaultSagas(boolean createDefaultSagas) { this.createDefaultSagas = createDefaultSagas; }
-
-        public boolean isKaiokenStackable() { return kaiokenStackable; }
-        public void setKaiokenStackable(boolean stackable) { this.kaiokenStackable = stackable; }
-
         public int getSenzuCooldownTicks() { return senzuCooldownTicks; }
-        public void setSenzuCooldownTicks(int ticks) { this.senzuCooldownTicks = ticks; }
-
-        public Map<String, float[]> getFoodRegenerations() { return foodRegenerations; }
-        public void setFoodRegenerations(Map<String, float[]> foodRegenerations) { this.foodRegenerations = foodRegenerations; }
 
         public float[] getFoodRegeneration(String itemId) {
             return foodRegenerations.getOrDefault(itemId, new float[]{0.0f, 0.0f, 0.0f});
         }
 
         public double getMightFruitPower() { return mightFruitPower; }
-        public void setMightFruitPower(double power) { this.mightFruitPower = power; }
-
         public double getMajinPower() { return majinPower; }
-        public void setMajinPower(double power) { this.majinPower = power; }
 
         private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();
@@ -122,12 +77,37 @@ public class GeneralServerConfig {
         }
     }
 
+	public static class CombatConfig {
+		private double staminaConsumptionRatio = 0.125;
+		private boolean respectAttackCooldown = true;
+		private boolean enableBlocking = true;
+		private boolean enableParrying = true;
+		private boolean enablePerfectAttack = true;
+		private int parryWindowMs = 500;
+		private double blockDamageReductionCap = 0.80;
+		private double blockDamageReductionMin = 0.25;
+		private double poiseDamageMultiplier = 0.25;
+		private int poiseRegenCooldown = 100;
+		private int stunDurationTicks = 60;
+
+		public double getStaminaConsumptionRatio() { return staminaConsumptionRatio; }
+		public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
+		public boolean isEnableBlocking() { return enableBlocking; }
+		public boolean isEnableParrying() { return enableParrying; }
+		public boolean isEnablePerfectAttack() { return enablePerfectAttack; }
+		public int getParryWindowMs() { return parryWindowMs; }
+		public double getBlockDamageReductionCap() { return blockDamageReductionCap; }
+		public double getBlockDamageReductionMin() { return blockDamageReductionMin; }
+		public double getPoiseDamageMultiplier() { return poiseDamageMultiplier; }
+		public int getPoiseRegenCooldown() { return poiseRegenCooldown; }
+		public int getStunDurationTicks() { return stunDurationTicks; }
+	}
+
 	public static class StorageConfig {
 		public enum StorageType {
 			NBT, JSON, DATABASE
 		}
 
-		@SerializedName("storage_type")
 		private StorageType storageType = StorageType.NBT;
 
 		private String host = "localhost";
@@ -137,9 +117,7 @@ public class GeneralServerConfig {
 		private String username = "root";
 		private String password = "password";
 
-		@SerializedName("pool_size")
 		private int poolSize = 10;
-		@SerializedName("io_thread_pool_size")
 		private int threadPoolSize = 4;
 
 		public StorageType getStorageType() { return storageType; }

@@ -28,13 +28,15 @@ public class JumpChargeHandler {
         if (player == null) return;
 
         final int[] jumpLevel = {0};
+		final boolean[] isStunned = {false};
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             if (data.getStatus().hasCreatedCharacter()) {
                 jumpLevel[0] = data.getSkills().getSkillLevel("jump");
+				isStunned[0] = data.getStatus().isStunned();
             }
         });
 
-        if (jumpLevel[0] <= 0) {
+        if (jumpLevel[0] <= 0 || isStunned[0]) {
             airTicks = 0;
             wasJumping = false;
             hasAppliedBaseBoost = false;

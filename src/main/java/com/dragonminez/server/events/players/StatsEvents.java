@@ -30,7 +30,9 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -56,10 +58,9 @@ public class StatsEvents {
 		if (!(player instanceof ServerPlayer serverPlayer)) return;
 
         StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) {
-                return;
-            }
+            if (!data.getStatus().hasCreatedCharacter()) return;
 
+			// Max Health Handling
             AttributeInstance dmzHealthAttr = serverPlayer.getAttribute(MainAttributes.DMZ_HEALTH.get());
             AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
 
@@ -271,9 +272,7 @@ public class StatsEvents {
 
     @SubscribeEvent
     public static void onItemUseFinish(LivingEntityUseItemEvent.Finish event) {
-        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
+        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
         ItemStack stack = event.getItem();
         String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
@@ -284,9 +283,7 @@ public class StatsEvents {
                 boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
                 boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
 
-                if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) {
-                    return;
-                }
+                if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
 
                 float maxHealth = data.getMaxHealth();
                 int maxEnergy = data.getMaxEnergy();
@@ -317,19 +314,58 @@ public class StatsEvents {
 
     @SubscribeEvent
     public static void onItemUseStart(LivingEntityUseItemEvent.Start event) {
-        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
+        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
         ItemStack stack = event.getItem();
         String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
 
         if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
-            if (player.getCooldowns().isOnCooldown(stack.getItem())) {
-                event.setCanceled(true);
-            } else {
-                event.setDuration(1);
-            }
+            if (player.getCooldowns().isOnCooldown(stack.getItem())) event.setCanceled(true);
+            else event.setDuration(1);
         }
     }
+
+	@SubscribeEvent
+	public static void onPlayerAttack(AttackEntityEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
+			if (data.getStatus().isStunned()) event.setCanceled(true);
+		});
+	}
+
+	@SubscribeEvent
+	public static void onPlayerInteract(PlayerInteractEvent event) {
+		if (event.getLevel().isClientSide) return;
+		if (event.getEntity() == null) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
+			if (data.getStatus().isStunned()) event.setCanceled(true);
+		});
+	}
+
+	@SubscribeEvent
+	public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
+			if (data.getStatus().isStunned()) {
+				event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
+				event.getEntity().setJumping(false);
+			}
+		});
+	}
+
+	@SubscribeEvent
+	public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
+		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (data.getStatus().isStunned()) {
+				if (player.isSprinting()) player.setSprinting(false);
+				if (player.isCrouching()) player.setShiftKeyDown(false);
+				if (player.isFallFlying()) player.stopFallFlying();
+			}
+		});
+	}
 }
