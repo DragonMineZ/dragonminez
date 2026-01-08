@@ -83,7 +83,7 @@ public class GeneralServerConfig {
 		private boolean enableBlocking = true;
 		private boolean enableParrying = true;
 		private boolean enablePerfectAttack = true;
-		private int parryWindowMs = 500;
+		private int parryWindowMs = 300;
 		private double blockDamageReductionCap = 0.80;
 		private double blockDamageReductionMin = 0.25;
 		private double poiseDamageMultiplier = 0.25;

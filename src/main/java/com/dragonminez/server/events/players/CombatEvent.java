@@ -104,90 +104,92 @@ public class CombatEvent {
 					double defense = targetData.getDefense();
 					boolean blocked = false;
 
-					if (targetData.getStatus().isBlocking() && !targetData.getStatus().isStunned() && source.getEntity() != null) {
-						Vec3 targetLook = target.getLookAngle();
-						Vec3 sourceLoc = source.getEntity().position();
-						Vec3 targetLoc = target.position();
-						Vec3 directionToSource = sourceLoc.subtract(targetLoc).normalize();
+					if (ConfigManager.getServerConfig().getCombat().isEnableBlocking()) {
+						if (targetData.getStatus().isBlocking() && !targetData.getStatus().isStunned() && source.getEntity() != null) {
+							Vec3 targetLook = target.getLookAngle();
+							Vec3 sourceLoc = source.getEntity().position();
+							Vec3 targetLoc = target.position();
+							Vec3 directionToSource = sourceLoc.subtract(targetLoc).normalize();
 
-						if (targetLook.dot(directionToSource) > 0.0) {
-							long currentTime = System.currentTimeMillis();
-							long blockTime = targetData.getStatus().getLastBlockTime();
-							int parryWindow = ConfigManager.getServerConfig().getCombat().getParryWindowMs();
-							boolean isParry = (currentTime - blockTime) <= parryWindow;
+							if (targetLook.dot(directionToSource) > 0.0) {
+								long currentTime = System.currentTimeMillis();
+								long blockTime = targetData.getStatus().getLastBlockTime();
+								int parryWindow = ConfigManager.getServerConfig().getCombat().getParryWindowMs();
+								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
 
-							double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
-							if (!(source.getEntity() instanceof Player)) {
-								poiseMultiplier *= 5.0;
-							}
-							float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
-
-							if (isParry) poiseDamage *= 0.75f;
-							int currentPoise = targetData.getResources().getCurrentPoise();
-							System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
-
-							if (currentPoise - poiseDamage <= 0) {
-								targetData.getResources().setCurrentPoise(0);
-								targetData.getStatus().setBlocking(false);
-								targetData.getStatus().setStunned(true);
-
-								int stunDuration = ConfigManager.getServerConfig().getCombat().getStunDurationTicks();
-								targetData.getCooldowns().setCooldown("StunTimer", stunDuration);
-								int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
-								targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
-
-								int currentStamina = targetData.getResources().getCurrentStamina();
-								targetData.getResources().setCurrentStamina(currentStamina / 2);
-
-								currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
-
-								// Acá pondríamos sonido de Rotura de Guardia
-							} else {
-								targetData.getResources().removePoise((int) poiseDamage);
-								blocked = true;
-
-								int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
-								targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
-
-								float originalDmg = (float) currentDamage[0];
-								float finalDmg;
-
-								if (isParry) {
-									finalDmg = 0;
-									if (source.getEntity() instanceof LivingEntity attackerLiving) {
-										attackerLiving.knockback(1.5F, target.getX() - attackerLiving.getX(), target.getZ() - attackerLiving.getZ());
-										attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
-									}
-									System.out.println("Parry!");
-								} else {
-									double reductionCap = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionCap();
-									double reductionMin = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionMin();
-									double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
-									mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
-
-									finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
-									System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
+								if (!(source.getEntity() instanceof Player)) {
+									poiseMultiplier *= 5.0;
 								}
+								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
-								if (target instanceof ServerPlayer sPlayer) {
-									DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(
-											sPlayer,
-											source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null,
-											originalDmg,
-											finalDmg,
-											isParry,
-											poiseDamage
-									);
-									MinecraftForge.EVENT_BUS.post(blockEvent);
+								if (isParry) poiseDamage *= 0.75f;
+								int currentPoise = targetData.getResources().getCurrentPoise();
+								System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
 
-									if (!blockEvent.isCanceled()) {
-										currentDamage[0] = blockEvent.getFinalDamage();
-									} else {
-										blocked = false;
-										currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
-									}
+								if (currentPoise - poiseDamage <= 0) {
+									targetData.getResources().setCurrentPoise(0);
+									targetData.getStatus().setBlocking(false);
+									targetData.getStatus().setStunned(true);
+
+									int stunDuration = ConfigManager.getServerConfig().getCombat().getStunDurationTicks();
+									targetData.getCooldowns().setCooldown("StunTimer", stunDuration);
+									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
+									targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+
+									int currentStamina = targetData.getResources().getCurrentStamina();
+									targetData.getResources().setCurrentStamina(currentStamina / 2);
+
+									currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
+
+									// Acá pondríamos sonido de Rotura de Guardia
 								} else {
-									currentDamage[0] = finalDmg;
+									targetData.getResources().removePoise((int) poiseDamage);
+									blocked = true;
+
+									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
+									targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+
+									float originalDmg = (float) currentDamage[0];
+									float finalDmg;
+
+									if (isParry) {
+										finalDmg = 0;
+										if (source.getEntity() instanceof LivingEntity attackerLiving) {
+											attackerLiving.knockback(1.5F, target.getX() - attackerLiving.getX(), target.getZ() - attackerLiving.getZ());
+											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
+										}
+										System.out.println("Parry!");
+									} else {
+										double reductionCap = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionCap();
+										double reductionMin = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionMin();
+										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
+										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
+
+										finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
+										System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+									}
+
+									if (target instanceof ServerPlayer sPlayer) {
+										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(
+												sPlayer,
+												source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null,
+												originalDmg,
+												finalDmg,
+												isParry,
+												poiseDamage
+										);
+										MinecraftForge.EVENT_BUS.post(blockEvent);
+
+										if (!blockEvent.isCanceled()) {
+											currentDamage[0] = blockEvent.getFinalDamage();
+										} else {
+											blocked = false;
+											currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
+										}
+									} else {
+										currentDamage[0] = finalDmg;
+									}
 								}
 							}
 						}
