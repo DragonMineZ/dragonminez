@@ -153,8 +153,8 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.FLYING_NIMUS.get(), FlyingNimbusRenderer::new);
         event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
 
-		event.registerEntityRenderer(MainEntities.Shenron.get(), ShenronRenderer::new);
-		event.registerEntityRenderer(MainEntities.PORUNGA.get(), PorungaRenderer::new);
+		event.registerEntityRenderer(MainEntities.SHENRON.get(), DragonDBRenderer::new);
+		event.registerEntityRenderer(MainEntities.PORUNGA.get(), DragonDBRenderer::new);
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);

@@ -140,7 +140,7 @@ public class DragonBallBlock extends BaseEntityBlock {
 			porunga.moveTo(pPos.getX() + 0.5, pPos.getY(), pPos.getZ() + 0.5, 0.0F, 0.0F);
 			serverLevel.addFreshEntity(porunga);
 		} else if (!isNamekian && serverLevel.dimension().equals(Level.OVERWORLD)) {
-			ShenronEntity Shenron = new ShenronEntity(MainEntities.Shenron.get(), serverLevel);
+			ShenronEntity Shenron = new ShenronEntity(MainEntities.SHENRON.get(), serverLevel);
 			Shenron.setOwnerName(pPlayer.getName().getString());
 			Shenron.setInvokingTime(currentTime);
 			Shenron.setGrantedWish(false);

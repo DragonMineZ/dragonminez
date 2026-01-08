@@ -36,15 +36,15 @@ public class MainEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Reference.MOD_ID);
 
-	public static final RegistryObject<EntityType<ShenronEntity>> Shenron =
+	public static final RegistryObject<EntityType<ShenronEntity>> SHENRON =
 			ENTITY_TYPES.register("shenron",
 					() -> EntityType.Builder.of(ShenronEntity::new, MobCategory.AMBIENT)
-							.sized(3.0f, 20.0f)
+							.sized(3.0f, 17.0f)
 							.build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shenron").toString()));
 	public static final RegistryObject<EntityType<PorungaEntity>> PORUNGA =
 			ENTITY_TYPES.register("porunga",
 					() -> EntityType.Builder.of(PorungaEntity::new, MobCategory.CREATURE)
-							.sized(4.0f, 25.0f)
+							.sized(4.0f, 20.0f)
 							.build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "porunga").toString()));
 
     public static final RegistryObject<EntityType<MasterKarinEntity>> MASTER_KARIN =

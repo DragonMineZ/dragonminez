@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities;
 
 import com.dragonminez.client.gui.WishesScreen;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.server.events.DragonBallsHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -32,48 +33,10 @@ import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInst
 import software.bernie.geckolib.core.animation.*;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class PorungaEntity extends Mob implements GeoEntity {
-	private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
-	private long invokingTime;
-	private int despawnDelay = 20 * 5;
-
-	private static final EntityDataAccessor<String> OWNER_NAME = SynchedEntityData.defineId(PorungaEntity.class, EntityDataSerializers.STRING);
-	private static final EntityDataAccessor<Boolean> GRANTED_WISH = SynchedEntityData.defineId(PorungaEntity.class, EntityDataSerializers.BOOLEAN);
+public class PorungaEntity extends DragonWishEntity {
 
 	public PorungaEntity(EntityType<? extends Mob> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
-		this.entityData.define(OWNER_NAME, "");
-		this.entityData.define(GRANTED_WISH, false);
-	}
-
-	public static AttributeSupplier.Builder createAttributes() {
-		return Mob.createMobAttributes()
-				.add(Attributes.MAX_HEALTH, 1000.0D)
-				.add(Attributes.MOVEMENT_SPEED, 2.0D)
-				.add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
-	}
-
-	public void setOwnerName(String name) {
-		this.entityData.set(OWNER_NAME, name);
-	}
-
-	public String getOwnerName() {
-		return this.entityData.get(OWNER_NAME);
-	}
-
-	public void setGrantedWish(boolean granted) {
-		this.entityData.set(GRANTED_WISH, granted);
-	}
-
-	public boolean hasGrantedWish() {
-		return this.entityData.get(GRANTED_WISH);
-	}
-
-	@Override
-	protected void registerGoals() {
-		this.goalSelector.addGoal(1, new FloatGoal(this));
-		this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 35.0f));
-		this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
 	}
 
 	@OnlyIn(Dist.CLIENT)
@@ -87,66 +50,12 @@ public class PorungaEntity extends Mob implements GeoEntity {
 		return super.mobInteract(player, hand);
 	}
 
-	public void setInvokingTime(long time) {
-		this.invokingTime = time;
-	}
-
-	public long getInvokingTime() {
-		return this.invokingTime;
-	}
-
-	@Override
-	public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
-		controllerRegistrar.add(new AnimationController<>(this, "controller", 0, this::predicate));
-	}
-
-	@Override
-	public void tick() {
-		super.tick();
-
-		if (hasGrantedWish()) despawnDelay--;
-		if (despawnDelay <= 0) this.discard();
-	}
-
-	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> tAnimationState) {
-		tAnimationState.getController().setAnimation(RawAnimation.begin().then("animation.porunga.idle", Animation.LoopType.LOOP));
-		return PlayState.CONTINUE;
-	}
-
-	@Override
-	public AnimatableInstanceCache getAnimatableInstanceCache() {
-		return this.cache;
-	}
-
-	@Override
-	public boolean canBeCollidedWith() {
-		return false;
-	}
-
-	@Override
-	public boolean canCollideWith(Entity pEntity) {
-		return false;
-	}
-
-	@Override
-	public boolean canBeHitByProjectile() {
-		return false;
-	}
-
 	@Override
 	public void remove(RemovalReason reason) {
 		if (!this.level().isClientSide && reason == RemovalReason.DISCARDED) {
 			onDespawn();
 		}
 		super.remove(reason);
-	}
-
-	@Override
-	public boolean hurt(DamageSource source, float amount) {
-		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC) || source.is(DamageTypes.GENERIC_KILL)) {
-			return super.hurt(source, amount);
-		}
-		return false;
 	}
 
 	private void onDespawn() {
