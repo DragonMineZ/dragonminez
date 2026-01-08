@@ -29,7 +29,8 @@ public class MainParticles {
 
     public static final RegistryObject<SimpleParticleType> PUNCH_PARTICLE =
             PARTICLE_TYPES.register("punch_particle", () -> new SimpleParticleType(true));
-
+    public static final RegistryObject<SimpleParticleType> BLOCK_PARTICLE =
+            PARTICLE_TYPES.register("block_particle", () -> new SimpleParticleType(true));
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }

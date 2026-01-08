@@ -4,27 +4,24 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
 
-public class PunchParticle extends TextureSheetParticle {
+public class BlockParticle extends TextureSheetParticle {
 
     private final SpriteSet spriteSet;
-    private final float initialAlpha;
 
-    protected PunchParticle(ClientLevel level, double x, double y, double z, double r, double g, double b, SpriteSet spriteSet) {
+    protected BlockParticle(ClientLevel level, double x, double y, double z, double r, double g, double b, SpriteSet spriteSet) {
         super(level, x, y, z, 0, 0, 0);
 
         this.spriteSet = spriteSet;
 
-        this.lifetime = 10;
-        this.quadSize = 0.8F;
+        this.lifetime = 3;
+        this.quadSize = 1.0F;
         this.gravity = 0.0F;
         this.hasPhysics = false;
 
         this.rCol = (float) r;
         this.gCol = (float) g;
         this.bCol = (float) b;
-
-        this.initialAlpha = 0.8F;
-        this.alpha = this.initialAlpha;
+        this.alpha = 1.0F;
 
         this.setSpriteFromAge(spriteSet);
     }
@@ -39,13 +36,8 @@ public class PunchParticle extends TextureSheetParticle {
             this.remove();
         } else {
             this.setSpriteFromAge(this.spriteSet);
-            this.quadSize += 0.05F;
-
-            float lifeRatio = (float)this.age / (float)this.lifetime;
-
-            this.alpha = this.initialAlpha * (1.0F - lifeRatio);
-
-            if (this.alpha < 0) this.alpha = 0;
+            float lifeRatio = (float) this.age / (float) this.lifetime;
+            this.alpha = 1.0F - lifeRatio;
         }
     }
 
@@ -64,7 +56,7 @@ public class PunchParticle extends TextureSheetParticle {
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
-            return new PunchParticle(level, x, y, z, r, g, b, this.spriteSet);
+            return new BlockParticle(level, x, y, z, r, g, b, this.spriteSet);
         }
     }
 }

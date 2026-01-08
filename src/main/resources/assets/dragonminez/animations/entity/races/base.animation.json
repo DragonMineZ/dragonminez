@@ -1320,14 +1320,9 @@
 		"animation.base.shield_right": {
 			"loop": true,
 			"bones": {
-				"waist": {
-					"rotation": {
-						"vector": [0, -25, 0]
-					}
-				},
 				"head": {
 					"rotation": {
-						"vector": ["-0 - query.head_x_rotation * 0.25", "22.5 - query.head_y_rotation * 0.25", 0]
+						"vector": ["-0 - query.head_x_rotation*0.25", "-query.head_y_rotation*0.25", 0]
 					}
 				},
 				"right_arm": {
@@ -1355,7 +1350,7 @@
 				},
 				"head": {
 					"rotation": {
-						"vector": ["-0 - query.head_x_rotation * 0.25", "-22.5 - query.head_y_rotation * 0.25", 0]
+						"vector": ["-0 - query.head_x_rotation * 0.25", "-query.head_y_rotation * 0.25", 0]
 					}
 				},
 				"left_arm": {

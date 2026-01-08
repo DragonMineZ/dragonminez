@@ -4,11 +4,13 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -99,13 +101,13 @@ public class CombatEvent {
 
 		// Victim Defense Event
         if (event.getEntity() instanceof Player target) {
-            StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
-                if (targetData.getStatus().hasCreatedCharacter()) {
-					double defense = targetData.getDefense();
+            StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(victimData -> {
+                if (victimData.getStatus().hasCreatedCharacter()) {
+					double defense = victimData.getDefense();
 					boolean blocked = false;
 
 					if (ConfigManager.getServerConfig().getCombat().isEnableBlocking()) {
-						if (targetData.getStatus().isBlocking() && !targetData.getStatus().isStunned() && source.getEntity() != null) {
+						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && source.getEntity() != null) {
 							Vec3 targetLook = target.getLookAngle();
 							Vec3 sourceLoc = source.getEntity().position();
 							Vec3 targetLoc = target.position();
@@ -113,7 +115,7 @@ public class CombatEvent {
 
 							if (targetLook.dot(directionToSource) > 0.0) {
 								long currentTime = System.currentTimeMillis();
-								long blockTime = targetData.getStatus().getLastBlockTime();
+								long blockTime = victimData.getStatus().getLastBlockTime();
 								int parryWindow = ConfigManager.getServerConfig().getCombat().getParryWindowMs();
 								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
 
@@ -124,31 +126,31 @@ public class CombatEvent {
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.75f;
-								int currentPoise = targetData.getResources().getCurrentPoise();
+								int currentPoise = victimData.getResources().getCurrentPoise();
 								System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
 
 								if (currentPoise - poiseDamage <= 0) {
-									targetData.getResources().setCurrentPoise(0);
-									targetData.getStatus().setBlocking(false);
-									targetData.getStatus().setStunned(true);
+									victimData.getResources().setCurrentPoise(0);
+									victimData.getStatus().setBlocking(false);
+									victimData.getStatus().setStunned(true);
 
 									int stunDuration = ConfigManager.getServerConfig().getCombat().getStunDurationTicks();
-									targetData.getCooldowns().setCooldown("StunTimer", stunDuration);
+									victimData.getCooldowns().setCooldown("StunTimer", stunDuration);
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
-									targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 
-									int currentStamina = targetData.getResources().getCurrentStamina();
-									targetData.getResources().setCurrentStamina(currentStamina / 2);
+									int currentStamina = victimData.getResources().getCurrentStamina();
+									victimData.getResources().setCurrentStamina(currentStamina / 2);
 
 									currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 
 									// Acá pondríamos sonido de Rotura de Guardia
 								} else {
-									targetData.getResources().removePoise((int) poiseDamage);
+									victimData.getResources().removePoise((int) poiseDamage);
 									blocked = true;
 
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
-									targetData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 
 									float originalDmg = (float) currentDamage[0];
 									float finalDmg;
@@ -168,6 +170,33 @@ public class CombatEvent {
 
 										finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
 										System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+                                        //EFECTOS
+                                        if (target.level() instanceof ServerLevel serverLevel) {
+                                            double maxPoise = victimData.getMaxPoise();
+                                            double currentPoiseVal = victimData.getResources().getCurrentPoise();
+                                            double percentage = (currentPoiseVal / maxPoise) * 100.0;
+                                            double r, g, b;
+
+                                            if (percentage > 66) {
+                                                r = 0.2; g = 0.9; b = 1.0;
+                                            } else if (percentage > 33) {
+                                                r = 1.0; g = 0.5; b = 0.0;
+                                            } else {
+                                                r = 1.0; g = 0.1; b = 0.1;
+                                            }
+
+                                            Vec3 look = target.getLookAngle();
+                                            Vec3 spawnPos = target.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+
+                                            serverLevel.sendParticles(
+                                                    MainParticles.BLOCK_PARTICLE.get(),
+                                                    spawnPos.x, spawnPos.y, spawnPos.z,
+                                                    0,
+                                                    r, g, b,
+                                                    1.0
+                                            );
+                                        }
+
 									}
 
 									if (target instanceof ServerPlayer sPlayer) {
@@ -196,19 +225,19 @@ public class CombatEvent {
 					}
 
 					if (!blocked) {
-						if (!targetData.getStatus().isStunned() || targetData.getResources().getCurrentPoise() > 0) {
-							if (!targetData.getStatus().isBlocking()) {
+						if (!victimData.getStatus().isStunned() || victimData.getResources().getCurrentPoise() > 0) {
+							if (!victimData.getStatus().isBlocking()) {
 								currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 							}
 						}
 					}
 
-					if (targetData.getCharacter().hasActiveForm()) {
-						FormConfig.FormData activeForm = targetData.getCharacter().getActiveFormData();
+					if (victimData.getCharacter().hasActiveForm()) {
+						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
 						if (activeForm != null) {
-							String formGroup = targetData.getCharacter().getCurrentFormGroup();
-							String formName = targetData.getCharacter().getCurrentForm();
-							targetData.getCharacter().getFormMasteries().addMastery(
+							String formGroup = victimData.getCharacter().getCurrentFormGroup();
+							String formName = victimData.getCharacter().getCurrentForm();
+							victimData.getCharacter().getFormMasteries().addMastery(
 									formGroup,
 									formName,
 									activeForm.getMasteryPerDamageReceived(),

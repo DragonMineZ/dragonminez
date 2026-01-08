@@ -179,6 +179,7 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.KI_EXPLOSION_SPLASH.get(), KiExplosionSplashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KINTON.get(), KintonParticle.Provider::new);
         event.registerSpriteSet(MainParticles.PUNCH_PARTICLE.get(), PunchParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.BLOCK_PARTICLE.get(), BlockParticle.Provider::new);
 
     }
 
