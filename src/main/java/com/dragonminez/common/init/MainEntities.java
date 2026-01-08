@@ -164,7 +164,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(FlyingNimbusEntity::new, MobCategory.CREATURE)
                             .sized(2.0f, 1.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "flying_nimbus").toString()));
-
+    public static final RegistryObject<EntityType<RobotEntity>> ROBOT_XENOVERSE =
+            ENTITY_TYPES.register("robotxv",
+                    () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)
+                            .sized(1.5f, 1.5f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "robotxv").toString()));
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",

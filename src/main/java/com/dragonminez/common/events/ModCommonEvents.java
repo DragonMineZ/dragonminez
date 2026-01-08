@@ -85,6 +85,7 @@ public class ModCommonEvents {
         event.put(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierEntity.createAttributes().build());
         event.put(MainEntities.SPACE_POD.get(), SpacePodEntity.createAttributes());
         event.put(MainEntities.FLYING_NIMUS.get(), FlyingNimbusEntity.createAttributes());
+        event.put(MainEntities.ROBOT_XENOVERSE.get(), RobotEntity.createAttributes().build());
 
     }
 

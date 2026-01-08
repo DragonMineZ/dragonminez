@@ -151,6 +151,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.RED_RIBBON_SOLDIER.get(), RedRibbonSoldierRenderer::new);
         event.registerEntityRenderer(MainEntities.SPACE_POD.get(), SpacePodRenderer::new);
         event.registerEntityRenderer(MainEntities.FLYING_NIMUS.get(), FlyingNimbusRenderer::new);
+        event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
 
 		event.registerEntityRenderer(MainEntities.Shenron.get(), ShenronRenderer::new);
 		event.registerEntityRenderer(MainEntities.PORUNGA.get(), PorungaRenderer::new);
