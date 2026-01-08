@@ -10,6 +10,7 @@ import net.minecraft.util.Mth;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.molang.MolangParser;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -100,10 +101,14 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         var head = this.getAnimationProcessor().getBone("head");
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
-        if (head != null) {
-            head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
-            head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
-        }
+        MolangParser parser = MolangParser.INSTANCE;
+        parser.setValue("query.head_x_rotation", () -> (double) entityData.headPitch());
+        parser.setValue("query.head_y_rotation", () -> (double) entityData.netHeadYaw());
+
+//        if (head != null) {
+//            head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
+//            head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
+//        }
 
         try {
             float partialTick = animationState.getPartialTick();
