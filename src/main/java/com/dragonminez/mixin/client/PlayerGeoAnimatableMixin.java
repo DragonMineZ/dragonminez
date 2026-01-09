@@ -100,7 +100,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
             }
 
             if (player.isVisuallyCrawling()) {
-                if (isMoving(player)) {
+                if (state.isMoving()) {
                     return state.setAndContinue(CRAWLING_MOVE);
                 } else {
                     return state.setAndContinue(CRAWLING);
@@ -118,7 +118,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
             if (player.onGround()) {
                 // Crouching
                 if (player.isCrouching()) {
-                    if (isMoving(player)) { // Walking
+                    if (state.isMoving()) { // Walking
                         if (playing != CROUCHING_WALK) {
                             ctl.setAnimation(CROUCHING_WALK);
                         }
@@ -127,11 +127,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
                             ctl.setAnimation(CROUCHING);
                         }
                     }
-                } else if (isMoving(player) && player.isSprinting()) { // Running
+                } else if (state.isMoving() && player.isSprinting()) { // Running
                     if (playing != RUN) {
                         ctl.setAnimation(RUN);
                     }
-                } else if (isMoving(player)) { // Walking
+                } else if (state.isMoving()) { // Walking
                     if (playing != WALK) {
                         ctl.setAnimation(WALK);
                     }
@@ -274,15 +274,6 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     public double getTick(Object animatable) {
         return ((AbstractClientPlayer) animatable).tickCount
                 + net.minecraft.client.Minecraft.getInstance().getPartialTick();
-    }
-
-    @Unique
-    private static boolean isMoving(LivingEntity entity) {
-        final Vector3d currentPos = new Vector3d(entity.getX(), entity.getY(), entity.getZ());
-        final Vector3d lastPos = new Vector3d(entity.xOld, entity.yOld, entity.zOld);
-        final Vector3d expectedVelocity = currentPos.sub(lastPos);
-        float avgVelocity = (float) (Math.abs(expectedVelocity.x) + Math.abs(expectedVelocity.z) / 2.0);
-        return avgVelocity >= 0.015;
     }
 
     @Unique

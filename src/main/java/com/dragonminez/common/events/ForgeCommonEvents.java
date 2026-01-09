@@ -96,7 +96,11 @@ public class ForgeCommonEvents {
 
             float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
 
-            serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
+			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
+				if (!targetData.getStatus().isBlocking()) {
+					serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
+				}
+			});
 
             RegistryObject<SoundEvent>[] sonidosGolpe = new RegistryObject[] {
                     MainSounds.GOLPE1,

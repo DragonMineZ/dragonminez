@@ -83,12 +83,14 @@ public class GeneralServerConfig {
 		private boolean enableBlocking = true;
 		private boolean enableParrying = true;
 		private boolean enablePerfectAttack = true;
-		private int parryWindowMs = 300;
+		private boolean enablePerfectEvasion = true;
+		private int parryWindowMs = 150;
 		private double blockDamageReductionCap = 0.80;
 		private double blockDamageReductionMin = 0.40;
 		private double poiseDamageMultiplier = 0.25;
 		private int poiseRegenCooldown = 100;
-		private int stunDurationTicks = 60;
+		private int blockBreakStunDurationTicks = 60;
+		private int perfectEvasionWindowMs = 150;
 
 		public double getStaminaConsumptionRatio() { return staminaConsumptionRatio; }
 		public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
@@ -100,7 +102,7 @@ public class GeneralServerConfig {
 		public double getBlockDamageReductionMin() { return blockDamageReductionMin; }
 		public double getPoiseDamageMultiplier() { return poiseDamageMultiplier; }
 		public int getPoiseRegenCooldown() { return poiseRegenCooldown; }
-		public int getStunDurationTicks() { return stunDurationTicks; }
+		public int getBlockBreakStunDurationTicks() { return blockBreakStunDurationTicks; }
 	}
 
 	public static class StorageConfig {

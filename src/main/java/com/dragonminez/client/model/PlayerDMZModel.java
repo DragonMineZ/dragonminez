@@ -10,7 +10,6 @@ import net.minecraft.util.Mth;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.molang.MolangParser;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -99,16 +98,26 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         super.setCustomAnimations(animatable, instanceId, animationState);
 
         var head = this.getAnimationProcessor().getBone("head");
+		var waist = this.getAnimationProcessor().getBone("waist");
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
-        MolangParser parser = MolangParser.INSTANCE;
-        parser.setValue("query.head_x_rotation", () -> (double) (entityData.headPitch() * 0.75f));
-        parser.setValue("query.head_y_rotation", () -> (double) (entityData.netHeadYaw() * 0.75f));
+		float waistContribution = 0.3f;
+		float globalReduction = 0.75f;
 
-//        if (head != null) {
-//            head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
-//            head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
-//        }
+		if (head != null) {
+			float rawPitch = entityData.headPitch();
+			float rawYaw = entityData.netHeadYaw();
+			float pitch = Mth.clamp(rawPitch, -90f, 90f);
+			float yaw = Mth.clamp(rawYaw, -90f, 90f);
+			float waistPitch = pitch * waistContribution;
+			float waistYaw = yaw * waistContribution;
+			if (waist != null) {
+				waist.setRotX(waist.getRotX() + (waistPitch * Mth.DEG_TO_RAD));
+				waist.setRotY(waist.getRotY() + (waistYaw * Mth.DEG_TO_RAD));
+			}
+			head.setRotX(rawPitch * Mth.DEG_TO_RAD * globalReduction);
+			head.setRotY(rawYaw * Mth.DEG_TO_RAD * globalReduction);
+		}
 
         try {
             float partialTick = animationState.getPartialTick();

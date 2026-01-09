@@ -302,7 +302,7 @@ public class StatsEvents {
 
                 if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
 
-                float maxHealth = data.getMaxHealth();
+                float maxHealth = player.getMaxHealth();
                 int maxEnergy = data.getMaxEnergy();
                 int maxStamina = data.getMaxStamina();
 

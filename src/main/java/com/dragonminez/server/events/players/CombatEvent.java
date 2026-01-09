@@ -136,7 +136,7 @@ public class CombatEvent {
 									victimData.getStatus().setBlocking(false);
 									victimData.getStatus().setStunned(true);
 
-									int stunDuration = ConfigManager.getServerConfig().getCombat().getStunDurationTicks();
+									int stunDuration = ConfigManager.getServerConfig().getCombat().getBlockBreakStunDurationTicks();
 									victimData.getCooldowns().setCooldown("StunTimer", stunDuration);
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
@@ -179,8 +179,11 @@ public class CombatEvent {
 									if (isParry) {
 										finalDmg = 0;
 										if (source.getEntity() instanceof LivingEntity attackerLiving) {
-											attackerLiving.knockback(1.5F, target.getX() - attackerLiving.getX(), target.getZ() - attackerLiving.getZ());
+											attackerLiving.knockback(1.5D, target.getX() - attackerLiving.getX(), target.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
+
+											// Efecto de Parry (temblor de pantalla pequeño) al atacante
+											// attackerLiving.addEffect(nuestroefectopecausaxdxdxd);
 										}
 										System.out.println("Parry!");
                                         //SONIDO PARRY
