@@ -105,18 +105,18 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 		float globalReduction = 0.75f;
 
 		if (head != null) {
-			float rawPitch = entityData.headPitch();
-			float rawYaw = entityData.netHeadYaw();
-			float pitch = Mth.clamp(rawPitch, -90f, 90f);
-			float yaw = Mth.clamp(rawYaw, -90f, 90f);
-			float waistPitch = pitch * waistContribution;
-			float waistYaw = yaw * waistContribution;
-			if (waist != null) {
-				waist.setRotX(waist.getRotX() + (waistPitch * Mth.DEG_TO_RAD));
-				waist.setRotY(waist.getRotY() + (waistYaw * Mth.DEG_TO_RAD));
-			}
-			head.setRotX(rawPitch * Mth.DEG_TO_RAD * globalReduction);
-			head.setRotY(rawYaw * Mth.DEG_TO_RAD * globalReduction);
+//			float rawPitch = entityData.headPitch();
+//			float rawYaw = entityData.netHeadYaw();
+//			float pitch = Mth.clamp(rawPitch, -90f, 90f);
+//			float yaw = Mth.clamp(rawYaw, -90f, 90f);
+//			float waistPitch = pitch * waistContribution;
+//			float waistYaw = yaw * waistContribution;
+//			if (waist != null) {
+//				waist.setRotX(waist.getRotX() + (waistPitch * Mth.DEG_TO_RAD));
+//				waist.setRotY(waist.getRotY() + (waistYaw * Mth.DEG_TO_RAD));
+//			}
+			head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
+			head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
 		}
 
         try {
