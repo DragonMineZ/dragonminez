@@ -152,6 +152,20 @@ public class CombatEvent {
                                             net.minecraft.sounds.SoundSource.PLAYERS,
                                             1.0F,
                                             0.9F + target.getRandom().nextFloat() * 0.1F);
+
+                                    if (target.level() instanceof ServerLevel serverLevel) {
+                                        Vec3 look = target.getLookAngle();
+                                        Vec3 spawnPos = target.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+
+                                        serverLevel.sendParticles(
+                                                MainParticles.GUARD_BLOCK.get(),
+                                                spawnPos.x, spawnPos.y, spawnPos.z,
+                                                0,
+                                                1.0, 0.1, 0.1,
+                                                1.0
+                                        );
+                                    }
+
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
 									blocked = true;
@@ -176,6 +190,35 @@ public class CombatEvent {
                                                 1.0F,
                                                 0.9F + target.getRandom().nextFloat() * 0.1F);
 
+                                        if (target.level() instanceof ServerLevel serverLevel) {
+                                            Vec3 look = target.getLookAngle();
+                                            Vec3 spawnPos = target.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+
+                                            serverLevel.sendParticles(
+                                                    MainParticles.GUARD_BLOCK.get(),
+                                                    spawnPos.x, spawnPos.y, spawnPos.z,
+                                                    0,
+                                                    1.0, 1.0, 1.0,
+                                                    1.0
+                                            );
+                                            for (int i = 0; i < 15; i++) {
+                                                serverLevel.sendParticles(
+                                                        MainParticles.KI_TRAIL.get(),
+                                                        spawnPos.x, spawnPos.y, spawnPos.z,
+                                                        0,
+                                                        1.0, 1.0, 1.0,
+                                                        1.0
+                                                );
+                                                serverLevel.sendParticles(
+                                                        MainParticles.SPARKS.get(),
+                                                        spawnPos.x, spawnPos.y, spawnPos.z,
+                                                        0,
+                                                        1.0, 1.0, 1.0,
+                                                        1.0
+                                                );
+                                            }
+                                        }
+
                                     } else {
 										double reductionCap = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionCap();
 										double reductionMin = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionMin();
@@ -194,7 +237,7 @@ public class CombatEvent {
                                             soundToPlay = MainSounds.BLOCK3.get();
                                         }
 
-                                        System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
+//                                        System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
 
                                         target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
                                                 soundToPlay,

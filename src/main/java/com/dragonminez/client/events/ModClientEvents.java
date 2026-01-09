@@ -180,6 +180,8 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.KINTON.get(), KintonParticle.Provider::new);
         event.registerSpriteSet(MainParticles.PUNCH_PARTICLE.get(), PunchParticle.Provider::new);
         event.registerSpriteSet(MainParticles.BLOCK_PARTICLE.get(), BlockParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.GUARD_BLOCK.get(), GuardBlockParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.SPARKS.get(), KiSplashParticle.Provider::new);
 
     }
 

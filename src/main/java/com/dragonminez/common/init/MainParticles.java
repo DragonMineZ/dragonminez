@@ -31,6 +31,12 @@ public class MainParticles {
             PARTICLE_TYPES.register("punch_particle", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> BLOCK_PARTICLE =
             PARTICLE_TYPES.register("block_particle", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> GUARD_BLOCK =
+            PARTICLE_TYPES.register("guard_block_particle", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> SPARKS =
+            PARTICLE_TYPES.register("sparks_particle", () -> new SimpleParticleType(true));
+
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }
