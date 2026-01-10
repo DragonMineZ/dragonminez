@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.init.entities.PorungaEntity;
-import com.dragonminez.common.init.entities.ShenronEntity;
+import com.dragonminez.common.init.entities.dragon.PorungaEntity;
+import com.dragonminez.common.init.entities.dragon.ShenronEntity;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.events.DragonBallsHandler;

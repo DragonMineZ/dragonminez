@@ -1,0 +1,19 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"loop": true
+		},
+		"punch": {
+			"loop": true,
+			"bones": {
+				"bone": {
+					"position": {
+						"vector": [0, 0, "0+math.sin(query.anim_time *800) *0.15"]
+					}
+				}
+			}
+		}
+	},
+	"geckolib_format_version": 2
+}

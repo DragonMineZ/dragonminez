@@ -6,6 +6,8 @@ import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
+import com.dragonminez.common.init.entities.dragon.PorungaEntity;
+import com.dragonminez.common.init.entities.dragon.ShenronEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -86,6 +88,7 @@ public class ModCommonEvents {
         event.put(MainEntities.SPACE_POD.get(), SpacePodEntity.createAttributes());
         event.put(MainEntities.FLYING_NIMUS.get(), FlyingNimbusEntity.createAttributes());
         event.put(MainEntities.ROBOT_XENOVERSE.get(), RobotEntity.createAttributes().build());
+        event.put(MainEntities.PUNCH_MACHINE.get(), PunchMachineEntity.createAttributes().build());
 
     }
 

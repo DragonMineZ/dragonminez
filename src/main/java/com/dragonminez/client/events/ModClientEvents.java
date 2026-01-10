@@ -152,6 +152,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SPACE_POD.get(), SpacePodRenderer::new);
         event.registerEntityRenderer(MainEntities.FLYING_NIMUS.get(), FlyingNimbusRenderer::new);
         event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
+        event.registerEntityRenderer(MainEntities.PUNCH_MACHINE.get(), PunchMachineRenderer::new);
 
 		event.registerEntityRenderer(MainEntities.SHENRON.get(), DragonDBRenderer::new);
 		event.registerEntityRenderer(MainEntities.PORUNGA.get(), DragonDBRenderer::new);

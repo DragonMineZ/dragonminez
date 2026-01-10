@@ -67,7 +67,8 @@ public class DMZItemModelProvider extends ItemModelProvider {
         simpleItem(MainItems.RED_SCOUTER);
         simpleItem(MainItems.BLUE_SCOUTER);
         simpleItem(MainItems.YELLOW_SCOUTER);
-		// Spawn Eggs
+        simpleItem(MainItems.PUNCH_MACHINE_ITEM);
+        // Spawn Eggs
 		withExistingParent(MainItems.DINO_1.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DINO_2.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DINO_3.getId().getPath(), mcLoc("item/template_spawn_egg"));

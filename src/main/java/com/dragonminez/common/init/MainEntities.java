@@ -2,8 +2,9 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.FlyingNimbusEntity;
-import com.dragonminez.common.init.entities.PorungaEntity;
-import com.dragonminez.common.init.entities.ShenronEntity;
+import com.dragonminez.common.init.entities.PunchMachineEntity;
+import com.dragonminez.common.init.entities.dragon.PorungaEntity;
+import com.dragonminez.common.init.entities.dragon.ShenronEntity;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
@@ -169,6 +170,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)
                             .sized(1.5f, 1.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "robotxv").toString()));
+    public static final RegistryObject<EntityType<PunchMachineEntity>> PUNCH_MACHINE =
+            ENTITY_TYPES.register("punch_machine",
+                    () -> EntityType.Builder.of(PunchMachineEntity::new, MobCategory.CREATURE)
+                            .sized(1.5f, 1.5f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "punch_machine").toString()));
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",
