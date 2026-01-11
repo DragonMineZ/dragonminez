@@ -65,7 +65,7 @@ public class KiVolleyEntity extends AbstractKiProjectile {
         for (double[] offset : VOLLEY_OFFSETS) {
             KiVolleyEntity volley = new KiVolleyEntity(level, attacker);
 
-            volley.setup(attacker, damage, 0.4F, colorMain, colorBorder);
+            volley.setup(attacker, damage, 0.4F, 0.0f, colorMain, colorBorder);
 
             Vec3 spawnPos = origin
                     .add(rightVector.scale(offset[0]))

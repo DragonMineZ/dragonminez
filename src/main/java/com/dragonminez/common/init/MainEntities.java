@@ -7,10 +7,7 @@ import com.dragonminez.common.init.entities.dragon.PorungaEntity;
 import com.dragonminez.common.init.entities.dragon.ShenronEntity;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
-import com.dragonminez.common.init.entities.ki.KiBlastEntity;
-import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
-import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
-import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
+import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -308,25 +305,37 @@ public class MainEntities {
                     .sized(0.8F, 0.8F)
                     .clientTrackingRange(4)
                     .updateInterval(10)
+                    .fireImmune()
                     .build("ki_blast"));
     public static final RegistryObject<EntityType<KiExplosionEntity>> KI_EXPLOSION = ENTITY_TYPES.register("ki_explosion",
             () -> EntityType.Builder.<KiExplosionEntity>of(KiExplosionEntity::new, MobCategory.MISC)
                     .sized(0.8F, 0.8F)
                     .clientTrackingRange(4)
                     .updateInterval(10)
+                    .fireImmune()
                     .build("ki_explosion"));
     public static final RegistryObject<EntityType<SPBlueHurricaneEntity>> SP_BLUE_HURRICANE = ENTITY_TYPES.register("sp_blue_hurricane",
             () -> EntityType.Builder.<SPBlueHurricaneEntity>of(SPBlueHurricaneEntity::new, MobCategory.MISC)
                     .sized(0.8F, 0.8F)
                     .clientTrackingRange(4)
                     .updateInterval(10)
+                    .fireImmune()
                     .build("sp_blue_hurricane"));
     public static final RegistryObject<EntityType<KiVolleyEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
             () -> EntityType.Builder.<KiVolleyEntity>of(KiVolleyEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.5f)
                     .clientTrackingRange(4)
                     .updateInterval(10)
+                    .fireImmune()
                     .build("ki_volley"));
+    public static final RegistryObject<EntityType<KiLaserEntity>> KI_LASER = ENTITY_TYPES.register("ki_laser",
+            () -> EntityType.Builder.<KiLaserEntity>of(KiLaserEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(128)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .build("ki_laser")
+    );
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

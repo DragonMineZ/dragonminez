@@ -39,7 +39,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     }
 
     public void setupExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder) {
-        this.setup(owner, damage, 0.1F, colorMain, colorBorder);
+        this.setup(owner, damage, 0.1F, 0.0f, colorMain, colorBorder);
 
         this.setMaxRadius(7.0f);
 

@@ -8,8 +8,12 @@ import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.KikonoStationBlockRenderer;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
+import com.dragonminez.client.init.entities.model.ki.KiLaserExplosion2Model;
+import com.dragonminez.client.init.entities.model.ki.KiLaserExplosionModel;
+import com.dragonminez.client.init.entities.model.ki.KiLaserModel;
 import com.dragonminez.client.init.entities.renderer.*;
 import com.dragonminez.client.init.entities.renderer.ki.KiExplosionRenderer;
+import com.dragonminez.client.init.entities.renderer.ki.KiLaserRenderer;
 import com.dragonminez.client.init.entities.renderer.ki.KiProjectileRenderer;
 import com.dragonminez.client.init.entities.renderer.ki.SPSkillsRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
@@ -162,6 +166,8 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_EXPLOSION.get(), KiExplosionRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
+        event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_LASER.get(), KiLaserRenderer::new);
 
     }
 
@@ -169,6 +175,9 @@ public class ModClientEvents {
     public static void registerModelLayers(EntityRenderersEvent.RegisterLayerDefinitions e) {
         e.registerLayerDefinition(ArmorBaseModel.LAYER_LOCATION, ArmorBaseModel::createBodyLayer);
         e.registerLayerDefinition(KiBallPlaneModel.LAYER_LOCATION, KiBallPlaneModel::createBodyLayer);
+        e.registerLayerDefinition(KiLaserModel.LAYER_LOCATION, KiLaserModel::createBodyLayer);
+        e.registerLayerDefinition(KiLaserExplosionModel.LAYER_LOCATION, KiLaserExplosionModel::createBodyLayer);
+        e.registerLayerDefinition(KiLaserExplosion2Model.LAYER_LOCATION, KiLaserExplosion2Model::createBodyLayer);
 
     }
 

@@ -156,9 +156,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
 				null,
 				this.getX(), this.getY(), this.getZ(),
 				radius,
-				false, // Fuego = false
+				false,
 				interaction,
-				false // SpawnParticles = false (Ya pusimos las nuestras)
+				false
 		);
 
 		this.discard();

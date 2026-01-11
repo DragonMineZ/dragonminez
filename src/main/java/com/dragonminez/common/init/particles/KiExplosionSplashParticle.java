@@ -29,6 +29,7 @@ public class KiExplosionSplashParticle extends TextureSheetParticle {
         this.setSpriteFromAge(spriteSet);
     }
 
+
     @Override
     public void tick() {
         this.xo = this.x;

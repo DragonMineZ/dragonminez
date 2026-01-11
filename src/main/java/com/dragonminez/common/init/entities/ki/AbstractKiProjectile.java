@@ -17,17 +17,19 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final EntityDataAccessor<Integer> COLOR_BORDER = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DAMAGE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SIZE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> SPEED = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.noCulling = true;
     }
 
-    public void setup(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
+    public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
         this.setOwner(owner);
         this.setKiDamage(damage);
         this.setSize(size);
         this.setColors(colorMain, colorBorder);
+        this.setKiSpeed(speed);
         this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
     }
 
@@ -52,6 +54,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.entityData.define(COLOR_BORDER, 0xFFFFFF);
         this.entityData.define(DAMAGE, 5.0f);
         this.entityData.define(SIZE, 1.0f);
+        this.entityData.define(SPEED, 1.0f);
     }
     @Override
     public void tick() {
@@ -91,6 +94,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     public void setSize(float size) { this.entityData.set(SIZE, size); }
     public float getSize() { return this.entityData.get(SIZE); }
 
+    public void setKiSpeed(float speed) { this.entityData.set(SPEED, speed); }
+    public float getKiSpeed() { return this.entityData.get(SPEED); }
+
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
@@ -98,6 +104,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         pCompound.putInt("ColorBorder", getColorBorde());
         pCompound.putFloat("Damage", getKiDamage());
         pCompound.putFloat("Size", getSize());
+        pCompound.putFloat("Speed", getKiSpeed());
     }
 
     @Override
@@ -106,6 +113,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (pCompound.contains("ColorMain")) setColors(pCompound.getInt("ColorMain"), pCompound.getInt("ColorBorder"));
         if (pCompound.contains("Damage")) setKiDamage(pCompound.getFloat("Damage"));
         if (pCompound.contains("Size")) setSize(pCompound.getFloat("Size"));
+        if (pCompound.contains("Speed")) setKiSpeed(pCompound.getFloat("Speed"));
     }
 
     @Override

@@ -75,7 +75,7 @@ public class SagaBurterEntity extends DBSagasEntity {
 
         SPBlueHurricaneEntity hurricane = new SPBlueHurricaneEntity(this.level(), this);
 
-        hurricane.setup(this, this.getKiBlastDamage(), 3.0F, 0x0000FF, 0x00FFFF);
+        hurricane.setup(this, this.getKiBlastDamage(), 3.0F, 0.0f,0x0000FF, 0x00FFFF);
 
         this.level().addFreshEntity(hurricane);
 
