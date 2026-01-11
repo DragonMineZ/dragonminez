@@ -4,6 +4,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.MainSounds;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -36,6 +37,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
+
+
     }
 
     public KiLaserEntity(Level level, LivingEntity owner) {
@@ -56,6 +59,17 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
         this.setKiSpeed(1.5F);
         this.setSize(1.5F);
+
+        level.playSound(
+                null,
+                owner.getX(),
+                owner.getY(),
+                owner.getZ(),
+                MainSounds.KI_LASER.get(),
+                SoundSource.PLAYERS,
+                1.0F,
+                1.0F + (this.random.nextFloat() * 0.2F)
+        );
     }
 
     @Override
@@ -94,15 +108,12 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
             double distToWall = MAX_RANGE;
 
-            // 1. DETECTAR CHOQUE
             if (hitResult.getType() != HitResult.Type.MISS) {
                 distToWall = hitResult.getLocation().distanceTo(startPos);
 
-                // Si es un BLOQUE y el láser ya creció lo suficiente para tocarlo
                 if (hitResult.getType() == HitResult.Type.BLOCK && targetLen >= distToWall) {
-                    // Llamamos a la explosión en el punto exacto del choque
                     explodeAndDie(hitResult.getLocation());
-                    return; // Detenemos el resto del tick porque la entidad muere
+                    return;
                 }
 
                 distToWall += 0.1D;
@@ -192,29 +203,26 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     private void explodeAndDie(Vec3 pos) {
-        boolean shouldDestroyBlocks = true; // O ConfigManager.getServerConfig()...
+        boolean shouldDestroyBlocks = true;
         float radius = this.getSize();
 
-        // Creamos una caja de búsqueda en el lugar del impacto, no en la entidad
         AABB area = new AABB(pos, pos).inflate(radius);
         List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
 
         for (LivingEntity target : entities) {
             if (this.shouldDamage(target)) {
-                double dist = target.distanceToSqr(pos); // Distancia al impacto
+                double dist = target.distanceToSqr(pos);
                 if (dist <= radius * radius) {
                     target.hurt(this.damageSources().explosion(this, this.getOwner()), this.getKiDamage());
                 }
             }
         }
 
-        // Partículas y Sonido en la posición 'pos' (Pared)
         this.level().addParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
         this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.HOSTILE, 4.0F, (1.0F + (this.level().random.nextFloat() - this.level().random.nextFloat()) * 0.2F) * 0.7F);
 
         Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
 
-        // Generamos la explosión en la pared
         this.level().explode(
                 this,
                 this.damageSources().explosion(this, this.getOwner()),

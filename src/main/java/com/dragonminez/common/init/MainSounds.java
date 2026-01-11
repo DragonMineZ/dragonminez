@@ -27,7 +27,6 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> PARRY = registerSoundEvent("parry");
     public static final RegistryObject<SoundEvent> UNBLOCK = registerSoundEvent("unblock");
 
-
     public static final RegistryObject<SoundEvent> DRAGONRADAR = registerSoundEvent("dragonradar");
 	public static final RegistryObject<SoundEvent> NUBE = registerSoundEvent("nube");
 	public static final RegistryObject<SoundEvent> SENZU_BEAN = registerSoundEvent("senzu");
@@ -64,6 +63,7 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> KIBLAST_ATTACK = registerSoundEvent("kiblast_shoot");
     public static final RegistryObject<SoundEvent> KI_EXPLOSION_IMPACT = registerSoundEvent("ki_explosion_impact");
     public static final RegistryObject<SoundEvent> KI_EXPLOSION_CHARGE = registerSoundEvent("ki_explosion_charge");
+    public static final RegistryObject<SoundEvent> KI_LASER = registerSoundEvent("laserbeam");
 
 	public static final RegistryObject<SoundEvent> OOZARU_HEARTBEAT = registerSoundEvent("oozaru_heartbeat");
 	public static final RegistryObject<SoundEvent> OOZARU_GROWL_PLAYER = registerSoundEvent("oozaru_growl_player");

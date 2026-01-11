@@ -268,5 +268,11 @@
     "sounds": [
       "dragonminez:unblock"
     ]
+  },
+  "laserbeam": {
+    "subtitle": "sounds.dragonminez.laserbeam",
+    "sounds": [
+      "dragonminez:laserbeam"
+    ]
   }
 }
