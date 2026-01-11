@@ -53,30 +53,30 @@ public class SaiyanShipItem extends Item {
 		return super.useOn(pContext);
 	}
 
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
-        ItemStack itemstack = pPlayer.getItemInHand(pHand);
-
-        if (!pLevel.isClientSide) {
-
-            KiLaserEntity laser = new KiLaserEntity(pLevel, pPlayer);
-
-            laser.setKiDamage(20.0F);
-            laser.setKiSpeed(3.2F);
-
-            laser.setColors(0xFF0000, 0x910000);
-
-            pLevel.addFreshEntity(laser);
-        }
-
-
-        pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
-                SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 2.0F);
-
-        pPlayer.getCooldowns().addCooldown(this, 10);
-
-        return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
-    }
+//    @Override
+//    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
+//        ItemStack itemstack = pPlayer.getItemInHand(pHand);
+//
+//        if (!pLevel.isClientSide) {
+//
+//            KiLaserEntity laser = new KiLaserEntity(pLevel, pPlayer);
+//
+//            laser.setKiDamage(20.0F);
+//            laser.setKiSpeed(3.2F);
+//
+//            laser.setColors(0xFF0000, 0x910000);
+//
+//            pLevel.addFreshEntity(laser);
+//        }
+//
+//
+//        pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
+//                SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 2.0F);
+//
+//        pPlayer.getCooldowns().addCooldown(this, 10);
+//
+//        return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
+//    }
 
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {

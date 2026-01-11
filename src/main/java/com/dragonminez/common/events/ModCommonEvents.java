@@ -70,6 +70,7 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_JEICE.get(), SagaJeiceEntity.createAttributes().build());
         event.put(MainEntities.SAGA_GINYU.get(), SagaGinyuEntity.createAttributes().build());
         event.put(MainEntities.SAGA_GINYU_GOKU.get(), SagaGinyuEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_FREEZER_FIRST.get(), SagaFreezer1stEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());

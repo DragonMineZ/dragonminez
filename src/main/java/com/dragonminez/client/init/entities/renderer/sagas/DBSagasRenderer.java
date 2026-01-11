@@ -5,7 +5,10 @@ import com.dragonminez.client.init.entities.model.MasterGlobalModel;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.sagas.SagaFreezer1stEntity;
 import com.dragonminez.common.init.entities.sagas.SagaNappaEntity;
+import com.dragonminez.common.quest.Saga;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -29,6 +32,19 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     }
 
     @Override
+    public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        poseStack.pushPose();
+
+        if (entity instanceof SagaFreezer1stEntity) {
+            poseStack.scale(0.8f, 0.8f, 0.8f);
+        }
+
+        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+
+        poseStack.popPose();
+    }
+
+    @Override
     public ResourceLocation getTextureLocation(T animatable) {
 
         if (animatable instanceof SagaNappaEntity nappa) {
@@ -42,4 +58,6 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         return super.getTextureLocation(animatable);
     }
+
+
 }

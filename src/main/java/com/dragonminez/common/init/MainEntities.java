@@ -298,6 +298,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaVegetaNamekEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ginyu_goku").toString()));
+    public static final RegistryObject<EntityType<SagaFreezer1stEntity>> SAGA_FREEZER_FIRST =
+            ENTITY_TYPES.register("saga_freezer_first",
+                    () -> EntityType.Builder.of(SagaFreezer1stEntity::new, MobCategory.CREATURE)
+                            .sized(0.7f, 1.6f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_freezer_first").toString()));
 
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
