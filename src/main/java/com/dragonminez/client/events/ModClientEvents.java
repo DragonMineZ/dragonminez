@@ -139,6 +139,8 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_GINYU.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_GINYU_GOKU.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_FREEZER_FIRST.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_SECOND.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_THIRD.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
@@ -194,6 +196,7 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.BLOCK_PARTICLE.get(), BlockParticle.Provider::new);
         event.registerSpriteSet(MainParticles.GUARD_BLOCK.get(), GuardBlockParticle.Provider::new);
         event.registerSpriteSet(MainParticles.SPARKS.get(), KiSplashParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.AURA.get(), AuraParticle.Provider::new);
 
     }
 

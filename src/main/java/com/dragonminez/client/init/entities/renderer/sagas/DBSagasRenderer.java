@@ -4,9 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.MasterGlobalModel;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.common.init.entities.MastersEntity;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
-import com.dragonminez.common.init.entities.sagas.SagaFreezer1stEntity;
-import com.dragonminez.common.init.entities.sagas.SagaNappaEntity;
+import com.dragonminez.common.init.entities.sagas.*;
 import com.dragonminez.common.quest.Saga;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -37,6 +35,10 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         if (entity instanceof SagaFreezer1stEntity) {
             poseStack.scale(0.8f, 0.8f, 0.8f);
+        } else if(entity instanceof SagaFreezer2ndEntity){
+            poseStack.scale(1.2f, 1.2f, 1.2f);
+        } else if(entity instanceof SagaFreezer3rdEntity){
+            poseStack.scale(1.3f, 1.3f, 1.3f);
         }
 
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
