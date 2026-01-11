@@ -312,7 +312,12 @@ public class MainEntities {
             ENTITY_TYPES.register("saga_freezer_third",
                     () -> EntityType.Builder.of(SagaFreezer3rdEntity::new, MobCategory.CREATURE)
                             .sized(1.0f, 2.5f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_freezer_third").toString()));
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_freezer_base").toString()));
+    public static final RegistryObject<EntityType<SagaFreezerBaseEntity>> SAGA_FREEZER_BASE =
+            ENTITY_TYPES.register("saga_freezer_base",
+                    () -> EntityType.Builder.of(SagaFreezerBaseEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_freezer_base").toString()));
 
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",

@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -16,12 +17,14 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class SagaFreezer3rdEntity extends DBSagasEntity{
+public class SagaFreezerBaseEntity extends DBSagasEntity {
 
     private int kiLaserCooldown = 0;
+    private int kiBlastCooldown = 0;
+
     private int castTimer = 0;
 
-    public SagaFreezer3rdEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+    public SagaFreezerBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
 
@@ -39,6 +42,8 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
 
         if (!this.level().isClientSide) {
             if (this.kiLaserCooldown > 0) this.kiLaserCooldown--;
+            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
+
             if (target != null && target.isAlive()) {
                 double yDiff = target.getY() - this.getY();
                 if (yDiff > 2.0D) {
@@ -55,6 +60,7 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
                     this.setNoGravity(false);
                 }
             }
+
             if (this.isFlying()) {
                 this.setNoGravity(true);
                 if (target != null) {
@@ -66,21 +72,37 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
                 this.setNoGravity(false);
             }
 
-            var distancePlayer = 10.0D;
-            if (target != null && target.isAlive() && this.kiLaserCooldown <= 0 &&
-                    this.distanceToSqr(target) > distancePlayer && !this.isCasting()) {
-                startCasting();
+            if (target != null && target.isAlive() && !this.isCasting()) {
+                double distSqr = this.distanceToSqr(target);
+
+                // Ki Blast (15 bloques -> 225 sqr)
+                if (distSqr > 120.0D && this.kiBlastCooldown <= 0) {
+                    startCasting(2); // Tipo 2 = Blast
+                }
+                //Ki Laser (10 bloques -> 100 sqr)
+                else if (distSqr > 100.0D && this.kiLaserCooldown <= 0) {
+                    startCasting(1); // Tipo 1 = Laser
+                }
             }
 
             if (this.isCasting()) {
                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
+
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
-                    if (this.castTimer >= 20) {
-                        performKiLaserAttack(target);
-                        performKiLaserAttack(target);
-                        performKiLaserAttack(target);
-                        stopCasting();
+
+                    int currentSkill = getSkillType();
+
+                    if (currentSkill == 1) { // Laser
+                        if (this.castTimer >= 20) {
+                            performKiLaserAttack(target);
+                            stopCasting();
+                        }
+                    } else if (currentSkill == 2) { // Blast
+                        if (this.castTimer >= 20) {
+                            performKiBlastAttack(target);
+                            stopCasting();
+                        }
                     }
                 } else {
                     stopCasting();
@@ -89,23 +111,12 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
         }
     }
 
-    private void rotateBodyToTarget(LivingEntity target) {
-        double d0 = target.getX() - this.getX();
-        double d2 = target.getZ() - this.getZ();
-        float targetYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
-        this.setYRot(targetYaw);
-        this.setYBodyRot(targetYaw);
-        this.setYHeadRot(targetYaw);
-        this.yRotO = targetYaw;
-        this.yBodyRotO = targetYaw;
-        this.yHeadRotO = targetYaw;
-    }
-    private void startCasting() {
+    private void startCasting(int type) {
         this.setCasting(true);
+        this.setSkillType(type);
         this.castTimer = 0;
 
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
-
         this.getNavigation().stop();
         this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
     }
@@ -113,22 +124,17 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
     private void stopCasting() {
         this.setCasting(false);
         this.castTimer = 0;
-        this.kiLaserCooldown = 10 * 20;
 
+        int usedSkill = getSkillType();
+
+        if (usedSkill == 1) {
+            this.kiLaserCooldown = 10 * 20;
+        } else if (usedSkill == 2) {
+            this.kiBlastCooldown = 20 * 20;
+        }
+
+        this.setSkillType(0);
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
-    }
-    private void moveTowardsTargetInAir(LivingEntity target) {
-        if (this.isCasting()) return;
-        double flyspeed = this.getFlySpeed();
-        double dx = target.getX() - this.getX();
-        double dy = (target.getY() + 1.0D) - this.getY();
-        double dz = target.getZ() - this.getZ();
-        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        if (distance < 1.0) return;
-        Vec3 movement = new Vec3(dx / distance * flyspeed, dy / distance * flyspeed, dz / distance * flyspeed);
-        double gravityDrag = (dy < -0.5) ? -0.05D : -0.03D;
-        this.setDeltaMovement(movement.add(0, gravityDrag, 0));
     }
 
     private void performKiLaserAttack(LivingEntity target) {
@@ -148,38 +154,85 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
 
         KiLaserEntity laserEntity = new KiLaserEntity(this.level(), this);
         laserEntity.setPos(startPos.x, startPos.y, startPos.z);
-        laserEntity.setColors(0xF157FF, 0x850491);
+        laserEntity.setColors(0xE32D3D, 0xB81422);
         laserEntity.setKiDamage(this.getKiBlastDamage());
-
-        laserEntity.setKiSpeed(1.5f);
+        laserEntity.setKiSpeed(2.3f);
 
         this.level().addFreshEntity(laserEntity);
     }
+
+    private void performKiBlastAttack(LivingEntity target) {
+        KiBlastEntity kiBlast = new KiBlastEntity(this.level(), this);
+
+        double sx = this.getX();
+        double sy = this.getY() + 1.0D;
+        double sz = this.getZ();
+
+        kiBlast.setPos(sx, sy, sz);
+        kiBlast.setColors(0x8A2FCC, 0x5D1294);
+        kiBlast.setSize(2.5f);
+        kiBlast.setKiDamage(this.getKiBlastDamage());
+        kiBlast.setOwner(this);
+
+        double tx = target.getX() - sx;
+        double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
+        double tz = target.getZ() - sz;
+
+        kiBlast.shoot(tx, ty, tz, 1.5F, 1.0F);
+
+        this.level().addFreshEntity(kiBlast);
+    }
+
+    private void rotateBodyToTarget(LivingEntity target) {
+        double d0 = target.getX() - this.getX();
+        double d2 = target.getZ() - this.getZ();
+        float targetYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
+        this.setYRot(targetYaw);
+        this.setYBodyRot(targetYaw);
+        this.setYHeadRot(targetYaw);
+    }
+
+    private void moveTowardsTargetInAir(LivingEntity target) {
+        if (this.isCasting()) return;
+        double flyspeed = this.getFlySpeed();
+        double dx = target.getX() - this.getX();
+        double dy = (target.getY() + 1.0D) - this.getY();
+        double dz = target.getZ() - this.getZ();
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (distance < 1.0) return;
+        Vec3 movement = new Vec3(dx / distance * flyspeed, dy / distance * flyspeed, dz / distance * flyspeed);
+        double gravityDrag = (dy < -0.5) ? -0.05D : -0.03D;
+        this.setDeltaMovement(movement.add(0, gravityDrag, 0));
+    }
+
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         super.registerControllers(controllers);
         controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
         controllers.add(new AnimationController<>(this, "tail", 0, this::tailPredicate));
-
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-
         event.getController().setAnimation(RawAnimation.begin().thenLoop("tail"));
-
         return PlayState.CONTINUE;
     }
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isCasting()) {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("kiattack"));
+
+            int currentSkill = getSkillType();
+
+            if (currentSkill == 1) {
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("kilaser"));
+            } else if (currentSkill == 2) {
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("kiball"));
+            }
             return PlayState.CONTINUE;
         }
-        event.getController().forceAnimationReset();
 
+        event.getController().forceAnimationReset();
         return PlayState.STOP;
     }
-
-
 }

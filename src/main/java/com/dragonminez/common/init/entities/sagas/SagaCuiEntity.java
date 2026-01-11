@@ -27,14 +27,6 @@ public class SagaCuiEntity extends DBSagasEntity {
         super(pEntityType, pLevel);
     }
 
-    public static AttributeSupplier.Builder createAttributes() {
-        return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 300.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.20D)
-                .add(Attributes.ATTACK_DAMAGE, 15.0D)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
-    }
-
     @Override
     public void tick() {
         super.tick();

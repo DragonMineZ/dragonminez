@@ -141,6 +141,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_FREEZER_FIRST.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_FREEZER_SECOND.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_FREEZER_THIRD.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_BASE.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
