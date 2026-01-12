@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
@@ -15,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -129,7 +131,7 @@ public class CombatEvent {
 
 								if (isParry) poiseDamage *= 0.75f;
 								int currentPoise = victimData.getResources().getCurrentPoise();
-								System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
+								//System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
 
 								if (currentPoise - poiseDamage <= 0) {
 									victimData.getResources().setCurrentPoise(0);
@@ -183,9 +185,9 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 
 											// Efecto de Parry (temblor de pantalla pequeño) al atacante
-											// attackerLiving.addEffect(nuestroefectopecausaxdxdxd);
-										}
-										System.out.println("Parry!");
+                                            attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 100, 50));
+                                        }
+										//System.out.println("Parry!");
                                         //SONIDO PARRY
                                         target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
                                                 MainSounds.PARRY.get(),

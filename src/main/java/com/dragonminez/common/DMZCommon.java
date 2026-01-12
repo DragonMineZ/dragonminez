@@ -34,7 +34,8 @@ public class DMZCommon {
         MainParticles.register(modEventBus);
 		MainRecipes.register(modEventBus);
 		MainMenus.register(modEventBus);
-		MainStructurePlacements.register(modEventBus);
+        MainEffects.register(modEventBus);
+        MainStructurePlacements.register(modEventBus);
 		modEventBus.addListener(ModCommonEvents::commonSetup);
 		OverworldFeatures.register(modEventBus);
     }
