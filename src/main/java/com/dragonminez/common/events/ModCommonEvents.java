@@ -74,6 +74,7 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_FREEZER_SECOND.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_FREEZER_THIRD.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_FREEZER_BASE.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_FREEZER_FP.get(), DBSagasEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());
