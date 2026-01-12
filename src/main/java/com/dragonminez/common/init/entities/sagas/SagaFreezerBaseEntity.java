@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import net.minecraft.sounds.SoundEvents;
@@ -158,7 +159,7 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
 
         this.teleportTo(destX, destY, destZ);
 
-        this.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0F, 1.0F);
+        this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
 
         this.teleportCooldown = 8 * 20;
 

@@ -274,5 +274,12 @@
     "sounds": [
       "dragonminez:laserbeam"
     ]
+  },
+  "tp": {
+    "subtitle": "sounds.dragonminez.tp",
+    "sounds": [
+      "dragonminez:tp"
+    ]
   }
+
 }
