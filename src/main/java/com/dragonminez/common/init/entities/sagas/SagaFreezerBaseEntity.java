@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,6 +22,7 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
 
     private int kiLaserCooldown = 0;
     private int kiBlastCooldown = 0;
+    private int teleportCooldown = 0;
 
     private int castTimer = 0;
 
@@ -43,6 +45,7 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
         if (!this.level().isClientSide) {
             if (this.kiLaserCooldown > 0) this.kiLaserCooldown--;
             if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
+            if (this.teleportCooldown > 0) this.teleportCooldown--;
 
             if (target != null && target.isAlive()) {
                 double yDiff = target.getY() - this.getY();
@@ -72,6 +75,10 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
                 this.setNoGravity(false);
             }
 
+            if (target != null && target.isAlive() && this.teleportCooldown <= 0 && !this.isCasting()) {
+                performTeleport(target);
+            }
+
             if (target != null && target.isAlive() && !this.isCasting()) {
                 double distSqr = this.distanceToSqr(target);
 
@@ -94,7 +101,11 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
                     int currentSkill = getSkillType();
 
                     if (currentSkill == 1) { // Laser
-                        if (this.castTimer >= 20) {
+                        if (this.castTimer == 20) {
+                            performKiLaserAttack(target);
+                        }else if (this.castTimer == 40) {
+                            performKiLaserAttack(target);
+                        }else if (this.castTimer == 60) {
                             performKiLaserAttack(target);
                             stopCasting();
                         }
@@ -137,6 +148,23 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
     }
 
+    private void performTeleport(LivingEntity target) {
+        Vec3 targetLook = target.getLookAngle().normalize();
+
+        double distanceBehind = 0.7D;
+        double destX = target.getX() - (targetLook.x * distanceBehind);
+        double destZ = target.getZ() - (targetLook.z * distanceBehind);
+        double destY = target.getY();
+
+        this.teleportTo(destX, destY, destZ);
+
+        this.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0F, 1.0F);
+
+        this.teleportCooldown = 8 * 20;
+
+        this.lookAt(target, 360, 360);
+    }
+
     private void performKiLaserAttack(LivingEntity target) {
         Vec3 startPos = this.getEyePosition();
         Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.5, 0);
@@ -154,7 +182,7 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
 
         KiLaserEntity laserEntity = new KiLaserEntity(this.level(), this);
         laserEntity.setPos(startPos.x, startPos.y, startPos.z);
-        laserEntity.setColors(0xE32D3D, 0xB81422);
+        laserEntity.setColors(0xBA1616, 0x850707);
         laserEntity.setKiDamage(this.getKiBlastDamage());
         laserEntity.setKiSpeed(2.3f);
 

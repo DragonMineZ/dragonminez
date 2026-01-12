@@ -76,9 +76,13 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
-                    if (this.castTimer >= 20) {
+                    if (this.castTimer == 20) {
                         performKiLaserAttack(target);
+                    }else if (this.castTimer == 30) {
                         performKiLaserAttack(target);
+                    }else if (this.castTimer == 40) {
+                        performKiLaserAttack(target);
+                    }else if (this.castTimer == 50) {
                         performKiLaserAttack(target);
                         stopCasting();
                     }
