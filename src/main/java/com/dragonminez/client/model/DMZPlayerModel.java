@@ -23,6 +23,8 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
 
     private static final ResourceLocation BASE_MODEL = ResourceCache.cache(Reference.MOD_ID, "geo/entity/races/human.geo.json");
     private static final ResourceLocation BASE_TEXTURE = ResourceCache.cache(Reference.MOD_ID, "textures/entity/races/human.png");
+    private static final ResourceLocation NULL_TEXTURE = ResourceCache.cache(Reference.MOD_ID, "textures/entity/races/null.png");
+
     private static final ResourceLocation BASE_ANIMATION = ResourceCache.cache(Reference.MOD_ID, "animations/entity/races/base.animation.json");
 
     @Override
@@ -35,14 +37,20 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
                 .map(data -> racePath(player, ResourceType.GEO, data)).orElse(BASE_MODEL);
     }
 
+//    @Override
+//    public ResourceLocation getTextureResource(DMZAnimatable animatable) {
+//        final AbstractClientPlayer player = DMZPlayerRenderer.INSTANCE.getCurrentEntity();
+//        if (player == null) {
+//            return BASE_TEXTURE;
+//        }
+//        return StatsProvider.get(StatsCapability.INSTANCE, player)
+//                .map(data -> racePath(player, ResourceType.TEXTURES, data)).orElse(BASE_TEXTURE);
+//    }
+
+
     @Override
     public ResourceLocation getTextureResource(DMZAnimatable animatable) {
-        final AbstractClientPlayer player = DMZPlayerRenderer.INSTANCE.getCurrentEntity();
-        if (player == null) {
-            return BASE_TEXTURE;
-        }
-        return StatsProvider.get(StatsCapability.INSTANCE, player)
-                .map(data -> racePath(player, ResourceType.TEXTURES, data)).orElse(BASE_TEXTURE);
+        return NULL_TEXTURE;
     }
 
     @Override
@@ -93,27 +101,48 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
     private ResourceLocation racePath(AbstractClientPlayer player, ResourceType resource, StatsData data) {
         final var rawRaceId = data.getCharacter().getRaceName().isEmpty() ? "base" : data.getCharacter().getRaceName();
         final RaceCharacterConfig config = ConfigManager.getRaceCharacter(rawRaceId);
+
         if (config == null) {
-            return resource == ResourceType.GEO ? BASE_MODEL
-                    : resource == ResourceType.TEXTURES ? BASE_TEXTURE
-                    : BASE_ANIMATION;
+            return resource == ResourceType.GEO ? BASE_MODEL : BASE_ANIMATION;
         }
 
         final boolean hasCustomModel = !config.getCustomModel().isEmpty();
         final var gender = data.getCharacter().getGender();
+
+        // 1. OBTENEMOS EL BODY TYPE
+        int bodyType = data.getCharacter().getBodyType();
+
         var raceId = hasCustomModel ? config.getCustomModel() : rawRaceId;
 
         if (!hasCustomModel && resource == ResourceType.ANIMATIONS) {
             raceId = "base";
         }
 
-        // TODO: Dynamic player skin allowance
+        if (raceId.equals("majin") && gender.equals("female")) {
+            raceId = "majin_slim";
+        }
+
         if (resource == ResourceType.TEXTURES && (raceId.isEmpty() || raceId.equals("saiyan") || raceId.equals("human"))) {
             return player.getSkinTextureLocation();
         }
 
-        final String raceName = (gender.equals("female") || isSlim(player)) ? raceId + "_" + "slim"
-                : raceId;
+        boolean isSlimSkin = gender.equals("female") || isSlim(player);
+
+        if (resource == ResourceType.GEO) {
+            if (raceId.equals("saiyan") || raceId.equals("human") || raceId.equals("namekian")) {
+                raceId = "human";
+            }
+        }
+
+        String raceName = raceId;
+
+
+        boolean isBuffHumanoid = (rawRaceId.equals("human") || rawRaceId.equals("saiyan")) && bodyType > 0;
+
+        if (isSlimSkin && raceId.equals("human") && !rawRaceId.equals("namekian") && !isBuffHumanoid) {
+            raceName = raceId + "_" + "slim";
+        }
+
         return ResourceCache.cache(Reference.MOD_ID, resource.name().toLowerCase()
                 + "/entity/races/" + raceName + resource.extension());
     }

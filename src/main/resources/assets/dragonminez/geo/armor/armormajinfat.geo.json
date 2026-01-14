@@ -12,12 +12,17 @@
 			},
 			"bones": [
 				{
-					"name": "body",
-					"pivot": [0, 21, 0]
+					"name": "root",
+					"pivot": [0, 0, 0]
 				},
 				{
-					"name": "armorBody",
-					"parent": "body",
+					"name": "waist",
+					"parent": "root",
+					"pivot": [0, 9, 0]
+				},
+				{
+					"name": "body",
+					"parent": "waist",
 					"pivot": [0, 21, 0],
 					"cubes": [
 						{
@@ -31,14 +36,7 @@
 								"up": {"uv": [20, 16], "uv_size": [9, 4]},
 								"down": {"uv": [32, 26], "uv_size": [8, -4]}
 							}
-						}
-					]
-				},
-				{
-					"name": "armorBody2",
-					"parent": "body",
-					"pivot": [0, 16, 0],
-					"cubes": [
+						},
 						{
 							"origin": [-5, 9, -4.25],
 							"size": [10, 7.1, 8.5],
