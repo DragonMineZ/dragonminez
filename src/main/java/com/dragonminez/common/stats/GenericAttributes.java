@@ -1,6 +1,7 @@
 package com.dragonminez.common.stats;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.mixin.common.RangedAttributeMixin;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -18,6 +19,7 @@ public class GenericAttributes {
 		Attribute armorAttribute = ForgeRegistries.ATTRIBUTES.getValue(new ResourceLocation("minecraft:generic.armor"));
 		Attribute armorToughnessAttribute = ForgeRegistries.ATTRIBUTES.getValue(new ResourceLocation("minecraft:generic.armor_toughness"));
 		Attribute maxHealth = ForgeRegistries.ATTRIBUTES.getValue(new ResourceLocation("minecraft:generic.max_health"));
+		Attribute dmzHealth = MainAttributes.DMZ_HEALTH.get();
 
 		if (armorAttribute instanceof RangedAttribute) {
 			RangedAttributeMixin accessor = (RangedAttributeMixin) armorAttribute;
@@ -31,6 +33,11 @@ public class GenericAttributes {
 
 		if (maxHealth instanceof RangedAttribute) {
 			RangedAttributeMixin accessor = (RangedAttributeMixin) maxHealth;
+			accessor.setMaxValue(2000000000.0);
+		}
+
+		if (dmzHealth instanceof RangedAttribute) {
+			RangedAttributeMixin accessor = (RangedAttributeMixin) dmzHealth;
 			accessor.setMaxValue(2000000000.0);
 		}
 	}

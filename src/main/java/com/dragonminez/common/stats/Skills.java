@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -23,19 +24,19 @@ public class Skills {
 
     public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax) {
         Skill superform = skillMap.get("superform");
-        if (superform != null && superformMax > 0) {
+        if (superform != null) {
             Skill updated = new Skill("superform", superform.getLevel(), superform.isActive(), superformMax);
             skillMap.put("superform", updated);
         }
 
         Skill godform = skillMap.get("godform");
-        if (godform != null && godformMax > 0) {
+        if (godform != null) {
             Skill updated = new Skill("godform", godform.getLevel(), godform.isActive(), godformMax);
             skillMap.put("godform", updated);
         }
 
         Skill legendaryforms = skillMap.get("legendaryforms");
-        if (legendaryforms != null && legendaryformsMax > 0) {
+        if (legendaryforms != null) {
             Skill updated = new Skill("legendaryforms", legendaryforms.getLevel(), legendaryforms.isActive(), legendaryformsMax);
             skillMap.put("legendaryforms", updated);
         }
@@ -55,11 +56,37 @@ public class Skills {
     }
 
     public void setSkillLevel(String name, int level) {
-        Skill skill = skillMap.get(name.toLowerCase());
-        if (skill != null) {
-            skill.setLevel(level);
+        String lowerName = name.toLowerCase();
+        if (!skillMap.containsKey(lowerName)) {
+            int costBasedMaxLevel = ConfigManager.getSkillsConfig().getSkillCosts(lowerName).getCosts().size();
+            int finalMaxLevel;
+            if (lowerName.equalsIgnoreCase("potentialunlock")) {
+                finalMaxLevel = Math.min(costBasedMaxLevel, 30);
+            } else {
+                finalMaxLevel = Math.min(costBasedMaxLevel, 50);
+            }
+            skillMap.put(lowerName, new Skill(name, 0, false, finalMaxLevel));
+        }
+        skillMap.get(lowerName).setLevel(level);
+    }
+
+    public void removeSkill(String name) {
+        String lowerName = name.toLowerCase();
+        if (lowerName.equals("superform") || lowerName.equals("godform") || lowerName.equals("legendaryforms")) {
+            Skill skill = skillMap.get(lowerName);
+            if (skill != null) {
+                skill.setLevel(0);
+                skill.setActive(false);
+            }
+        } else {
+            skillMap.remove(lowerName);
         }
     }
+
+	public void removeAllSkills() {
+		skillMap.clear();
+		registerDefaultSkills();
+	}
 
     public void addSkillLevel(String name, int amount) {
         Skill skill = skillMap.get(name.toLowerCase());
@@ -106,7 +133,7 @@ public class Skills {
     public void load(CompoundTag nbt) {
         if (nbt.contains("SkillsList", Tag.TAG_LIST)) {
             ListTag skillsList = nbt.getList("SkillsList", Tag.TAG_COMPOUND);
-
+            skillMap.clear();
             for (int i = 0; i < skillsList.size(); i++) {
                 CompoundTag skillTag = skillsList.getCompound(i);
                 Skill skill = Skill.load(skillTag);
@@ -144,4 +171,3 @@ public class Skills {
         }
     }
 }
-

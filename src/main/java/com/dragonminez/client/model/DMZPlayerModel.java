@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.render.data.DMZAnimatable;
 import com.dragonminez.client.util.RenderUtil;
-import com.dragonminez.client.util.ResourceCache;
+import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.ResourceType;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -21,11 +21,11 @@ import software.bernie.geckolib.model.data.EntityModelData;
 
 public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
 
-    private static final ResourceLocation BASE_MODEL = ResourceCache.cache(Reference.MOD_ID, "geo/entity/races/human.geo.json");
-    private static final ResourceLocation BASE_TEXTURE = ResourceCache.cache(Reference.MOD_ID, "textures/entity/races/human.png");
-    private static final ResourceLocation NULL_TEXTURE = ResourceCache.cache(Reference.MOD_ID, "textures/entity/races/null.png");
+    private static final ResourceLocation BASE_MODEL = TextureCounter.cache(Reference.MOD_ID, "geo/entity/races/human.geo.json");
+    private static final ResourceLocation BASE_TEXTURE = TextureCounter.cache(Reference.MOD_ID, "textures/entity/races/human.png");
+    private static final ResourceLocation NULL_TEXTURE = TextureCounter.cache(Reference.MOD_ID, "textures/entity/races/null.png");
 
-    private static final ResourceLocation BASE_ANIMATION = ResourceCache.cache(Reference.MOD_ID, "animations/entity/races/base.animation.json");
+    private static final ResourceLocation BASE_ANIMATION = TextureCounter.cache(Reference.MOD_ID, "animations/entity/races/base.animation.json");
 
     @Override
     public ResourceLocation getModelResource(DMZAnimatable animatable) {
@@ -145,7 +145,7 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
             raceName = raceId + "_" + "slim";
         }
 
-        return ResourceCache.cache(Reference.MOD_ID, resource.name().toLowerCase()
+        return TextureCounter.cache(Reference.MOD_ID, resource.name().toLowerCase()
                 + "/entity/races/" + raceName + resource.extension());
     }
 

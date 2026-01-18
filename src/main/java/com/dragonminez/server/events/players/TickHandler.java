@@ -7,11 +7,14 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -26,6 +29,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TickHandler {
 
+	private static final UUID STUN_SLOW_UUID = UUID.fromString("7107DE5E-7CE8-4030-940E-514C1F160890");
     private static final int REGEN_INTERVAL = 20;
     private static final int SYNC_INTERVAL = 10;
     private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
@@ -53,6 +57,28 @@ public class TickHandler {
 
             data.getEffects().tick();
 
+			var movementAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
+
+			if (data.getStatus().isStunned()) {
+				if (!data.getCooldowns().hasCooldown(Cooldowns.STUN_TIMER)) data.getStatus().setStunned(false);
+				else data.getStatus().setBlocking(false);
+
+				if (movementAttr != null && movementAttr.getModifier(STUN_SLOW_UUID) == null) {
+					AttributeModifier stunSlow = new AttributeModifier(
+							STUN_SLOW_UUID,
+							"Stun Immobilization",
+							-1.0,
+							AttributeModifier.Operation.MULTIPLY_TOTAL
+					);
+					movementAttr.addTransientModifier(stunSlow);
+				}
+
+			} else {
+				if (movementAttr != null && movementAttr.getModifier(STUN_SLOW_UUID) != null) {
+					movementAttr.removeModifier(STUN_SLOW_UUID);
+				}
+			}
+
             boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
             boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
             boolean isChargingKi = data.getStatus().isChargingKi();
@@ -72,9 +98,10 @@ public class TickHandler {
                     double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
                     boolean activeCharging = isChargingKi && !isDescending;
                     
-                    regenerateHealth(serverPlayer, data, classStats, meditationBonus);
+                    regenerateHealth(serverPlayer, data, classStats);
                     regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
-                    regenerateStamina(data, classStats, meditationBonus, activeCharging);
+                    regenerateStamina(data, classStats, meditationBonus);
+					regeneratePoise(data, meditationBonus);
                 }
 
                 playerTickCounters.put(playerId, 0);
@@ -84,8 +111,12 @@ public class TickHandler {
 
 			if (isChargingKi && tickCounter % 20 == 0) {
 				int currentRelease = data.getResources().getPowerRelease();
-				if (!isDescending && currentRelease < 100) {
-					int newRelease = Math.min(100, currentRelease + 5);
+
+				int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
+				int maxRelease = 50 + (potentialUnlockLevel * 5);
+
+				if (!isDescending && currentRelease < maxRelease) {
+					int newRelease = Math.min(maxRelease, currentRelease + 5);
 					data.getResources().setPowerRelease(newRelease);
 				} else if (isDescending && currentRelease > 0) {
 					int newRelease = Math.max(0, currentRelease - 5);
@@ -136,15 +167,16 @@ public class TickHandler {
     }
 
     private static void regenerateHealth(ServerPlayer player, StatsData data, 
-                                        RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+                                        RaceStatsConfig.ClassStats classStats) {
         int currentHealth = (int) player.getHealth();
-        int maxHealth = data.getMaxHealth();
+        float maxHealth = player.getMaxHealth();
         
         if (currentHealth < maxHealth) {
             double baseRegen = classStats.getHealthRegenRate();
-            double regenAmount = maxHealth * baseRegen * meditationBonus;
-            
-            int newHealth = (int) Math.min(maxHealth, currentHealth + Math.ceil(regenAmount));
+            double regenAmount = maxHealth * baseRegen;
+			if (regenAmount <= 1.0) return;
+
+			float newHealth = (float) Math.min(maxHealth, currentHealth + Math.ceil(regenAmount));
             player.setHealth(newHealth);
         }
     }
@@ -162,6 +194,7 @@ public class TickHandler {
         if (activeCharging) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
 
             DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
@@ -171,6 +204,7 @@ public class TickHandler {
         } else if (!hasActiveForm && currentEnergy < maxEnergy) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
         }
 
@@ -191,19 +225,34 @@ public class TickHandler {
     }
 
     private static void regenerateStamina(StatsData data,
-                                         RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+                                         RaceStatsConfig.ClassStats classStats, double meditationBonus) {
         int currentStamina = data.getResources().getCurrentStamina();
         int maxStamina = data.getMaxStamina();
         
         if (currentStamina < maxStamina) {
             double baseRegen = classStats.getStaminaRegenRate();
-            double multiplier = activeCharging ? ACTIVE_CHARGE_MULTIPLIER : 1.0;
-            double regenAmount = maxStamina * baseRegen * meditationBonus * multiplier;
+            double regenAmount = maxStamina * baseRegen * meditationBonus;
+			if (regenAmount <= 1.0) regenAmount = 0.5;
             
             int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
             data.getResources().setCurrentStamina(newStamina);
         }
     }
+
+	private static void regeneratePoise(StatsData data, double meditationBonus) {
+		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking() || data.getStatus().isStunned()) return;
+
+		int currentPoise = data.getResources().getCurrentPoise();
+		int maxPoise = data.getMaxPoise();
+
+		if (currentPoise < maxPoise) {
+			double baseRegen = 0.1;
+			double regenAmount = maxPoise * baseRegen * meditationBonus;
+			if (regenAmount < 1.0) regenAmount = 1.0;
+			int newPoise = (int) Math.min(maxPoise, currentPoise + Math.ceil(regenAmount));
+			data.getResources().setCurrentPoise(newPoise);
+		}
+	}
 
     private static void handleTransformation(ServerPlayer player, StatsData data, boolean hasKaiokenSelected) {
         if (hasKaiokenSelected) {

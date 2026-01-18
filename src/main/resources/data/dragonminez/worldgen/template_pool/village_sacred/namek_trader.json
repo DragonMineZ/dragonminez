@@ -1,0 +1,101 @@
+{
+  "name": "dragonminez:village_sacred/namek_trader",
+  "fallback": "minecraft:empty",
+  "elements": [{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader1",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader2",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader3",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader4",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader5",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader6",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader7",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader8",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader9",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader10",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader11",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  },{
+    "weight": 3,
+    "element": {
+      "location": "dragonminez:village_sacred/entities/namek_traders/namek_trader12",
+      "processors": "minecraft:empty",
+      "projection": "rigid",
+      "element_type": "minecraft:single_pool_element"
+    }
+  }]
+}

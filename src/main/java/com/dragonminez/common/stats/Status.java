@@ -14,6 +14,10 @@ public class Status {
     private boolean compactMenu;
 	private boolean isChargingKi;
 	private boolean isKaiokenActive;
+	private boolean isInCombat;
+	private boolean isBlocking;
+	private long lastBlockTime;
+	private boolean isStunned;
 
     public Status() {
         this.isAlive = true;
@@ -27,6 +31,10 @@ public class Status {
         this.compactMenu = false;
 		this.isChargingKi = false;
 		this.isKaiokenActive = false;
+		this.isInCombat = false;
+		this.isBlocking = false;
+		this.lastBlockTime = 0;
+		this.isStunned = false;
     }
 
     public boolean isAlive() { return isAlive; }
@@ -40,6 +48,10 @@ public class Status {
     public boolean isCompactMenu() { return compactMenu; }
 	public boolean isChargingKi() { return isChargingKi; }
 	public boolean isKaiokenActive() { return isKaiokenActive; }
+	public boolean isInCombat() { return isInCombat; }
+	public boolean isBlocking() { return isBlocking; }
+	public long getLastBlockTime() { return lastBlockTime; }
+	public boolean isStunned() { return isStunned; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -52,6 +64,10 @@ public class Status {
     public void setCompactMenu(boolean compact) { this.compactMenu = compact; }
 	public void setChargingKi(boolean charging) { this.isChargingKi = charging; }
 	public void setKaiokenActive(boolean active) { this.isKaiokenActive = active; }
+	public void setInCombat(boolean inCombat) { this.isInCombat = inCombat; }
+	public void setBlocking(boolean blocking) { this.isBlocking = blocking; }
+	public void setLastBlockTime(long time) { this.lastBlockTime = time; }
+	public void setStunned(boolean stunned) { this.isStunned = stunned; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -65,6 +81,11 @@ public class Status {
         tag.putBoolean("InKaioPlanet", isInKaioPlanet);
         tag.putBoolean("CompactMenu", compactMenu);
 		tag.putBoolean("IsChargingKi", isChargingKi);
+		tag.putBoolean("IsKaiokenActive", isKaiokenActive);
+		tag.putBoolean("IsInCombat", isInCombat);
+		tag.putBoolean("IsBlocking", isBlocking);
+		tag.putLong("LastBlockTime", lastBlockTime);
+		tag.putBoolean("IsStunned", isStunned);
         return tag;
     }
 
@@ -79,6 +100,11 @@ public class Status {
         this.isInKaioPlanet = tag.getBoolean("InKaioPlanet");
         this.compactMenu = tag.getBoolean("CompactMenu");
 		this.isChargingKi = tag.getBoolean("IsChargingKi");
+		this.isKaiokenActive = tag.getBoolean("IsKaiokenActive");
+		this.isInCombat = tag.getBoolean("IsInCombat");
+		this.isBlocking = tag.getBoolean("IsBlocking");
+		this.lastBlockTime = tag.getLong("LastBlockTime");
+		this.isStunned = tag.getBoolean("IsStunned");
     }
 
     public void copyFrom(Status other) {
@@ -92,6 +118,11 @@ public class Status {
         this.isInKaioPlanet = other.isInKaioPlanet;
         this.compactMenu = other.compactMenu;
 		this.isChargingKi = other.isChargingKi;
+		this.isKaiokenActive = other.isKaiokenActive;
+		this.isInCombat = other.isInCombat;
+		this.isBlocking = other.isBlocking;
+		this.lastBlockTime = other.lastBlockTime;
+		this.isStunned = other.isStunned;
     }
 }
 

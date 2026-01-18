@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smoking",
+  "category": "food",
+  "cookingtime": 100,
+  "experience": 0.35,
+  "ingredient": {
+    "item": "dragonminez:dino_tail_raw"
+  },
+  "result": "dragonminez:dino_tail_cooked"
+}

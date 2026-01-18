@@ -20,12 +20,18 @@ import java.util.*;
 public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga>> {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<String, Saga> LOADED_SAGAS = new HashMap<>();
+    private static final Map<String, Saga> CLIENT_SAGAS = new HashMap<>();
     private static final String SAGA_FOLDER = "dragonminez" + File.separator + "sagas";
 
     public static void init() {
     }
 
-    private static void createDefaultSagaFile(Path sagaDir) {
+    private static void createDefaultSagaFiles(Path sagaDir) {
+        createSaiyanSagaFile(sagaDir);
+        createFriezaSagaFile(sagaDir);
+    }
+
+    private static void createSaiyanSagaFile(Path sagaDir) {
         Path defaultFile = sagaDir.resolve("saiyan_saga.json");
         if (!Files.exists(defaultFile)) {
             try {
@@ -38,105 +44,229 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
 
                     JsonObject requirements = new JsonObject();
                     requirements.addProperty("previousSaga", "");
-                    requirements.addProperty("minLevel", 1);
-                    requirements.addProperty("requiredRace", "");
                     root.add("requirements", requirements);
 
                     JsonArray quests = new JsonArray();
 
-                    JsonObject quest1 = new JsonObject();
-                    quest1.addProperty("id", 1);
-                    quest1.addProperty("title", "dmz.quest.saiyan1.name");
-                    quest1.addProperty("description", "dmz.quest.saiyan1.desc");
+                    // Quest 1
+                    quests.add(createQuest(1, "dmz.quest.saiyan1.name", "dmz.quest.saiyan1.desc",
+                            new JsonObject[][]{
+                                    {createObjective("STRUCTURE", "dmz.quest.saiyan1.obj1", "dragonminez:roshi_house", null, 0)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 500, null, 0, null)}
+                            }
+                    ));
 
-                    JsonArray objectives1 = new JsonArray();
-                    JsonObject obj1_1 = new JsonObject();
-                    obj1_1.addProperty("type", "STRUCTURE");
-                    obj1_1.addProperty("description", "dmz.quest.saiyan1.obj1");
-                    obj1_1.addProperty("structure", "dragonminez:kame_house");
-                    objectives1.add(obj1_1);
-                    quest1.add("objectives", objectives1);
+                    // Quest 2
+                    quests.add(createQuest(2, "dmz.quest.saiyan2.name", "dmz.quest.saiyan2.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.saiyan2.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.saiyan2.obj2", null, "dragonminez:saga_raditz", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 1000, null, 0, null)}
+                            }
+                    ));
 
-                    JsonArray rewards1 = new JsonArray();
-                    JsonObject reward1_1 = new JsonObject();
-                    reward1_1.addProperty("type", "TPS");
-                    reward1_1.addProperty("amount", 500);
-                    rewards1.add(reward1_1);
-                    quest1.add("rewards", rewards1);
+                    // Quest 3
+                    quests.add(createQuest(3, "dmz.quest.saiyan3.name", "dmz.quest.saiyan3.desc",
+                            new JsonObject[][]{
+                                    {createObjective("ITEM", "dmz.quest.saiyan3.obj1", "dragonminez:dball_radar", null, 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 1500, null, 0, null)}
+                            }
+                    ));
 
-                    quests.add(quest1);
+                    // Quest 4
+                    JsonArray objectives4 = new JsonArray();
+                    for (int i = 1; i <= 7; i++) {
+                        objectives4.add(createObjective("ITEM", "dmz.quest.saiyan4.obj" + i, "dragonminez:dball" + i, null, 1));
+                    }
+                    quests.add(createQuest(4, "dmz.quest.saiyan4.name", "dmz.quest.saiyan4.desc",
+                            new JsonObject[][]{{objectives4.get(0).getAsJsonObject(), objectives4.get(1).getAsJsonObject(), objectives4.get(2).getAsJsonObject(), objectives4.get(3).getAsJsonObject(), objectives4.get(4).getAsJsonObject(), objectives4.get(5).getAsJsonObject(), objectives4.get(6).getAsJsonObject()}},
+                            new JsonObject[][]{
+                                    {createReward("TPS", 2000, null, 0, null)}
+                            }
+                    ));
 
-                    JsonObject quest2 = new JsonObject();
-                    quest2.addProperty("id", 2);
-                    quest2.addProperty("title", "dmz.quest.saiyan2.name");
-                    quest2.addProperty("description", "dmz.quest.saiyan2.desc");
+                    // Quest 5
+                    quests.add(createQuest(5, "dmz.quest.saiyan5.name", "dmz.quest.saiyan5.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.saiyan5.obj1", "dragonminez:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.saiyan5.obj2", null, "dragonminez:saga_saibaman1", 6)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 2500, null, 0, null)}
+                            }
+                    ));
 
-                    JsonArray objectives2 = new JsonArray();
-                    JsonObject obj2_1 = new JsonObject();
-                    obj2_1.addProperty("type", "BIOME");
-                    obj2_1.addProperty("description", "dmz.quest.saiyan2.obj1");
-                    obj2_1.addProperty("biome", "plains");
-                    objectives2.add(obj2_1);
+                    // Quest 6
+                    quests.add(createQuest(6, "dmz.quest.saiyan6.name", "dmz.quest.saiyan6.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.saiyan6.obj1", "dragonminez:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.saiyan6.obj2", null, "dragonminez:saga_nappa", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 3000, null, 0, null)}
+                            }
+                    ));
 
-                    JsonObject obj2_2 = new JsonObject();
-                    obj2_2.addProperty("type", "KILL");
-                    obj2_2.addProperty("description", "dmz.quest.saiyan2.obj2");
-                    obj2_2.addProperty("entity", "dragonminez:raditz");
-                    obj2_2.addProperty("count", 1);
-                    objectives2.add(obj2_2);
-                    quest2.add("objectives", objectives2);
+                    // Quest 7
+                    quests.add(createQuest(7, "dmz.quest.saiyan7.name", "dmz.quest.saiyan7.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.saiyan7.obj1", "dragonminez:rocky", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.saiyan7.obj2", null, "dragonminez:saga_vegeta", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 3500, null, 0, null)}
+                            }
+                    ));
 
-                    JsonArray rewards2 = new JsonArray();
-                    JsonObject reward2_1 = new JsonObject();
-                    reward2_1.addProperty("type", "TPS");
-                    reward2_1.addProperty("amount", 1000);
-                    rewards2.add(reward2_1);
-                    quest2.add("rewards", rewards2);
+                    // Quest 8
+                    quests.add(createQuest(8, "dmz.quest.saiyan8.name", "dmz.quest.saiyan8.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.saiyan8.obj1", "dragonminez:rocky", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.saiyan8.obj2", null, "dragonminez:saga_ozaruvegeta", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 4000, null, 0, null)}
+                            }
+                    ));
 
-                    quests.add(quest2);
-
-                    JsonObject quest3 = new JsonObject();
-                    quest3.addProperty("id", 3);
-                    quest3.addProperty("title", "dmz.quest.saiyan3.name");
-                    quest3.addProperty("description", "dmz.quest.saiyan3.desc");
-
-                    JsonArray objectives3 = new JsonArray();
-                    JsonObject obj3_1 = new JsonObject();
-                    obj3_1.addProperty("type", "BIOME");
-                    obj3_1.addProperty("description", "dmz.quest.saiyan3.obj1");
-                    obj3_1.addProperty("biome", "mountain");
-                    objectives3.add(obj3_1);
-
-                    JsonObject obj3_2 = new JsonObject();
-                    obj3_2.addProperty("type", "KILL");
-                    obj3_2.addProperty("description", "dmz.quest.saiyan3.obj2");
-                    obj3_2.addProperty("entity", "dragonminez:saibaman");
-                    obj3_2.addProperty("count", 6);
-                    objectives3.add(obj3_2);
-                    quest3.add("objectives", objectives3);
-
-                    JsonArray rewards3 = new JsonArray();
-                    JsonObject reward3_1 = new JsonObject();
-                    reward3_1.addProperty("type", "TPS");
-                    reward3_1.addProperty("amount", 1500);
-                    rewards3.add(reward3_1);
-
-                    JsonObject reward3_2 = new JsonObject();
-                    reward3_2.addProperty("type", "COMMAND");
-                    reward3_2.addProperty("command", "dmzskill unlock %player% fly");
-                    rewards3.add(reward3_2);
-                    quest3.add("rewards", rewards3);
-
-                    quests.add(quest3);
+                    // Quest 9
+                    quests.add(createQuest(9, "dmz.quest.saiyan9.name", "dmz.quest.saiyan9.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.saiyan9.obj1", "dragonminez:ajissa_plains", null, 0)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 4500, null, 0, null)}
+                            }
+                    ));
 
                     root.add("quests", quests);
-
                     GSON.toJson(root, writer);
                 }
             } catch (IOException e) {
-                LogUtil.error(Env.COMMON, "Failed to create default saga file", e);
+                LogUtil.error(Env.COMMON, "Failed to create default saiyan saga file", e);
             }
         }
+    }
+
+    private static void createFriezaSagaFile(Path sagaDir) {
+        Path defaultFile = sagaDir.resolve("frieza_saga.json");
+        if (!Files.exists(defaultFile)) {
+            try {
+                Files.createDirectories(sagaDir);
+                try (Writer writer = Files.newBufferedWriter(defaultFile, StandardCharsets.UTF_8)) {
+                    JsonObject root = new JsonObject();
+
+                    root.addProperty("id", "frieza_saga");
+                    root.addProperty("name", "dmz.saga.frieza_saga");
+
+                    JsonObject requirements = new JsonObject();
+                    requirements.addProperty("previousSaga", "saiyan_saga");
+                    root.add("requirements", requirements);
+
+                    JsonArray quests = new JsonArray();
+
+                    // Quest 1
+                    quests.add(createQuest(1, "dmz.quest.frieza1.name", "dmz.quest.frieza1.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.frieza1.obj1", "dragonminez:ajissa_plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.frieza1.obj2", null, "dragonminez:saga_cui", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 5000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 2
+                    quests.add(createQuest(2, "dmz.quest.frieza2.name", "dmz.quest.frieza2.desc",
+                            new JsonObject[][]{
+                                    {createObjective("STRUCTURE", "dmz.quest.frieza2.obj1", "dragonminez:ajissa_village", null, 0)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 5500, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 3
+                    quests.add(createQuest(3, "dmz.quest.frieza3.name", "dmz.quest.frieza3.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.frieza3.obj1", "dragonminez:ajissa_plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.frieza3.obj2", null, "dragonminez:saga_dodoria", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 6000, null, 0, null)}
+                            }
+                    ));
+
+                    root.add("quests", quests);
+                    GSON.toJson(root, writer);
+                }
+            } catch (IOException e) {
+                LogUtil.error(Env.COMMON, "Failed to create default frieza saga file", e);
+            }
+        }
+    }
+
+    private static JsonObject createQuest(int id, String title, String description, JsonObject[][] objectives, JsonObject[][] rewards) {
+        JsonObject quest = new JsonObject();
+        quest.addProperty("id", id);
+        quest.addProperty("title", title);
+        quest.addProperty("description", description);
+
+        JsonArray objectivesArray = new JsonArray();
+        for (JsonObject[] objectiveGroup : objectives) {
+            for (JsonObject objective : objectiveGroup) {
+                objectivesArray.add(objective);
+            }
+        }
+        quest.add("objectives", objectivesArray);
+
+        JsonArray rewardsArray = new JsonArray();
+        for (JsonObject[] rewardGroup : rewards) {
+            for (JsonObject reward : rewardGroup) {
+                rewardsArray.add(reward);
+            }
+        }
+        quest.add("rewards", rewardsArray);
+
+        return quest;
+    }
+
+    private static JsonObject createObjective(String type, String description, String target, String entity, int count) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("type", type);
+        obj.addProperty("description", description);
+        if (target != null) {
+            if (type.equals("STRUCTURE") || type.equals("BIOME") || type.equals("ITEM")) {
+                obj.addProperty(type.toLowerCase(), target);
+            }
+        }
+        if (entity != null) {
+            obj.addProperty("entity", entity);
+        }
+        if (count > 0) {
+            obj.addProperty("count", count);
+        }
+        return obj;
+    }
+
+    private static JsonObject createReward(String type, int amount, String item, int count, String command) {
+        JsonObject reward = new JsonObject();
+        reward.addProperty("type", type);
+        if (type.equals("TPS")) {
+            reward.addProperty("amount", amount);
+        } else if (type.equals("ITEM")) {
+            reward.addProperty("item", item);
+            reward.addProperty("count", count);
+        } else if (type.equals("COMMAND")) {
+            reward.addProperty("command", command);
+        }
+        return reward;
     }
 
     public static void loadSagas(MinecraftServer server) {
@@ -159,7 +289,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         try {
             if (!Files.exists(sagaDir)) {
                 Files.createDirectories(sagaDir);
-                createDefaultSagaFile(sagaDir);
+                createDefaultSagaFiles(sagaDir);
             }
 
             try (var stream = Files.walk(sagaDir)) {
@@ -179,7 +309,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
             Saga saga = parseSaga(root);
             if (saga != null) {
                 LOADED_SAGAS.put(saga.getId(), saga);
-                LogUtil.debug(Env.COMMON, "Loaded saga: {}", saga.getName());
+                LogUtil.info(Env.COMMON, "Loaded saga: {}", saga.getName());
             }
         } catch (Exception e) {
             LogUtil.error(Env.COMMON, "Failed to load saga file: {}", file, e);
@@ -194,9 +324,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         if (json.has("requirements")) {
             JsonObject reqJson = json.getAsJsonObject("requirements");
             String prevSaga = reqJson.has("previousSaga") ? reqJson.get("previousSaga").getAsString() : "";
-            int minLevel = reqJson.has("minLevel") ? reqJson.get("minLevel").getAsInt() : 0;
-            String race = reqJson.has("requiredRace") ? reqJson.get("requiredRace").getAsString() : "";
-            requirements = new Saga.SagaRequirements(prevSaga, minLevel, race);
+            requirements = new Saga.SagaRequirements(prevSaga);
         }
 
         List<Quest> quests = new ArrayList<>();
@@ -221,6 +349,20 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         return LOADED_SAGAS.get(id);
     }
 
+    public static Map<String, Saga> getClientSagas() {
+        return new HashMap<>(CLIENT_SAGAS);
+    }
+
+    public static Saga getClientSaga(String id) {
+        return CLIENT_SAGAS.get(id);
+    }
+
+    public static void applySyncedSagas(Map<String, Saga> sagas) {
+        CLIENT_SAGAS.clear();
+        CLIENT_SAGAS.putAll(sagas);
+        LogUtil.info(Env.CLIENT, "Loaded {} saga(s) from server", sagas.size());
+    }
+
     @Override
     protected @NotNull Map<String, Saga> prepare(@NotNull ResourceManager pResourceManager, @NotNull ProfilerFiller pProfiler) {
         return new HashMap<>(LOADED_SAGAS);
@@ -232,4 +374,3 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         LOADED_SAGAS.putAll(pObject);
     }
 }
-

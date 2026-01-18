@@ -2,8 +2,8 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.block.custom.*;
-import com.dragonminez.server.worldgen.tree.NamekAjissaGrower;
-import com.dragonminez.server.worldgen.tree.NamekSacredGrower;
+import com.dragonminez.server.world.tree.NamekAjissaGrower;
+import com.dragonminez.server.world.tree.NamekSacredGrower;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.WoodType;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -30,7 +31,6 @@ public final class MainBlocks {
 		return (IsThisOn) -> (Boolean) IsThisOn.getValue(BlockStateProperties.LIT) ? pLightValue : 0;
 	}
 
-	//INICIO DE ITEMS SIN NECESIDADES ESPECIALES **NO** TIENEN SU CLASE EN INIT.BLOCKS.CUSTOM:
 	//BLOQUES
 	public static final RegistryObject<Block> INVISIBLE_LADDER_BLOCK = registerBlock("invisible_ladder_block",
 			() -> new ClimbableBlock(BlockBehaviour.Properties.of().noOcclusion().forceSolidOff()
@@ -222,9 +222,15 @@ public final class MainBlocks {
 	//                .mapColor(MapColor.STONE).requiresCorrectToolForDrops().strength(3.5F)
 	//                .lightLevel(litBlockEmission(13))));
 
-	//public static final RegistryObject<Block> KIKONO_ARMOR_STATION = registerBlock("kikono_armor_station",
-	//		() -> new KikonoArmorStationBlock(BlockBehaviour.Properties.copy(Blocks.SMITHING_TABLE)
-	//				.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
+	public static final RegistryObject<Block> KIKONO_STATION = registerBlock("kikono_station",
+			() -> new KikonoStationBlock(BlockBehaviour.Properties.copy(Blocks.SMITHING_TABLE)
+					.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
+	public static final RegistryObject<Block> FUEL_GENERATOR = registerBlock("fuel_generator",
+			() -> new FuelGeneratorBlock(BlockBehaviour.Properties.copy(Blocks.FURNACE)
+					.mapColor(MapColor.STONE).requiresCorrectToolForDrops().noOcclusion()));
+	public static final RegistryObject<Block> ENERGY_CABLE = registerBlock("energy_cable",
+			() -> new EnergyCableBlock(BlockBehaviour.Properties.copy(Blocks.WHITE_WOOL)
+					.mapColor(MapColor.STONE).noOcclusion()));
 
 	//Plantas Namek 1
 	public static final RegistryObject<Block> NAMEK_GRASS = registerBlock("namek_grass",

@@ -18,19 +18,19 @@ public class MasterGlobalModel<T extends MastersEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getModelResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "geo/entity/master/" + name + ".geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/master/" + name + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "textures/entity/master/" + name + ".png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/master/" + name + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return new ResourceLocation(Reference.MOD_ID, "animations/entity/master/masterentity.animation.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/master/" + name +".animation.json");
     }
 
     @Override

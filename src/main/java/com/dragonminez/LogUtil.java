@@ -27,6 +27,6 @@ public final class LogUtil {
 	}
 
 	private static String prefixedMessage(Env env, String message) {
-		return "[" + env.name() + "] " + message;
+		return "[DMZ-" + env.name() + "] " + message;
 	}
 }

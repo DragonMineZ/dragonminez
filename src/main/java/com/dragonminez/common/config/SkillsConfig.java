@@ -17,6 +17,7 @@ public class SkillsConfig {
 
     private void createDefaults() {
         List<Integer> jumpCosts = new ArrayList<>();
+		jumpCosts.add(-1);
         jumpCosts.add(2000);
         jumpCosts.add(3000);
         jumpCosts.add(4000);
@@ -29,6 +30,7 @@ public class SkillsConfig {
 		skills.put("jump", new SkillCosts(jumpCosts));
 
 		List<Integer> flyCosts = new ArrayList<>();
+		flyCosts.add(-1);
 		flyCosts.add(2000);
 		flyCosts.add(3000);
 		flyCosts.add(4000);
@@ -41,6 +43,7 @@ public class SkillsConfig {
 		skills.put("fly", new SkillCosts(flyCosts));
 
 		List<Integer> potentialUnlockCosts = new ArrayList<>();
+		potentialUnlockCosts.add(-1);
 		potentialUnlockCosts.add(4000);
 		potentialUnlockCosts.add(6000);
 		potentialUnlockCosts.add(8000);
@@ -56,6 +59,7 @@ public class SkillsConfig {
 		skills.put("potentialunlock", new SkillCosts(potentialUnlockCosts));
 
 		List<Integer> meditationCosts = new ArrayList<>();
+		meditationCosts.add(-1);
 		meditationCosts.add(2000);
 		meditationCosts.add(3000);
 		meditationCosts.add(4000);
@@ -68,6 +72,7 @@ public class SkillsConfig {
 		skills.put("meditation", new SkillCosts(meditationCosts));
 
 		List<Integer> kiControlCosts = new ArrayList<>();
+		kiControlCosts.add(-1);
 		kiControlCosts.add(2000);
 		kiControlCosts.add(3000);
 		kiControlCosts.add(4000);
@@ -80,6 +85,7 @@ public class SkillsConfig {
 		skills.put("kicontrol", new SkillCosts(kiControlCosts));
 
 		List<Integer> kiSenseCosts = new ArrayList<>();
+		kiSenseCosts.add(-1);
 		kiSenseCosts.add(2000);
 		kiSenseCosts.add(3000);
 		kiSenseCosts.add(4000);
@@ -92,6 +98,7 @@ public class SkillsConfig {
 		skills.put("kisense", new SkillCosts(kiSenseCosts));
 
 		List<Integer> kiManipulationCosts = new ArrayList<>();
+		kiManipulationCosts.add(-1);
 		kiManipulationCosts.add(2000);
 		kiManipulationCosts.add(3000);
 		kiManipulationCosts.add(4000);
@@ -104,6 +111,7 @@ public class SkillsConfig {
 		skills.put("kimanipulation", new SkillCosts(kiManipulationCosts));
 
 		List<Integer> kaiokenCosts = new ArrayList<>();
+		kaiokenCosts.add(-1);
 		kaiokenCosts.add(5000);
 		kaiokenCosts.add(7000);
 		kaiokenCosts.add(9000);

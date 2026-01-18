@@ -5,6 +5,7 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.quest.QuestData;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
 public class StatsData {
@@ -29,6 +30,7 @@ public class StatsData {
         this.cooldowns = new Cooldowns();
         this.character = new Character();
         this.resources = new Resources();
+        this.resources.setPlayer(player);
         this.skills = new Skills();
         this.effects = new Effects();
         this.questData = new QuestData();
@@ -78,26 +80,30 @@ public class StatsData {
         return (int) ((str + skp + res + vit + pwr) * releaseMultiplier);
     }
 
-    public int getMaxHealth() {
+    public float getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
-        double vitMult = 1.0 + getTotalMultiplier("VIT");
+        double vitMult = 1.0 + getFormMultiplier("VIT");
         double bonusVit = bonusStats.calculateBonus("VIT", 0);
-        return (int) (20 + (stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
+        return (float) ((stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
-        double eneMult = 1.0 + getTotalMultiplier("ENE");
+        double eneMult = 1.0 + getFormMultiplier("ENE");
         double bonusEne = bonusStats.calculateBonus("ENE", 0);
-        return (int) (100 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
+        return (int) (20 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
     }
 
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
         double resMult = 1.0 + getTotalMultiplier("RES");
         double bonusRes = bonusStats.calculateBonus("RES", 0);
-        return (int) (100 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
+        return (int) (20 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
     }
+
+	public int getMaxPoise() {
+		return (int) (100 + stats.getResistance() * 0.1);
+	}
 
 	public double getMaxMeleeDamage() {
 		double strScaling = getStatScaling("STR");
@@ -155,7 +161,9 @@ public class StatsData {
 		double defScaling = getStatScaling("DEF");
 		double resMult = 1.0 + getTotalMultiplier("RES");
 		double bonusRes = bonusStats.calculateBonus("RES", 0);
-		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling);
+		double armor = player.getArmorValue();
+		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
+		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.75 + toughness;
 	}
 
     public double getDefense() {
@@ -163,76 +171,9 @@ public class StatsData {
         double resMult = 1.0 + getTotalMultiplier("RES");
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
         double bonusRes = bonusStats.calculateBonus("RES", 0);
-        return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling)) * releaseMultiplier;
-    }
-
-    public CompoundTag save() {
-        CompoundTag nbt = new CompoundTag();
-        nbt.put("Stats", stats.save());
-        nbt.put("Status", status.save());
-        nbt.put("Cooldowns", cooldowns.save());
-        nbt.put("Character", character.save());
-        nbt.put("Resources", resources.save());
-        nbt.put("Skills", skills.save());
-        nbt.put("Effects", effects.save());
-        nbt.put("QuestData", questData.serializeNBT());
-        nbt.put("BonusStats", bonusStats.save());
-        nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
-        return nbt;
-    }
-
-    public void load(CompoundTag nbt) {
-        if (nbt.contains("Stats")) {
-            stats.load(nbt.getCompound("Stats"));
-        }
-        if (nbt.contains("Status")) {
-            status.load(nbt.getCompound("Status"));
-        }
-        if (nbt.contains("Cooldowns")) {
-            cooldowns.load(nbt.getCompound("Cooldowns"));
-        }
-        if (nbt.contains("Character")) {
-            character.load(nbt.getCompound("Character"));
-        }
-        if (nbt.contains("Resources")) {
-            resources.load(nbt.getCompound("Resources"));
-        }
-        if (nbt.contains("Skills")) {
-            skills.load(nbt.getCompound("Skills"));
-        }
-        if (nbt.contains("Effects")) {
-            effects.load(nbt.getCompound("Effects"));
-        }
-        if (nbt.contains("QuestData")) {
-            questData.deserializeNBT(nbt.getCompound("QuestData"));
-        }
-        if (nbt.contains("BonusStats")) {
-            bonusStats.load(nbt.getCompound("BonusStats"));
-        }
-        if (nbt.contains("HasInitializedHealth")) {
-            hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
-        }
-
-        if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
-            updateTransformationSkillLimits(character.getRaceName());
-        }
-    }
-
-    public void copyFrom(StatsData other) {
-        this.stats.copyFrom(other.stats);
-        this.status.copyFrom(other.status);
-        this.cooldowns.copyFrom(other.cooldowns);
-        this.character.copyFrom(other.character);
-        this.resources.copyFrom(other.resources);
-        this.skills.copyFrom(other.skills);
-        this.effects.copyFrom(other.effects);
-        this.questData.deserializeNBT(other.questData.serializeNBT());
-        this.bonusStats.copyFrom(other.bonusStats);
-        this.hasInitializedHealth = other.hasInitializedHealth;
-
-        if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
-            updateTransformationSkillLimits(character.getRaceName());
-        }
+		double armor = player.getArmorValue();
+		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
+        return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
     }
 
     public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
@@ -274,6 +215,7 @@ public class StatsData {
 
         resources.setCurrentEnergy(getMaxEnergy());
         resources.setCurrentStamina(getMaxStamina());
+		resources.setCurrentPoise(getMaxPoise());
         resources.setPowerRelease(5);
         resources.setAlignment(100);
 
@@ -447,6 +389,12 @@ public class StatsData {
         );
         double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
 
+        int kiControlLevel = skills.getSkillLevel("kicontrol");
+        if (kiControlLevel > 0) {
+            double kiControlReduction = (kiControlLevel * 2.0) / 100.0;
+            reduction += baseDrain * kiControlReduction;
+        }
+
         return Math.max(0.0, baseDrain - reduction);
     }
 
@@ -469,4 +417,73 @@ public class StatsData {
 
         return Math.max(1.0, baseDrain - reduction);
     }
+
+	public CompoundTag save() {
+		CompoundTag nbt = new CompoundTag();
+		nbt.put("Stats", stats.save());
+		nbt.put("Status", status.save());
+		nbt.put("Cooldowns", cooldowns.save());
+		nbt.put("Character", character.save());
+		nbt.put("Resources", resources.save());
+		nbt.put("Skills", skills.save());
+		nbt.put("Effects", effects.save());
+		nbt.put("QuestData", questData.serializeNBT());
+		nbt.put("BonusStats", bonusStats.save());
+		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
+		return nbt;
+	}
+
+	public void load(CompoundTag nbt) {
+		if (nbt.contains("Stats")) {
+			stats.load(nbt.getCompound("Stats"));
+		}
+		if (nbt.contains("Status")) {
+			status.load(nbt.getCompound("Status"));
+		}
+		if (nbt.contains("Cooldowns")) {
+			cooldowns.load(nbt.getCompound("Cooldowns"));
+		}
+		if (nbt.contains("Character")) {
+			character.load(nbt.getCompound("Character"));
+		}
+		if (nbt.contains("Resources")) {
+			resources.load(nbt.getCompound("Resources"));
+		}
+		if (nbt.contains("Skills")) {
+			skills.load(nbt.getCompound("Skills"));
+		}
+		if (nbt.contains("Effects")) {
+			effects.load(nbt.getCompound("Effects"));
+		}
+		if (nbt.contains("QuestData")) {
+			questData.deserializeNBT(nbt.getCompound("QuestData"));
+		}
+		if (nbt.contains("BonusStats")) {
+			bonusStats.load(nbt.getCompound("BonusStats"));
+		}
+		if (nbt.contains("HasInitializedHealth")) {
+			hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
+		}
+
+		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+			updateTransformationSkillLimits(character.getRaceName());
+		}
+	}
+
+	public void copyFrom(StatsData other) {
+		this.stats.copyFrom(other.stats);
+		this.status.copyFrom(other.status);
+		this.cooldowns.copyFrom(other.cooldowns);
+		this.character.copyFrom(other.character);
+		this.resources.copyFrom(other.resources);
+		this.skills.copyFrom(other.skills);
+		this.effects.copyFrom(other.effects);
+		this.questData.deserializeNBT(other.questData.serializeNBT());
+		this.bonusStats.copyFrom(other.bonusStats);
+		this.hasInitializedHealth = other.hasInitializedHealth;
+
+		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+			updateTransformationSkillLimits(character.getRaceName());
+		}
+	}
 }

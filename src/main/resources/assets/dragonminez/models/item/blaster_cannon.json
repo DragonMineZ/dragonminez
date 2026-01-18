@@ -1,0 +1,18 @@
+{
+  "parent": "minecraft:item/handheld",
+  "loader": "forge:separate_transforms",
+  "base": {
+    "parent": "dragonminez:item/blaster_cannon_3d"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "dragonminez:item/blaster_cannon_2d"
+    },
+    "ground": {
+      "parent": "dragonminez:item/blaster_cannon_2d"
+    },
+    "fixed": {
+      "parent": "dragonminez:item/blaster_cannon_2d"
+    }
+  }
+}

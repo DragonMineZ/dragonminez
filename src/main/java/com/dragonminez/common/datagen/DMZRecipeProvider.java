@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class DMZRecipeProvider extends net.minecraft.data.recipes.RecipeProvider implements IConditionBuilder {
+public class DMZRecipeProvider extends RecipeProvider implements IConditionBuilder {
 	public DMZRecipeProvider(PackOutput pOutput) {
 		super(pOutput);
 	}
@@ -46,15 +46,15 @@ public class DMZRecipeProvider extends net.minecraft.data.recipes.RecipeProvider
 		SimpleCookingRecipeBuilder.smelting(Ingredient.of(MainItems.FROG_LEGS_RAW.get()),
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 200)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
-				.save(pWriter, new ResourceLocation(Reference.MOD_ID, "frog_legs_cooked"));
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frog_legs_cooked"));
 		SimpleCookingRecipeBuilder.smoking(Ingredient.of(MainItems.FROG_LEGS_RAW.get()),
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 100)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
-				.save(pWriter, new ResourceLocation(Reference.MOD_ID, "frog_legs_cooked_smoking"));
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frog_legs_cooked_smoking"));
 		SimpleCookingRecipeBuilder.campfireCooking(Ingredient.of(MainItems.FROG_LEGS_RAW.get()),
 						RecipeCategory.FOOD, MainItems.FROG_LEGS_COOKED.get(), 0.35f, 600)
 				.unlockedBy(getHasName(MainItems.FROG_LEGS_RAW.get()), has(MainItems.FROG_LEGS_RAW.get())).group(Reference.MOD_ID)
-				.save(pWriter, new ResourceLocation(Reference.MOD_ID, "frog_legs_cooked_campfire"));
+				.save(pWriter, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "frog_legs_cooked_campfire"));
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, MainBlocks.NAMEK_AJISSA_PRESSURE_PLATE.get(), 1)
 				.pattern("##")
@@ -731,6 +731,8 @@ public class DMZRecipeProvider extends net.minecraft.data.recipes.RecipeProvider
 //				.unlockedBy(getHasName(Items.DIAMOND_CHESTPLATE), has(Items.DIAMOND_CHESTPLATE))
 //				.group(Reference.MOD_ID)
 //				.save(pWriter);
+
+				new DMZKikonoRecipeProvider(pWriter).generate();
 
 	}
 

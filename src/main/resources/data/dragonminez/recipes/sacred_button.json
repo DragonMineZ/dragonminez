@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "group": "wooden_button",
+  "ingredients": [
+    {
+      "item": "dragonminez:namek_sacred_planks"
+    }
+  ],
+  "result": {
+    "item": "dragonminez:namek_sacred_button"
+  }
+}

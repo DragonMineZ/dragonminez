@@ -1,11 +1,12 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.gui.HairEditorScreen;
-import com.dragonminez.client.gui.RaceSelectionScreen;
+import com.dragonminez.client.gui.SpacePodScreen;
+import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.client.gui.CharacterStatsScreen;
+import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -20,18 +21,24 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
+	public static boolean hasCreatedCharacterCache = false;
 
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
-					if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
-						event.setCanceled(true);
-					}
-				}
-			});
+			if (hasCreatedCharacterCache) {
+				if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
+					event.setCanceled(true);}
+			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+		if (Minecraft.getInstance().player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+			hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+		});
 	}
 
     @SubscribeEvent
@@ -42,24 +49,26 @@ public class ForgeClientEvents {
             return;
         }
 
-		if (KeyBinds.TRANSFORM_KEY.consumeClick()) {
-			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-				mc.setScreen(new HairEditorScreen(null, data.getCharacter()));
-			});
-		}
-
         if (KeyBinds.OPEN_CHARACTER_MENU.consumeClick()) {
-            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-                if (data.getStatus().hasCreatedCharacter()) {
-                    int oldGuiScale = mc.options.guiScale().get();
-                    mc.options.guiScale().set(3);
-                    mc.resizeDisplay();
-                    mc.setScreen(new CharacterStatsScreen(oldGuiScale));
-                } else {
-                    mc.setScreen(new RaceSelectionScreen(null, data.getCharacter()));
-                }
-            });
+			if (mc.player == null || mc.screen != null) return;
+			int oldGuiScale = mc.options.guiScale().get();
+			if (oldGuiScale != 3) {
+				mc.options.guiScale().set(3);
+				mc.resizeDisplay();
+			}
+
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+				if (data.getStatus().hasCreatedCharacter()) {
+					mc.setScreen(new CharacterStatsScreen(oldGuiScale));
+				} else {
+					mc.setScreen(new RaceSelectionScreen(data.getCharacter(), oldGuiScale));
+				}
+			});
         }
+
+		if (KeyBinds.SPACEPOD_MENU.consumeClick() && mc.player.isPassenger() && mc.player.getVehicle() instanceof SpacePodEntity) {
+			mc.setScreen(new SpacePodScreen());
+		}
     }
 
     private static int tickCounter = 0;
@@ -79,6 +88,11 @@ public class ForgeClientEvents {
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
             tickCounter = 0;
+            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+                if (hasCreatedCharacterCache != data.getStatus().hasCreatedCharacter()) {
+                    hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+                }
+            });
         }
     }
 
@@ -87,4 +101,3 @@ public class ForgeClientEvents {
         ConfigManager.clearServerSync();
     }
 }
-

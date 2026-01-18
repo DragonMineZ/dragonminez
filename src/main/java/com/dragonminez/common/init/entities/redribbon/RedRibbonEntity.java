@@ -2,6 +2,8 @@ package com.dragonminez.common.init.entities.redribbon;
 
 import com.dragonminez.common.init.entities.animal.DinoGlobalEntity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -24,8 +26,16 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
     private boolean isAttacking = false;
 
-    protected RedRibbonEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+    public RedRibbonEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return Monster.createMonsterAttributes()
+                .add(Attributes.MAX_HEALTH, 20.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.20D)
+                .add(Attributes.ATTACK_DAMAGE, 3.5D)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
     }
 
     @Override

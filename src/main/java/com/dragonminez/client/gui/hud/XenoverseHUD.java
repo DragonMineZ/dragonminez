@@ -3,10 +3,8 @@ package com.dragonminez.client.gui.hud;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
-import com.eliotlash.mclib.math.functions.limit.Min;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -19,10 +17,10 @@ import java.util.List;
 import java.util.Locale;
 
 public class XenoverseHUD {
-	private static final ResourceLocation efectos = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/efectosperma.png"),
-			efectostemp = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/efectostemp.png"),
-			hud = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png"),
-			racialIcons = new ResourceLocation(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
+	private static final ResourceLocation efectos = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/efectosperma.png"),
+			efectostemp = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/efectostemp.png"),
+			hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png"),
+			racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
 
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
@@ -34,14 +32,13 @@ public class XenoverseHUD {
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
 		if (ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
-
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			Character character = data.getCharacter();
 			Status status = data.getStatus();
 			Resources resources = data.getResources();
 
 			if (status.hasCreatedCharacter()) {
-				float maxHP = data.getMaxHealth();
+				float maxHP = Minecraft.getInstance().player.getMaxHealth();
 				int maxKi = data.getMaxEnergy();
 				int maxStm = data.getMaxStamina();
 				int powerRelease = resources.getPowerRelease();
@@ -89,8 +86,10 @@ public class XenoverseHUD {
 				RenderSystem.setShaderTexture(0, hud);
 
 				guiGraphics.pose().pushPose();
-				float scale = ConfigManager.getUserConfig().getHud().getXenoverseHudScale();
-				guiGraphics.pose().scale(scale, scale, 1.0f);
+				float configScale = 1.8f;
+				float correctionFactor = HUDManager.getScaleFactor();
+				float finalScale = configScale * correctionFactor;
+				guiGraphics.pose().scale(finalScale, finalScale, 1.0f);
 
 				int initialX = ConfigManager.getUserConfig().getHud().getXenoverseHudPosX();
 				int initialY = ConfigManager.getUserConfig().getHud().getXenoverseHudPosY();
@@ -155,26 +154,27 @@ public class XenoverseHUD {
 					guiGraphics.blit(hud, initialX + 10, initialY + 20 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight);
 				}
 
-				guiGraphics.pose().scale(0.5f, 0.5f, 1.0f);
-				drawStringWithBorder(guiGraphics, powerRelease + "%", initialX + 14, initialY + 64, ColorUtils.hexToInt("#FACAF7"));
+				float finalTextScale = 0.5f;
+
+				guiGraphics.pose().pushPose();
+				guiGraphics.pose().scale(finalTextScale, finalTextScale, 1.0f);
+
+				drawStringWithBorder(guiGraphics, powerRelease + "%", (int)((initialX + 7) / finalTextScale), (int)((initialY + 32) / finalTextScale), ColorUtils.hexToInt("#FACAF7"));
 
 				if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
-					String plainHP = numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
-					String percentHP = String.format("%.0f", (currentHP / maxHP) * 100) + "%";
-					String hpText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentHP : plainHP;
-					drawStringWithBorder(guiGraphics, hpText, initialX + 200, initialY + 36, ColorUtils.hexToInt("#FFFFFF"));
+					boolean showPercent = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage();
 
-					String plainKi = numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
-					String percentKi = String.format("%.0f", (currentKi / (float) maxKi) * 100) + "%";
-					String kiText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentKi : plainKi;
-					drawStringWithBorder(guiGraphics, kiText, initialX + 180, initialY + 51, ColorUtils.hexToInt("#FFFFFF"));
+					String hpText = showPercent ? String.format("%.0f", (currentHP / maxHP) * 100) + "%" : numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
+					drawStringWithBorder(guiGraphics, hpText, (int)((initialX + 100) / finalTextScale), (int)((initialY + 15) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
 
-					String plainStm = numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
-					String percentStm = String.format("%.0f", (currentStm / (float) maxStm) * 100) + "%";
-					String stmText = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage() ? percentStm : plainStm;
-					drawStringWithBorder(guiGraphics, stmText, initialX + 160, initialY + 64, ColorUtils.hexToInt("#FFFFFF"));
+					String kiText = showPercent ? String.format("%.0f", (currentKi / (float) maxKi) * 100) + "%" : numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
+					drawStringWithBorder(guiGraphics, kiText, (int)((initialX + 90) / finalTextScale), (int)((initialY + 23) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
+
+					String stmText = showPercent ? String.format("%.0f", (currentStm / (float) maxStm) * 100) + "%" : numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
+					drawStringWithBorder(guiGraphics, stmText, (int)((initialX + 80) / finalTextScale), (int)((initialY + 30) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
 				}
 
+				guiGraphics.pose().popPose();
 				guiGraphics.pose().popPose();
 			}
 		});

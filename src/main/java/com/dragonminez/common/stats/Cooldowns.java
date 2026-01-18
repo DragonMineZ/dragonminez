@@ -13,6 +13,8 @@ public class Cooldowns {
     public static final String BABA_ALIVE = "BabaAlive";
     public static final String ZENKAI = "Zenkai";
 	public static final String SENZU_CD = "SenzuCooldown";
+	public static final String POISE_CD = "PoiseCooldown";
+	public static final String STUN_TIMER = "StunTimer";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

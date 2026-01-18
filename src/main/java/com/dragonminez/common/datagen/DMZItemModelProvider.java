@@ -5,14 +5,18 @@ import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.model.generators.ItemModelBuilder;
+import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-public class DMZItemModelProvider extends net.minecraftforge.client.model.generators.ItemModelProvider {
+import java.util.Map;
+
+public class DMZItemModelProvider extends ItemModelProvider {
 	public DMZItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
 		super(output, Reference.MOD_ID, existingFileHelper);
 	}
@@ -59,26 +63,33 @@ public class DMZItemModelProvider extends net.minecraftforge.client.model.genera
 		simpleItem(MainItems.T2_RADAR_CHIP);
 		simpleItem(MainItems.T1_RADAR_CPU);
 		simpleItem(MainItems.T2_RADAR_CPU);
-
-		// Spawn Eggs
-//		withExistingParent(MainItems.DINO_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.GINYU_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.PINK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.YELLOW_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SOLDIER01_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.MORO_SOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.NWARRIOR1_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.NWARRIOR2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.SAIBAMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.KAIWAREMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.KYUKONMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.COPYMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.TENNENMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.JINKOUMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
-//		withExistingParent(MainItems.REDRIBBONSOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        simpleItem(MainItems.GREEN_SCOUTER);
+        simpleItem(MainItems.RED_SCOUTER);
+        simpleItem(MainItems.BLUE_SCOUTER);
+        simpleItem(MainItems.YELLOW_SCOUTER);
+        simpleItem(MainItems.PUNCH_MACHINE_ITEM);
+        // Spawn Eggs
+		withExistingParent(MainItems.DINO_1.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DINO_2.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DINO_3.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.DINO_KID.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.NAMEK_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.GINYU_FROG_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SOLDIER01_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SOLDIER02_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SOLDIER03_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.NWARRIOR_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.SAIBAMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.KAIWAREMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.KYUKONMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.COPYMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.TENNENMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.JINKOUMAN_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONSOLDIER_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONROBOT1_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONROBOT2_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.REDRIBBONROBOT3_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
+		withExistingParent(MainItems.BANDIT_SE.getId().getPath(), mcLoc("item/template_spawn_egg"));
 
 		//Comidas
 		simpleItem(MainItems.COMIDA_DINO_RAW);
@@ -89,130 +100,46 @@ public class DMZItemModelProvider extends net.minecraftforge.client.model.genera
 		simpleItem(MainItems.FROG_LEGS_COOKED);
 
 		//Armaduras
-//		armorItem(MainItems.GOKU_KID_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOKU_KID_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOKU_KID_ARMOR_BOOTS);
-//		armorItem(MainItems.GOKU_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOKU_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOKU_ARMOR_BOOTS);
-//		armorItem(MainItems.GOKU_KAITO_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOKU_KAITO_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOKU_KAITO_ARMOR_BOOTS);
-//		armorItem(MainItems.GOKU_SUPER_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOKU_SUPER_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOKU_SUPER_ARMOR_BOOTS);
-//		armorItem(MainItems.GOKU_GT_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOKU_GT_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOKU_GT_ARMOR_BOOTS);
-//		armorItem(MainItems.YARDRAT_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.YARDRAT_ARMOR_LEGGINGS);
-//		armorItem(MainItems.YARDRAT_ARMOR_BOOTS);
-//		armorItem(MainItems.GOTEN_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOTEN_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOTEN_ARMOR_BOOTS);
-//		armorItem(MainItems.GOTEN_SUPER_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOTEN_SUPER_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOTEN_SUPER_ARMOR_BOOTS);
-//		armorItem(MainItems.GOHAN_SUPER_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOHAN_SUPER_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOHAN_SUPER_ARMOR_BOOTS);
-//		armorItem(MainItems.GREAT_SAIYAMAN_ARMOR_HELMET);
-//		armorItem(MainItems.GREAT_SAIYAMAN_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GREAT_SAIYAMAN_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GREAT_SAIYAMAN_ARMOR_BOOTS);
-//		armorItem(MainItems.FUTURE_GOHAN_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.FUTURE_GOHAN_ARMOR_LEGGINGS);
-//		armorItem(MainItems.FUTURE_GOHAN_ARMOR_BOOTS);
-//		armorItem(MainItems.VEGETA_SAIYAN_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.VEGETA_SAIYAN_ARMOR_LEGGINGS);
-//		armorItem(MainItems.VEGETA_SAIYAN_ARMOR_BOOTS);
-//		armorItem(MainItems.VEGETA_NAMEK_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.VEGETA_NAMEK_ARMOR_LEGGINGS);
-//		armorItem(MainItems.VEGETA_NAMEK_ARMOR_BOOTS);
-//		armorItem(MainItems.VEGETA_Z_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.VEGETA_Z_ARMOR_LEGGINGS);
-//		armorItem(MainItems.VEGETA_Z_ARMOR_BOOTS);
-//		armorItem(MainItems.VEGETA_BUU_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.VEGETA_BUU_ARMOR_LEGGINGS);
-//		armorItem(MainItems.VEGETA_BUU_ARMOR_BOOTS);
-//		armorItem(MainItems.VEGETA_SUPER_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.VEGETA_SUPER_ARMOR_LEGGINGS);
-//		armorItem(MainItems.VEGETA_SUPER_ARMOR_BOOTS);
-//		armorItem(MainItems.VEGETTO_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.VEGETTO_ARMOR_LEGGINGS);
-//		armorItem(MainItems.VEGETTO_ARMOR_BOOTS);
-//		armorItem(MainItems.GOGETA_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GOGETA_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GOGETA_ARMOR_BOOTS);
-//		armorItem(MainItems.PICCOLO_ARMOR_HELMET);
-//		armorItem(MainItems.PICCOLO_ARMOR_CHESTPLATE_CAPE);
-//		armorItem(MainItems.PICCOLO_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.PICCOLO_ARMOR_LEGGINGS);
-//		armorItem(MainItems.PICCOLO_ARMOR_BOOTS);
-//		armorItem(MainItems.DEMON_GI_BLUE_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.DEMON_GI_BLUE_ARMOR_LEGGINGS);
-//		armorItem(MainItems.DEMON_GI_BLUE_ARMOR_BOOTS);
-//		armorItem(MainItems.BARDOCK_DBZ_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.BARDOCK_DBZ_ARMOR_LEGGINGS);
-//		armorItem(MainItems.BARDOCK_DBZ_ARMOR_BOOTS);
-//		armorItem(MainItems.BARDOCK_SUPER_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.BARDOCK_SUPER_ARMOR_LEGGINGS);
-//		armorItem(MainItems.BARDOCK_SUPER_ARMOR_BOOTS);
-//		armorItem(MainItems.TURLES_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.TURLES_ARMOR_LEGGINGS);
-//		armorItem(MainItems.TURLES_ARMOR_BOOTS);
-//		armorItem(MainItems.TIEN_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.TIEN_ARMOR_LEGGINGS);
-//		armorItem(MainItems.TIEN_ARMOR_BOOTS);
-//		armorItem(MainItems.TRUNKS_Z_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.TRUNKS_Z_ARMOR_LEGGINGS);
-//		armorItem(MainItems.TRUNKS_Z_ARMOR_BOOTS);
-//		armorItem(MainItems.TRUNKS_SUPER_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.TRUNKS_SUPER_ARMOR_LEGGINGS);
-//		armorItem(MainItems.TRUNKS_SUPER_ARMOR_BOOTS);
-//		armorItem(MainItems.TRUNKS_KID_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.TRUNKS_KID_ARMOR_LEGGINGS);
-//		armorItem(MainItems.TRUNKS_KID_ARMOR_BOOTS);
-//		armorItem(MainItems.BROLY_Z_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.BROLY_Z_ARMOR_LEGGINGS);
-//		armorItem(MainItems.BROLY_Z_ARMOR_BOOTS);
-//		armorItem(MainItems.BROLY_SUPER_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.BROLY_SUPER_ARMOR_LEGGINGS);
-//		armorItem(MainItems.BROLY_SUPER_ARMOR_BOOTS);
-//		armorItem(MainItems.SHIN_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.SHIN_ARMOR_LEGGINGS);
-//		armorItem(MainItems.SHIN_ARMOR_BOOTS);
-//		armorItem(MainItems.BLACK_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.BLACK_ARMOR_LEGGINGS);
-//		armorItem(MainItems.BLACK_ARMOR_BOOTS);
-//		armorItem(MainItems.ZAMASU_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.ZAMASU_ARMOR_LEGGINGS);
-//		armorItem(MainItems.ZAMASU_ARMOR_BOOTS);
-//		armorItem(MainItems.FUSION_ZAMASU_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.FUSION_ZAMASU_ARMOR_LEGGINGS);
-//		armorItem(MainItems.FUSION_ZAMASU_ARMOR_BOOTS);
-//		armorItem(MainItems.PRIDE_TROOPS_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.PRIDE_TROOPS_ARMOR_LEGGINGS);
-//		armorItem(MainItems.PRIDE_TROOPS_ARMOR_BOOTS);
-//		armorItem(MainItems.HIT_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.HIT_ARMOR_LEGGINGS);
-//		armorItem(MainItems.HIT_ARMOR_BOOTS);
-//		armorItem(MainItems.GAS_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GAS_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GAS_ARMOR_BOOTS);
-//		armorItem(MainItems.MAJIN_BUU_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.MAJIN_BUU_ARMOR_LEGGINGS);
-//		armorItem(MainItems.MAJIN_BUU_ARMOR_BOOTS);
-//		armorItem(MainItems.GAMMA1_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GAMMA1_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GAMMA1_ARMOR_BOOTS);
-//		armorItem(MainItems.GAMMA2_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.GAMMA2_ARMOR_LEGGINGS);
-//		armorItem(MainItems.GAMMA2_ARMOR_BOOTS);
-//		armorItem(MainItems.INVENCIBLE_ARMOR_HELMET);
-//		armorItem(MainItems.INVENCIBLE_ARMOR_CHESTPLATE);
-//		armorItem(MainItems.INVENCIBLE_ARMOR_LEGGINGS);
-//		armorItem(MainItems.INVENCIBLE_ARMOR_BOOTS);
+		generateArmorSetModels(MainItems.GOKU_KID_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_KAITO_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.GOKU_GT_ARMOR);
+		generateArmorSetModels(MainItems.YARDRAT_ARMOR);
+		generateArmorSetModels(MainItems.GOTEN_ARMOR);
+		generateArmorSetModels(MainItems.GOTEN_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.GOHAN_SUPER_ARMOR);
+//		generateArmorSetModels(MainItems.GREAT_SAIYAMAN_ARMOR);
+		generateArmorSetModels(MainItems.FUTURE_GOHAN_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_SAIYAN_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_NAMEK_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_Z_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_BUU_ARMOR);
+		generateArmorSetModels(MainItems.VEGETA_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.VEGETTO_ARMOR);
+		generateArmorSetModels(MainItems.GOGETA_ARMOR);
+		generateArmorSetModels(MainItems.PICCOLO_ARMOR);
+		generateArmorSetModels(MainItems.DEMON_GI_BLUE_ARMOR);
+		generateArmorSetModels(MainItems.BARDOCK_DBZ_ARMOR);
+		generateArmorSetModels(MainItems.BARDOCK_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.TURLES_ARMOR);
+		generateArmorSetModels(MainItems.TIEN_ARMOR);
+		generateArmorSetModels(MainItems.TRUNKS_Z_ARMOR);
+		generateArmorSetModels(MainItems.TRUNKS_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.TRUNKS_KID_ARMOR);
+		generateArmorSetModels(MainItems.BROLY_Z_ARMOR);
+		generateArmorSetModels(MainItems.BROLY_SUPER_ARMOR);
+		generateArmorSetModels(MainItems.SHIN_ARMOR);
+		generateArmorSetModels(MainItems.BLACKGOKU_ARMOR);
+		generateArmorSetModels(MainItems.ZAMASU_ARMOR);
+		generateArmorSetModels(MainItems.FUSION_ZAMASU_ARMOR);
+		generateArmorSetModels(MainItems.PRIDE_TROOPS_ARMOR);
+		generateArmorSetModels(MainItems.HIT_ARMOR);
+		generateArmorSetModels(MainItems.GAS_ARMOR);
+//		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
+//		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
+//		generateArmorSetModels(MainItems.GAMMA2_ARMOR);
+		generateArmorSetModels(MainItems.INVENCIBLE_ARMOR);
 
 		//Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
@@ -295,7 +222,8 @@ public class DMZItemModelProvider extends net.minecraftforge.client.model.genera
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COAL);
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_EMERALD);
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COPPER);
-		//simpleBlockItem(MainBlocks.GETE_FURNACE);
+		simpleBlockItem(MainBlocks.FUEL_GENERATOR);
+		simpleBlockItem(MainBlocks.ENERGY_CABLE);
 		simpleBlockItem(MainBlocks.TIME_CHAMBER_PORTAL);
 		simpleBlockItem(MainBlocks.OTHERWORLD_CLOUD);
 		simpleBlockItem(MainBlocks.GETE_ORE);
@@ -354,27 +282,27 @@ public class DMZItemModelProvider extends net.minecraftforge.client.model.genera
 	private ItemModelBuilder simpleItem(RegistryObject<Item> item) {
 		return withExistingParent(item.getId().getPath(),
 				new ResourceLocation("item/generated")).texture("layer0",
-				new ResourceLocation(Reference.MOD_ID, "item/" + item.getId().getPath()));
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 	private ItemModelBuilder armorItem(RegistryObject<Item> item) {
 		return withExistingParent(item.getId().getPath(),
 				new ResourceLocation("item/generated")).texture("layer0",
-				new ResourceLocation(Reference.MOD_ID, "item/armors/" + item.getId().getPath()));
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/armors/" + item.getId().getPath()));
 	}
 	private ItemModelBuilder patternItem(RegistryObject<Item> item) {
 		return withExistingParent(item.getId().getPath(),
 				new ResourceLocation("item/generated")).texture("layer0",
-				new ResourceLocation(Reference.MOD_ID, "item/patterns/" + item.getId().getPath()));
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/patterns/" + item.getId().getPath()));
 	}
 	private ItemModelBuilder blockItem(RegistryObject<Block> item) {
 		return withExistingParent(item.getId().getPath(),
 				new ResourceLocation("item/generated")).texture("layer0",
-				new ResourceLocation(Reference.MOD_ID, "block/" + item.getId().getPath()));
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + item.getId().getPath()));
 	}
 	private ItemModelBuilder blockAsItem(RegistryObject<Block> item) {
 		return withExistingParent(item.getId().getPath(),
 				new ResourceLocation("item/generated")).texture("layer0",
-				new ResourceLocation(Reference.MOD_ID, "item/" + item.getId().getPath()));
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 	public void simpleBlockItem(RegistryObject<Block> block) {
 		this.withExistingParent(Reference.MOD_ID + ":" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
@@ -387,20 +315,25 @@ public class DMZItemModelProvider extends net.minecraftforge.client.model.genera
 
 	public void fenceItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
 		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/fence_inventory"))
-				.texture("texture",  new ResourceLocation(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
 	}
 
 	public void buttonItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
 		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/button_inventory"))
-				.texture("texture",  new ResourceLocation(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+				.texture("texture",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
 	}
 	public void wallItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
 		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/wall_inventory"))
-				.texture("wall",  new ResourceLocation(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
+				.texture("wall",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
 	}
 	private ItemModelBuilder saplingItem(RegistryObject<Block> item) {
 		return withExistingParent(item.getId().getPath(),
 				new ResourceLocation("item/generated")).texture("layer0",
-				new ResourceLocation(Reference.MOD_ID,"block/" + item.getId().getPath()));
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,"block/" + item.getId().getPath()));
+	}
+	private void generateArmorSetModels(Map<ArmorItem.Type, RegistryObject<Item>> armorSet) {
+		for (RegistryObject<Item> piece : armorSet.values()) {
+			armorItem(piece);
+		}
 	}
 }

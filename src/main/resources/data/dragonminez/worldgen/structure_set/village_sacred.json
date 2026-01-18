@@ -1,0 +1,13 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 92037394,
+    "separation": 8,
+    "spacing": 34,
+    "spread_type": "triangular"
+  },
+  "structures": [{
+    "structure": "dragonminez:village_sacred",
+    "weight": 1
+  }]
+}

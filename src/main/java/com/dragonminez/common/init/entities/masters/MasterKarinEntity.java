@@ -13,6 +13,8 @@ public class MasterKarinEntity extends MastersEntity {
 
     public MasterKarinEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+
+        this.setPersistenceRequired();
     }
 
     @Override

@@ -38,13 +38,17 @@ public class UpdateStatC2S {
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 switch (msg.statusKey) {
                     case "isChargingKi":
-                        data.getStatus().setChargingKi(msg.value);
+                        if (data.getStatus().isChargingKi() != msg.value) data.getStatus().setChargingKi(msg.value);
                         break;
                     case "isDescending":
-                        data.getStatus().setDescending(msg.value);
+						if (data.getStatus().isDescending() != msg.value) data.getStatus().setDescending(msg.value);
                         break;
 					case "isTransforming":
-						data.getStatus().setTransforming(msg.value);
+						if (data.getStatus().isTransforming() != msg.value) data.getStatus().setTransforming(msg.value);
+						break;
+					case "isBlocking":
+						if (data.getStatus().isBlocking() != msg.value) data.getStatus().setBlocking(msg.value);
+						if (msg.value) data.getStatus().setLastBlockTime(System.currentTimeMillis());
 						break;
                 }
             });

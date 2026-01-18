@@ -5,11 +5,18 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "dragonminez.refmap.json",
   "mixins": [
-    "common.RangedAttributeMixin"
+    "common.RangedAttributeMixin",
+    "common.ItemStackMixin"
   ],
   "client": [
+    "client.PlayerGeoAnimatableMixin",
     "client.EntityRenderDispatcherMixin",
-    "client.PlayerGeoAnimatableMixin"
+    "client.HeldItemRendererMixin",
+    "client.PrimaryLevelDataMixin",
+    "client.SoundManagerMixin",
+    "client.WorldOpenFlowsMixin",
+    "client.WorldSelectionListMixin",
+    "client.TitleScreenMixin"
   ],
   "server": [],
   "injectors": {

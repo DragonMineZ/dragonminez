@@ -65,7 +65,8 @@ public class QuestData {
 
         for (int i = 0; i < sagaList.size(); i++) {
             CompoundTag sagaTag = sagaList.getCompound(i);
-            SagaProgress progress = new SagaProgress("");
+            String sagaId = sagaTag.getString("sagaId");
+            SagaProgress progress = new SagaProgress(sagaId);
             progress.deserializeNBT(sagaTag);
             sagaProgress.put(progress.getSagaId(), progress);
         }
@@ -137,11 +138,12 @@ public class QuestData {
 
         public void deserializeNBT(CompoundTag tag) {
             unlocked = tag.getBoolean("unlocked");
-
+            questProgress.clear();
             ListTag questList = tag.getList("quests", Tag.TAG_COMPOUND);
             for (int i = 0; i < questList.size(); i++) {
                 CompoundTag questTag = questList.getCompound(i);
-                QuestProgress progress = new QuestProgress(0);
+                int questId = questTag.getInt("questId");
+                QuestProgress progress = new QuestProgress(questId);
                 progress.deserializeNBT(questTag);
                 questProgress.put(progress.getQuestId(), progress);
             }
@@ -209,7 +211,8 @@ public class QuestData {
 
         public void deserializeNBT(CompoundTag tag) {
             completed = tag.getBoolean("completed");
-
+            objectiveProgress.clear();
+            rewardsClaimed.clear();
             CompoundTag objectivesTag = tag.getCompound("objectives");
             for (String key : objectivesTag.getAllKeys()) {
                 objectiveProgress.put(Integer.parseInt(key), objectivesTag.getInt(key));

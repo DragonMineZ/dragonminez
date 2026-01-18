@@ -5,12 +5,13 @@ import com.dragonminez.common.init.MainBlocks;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.*;
+import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-public class DMZBlockStateProvider extends net.minecraftforge.client.model.generators.BlockStateProvider {
+public class DMZBlockStateProvider extends BlockStateProvider {
 	public DMZBlockStateProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
 		super(output, Reference.MOD_ID, existingFileHelper);
 	}
@@ -21,6 +22,7 @@ public class DMZBlockStateProvider extends net.minecraftforge.client.model.gener
 		blockWithItem(MainBlocks.NAMEK_BLOCK);
 		blockWithItem(MainBlocks.NAMEK_DIRT);
 		grassBlock(MainBlocks.NAMEK_GRASS_BLOCK);
+		grassBlock(MainBlocks.NAMEK_SACRED_GRASS_BLOCK);
 		blockWithItem(MainBlocks.NAMEK_STONE);
 		blockWithItem(MainBlocks.NAMEK_COBBLESTONE);
 		blockWithItem(MainBlocks.ROCKY_DIRT);
@@ -120,9 +122,9 @@ public class DMZBlockStateProvider extends net.minecraftforge.client.model.gener
 	
 	private void grassBlock(RegistryObject<Block> blockRegistryObject) {
 		String path = ForgeRegistries.BLOCKS.getKey(blockRegistryObject.get()).getPath();
-		ResourceLocation bottom = new ResourceLocation(Reference.MOD_ID, "block/" + path + "_down");
-		ResourceLocation top = new ResourceLocation(Reference.MOD_ID, "block/" + path + "_top");
-		ResourceLocation side = new ResourceLocation(Reference.MOD_ID, "block/" + path + "_side");
+		ResourceLocation bottom = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_down");
+		ResourceLocation top = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_top");
+		ResourceLocation side = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + path + "_side");
 		
 		simpleBlockWithItem(blockRegistryObject.get(), 
 			models().cubeBottomTop(path, side, bottom, top));

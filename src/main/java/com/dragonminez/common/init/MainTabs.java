@@ -3,6 +3,7 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
@@ -70,18 +71,18 @@ public final class MainTabs {
 					})).build()
 	);
 
-//	public static final RegistryObject<CreativeModeTab> ARMORS_TAB =  CREATIVE_TABS_REGISTER.register("dragonminez_armors_tab",
-//			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainItems.BARDOCK_DBZ_ARMOR_CHESTPLATE.get()))
-//
-//					.title(Component.translatable("itemGroup.dragonminez.armors"))
-//					.displayItems((parameters, output) -> MainItems.ITEM_REGISTER.getEntries().forEach((item) -> {
-//						if (item.getId().getPath().contains("_armor_")) {
-//							if (!item.getId().getPath().equals("kikono_armor_station")) {
-//								output.accept(item.get().asItem());
-//							}
-//						}
-//					})).build()
-//	);
+	public static final RegistryObject<CreativeModeTab> ARMORS_TAB =  CREATIVE_TABS_REGISTER.register("dragonminez_armors_tab",
+			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainItems.BARDOCK_DBZ_ARMOR.get(ArmorItem.Type.CHESTPLATE).get()))
+
+					.title(Component.translatable("itemGroup.dragonminez.armors"))
+					.displayItems((parameters, output) -> MainItems.ITEM_REGISTER.getEntries().forEach((item) -> {
+						if (item.getId().getPath().contains("_armor_")) {
+							if (!item.getId().getPath().equals("kikono_armor_station")) {
+								output.accept(item.get().asItem());
+							}
+						}
+					})).build()
+	);
 
 	public static final RegistryObject<CreativeModeTab> ORES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_ores_tab",
 			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainBlocks.GETE_ORE.get()))
