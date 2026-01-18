@@ -40,9 +40,6 @@ public class DMZPlayerRenderer extends GeoReplacedEntityRenderer<AbstractClientP
     public static final DMZPlayerRenderer INSTANCE = new DMZPlayerRenderer();
     private final PlayerModel<AbstractClientPlayer> modelReference;
 
-    private static final ResourceLocation MAJIN_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
-            "geo/armor/armormajinfat.geo.json");
-
     public DMZPlayerRenderer() {
         super(DMZPlayerRenderer.createContext(), DMZPlayerRenderer.createModel(), DMZAnimatable.INSTANCE);
         this.shadowRadius = 0.4f;
@@ -62,11 +59,6 @@ public class DMZPlayerRenderer extends GeoReplacedEntityRenderer<AbstractClientP
         if (this.getCurrentEntity() != null) {
             BoneVisibilityHandler.updateVisibility(model, this.getCurrentEntity());
         }
-    }
-
-    @Override
-    public void render(AbstractClientPlayer entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     }
 
     @Override

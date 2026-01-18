@@ -139,6 +139,9 @@ dependencies {
     runtimeOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
+    runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
+    runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
+    runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
 }
 
 sourceSets.main {

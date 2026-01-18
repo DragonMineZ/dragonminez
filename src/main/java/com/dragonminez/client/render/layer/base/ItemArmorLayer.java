@@ -102,7 +102,7 @@ public class ItemArmorLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
      */
     @Nonnull
     protected ModelPart getModelPartForBone(GeoBone bone, EquipmentSlot slot, ItemStack stack, T animatable, HumanoidModel<?> baseModel) {
-        return baseModel.body;
+        return baseModel.head;
     }
 
     /**

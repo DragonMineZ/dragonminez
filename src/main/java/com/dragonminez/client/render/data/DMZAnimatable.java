@@ -258,6 +258,7 @@ public class DMZAnimatable implements GeoReplacedEntity {
         return EntityType.PLAYER;
     }
 
+
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;

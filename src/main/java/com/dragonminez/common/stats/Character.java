@@ -38,10 +38,13 @@ public class Character {
     private String eye2Color;
     private String auraColor;
 
+    private Boolean armored;
+
     public Character() {
         this.race = "human";
         this.gender = GENDER_MALE;
         this.characterClass = CLASS_WARRIOR;
+        this.armored = false;
 
         RaceCharacterConfig config = ConfigManager.getRaceCharacter("human");
         this.hairId = config.getDefaultHairType();
@@ -81,6 +84,7 @@ public class Character {
     public String getEye2Color() { return eye2Color; }
     public String getAuraColor() { return auraColor; }
     public FormMasteries getFormMasteries() { return formMasteries; }
+    public Boolean getArmored() {return armored;}
 
     public void setRace(String race) {
         if (race != null && ConfigManager.isRaceLoaded(race)) {
@@ -110,6 +114,7 @@ public class Character {
     public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
     public void setCurrentFormGroup(String currentFormGroup) { this.currentFormGroup = currentFormGroup; }
     public void setCurrentForm(String currentForm) { this.currentForm = currentForm; }
+    public void setArmored(Boolean armored) {this.armored = armored;}
 
     public String getRaceName() {
         return race != null && !race.isEmpty() ? race : "human";
@@ -153,6 +158,7 @@ public class Character {
         tag.putString("CurrentFormGroup", currentFormGroup);
         tag.putString("CurrentForm", currentForm);
         tag.put("FormMasteries", formMasteries.save());
+        tag.putBoolean("isArmored", armored);
         return tag;
     }
 
@@ -188,6 +194,7 @@ public class Character {
         if (tag.contains("FormMasteries")) {
             formMasteries.load(tag.getCompound("FormMasteries"));
         }
+        this.armored = tag.getBoolean("isArmored");
     }
 
     public boolean hasActiveForm() {
@@ -232,5 +239,6 @@ public class Character {
         this.currentFormGroup = other.currentFormGroup;
         this.currentForm = other.currentForm;
         this.formMasteries.copyFrom(other.formMasteries);
+        this.armored = other.armored;
     }
 }

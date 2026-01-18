@@ -5,13 +5,17 @@ import com.dragonminez.client.render.layer.base.ItemArmorLayer;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
+import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoRenderer;
 
@@ -29,32 +33,47 @@ public class DMZPlayerArmorLayer<T extends DMZAnimatable> extends ItemArmorLayer
             return null;
         }
 
-        final String boneName = bone.getName();
+        final String boneName = bone.getName().trim();
+
         final LazyOptional<StatsData> optStats = StatsProvider.get(StatsCapability.INSTANCE, player);
         if (!optStats.isPresent()) {
             return null;
         }
 
-        // Shut up the compiler
         final var stats = optStats.orElse(new StatsData(player));
         var character = stats.getCharacter();
-        var race = character.getRace();
-        var gender = character.getGender();
+        String race = character.getRace().toLowerCase();
+        String gender = character.getGender().toLowerCase();
 
-        if (race.equals("majin") && gender.equals("male") || gender.equals("female")) {
-            if (boneName.equals("armorBody")) {
-                return null;
-            }
-            if (boneName.equals("boobas")) {
-                return null;
+        boolean isArmored = character.getArmored();
+
+        if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
+
+            boolean isMajin = race.equals("majin");
+            boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
+
+            if (isMajin || isFemaleHumanOrSaiyan) {
+                if (!isArmored) {
+                    return null;
+                } else {
+                    System.out.println("DEBUG: Renderizando ArmorBody Vanilla porque isArmored = TRUE");
+                }
             }
         }
 
         return switch (boneName) {
-            case "armorHead" -> this.helmetStack;
-            case "armorBody", "armorRightArm", "armorLeftArm" -> this.chestplateStack;
-            case "armorLeggingsBody", "armorLeftLeg", "armorRightLeg" -> this.leggingsStack;
-            case "armorRightBoot", "armorLeftBoot" -> this.bootsStack;
+            case "armorHead", "armor_head" -> this.helmetStack;
+
+            case "armorBody", "armor_body",
+                 "armorRightArm", "armor_right_arm",
+                 "armorLeftArm", "armor_left_arm" -> this.chestplateStack;
+
+            case "armorLeggingsBody", "armor_leggings_body",
+                 "armorLeftLeg", "armor_left_leg",
+                 "armorRightLeg", "armor_right_leg" -> this.leggingsStack;
+
+            case "armorRightBoot", "armor_right_boot",
+                 "armorLeftBoot", "armor_left_boot" -> this.bootsStack;
             default -> null;
         };
     }
@@ -85,4 +104,6 @@ public class DMZPlayerArmorLayer<T extends DMZAnimatable> extends ItemArmorLayer
             default -> super.getModelPartForBone(bone, slot, stack, animatable, baseModel);
         };
     }
+
+
 }

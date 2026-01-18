@@ -108,8 +108,6 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
 
         final boolean hasCustomModel = !config.getCustomModel().isEmpty();
         final var gender = data.getCharacter().getGender();
-
-        // 1. OBTENEMOS EL BODY TYPE
         int bodyType = data.getCharacter().getBodyType();
 
         var raceId = hasCustomModel ? config.getCustomModel() : rawRaceId;
@@ -129,17 +127,21 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
         boolean isSlimSkin = gender.equals("female") || isSlim(player);
 
         if (resource == ResourceType.GEO) {
-            if (raceId.equals("saiyan") || raceId.equals("human") || raceId.equals("namekian")) {
+            boolean isHumanOrSaiyan = rawRaceId.equals("human") || rawRaceId.equals("saiyan");
+
+            if (isHumanOrSaiyan && gender.equals("female")) {
+                raceId = "majin_slim";
+            }
+            else if (raceId.equals("saiyan") || raceId.equals("human") || raceId.equals("namekian")) {
                 raceId = "human";
             }
         }
 
         String raceName = raceId;
 
-
         boolean isBuffHumanoid = (rawRaceId.equals("human") || rawRaceId.equals("saiyan")) && bodyType > 0;
 
-        if (isSlimSkin && raceId.equals("human") && !rawRaceId.equals("namekian") && !isBuffHumanoid) {
+        if (isSlimSkin && raceId.equals("human") && !rawRaceId.equals("namekian") && !isBuffHumanoid && !raceId.equals("majin_slim")) {
             raceName = raceId + "_" + "slim";
         }
 

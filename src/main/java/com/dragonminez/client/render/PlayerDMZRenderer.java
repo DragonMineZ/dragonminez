@@ -53,9 +53,10 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
     private boolean isRenderingArmor = false;
     private boolean isRenderingTattoo = false;
 
-    public PlayerDMZRenderer(EntityRendererProvider.Context context, EntityType<? extends T> entityType) {
-        super(context, entityType);
+    public PlayerDMZRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
+        super(renderManager, model);
     }
+
 
     private void renderBodyAll(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha, @Nullable GeoBone targetBone, float partialTick, boolean isReRender) {
 
