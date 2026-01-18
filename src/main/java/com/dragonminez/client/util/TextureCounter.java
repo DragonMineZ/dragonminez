@@ -13,12 +13,17 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class TextureCounter {
 
+    private static final HashMap<String, ResourceLocation> CACHE = new HashMap<>();
     private static final Map<String, Integer> BODY_TYPE_CACHE = new HashMap<>();
     private static final Map<String, Integer> HAIR_TYPE_CACHE = new HashMap<>();
     private static final Map<String, Integer> EYES_TYPE_CACHE = new HashMap<>();
     private static final Map<String, Integer> NOSE_TYPE_CACHE = new HashMap<>();
     private static final Map<String, Integer> MOUTH_TYPE_CACHE = new HashMap<>();
-	private static final Map<String, Integer> TATTOO_TYPE_CACHE = new HashMap<>();
+    private static final Map<String, Integer> TATTOO_TYPE_CACHE = new HashMap<>();
+
+    public static ResourceLocation cache(String namespace, String path) {
+        return CACHE.computeIfAbsent(namespace + ":" + path, ResourceLocation::new);
+    }
 
     public static int getMaxBodyTypes(String race, String gender) {
         String key = race + "_" + gender;
@@ -71,14 +76,14 @@ public class TextureCounter {
         return count;
     }
 
-	public static int getMaxTattooTypes(String race) {
-		if (TATTOO_TYPE_CACHE.containsKey(race)) {
-			return TATTOO_TYPE_CACHE.get(race);
-		}
-		int count = countTattooTextures();
-		TATTOO_TYPE_CACHE.put(race, count);
-		return count;
-	}
+    public static int getMaxTattooTypes(String race) {
+        if (TATTOO_TYPE_CACHE.containsKey(race)) {
+            return TATTOO_TYPE_CACHE.get(race);
+        }
+        int count = countTattooTextures();
+        TATTOO_TYPE_CACHE.put(race, count);
+        return count;
+    }
 
     private static int countBodyTextures(String race, String gender) {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
@@ -201,12 +206,13 @@ public class TextureCounter {
     }
 
     public static void clearCache() {
+        CACHE.clear();
         BODY_TYPE_CACHE.clear();
         HAIR_TYPE_CACHE.clear();
         EYES_TYPE_CACHE.clear();
         NOSE_TYPE_CACHE.clear();
         MOUTH_TYPE_CACHE.clear();
-		TATTOO_TYPE_CACHE.clear();
+        TATTOO_TYPE_CACHE.clear();
     }
 }
 
