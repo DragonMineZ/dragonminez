@@ -9,12 +9,14 @@ import com.dragonminez.client.util.ResourceCache;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
@@ -159,6 +161,14 @@ public class CharacterCustomizationScreen extends Screen {
         addRenderableWidget(createArrowButton(hairPosX, hairPosY, false,
                 btn -> changeHair(1)));
 
+        // Botón "Edit" solo si hairType=0 Y la raza puede usar cabello
+        if (character.getHairId() == 0 && HairManager.canUseHair(character)) {
+            addRenderableWidget(Button.builder(
+                Component.literal("Edit"),
+                btn -> openHairEditor()
+            ).bounds(hairPosX + 35, hairPosY, 40, 20).build());
+        }
+
         int tattooPosX = 113;
         int tattooPosY = centerY + 80;
 
@@ -176,7 +186,7 @@ public class CharacterCustomizationScreen extends Screen {
                         btn -> {
                             character.setGender(Character.GENDER_FEMALE);
                             if (character.getRace().equals("majin")) {
-                                character.setHairId(0);
+                                character.setHairId(1);
                             }
                             refreshButtons();
                         }));
@@ -444,6 +454,10 @@ public class CharacterCustomizationScreen extends Screen {
 
         character.setHairId(newHair);
         refreshButtons();
+    }
+
+    private void openHairEditor() {
+        Minecraft.getInstance().setScreen(new HairEditorScreen(this, character));
     }
 
 

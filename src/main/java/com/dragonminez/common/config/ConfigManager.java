@@ -201,7 +201,8 @@ public class ConfigManager {
 
     private static void setupHumanCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
-        config.setDefaultHairType(0);
+        config.setDefaultHairType(1);
+		config.setCanUseHair(true);
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
@@ -220,7 +221,8 @@ public class ConfigManager {
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
-        config.setDefaultHairType(0);
+        config.setDefaultHairType(1);
+		config.setCanUseHair(true);
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
@@ -240,6 +242,7 @@ public class ConfigManager {
     private static void setupNamekianCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
+		config.setCanUseHair(false);
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
@@ -259,6 +262,7 @@ public class ConfigManager {
     private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
+		config.setCanUseHair(false);
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
@@ -278,6 +282,7 @@ public class ConfigManager {
     private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
+		config.setCanUseHair(false);
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
@@ -297,6 +302,7 @@ public class ConfigManager {
     private static void setupMajinCharacter(RaceCharacterConfig config) {
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
+		config.setCanUseHair(true);
         config.setDefaultEyesType(0);
         config.setDefaultNoseType(0);
         config.setDefaultMouthType(0);
@@ -315,7 +321,7 @@ public class ConfigManager {
 
     private static void setupDefaultCharacter(RaceCharacterConfig config) {
 		config.setDefaultBodyType(0);
-		config.setDefaultHairType(0);
+		config.setDefaultHairType(1);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
