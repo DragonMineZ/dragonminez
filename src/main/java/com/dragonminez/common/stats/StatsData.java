@@ -236,13 +236,17 @@ public class StatsData {
     }
 
     public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
-                                           int hairId, int bodyType, int eyesType, int noseType, int mouthType, int tattooType,
+                                           int hairId, com.dragonminez.common.hair.CustomHair customHair,
+                                           int bodyType, int eyesType, int noseType, int mouthType, int tattooType,
                                            String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
                                            String eye1Color, String eye2Color, String auraColor) {
         character.setRace(raceName);
         character.setGender(gender);
         character.setCharacterClass(characterClass);
         character.setHairId(hairId);
+        if (customHair != null) {
+            character.setCustomHair(customHair);
+        }
         character.setBodyType(bodyType);
         character.setEyesType(eyesType);
         character.setNoseType(noseType);
