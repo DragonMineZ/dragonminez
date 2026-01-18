@@ -27,11 +27,10 @@ public class EntitiesConfig {
 		@SerializedName("damage_multiplier")
 		private double damageMultiplier = 2.0;
 
-		public double getHpMultiplier() { return hpMultiplier; }
-		public void setHpMultiplier(double val) { this.hpMultiplier = val; }
-
-		public double getDamageMultiplier() { return damageMultiplier; }
-		public void setDamageMultiplier(double val) { this.damageMultiplier = val; }
+		public double getHpMultiplier() { return Math.max(1, hpMultiplier); }
+		public void setHpMultiplier(double hpMultiplier) { this.hpMultiplier = hpMultiplier; }
+		public double getDamageMultiplier() { return Math.max(1, damageMultiplier); }
+		public void setDamageMultiplier(double damageMultiplier) { this.damageMultiplier = damageMultiplier; }
 	}
 
 	public static class EntityStats {
@@ -42,11 +41,11 @@ public class EntitiesConfig {
 		@SerializedName("ki_damage")
 		private Double kiDamage;
 
-		public Double getHealth() { return health; }
-		public Double getMeleeDamage() { return meleeDamage; }
-		public Double getKiDamage() { return kiDamage; }
+		public Double getHealth() { return health != null ? Math.max(1, health) : null; }
 		public void setHealth(Double health) { this.health = health; }
+		public Double getMeleeDamage() { return meleeDamage != null ? Math.max(1, meleeDamage) : null; }
 		public void setMeleeDamage(Double meleeDamage) { this.meleeDamage = meleeDamage; }
+		public Double getKiDamage() { return kiDamage != null ? Math.max(1, kiDamage) : null; }
 		public void setKiDamage(Double kiDamage) { this.kiDamage = kiDamage; }
 	}
 }

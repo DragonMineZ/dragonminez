@@ -150,7 +150,7 @@ public class SkillsConfig {
         if (level < 1 || level > skillCosts.costs.size()) {
             return -1;
         }
-        return skillCosts.costs.get(level - 1);
+        return Math.max(0, skillCosts.costs.get(level - 1));
     }
 
     public double getMultiplierForLevel(String skillName, int level) {
@@ -161,7 +161,7 @@ public class SkillsConfig {
         if (level < 1 || level > skillCosts.multipliers.size()) {
             return 0.0;
         }
-        return skillCosts.multipliers.get(level - 1);
+        return Math.max(0.0, skillCosts.multipliers.get(level - 1));
     }
 
     public boolean canPurchaseLevel(String skillName, int level) {
@@ -199,4 +199,3 @@ public class SkillsConfig {
         }
     }
 }
-

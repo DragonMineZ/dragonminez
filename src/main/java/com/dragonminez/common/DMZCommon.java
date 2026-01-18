@@ -38,6 +38,8 @@ public class DMZCommon {
         MainStructurePlacements.register(modEventBus);
 		modEventBus.addListener(ModCommonEvents::commonSetup);
 		OverworldFeatures.register(modEventBus);
+
+		MainGameRules.register();
     }
 }
 

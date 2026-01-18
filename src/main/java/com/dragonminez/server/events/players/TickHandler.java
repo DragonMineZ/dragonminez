@@ -21,6 +21,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.io.ObjectInputFilter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class TickHandler {
     private static final int SYNC_INTERVAL = 10;
     private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
     private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
+	private static int saiyanZenkaiSeconds = 0;
 
     private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 
@@ -146,6 +148,12 @@ public class TickHandler {
 				data.getResources().setFormRelease(0);
 			}
 
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
+				if (tickCounter % 20 == 0 && data.getCharacter().getRaceName().equals("saiyan")) {
+					handleSaiyanPassive(serverPlayer, data);
+				}
+			}
+
             if (shouldSync) {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
             }
@@ -194,6 +202,9 @@ public class TickHandler {
         if (activeCharging) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			}
 			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
 
@@ -204,6 +215,9 @@ public class TickHandler {
         } else if (!hasActiveForm && currentEnergy < maxEnergy) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			}
 			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
         }
@@ -218,7 +232,7 @@ public class TickHandler {
             int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
             data.getResources().setCurrentEnergy(newEnergy);
 
-            if (newEnergy <= 0 && hasActiveForm) {
+            if (newEnergy <= maxEnergy * 0.05 && hasActiveForm) {
                 data.getCharacter().clearActiveForm();
             }
         }
@@ -283,5 +297,27 @@ public class TickHandler {
             }
         }
     }
+
+	private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {
+		if (data.getResources().getZenkaiCount() >= ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiAmount()) return;
+		if (data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) return;
+
+		float maxHealth = player.getMaxHealth();
+		if (player.getHealth() <= maxHealth * 0.15) saiyanZenkaiSeconds = saiyanZenkaiSeconds + 1;
+		else saiyanZenkaiSeconds = 0;
+
+		if (saiyanZenkaiSeconds >= 8) {
+			data.getResources().setZenkaiCount(data.getResources().getZenkaiCount() + 1);
+			player.heal((float) (maxHealth * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiHealthRegen()));
+			String[] boosts = ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiBoosts();
+			for (String boost : boosts) {
+				data.getBonusStats().addBonus(boost, "Zenkai_" + data.getResources().getZenkaiCount(), "*", ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
+			}
+
+			data.getCooldowns().addCooldown(Cooldowns.ZENKAI, ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiCooldownSeconds());
+			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			saiyanZenkaiSeconds = 0;
+		}
+	}
 }
 
