@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.util.KeyBinds;
@@ -47,6 +48,12 @@ public class ForgeClientEvents {
 
         if (mc.player == null || mc.screen != null) {
             return;
+        }
+
+        if (KeyBinds.UTILITY_MENU.consumeClick()) {
+            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+                mc.setScreen(new HairEditorScreen(null, data.getCharacter()));
+            });
         }
 
         if (KeyBinds.OPEN_CHARACTER_MENU.consumeClick()) {

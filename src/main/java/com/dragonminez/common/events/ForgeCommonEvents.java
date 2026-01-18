@@ -7,8 +7,10 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -24,13 +26,17 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -39,6 +45,7 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.List;
@@ -194,4 +201,36 @@ public class ForgeCommonEvents {
 			}
 		}
 	}
+
+    @SubscribeEvent
+    public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        if (event.getSlot() != EquipmentSlot.CHEST) {
+            return;
+        }
+
+        ItemStack newStack = event.getTo();
+
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+
+            boolean shouldBeArmored = false;
+
+            if (!newStack.isEmpty() && newStack.getItem() instanceof ArmorItem) {
+                boolean isVanilla = ForgeRegistries.ITEMS.getKey(newStack.getItem()).getNamespace().equals("minecraft");
+                boolean isDbzArmor = newStack.getItem() instanceof DbzArmorItem;
+
+                if (!isVanilla && !isDbzArmor) {
+                    shouldBeArmored = true;
+                }
+            }
+            if (stats.getCharacter().getArmored() != shouldBeArmored) {
+                stats.getCharacter().setArmored(shouldBeArmored);
+
+                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+            }
+        });
+    }
 }

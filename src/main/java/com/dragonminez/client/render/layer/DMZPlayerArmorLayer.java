@@ -56,7 +56,6 @@ public class DMZPlayerArmorLayer<T extends DMZAnimatable> extends ItemArmorLayer
                 if (!isArmored) {
                     return null;
                 } else {
-                    System.out.println("DEBUG: Renderizando ArmorBody Vanilla porque isArmored = TRUE");
                 }
             }
         }

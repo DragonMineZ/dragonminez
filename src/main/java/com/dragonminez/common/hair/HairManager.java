@@ -10,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.math.BigInteger;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,15 +21,101 @@ public class HairManager {
     private static final String[] DEFAULT_HAIR_RACES = {"human", "saiyan"};
     private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
     private static final String CODE_PREFIX = "DMZ_HAIR:";
+
+    // Alfabeto de solo letras minúsculas para cumplir con tu requisito
+    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+
     static {
         initializeDefaultPresets();
     }
 
     private static void initializeDefaultPresets() {
-        //registerPreset(1, presetGoku);
-        //registerPreset(2, presetVegeta);
-        //registerPreset(3, presetTrunks);
+
     }
+
+    /**
+     * Convierte los bytes del NBT a una cadena de solo letras (a-z).
+     */
+    private static String encodeToLetters(byte[] bytes) {
+        // Añadimos un byte extra para asegurar que el número sea interpretado como positivo
+        byte[] positiveBytes = new byte[bytes.length + 1];
+        System.arraycopy(bytes, 0, positiveBytes, 1, bytes.length);
+        BigInteger number = new BigInteger(positiveBytes);
+
+        StringBuilder sb = new StringBuilder();
+        BigInteger base = BigInteger.valueOf(26);
+
+        while (number.compareTo(BigInteger.ZERO) > 0) {
+            BigInteger[] quotientAndRemainder = number.divideAndRemainder(base);
+            sb.append(ALPHABET.charAt(quotientAndRemainder[1].intValue()));
+            number = quotientAndRemainder[0];
+        }
+        return sb.reverse().toString();
+    }
+
+    /**
+     * Convierte la cadena de letras de vuelta a bytes para cargar el NBT.
+     */
+    private static byte[] decodeFromLetters(String s) {
+        BigInteger number = BigInteger.ZERO;
+        BigInteger base = BigInteger.valueOf(26);
+
+        for (int i = 0; i < s.length(); i++) {
+            int digit = ALPHABET.indexOf(s.charAt(i));
+            if (digit == -1) continue; // Ignora caracteres inválidos
+            number = number.multiply(base).add(BigInteger.valueOf(digit));
+        }
+
+        byte[] bytes = number.toByteArray();
+        // Quitar el byte de relleno de signo si existe
+        if (bytes.length > 0 && bytes[0] == 0) {
+            byte[] result = new byte[bytes.length - 1];
+            System.arraycopy(bytes, 1, result, 0, result.length);
+            return result;
+        }
+        return bytes;
+    }
+
+    // --- LÓGICA DE GESTIÓN DE CÓDIGOS ---
+
+    public static String toCode(CustomHair hair) {
+        if (hair == null) return null;
+
+        try {
+            CompoundTag tag = hair.save();
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
+            NbtIo.write(tag, dataOutput);
+            dataOutput.close();
+
+            // Usamos la codificación de letras en lugar de Base64
+            return CODE_PREFIX + encodeToLetters(byteStream.toByteArray());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static CustomHair fromCode(String code) {
+        if (code == null || code.isEmpty()) return null;
+
+        String rawContent = code.startsWith(CODE_PREFIX) ? code.substring(CODE_PREFIX.length()) : code;
+
+        try {
+            byte[] compressed = decodeFromLetters(rawContent);
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
+            DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
+            CompoundTag tag = NbtIo.read(dataInput);
+            dataInput.close();
+
+            CustomHair hair = new CustomHair();
+            hair.load(tag);
+            return hair;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // --- LÓGICA DE REGLAS DE RAZA ---
 
     public static boolean canUseHair(Character character) {
         if (character == null) return false;
@@ -37,31 +124,18 @@ public class HairManager {
         String gender = character.getGender().toLowerCase();
 
         for (String defaultRace : DEFAULT_HAIR_RACES) {
-            if (race.equals(defaultRace)) {
-                return true;
-            }
+            if (race.equals(defaultRace)) return true;
         }
 
-        if (race.equals("majin")) {
-            return gender.equals(Character.GENDER_FEMALE);
-        }
-
-        if (race.equals("bioandroid") || race.equals("frostdemon") || race.equals("namekian")) {
-            return false;
-        }
+        if (race.equals("majin")) return gender.equals(Character.GENDER_FEMALE);
+        if (race.equals("bioandroid") || race.equals("frostdemon") || race.equals("namekian")) return false;
 
         RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-        if (config != null) {
-            return config.canUseHair();
-        }
-
-        return false;
+        return config != null && config.canUseHair();
     }
 
     public static CustomHair getEffectiveHair(Character character) {
-        if (character == null || !canUseHair(character)) {
-            return null;
-        }
+        if (character == null || !canUseHair(character)) return null;
 
         int hairId = character.getHairId();
 
@@ -105,46 +179,6 @@ public class HairManager {
 
     public static int getPresetCount() {
         return PRESET_CODES.size();
-    }
-
-    public static String toCode(CustomHair hair) {
-        if (hair == null) {
-            return null;
-        }
-
-        try {
-            CompoundTag tag = hair.save();
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
-            NbtIo.write(tag, dataOutput);
-            dataOutput.close();
-
-            return CODE_PREFIX + Base64.getEncoder().encodeToString(byteStream.toByteArray());
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public static CustomHair fromCode(String code) {
-        if (code == null || code.isEmpty()) {
-            return null;
-        }
-
-        String base64 = code.startsWith(CODE_PREFIX) ? code.substring(CODE_PREFIX.length()) : code;
-
-        try {
-            byte[] compressed = Base64.getDecoder().decode(base64);
-            ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
-            DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
-            CompoundTag tag = NbtIo.read(dataInput);
-            dataInput.close();
-
-            CustomHair hair = new CustomHair();
-            hair.load(tag);
-            return hair;
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     public static boolean isValidCode(String code) {

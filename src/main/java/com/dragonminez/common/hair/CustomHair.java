@@ -71,15 +71,15 @@ public class CustomHair {
                 strand.setRotation(-90, 0, 0);
             }
             case LEFT -> {
-                strand.setOffset(-3f, 5 + rowYOffset, gridX);
+                strand.setOffset(-3f, 7 + rowYOffset, gridX);
                 strand.setRotation(0, 0, 90);
             }
             case RIGHT -> {
-                strand.setOffset(3f, 5 + rowYOffset, -gridX);
+                strand.setOffset(3f, 7 + rowYOffset, -gridX);
                 strand.setRotation(0, 0, -90);
             }
             case TOP -> {
-                strand.setOffset(gridX, 6f, gridZ);
+                strand.setOffset(gridX, 8f, gridZ);
                 strand.setRotation(0, 0, 0);
             }
         }

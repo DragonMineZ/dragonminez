@@ -5,6 +5,7 @@ import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.S2C.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
@@ -136,6 +137,11 @@ public class NetworkHandler {
     public static <MSG> void sendToAllPlayers(MSG message) {
         INSTANCE.send(PacketDistributor.ALL.noArg(), message);
     }
+
+    public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
+        INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
+    }
+
 }
 
 
