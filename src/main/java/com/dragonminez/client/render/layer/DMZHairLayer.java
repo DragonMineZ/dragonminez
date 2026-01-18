@@ -68,13 +68,9 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
 
         poseStack.pushPose();
 
-        // 1. CORRECCIÓN DE GIRO 180º (Sincronización con el cuerpo)
-        // Minecraft renderiza las entidades rotadas 180 grados por defecto.
-        // Además, necesitamos seguir la rotación del cuerpo del jugador.
         float bodyYaw = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - bodyYaw));
 
-        // 2. CONSTRUIR JERARQUÍA
         List<GeoBone> boneChain = new ArrayList<>();
         CoreGeoBone currentBone = headBone;
         while (currentBone != null) {
@@ -82,16 +78,13 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
             currentBone = currentBone.getParent();
         }
 
-        // 3. APLICAR TRANSFORMACIONES (Root -> Head)
         for (int i = boneChain.size() - 1; i >= 0; i--) {
             GeoBone bone = boneChain.get(i);
 
-            // Traslación de la animación (Invertimos X para Geckolib)
             poseStack.translate(-bone.getPosX() / 16f, bone.getPosY() / 16f, bone.getPosZ() / 16f);
 
             RenderUtils.translateToPivotPoint(poseStack, bone);
 
-            // Rotación: Usamos los valores tal cual los da el hueso animado
             if (bone.getRotZ() != 0) poseStack.mulPose(Axis.ZP.rotation(bone.getRotZ()));
             if (bone.getRotY() != 0) poseStack.mulPose(Axis.YP.rotation(bone.getRotY()));
             if (bone.getRotX() != 0) poseStack.mulPose(Axis.XP.rotation(bone.getRotX()));
@@ -100,10 +93,8 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
             RenderUtils.translateAwayFromPivotPoint(poseStack, bone);
         }
 
-        // 4. POSICIONAR EN EL PIVOTE DE LA CABEZA
         RenderUtils.translateToPivotPoint(poseStack, headBone);
 
-        // 5. RENDERIZAR
         HairRenderer.render(
                 poseStack,
                 bufferSource,

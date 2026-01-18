@@ -22,7 +22,6 @@ public class HairManager {
     private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
     private static final String CODE_PREFIX = "DMZ_HAIR:";
 
-    // Alfabeto de solo letras minúsculas para cumplir con tu requisito
     private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 
     static {
@@ -62,12 +61,11 @@ public class HairManager {
 
         for (int i = 0; i < s.length(); i++) {
             int digit = ALPHABET.indexOf(s.charAt(i));
-            if (digit == -1) continue; // Ignora caracteres inválidos
+            if (digit == -1) continue;
             number = number.multiply(base).add(BigInteger.valueOf(digit));
         }
 
         byte[] bytes = number.toByteArray();
-        // Quitar el byte de relleno de signo si existe
         if (bytes.length > 0 && bytes[0] == 0) {
             byte[] result = new byte[bytes.length - 1];
             System.arraycopy(bytes, 1, result, 0, result.length);
@@ -75,8 +73,6 @@ public class HairManager {
         }
         return bytes;
     }
-
-    // --- LÓGICA DE GESTIÓN DE CÓDIGOS ---
 
     public static String toCode(CustomHair hair) {
         if (hair == null) return null;
@@ -88,7 +84,6 @@ public class HairManager {
             NbtIo.write(tag, dataOutput);
             dataOutput.close();
 
-            // Usamos la codificación de letras en lugar de Base64
             return CODE_PREFIX + encodeToLetters(byteStream.toByteArray());
         } catch (Exception e) {
             return null;
@@ -114,8 +109,6 @@ public class HairManager {
             return null;
         }
     }
-
-    // --- LÓGICA DE REGLAS DE RAZA ---
 
     public static boolean canUseHair(Character character) {
         if (character == null) return false;
