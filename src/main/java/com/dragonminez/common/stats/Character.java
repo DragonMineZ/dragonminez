@@ -3,6 +3,7 @@ package com.dragonminez.common.stats;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.hair.CustomHair;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class Character {
     public static final String CLASS_MARTIALARTIST = "martialartist";
 
     private int hairId;
+    private CustomHair customHair = new CustomHair();
     private int bodyType;
     private int eyesType;
     private int noseType;
@@ -38,10 +40,13 @@ public class Character {
     private String eye2Color;
     private String auraColor;
 
+    private Boolean armored;
+
     public Character() {
         this.race = "human";
         this.gender = GENDER_MALE;
         this.characterClass = CLASS_WARRIOR;
+        this.armored = false;
 
         RaceCharacterConfig config = ConfigManager.getRaceCharacter("human");
         this.hairId = config.getDefaultHairType();
@@ -66,6 +71,7 @@ public class Character {
     public String getActiveFormGroup() { return activeFormGroup; }
     public String getActiveForm() { return activeForm; }
     public int getHairId() { return hairId; }
+	public CustomHair getCustomHair() { return customHair; }
     public int getBodyType() { return bodyType; }
     public int getEyesType() { return eyesType; }
     public int getNoseType() { return noseType; }
@@ -79,6 +85,7 @@ public class Character {
     public String getEye2Color() { return eye2Color; }
     public String getAuraColor() { return auraColor; }
     public FormMasteries getFormMasteries() { return formMasteries; }
+    public Boolean getArmored() {return armored;}
 
     public void setRace(String race) {
         if (race != null && ConfigManager.isRaceLoaded(race)) {
@@ -93,6 +100,7 @@ public class Character {
     public void setGender(String gender) { this.gender = gender; }
     public void setCharacterClass(String characterClass) { this.characterClass = characterClass; }
     public void setHairId(int hairId) { this.hairId = hairId; }
+    public void setCustomHair(CustomHair customHair) { this.customHair = customHair; }
     public void setBodyType(int bodyType) { this.bodyType = bodyType; }
     public void setEyesType(int eyesType) { this.eyesType = eyesType; }
     public void setNoseType(int noseType) { this.noseType = noseType; }
@@ -106,6 +114,7 @@ public class Character {
     public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
     public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
     public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
+    public void setArmored(Boolean armored) {this.armored = armored;}
 
     public String getRaceName() {
         return race != null && !race.isEmpty() ? race : "human";
@@ -133,6 +142,9 @@ public class Character {
         tag.putString("Gender", gender);
         tag.putString("Class", characterClass);
         tag.putInt("HairId", hairId);
+        if (customHair != null && !customHair.isEmpty()) {
+            tag.put("CustomHair", customHair.save());
+        }
         tag.putInt("BodyType", bodyType);
         tag.putInt("EyesType", eyesType);
         tag.putInt("NoseType", noseType);
@@ -149,6 +161,7 @@ public class Character {
         tag.putString("CurrentFormGroup", activeFormGroup);
         tag.putString("CurrentForm", activeForm);
         tag.put("FormMasteries", formMasteries.save());
+        tag.putBoolean("isArmored", armored);
         return tag;
     }
 
@@ -166,6 +179,12 @@ public class Character {
         this.gender = tag.getString("Gender");
         this.characterClass = tag.getString("Class");
         this.hairId = tag.getInt("HairId");
+        if (tag.contains("CustomHair")) {
+            this.customHair = new CustomHair();
+            this.customHair.load(tag.getCompound("CustomHair"));
+        } else {
+            this.customHair = new CustomHair();
+        }
         this.bodyType = tag.getInt("BodyType");
         this.eyesType = tag.getInt("EyesType");
         this.noseType = tag.getInt("NoseType");
@@ -184,6 +203,7 @@ public class Character {
         if (tag.contains("FormMasteries")) {
             formMasteries.load(tag.getCompound("FormMasteries"));
         }
+        this.armored = tag.getBoolean("isArmored");
     }
 
     public boolean hasActiveForm() {
@@ -212,6 +232,7 @@ public class Character {
         this.gender = other.gender;
         this.characterClass = other.characterClass;
         this.hairId = other.hairId;
+        this.customHair = other.customHair != null ? other.customHair.copy() : new CustomHair();
         this.bodyType = other.bodyType;
         this.eyesType = other.eyesType;
         this.noseType = other.noseType;
@@ -228,5 +249,6 @@ public class Character {
         this.activeFormGroup = other.activeFormGroup;
         this.activeForm = other.activeForm;
         this.formMasteries.copyFrom(other.formMasteries);
+        this.armored = other.armored;
     }
 }

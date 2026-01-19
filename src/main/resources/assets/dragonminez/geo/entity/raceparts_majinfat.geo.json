@@ -1,0 +1,68 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 4,
+				"visible_bounds_height": 4.5,
+				"visible_bounds_offset": [0, 1.75, 0]
+			},
+			"bones": [
+				{
+					"name": "root",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "waist",
+					"parent": "root",
+					"pivot": [0, 12, 0]
+				},
+				{
+					"name": "head",
+					"parent": "waist",
+					"pivot": [0, 21, 0]
+				},
+				{
+					"name": "orejas1",
+					"parent": "head",
+					"pivot": [0, 18, 0],
+					"cubes": [
+						{"origin": [-5.5, 22.5, 0.5], "size": [3, 5, 0], "pivot": [-3.5, 22.5, 1.5], "rotation": [0, 25, -10], "uv": [1, 2]},
+						{"origin": [2.25, 22.25, 0.5], "size": [3, 5, 0], "pivot": [4.25, 22.25, 1.5], "rotation": [0, -25, 10], "uv": [1, 2], "mirror": true}
+					]
+				},
+				{
+					"name": "orejas2",
+					"parent": "head",
+					"pivot": [0, 21, 0],
+					"cubes": [
+						{"origin": [-4.75, 23.5, -0.5], "size": [2, 3, 2], "pivot": [-3.75, 23.5, 0.5], "rotation": [0, 0, -5], "uv": [28, 1]},
+						{"origin": [2.5, 23.5, -0.5], "size": [2, 3, 2], "pivot": [3.5, 23.5, 0.5], "rotation": [0, 0, 5], "uv": [28, 1]}
+					]
+				},
+				{
+					"name": "orejas3",
+					"parent": "head",
+					"pivot": [0, 21, 0],
+					"cubes": [
+						{"origin": [3, 23.75, -1.5], "size": [2, 3, 3], "pivot": [4, 24.75, -0.5], "rotation": [-45, 0, 0], "uv": [17, 0]},
+						{"origin": [-5, 23.75, -1.5], "size": [2, 3, 3], "pivot": [-4, 24.75, -0.5], "rotation": [-45, 0, 0], "uv": [17, 0]}
+					]
+				},
+				{
+					"name": "colamajin",
+					"parent": "head",
+					"pivot": [0, 21, 0],
+					"cubes": [
+						{"origin": [-1, 28.15, -0.75], "size": [2, 3, 2], "pivot": [0, 28.15, 0.25], "rotation": [-50, 0, 0], "uv": [8, 1]},
+						{"origin": [-1, 29.9, 1], "size": [2, 3, 2], "inflate": -0.2, "pivot": [0, 29.9, 2], "rotation": [-72.5, 0, 0], "uv": [8, 1]},
+						{"origin": [-1, 30.8, 3.05], "size": [2, 3, 2], "inflate": -0.3, "pivot": [0, 30.8, 4.05], "rotation": [-110, 0, 0], "uv": [8, 1]}
+					]
+				}
+			]
+		}
+	]
+}

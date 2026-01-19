@@ -8,6 +8,7 @@ public class RaceCharacterConfig {
 	private float defaultModelScaling = 0.9375f;
     private int defaultBodyType = 0;
     private int defaultHairType = 0;
+    private boolean canUseHair = true;
     private int defaultEyesType = 0;
     private int defaultNoseType = 0;
     private int defaultMouthType = 0;
@@ -32,6 +33,7 @@ public class RaceCharacterConfig {
 	public float getDefaultModelScaling() { return defaultModelScaling; }
     public int getDefaultBodyType() { return defaultBodyType; }
     public int getDefaultHairType() { return defaultHairType; }
+    public boolean canUseHair() { return canUseHair; }
     public int getDefaultEyesType() { return defaultEyesType; }
     public int getDefaultNoseType() { return defaultNoseType; }
     public int getDefaultMouthType() { return defaultMouthType; }
@@ -54,6 +56,7 @@ public class RaceCharacterConfig {
 	public void setDefaultModelScaling(float defaultModelScaling) { this.defaultModelScaling = defaultModelScaling; }
     public void setDefaultBodyType(int defaultBodyType) { this.defaultBodyType = defaultBodyType; }
     public void setDefaultHairType(int defaultHairType) { this.defaultHairType = defaultHairType; }
+    public void setCanUseHair(boolean canUseHair) { this.canUseHair = canUseHair; }
     public void setDefaultEyesType(int defaultEyesType) { this.defaultEyesType = defaultEyesType; }
     public void setDefaultNoseType(int defaultNoseType) { this.defaultNoseType = defaultNoseType; }
     public void setDefaultMouthType(int defaultMouthType) { this.defaultMouthType = defaultMouthType; }

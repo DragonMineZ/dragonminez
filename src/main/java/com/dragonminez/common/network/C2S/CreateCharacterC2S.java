@@ -1,7 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.Env;
-import com.dragonminez.LogUtil;
+import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Character;
@@ -19,6 +18,7 @@ public class CreateCharacterC2S {
     private final String className;
     private final String gender;
     private final int hairId;
+	private final CustomHair customHair;
     private final int bodyType;
     private final int eyesType;
     private final int noseType;
@@ -37,6 +37,7 @@ public class CreateCharacterC2S {
         this.className = character.getCharacterClass();
         this.gender = character.getGender();
         this.hairId = character.getHairId();
+		this.customHair = character.getCustomHair();
         this.bodyType = character.getBodyType();
         this.eyesType = character.getEyesType();
         this.noseType = character.getNoseType();
@@ -51,13 +52,14 @@ public class CreateCharacterC2S {
         this.auraColor = character.getAuraColor();
     }
 
-    private CreateCharacterC2S(String raceName, String className, String gender, int hairId, int bodyType, int eyesType,
+    private CreateCharacterC2S(String raceName, String className, String gender, int hairId, CustomHair customHair, int bodyType, int eyesType,
                                int noseType, int mouthType, int tattooType, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
                                String eye1Color, String eye2Color, String auraColor) {
         this.raceName = raceName;
         this.className = className;
         this.gender = gender;
         this.hairId = hairId;
+		this.customHair = customHair;
         this.bodyType = bodyType;
         this.eyesType = eyesType;
         this.noseType = noseType;
@@ -77,6 +79,11 @@ public class CreateCharacterC2S {
         buf.writeUtf(msg.className);
         buf.writeUtf(msg.gender);
         buf.writeInt(msg.hairId);
+        boolean hasCustomHair = msg.customHair != null;
+        buf.writeBoolean(hasCustomHair);
+        if (hasCustomHair) {
+            msg.customHair.writeToBuffer(buf);
+        }
         buf.writeInt(msg.bodyType);
         buf.writeInt(msg.eyesType);
         buf.writeInt(msg.noseType);
@@ -92,23 +99,32 @@ public class CreateCharacterC2S {
     }
 
     public static CreateCharacterC2S decode(FriendlyByteBuf buf) {
+        String raceName = buf.readUtf();
+        String className = buf.readUtf();
+        String gender = buf.readUtf();
+        int hairId = buf.readInt();
+        // Deserializar CustomHair
+        CustomHair customHair = null;
+        if (buf.readBoolean()) {
+            customHair = CustomHair.readFromBuffer(buf);
+        }
+        int bodyType = buf.readInt();
+        int eyesType = buf.readInt();
+        int noseType = buf.readInt();
+        int mouthType = buf.readInt();
+        int tattooType = buf.readInt();
+        String hairColor = buf.readUtf();
+        String bodyColor = buf.readUtf();
+        String bodyColor2 = buf.readUtf();
+        String bodyColor3 = buf.readUtf();
+        String eye1Color = buf.readUtf();
+        String eye2Color = buf.readUtf();
+        String auraColor = buf.readUtf();
+
         return new CreateCharacterC2S(
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readInt(),
-                buf.readInt(),
-                buf.readInt(),
-                buf.readInt(),
-                buf.readInt(),
-				buf.readInt(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf()
+                raceName, className, gender, hairId, customHair, bodyType, eyesType,
+                noseType, mouthType, tattooType, hairColor, bodyColor, bodyColor2, bodyColor3,
+                eye1Color, eye2Color, auraColor
         );
     }
 
@@ -120,13 +136,9 @@ public class CreateCharacterC2S {
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 if (!data.getStatus().hasCreatedCharacter()) {
                     data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender,
-                            msg.hairId, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
+                            msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
                             msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
                             msg.eye1Color, msg.eye2Color, msg.auraColor);
-
-                    LogUtil.info(Env.COMMON, "Jugador {} creó personaje: Raza={}, Clase={}, Género={}",
-                            player.getName().getString(), msg.raceName, msg.className, msg.gender);
-
                     NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
                 }
             });

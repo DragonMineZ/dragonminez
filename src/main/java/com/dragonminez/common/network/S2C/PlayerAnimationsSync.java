@@ -35,7 +35,7 @@ public class PlayerAnimationsSync {
 			if (mc.level != null) {
 				Player player = mc.level.getPlayerByUUID(playerUUID);
 				if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
-					animatable.dragonminez$setCreativeFlying(isFlying);
+					animatable.dragonminez$isCreativeFlying(isFlying);
 				}
 			}
 		});

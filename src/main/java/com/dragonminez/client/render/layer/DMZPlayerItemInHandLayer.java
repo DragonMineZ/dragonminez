@@ -1,5 +1,7 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.data.DMZAnimatable;
+import com.dragonminez.client.render.layer.base.BlockAndItemLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -7,30 +9,33 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.*;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
+import software.bernie.geckolib.renderer.GeoReplacedEntityRenderer;
 
 import javax.annotation.Nullable;
 
-public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatable> extends BlockAndItemGeoLayer<T> {
-    public PlayerItemInHandLayer(GeoRenderer<T> renderer) {
+public class DMZPlayerItemInHandLayer extends BlockAndItemLayer {
+    public DMZPlayerItemInHandLayer(GeoReplacedEntityRenderer<AbstractClientPlayer, DMZAnimatable> renderer) {
         super(renderer);
     }
 
     @Nullable
     @Override
-    protected ItemStack getStackForBone(GeoBone bone, T animatable) {
+    protected ItemStack getStackForBone(GeoBone bone, DMZAnimatable animatable) {
+        final AbstractClientPlayer player = this.player();
+        if (player == null) {
+            return null;
+        }
+
         if (bone.getName().equals("right_hand_item")) {
-            return animatable.getMainArm() == HumanoidArm.RIGHT ?
-                   animatable.getMainHandItem() :
-                   animatable.getOffhandItem();
+            return player.getMainArm() == HumanoidArm.RIGHT ?
+                    player.getMainHandItem() :
+                    player.getOffhandItem();
         }
 
         if (bone.getName().equals("left_hand_item")) {
-            return animatable.getMainArm() == HumanoidArm.LEFT ?
-                   animatable.getMainHandItem() :
-                   animatable.getOffhandItem();
+            return player.getMainArm() == HumanoidArm.LEFT ?
+                    player.getMainHandItem() :
+                    player.getOffhandItem();
         }
 
 
@@ -38,17 +43,21 @@ public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatabl
     }
 
     @Override
-    protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, T animatable) {
+    protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, DMZAnimatable animatable) {
+        final AbstractClientPlayer player = this.player();
+        if (player == null) {
+            return ItemDisplayContext.NONE;
+        }
         if (bone.getName().equals("right_hand_item")) {
-            return animatable.getMainArm() == HumanoidArm.RIGHT ?
-                   ItemDisplayContext.THIRD_PERSON_RIGHT_HAND :
-                   ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+            return player.getMainArm() == HumanoidArm.RIGHT ?
+                    ItemDisplayContext.THIRD_PERSON_RIGHT_HAND :
+                    ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
         }
 
         if (bone.getName().equals("left_hand_item")) {
-            return animatable.getMainArm() == HumanoidArm.LEFT ?
-                   ItemDisplayContext.THIRD_PERSON_RIGHT_HAND :
-                   ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+            return player.getMainArm() == HumanoidArm.LEFT ?
+                    ItemDisplayContext.THIRD_PERSON_RIGHT_HAND :
+                    ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
         }
 
         return ItemDisplayContext.NONE;
@@ -56,16 +65,20 @@ public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatabl
 
     @Override
     protected void renderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack,
-                                     T animatable, MultiBufferSource bufferSource,
-                                     float partialTick, int packedLight, int packedOverlay) {
-
+                                      DMZAnimatable animatable, MultiBufferSource bufferSource,
+                                      float partialTick, int packedLight, int packedOverlay) {
         if (bone.getName().equals("right_hand_item") || bone.getName().equals("left_hand_item")) {
+            final AbstractClientPlayer player = this.player();
+            if (player == null) {
+                return;
+            }
+
             poseStack.pushPose();
 
             boolean isMainHand = (bone.getName().equals("right_hand_item"));
             if (isMainHand) {
                 if (stack.getItem() instanceof ShieldItem) {
-                    if (animatable.isUsingItem() && animatable.getUseItem() == stack) {
+                    if (player.isUsingItem() && player.getUseItem() == stack) {
                         poseStack.translate(-0.0, -0.01, -0.14);
                         poseStack.mulPose(Axis.XP.rotationDegrees(-140));
                         poseStack.mulPose(Axis.XN.rotationDegrees(-65));
@@ -91,7 +104,7 @@ public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatabl
                 }
             } else {
                 if (stack.getItem() instanceof ShieldItem) {
-                    if (animatable.isUsingItem() && animatable.getUseItem() == stack) {
+                    if (player.isUsingItem() && player.getUseItem() == stack) {
                         poseStack.translate(-0.70, 1.15, 0.35);
                         poseStack.mulPose(Axis.XP.rotationDegrees(35));
                         poseStack.mulPose(Axis.YP.rotationDegrees(90));
@@ -124,6 +137,13 @@ public class PlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimatabl
         } else {
             super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
         }
+    }
+
+    private AbstractClientPlayer player() {
+        if (this.renderer instanceof GeoReplacedEntityRenderer<?, ?> geoRenderer) {
+            return (AbstractClientPlayer) geoRenderer.getCurrentEntity();
+        }
+        return null;
     }
 }
 
