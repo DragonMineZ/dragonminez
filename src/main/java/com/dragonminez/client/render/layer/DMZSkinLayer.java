@@ -56,7 +56,7 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         String raceName = character.getRace().toLowerCase();
         String gender = character.getGender().toLowerCase();
         int bodyType = character.getBodyType();
-        String currentForm = character.getCurrentForm();
+        String currentForm = character.getActiveForm();
         boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
@@ -239,7 +239,7 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         try {
             if (raceName.equals("bioandroid")) {
                 String formPrefix = "imperfect";
-                String form = character.getCurrentForm();
+                String form = character.getActiveForm();
                 if (form != null) {
                     if (form.equals("semi_perfect")) formPrefix = "semi";
                     else if (form.equals("perfect")) formPrefix = "perfect";

@@ -3,8 +3,10 @@ package com.dragonminez.server.events.players;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
@@ -12,8 +14,11 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.RacialSkillLogic;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -39,44 +44,32 @@ public class TickHandler {
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) {
-            return;
-        }
+        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
+        if (!(event.player instanceof ServerPlayer serverPlayer)) return;
 
-        if (!(event.player instanceof ServerPlayer serverPlayer)) {
-            return;
-        }
 
         UUID playerId = serverPlayer.getUUID();
         int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
 
         StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter() || !data.getStatus().isAlive()) {
-                return;
-            }
+            if (!data.getStatus().hasCreatedCharacter() || !data.getStatus().isAlive()) return;
 
-            data.getEffects().tick();
+			handleBioDrainTick(serverPlayer, data);
 
-			var movementAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
+			if (serverPlayer.hasEffect(MainEffects.STUN.get())) {
+				data.getStatus().setChargingKi(false);
+				data.getStatus().setActionCharging(false);
+				data.getResources().setActionCharge(0);
+				if (!data.getStatus().isStunned()) data.getStatus().setStunned(true);
 
-			if (data.getStatus().isStunned()) {
-				if (!data.getCooldowns().hasCooldown(Cooldowns.STUN_TIMER)) data.getStatus().setStunned(false);
-				else data.getStatus().setBlocking(false);
-
-				if (movementAttr != null && movementAttr.getModifier(STUN_SLOW_UUID) == null) {
-					AttributeModifier stunSlow = new AttributeModifier(
-							STUN_SLOW_UUID,
-							"Stun Immobilization",
-							-1.0,
-							AttributeModifier.Operation.MULTIPLY_TOTAL
-					);
-					movementAttr.addTransientModifier(stunSlow);
-				}
-
+				data.getCooldowns().tick();
+				data.getEffects().tick();
+				if (serverPlayer.tickCount % SYNC_INTERVAL == 0) NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+				return;
 			} else {
-				if (movementAttr != null && movementAttr.getModifier(STUN_SLOW_UUID) != null) {
-					movementAttr.removeModifier(STUN_SLOW_UUID);
-				}
+				data.getCooldowns().tick();
+				data.getEffects().tick();
+				if (data.getStatus().isStunned()) data.getStatus().setStunned(false);
 			}
 
             boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
@@ -436,5 +429,48 @@ public class TickHandler {
 			saiyanZenkaiSeconds = 0;
 		}
 	}
-}
 
+	private static void handleBioDrainTick(ServerPlayer player, StatsData data) {
+		int targetId = data.getStatus().getDrainingTargetId();
+		if (targetId == -1) return;
+
+		if (data.getCooldowns().getCooldown(Cooldowns.DRAIN_ACTIVE) > 0) {
+			Entity entity = player.level().getEntity(targetId);
+			if (entity instanceof LivingEntity target && target.isAlive() && player.distanceTo(target) < 6.0f) {
+				Vec3 lookVec = target.getLookAngle().normalize();
+				Vec3 behindPos = target.position().add(lookVec.scale(-0.8));
+				player.teleportTo(behindPos.x, target.getY(), behindPos.z);
+				player.setYRot(target.getYRot());
+
+				if (player.tickCount % 20 == 0) {
+					GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
+					double totalDrainRatio = config.getBioAndroidDrainRatio();
+					float durationSeconds = 6.0f;
+					float totalHealthToDrain = (float) (target.getMaxHealth() * totalDrainRatio);
+					float drainPerSecond = totalHealthToDrain / durationSeconds;
+
+					target.setHealth(Math.max(0, target.getHealth() - drainPerSecond));
+					player.heal(drainPerSecond);
+					data.getResources().addEnergy((int)(drainPerSecond * 5));
+				}
+
+			} else {
+				data.getStatus().setDrainingTargetId(-1);
+				data.getCooldowns().removeCooldown(Cooldowns.DRAIN_ACTIVE);
+				player.removeEffect(MainEffects.STUN.get());
+			}
+
+		} else {
+			Entity entity = player.level().getEntity(targetId);
+			if (entity instanceof LivingEntity target) {
+				Vec3 look = player.getLookAngle();
+				target.setDeltaMovement(look.scale(1.5).add(0, 0.5, 0));
+				target.hurtMarked = true;
+				player.setDeltaMovement(look.scale(-1.0).add(0, 0.3, 0));
+				player.hurtMarked = true;
+			}
+			data.getStatus().setDrainingTargetId(-1);
+			player.removeEffect(MainEffects.STUN.get());
+		}
+	}
+}

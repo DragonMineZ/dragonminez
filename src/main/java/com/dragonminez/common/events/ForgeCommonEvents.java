@@ -132,11 +132,15 @@ public class ForgeCommonEvents {
 
             float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
 
-			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
-				if (!targetData.getStatus().isBlocking()) {
-					serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
-				}
-			});
+			if (target instanceof ServerPlayer targetPlayer) {
+				StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
+					if (!targetData.getStatus().isBlocking()) {
+						serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
+					}
+				});
+			} else {
+				serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
+			}
 
             RegistryObject<SoundEvent>[] sonidosGolpe = new RegistryObject[] {
                     MainSounds.GOLPE1,

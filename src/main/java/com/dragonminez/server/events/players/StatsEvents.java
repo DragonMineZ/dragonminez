@@ -3,6 +3,7 @@ package com.dragonminez.server.events.players;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -337,7 +338,7 @@ public class StatsEvents {
         String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
 
         if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
-            if (player.getCooldowns().isOnCooldown(stack.getItem())) event.setCanceled(true);
+            if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
             else event.setDuration(1);
         }
     }
@@ -346,9 +347,7 @@ public class StatsEvents {
 	public static void onPlayerAttack(AttackEntityEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
-			if (data.getStatus().isStunned()) event.setCanceled(true);
-		});
+		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
 	}
 
 	@SubscribeEvent
@@ -356,53 +355,55 @@ public class StatsEvents {
 		if (event.getLevel().isClientSide) return;
 		if (event.getEntity() == null) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
-			if (data.getStatus().isStunned()) event.setCanceled(true);
-		});
+		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
 	}
 
 	@SubscribeEvent
 	public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
-			if (data.getStatus().isStunned()) {
-				event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
-				event.getEntity().setJumping(false);
-			}
-		});
+		if (event.getEntity().hasEffect(MainEffects.STUN.get()))
+			event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
 	}
 
 	@SubscribeEvent
 	public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
-		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (data.getStatus().isStunned()) {
-				if (player.isSprinting()) player.setSprinting(false);
-				if (player.isCrouching()) player.setShiftKeyDown(false);
-				if (player.isFallFlying()) player.stopFallFlying();
-				player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
-				player.hurtMarked = true;
+		if (entity.hasEffect(MainEffects.STUN.get())) {
+			entity.setDeltaMovement(0, entity.getDeltaMovement().y, 0);
+			entity.setJumping(false);
+			entity.setSprinting(false);
+
+			if (entity.getPose() != Pose.CROUCHING) entity.setPose(Pose.CROUCHING);
+
+			if (entity instanceof Mob mob) {
+				mob.getNavigation().stop();
+				mob.setTarget(null);
+				mob.setAggressive(false);
 			}
+		}
 
-			AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
-			if (speedAttr != null) {
-				if (speedAttr.getModifier(FORM_SPEED_UUID) != null) {
-					speedAttr.removeModifier(FORM_SPEED_UUID);
-				}
+		if (entity instanceof ServerPlayer serverPlayer) {
+			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 
-				if (data.getCharacter().hasActiveForm()) {
-					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-					if (activeForm != null) {
-						double multiplier = activeForm.getSpeedMultiplier();
-						if (multiplier != 1.0) {
-							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "FormSpeedBonus", multiplier, AttributeModifier.Operation.MULTIPLY_TOTAL));
+				AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
+				if (speedAttr != null) {
+					if (speedAttr.getModifier(FORM_SPEED_UUID) != null) speedAttr.removeModifier(FORM_SPEED_UUID);
+					if (data.getCharacter().hasActiveForm()) {
+						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+						if (activeForm != null) {
+							double multiplier = activeForm.getSpeedMultiplier();
+							if (multiplier != 1.0) {
+								double bonus = multiplier - 1.0;
+								speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", bonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+							}
 						}
 					}
 				}
-			}
-		});
+			});
+		}
 	}
 
 	@SubscribeEvent

@@ -335,7 +335,7 @@ public class ConfigManager {
         config.setDefaultBodyColor3("#FF39A9");
         config.setDefaultHairColor("#FF001D");
         config.setDefaultEye1Color("#FF001D");
-        config.setDefaultEye2Color("#000000");
+        config.setDefaultEye2Color("#FF001D");
         config.setDefaultAuraColor("#5F00FF");
 
         config.setSuperformTpCost(new int[]{});

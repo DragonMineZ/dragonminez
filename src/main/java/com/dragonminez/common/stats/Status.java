@@ -13,12 +13,12 @@ public class Status {
     private boolean isInKaioPlanet;
 	private boolean isChargingKi;
 	private int activeKaiokenPhase;
-	private boolean isInCombat;
 	private boolean isBlocking;
 	private long lastBlockTime;
 	private boolean isStunned;
 	private ActionMode selectedAction;
 	private String kiWeaponType;
+	private int drainingTargetId;
 
     public Status() {
         this.isAlive = true;
@@ -31,12 +31,12 @@ public class Status {
         this.isInKaioPlanet = false;
 		this.isChargingKi = false;
 		this.activeKaiokenPhase = 0;
-		this.isInCombat = false;
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
 		this.isStunned = false;
 		this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = "blade";
+		this.drainingTargetId = -1;
     }
 
     public boolean isAlive() { return isAlive; }
@@ -49,12 +49,12 @@ public class Status {
     public boolean isInKaioPlanet() { return isInKaioPlanet; }
 	public boolean isChargingKi() { return isChargingKi; }
 	public int getActiveKaiokenPhase() { return activeKaiokenPhase; }
-	public boolean isInCombat() { return isInCombat; }
 	public boolean isBlocking() { return isBlocking; }
 	public long getLastBlockTime() { return lastBlockTime; }
 	public boolean isStunned() { return isStunned; }
 	public ActionMode getSelectedAction() { return selectedAction; }
 	public String getKiWeaponType() { return kiWeaponType; }
+	public int getDrainingTargetId() { return drainingTargetId; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -66,12 +66,12 @@ public class Status {
     public void setInKaioPlanet(boolean inKaio) { this.isInKaioPlanet = inKaio; }
 	public void setChargingKi(boolean charging) { this.isChargingKi = charging; }
 	public void setActiveKaiokenPhase(int phase) { this.activeKaiokenPhase = Math.max(0, Math.min(phase, 5)); }
-	public void setInCombat(boolean inCombat) { this.isInCombat = inCombat; }
 	public void setBlocking(boolean blocking) { this.isBlocking = blocking; }
 	public void setLastBlockTime(long time) { this.lastBlockTime = time; }
 	public void setStunned(boolean stunned) { this.isStunned = stunned; }
 	public void setSelectedAction(ActionMode action) { this.selectedAction = action; }
 	public void setKiWeaponType(String type) { this.kiWeaponType = type; }
+	public void setDrainingTargetId(int id) { this.drainingTargetId = id; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -85,12 +85,12 @@ public class Status {
         tag.putBoolean("InKaioPlanet", isInKaioPlanet);
 		tag.putBoolean("IsChargingKi", isChargingKi);
 		tag.putInt("ActiveKaiokenPhase", activeKaiokenPhase);
-		tag.putBoolean("IsInCombat", isInCombat);
 		tag.putBoolean("IsBlocking", isBlocking);
 		tag.putLong("LastBlockTime", lastBlockTime);
 		tag.putBoolean("IsStunned", isStunned);
 		tag.putInt("SelectedAction", selectedAction.ordinal());
 		tag.putString("KiWeaponType", kiWeaponType);
+		tag.putInt("DrainingTargetId", drainingTargetId);
         return tag;
     }
 
@@ -105,7 +105,6 @@ public class Status {
         this.isInKaioPlanet = tag.getBoolean("InKaioPlanet");
 		this.isChargingKi = tag.getBoolean("IsChargingKi");
 		this.activeKaiokenPhase = tag.getInt("ActiveKaiokenPhase");
-		this.isInCombat = tag.getBoolean("IsInCombat");
 		this.isBlocking = tag.getBoolean("IsBlocking");
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.isStunned = tag.getBoolean("IsStunned");
@@ -115,6 +114,7 @@ public class Status {
 			this.selectedAction = ActionMode.FORM;
 		}
 		this.kiWeaponType = tag.getString("KiWeaponType");
+		this.drainingTargetId = tag.getInt("DrainingTargetId");
     }
 
     public void copyFrom(Status other) {
@@ -128,12 +128,12 @@ public class Status {
         this.isInKaioPlanet = other.isInKaioPlanet;
 		this.isChargingKi = other.isChargingKi;
 		this.activeKaiokenPhase = other.activeKaiokenPhase;
-		this.isInCombat = other.isInCombat;
 		this.isBlocking = other.isBlocking;
 		this.lastBlockTime = other.lastBlockTime;
 		this.isStunned = other.isStunned;
 		this.selectedAction = other.selectedAction;
 		this.kiWeaponType = other.kiWeaponType;
+		this.drainingTargetId = other.drainingTargetId;
     }
 }
 

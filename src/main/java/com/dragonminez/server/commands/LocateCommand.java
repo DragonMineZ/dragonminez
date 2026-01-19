@@ -65,14 +65,14 @@ public class LocateCommand {
 
 		ServerLevel targetLevel = source.getServer().getLevel(targetDimKey);
 		if (targetLevel == null) {
-			source.sendFailure(Component.literal("Error: Dimension not found: " + targetDimKey.location()));
+			source.sendFailure(Component.translatable("command.dragonminez.locate.dimension_not_found", targetDimKey.location()));
 			return 0;
 		}
 
 		String playerDim = source.getLevel().dimension().location().toString();
 
 		if (!targetDimKey.location().toString().equals(playerDim)) {
-			source.sendFailure(Component.literal("Error: You can't locate structures in another dimension."));
+			source.sendFailure(Component.translatable("command.dragonminez.locate.wrong_dimension"));
 			return 0;
 		}
 
@@ -93,7 +93,7 @@ public class LocateCommand {
 		}
 
 		if (placement == null) {
-			source.sendFailure(Component.literal("Error: StructureSet not found for structure " + structName));
+			source.sendFailure(Component.translatable("command.dragonminez.locate.structureset_not_found", structName));
 			return 0;
 		}
 

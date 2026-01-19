@@ -39,6 +39,11 @@ public class CombatEvent {
 
 		// Attacker Damage Event
         if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
+			if (attacker.hasEffect(MainEffects.STUN.get())) {
+				event.setCanceled(true);
+				return;
+			}
+
             StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
                 if (!attackerData.getStatus().hasCreatedCharacter()) return;
 
@@ -82,12 +87,7 @@ public class CombatEvent {
                     if (activeForm != null) {
                         String formGroup = attackerData.getCharacter().getActiveFormGroup();
                         String formName = attackerData.getCharacter().getActiveForm();
-                        attackerData.getCharacter().getFormMasteries().addMastery(
-                                formGroup,
-                                formName,
-                                activeForm.getMasteryPerHit(),
-                                activeForm.getMaxMastery()
-                        );
+                        attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
                     }
                 }
 
@@ -108,8 +108,8 @@ public class CombatEvent {
         }
 
 		// Victim Defense Event
-        if (event.getEntity() instanceof Player target) {
-            StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(victimData -> {
+        if (event.getEntity() instanceof Player victim) {
+            StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
                 if (victimData.getStatus().hasCreatedCharacter()) {
 					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 					double defense = victimData.getDefense();
@@ -117,9 +117,9 @@ public class CombatEvent {
 
 					if (ConfigManager.getServerConfig().getCombat().isEnableBlocking()) {
 						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && source.getEntity() != null) {
-							Vec3 targetLook = target.getLookAngle();
+							Vec3 targetLook = victim.getLookAngle();
 							Vec3 sourceLoc = source.getEntity().position();
-							Vec3 targetLoc = target.position();
+							Vec3 targetLoc = victim.position();
 							Vec3 directionToSource = sourceLoc.subtract(targetLoc).normalize();
 
 							if (targetLook.dot(directionToSource) > 0.0) {
@@ -141,10 +141,9 @@ public class CombatEvent {
 								if (currentPoise - poiseDamage <= 0) {
 									victimData.getResources().setCurrentPoise(0);
 									victimData.getStatus().setBlocking(false);
-									victimData.getStatus().setStunned(true);
 
 									int stunDuration = ConfigManager.getServerConfig().getCombat().getBlockBreakStunDurationTicks();
-									victimData.getCooldowns().setCooldown("StunTimer", stunDuration);
+									victim.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0));
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 
@@ -154,15 +153,15 @@ public class CombatEvent {
 									currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 
 									// Acá pondríamos sonido de Rotura de Guardia
-                                    target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+                                    victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
                                             MainSounds.UNBLOCK.get(),
                                             net.minecraft.sounds.SoundSource.PLAYERS,
                                             1.0F,
-                                            0.9F + target.getRandom().nextFloat() * 0.1F);
+                                            0.9F + victim.getRandom().nextFloat() * 0.1F);
 
-                                    if (target.level() instanceof ServerLevel serverLevel) {
-                                        Vec3 look = target.getLookAngle();
-                                        Vec3 spawnPos = target.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+                                    if (victim.level() instanceof ServerLevel serverLevel) {
+                                        Vec3 look = victim.getLookAngle();
+                                        Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
                                         serverLevel.sendParticles(
                                                 MainParticles.GUARD_BLOCK.get(),
@@ -186,7 +185,7 @@ public class CombatEvent {
 									if (isParry) {
 										finalDmg = 0;
 										if (source.getEntity() instanceof LivingEntity attackerLiving) {
-											attackerLiving.knockback(1.5D, target.getX() - attackerLiving.getX(), target.getZ() - attackerLiving.getZ());
+											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 
 											// Efecto de Parry (temblor de pantalla pequeño) al atacante
@@ -194,15 +193,15 @@ public class CombatEvent {
                                         }
 										//System.out.println("Parry!");
                                         //SONIDO PARRY
-                                        target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+                                        victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
                                                 MainSounds.PARRY.get(),
                                                 net.minecraft.sounds.SoundSource.PLAYERS,
                                                 1.0F,
-                                                0.9F + target.getRandom().nextFloat() * 0.1F);
+                                                0.9F + victim.getRandom().nextFloat() * 0.1F);
 
-                                        if (target.level() instanceof ServerLevel serverLevel) {
-                                            Vec3 look = target.getLookAngle();
-                                            Vec3 spawnPos = target.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+                                        if (victim.level() instanceof ServerLevel serverLevel) {
+                                            Vec3 look = victim.getLookAngle();
+                                            Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
                                             serverLevel.sendParticles(
                                                     MainParticles.GUARD_BLOCK.get(),
@@ -236,7 +235,7 @@ public class CombatEvent {
 										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
 
 										finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
-                                        int randomSound = target.getRandom().nextInt(3);
+                                        int randomSound = victim.getRandom().nextInt(3);
                                         SoundEvent soundToPlay;
 
                                         if (randomSound == 0) {
@@ -249,14 +248,14 @@ public class CombatEvent {
 
 //                                        System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
 
-                                        target.level().playSound(null, target.getX(), target.getY(), target.getZ(),
+                                        victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
                                                 soundToPlay,
                                                 net.minecraft.sounds.SoundSource.PLAYERS,
                                                 1.0F,
-                                                0.9F + target.getRandom().nextFloat() * 0.1F);
+                                                0.9F + victim.getRandom().nextFloat() * 0.1F);
 
                                         //EFECTOS
-                                        if (target.level() instanceof ServerLevel serverLevel) {
+                                        if (victim.level() instanceof ServerLevel serverLevel) {
                                             double maxPoise = victimData.getMaxPoise();
                                             double currentPoiseVal = victimData.getResources().getCurrentPoise();
                                             double percentage = (currentPoiseVal / maxPoise) * 100.0;
@@ -270,8 +269,8 @@ public class CombatEvent {
                                                 r = 1.0; g = 0.1; b = 0.1;
                                             }
 
-                                            Vec3 look = target.getLookAngle();
-                                            Vec3 spawnPos = target.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+                                            Vec3 look = victim.getLookAngle();
+                                            Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
                                             serverLevel.sendParticles(
                                                     MainParticles.BLOCK_PARTICLE.get(),
@@ -284,7 +283,7 @@ public class CombatEvent {
 
 									}
 
-									if (target instanceof ServerPlayer sPlayer) {
+									if (victim instanceof ServerPlayer sPlayer) {
 										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(
 												sPlayer,
 												source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null,
@@ -329,7 +328,7 @@ public class CombatEvent {
 									activeForm.getMaxMastery()
 							);
 
-							if (target instanceof ServerPlayer serverPlayer) {
+							if (victim instanceof ServerPlayer serverPlayer) {
 								NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
 							}
 						}

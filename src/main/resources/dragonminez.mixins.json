@@ -6,7 +6,8 @@
   "refmap": "dragonminez.refmap.json",
   "mixins": [
     "common.RangedAttributeMixin",
-    "common.ItemStackMixin"
+    "common.ItemStackMixin",
+    "common.PlayerMixin"
   ],
   "client": [
     "client.PlayerGeoAnimatableMixin",
