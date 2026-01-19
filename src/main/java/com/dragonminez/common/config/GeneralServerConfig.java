@@ -45,6 +45,7 @@ public class GeneralServerConfig {
         private Map<String, float[]> foodRegenerations = createDefaultFoodRegenerations();
         private double mightFruitPower = 1.2;
         private double majinPower = 1.3;
+		private double metamoruFusionThreshold = 0.5;
 		private int fusionDurationSeconds = 300;
 		private int fusionCooldownSeconds = 1800;
 
@@ -66,6 +67,9 @@ public class GeneralServerConfig {
 
         public double getMightFruitPower() { return Math.max(0, mightFruitPower); }
         public double getMajinPower() { return Math.max(0, majinPower); }
+		public double getMetamoruFusionThreshold() { return Math.max(0, metamoruFusionThreshold); }
+		public int getFusionDurationSeconds() { return Math.max(0, fusionDurationSeconds); }
+		public int getFusionCooldownSeconds() { return Math.max(0, fusionCooldownSeconds); }
 
         private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();

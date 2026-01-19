@@ -48,6 +48,12 @@ public class BonusStats {
         statBonuses.removeIf(bonus -> bonus.name.equals(bonusName));
     }
 
+	public void removeAllBonuses(String bonusName) {
+		for (List<StatBonus> statBonuses : bonuses.values()) {
+			statBonuses.removeIf(bonus -> bonus.name.equals(bonusName));
+		}
+	}
+
     public void clearAll(String stat) {
         stat = stat.toUpperCase();
         if (!bonuses.containsKey(stat)) {

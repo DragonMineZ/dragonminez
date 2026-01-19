@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.data;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -53,6 +54,11 @@ public class DMZAnimatable implements GeoReplacedEntity {
 //            if (!raceName.equals("human")) {
 //                return PlayState.STOP;
 //            }
+
+			if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE)) {
+				if (playing != DRAIN) ctl.setAnimation(DRAIN);
+				return PlayState.CONTINUE;
+			}
 
             // Swimming
             if (player.isSwimming()) return state.setAndContinue(SWIMMING);
@@ -108,6 +114,7 @@ public class DMZAnimatable implements GeoReplacedEntity {
             String race = data.getCharacter().getRace();
             boolean hasTail = race.equals("saiyan") && data.getStatus().isTailVisible() || race.equals("frostdemon") || race.equals("bioandroid");
             if (!hasTail) return PlayState.STOP;
+			if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE)) return PlayState.STOP;
 
 //
 //            // 2. CONFLICTO DE MOVIMIENTO

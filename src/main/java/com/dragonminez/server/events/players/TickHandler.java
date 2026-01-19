@@ -11,6 +11,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.RacialSkillLogic;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,6 +19,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -125,6 +127,8 @@ public class TickHandler {
 					handleSaiyanPassive(serverPlayer, data);
 				}
 			}
+
+			fusionTickHandling(serverPlayer, data);
 
             if (shouldSync) {
                 NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
@@ -380,14 +384,12 @@ public class TickHandler {
 
 		for (ServerPlayer target : nearby) {
 			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
-				if (targetData.getStatus().getSelectedAction() == ActionMode.FUSION
-						&& targetData.getResources().getActionCharge() >= 50
-						&& targetData.getStatus().isActionCharging()) {
-
-					MinecraftForge.EVENT_BUS.post(new DMZEvent.FusionEvent(player, target, DMZEvent.FusionEvent.FusionType.METAMORU));
-					player.sendSystemMessage(Component.translatable("message.dragonminez.fusion.success", target.getName().getString()));
-					targetData.getResources().setActionCharge(0);
-					targetData.getStatus().setActionCharging(false);
+				if (targetData.getStatus().getSelectedAction() == ActionMode.FUSION && targetData.getResources().getActionCharge() >= 100 && targetData.getStatus().isActionCharging()) {
+					if (data.getResources().getActionCharge() >= 100) {
+						FusionLogic.executeMetamoru(player, target, data, targetData);
+						data.getResources().setActionCharge(0);
+						targetData.getResources().setActionCharge(0);
+					}
 				}
 			});
 		}
@@ -437,21 +439,45 @@ public class TickHandler {
 		if (data.getCooldowns().getCooldown(Cooldowns.DRAIN_ACTIVE) > 0) {
 			Entity entity = player.level().getEntity(targetId);
 			if (entity instanceof LivingEntity target && target.isAlive() && player.distanceTo(target) < 6.0f) {
-				Vec3 lookVec = target.getLookAngle().normalize();
-				Vec3 behindPos = target.position().add(lookVec.scale(-0.8));
-				player.teleportTo(behindPos.x, target.getY(), behindPos.z);
-				player.setYRot(target.getYRot());
+				float targetYRot = target.getYRot();
+
+				double dist = 0.75;
+				double rads = Math.toRadians(targetYRot);
+				double xOffset = -Math.sin(rads) * dist;
+				double zOffset = Math.cos(rads) * dist;
+
+				double finalX = target.getX() - xOffset;
+				double finalZ = target.getZ() - zOffset;
+				double finalY = target.getY();
+
+				player.connection.teleport(finalX, finalY, finalZ, targetYRot, 15.0F);
+
+				player.setYRot(targetYRot);
+				player.setYHeadRot(targetYRot);
 
 				if (player.tickCount % 20 == 0) {
 					GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 					double totalDrainRatio = config.getBioAndroidDrainRatio();
+
 					float durationSeconds = 6.0f;
 					float totalHealthToDrain = (float) (target.getMaxHealth() * totalDrainRatio);
 					float drainPerSecond = totalHealthToDrain / durationSeconds;
 
-					target.setHealth(Math.max(0, target.getHealth() - drainPerSecond));
-					player.heal(drainPerSecond);
-					data.getResources().addEnergy((int)(drainPerSecond * 5));
+					target.setHealth(Math.max(1, target.getHealth() - drainPerSecond));
+					if (player.getHealth() < player.getMaxHealth()) {
+						player.heal(drainPerSecond);
+					}
+					if (data.getResources().getCurrentEnergy() < data.getMaxEnergy()) {
+						data.getResources().addEnergy((int)(drainPerSecond * 5));
+					}
+
+					if (target.getHealth() <= 1.0f) {
+						target.hurtMarked = true;
+						data.getStatus().setDrainingTargetId(-1);
+						data.getCooldowns().removeCooldown(Cooldowns.DRAIN_ACTIVE);
+						player.removeEffect(MainEffects.STUN.get());
+						target.kill();
+					}
 				}
 
 			} else {
@@ -471,6 +497,32 @@ public class TickHandler {
 			}
 			data.getStatus().setDrainingTargetId(-1);
 			player.removeEffect(MainEffects.STUN.get());
+		}
+	}
+
+	private static void fusionTickHandling(ServerPlayer serverPlayer, StatsData data) {
+		if (data.getStatus().isFused()) {
+			if (data.getStatus().isFusionLeader()) {
+				int timer = data.getStatus().getFusionTimer();
+				if (timer > 0) {
+					data.getStatus().setFusionTimer(timer - 1);
+					if (timer - 1 <= 0) {
+						FusionLogic.endFusion(serverPlayer, data, false);
+					}
+				}
+				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
+				ServerPlayer partner = serverPlayer.getServer().getPlayerList().getPlayer(partnerUUID);
+				if (partner == null || partner.hasDisconnected() || partner.isDeadOrDying()) {
+					FusionLogic.endFusion(serverPlayer, data, true);
+				} else if (partner.distanceTo(serverPlayer) > 5.0) {
+					partner.teleportTo(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ());
+				}
+			} else {
+				UUID leaderUUID = data.getStatus().getFusionPartnerUUID();
+				if (leaderUUID == null || serverPlayer.getServer().getPlayerList().getPlayer(leaderUUID) == null) {
+					FusionLogic.endFusion(serverPlayer, data, true);
+				}
+			}
 		}
 	}
 }

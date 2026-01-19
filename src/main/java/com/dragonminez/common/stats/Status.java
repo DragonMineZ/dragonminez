@@ -2,6 +2,8 @@ package com.dragonminez.common.stats;
 
 import net.minecraft.nbt.CompoundTag;
 
+import java.util.UUID;
+
 public class Status {
     private boolean isAlive;
     private boolean hasCreatedCharacter;
@@ -19,6 +21,12 @@ public class Status {
 	private ActionMode selectedAction;
 	private String kiWeaponType;
 	private int drainingTargetId;
+	private boolean isFused;
+	private boolean isFusionLeader;
+	private UUID fusionPartnerUUID;
+	private int fusionTimer;
+	private String fusionType;
+	private CompoundTag originalAppearance;
 
     public Status() {
         this.isAlive = true;
@@ -37,6 +45,12 @@ public class Status {
 		this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = "blade";
 		this.drainingTargetId = -1;
+		this.isFused = false;
+		this.isFusionLeader = false;
+		this.fusionPartnerUUID = null;
+		this.fusionTimer = 0;
+		this.fusionType = "";
+		this.originalAppearance = new CompoundTag();
     }
 
     public boolean isAlive() { return isAlive; }
@@ -55,6 +69,12 @@ public class Status {
 	public ActionMode getSelectedAction() { return selectedAction; }
 	public String getKiWeaponType() { return kiWeaponType; }
 	public int getDrainingTargetId() { return drainingTargetId; }
+	public boolean isFused() { return isFused; }
+	public boolean isFusionLeader() { return isFusionLeader; }
+	public UUID getFusionPartnerUUID() { return fusionPartnerUUID; }
+	public int getFusionTimer() { return fusionTimer; }
+	public String getFusionType() { return fusionType; }
+	public CompoundTag getOriginalAppearance() { return originalAppearance; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -72,6 +92,12 @@ public class Status {
 	public void setSelectedAction(ActionMode action) { this.selectedAction = action; }
 	public void setKiWeaponType(String type) { this.kiWeaponType = type; }
 	public void setDrainingTargetId(int id) { this.drainingTargetId = id; }
+	public void setFused(boolean fused) { this.isFused = fused; }
+	public void setFusionLeader(boolean leader) { this.isFusionLeader = leader; }
+	public void setFusionPartnerUUID(UUID uuid) { this.fusionPartnerUUID = uuid; }
+	public void setFusionTimer(int timer) { this.fusionTimer = timer; }
+	public void setFusionType(String type) { this.fusionType = type; }
+	public void setOriginalAppearance(CompoundTag tag) { this.originalAppearance = tag; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -91,6 +117,14 @@ public class Status {
 		tag.putInt("SelectedAction", selectedAction.ordinal());
 		tag.putString("KiWeaponType", kiWeaponType);
 		tag.putInt("DrainingTargetId", drainingTargetId);
+		tag.putBoolean("IsFused", isFused);
+		tag.putBoolean("IsFusionLeader", isFusionLeader);
+		if (fusionPartnerUUID != null) {
+			tag.putUUID("FusionPartnerUUID", fusionPartnerUUID);
+		}
+		tag.putInt("FusionTimer", fusionTimer);
+		tag.putString("FusionType", fusionType);
+		tag.put("OriginalAppearance", originalAppearance);
         return tag;
     }
 
@@ -115,6 +149,20 @@ public class Status {
 		}
 		this.kiWeaponType = tag.getString("KiWeaponType");
 		this.drainingTargetId = tag.getInt("DrainingTargetId");
+		this.isFused = tag.getBoolean("IsFused");
+		this.isFusionLeader = tag.getBoolean("IsFusionLeader");
+		if (tag.hasUUID("FusionPartnerUUID")) {
+			this.fusionPartnerUUID = tag.getUUID("FusionPartnerUUID");
+		} else {
+			this.fusionPartnerUUID = null;
+		}
+		this.fusionTimer = tag.getInt("FusionTimer");
+		this.fusionType = tag.getString("FusionType");
+		if (tag.contains("OriginalAppearance")) {
+			this.originalAppearance = tag.getCompound("OriginalAppearance");
+		} else {
+			this.originalAppearance = new CompoundTag();
+		}
     }
 
     public void copyFrom(Status other) {
@@ -134,6 +182,12 @@ public class Status {
 		this.selectedAction = other.selectedAction;
 		this.kiWeaponType = other.kiWeaponType;
 		this.drainingTargetId = other.drainingTargetId;
+		this.isFused = other.isFused;
+		this.isFusionLeader = other.isFusionLeader;
+		this.fusionPartnerUUID = other.fusionPartnerUUID;
+		this.fusionTimer = other.fusionTimer;
+		this.fusionType = other.fusionType;
+		this.originalAppearance = other.originalAppearance.copy();
     }
 }
 
