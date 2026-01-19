@@ -5,11 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EntitiesConfig {
-
-	@SerializedName("hard_mode_settings")
 	private HardModeSettings hardModeSettings = new HardModeSettings();
-
-	@SerializedName("entity_stats")
 	private Map<String, EntityStats> entityStats = new HashMap<>();
 
 	public Map<String, EntityStats> getEntityStats() {
@@ -21,32 +17,25 @@ public class EntitiesConfig {
 	}
 
 	public static class HardModeSettings {
-		@SerializedName("hp_multiplier")
 		private double hpMultiplier = 3.0;
-
-		@SerializedName("damage_multiplier")
 		private double damageMultiplier = 2.0;
 
-		public double getHpMultiplier() { return hpMultiplier; }
-		public void setHpMultiplier(double val) { this.hpMultiplier = val; }
-
-		public double getDamageMultiplier() { return damageMultiplier; }
-		public void setDamageMultiplier(double val) { this.damageMultiplier = val; }
+		public double getHpMultiplier() { return Math.max(1, hpMultiplier); }
+		public void setHpMultiplier(double hpMultiplier) { this.hpMultiplier = hpMultiplier; }
+		public double getDamageMultiplier() { return Math.max(1, damageMultiplier); }
+		public void setDamageMultiplier(double damageMultiplier) { this.damageMultiplier = damageMultiplier; }
 	}
 
 	public static class EntityStats {
-		@SerializedName("health")
 		private Double health;
-		@SerializedName("melee_damage")
 		private Double meleeDamage;
-		@SerializedName("ki_damage")
 		private Double kiDamage;
 
-		public Double getHealth() { return health; }
-		public Double getMeleeDamage() { return meleeDamage; }
-		public Double getKiDamage() { return kiDamage; }
+		public Double getHealth() { return health != null ? Math.max(1, health) : null; }
 		public void setHealth(Double health) { this.health = health; }
+		public Double getMeleeDamage() { return meleeDamage != null ? Math.max(1, meleeDamage) : null; }
 		public void setMeleeDamage(Double meleeDamage) { this.meleeDamage = meleeDamage; }
+		public Double getKiDamage() { return kiDamage != null ? Math.max(1, kiDamage) : null; }
 		public void setKiDamage(Double kiDamage) { this.kiDamage = kiDamage; }
 	}
 }

@@ -14,8 +14,8 @@ public class Character {
     private String characterClass;
 
     private String selectedFormGroup = "";
-    private String currentFormGroup = "";
-    private String currentForm = "";
+    private String activeFormGroup = "";
+    private String activeForm = "";
     private final FormMasteries formMasteries = new FormMasteries();
 
     public static final String GENDER_MALE = "male";
@@ -68,10 +68,8 @@ public class Character {
     public String getGender() { return gender; }
     public String getCharacterClass() { return characterClass; }
     public String getSelectedFormGroup() { return selectedFormGroup; }
-    public String getActiveFormGroup() { return currentFormGroup; }
-    public String getActiveFormName() { return currentForm; }
-    public String getCurrentFormGroup() { return currentFormGroup; }
-    public String getCurrentForm() { return currentForm; }
+    public String getActiveFormGroup() { return activeFormGroup; }
+    public String getActiveForm() { return activeForm; }
     public int getHairId() { return hairId; }
 	public CustomHair getCustomHair() { return customHair; }
     public int getBodyType() { return bodyType; }
@@ -116,8 +114,6 @@ public class Character {
     public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
     public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
     public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
-    public void setCurrentFormGroup(String currentFormGroup) { this.currentFormGroup = currentFormGroup; }
-    public void setCurrentForm(String currentForm) { this.currentForm = currentForm; }
     public void setArmored(Boolean armored) {this.armored = armored;}
 
     public String getRaceName() {
@@ -162,8 +158,8 @@ public class Character {
         tag.putString("Eye2Color", eye2Color);
         tag.putString("AuraColor", auraColor);
         tag.putString("SelectedFormGroup", selectedFormGroup);
-        tag.putString("CurrentFormGroup", currentFormGroup);
-        tag.putString("CurrentForm", currentForm);
+        tag.putString("CurrentFormGroup", activeFormGroup);
+        tag.putString("CurrentForm", activeForm);
         tag.put("FormMasteries", formMasteries.save());
         tag.putBoolean("isArmored", armored);
         return tag;
@@ -202,8 +198,8 @@ public class Character {
         this.eye2Color = tag.getString("Eye2Color");
         this.auraColor = tag.getString("AuraColor");
         this.selectedFormGroup = tag.getString("SelectedFormGroup");
-        this.currentFormGroup = tag.getString("CurrentFormGroup");
-        this.currentForm = tag.getString("CurrentForm");
+        this.activeFormGroup = tag.getString("CurrentFormGroup");
+        this.activeForm = tag.getString("CurrentForm");
         if (tag.contains("FormMasteries")) {
             formMasteries.load(tag.getCompound("FormMasteries"));
         }
@@ -211,24 +207,24 @@ public class Character {
     }
 
     public boolean hasActiveForm() {
-        return !currentFormGroup.isEmpty() && !currentForm.isEmpty();
+        return !activeFormGroup.isEmpty() && !activeForm.isEmpty();
     }
 
     public void setActiveForm(String groupName, String formName) {
-        this.currentFormGroup = groupName != null ? groupName : "";
-        this.currentForm = formName != null ? formName : "";
+        this.activeFormGroup = groupName != null ? groupName : "";
+        this.activeForm = formName != null ? formName : "";
     }
 
     public void clearActiveForm() {
-        this.currentFormGroup = "";
-        this.currentForm = "";
+        this.activeFormGroup = "";
+        this.activeForm = "";
     }
 
     public FormConfig.FormData getActiveFormData() {
         if (!hasActiveForm()) {
             return null;
         }
-        return ConfigManager.getForm(getRaceName(), currentFormGroup, currentForm);
+        return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
     }
 
     public void copyFrom(Character other) {
@@ -250,8 +246,8 @@ public class Character {
         this.eye2Color = other.eye2Color;
         this.auraColor = other.auraColor;
         this.selectedFormGroup = other.selectedFormGroup;
-        this.currentFormGroup = other.currentFormGroup;
-        this.currentForm = other.currentForm;
+        this.activeFormGroup = other.activeFormGroup;
+        this.activeForm = other.activeForm;
         this.formMasteries.copyFrom(other.formMasteries);
         this.armored = other.armored;
     }

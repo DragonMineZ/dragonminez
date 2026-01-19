@@ -276,6 +276,8 @@ public class StatsCommand {
             stats.setEnergy(5);
             data.getStatus().setCreatedCharacter(false);
 			data.getResources().setTrainingPoints(0);
+			data.getResources().setRacialSkillCount(0);
+			data.getResources().setPowerRelease(0);
 			data.getSkills().removeAllSkills();
 			data.getEffects().removeAllEffects();
 

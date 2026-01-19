@@ -12,9 +12,14 @@ public class Cooldowns {
     public static final String BABA = "Baba";
     public static final String BABA_ALIVE = "BabaAlive";
     public static final String ZENKAI = "Zenkai";
+	public static final String ASSIMILATION = "Assimilation";
+	public static final String ABSORPTION = "Absorption";
+	public static final String DRAIN = "Drain";
+	public static final String COMBAT = "CombatTimer";
 	public static final String SENZU_CD = "SenzuCooldown";
 	public static final String POISE_CD = "PoiseCooldown";
 	public static final String STUN_TIMER = "StunTimer";
+	public static final String FUSION_CD = "FusionCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();
@@ -45,6 +50,10 @@ public class Cooldowns {
     public boolean hasCooldown(String key) {
         return getCooldown(key) > 0;
     }
+
+	public void removeCooldown(String key) {
+		cooldowns.remove(key);
+	}
 
     public void tick() {
         cooldowns.replaceAll((key, value) -> Math.max(0, value - 1));

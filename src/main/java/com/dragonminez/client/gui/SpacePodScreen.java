@@ -3,6 +3,7 @@ package com.dragonminez.client.gui;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.TravelToPlanetC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -16,6 +17,7 @@ import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -224,7 +226,7 @@ public class SpacePodScreen extends Screen {
 				if (dest.unlocked) {
 					selectDestination(index);
 					Minecraft.getInstance().getSoundManager().play(
-							net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F)
+							SimpleSoundInstance.forUI(MainSounds.UI_MENU_SWITCH.get(), 1.0F)
 					);
 				}
 				return true;

@@ -3,9 +3,9 @@ package com.dragonminez.common.init.effects;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 
-public class StaggerEffect extends MobEffect {
+public class DMZEffect extends MobEffect {
 
-    public StaggerEffect() {
+    public DMZEffect() {
         super(MobEffectCategory.HARMFUL, 0xFFAA00);
     }
 
@@ -13,6 +13,4 @@ public class StaggerEffect extends MobEffect {
     public boolean isDurationEffectTick(int duration, int amplifier) {
         return true;
     }
-
-
 }

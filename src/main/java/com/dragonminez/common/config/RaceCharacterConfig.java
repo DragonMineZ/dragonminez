@@ -1,74 +1,27 @@
 package com.dragonminez.common.config;
 
-import com.google.gson.annotations.SerializedName;
-
-
 public class RaceCharacterConfig {
-
-    @SerializedName("raceName")
     private String raceName;
-
-    @SerializedName("hasGender")
     private boolean hasGender = true;
-
-    @SerializedName("useVanillaSkin")
     private boolean useVanillaSkin = false;
-
-    @SerializedName("customModel")
     private String customModel = "";
-
-	@SerializedName("defaultModelScaling")
 	private float defaultModelScaling = 0.9375f;
-
-    @SerializedName("defaultBodyType")
     private int defaultBodyType = 0;
-
-    @SerializedName("defaultHairType")
     private int defaultHairType = 0;
-
-    @SerializedName("canUseHair")
     private boolean canUseHair = true;
-
-    @SerializedName("defaultEyesType")
     private int defaultEyesType = 0;
-
-    @SerializedName("defaultNoseType")
     private int defaultNoseType = 0;
-
-    @SerializedName("defaultMouthType")
     private int defaultMouthType = 0;
-
-	@SerializedName("defaultTattooType")
 	private int defaultTattooType = 0;
-
-    @SerializedName("defaultBodyColor")
 	private String defaultBodyColor = null;
-
-    @SerializedName("defaultBodyColor2")
     private String defaultBodyColor2 = null;
-
-    @SerializedName("defaultBodyColor3")
     private String defaultBodyColor3 = null;
-
-    @SerializedName("defaultHairColor")
     private String defaultHairColor = null;
-
-    @SerializedName("defaultEye1Color")
     private String defaultEye1Color = null;
-
-    @SerializedName("defaultEye2Color")
     private String defaultEye2Color = null;
-
-    @SerializedName("defaultAuraColor")
     private String defaultAuraColor = null;
-
-    @SerializedName("superform_tpcost")
     private int[] superformTpCost = null;
-
-    @SerializedName("godform_tpcost")
     private int[] godformTpCost = null;
-
-    @SerializedName("legendaryforms_tpcost")
     private int[] legendaryformsTpCost = null;
 
     public RaceCharacterConfig() {}

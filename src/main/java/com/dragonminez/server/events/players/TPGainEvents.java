@@ -19,23 +19,25 @@ public class TPGainEvents {
         }
 
 		int baseTP = event.getTpGain();
-        int modifiedTP = event.getTpGain();
+		final int[] modifiedTP = {event.getTpGain()};
 
         if (event.getPlayer().level().dimension().equals(HTCDimension.HTC_KEY)) {
             double htcMultiplier = ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier();
-            modifiedTP = (int) (baseTP + baseTP * (htcMultiplier - 1.0));
+            modifiedTP[0] = (int) (baseTP + baseTP * htcMultiplier);
         }
 
 		// FrostDemon passive
-		StatsProvider.get(StatsCapability.INSTANCE, event.getPlayer()).ifPresent(data -> {
-			//if (data.getCharacter().getRace().equals("frostdemon")) {
-			//	double frostDemonMultiplier = ConfigManager.getServerConfig().getPassives().getFrostDemonTpGainMultiplier();
-			//	modifiedTP = (int) (modifiedTP + baseTP * (frostDemonMultiplier - 1.0));
-			//}
-		});
+		if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isFrostDemonRacialSkill()) {
+			StatsProvider.get(StatsCapability.INSTANCE, event.getPlayer()).ifPresent(data -> {
+				if (data.getCharacter().getRace().equals("frostdemon")) {
+					double frostDemonMultiplier = ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost();
+					modifiedTP[0] = (int) (modifiedTP[0] + baseTP * frostDemonMultiplier);
+				}
+			});
+		}
 
 
-        event.setTpGain(modifiedTP);
+        event.setTpGain(modifiedTP[0]);
     }
 }
 

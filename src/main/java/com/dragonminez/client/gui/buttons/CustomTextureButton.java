@@ -1,9 +1,14 @@
 package com.dragonminez.client.gui.buttons;
 
+import com.dragonminez.common.init.MainSounds;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -17,11 +22,12 @@ public class CustomTextureButton extends Button {
     private final int normalV;
     private final int hoverU;
     private final int hoverV;
+	private final SoundEvent sound;
 
     public CustomTextureButton(int x, int y, int width, int height, ResourceLocation texture,
                                int normalU, int normalV, int hoverU, int hoverV,
                                int textureWidth, int textureHeight,
-                               Component message, OnPress onPress) {
+                               Component message, OnPress onPress, SoundEvent sound) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
         this.texture = texture;
         this.normalU = normalU;
@@ -30,7 +36,15 @@ public class CustomTextureButton extends Button {
         this.hoverV = hoverV;
         this.textureWidth = textureWidth;
         this.textureHeight = textureHeight;
+		this.sound = sound;
     }
+
+	@Override
+	public void playDownSound(SoundManager handler) {
+		if (this.sound != null) {
+			handler.play(SimpleSoundInstance.forUI(this.sound, 1.0F));
+		}
+	}
 
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -48,6 +62,7 @@ public class CustomTextureButton extends Button {
         private int textureWidth, textureHeight;
         private Component message = Component.empty();
         private OnPress onPress;
+		private SoundEvent sound = MainSounds.UI_NAVE_COOLDOWN.get();
 
         public Builder position(int x, int y) {
             this.x = x;
@@ -90,10 +105,15 @@ public class CustomTextureButton extends Button {
             return this;
         }
 
+		public Builder sound(SoundEvent sound) {
+			this.sound = sound;
+			return this;
+		}
+
         public CustomTextureButton build() {
             return new CustomTextureButton(x, y, width, height, texture,
                     normalU, normalV, hoverU, hoverV,
-                    textureWidth, textureHeight, message, onPress);
+                    textureWidth, textureHeight, message, onPress, sound);
         }
     }
 }

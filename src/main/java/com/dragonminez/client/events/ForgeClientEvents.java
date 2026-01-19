@@ -1,13 +1,17 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
+import com.dragonminez.common.network.C2S.ExecuteActionC2S;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -50,7 +54,7 @@ public class ForgeClientEvents {
             return;
         }
 
-        if (KeyBinds.UTILITY_MENU.consumeClick()) {
+        if (KeyBinds.SPACEPOD_MENU.consumeClick()) {
             StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
                 mc.setScreen(new HairEditorScreen(null, data.getCharacter()));
             });
@@ -70,11 +74,13 @@ public class ForgeClientEvents {
 				} else {
 					mc.setScreen(new RaceSelectionScreen(data.getCharacter(), oldGuiScale));
 				}
+				mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 			});
         }
 
 		if (KeyBinds.SPACEPOD_MENU.consumeClick() && mc.player.isPassenger() && mc.player.getVehicle() instanceof SpacePodEntity) {
 			mc.setScreen(new SpacePodScreen());
+			mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 		}
     }
 
@@ -91,6 +97,13 @@ public class ForgeClientEvents {
         if (mc.player == null || mc.level == null) {
             return;
         }
+
+		if (KeyBinds.UTILITY_MENU.isDown()) {
+			if (mc.screen == null) {
+				mc.setScreen(new UtilityMenuScreen());
+				mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+			}
+		}
 
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {

@@ -2,7 +2,7 @@ package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.init.MainAttributes;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -16,9 +16,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.DragonBallsHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.FlyingMob;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -29,6 +27,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -49,6 +48,7 @@ import java.util.WeakHashMap;
 public class StatsEvents {
 
     public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
+	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -151,7 +151,7 @@ public class StatsEvents {
 					if (victimData.getStatus().hasCreatedCharacter()) {
 						victimData.getEffects().removeAllEffects();
 						victimData.getStatus().setChargingKi(false);
-						victimData.getStatus().setTransforming(false);
+						victimData.getStatus().setActionCharging(false);
 						victimData.getCharacter().setActiveForm(null, null);
 					}
 				});
@@ -382,6 +382,52 @@ public class StatsEvents {
 				if (player.isSprinting()) player.setSprinting(false);
 				if (player.isCrouching()) player.setShiftKeyDown(false);
 				if (player.isFallFlying()) player.stopFallFlying();
+				player.setDeltaMovement(0, player.getDeltaMovement().y, 0);
+				player.hurtMarked = true;
+			}
+
+			AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
+			if (speedAttr != null) {
+				if (speedAttr.getModifier(FORM_SPEED_UUID) != null) {
+					speedAttr.removeModifier(FORM_SPEED_UUID);
+				}
+
+				if (data.getCharacter().hasActiveForm()) {
+					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+					if (activeForm != null) {
+						double multiplier = activeForm.getSpeedMultiplier();
+						if (multiplier != 1.0) {
+							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "FormSpeedBonus", multiplier, AttributeModifier.Operation.MULTIPLY_TOTAL));
+						}
+					}
+				}
+			}
+		});
+	}
+
+	@SubscribeEvent
+	public static void onEntitySize(EntityEvent.Size event) {
+		if (!(event.getEntity() instanceof Player player)) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			float configScale = 0.9375f;
+
+			if (data.getCharacter().hasActiveForm()) {
+				FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+				if (activeForm != null) {
+					configScale *= activeForm.getModelScaling();
+				}
+			} else {
+				configScale = (float) data.getCharacter().getModelScaling();
+			}
+
+			if (Math.abs(configScale - 0.9375f) > 0.001F) {
+				float ratio = configScale / 0.9375f;
+				EntityDimensions newDims = EntityDimensions.scalable(0.6F * ratio, 1.8F * ratio);
+				event.setNewSize(newDims);
+				float defaultEyeHeight = player.getEyeHeight(Pose.STANDING);
+				float currentBaseEye = event.getNewEyeHeight() > 0 ? event.getNewEyeHeight() : defaultEyeHeight;
+				event.setNewEyeHeight(currentBaseEye * ratio);
 			}
 		});
 	}

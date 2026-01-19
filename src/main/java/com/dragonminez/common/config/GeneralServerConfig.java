@@ -1,7 +1,5 @@
 package com.dragonminez.common.config;
 
-import com.google.gson.annotations.SerializedName;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,11 +8,13 @@ public class GeneralServerConfig {
     private WorldGenConfig worldGen = new WorldGenConfig();
     private GameplayConfig gameplay = new GameplayConfig();
 	private CombatConfig combat = new CombatConfig();
+	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
 	private StorageConfig storage = new StorageConfig();
 
     public WorldGenConfig getWorldGen() { return worldGen; }
     public GameplayConfig getGameplay() { return gameplay; }
 	public CombatConfig getCombat() { return combat; }
+	public RacialSkillsConfig getRacialSkills() { return racialSkills; }
 	public StorageConfig getStorage() {return storage; }
 
     public static class WorldGenConfig {
@@ -26,7 +26,7 @@ public class GeneralServerConfig {
         public boolean isGenerateCustomStructures() { return generateCustomStructures; }
         public boolean isGenerateDragonBalls() { return generateDragonBalls; }
 		public boolean isOtherworldActive() { return otherworldActive; }
-		public int getDBSpawnRange() { return dbSpawnRange; }
+		public int getDBSpawnRange() { return Math.max(500, dbSpawnRange); }
 
     }
 
@@ -37,7 +37,7 @@ public class GeneralServerConfig {
 		private int tpPerHit = 2;
 		private double HTCTpMultiplier = 2.5;
         private int maxStatValue = 10000;
-		private boolean kiDestroyBlocks = true;
+		private boolean formsUnlockWithStoryProgression = false;
 		private boolean storyModeEnabled = true;
 		private boolean createDefaultSagas = true;
         private boolean kaiokenStackable = true;
@@ -46,21 +46,24 @@ public class GeneralServerConfig {
         private double mightFruitPower = 1.2;
         private double majinPower = 1.3;
 
-        public double getTpsMultiplier() { return tpGainMultiplier; }
-		public double getTpCostMultiplier() { return tpCostMultiplier; }
-		public double getTpHealthRatio() { return tpHealthRatio; }
-		public int getTpPerHit() { return tpPerHit; }
-		public double getHTCTpMultiplier() { return HTCTpMultiplier; }
-        public int getMaxStatValue() { return maxStatValue; }
-		public boolean isKiDestroyBlocks() { return kiDestroyBlocks; }
-        public int getSenzuCooldownTicks() { return senzuCooldownTicks; }
+        public double getTpsMultiplier() { return Math.max(0, tpGainMultiplier); }
+		public double getTpCostMultiplier() { return Math.max(0.01, tpCostMultiplier); }
+		public double getTpHealthRatio() { return Math.max(0, tpHealthRatio); }
+		public int getTpPerHit() { return Math.max(0, tpPerHit); }
+		public double getHTCTpMultiplier() { return Math.max(1.0, HTCTpMultiplier); }
+        public int getMaxStatValue() { return Math.max(1000, maxStatValue); }
+		public boolean isFormsUnlockWithStoryProgression() { return formsUnlockWithStoryProgression; }
+		public boolean isStoryModeEnabled() { return storyModeEnabled; }
+		public boolean isCreateDefaultSagas() { return createDefaultSagas; }
+		public boolean isKaiokenStackable() { return kaiokenStackable; }
+        public int getSenzuCooldownTicks() { return Math.max(0, senzuCooldownTicks); }
 
         public float[] getFoodRegeneration(String itemId) {
             return foodRegenerations.getOrDefault(itemId, new float[]{0.0f, 0.0f, 0.0f});
         }
 
-        public double getMightFruitPower() { return mightFruitPower; }
-        public double getMajinPower() { return majinPower; }
+        public double getMightFruitPower() { return Math.max(0, mightFruitPower); }
+        public double getMajinPower() { return Math.max(0, majinPower); }
 
         private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();
@@ -78,6 +81,7 @@ public class GeneralServerConfig {
     }
 
 	public static class CombatConfig {
+		private boolean killPlayersOnCombatLogout = true;
 		private double staminaConsumptionRatio = 0.125;
 		private boolean respectAttackCooldown = true;
 		private boolean enableBlocking = true;
@@ -91,18 +95,87 @@ public class GeneralServerConfig {
 		private int poiseRegenCooldown = 100;
 		private int blockBreakStunDurationTicks = 60;
 		private int perfectEvasionWindowMs = 150;
+		private int dashCooldownSeconds = 4;
+		private int doubleDashCooldownSeconds = 12;
 
-		public double getStaminaConsumptionRatio() { return staminaConsumptionRatio; }
+		public boolean isKillPlayersOnCombatLogout() { return killPlayersOnCombatLogout; }
+		public double getStaminaConsumptionRatio() { return Math.max(0, staminaConsumptionRatio); }
 		public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
 		public boolean isEnableBlocking() { return enableBlocking; }
 		public boolean isEnableParrying() { return enableParrying; }
 		public boolean isEnablePerfectAttack() { return enablePerfectAttack; }
-		public int getParryWindowMs() { return parryWindowMs; }
-		public double getBlockDamageReductionCap() { return blockDamageReductionCap; }
-		public double getBlockDamageReductionMin() { return blockDamageReductionMin; }
-		public double getPoiseDamageMultiplier() { return poiseDamageMultiplier; }
-		public int getPoiseRegenCooldown() { return poiseRegenCooldown; }
-		public int getBlockBreakStunDurationTicks() { return blockBreakStunDurationTicks; }
+		public boolean isEnablePerfectEvasion() { return enablePerfectEvasion; }
+		public int getParryWindowMs() { return Math.max(0, parryWindowMs); }
+		public double getBlockDamageReductionCap() { return Math.max(0, blockDamageReductionCap); }
+		public double getBlockDamageReductionMin() { return Math.max(0, blockDamageReductionMin); }
+		public double getPoiseDamageMultiplier() { return Math.max(0, poiseDamageMultiplier); }
+		public int getPoiseRegenCooldown() { return Math.max(0, poiseRegenCooldown); }
+		public int getBlockBreakStunDurationTicks() { return Math.max(0, blockBreakStunDurationTicks); }
+		public int getPerfectEvasionWindowMs() { return Math.max(0, perfectEvasionWindowMs); }
+		public int getDashCooldownSeconds() { return Math.max(0, dashCooldownSeconds); }
+		public int getDoubleDashCooldownSeconds() { return Math.max(0, doubleDashCooldownSeconds); }
+	}
+
+	public static class RacialSkillsConfig {
+		private boolean enableRacialSkills = true;
+		private boolean humanRacialSkill = true;
+		private double humanKiRegenBoost = 1.40;
+		private boolean saiyanRacialSkill = true;
+		private int saiyanZenkaiAmount = 3;
+		private double saiyanZenkaiHealthRegen = 0.20;
+		private double saiyanZenkaiStatBoost = 1.10;
+		private String[] saiyanZenkaiBoosts = {"STR", "SKP", "PWR"};
+		private int saiyanZenkaiCooldownSeconds = 900;
+		private boolean namekianRacialSkill = true;
+		private int namekianAssimilationAmount = 4;
+		private double namekianAssimilationHealthRegen = 0.35;
+		private double namekianAssimilationStatBoost = 1.15;
+		private String[] namekianAssimilationBoosts = {"STR", "SKP", "PWR"};
+		private boolean namekianAssimilationOnNamekNpcs = true;
+		private boolean frostDemonRacialSkill = true;
+		private double frostDemonTPBoost = 1.25;
+		private boolean bioAndroidRacialSkill = true;
+		private int bioAndroidCooldownSeconds = 900;
+		private double bioAndroidDrainRatio = 0.25;
+		private boolean majinAbsoprtionSkill = true;
+		private boolean majinReviveSkill = true;
+		private int majinAbsorptionAmount = 3;
+		private double majinAbsorptionHealthRegen = 0.30;
+		private double majinAbsorptionStatsCopy = 1.10;
+		private String[] majinAbsorptionBoosts = {"STR", "SKP", "PWR"};
+		private boolean majinAbsorptionOnMobs = true;
+		private int majinReviveCooldownSeconds = 3600;
+		private double majinReviveHealthRatioPerBlop = 0.25;
+
+		public boolean isEnableRacialSkills() { return enableRacialSkills; }
+		public boolean isHumanRacialSkill() { return humanRacialSkill; }
+		public double getHumanKiRegenBoost() { return Math.max(0, humanKiRegenBoost); }
+		public boolean isSaiyanRacialSkill() { return saiyanRacialSkill; }
+		public int getSaiyanZenkaiAmount() { return Math.max(0, saiyanZenkaiAmount); }
+		public double getSaiyanZenkaiHealthRegen() { return Math.max(0, saiyanZenkaiHealthRegen); }
+		public double getSaiyanZenkaiStatBoost() { return Math.max(1, saiyanZenkaiStatBoost); }
+		public String[] getSaiyanZenkaiBoosts() { return saiyanZenkaiBoosts; }
+		public int getSaiyanZenkaiCooldownSeconds() { return Math.max(0, saiyanZenkaiCooldownSeconds); }
+		public boolean isNamekianRacialSkill() { return namekianRacialSkill; }
+		public int getNamekianAssimilationAmount() { return Math.max(0, namekianAssimilationAmount); }
+		public double getNamekianAssimilationHealthRegen() { return Math.max(0, namekianAssimilationHealthRegen); }
+		public double getNamekianAssimilationStatBoost() { return Math.max(0, namekianAssimilationStatBoost); }
+		public String[] getNamekianAssimilationBoosts() { return namekianAssimilationBoosts; }
+		public boolean isNamekianAssimilationOnNamekNpcs() { return namekianAssimilationOnNamekNpcs; }
+		public boolean isFrostDemonRacialSkill() { return frostDemonRacialSkill; }
+		public double getFrostDemonTPBoost() { return Math.max(1, frostDemonTPBoost); }
+		public boolean isBioAndroidRacialSkill() { return bioAndroidRacialSkill; }
+		public int getBioAndroidCooldownSeconds() { return Math.max(0, bioAndroidCooldownSeconds); }
+		public double getBioAndroidDrainRatio() { return Math.max(0, bioAndroidDrainRatio); }
+		public boolean isMajinAbsoprtionSkill() { return majinAbsoprtionSkill; }
+		public boolean isMajinReviveSkill() { return majinReviveSkill; }
+		public int getMajinAbsorptionAmount() { return Math.max(0, majinAbsorptionAmount); }
+		public double getMajinAbsorptionHealthRegen() { return Math.max(0, majinAbsorptionHealthRegen); }
+		public double getMajinAbsorptionStatCopy() { return Math.max(0, majinAbsorptionStatsCopy); }
+		public String[] getMajinAbsorptionBoosts() { return majinAbsorptionBoosts; }
+		public boolean isMajinAbsorptionOnMobs() { return majinAbsorptionOnMobs; }
+		public int getMajinReviveCooldownSeconds() { return Math.max(0, majinReviveCooldownSeconds); }
+		public double getMajinReviveHealthRatioPerBlop() { return Math.max(0, majinReviveHealthRatioPerBlop); }
 	}
 
 	public static class StorageConfig {
@@ -129,8 +202,7 @@ public class GeneralServerConfig {
 		public String getTable() { return table; }
 		public String getUsername() { return username; }
 		public String getPassword() { return password; }
-		public int getPoolSize() { return poolSize; }
+		public int getPoolSize() { return Math.max(1, poolSize); }
 		public int getThreadPoolSize() { return Math.max(1, threadPoolSize); }
 	}
 }
-

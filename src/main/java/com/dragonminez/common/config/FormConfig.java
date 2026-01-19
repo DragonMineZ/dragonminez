@@ -1,19 +1,11 @@
 package com.dragonminez.common.config;
 
-import com.google.gson.annotations.SerializedName;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FormConfig {
-
-    @SerializedName("group_name")
     private String groupName;
-
-    @SerializedName("form_type")
     private String formType = "super";
-
-    @SerializedName("forms")
     private Map<String, FormData> forms = new LinkedHashMap<>();
 
     public FormConfig() {}
@@ -57,94 +49,41 @@ public class FormConfig {
     }
 
     public static class FormData {
-        @SerializedName("name")
         private String name = "";
-
-        @SerializedName("unlock_on_superform_level")
-        private int unlockOnSuperformLevel = 0;
-
-        @SerializedName("custom_model")
+        private int unlockOnSkillLevel = 0;
         private String customModel = "";
-
-        @SerializedName("body_color_1")
         private String bodyColor1 = "";
-
-        @SerializedName("body_color_2")
         private String bodyColor2 = "";
-
-        @SerializedName("body_color_3")
         private String bodyColor3 = "";
-
-        @SerializedName("hair_type")
         private int hairType = -1;
-
-        @SerializedName("hair_color")
         private String hairColor = "";
-
-        @SerializedName("eye1_color")
         private String eye1Color = "";
-
-        @SerializedName("eye2_color")
         private String eye2Color = "";
-
-        @SerializedName("aura_color")
         private String auraColor = "";
-
-        @SerializedName("model_scaling")
         private float modelScaling = 0.9375f;
-
-        @SerializedName("str_mult")
         private double strMultiplier = 1.0;
-
-        @SerializedName("skp_mult")
         private double skpMultiplier = 1.0;
-
-        @SerializedName("stm_mult")
         private double stmMultiplier = 1.0;
-
-        @SerializedName("def_mult")
         private double defMultiplier = 1.0;
-
-        @SerializedName("vit_mult")
         private double vitMultiplier = 1.0;
-
-        @SerializedName("pwr_mult")
         private double pwrMultiplier = 1.0;
-
-        @SerializedName("ene_mult")
         private double eneMultiplier = 1.0;
-
-        @SerializedName("speed_mult")
         private double speedMultiplier = 1.0;
-
-        @SerializedName("energy_drain")
         private double energyDrain = 1.0;
-
-        @SerializedName("stamina_drain")
         private double staminaDrain = 1.0;
-
-        @SerializedName("attack_speed")
         private double attackSpeed = 1.0;
-
-        @SerializedName("max_mastery")
         private double maxMastery = 100.0;
-
-        @SerializedName("mastery_per_hit")
         private double masteryPerHit = 0.1;
-
-        @SerializedName("mastery_per_damage_received")
         private double masteryPerDamageReceived = 0.1;
-
-        @SerializedName("stat_mult_per_mastery_point")
         private double statMultPerMasteryPoint = 0.02;
-
-        @SerializedName("cost_decrease_per_mastery_point")
         private double costDecreasePerMasteryPoint = 0.02;
+		private boolean kaiokenStackable = true;
+		private double kaiokenDrainMultiplier = 2.0;
 
         public FormData() {}
 
         public String getName() { return name; }
-        public int getUnlockOnSuperformLevel() { return unlockOnSuperformLevel; }
+        public int getUnlockOnSkillLevel() { return unlockOnSkillLevel; }
         public String getCustomModel() { return customModel; }
         public String getBodyColor1() { return bodyColor1; }
         public String getBodyColor2() { return bodyColor2; }
@@ -155,25 +94,27 @@ public class FormConfig {
         public String getEye2Color() { return eye2Color; }
         public String getAuraColor() { return auraColor; }
         public float getModelScaling() { return modelScaling; }
-        public double getStrMultiplier() { return strMultiplier; }
-        public double getSkpMultiplier() { return skpMultiplier; }
-        public double getStmMultiplier() { return stmMultiplier; }
-        public double getDefMultiplier() { return defMultiplier; }
-        public double getVitMultiplier() { return vitMultiplier; }
-        public double getPwrMultiplier() { return pwrMultiplier; }
-        public double getEneMultiplier() { return eneMultiplier; }
-        public double getSpeedMultiplier() { return speedMultiplier; }
-        public double getEnergyDrain() { return energyDrain; }
-        public double getStaminaDrain() { return staminaDrain; }
-        public double getAttackSpeed() { return attackSpeed; }
+        public double getStrMultiplier() { return Math.max(0.01, strMultiplier); }
+        public double getSkpMultiplier() { return Math.max(0.01, skpMultiplier); }
+        public double getStmMultiplier() { return Math.max(0.01, stmMultiplier); }
+        public double getDefMultiplier() { return Math.max(0.01, defMultiplier); }
+        public double getVitMultiplier() { return Math.max(0.01, vitMultiplier); }
+        public double getPwrMultiplier() { return Math.max(0.01, pwrMultiplier); }
+        public double getEneMultiplier() { return Math.max(0.01, eneMultiplier); }
+        public double getSpeedMultiplier() { return Math.max(0.01, speedMultiplier); }
+        public double getEnergyDrain() { return Math.max(0, energyDrain); }
+        public double getStaminaDrain() { return Math.max(0, staminaDrain); }
+        public double getAttackSpeed() { return Math.max(0.1, attackSpeed); }
         public double getMaxMastery() { return maxMastery; }
-        public double getMasteryPerHit() { return masteryPerHit; }
-        public double getMasteryPerDamageReceived() { return masteryPerDamageReceived; }
-        public double getStatMultPerMasteryPoint() { return statMultPerMasteryPoint; }
-        public double getCostDecreasePerMasteryPoint() { return costDecreasePerMasteryPoint; }
+        public double getMasteryPerHit() { return Math.max(0,  masteryPerHit); }
+        public double getMasteryPerDamageReceived() { return Math.max(0, masteryPerDamageReceived); }
+        public double getStatMultPerMasteryPoint() { return Math.max(0, statMultPerMasteryPoint); }
+        public double getCostDecreasePerMasteryPoint() { return Math.max(0, costDecreasePerMasteryPoint); }
+		public boolean isKaiokenStackable() { return kaiokenStackable; }
+		public double getKaiokenDrainMultiplier() { return Math.max(0.01, kaiokenDrainMultiplier); }
 
         public void setName(String name) { this.name = name; }
-        public void setUnlockOnSuperformLevel(int level) { this.unlockOnSuperformLevel = level; }
+        public void setUnlockOnSkillLevel(int level) { this.unlockOnSkillLevel = level; }
         public void setCustomModel(String customModel) { this.customModel = customModel; }
         public void setBodyColor1(String bodyColor1) { this.bodyColor1 = bodyColor1; }
         public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
@@ -200,6 +141,8 @@ public class FormConfig {
         public void setMasteryPerDamageReceived(double masteryPerDamageReceived) { this.masteryPerDamageReceived = masteryPerDamageReceived; }
         public void setStatMultPerMasteryPoint(double statMultPerMasteryPoint) { this.statMultPerMasteryPoint = statMultPerMasteryPoint; }
         public void setCostDecreasePerMasteryPoint(double costDecreasePerMasteryPoint) { this.costDecreasePerMasteryPoint = costDecreasePerMasteryPoint; }
+		public void setKaiokenStackable(boolean kaiokenStackable) { this.kaiokenStackable = kaiokenStackable; }
+		public void setKaiokenDrainMultiplier(double kaiokenDrainMultiplier) { this.kaiokenDrainMultiplier = kaiokenDrainMultiplier; }
 
         public boolean hasCustomModel() {
             return customModel != null && !customModel.isEmpty();

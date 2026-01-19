@@ -2,6 +2,7 @@ package com.dragonminez.common.quest;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -23,12 +24,13 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
     private static final Map<String, Saga> CLIENT_SAGAS = new HashMap<>();
     private static final String SAGA_FOLDER = "dragonminez" + File.separator + "sagas";
 
-    public static void init() {
-    }
+    public static void init() {}
 
     private static void createDefaultSagaFiles(Path sagaDir) {
-        createSaiyanSagaFile(sagaDir);
-        createFriezaSagaFile(sagaDir);
+		if (ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled() && ConfigManager.getServerConfig().getGameplay().isCreateDefaultSagas()) {
+			createSaiyanSagaFile(sagaDir);
+			createFriezaSagaFile(sagaDir);
+		}
     }
 
     private static void createSaiyanSagaFile(Path sagaDir) {
@@ -271,6 +273,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
 
     public static void loadSagas(MinecraftServer server) {
         LOADED_SAGAS.clear();
+		if (!ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled()) return;
 
         if (server == null) {
             LogUtil.warn(Env.COMMON, "Cannot load sagas: server is null");
@@ -342,6 +345,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
     }
 
     public static Map<String, Saga> getAllSagas() {
+		if (!ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled()) return null;
         return new HashMap<>(LOADED_SAGAS);
     }
 
@@ -350,6 +354,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
     }
 
     public static Map<String, Saga> getClientSagas() {
+		if (!ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled()) return null;
         return new HashMap<>(CLIENT_SAGAS);
     }
 

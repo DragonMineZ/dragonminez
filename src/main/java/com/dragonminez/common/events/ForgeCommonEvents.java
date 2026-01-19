@@ -12,6 +12,7 @@ import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
+import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
@@ -73,6 +74,27 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
 			DragonBallsHandler.syncRadar(player.serverLevel());
+
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) {
+					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) {
+						player.kill();
+					}
+				}
+			});
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) {
+					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) {
+						player.kill();
+					}
+				}
+			});
 		}
 	}
 
@@ -85,7 +107,14 @@ public class ForgeCommonEvents {
 					data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().isInKaioPlanet();
 					data.getEffects().removeAllEffects();
+					data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
 				}
+			});
+		}
+
+		if (event.getSource().getEntity() instanceof ServerPlayer player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
 			});
 		}
 	}

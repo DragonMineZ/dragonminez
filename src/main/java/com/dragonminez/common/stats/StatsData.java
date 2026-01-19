@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.quest.QuestData;
+import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -218,6 +219,7 @@ public class StatsData {
 		resources.setCurrentPoise(getMaxPoise());
         resources.setPowerRelease(5);
         resources.setAlignment(100);
+		character.setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(this));
 
         updateTransformationSkillLimits(raceName);
     }
@@ -299,32 +301,21 @@ public class StatsData {
     }
 
     public double getTotalMultiplier(String statName) {
-        return getFormMultiplier(statName) + getKaiokenMultiplier(statName) + getEffectsMultiplier();
+        return getFormMultiplier(statName) + getKaiokenMultiplier(statName) + getEffectsMultiplier(statName);
     }
 
     public double getFormMultiplier(String statName) {
-        String currentForm = character.getCurrentForm();
-        String currentFormGroup = character.getCurrentFormGroup();
+        String currentForm = character.getActiveForm();
+        String currentFormGroup = character.getActiveFormGroup();
 
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) {
-            return 0.0;
-        }
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 0.0;
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 0.0;
 
-        if (currentFormGroup == null || currentFormGroup.isEmpty()) {
-            return 0.0;
-        }
-
-        var formConfig = ConfigManager.getFormGroup(
-            character.getRaceName(), currentFormGroup);
-
-        if (formConfig == null) {
-            return 0.0;
-        }
+        var formConfig = ConfigManager.getFormGroup(character.getRaceName(), currentFormGroup);
+        if (formConfig == null) return 0.0;
 
         var formData = formConfig.getForm(currentForm);
-        if (formData == null) {
-            return 0.0;
-        }
+        if (formData == null) return 0.0;
 
         double baseMult = switch (statName.toUpperCase()) {
             case "STR" -> formData.getStrMultiplier() - 1.0;
@@ -345,31 +336,29 @@ public class StatsData {
 
     public double getKaiokenMultiplier(String statName) {
         var skill = skills.getSkill("kaioken");
-        if (skill == null || !skill.isActive()) {
-            return 0.0;
-        }
+        if (skill == null || !skill.isActive()) return 0.0;
 
         int kaiokenLevel = skill.getLevel();
-        if (kaiokenLevel <= 0) {
-            return 0.0;
-        }
+        if (kaiokenLevel <= 0) return 0.0;
 
         var skillsConfig = ConfigManager.getSkillsConfig();
-        if (skillsConfig == null) {
-            return 0.0;
-        }
+        if (skillsConfig == null) return 0.0;
 
-        double baseMultiplier = skillsConfig.getMultiplierForLevel("kaioken", kaiokenLevel) - 1.0;
+        double baseMultiplier = skillsConfig.getMultiplierForLevel("kaioken", getStatus().getActiveKaiokenPhase());
 
         return switch (statName.toUpperCase()) {
-            case "STR", "SKP", "PWR" -> baseMultiplier;
-            case "DEF" -> baseMultiplier * 0.5;
+            case "STR", "SKP", "PWR" -> baseMultiplier - 1.0;
+            case "DEF" -> (baseMultiplier - 1.0) * 0.5;
             default -> 0.0;
         };
     }
 
-    public double getEffectsMultiplier() {
-        return effects.getTotalEffectMultiplier();
+    public double getEffectsMultiplier(String statName) {
+        return switch (statName.toUpperCase()) {
+			case "STR", "SKP", "PWR" -> effects.getTotalEffectMultiplier();
+			case "DEF" -> effects.getTotalEffectMultiplier() * 0.5;
+			default -> 0.0;
+		};
     }
 
     public double getAdjustedEnergyDrain() {
@@ -383,10 +372,7 @@ public class StatsData {
         }
 
         double baseDrain = formData.getEnergyDrain();
-        double mastery = character.getFormMasteries().getMastery(
-            character.getCurrentFormGroup(),
-            character.getCurrentForm()
-        );
+        double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
         double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
 
         int kiControlLevel = skills.getSkillLevel("kicontrol");
@@ -395,7 +381,7 @@ public class StatsData {
             reduction += baseDrain * kiControlReduction;
         }
 
-        return Math.max(0.0, baseDrain - reduction);
+        return Math.max(0.001, baseDrain - reduction);
     }
 
     public double getAdjustedStaminaDrain() {
@@ -410,8 +396,8 @@ public class StatsData {
 
         double baseDrain = formData.getStaminaDrain();
         double mastery = character.getFormMasteries().getMastery(
-            character.getCurrentFormGroup(),
-            character.getCurrentForm()
+            character.getActiveFormGroup(),
+            character.getActiveForm()
         );
         double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
 

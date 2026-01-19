@@ -1,9 +1,13 @@
 package com.dragonminez.client.gui.buttons;
 
+import com.dragonminez.common.init.MainSounds;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -22,12 +26,13 @@ public class ClippableTextureButton extends Button {
     private final int scissorY1;
     private final int scissorX2;
     private final int scissorY2;
+    private final SoundEvent sound;
 
     public ClippableTextureButton(int x, int y, int width, int height, ResourceLocation texture,
                                   int normalU, int normalV, int hoverU, int hoverV,
                                   int textureWidth, int textureHeight, boolean clipping,
                                   int scissorX1, int scissorY1, int scissorX2, int scissorY2,
-                                  Component message, OnPress onPress) {
+                                  Component message, OnPress onPress, SoundEvent sound) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
         this.texture = texture;
         this.normalU = normalU;
@@ -41,6 +46,14 @@ public class ClippableTextureButton extends Button {
         this.scissorY1 = scissorY1;
         this.scissorX2 = scissorX2;
         this.scissorY2 = scissorY2;
+        this.sound = sound;
+    }
+
+    @Override
+    public void playDownSound(SoundManager handler) {
+        if (this.sound != null) {
+            handler.play(SimpleSoundInstance.forUI(this.sound, 1.0F));
+        }
     }
 
     @Override
@@ -67,6 +80,7 @@ public class ClippableTextureButton extends Button {
         private OnPress onPress;
         private boolean clipping = false;
         private int scissorX1, scissorY1, scissorX2, scissorY2;
+        private SoundEvent sound = MainSounds.UI_NAVE_COOLDOWN.get();
 
         public Builder position(int x, int y) {
             this.x = x;
@@ -118,12 +132,17 @@ public class ClippableTextureButton extends Button {
             return this;
         }
 
+        public Builder sound(SoundEvent sound) {
+            this.sound = sound;
+            return this;
+        }
+
         public ClippableTextureButton build() {
             return new ClippableTextureButton(x, y, width, height, texture,
                     normalU, normalV, hoverU, hoverV,
                     textureWidth, textureHeight, clipping,
                     scissorX1, scissorY1, scissorX2, scissorY2,
-                    message, onPress);
+                    message, onPress, sound);
         }
     }
 }

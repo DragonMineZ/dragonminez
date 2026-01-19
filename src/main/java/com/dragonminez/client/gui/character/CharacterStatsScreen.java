@@ -12,6 +12,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
@@ -95,24 +96,20 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
+		if (!isAnimating()) this.renderBackground(graphics);
+		PoseStack pose = graphics.pose();
+		pose.pushPose();
+		applyZoom(graphics);
+
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-
-
-        if (statsData == null) {
-            graphics.drawCenteredString(this.font, Component.translatable("gui.dragonminez.character_stats.error"),
-                    this.width / 2, this.height / 2, 0xFF0000);
-            return;
-        }
-
         renderMenuPanels(graphics);
+        renderPlayerInfo(graphics, mouseX, mouseY);
+        renderStatsInfo(graphics, mouseX, mouseY);
+        renderStatisticsInfo(graphics, mouseX, mouseY);
+        renderTPCost(graphics);
 
-       renderPlayerInfo(graphics, mouseX, mouseY);
-       renderStatsInfo(graphics, mouseX, mouseY);
-       renderStatisticsInfo(graphics, mouseX, mouseY);
-       renderTPCost(graphics);
-
-       super.render(graphics, mouseX, mouseY, partialTick);
+		super.render(graphics, mouseX, mouseY, partialTick);
+	    pose.popPose();
     }
 
     private void initStatButtons() {
@@ -304,10 +301,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int level = statsData.getLevel();
         int tps = statsData.getResources().getTrainingPoints();
         String characterClass = statsData.getCharacter().getCharacterClass();
-        String form = statsData.getCharacter().getCurrentForm();
-        if (form == null || form.isEmpty()) {
-            form = "base";
-        }
+        String form = statsData.getCharacter().getActiveForm();
 
         int labelX = 35;
         int valueX = 80;
@@ -320,11 +314,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(tps)), valueX, startY + 11, 0xFFE593, 0x000000);
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.form").withStyle(style -> style.withBold(true)), labelX, startY + 22, 0xD7FEF5, 0x000000);
-        Component formComponent = Component.translatable("forms.dragonminez." + form);
+        Component formComponent;
+		if (form == null || form.isEmpty()) formComponent = Component.translatable("race.dragonminez.base");
+		else formComponent = Component.translatable("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
         drawStringWithBorder2(graphics, formComponent, valueX, startY + 22, 0xC7EAFC, 0x000000);
 
         if (!form.equals("base") && mouseX >= valueX && mouseX <= valueX + 60 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
-            String currentFormGroup = statsData.getCharacter().getCurrentFormGroup();
+            String currentFormGroup = statsData.getCharacter().getActiveFormGroup();
             if (currentFormGroup != null && !currentFormGroup.isEmpty()) {
                 var formConfig = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), currentFormGroup);
                 if (formConfig != null) {

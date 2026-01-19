@@ -80,8 +80,8 @@ public class CombatEvent {
                 if (attackerData.getCharacter().hasActiveForm()) {
                     FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
                     if (activeForm != null) {
-                        String formGroup = attackerData.getCharacter().getCurrentFormGroup();
-                        String formName = attackerData.getCharacter().getCurrentForm();
+                        String formGroup = attackerData.getCharacter().getActiveFormGroup();
+                        String formName = attackerData.getCharacter().getActiveForm();
                         attackerData.getCharacter().getFormMasteries().addMastery(
                                 formGroup,
                                 formName,
@@ -100,6 +100,10 @@ public class CombatEvent {
                 } else {
                     currentDamage[0] = mcBaseDamage + finalDmzDamage;
                 }
+
+				if (event.getEntity() instanceof Player) {
+					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+				}
             });
         }
 
@@ -107,6 +111,7 @@ public class CombatEvent {
         if (event.getEntity() instanceof Player target) {
             StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(victimData -> {
                 if (victimData.getStatus().hasCreatedCharacter()) {
+					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 					double defense = victimData.getDefense();
 					boolean blocked = false;
 
@@ -315,8 +320,8 @@ public class CombatEvent {
 					if (victimData.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
 						if (activeForm != null) {
-							String formGroup = victimData.getCharacter().getCurrentFormGroup();
-							String formName = victimData.getCharacter().getCurrentForm();
+							String formGroup = victimData.getCharacter().getActiveFormGroup();
+							String formName = victimData.getCharacter().getActiveForm();
 							victimData.getCharacter().getFormMasteries().addMastery(
 									formGroup,
 									formName,

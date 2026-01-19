@@ -41,7 +41,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     public ResourceLocation getModelResource(T player) {
 
         if (this.customModel != null && !this.customModel.isEmpty()) {
-            return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.customModel);
+            return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.customModel + ".geo.json");
         }
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {

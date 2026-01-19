@@ -7,11 +7,10 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.stats.Cooldowns;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
-import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.util.TransformationHelper;
+import com.dragonminez.common.stats.*;
+import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.util.RacialSkillLogic;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -34,6 +33,7 @@ public class TickHandler {
     private static final int SYNC_INTERVAL = 10;
     private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
     private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
+	private static int saiyanZenkaiSeconds = 0;
 
     private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 
@@ -83,9 +83,7 @@ public class TickHandler {
             boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
             boolean isChargingKi = data.getStatus().isChargingKi();
             boolean isDescending = data.getStatus().isDescending();
-            boolean isTransforming = data.getStatus().isTransforming();
             int meditationLevel = data.getSkills().getSkillLevel("meditation");
-            boolean isFormActive = data.getCharacter().hasActiveForm();
 
             if (shouldRegen) {
                 String raceName = data.getCharacter().getRaceName();
@@ -124,26 +122,15 @@ public class TickHandler {
 				}
 			}
 
-			if (isTransforming && tickCounter % 20 == 0) {
-				boolean canTransform = TransformationHelper.canTransform(data);
-				boolean hasKaiokenSelected = TransformationHelper.hasKaiokenSelected(data);
+			if (tickCounter % 20 == 0) {
+				handleActionCharge(serverPlayer, data);
+				handleKaiokenEffects(serverPlayer, data);
+			}
 
-				if (canTransform || hasKaiokenSelected) {
-					int currentFormRelease = data.getResources().getFormRelease();
-					if (currentFormRelease < 100) {
-						int newFormRelease = Math.min(100, currentFormRelease + 10);
-						data.getResources().setFormRelease(newFormRelease);
-
-						if (newFormRelease >= 100) {
-							handleTransformation(serverPlayer, data, hasKaiokenSelected);
-							data.getResources().setFormRelease(0);
-						}
-					}
-				} else {
-					data.getResources().setFormRelease(0);
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
+				if (tickCounter % 20 == 0 && data.getCharacter().getRaceName().equals("saiyan")) {
+					handleSaiyanPassive(serverPlayer, data);
 				}
-			} else if (data.getResources().getFormRelease() > 0) {
-				data.getResources().setFormRelease(0);
 			}
 
             if (shouldSync) {
@@ -171,7 +158,7 @@ public class TickHandler {
         int currentHealth = (int) player.getHealth();
         float maxHealth = player.getMaxHealth();
         
-        if (currentHealth < maxHealth) {
+        if (currentHealth < maxHealth && !data.getSkills().isSkillActive("kaioken")) {
             double baseRegen = classStats.getHealthRegenRate();
             double regenAmount = maxHealth * baseRegen;
 			if (regenAmount <= 1.0) return;
@@ -194,6 +181,9 @@ public class TickHandler {
         if (activeCharging) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			}
 			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
 
@@ -204,6 +194,9 @@ public class TickHandler {
         } else if (!hasActiveForm && currentEnergy < maxEnergy) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			}
 			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
         }
@@ -218,7 +211,7 @@ public class TickHandler {
             int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
             data.getResources().setCurrentEnergy(newEnergy);
 
-            if (newEnergy <= 0 && hasActiveForm) {
+            if (newEnergy <= maxEnergy * 0.05 && hasActiveForm) {
                 data.getCharacter().clearActiveForm();
             }
         }
@@ -254,34 +247,194 @@ public class TickHandler {
 		}
 	}
 
-    private static void handleTransformation(ServerPlayer player, StatsData data, boolean hasKaiokenSelected) {
-        if (hasKaiokenSelected) {
-            int kaiokenLevel = data.getSkills().getSkillLevel("kaioken");
-            if (kaiokenLevel > 0) {
-                data.getSkills().setSkillActive("kaioken", true);
-            }
-        } else {
-            String raceName = data.getCharacter().getRaceName();
+	private static void handleActionCharge(ServerPlayer player, StatsData data) {
+		if (!data.getStatus().isActionCharging()) {
+			if (data.getResources().getActionCharge() > 0) {
+				data.getResources().setActionCharge(0);
+			}
+			return;
+		}
 
-            if (data.getCharacter().hasActiveForm()) {
-                String currentGroup = data.getCharacter().getActiveFormGroup();
-                String currentFormName = data.getCharacter().getActiveFormName();
+		ActionMode mode = data.getStatus().getSelectedAction();
+		int currentRelease = data.getResources().getActionCharge();
+		int increment = 0;
+		boolean execute = false;
 
-                FormConfig.FormData nextForm = TransformationHelper.getNextForm(data, raceName, currentGroup, currentFormName);
-                if (nextForm != null) {
-                    data.getCharacter().setActiveForm(currentGroup, nextForm.getName());
-                }
-            } else {
-                String selectedGroup = data.getCharacter().getSelectedFormGroup();
-                if (selectedGroup != null && !selectedGroup.isEmpty()) {
-                    List<FormConfig.FormData> unlockedForms = TransformationHelper.getUnlockedForms(data, raceName, selectedGroup);
-                    if (!unlockedForms.isEmpty()) {
-                        FormConfig.FormData firstForm = unlockedForms.get(0);
-                        data.getCharacter().setActiveForm(selectedGroup, firstForm.getName());
-                    }
-                }
-            }
-        }
-    }
+		switch (mode) {
+			case KAIOKEN -> {
+				if (TransformationsHelper.canStackKaioken(data)) {
+					int skillLvl = data.getSkills().getSkillLevel("kaioken");
+					int currentPhase = data.getStatus().getActiveKaiokenPhase();
+					int maxPhase = TransformationsHelper.getMaxKaiokenPhase(skillLvl);
+					if (currentPhase < maxPhase) {
+						increment = 25;
+					}
+				} else {
+					data.getStatus().setActionCharging(false);
+					return;
+				}
+			}
+			case FUSION -> {
+				if (data.getSkills().hasSkill("fusion") && !data.getCooldowns().hasCooldown(Cooldowns.COMBAT) && !data.getCooldowns().hasCooldown(Cooldowns.FUSION_CD)) {
+					increment = 10;
+				}
+			}
+			case RACIAL -> {
+				String race = data.getCharacter().getRaceName();
+				if ("bioandroid".equals(race)) {
+					RacialSkillLogic.attemptRacialAction(player);
+					data.getStatus().setActionCharging(false);
+					return;
+				}
+				increment = 25;
+			}
+			case FORM -> {
+				FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+				if (nextForm != null) {
+					String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+
+					String type = ConfigManager.getFormGroup(data.getCharacter().getRaceName(), group).getFormType();
+					int skillLvl = switch (type) {
+						case "super" -> data.getSkills().getSkillLevel("superform");
+						case "god" -> data.getSkills().getSkillLevel("godform");
+						case "legendary" -> data.getSkills().getSkillLevel("legendaryforms");
+						default -> 1;
+					};
+					increment = 5 * Math.max(1, skillLvl);
+				}
+			}
+		}
+
+		if (increment > 0) {
+			currentRelease += increment;
+			if (currentRelease >= 100) {
+				currentRelease = 0;
+				execute = true;
+			}
+			data.getResources().setActionCharge(currentRelease);
+		}
+
+		if (execute) {
+			performAction(player, data, mode);
+			data.getResources().setActionCharge(0);
+		}
+	}
+
+	private static void performAction(ServerPlayer player, StatsData data, ActionMode mode) {
+		switch (mode) {
+			case KAIOKEN -> {
+				int currentPhase = data.getStatus().getActiveKaiokenPhase();
+				int skillLvl = data.getSkills().getSkillLevel("kaioken");
+				int maxPhase = TransformationsHelper.getMaxKaiokenPhase(skillLvl);
+
+				if (currentPhase < maxPhase) {
+					data.getStatus().setActiveKaiokenPhase(currentPhase + 1);
+					String name = TransformationsHelper.getKaiokenName(currentPhase + 1);
+					player.displayClientMessage(Component.translatable("message.dragonminez.kaioken.activate", name), true);
+				}
+
+				if (!data.getSkills().isSkillActive("kaioken")) data.getSkills().setSkillActive("kaioken", true);
+				NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			}
+			case RACIAL -> RacialSkillLogic.attemptRacialAction(player);
+			case FUSION -> attemptFusion(player, data);
+			case FORM -> attemptTransform(player, data);
+		}
+	}
+
+	private static void handleKaiokenEffects(ServerPlayer player, StatsData data) {
+		if (!data.getSkills().isSkillActive("kaioken")) return;
+		if (player.isCreative() || player.isSpectator()) return;
+
+		if (player.tickCount % 20 == 0) {
+			float drain = TransformationsHelper.getKaiokenHealthDrain(data);
+
+			if (player.getHealth() - drain <= 1.0f) {
+				data.getSkills().setSkillActive("kaioken", false);
+				data.getResources().setPowerRelease(0);
+				data.getResources().setActionCharge(0);
+			} else {
+				player.setHealth(player.getHealth() - drain);
+				player.hurtTime = 0;
+				player.hurtDuration = 0;
+				player.invulnerableTime = 0;
+			}
+		}
+	}
+
+
+	private static void attemptTransform(ServerPlayer player, StatsData data) {
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+		if (nextForm == null) return;
+
+		int cost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
+		if (data.getResources().getCurrentEnergy() >= cost) {
+			data.getResources().removeEnergy(cost);
+
+			String group = data.getCharacter().hasActiveForm() ?
+					data.getCharacter().getActiveFormGroup() :
+					data.getCharacter().getSelectedFormGroup();
+
+			data.getCharacter().setActiveForm(group, nextForm.getName());
+		} else {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki", cost), true);
+		}
+	}
+
+	private static void attemptFusion(ServerPlayer player, StatsData data) {
+		List<ServerPlayer> nearby = player.level().getEntitiesOfClass(ServerPlayer.class,
+				player.getBoundingBox().inflate(5.0), p -> p != player);
+
+		for (ServerPlayer target : nearby) {
+			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
+				if (targetData.getStatus().getSelectedAction() == ActionMode.FUSION
+						&& targetData.getResources().getActionCharge() >= 50
+						&& targetData.getStatus().isActionCharging()) {
+
+					MinecraftForge.EVENT_BUS.post(new DMZEvent.FusionEvent(player, target, DMZEvent.FusionEvent.FusionType.METAMORU));
+					player.sendSystemMessage(Component.translatable("message.dragonminez.fusion.success", target.getName().getString()));
+					targetData.getResources().setActionCharge(0);
+					targetData.getStatus().setActionCharging(false);
+				}
+			});
+		}
+	}
+
+	private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {
+		if (data.getResources().getRacialSkillCount() >= ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiAmount()) return;
+		if (data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) return;
+
+		float maxHealth = player.getMaxHealth();
+		if (player.getHealth() <= maxHealth * 0.15) saiyanZenkaiSeconds = saiyanZenkaiSeconds + 1;
+		else saiyanZenkaiSeconds = 0;
+
+		if (saiyanZenkaiSeconds >= 8) {
+			data.getResources().setRacialSkillCount(data.getResources().getRacialSkillCount() + 1);
+			player.heal((float) (maxHealth * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiHealthRegen()));
+			String[] boosts = ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiBoosts();
+			for (String boost : boosts) {
+				int bonusValue;
+				switch (boost) {
+					case "STR" -> bonusValue = (int) Math.round(data.getStats().getStrength() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
+					case "SKP" -> bonusValue = (int) Math.round(data.getStats().getStrikePower() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
+					case "RES" -> bonusValue = (int) Math.round(data.getStats().getResistance() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
+					case "VIT" -> bonusValue = (int) Math.round(data.getStats().getVitality() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
+					case "ENE" -> bonusValue = (int) Math.round(data.getStats().getEnergy() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
+					case "PWR" -> bonusValue = (int) Math.round(data.getStats().getKiPower() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
+					default -> bonusValue = 0;
+				}
+				if (bonusValue >= 1) {
+					data.getBonusStats().addBonus(boost, "Zenkai_" + data.getResources().getRacialSkillCount(), "+", bonusValue);
+				}
+			}
+
+			player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);
+
+			data.getResources().addRacialSkillCount(1);
+			data.getCooldowns().addCooldown(Cooldowns.ZENKAI, ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiCooldownSeconds());
+			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			saiyanZenkaiSeconds = 0;
+		}
+	}
 }
 
