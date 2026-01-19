@@ -50,9 +50,7 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
 
     }
 
-    // -------------------------------------------------------------------------
-    // LÓGICA DEL CUERPO
-    // -------------------------------------------------------------------------
+
     private void renderBody(PoseStack poseStack, DMZAnimatable animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
         var character = stats.getCharacter();
         String raceName = character.getRace().toLowerCase();
@@ -71,6 +69,15 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         boolean forceVanilla = raceConfig.useVanillaSkin();
         boolean isStandardHumanoid = (raceName.equals("human") || raceName.equals("saiyan"));
         boolean isDefaultBody = (bodyType == 0);
+
+
+        if (raceName.equals("saiyan") && !stats.getStatus().isTailVisible()) {
+            var tailColor = ColorUtils.rgbIntToFloat(0x6B1E0E);
+
+            String racePartsPath = "textures/entity/races/tail1.png";
+
+            renderColoredLayer(model, poseStack, animatable, bufferSource, racePartsPath, tailColor, partialTick, packedLight, packedOverlay);
+        }
 
         if (forceVanilla || (isStandardHumanoid && isDefaultBody && !hasForm)) {
             ResourceLocation playerSkin = player.getSkinTextureLocation();
@@ -123,6 +130,8 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         String customPath = "textures/entity/races/" + textureBaseName + "/bodytype" + genderPart + "_" + bodyType + formPart + ".png";
 
         renderColoredLayer(model, poseStack, animatable, bufferSource, customPath, bodyTint, partialTick, packedLight, packedOverlay);
+
+
     }
 
     private void renderTattoos(PoseStack poseStack, DMZAnimatable animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
@@ -141,33 +150,22 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         // Usamos esto para restaurar el modelo después de pintar el tatuaje
         Map<String, float[]> originalScales = new HashMap<>();
 
-        // VALOR DE INFLADO
-        // 0.002f es suficiente para que no parpadee, pero pegado a la piel.
         float inflation = 0;
 
-        // 1. INFLAR HUESOS MANUALMENTE
-        // Esto garantiza que si te agachas, el tatuaje del torso se agache CONTIGO.
         for (GeoBone bone : model.topLevelBones()) {
-            // Guardamos estado original
             originalScales.put(bone.getName(), new float[]{bone.getScaleX(), bone.getScaleY(), bone.getScaleZ()});
 
-            // Aplicamos la inflación a cada eje
             bone.setScaleX(bone.getScaleX() + inflation);
             bone.setScaleY(bone.getScaleY() + inflation);
             bone.setScaleZ(bone.getScaleZ() + inflation);
         }
 
         try {
-            // 2. RENDERIZAR
-            // Pasamos 1.0f en scaleInflation porque YA hemos inflado los huesos arriba.
-            // Si pasasemos más aquí, se vería doblemente gordo.
             renderLayerWholeModel(model, poseStack, bufferSource, animatable, type,
                     1.0f, 1.0f, 1.0f, // Color blanco
                     1.0f,             // Escala global NORMAL (1.0)
                     partialTick, packedLight, packedOverlay);
         } finally {
-            // 3. RESTAURAR HUESOS (IMPORTANTE)
-            // Si no hacemos esto, el jugador se verá gordo en la siguiente capa (la cara) o frame.
             for (GeoBone bone : model.topLevelBones()) {
                 if (originalScales.containsKey(bone.getName())) {
                     float[] scales = originalScales.get(bone.getName());
@@ -179,9 +177,6 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // LÓGICA DE LA CARA (FIX ROTACIÓN)
-    // -------------------------------------------------------------------------
     private void renderFace(PoseStack poseStack, DMZAnimatable animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
         var character = stats.getCharacter();
         String raceName = character.getRace().toLowerCase();
@@ -202,14 +197,12 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         float originalSY = headBone.getScaleY();
         float originalSZ = headBone.getScaleZ();
 
-        // 2. APLICAR OFFSET
         headBone.setPosZ(originalZ - 0.002f);
         float inflation = 0.002f;
         headBone.setScaleX(originalSX + inflation);
         headBone.setScaleY(originalSY + inflation);
         headBone.setScaleZ(originalSZ + inflation);
 
-        // 3. OCULTAR CUERPO
         List<String> hiddenBones = new ArrayList<>();
         for (GeoBone bone : model.topLevelBones()) {
             if (!bone.isHidden()) {
@@ -238,31 +231,27 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         int noseType = character.getNoseType();
         int mouthType = character.getMouthType();
 
-        // 5. RENDERIZADO POR RAZA
         String folder = "textures/entity/races/" + raceName + "/faces/";
 
         // Si es humano/saiyan, la carpeta es humansaiyan
         if (isVanillaPlayer) folder = "textures/entity/races/humansaiyan/faces/";
 
         try {
-            // === CASO BIOANDROID ===
             if (raceName.equals("bioandroid")) {
-                String formPrefix = "imperfect"; // Default
+                String formPrefix = "imperfect";
                 String form = character.getCurrentForm();
                 if (form != null) {
                     if (form.equals("semi_perfect")) formPrefix = "semi";
                     else if (form.equals("perfect")) formPrefix = "perfect";
                 }
 
-                // Estructura: bioandroid_[form]_eye_[type]_[layer]
+                //bioandroid_[form]_eye_[type]_[layer]
                 String eyeBase = "bioandroid_" + formPrefix + "_eye";
 
                 // Layer 0: Coloreable (Eye 1) - O White si prefieres
                 renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", eye1Tint, partialTick, packedLight, packedOverlay);
                 // Layer 1: Coloreable (Eye 2)
                 renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", eye2Tint, partialTick, packedLight, packedOverlay);
-
-                // NO RENDERIZAMOS NI NARIZ NI BOCA
             }
             // === CASO FROSTDEMON ===
             else if (raceName.equals("frostdemon")) {
@@ -300,20 +289,31 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
             else if (raceName.equals("majin")) {
                 String eyeBase = "majin_eye_" + eyesType;
 
-                // Layer 0: Negro
+                if(eyesType == 0){
+                    // Layer 0: El fondo (Negro por defecto, Piel si eyeType es 0)
+                    renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", skinTint, partialTick, packedLight, packedOverlay);
+
+                    // Layer 1: El iris/pupila (Eye 1)
+                    renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", skinTint, partialTick, packedLight, packedOverlay);
+
+                    // Layer 2: Detalles de la piel/contorno
+                    renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_2.png", skinTint, partialTick, packedLight, packedOverlay);
+
+                } else {
+                // Layer 0: El fondo (Negro por defecto, Piel si eyeType es 0)
                 renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", blackTint, partialTick, packedLight, packedOverlay);
-                // Layer 1: Eye 1
+
+                // Layer 1: El iris/pupila (Eye 1)
                 renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", eye1Tint, partialTick, packedLight, packedOverlay);
-                // Layer 2: Piel
+
+                // Layer 2: Detalles de la piel/contorno
                 renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_2.png", skinTint, partialTick, packedLight, packedOverlay);
 
                 // Boca y Nariz
                 renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_nose_" + noseType + ".png", skinTint, partialTick, packedLight, packedOverlay);
                 renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + mouthType + ".png", skinTint, partialTick, packedLight, packedOverlay);
-            }
-            // === CASO STANDARD (Human, Saiyan, Custom) ===
+            }}
             else {
-                // Usamos el prefijo de la raza o humansaiyan
                 String prefix = isVanillaPlayer ? "humansaiyan" : raceName;
                 String eyeBase = prefix + "_eye_" + eyesType;
 
@@ -347,25 +347,15 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         headBone.setScaleZ(originalSZ);
     }
 
-
-    // -------------------------------------------------------------------------
-    // UTILS
-    // -------------------------------------------------------------------------
-
-    // Renderiza el modelo COMPLETO con FIX DE ESCALA y ROTACIÓN CORRECTA
     private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, DMZAnimatable animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay) {
         poseStack.pushPose();
 
-        // 1. Escala Base de GeckoLib (Corrección de 0.9375)
         float baseScale = 1.0f / 0.9375f;
 
-        // 2. Aplicamos la inflación extra (1.002 para tatuajes, 1.0 para cuerpo)
         float finalScale = baseScale * scaleInflation;
 
-        // 3. Aplicamos la escala al PoseStack global
         poseStack.scale(finalScale, finalScale, finalScale);
 
-        // Truco opcional: Moverlo ligerísimamente en Z para centrar la expansión
         poseStack.translate(0, -0.001f, 0);
 
         getRenderer().reRender(model, poseStack, bufferSource, (T)animatable, renderType,

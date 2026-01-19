@@ -3,11 +3,7 @@ package com.dragonminez.client.render;
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.data.DMZAnimatable;
-import com.dragonminez.client.render.layer.DMZMajinArmorLayer;
-import com.dragonminez.client.render.layer.DMZPlayerItemInHandLayer;
-import com.dragonminez.client.render.layer.DMZPlayerArmorLayer;
-import com.dragonminez.client.render.layer.DMZSkinLayer;
-import com.dragonminez.client.render.layer.DMZHairLayer;
+import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -49,6 +45,7 @@ public class DMZPlayerRenderer extends GeoReplacedEntityRenderer<AbstractClientP
         this.addRenderLayer(new DMZMajinArmorLayer(this));
         this.addRenderLayer(new DMZSkinLayer<>(this));
         this.addRenderLayer(new DMZHairLayer<>(this));
+        this.addRenderLayer(new DMZRacePartsLayer(this));
 
         this.modelReference = new PlayerModel<>(Minecraft.getInstance().getEntityModels()
                 .bakeLayer(ModelLayers.PLAYER), false);
