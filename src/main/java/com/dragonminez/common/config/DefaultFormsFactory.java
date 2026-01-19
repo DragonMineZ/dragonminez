@@ -2,6 +2,7 @@ package com.dragonminez.common.config;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.util.lists.*;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -38,11 +39,11 @@ public class DefaultFormsFactory {
 
 	private void createDefaultHumanForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         FormConfig humanForms = new FormConfig();
-        humanForms.setGroupName("superforms");
+        humanForms.setGroupName(HumanForms.GROUP_SUPERFORMS);
         humanForms.setFormType("super");
 
         FormConfig.FormData buffed = new FormConfig.FormData();
-        buffed.setName("buffed");
+        buffed.setName(HumanForms.BUFFED);
         buffed.setUnlockOnSkillLevel(1);
         buffed.setCustomModel("");
         buffed.setModelScaling(1.1f);
@@ -67,7 +68,7 @@ public class DefaultFormsFactory {
         buffed.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
-        fullPower.setName("fullpower");
+        fullPower.setName(HumanForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(2);
         fullPower.setCustomModel("");
         fullPower.setModelScaling(1.0f);
@@ -92,7 +93,7 @@ public class DefaultFormsFactory {
         fullPower.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData overdrive = new FormConfig.FormData();
-        overdrive.setName("overdrive");
+        overdrive.setName(HumanForms.OVERDRIVE);
         overdrive.setUnlockOnSkillLevel(3);
         overdrive.setCustomModel("");
         overdrive.setModelScaling(1.0f);
@@ -117,7 +118,7 @@ public class DefaultFormsFactory {
         overdrive.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData solaris = new FormConfig.FormData();
-        solaris.setName("solaris");
+        solaris.setName(HumanForms.SOLARIS);
         solaris.setUnlockOnSkillLevel(4);
         solaris.setCustomModel("");
         solaris.setModelScaling(1.0f);
@@ -142,26 +143,26 @@ public class DefaultFormsFactory {
         solaris.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> humanFormData = new LinkedHashMap<>();
-        humanFormData.put("buffed", buffed);
-        humanFormData.put("fullpower", fullPower);
-        humanFormData.put("overdrive", overdrive);
-        humanFormData.put("solaris", solaris);
+        humanFormData.put(HumanForms.BUFFED, buffed);
+        humanFormData.put(HumanForms.FULLPOWER, fullPower);
+        humanFormData.put(HumanForms.OVERDRIVE, overdrive);
+        humanFormData.put(HumanForms.SOLARIS, solaris);
         humanForms.setForms(humanFormData);
 
-        forms.put("superforms", humanForms);
+        forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
 
-        Path humanPath = formsPath.resolve("superforms.json");
+        Path humanPath = formsPath.resolve(HumanForms.GROUP_SUPERFORMS + ".json");
         loader.saveConfig(humanPath, humanForms);
         LogUtil.info(Env.COMMON, "Default Human forms created");
 	}
 
     private void createSaiyanForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         FormConfig oozaruForms = new FormConfig();
-        oozaruForms.setGroupName("oozaru");
+        oozaruForms.setGroupName(SaiyanForms.GROUP_OOZARU);
         oozaruForms.setFormType("super");
 
         FormConfig.FormData oozaru = new FormConfig.FormData();
-        oozaru.setName("oozaru");
+        oozaru.setName(SaiyanForms.OOZARU);
         oozaru.setUnlockOnSkillLevel(0);
         oozaru.setCustomModel("oozaru");
         oozaru.setModelScaling(2.5f);
@@ -186,7 +187,7 @@ public class DefaultFormsFactory {
 		oozaru.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData goldenOozaru = new FormConfig.FormData();
-        goldenOozaru.setName("goldenoozaru");
+        goldenOozaru.setName(SaiyanForms.GOLDEN_OOZARU);
         goldenOozaru.setUnlockOnSkillLevel(7);
         goldenOozaru.setCustomModel("oozaru");
         goldenOozaru.setHairColor("#FFD700");
@@ -211,7 +212,7 @@ public class DefaultFormsFactory {
 		goldenOozaru.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData ssj4 = new FormConfig.FormData();
-        ssj4.setName("supersaiyan4");
+        ssj4.setName(SaiyanForms.SUPER_SAIYAN_4);
         ssj4.setUnlockOnSkillLevel(7);
         ssj4.setCustomModel("");
         ssj4.setHairColor("#000000");
@@ -236,17 +237,17 @@ public class DefaultFormsFactory {
 		ssj4.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
-        oozaruFormData.put("oozaru", oozaru);
-        oozaruFormData.put("goldenoozaru", goldenOozaru);
-        oozaruFormData.put("ssj4", ssj4);
+        oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
+        oozaruFormData.put(SaiyanForms.GOLDEN_OOZARU, goldenOozaru);
+        oozaruFormData.put(SaiyanForms.SUPER_SAIYAN_4, ssj4);
         oozaruForms.setForms(oozaruFormData);
 
         FormConfig ssGrades = new FormConfig();
-        ssGrades.setGroupName("ssgrades");
+        ssGrades.setGroupName(SaiyanForms.GROUP_SSGRADES);
         ssGrades.setFormType("super");
 
         FormConfig.FormData ssj1 = new FormConfig.FormData();
-        ssj1.setName("supersaiyan");
+        ssj1.setName(SaiyanForms.SUPER_SAIYAN);
         ssj1.setUnlockOnSkillLevel(1);
         ssj1.setCustomModel("");
         ssj1.setHairColor("#FFD700");
@@ -271,7 +272,7 @@ public class DefaultFormsFactory {
         ssj1.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData ssg2 = new FormConfig.FormData();
-        ssg2.setName("supersaiyangrade2");
+        ssg2.setName(SaiyanForms.SUPER_SAIYAN_GRADE_2);
         ssg2.setUnlockOnSkillLevel(2);
         ssg2.setCustomModel("");
         ssg2.setHairColor("#FFD700");
@@ -296,7 +297,7 @@ public class DefaultFormsFactory {
         ssg2.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData ssg3 = new FormConfig.FormData();
-        ssg3.setName("supersaiyangrade3");
+        ssg3.setName(SaiyanForms.SUPER_SAIYAN_GRADE_3);
         ssg3.setUnlockOnSkillLevel(3);
         ssg3.setCustomModel("");
         ssg3.setHairColor("#FFD700");
@@ -321,17 +322,17 @@ public class DefaultFormsFactory {
         ssg3.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> ssGradeForms = new LinkedHashMap<>();
-        ssGradeForms.put("ssj1", ssj1);
-        ssGradeForms.put("grade2", ssg2);
-        ssGradeForms.put("grade3", ssg3);
+        ssGradeForms.put(SaiyanForms.SUPER_SAIYAN, ssj1);
+        ssGradeForms.put(SaiyanForms.SUPER_SAIYAN_GRADE_2, ssg2);
+        ssGradeForms.put(SaiyanForms.SUPER_SAIYAN_GRADE_3, ssg3);
         ssGrades.setForms(ssGradeForms);
 
         FormConfig superSaiyan = new FormConfig();
-        superSaiyan.setGroupName("supersaiyan");
+        superSaiyan.setGroupName(SaiyanForms.GROUP_SUPERSAIYAN);
         superSaiyan.setFormType("super");
 
         FormConfig.FormData ssj1Mastered = new FormConfig.FormData();
-        ssj1Mastered.setName("supersaiyanmastered");
+        ssj1Mastered.setName(SaiyanForms.SUPER_SAIYAN_MASTERED);
         ssj1Mastered.setUnlockOnSkillLevel(4);
         ssj1Mastered.setCustomModel("");
         ssj1Mastered.setHairColor("#FFD700");
@@ -356,7 +357,7 @@ public class DefaultFormsFactory {
         ssj1Mastered.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData ssj2 = new FormConfig.FormData();
-        ssj2.setName("supersaiyan2");
+        ssj2.setName(SaiyanForms.SUPER_SAIYAN_2);
         ssj2.setUnlockOnSkillLevel(5);
         ssj2.setCustomModel("");
         ssj2.setHairColor("#FFD700");
@@ -381,7 +382,7 @@ public class DefaultFormsFactory {
         ssj2.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData ssj3 = new FormConfig.FormData();
-        ssj3.setName("supersaiyan3");
+        ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
         ssj3.setUnlockOnSkillLevel(6);
         ssj3.setCustomModel("");
         ssj3.setHairType(1);
@@ -406,31 +407,31 @@ public class DefaultFormsFactory {
         ssj3.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
-        superSaiyanForms.put("ssj1mastered", ssj1Mastered);
-        superSaiyanForms.put("ssj2", ssj2);
-        superSaiyanForms.put("ssj3", ssj3);
+        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
+        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
+        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
         superSaiyan.setForms(superSaiyanForms);
 
-        forms.put("oozaru", oozaruForms);
-        forms.put("ssgrades", ssGrades);
-        forms.put("supersaiyan", superSaiyan);
+        forms.put(SaiyanForms.OOZARU, oozaruForms);
+        forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
+        forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
 
-        Path oozaruPath = formsPath.resolve("oozaru.json");
+        Path oozaruPath = formsPath.resolve(SaiyanForms.OOZARU + ".json");
         loader.saveConfig(oozaruPath, oozaruForms);
-        Path ssGradesPath = formsPath.resolve("ssgrades.json");
+        Path ssGradesPath = formsPath.resolve(SaiyanForms.GROUP_SSGRADES + ".json");
         loader.saveConfig(ssGradesPath, ssGrades);
-        Path superSaiyanPath = formsPath.resolve("supersaiyan.json");
+        Path superSaiyanPath = formsPath.resolve(SaiyanForms.SUPER_SAIYAN + ".json");
         loader.saveConfig(superSaiyanPath, superSaiyan);
         LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
     }
 
     private void createNamekianForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         FormConfig namekianForms = new FormConfig();
-        namekianForms.setGroupName("superforms");
+        namekianForms.setGroupName(NamekianForms.GROUP_SUPERFORMS);
         namekianForms.setFormType("super");
 
         FormConfig.FormData giantForm = new FormConfig.FormData();
-        giantForm.setName("giant");
+        giantForm.setName(NamekianForms.GIANT);
         giantForm.setUnlockOnSkillLevel(1);
         giantForm.setCustomModel("");
         giantForm.setModelScaling(3.0f);
@@ -455,7 +456,7 @@ public class DefaultFormsFactory {
         giantForm.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
-        fullPower.setName("fullpower");
+        fullPower.setName(NamekianForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(2);
         fullPower.setCustomModel("");
         fullPower.setModelScaling(1.0f);
@@ -480,7 +481,7 @@ public class DefaultFormsFactory {
         fullPower.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData superNamekian = new FormConfig.FormData();
-        superNamekian.setName("supernamekian");
+        superNamekian.setName(NamekianForms.SUPER_NAMEKIAN);
         superNamekian.setUnlockOnSkillLevel(3);
         superNamekian.setCustomModel("");
         superNamekian.setAuraColor("#7FFF00");
@@ -505,25 +506,25 @@ public class DefaultFormsFactory {
         superNamekian.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> namekianFormData = new LinkedHashMap<>();
-        namekianFormData.put("giant", giantForm);
-        namekianFormData.put("fullpower", fullPower);
-        namekianFormData.put("supernamekian", superNamekian);
+        namekianFormData.put(NamekianForms.GIANT, giantForm);
+        namekianFormData.put(NamekianForms.FULLPOWER, fullPower);
+        namekianFormData.put(NamekianForms.SUPER_NAMEKIAN, superNamekian);
         namekianForms.setForms(namekianFormData);
 
-        forms.put("superforms", namekianForms);
+        forms.put(NamekianForms.GROUP_SUPERFORMS, namekianForms);
 
-        Path namekianPath = formsPath.resolve("superforms.json");
+        Path namekianPath = formsPath.resolve(NamekianForms.GROUP_SUPERFORMS + ".json");
         loader.saveConfig(namekianPath, namekianForms);
         LogUtil.info(Env.COMMON, "Default Namekian forms created");
     }
 
     private void createFrostDemonForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         FormConfig frostForms = new FormConfig();
-        frostForms.setGroupName("evolutionforms");
+        frostForms.setGroupName(FrostDemonForms.GROUP_EVOLUTIONFORMS);
         frostForms.setFormType("super");
 
         FormConfig.FormData second = new FormConfig.FormData();
-        second.setName("second");
+        second.setName(FrostDemonForms.SECOND_FORM);
         second.setUnlockOnSkillLevel(1);
         second.setCustomModel("");
         second.setModelScaling(1.0f);
@@ -548,7 +549,7 @@ public class DefaultFormsFactory {
         second.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData third = new FormConfig.FormData();
-        third.setName("third");
+        third.setName(FrostDemonForms.THIRD_FORM);
         third.setUnlockOnSkillLevel(2);
         third.setCustomModel("");
         third.setModelScaling(1.0f);
@@ -573,7 +574,7 @@ public class DefaultFormsFactory {
         third.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData finalForm = new FormConfig.FormData();
-        finalForm.setName("final");
+        finalForm.setName(FrostDemonForms.FINAL_FORM);
         finalForm.setUnlockOnSkillLevel(3);
         finalForm.setCustomModel("");
         finalForm.setModelScaling(1.0f);
@@ -598,7 +599,7 @@ public class DefaultFormsFactory {
         finalForm.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
-        fullPower.setName("fullpower");
+        fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
         fullPower.setModelScaling(1.0f);
@@ -623,26 +624,26 @@ public class DefaultFormsFactory {
         fullPower.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> frostFormData = new LinkedHashMap<>();
-        frostFormData.put("second", second);
-        frostFormData.put("third", third);
-        frostFormData.put("final", finalForm);
-        frostFormData.put("fullpower", fullPower);
+        frostFormData.put(FrostDemonForms.SECOND_FORM, second);
+        frostFormData.put(FrostDemonForms.THIRD_FORM, third);
+        frostFormData.put(FrostDemonForms.FINAL_FORM, finalForm);
+        frostFormData.put(FrostDemonForms.FULLPOWER, fullPower);
         frostForms.setForms(frostFormData);
 
-        forms.put("evolutionforms", frostForms);
+        forms.put(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostForms);
 
-        Path frostPath = formsPath.resolve("evolutionforms.json");
+        Path frostPath = formsPath.resolve(FrostDemonForms.GROUP_EVOLUTIONFORMS + ".json");
         loader.saveConfig(frostPath, frostForms);
         LogUtil.info(Env.COMMON, "Default Frost Demon forms created");
     }
 
     private void createMajinForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         FormConfig majinForms = new FormConfig();
-        majinForms.setGroupName("pureforms");
+        majinForms.setGroupName(MajinForms.GROUP_PUREFORMS);
         majinForms.setFormType("super");
 
         FormConfig.FormData kid = new FormConfig.FormData();
-        kid.setName("kid");
+        kid.setName(MajinForms.KID);
         kid.setUnlockOnSkillLevel(1);
         kid.setCustomModel("");
         kid.setModelScaling(1.0f);
@@ -667,7 +668,7 @@ public class DefaultFormsFactory {
         kid.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData evil = new FormConfig.FormData();
-        evil.setName("evil");
+        evil.setName(MajinForms.EVIL);
         evil.setUnlockOnSkillLevel(2);
         evil.setCustomModel("");
         evil.setModelScaling(1.0f);
@@ -692,7 +693,7 @@ public class DefaultFormsFactory {
         evil.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData superForm = new FormConfig.FormData();
-        superForm.setName("super");
+        superForm.setName(MajinForms.SUPER);
         superForm.setUnlockOnSkillLevel(3);
         superForm.setCustomModel("");
         superForm.setModelScaling(1.0f);
@@ -717,7 +718,7 @@ public class DefaultFormsFactory {
         superForm.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData ultra = new FormConfig.FormData();
-        ultra.setName("ultra");
+        ultra.setName(MajinForms.ULTRA);
         ultra.setUnlockOnSkillLevel(4);
         ultra.setCustomModel("");
         ultra.setModelScaling(1.0f);
@@ -742,26 +743,26 @@ public class DefaultFormsFactory {
         ultra.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> majinFormData = new LinkedHashMap<>();
-        majinFormData.put("kid", kid);
-        majinFormData.put("evil", evil);
-        majinFormData.put("super", superForm);
-        majinFormData.put("ultra", ultra);
+        majinFormData.put(MajinForms.KID, kid);
+        majinFormData.put(MajinForms.EVIL, evil);
+        majinFormData.put(MajinForms.SUPER, superForm);
+        majinFormData.put(MajinForms.ULTRA, ultra);
         majinForms.setForms(majinFormData);
 
-        forms.put("pureforms", majinForms);
+        forms.put(MajinForms.GROUP_PUREFORMS, majinForms);
 
-        Path majinPath = formsPath.resolve("pureforms.json");
+        Path majinPath = formsPath.resolve(MajinForms.GROUP_PUREFORMS + ".json");
         loader.saveConfig(majinPath, majinForms);
         LogUtil.info(Env.COMMON, "Default Majin forms created");
     }
 
     private void createBioAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         FormConfig bioForms = new FormConfig();
-        bioForms.setGroupName("bioevolution");
+        bioForms.setGroupName(BioAndroidForms.GROUP_BIOEVOLUTION);
         bioForms.setFormType("super");
 
         FormConfig.FormData semiPerfect = new FormConfig.FormData();
-        semiPerfect.setName("semiperfect");
+        semiPerfect.setName(BioAndroidForms.SEMI_PERFECT);
         semiPerfect.setUnlockOnSkillLevel(1);
         semiPerfect.setCustomModel("");
         semiPerfect.setModelScaling(1.0f);
@@ -786,7 +787,7 @@ public class DefaultFormsFactory {
         semiPerfect.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData perfect = new FormConfig.FormData();
-        perfect.setName("perfect");
+        perfect.setName(BioAndroidForms.PERFECT);
         perfect.setUnlockOnSkillLevel(2);
         perfect.setCustomModel("");
         perfect.setModelScaling(1.0f);
@@ -811,7 +812,7 @@ public class DefaultFormsFactory {
         perfect.setKaiokenDrainMultiplier(2.0);
 
         FormConfig.FormData superPerfect = new FormConfig.FormData();
-        superPerfect.setName("superperfect");
+        superPerfect.setName(BioAndroidForms.SUPER_PERFECT);
         superPerfect.setUnlockOnSkillLevel(3);
         superPerfect.setCustomModel("");
         superPerfect.setModelScaling(1.0f);
@@ -836,15 +837,15 @@ public class DefaultFormsFactory {
         superPerfect.setKaiokenDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> bioFormData = new LinkedHashMap<>();
-        bioFormData.put("semiperfect", semiPerfect);
-        bioFormData.put("perfect", perfect);
-        bioFormData.put("superperfect", superPerfect);
+        bioFormData.put(BioAndroidForms.SEMI_PERFECT, semiPerfect);
+        bioFormData.put(BioAndroidForms.PERFECT, perfect);
+        bioFormData.put(BioAndroidForms.SUPER_PERFECT, superPerfect);
         bioForms.setForms(bioFormData);
 
-        forms.put("bioevolution", bioForms);
+        forms.put(BioAndroidForms.GROUP_BIOEVOLUTION, bioForms);
 
-        Path bioPath = formsPath.resolve("bioevolution.json");
-        loader.saveConfig(bioPath, bioForms);
+        Path bioAndroidPath = formsPath.resolve(BioAndroidForms.GROUP_BIOEVOLUTION + ".json");
+        loader.saveConfig(bioAndroidPath, bioForms);
         LogUtil.info(Env.COMMON, "Default Bio Android forms created");
     }
 }

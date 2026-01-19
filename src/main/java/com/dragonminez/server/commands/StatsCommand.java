@@ -280,6 +280,7 @@ public class StatsCommand {
 			data.getResources().setPowerRelease(0);
 			data.getSkills().removeAllSkills();
 			data.getEffects().removeAllEffects();
+			data.getCooldowns().clearCooldowns();
 
 			player.setHealth(20.0F);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
@@ -297,7 +298,7 @@ public class StatsCommand {
             String raceName = data.getCharacter().getRaceName();
 
             if (!ConfigManager.hasForm(raceName, group, form)) {
-                source.sendFailure(Component.literal("Form " + group + "." + form + " does not exist for race " + raceName));
+                source.sendFailure(Component.translatable("command.dragonminez.stats.transform.error", group, form, raceName));
                 return;
             }
 
@@ -305,7 +306,7 @@ public class StatsCommand {
 
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 
-            source.sendSuccess(() -> Component.literal("§a" + player.getName().getString() + " transformed into " + group + "." + form), true);
+            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.transform.success", player.getName().getString(), group, form), true);
         });
         return 1;
     }
@@ -315,7 +316,7 @@ public class StatsCommand {
             data.getCharacter().clearActiveForm();
             NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 
-            source.sendSuccess(() -> Component.literal("§a" + player.getName().getString() + " returned to base form"), true);
+            source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.untransform.success", player.getName().getString()), true);
         });
         return 1;
     }

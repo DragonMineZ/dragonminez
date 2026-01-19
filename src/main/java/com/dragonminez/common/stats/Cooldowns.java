@@ -16,10 +16,9 @@ public class Cooldowns {
 	public static final String ABSORPTION = "Absorption";
 	public static final String DRAIN = "Drain";
 	public static final String COMBAT = "CombatTimer";
-	public static final String SENZU_CD = "SenzuCooldown";
 	public static final String POISE_CD = "PoiseCooldown";
-	public static final String STUN_TIMER = "StunTimer";
 	public static final String FUSION_CD = "FusionCooldown";
+	public static final String DRAIN_ACTIVE = "DrainActive";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();
@@ -53,6 +52,10 @@ public class Cooldowns {
 
 	public void removeCooldown(String key) {
 		cooldowns.remove(key);
+	}
+
+	public void clearCooldowns() {
+		cooldowns.clear();
 	}
 
     public void tick() {

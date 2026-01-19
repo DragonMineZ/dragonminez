@@ -34,100 +34,60 @@ public class DMZAnimatable implements GeoReplacedEntity {
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
         registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
-        registrar.add(new AnimationController<>(this, "shield_controller", 0, this::shieldPredicate));
+		registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
+        registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
         registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
     }
 
     @Unique
     private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> state) {
-        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) {
-            return PlayState.STOP;
-        }
-
-        if (!(player instanceof IPlayerAnimatable animatable)) {
-            return PlayState.STOP;
-        }
+        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) return PlayState.STOP;
+        if (!(player instanceof IPlayerAnimatable animatable)) return PlayState.STOP;
 
         AnimationController<T> ctl = state.getController();
         RawAnimation playing = ctl.getCurrentRawAnimation();
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-
             String raceName = data.getCharacter().getRace();
-
             // Si no es humano no hace ninguna animacion, esto lo usare luego para la raza majin o no se
 //            if (!raceName.equals("human")) {
 //                return PlayState.STOP;
 //            }
 
-            // Attacking - Skip if placing blocks
-//            if (player.attackAnim > 0 && !isPlacingBlock(player)) {
-//                int currentTime = player.tickCount;
-//                if (!isPlayingAttack) {
-//                    int timeSinceLastAttack = currentTime - lastAttackTime;
-//                    if (timeSinceLastAttack > 40) {
-//                        useAttack2 = false;
-//                    } else if (timeSinceLastAttack >= 10) {
-//                        useAttack2 = !useAttack2;
-//                    } else {
-//                        useAttack2 = false;
-//                    }
-//
-//                    lastAttackTime = currentTime;
-//                    attackAnimStartTime = currentTime;
-//                    isPlayingAttack = true;
-//                    ctl.setAnimation(useAttack2 ? ATTACK2 : ATTACK);
-//                }
-//                return PlayState.CONTINUE;
-//            } else {
-//                isPlayingAttack = false;
-//            }
-
             // Swimming
-            if (player.isSwimming()) {
-                return state.setAndContinue(SWIMMING);
-            }
+            if (player.isSwimming()) return state.setAndContinue(SWIMMING);
 
             if (player.isVisuallyCrawling()) {
-                if (isMoving(player)) {
-                    return state.setAndContinue(CRAWLING_MOVE);
-                } else {
-                    return state.setAndContinue(CRAWLING);
-                }
+                if (state.isMoving()) return state.setAndContinue(CRAWLING_MOVE);
+                else return state.setAndContinue(CRAWLING);
             }
 
             // Flying
             if (player.isFallFlying() || animatable.dragonminez$isCreativeFlying()) {
-                if (playing != FLY) {
-                    ctl.setAnimation(FLY);
-                }
+                if (playing != FLY) ctl.setAnimation(FLY);
                 return PlayState.CONTINUE;
             }
 
             if (player.onGround()) {
                 // Crouching
                 if (player.isCrouching()) {
-                    if (isMoving(player)) { // Walking
-                        if (playing != CROUCHING_WALK) {
-                            ctl.setAnimation(CROUCHING_WALK);
-                        }
-                    } else { // Still
-                        if (playing != CROUCHING) {
-                            ctl.setAnimation(CROUCHING);
-                        }
+                    if (state.isMoving()) {
+						// Walking
+                        if (playing != CROUCHING_WALK) ctl.setAnimation(CROUCHING_WALK);
+                    } else {
+						// Still
+                        if (playing != CROUCHING) ctl.setAnimation(CROUCHING);
+
                     }
-                } else if (isMoving(player) && player.isSprinting()) { // Running
-                    if (playing != RUN) {
-                        ctl.setAnimation(RUN);
-                    }
-                } else if (isMoving(player)) { // Walking
-                    if (playing != WALK) {
-                        ctl.setAnimation(WALK);
-                    }
-                } else { // Idle
-                    if (playing != IDLE) {
-                        ctl.setAnimation(IDLE);
-                    }
+                } else if (state.isMoving() && player.isSprinting()) {
+					// Running
+                    if (playing != RUN) ctl.setAnimation(RUN);
+                } else if (state.isMoving()) {
+					// Walking
+                    if (playing != WALK) ctl.setAnimation(WALK);
+                } else {
+					// Idle
+                    if (playing != IDLE) ctl.setAnimation(IDLE);
                 }
                 return PlayState.CONTINUE;
             }
@@ -142,21 +102,13 @@ public class DMZAnimatable implements GeoReplacedEntity {
 
     @Unique
     private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
-        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) {
-            return PlayState.STOP;
-        }
+        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) return PlayState.STOP;
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-
             String race = data.getCharacter().getRace();
+            boolean hasTail = race.equals("saiyan") && data.getStatus().isTailVisible() || race.equals("frostdemon") || race.equals("bioandroid");
+            if (!hasTail) return PlayState.STOP;
 
-            boolean hasTail = race.equals("saiyan") ||
-                    race.equals("frostdemon") ||
-                    race.equals("bioandroid");
-
-            if (!hasTail) {
-                return PlayState.STOP;
-            }
 //
 //            // 2. CONFLICTO DE MOVIMIENTO
 //            // Si el jugador camina/corre, generalmente la animación "walk" ya incluye el movimiento de la cola.
@@ -176,13 +128,9 @@ public class DMZAnimatable implements GeoReplacedEntity {
 
     @Unique
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
-        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) {
-            return PlayState.STOP;
-        }
+        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) return PlayState.STOP;
+        if (!(player instanceof IPlayerAnimatable animatable)) return PlayState.STOP;
 
-        if (!(player instanceof IPlayerAnimatable animatable)) {
-            return PlayState.STOP;
-        }
 
         AnimationController<T> ctl = state.getController();
         if (player.attackAnim > 0 && !isPlacingBlock(player)) {
@@ -198,11 +146,27 @@ public class DMZAnimatable implements GeoReplacedEntity {
         }
     }
 
+	@Unique
+	private <T extends GeoAnimatable> PlayState blockPredicate(AnimationState<T> state) {
+		if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) return PlayState.STOP;
+
+		AnimationController<T> ctl = state.getController();
+
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			if (data.getStatus().isBlocking()) {
+				if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(BLOCK)) {
+					ctl.setAnimation(BLOCK);
+					ctl.forceAnimationReset();
+				}
+				return PlayState.CONTINUE;
+			}
+			return PlayState.STOP;
+		}).orElse(PlayState.STOP);
+	}
+
     @Unique
     private <T extends GeoAnimatable> PlayState shieldPredicate(AnimationState<T> state) {
-        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) {
-            return PlayState.STOP;
-        }
+        if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) return PlayState.STOP;
 
         AnimationController<T> ctl = state.getController();
 
@@ -213,33 +177,22 @@ public class DMZAnimatable implements GeoReplacedEntity {
         boolean offHandIsShield = offHand.getItem() instanceof ShieldItem;
 
         if (player.isUsingItem()) {
-            if (mainHandIsShield) {
-                if (player.getMainArm() == HumanoidArm.RIGHT) {
-                    ctl.setAnimation(SHIELD_RIGHT);
-                } else {
-                    ctl.setAnimation(SHIELD_LEFT);
-                }
-                return PlayState.CONTINUE;
-            } else if (offHandIsShield) {
-                if (player.getMainArm() == HumanoidArm.RIGHT) {
-                    ctl.setAnimation(SHIELD_LEFT);
-                } else {
-                    ctl.setAnimation(SHIELD_RIGHT);
-                }
-                return PlayState.CONTINUE;
-            }
-        }
+			if (mainHandIsShield || offHandIsShield) {
+				RawAnimation targetAnimation;
+				boolean isRightHanded = player.getMainArm() == HumanoidArm.RIGHT;
+
+				if (mainHandIsShield) targetAnimation = isRightHanded ? SHIELD_RIGHT : SHIELD_LEFT;
+				else targetAnimation = isRightHanded ? SHIELD_LEFT : SHIELD_RIGHT;
+
+				if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(targetAnimation)) {
+					ctl.setAnimation(targetAnimation);
+					ctl.forceAnimationReset();
+				}
+				return PlayState.CONTINUE;
+			}
+		}
 
         return PlayState.STOP;
-    }
-
-    @Unique
-    private static boolean isMoving(LivingEntity entity) {
-        final Vector3d currentPos = new Vector3d(entity.getX(), entity.getY(), entity.getZ());
-        final Vector3d lastPos = new Vector3d(entity.xOld, entity.yOld, entity.zOld);
-        final Vector3d expectedVelocity = currentPos.sub(lastPos);
-        float avgVelocity = (float) (Math.abs(expectedVelocity.x) + Math.abs(expectedVelocity.z) / 2.0);
-        return avgVelocity >= 0.015;
     }
 
     @Unique

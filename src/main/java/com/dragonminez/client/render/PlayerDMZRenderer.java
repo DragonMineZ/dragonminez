@@ -69,7 +69,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         String raceName = character.getRace().toLowerCase();
         String gender = character.getGender().toLowerCase();
         int bodyType = character.getBodyType();
-        String currentForm = character.getCurrentForm();
+        String currentForm = character.getActiveForm();
         boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
@@ -304,7 +304,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         String raceName = character.getRace().toLowerCase();
         int bodyType = character.getBodyType();
         String gender = character.getGender().toLowerCase();
-        String currentForm = character.getCurrentForm();
+        String currentForm = character.getActiveForm();
 
         List<ResourceLocation> textures = getKaiokenTexturesInternal(raceName, bodyType, gender, currentForm, animatable);
         if (textures.isEmpty()) return;

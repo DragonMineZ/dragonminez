@@ -2,6 +2,7 @@ package com.dragonminez.server.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.stats.Cooldowns;
@@ -11,6 +12,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSources;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -144,33 +146,31 @@ public class RacialSkillLogic {
 		if (!config.isBioAndroidRacialSkill()) return;
 
 		if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {
-			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);
+			player.sendSystemMessage(Component.translatable("message.dragonminez.racial.cooldown"));
 			return;
 		}
 
-		double drainRatio = config.getBioAndroidDrainRatio();
-		AtomicReference<Float> healAmount = new AtomicReference<>((float) 0);
-		AtomicInteger kiRecover = new AtomicInteger();
-		AtomicInteger staminaRecover = new AtomicInteger();
-		if (target instanceof ServerPlayer) {
-			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
-				healAmount.set((float) (target.getHealth() * drainRatio));
-				kiRecover.set((int) (targetData.getResources().getCurrentEnergy() * drainRatio));
-				staminaRecover.set((int) (targetData.getResources().getCurrentStamina() * drainRatio));
-			});
-		} else {
-			healAmount.set((float) (target.getHealth() * drainRatio));
-			kiRecover.set((int) (target.getHealth() * drainRatio * 10));
-			staminaRecover.set((int) (target.getHealth() * drainRatio * 5));
-		}
+		int duration = 120;
 
-		player.setHealth(Math.max(player.getHealth(), Math.min(player.getMaxHealth(), player.getHealth() + healAmount.get())));
-		data.getResources().addEnergy(Math.max(data.getMaxEnergy(), kiRecover.get()));
-		data.getResources().addStamina(Math.max(data.getMaxStamina(), staminaRecover.get()));
+		teleportBehindTarget(player, target);
+		target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false));
+		player.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false));
+		data.getStatus().setDrainingTargetId(target.getId());
+		data.getCooldowns().addCooldown(Cooldowns.DRAIN_ACTIVE, duration);
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);
-		player.displayClientMessage(Component.translatable("message.dragonminez.racial.bio.success"), true);
+	}
 
-		target.setHealth((float) (target.getHealth() - (target.getMaxHealth() * drainRatio)));
+	private static void teleportBehindTarget(ServerPlayer player, LivingEntity target) {
+		Vec3 targetPos = target.position();
+		Vec3 lookVec = target.getLookAngle().normalize();
+
+		Vec3 behindPos = targetPos.add(lookVec.scale(-0.8));
+
+		player.teleportTo(behindPos.x, target.getY(), behindPos.z);
+		player.setYRot(target.getYRot());
+		player.setXRot(target.getXRot());
+
+		player.connection.teleport(behindPos.x, target.getY(), behindPos.z, target.getYRot(), target.getXRot());
 	}
 
 	private static boolean canOverpowerTarget(ServerPlayer player, StatsData playerData, LivingEntity target) {

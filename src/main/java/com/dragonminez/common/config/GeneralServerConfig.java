@@ -45,6 +45,8 @@ public class GeneralServerConfig {
         private Map<String, float[]> foodRegenerations = createDefaultFoodRegenerations();
         private double mightFruitPower = 1.2;
         private double majinPower = 1.3;
+		private int fusionDurationSeconds = 300;
+		private int fusionCooldownSeconds = 1800;
 
         public double getTpsMultiplier() { return Math.max(0, tpGainMultiplier); }
 		public double getTpCostMultiplier() { return Math.max(0.01, tpCostMultiplier); }

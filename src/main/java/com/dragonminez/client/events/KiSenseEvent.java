@@ -28,6 +28,11 @@ public class KiSenseEvent {
 	private static final ResourceLocation HUD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
+	static {
+		numberFormat.setMaximumFractionDigits(1);
+		numberFormat.setMinimumFractionDigits(0);
+	}
+
 	@SubscribeEvent
 	public static void onRenderNameTag(RenderNameTagEvent event) {
 		if (!(event.getEntity() instanceof LivingEntity entity)) return;
