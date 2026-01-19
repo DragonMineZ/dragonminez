@@ -1,12 +1,16 @@
 package com.dragonminez.client.gui.buttons;
 
+import com.dragonminez.common.init.MainSounds;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -23,13 +27,14 @@ public class TexturedTextButton extends Button {
     private final int normalTextColor;
     private final int hoverTextColor;
     private final int backgroundColor;
+    private final SoundEvent sound;
 
     public TexturedTextButton(int x, int y, int width, int height, ResourceLocation texture,
                               int normalU, int normalV, int hoverU, int hoverV,
                               int textureWidth, int textureHeight,
                               int normalTextColor, int hoverTextColor,
                               int backgroundColor,
-                              Component message, OnPress onPress) {
+                              Component message, OnPress onPress, SoundEvent sound) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
         this.texture = texture;
         this.normalU = normalU;
@@ -41,6 +46,14 @@ public class TexturedTextButton extends Button {
         this.normalTextColor = normalTextColor;
         this.hoverTextColor = hoverTextColor;
         this.backgroundColor = backgroundColor;
+        this.sound = sound;
+    }
+
+    @Override
+    public void playDownSound(SoundManager handler) {
+        if (this.sound != null) {
+            handler.play(SimpleSoundInstance.forUI(this.sound, 1.0F));
+        }
     }
 
     @Override
@@ -83,6 +96,7 @@ public class TexturedTextButton extends Button {
         private int backgroundColor = 0;
         private Component message = Component.empty();
         private OnPress onPress;
+        private SoundEvent sound = MainSounds.UI_NAVE_COOLDOWN.get();
 
         public Builder position(int x, int y) {
             this.x = x;
@@ -136,12 +150,16 @@ public class TexturedTextButton extends Button {
             return this;
         }
 
+        public Builder sound(SoundEvent sound) {
+            this.sound = sound;
+            return this;
+        }
+
         public TexturedTextButton build() {
             return new TexturedTextButton(x, y, width, height, texture,
                     normalU, normalV, hoverU, hoverV,
                     textureWidth, textureHeight,
-                    normalTextColor, hoverTextColor, backgroundColor, message, onPress);
+                    normalTextColor, hoverTextColor, backgroundColor, message, onPress, sound);
         }
     }
 }
-

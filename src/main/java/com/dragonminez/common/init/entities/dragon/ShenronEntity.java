@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.dragon;
 
 import com.dragonminez.client.gui.WishesScreen;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.server.events.DragonBallsHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
@@ -27,6 +28,7 @@ public class ShenronEntity extends DragonWishEntity {
 		if (this.level().isClientSide && this.getOwnerName().equals(player.getName().getString())) {
 			if (!this.hasGrantedWish() && Minecraft.getInstance().player.equals(player)) {
 				Minecraft.getInstance().setScreen(new WishesScreen("shenron", 1));
+				Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());
 			}
 		}
 		return super.mobInteract(player, hand);

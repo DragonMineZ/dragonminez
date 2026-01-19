@@ -48,8 +48,8 @@ public abstract class EntityRenderDispatcherMixin {
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 String race = data.getCharacter().getRace();
                 String gender = data.getCharacter().getGender();
-                String formGroup = data.getCharacter().getCurrentFormGroup();
-                String form = data.getCharacter().getCurrentForm();
+                String formGroup = data.getCharacter().getActiveFormGroup();
+                String form = data.getCharacter().getActiveForm();
 
                 String rendererKey = race + "_" + gender;
                 if (formGroup != null && !formGroup.isEmpty() && form != null && !form.isEmpty()) {

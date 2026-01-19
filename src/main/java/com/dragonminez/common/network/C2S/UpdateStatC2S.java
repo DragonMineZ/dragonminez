@@ -43,8 +43,8 @@ public class UpdateStatC2S {
                     case "isDescending":
 						if (data.getStatus().isDescending() != msg.value) data.getStatus().setDescending(msg.value);
                         break;
-					case "isTransforming":
-						if (data.getStatus().isTransforming() != msg.value) data.getStatus().setTransforming(msg.value);
+					case "isActionCharging":
+						if (data.getStatus().isActionCharging() != msg.value) data.getStatus().setActionCharging(msg.value);
 						break;
 					case "isBlocking":
 						if (data.getStatus().isBlocking() != msg.value) data.getStatus().setBlocking(msg.value);

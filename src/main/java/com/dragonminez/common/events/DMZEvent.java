@@ -5,7 +5,9 @@ import com.dragonminez.common.quest.Saga;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
@@ -163,6 +165,31 @@ public abstract class DMZEvent extends Event {
 		public void setParry(boolean parry) { isParry = parry; }
 		public float getPoiseDamage() { return poiseDamage; }
 		public void setPoiseDamage(float poiseDamage) { this.poiseDamage = poiseDamage; }
+	}
+
+	/**
+	 * Event fired when two entities are about to fuse.
+	 * This event is cancelable; if canceled, the fusion will not occur.
+	 */
+	@Cancelable
+	public static class FusionEvent extends Event {
+		private final ServerPlayer initiator;
+		private final LivingEntity target;
+		private final FusionType type;
+
+		public FusionEvent(ServerPlayer initiator, LivingEntity target, FusionType type) {
+			this.initiator = initiator;
+			this.target = target;
+			this.type = type;
+		}
+
+		public ServerPlayer getInitiator() { return initiator; }
+		public LivingEntity getTarget() { return target; }
+		public FusionType getType() { return type; }
+
+		public enum FusionType {
+			METAMORU, POTARA, ABSORPTION, ASSIMILATION
+		}
 	}
 
 	/**

@@ -207,8 +207,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int cost = getUpgradeCost(selectedSkill, skill.getLevel());
         int currentTPS = statsData.getResources().getTrainingPoints();
         boolean canUpgrade = skill.getLevel() < skill.getMaxLevel() && currentTPS >= cost;
+		boolean isSuperForm = selectedSkill.equals("superform") || selectedSkill.equals("godform") || selectedSkill.equals("legendaryforms");
+		boolean superFormWithTP = !ConfigManager.getServerConfig().getGameplay().isFormsUnlockWithStoryProgression();
 
-        if (cost != Integer.MAX_VALUE && skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel()) {
+        if ((cost != Integer.MAX_VALUE && skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel()) || (cost != Integer.MAX_VALUE && (isSuperForm && superFormWithTP))) {
 			upgradeButton = new TexturedTextButton.Builder()
 					.position(rightPanelX + 35, rightPanelY + 196)
 					.size(74, 20)

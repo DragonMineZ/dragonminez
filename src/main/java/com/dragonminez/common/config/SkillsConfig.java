@@ -125,16 +125,25 @@ public class SkillsConfig {
 		List<Double> kaiokenMultipliers = new ArrayList<>();
 		kaiokenMultipliers.add(1.1);
 		kaiokenMultipliers.add(1.2);
-		kaiokenMultipliers.add(1.3);
-		kaiokenMultipliers.add(1.4);
+		kaiokenMultipliers.add(1.35);
 		kaiokenMultipliers.add(1.5);
-		kaiokenMultipliers.add(1.6);
-		kaiokenMultipliers.add(1.7);
-		kaiokenMultipliers.add(1.8);
-		kaiokenMultipliers.add(1.9);
-		kaiokenMultipliers.add(2.0);
+		kaiokenMultipliers.add(1.65);
 
+		List<Double> kaiokenDrainRates = new ArrayList<>();
+		kaiokenDrainRates.add(0.01);
+		kaiokenDrainRates.add(0.02);
+		kaiokenDrainRates.add(0.04);
+		kaiokenDrainRates.add(0.075);
+		kaiokenDrainRates.add(0.1);
 		skills.put("kaioken", new SkillCosts(kaiokenCosts, kaiokenMultipliers));
+
+		List<Integer> fusionCosts = new ArrayList<>();
+		fusionCosts.add(-1);
+		fusionCosts.add(10000);
+		fusionCosts.add(30000);
+		fusionCosts.add(50000);
+		fusionCosts.add(75000);
+		skills.put("fusion", new SkillCosts(fusionCosts));
     }
 
     public Map<String, SkillCosts> getSkills() {
@@ -158,11 +167,22 @@ public class SkillsConfig {
         if (skillCosts.multipliers == null || skillCosts.multipliers.isEmpty()) {
             return 0.0;
         }
-        if (level < 1 || level > skillCosts.multipliers.size()) {
+        if (level < 1) {
             return 0.0;
         }
         return Math.max(0.0, skillCosts.multipliers.get(level - 1));
     }
+
+	public double getDrainRateForLevel(String skillName, int level) {
+		SkillCosts skillCosts = getSkillCosts(skillName);
+		if (skillCosts.drainRate == null || skillCosts.drainRate.isEmpty()) {
+			return 0.0;
+		}
+		if (level < 1) {
+			return 0.0;
+		}
+		return Math.max(0.0, skillCosts.drainRate.get(level - 1));
+	}
 
     public boolean canPurchaseLevel(String skillName, int level) {
         int cost = getCostForLevel(skillName, level);
@@ -170,21 +190,26 @@ public class SkillsConfig {
     }
 
     public static class SkillCosts {
-        @SerializedName("costs")
         private List<Integer> costs;
-
-        @SerializedName("multipliers")
         private List<Double> multipliers;
+		private List<Double> drainRate;
 
         public SkillCosts(List<Integer> costs) {
             this.costs = costs;
             this.multipliers = null;
+			this.drainRate = null;
         }
 
         public SkillCosts(List<Integer> costs, List<Double> multipliers) {
             this.costs = costs;
             this.multipliers = multipliers;
         }
+
+		public SkillCosts(List<Integer> costs, List<Double> multipliers, List<Double> drainRate) {
+			this.costs = costs;
+			this.multipliers = multipliers;
+			this.drainRate = drainRate;
+		}
 
         public List<Integer> getCosts() {
             return costs;
@@ -193,6 +218,10 @@ public class SkillsConfig {
         public List<Double> getMultipliers() {
             return multipliers;
         }
+
+		public List<Double> getDrainRate() {
+			return drainRate;
+		}
 
         public int getMaxLevel() {
             return costs.size();

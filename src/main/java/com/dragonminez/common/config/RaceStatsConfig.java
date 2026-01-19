@@ -4,117 +4,44 @@ import com.google.gson.annotations.SerializedName;
 
 
 public class RaceStatsConfig {
-
-    @SerializedName("warrior")
     private ClassStats warrior = new ClassStats();
-
-    @SerializedName("spiritualist")
     private ClassStats spiritualist = new ClassStats();
-
-    @SerializedName("martial_artist")
     private ClassStats martialArtist = new ClassStats();
-
-
     public RaceStatsConfig() {}
 
-    public ClassStats getWarrior() {
-        return warrior;
-    }
-
-    public void setWarrior(ClassStats warrior) {
-        this.warrior = warrior;
-    }
-
-    public ClassStats getSpiritualist() {
-        return spiritualist;
-    }
-
-    public void setSpiritualist(ClassStats spiritualist) {
-        this.spiritualist = spiritualist;
-    }
-
-    public ClassStats getMartialArtist() {
-        return martialArtist;
-    }
-
-    public void setMartialArtist(ClassStats martialArtist) {
-        this.martialArtist = martialArtist;
-    }
+    public ClassStats getWarrior() { return warrior; }
+    public ClassStats getSpiritualist() { return spiritualist; }
+    public ClassStats getMartialArtist() { return martialArtist; }
 
 
     public static class ClassStats {
-        @SerializedName("base_stats")
         private BaseStats baseStats = new BaseStats();
-
-        @SerializedName("stat_scaling")
         private StatScaling statScaling = new StatScaling();
-
-        @SerializedName("health_regen_rate")
         private double healthRegenRate = 0.0025;
-
-        @SerializedName("energy_regen_rate")
         private double energyRegenRate = 0.01;
-
-        @SerializedName("stamina_regen_rate")
         private double staminaRegenRate = 0.01;
 
-        public BaseStats getBaseStats() {
-            return baseStats;
-        }
-
-        public void setBaseStats(BaseStats baseStats) {
-            this.baseStats = baseStats;
-        }
-
-        public StatScaling getStatScaling() {
-            return statScaling;
-        }
-
-        public void setStatScaling(StatScaling statScaling) {
-            this.statScaling = statScaling;
-        }
-
-        public double getHealthRegenRate() {
-            return healthRegenRate;
-        }
-
-        public void setHealthRegenRate(double healthRegenRate) {
-            this.healthRegenRate = healthRegenRate;
-        }
-
-        public double getEnergyRegenRate() {
-            return energyRegenRate;
-        }
-
-        public void setEnergyRegenRate(double energyRegenRate) {
-            this.energyRegenRate = energyRegenRate;
-        }
-
-        public double getStaminaRegenRate() {
-            return staminaRegenRate;
-        }
-
-        public void setStaminaRegenRate(double staminaRegenRate) {
-            this.staminaRegenRate = staminaRegenRate;
-        }
+        public BaseStats getBaseStats() { return baseStats; }
+        public StatScaling getStatScaling() { return statScaling; }
+        public double getHealthRegenRate() { return healthRegenRate; }
+        public void setHealthRegenRate(double healthRegenRate) { this.healthRegenRate = healthRegenRate; }
+        public double getEnergyRegenRate() { return energyRegenRate; }
+        public void setEnergyRegenRate(double energyRegenRate) { this.energyRegenRate = energyRegenRate; }
+        public double getStaminaRegenRate() { return staminaRegenRate; }
+        public void setStaminaRegenRate(double staminaRegenRate) { this.staminaRegenRate = staminaRegenRate; }
     }
 
     public static class BaseStats {
         @SerializedName("STR")
         private int strength = 5;
-
         @SerializedName("SKP")
         private int strikePower = 5;
-
         @SerializedName("RES")
         private int resistance = 5;
-
         @SerializedName("VIT")
         private int vitality = 5;
-
         @SerializedName("PWR")
         private int kiPower = 5;
-
         @SerializedName("ENE")
         private int energy = 5;
 
@@ -136,22 +63,16 @@ public class RaceStatsConfig {
     public static class StatScaling {
         @SerializedName("STR_scaling")
         private double strengthScaling = 1.0;
-
         @SerializedName("SKP_scaling")
         private double strikePowerScaling = 1.0;
-
         @SerializedName("STM_scaling")
         private double staminaScaling = 1.0;
-
         @SerializedName("DEF_scaling")
         private double defenseScaling = 1.0;
-
         @SerializedName("VIT_scaling")
         private double vitalityScaling = 1.0;
-
         @SerializedName("PWR_scaling")
         private double kiPowerScaling = 1.0;
-
         @SerializedName("ENE_scaling")
         private double energyScaling = 1.0;
 

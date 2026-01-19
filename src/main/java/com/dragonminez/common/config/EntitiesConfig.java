@@ -5,11 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EntitiesConfig {
-
-	@SerializedName("hard_mode_settings")
 	private HardModeSettings hardModeSettings = new HardModeSettings();
-
-	@SerializedName("entity_stats")
 	private Map<String, EntityStats> entityStats = new HashMap<>();
 
 	public Map<String, EntityStats> getEntityStats() {
@@ -21,10 +17,7 @@ public class EntitiesConfig {
 	}
 
 	public static class HardModeSettings {
-		@SerializedName("hp_multiplier")
 		private double hpMultiplier = 3.0;
-
-		@SerializedName("damage_multiplier")
 		private double damageMultiplier = 2.0;
 
 		public double getHpMultiplier() { return Math.max(1, hpMultiplier); }
@@ -34,11 +27,8 @@ public class EntitiesConfig {
 	}
 
 	public static class EntityStats {
-		@SerializedName("health")
 		private Double health;
-		@SerializedName("melee_damage")
 		private Double meleeDamage;
-		@SerializedName("ki_damage")
 		private Double kiDamage;
 
 		public Double getHealth() { return health != null ? Math.max(1, health) : null; }

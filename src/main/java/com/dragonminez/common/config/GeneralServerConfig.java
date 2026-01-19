@@ -37,6 +37,7 @@ public class GeneralServerConfig {
 		private int tpPerHit = 2;
 		private double HTCTpMultiplier = 2.5;
         private int maxStatValue = 10000;
+		private boolean formsUnlockWithStoryProgression = false;
 		private boolean storyModeEnabled = true;
 		private boolean createDefaultSagas = true;
         private boolean kaiokenStackable = true;
@@ -51,6 +52,7 @@ public class GeneralServerConfig {
 		public int getTpPerHit() { return Math.max(0, tpPerHit); }
 		public double getHTCTpMultiplier() { return Math.max(1.0, HTCTpMultiplier); }
         public int getMaxStatValue() { return Math.max(1000, maxStatValue); }
+		public boolean isFormsUnlockWithStoryProgression() { return formsUnlockWithStoryProgression; }
 		public boolean isStoryModeEnabled() { return storyModeEnabled; }
 		public boolean isCreateDefaultSagas() { return createDefaultSagas; }
 		public boolean isKaiokenStackable() { return kaiokenStackable; }
@@ -79,6 +81,7 @@ public class GeneralServerConfig {
     }
 
 	public static class CombatConfig {
+		private boolean killPlayersOnCombatLogout = true;
 		private double staminaConsumptionRatio = 0.125;
 		private boolean respectAttackCooldown = true;
 		private boolean enableBlocking = true;
@@ -95,6 +98,7 @@ public class GeneralServerConfig {
 		private int dashCooldownSeconds = 4;
 		private int doubleDashCooldownSeconds = 12;
 
+		public boolean isKillPlayersOnCombatLogout() { return killPlayersOnCombatLogout; }
 		public double getStaminaConsumptionRatio() { return Math.max(0, staminaConsumptionRatio); }
 		public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
 		public boolean isEnableBlocking() { return enableBlocking; }
@@ -119,14 +123,15 @@ public class GeneralServerConfig {
 		private boolean saiyanRacialSkill = true;
 		private int saiyanZenkaiAmount = 3;
 		private double saiyanZenkaiHealthRegen = 0.20;
-		private double saiyanZenkaiStatBoost = 0.10;
+		private double saiyanZenkaiStatBoost = 1.10;
 		private String[] saiyanZenkaiBoosts = {"STR", "SKP", "PWR"};
 		private int saiyanZenkaiCooldownSeconds = 900;
 		private boolean namekianRacialSkill = true;
-		private int namekianAsimilationAmount = 4;
-		private double namekianAsimilationHealthRegen = 0.35;
-		private double namekianAsimilationStatBoost = 0.12;
-		private boolean namekianAsimilationOnNpcs = true;
+		private int namekianAssimilationAmount = 4;
+		private double namekianAssimilationHealthRegen = 0.35;
+		private double namekianAssimilationStatBoost = 1.15;
+		private String[] namekianAssimilationBoosts = {"STR", "SKP", "PWR"};
+		private boolean namekianAssimilationOnNamekNpcs = true;
 		private boolean frostDemonRacialSkill = true;
 		private double frostDemonTPBoost = 1.25;
 		private boolean bioAndroidRacialSkill = true;
@@ -136,7 +141,9 @@ public class GeneralServerConfig {
 		private boolean majinReviveSkill = true;
 		private int majinAbsorptionAmount = 3;
 		private double majinAbsorptionHealthRegen = 0.30;
-		private double majinAbsorptionStatBoost = 0.10;
+		private double majinAbsorptionStatsCopy = 1.10;
+		private String[] majinAbsorptionBoosts = {"STR", "SKP", "PWR"};
+		private boolean majinAbsorptionOnMobs = true;
 		private int majinReviveCooldownSeconds = 3600;
 		private double majinReviveHealthRatioPerBlop = 0.25;
 
@@ -146,14 +153,15 @@ public class GeneralServerConfig {
 		public boolean isSaiyanRacialSkill() { return saiyanRacialSkill; }
 		public int getSaiyanZenkaiAmount() { return Math.max(0, saiyanZenkaiAmount); }
 		public double getSaiyanZenkaiHealthRegen() { return Math.max(0, saiyanZenkaiHealthRegen); }
-		public double getSaiyanZenkaiStatBoost() { return Math.max(0, saiyanZenkaiStatBoost); }
+		public double getSaiyanZenkaiStatBoost() { return Math.max(1, saiyanZenkaiStatBoost); }
 		public String[] getSaiyanZenkaiBoosts() { return saiyanZenkaiBoosts; }
 		public int getSaiyanZenkaiCooldownSeconds() { return Math.max(0, saiyanZenkaiCooldownSeconds); }
 		public boolean isNamekianRacialSkill() { return namekianRacialSkill; }
-		public int getNamekianAsimilationAmount() { return Math.max(0, namekianAsimilationAmount); }
-		public double getNamekianAsimilationHealthRegen() { return Math.max(0, namekianAsimilationHealthRegen); }
-		public double getNamekianAsimilationStatBoost() { return Math.max(0, namekianAsimilationStatBoost); }
-		public boolean isNamekianAsimilationOnNpcs() { return namekianAsimilationOnNpcs; }
+		public int getNamekianAssimilationAmount() { return Math.max(0, namekianAssimilationAmount); }
+		public double getNamekianAssimilationHealthRegen() { return Math.max(0, namekianAssimilationHealthRegen); }
+		public double getNamekianAssimilationStatBoost() { return Math.max(0, namekianAssimilationStatBoost); }
+		public String[] getNamekianAssimilationBoosts() { return namekianAssimilationBoosts; }
+		public boolean isNamekianAssimilationOnNamekNpcs() { return namekianAssimilationOnNamekNpcs; }
 		public boolean isFrostDemonRacialSkill() { return frostDemonRacialSkill; }
 		public double getFrostDemonTPBoost() { return Math.max(1, frostDemonTPBoost); }
 		public boolean isBioAndroidRacialSkill() { return bioAndroidRacialSkill; }
@@ -163,7 +171,9 @@ public class GeneralServerConfig {
 		public boolean isMajinReviveSkill() { return majinReviveSkill; }
 		public int getMajinAbsorptionAmount() { return Math.max(0, majinAbsorptionAmount); }
 		public double getMajinAbsorptionHealthRegen() { return Math.max(0, majinAbsorptionHealthRegen); }
-		public double getMajinAbsorptionStatBoost() { return Math.max(0, majinAbsorptionStatBoost); }
+		public double getMajinAbsorptionStatCopy() { return Math.max(0, majinAbsorptionStatsCopy); }
+		public String[] getMajinAbsorptionBoosts() { return majinAbsorptionBoosts; }
+		public boolean isMajinAbsorptionOnMobs() { return majinAbsorptionOnMobs; }
 		public int getMajinReviveCooldownSeconds() { return Math.max(0, majinReviveCooldownSeconds); }
 		public double getMajinReviveHealthRatioPerBlop() { return Math.max(0, majinReviveHealthRatioPerBlop); }
 	}

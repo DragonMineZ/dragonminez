@@ -85,6 +85,18 @@ public class NetworkHandler {
 				.encoder(TravelToPlanetC2S::encode)
 				.consumerMainThread(TravelToPlanetC2S::handle)
 				.add();
+
+		net.messageBuilder(SwitchActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SwitchActionC2S::new)
+				.encoder(SwitchActionC2S::encode)
+				.consumerMainThread(SwitchActionC2S::handle)
+				.add();
+
+		net.messageBuilder(ExecuteActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ExecuteActionC2S::new)
+				.encoder(ExecuteActionC2S::encode)
+				.consumerMainThread(ExecuteActionC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */
