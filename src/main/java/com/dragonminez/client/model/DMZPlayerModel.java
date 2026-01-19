@@ -7,6 +7,7 @@ import com.dragonminez.client.util.RenderUtil;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.ResourceType;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -106,11 +107,21 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
             return resource == ResourceType.GEO ? BASE_MODEL : BASE_ANIMATION;
         }
 
-        final boolean hasCustomModel = !config.getCustomModel().isEmpty();
-        final var gender = data.getCharacter().getGender();
-        int bodyType = data.getCharacter().getBodyType();
+        String customModel = config.getCustomModel();
 
-        var raceId = hasCustomModel ? config.getCustomModel() : rawRaceId;
+        final var character = data.getCharacter();
+        if (character.hasActiveForm()) {
+            FormConfig.FormData activeFormData = character.getActiveFormData();
+            if (activeFormData != null && activeFormData.hasCustomModel()) {
+                customModel = activeFormData.getCustomModel();
+            }
+        }
+
+        final boolean hasCustomModel = customModel != null && !customModel.isEmpty();
+        final var gender = character.getGender();
+        int bodyType = character.getBodyType();
+
+        var raceId = hasCustomModel ? customModel : rawRaceId;
 
         if (!hasCustomModel && resource == ResourceType.ANIMATIONS) {
             raceId = "base";

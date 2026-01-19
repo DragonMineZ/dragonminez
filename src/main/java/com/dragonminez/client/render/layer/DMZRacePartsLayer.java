@@ -48,7 +48,7 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
         int hairType = character.getHairId();
 
         boolean isSaiyan = race.equalsIgnoreCase("saiyan");
-        boolean isTailEnrolled = stats.getStatus().isTailVisible();
+        boolean isTailEnrolled = !stats.getStatus().isTailVisible();
         boolean isNamek = race.equalsIgnoreCase("namekian");
         boolean isMajin = race.equalsIgnoreCase("majin");
         boolean isFrostDemon = race.equalsIgnoreCase("frostdemon");

@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.ActionMode;
@@ -62,6 +63,7 @@ public class ExecuteActionC2S {
 							data.getStatus().setSelectedAction(ActionMode.FORM);
 							TransformationsHelper.cycleSelectedFormGroup(data);
 							needsSync = true;
+							player.playSound(MainSounds.UI_MENU_SWITCH.get());
 						}
 						case "instant_transform" -> {
 							FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
@@ -87,12 +89,7 @@ public class ExecuteActionC2S {
 						case "toggle_tail" -> {
 							data.getStatus().setTailVisible(!data.getStatus().isTailVisible());
 							needsSync = true;
-						}
-						case "toggle_ki_sense" -> {
-							boolean isActive = data.getSkills().isSkillActive("kisense");
-							data.getSkills().setSkillActive("kisense", !isActive);
-							player.sendSystemMessage(Component.translatable(isActive ? "message.dragonminez.skill.kisense.off" : "message.dragonminez.skill.kisense.on"));
-							needsSync = true;
+							player.playSound(MainSounds.UI_MENU_SWITCH.get());
 						}
 						case "toggle_ki_weapon" -> {
 							switch (kiWeaponCycle) {
@@ -118,6 +115,7 @@ public class ExecuteActionC2S {
 								}
 							}
 							needsSync = true;
+							player.playSound(MainSounds.UI_MENU_SWITCH.get());
 						}
 					}
 

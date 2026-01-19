@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -35,6 +36,7 @@ public class SwitchActionC2S {
 					} else {
 						data.getStatus().setSelectedAction(ActionMode.FORM);
 					}
+					player.playSound(MainSounds.UI_MENU_SWITCH.get());
 				});
 			}
 		});
