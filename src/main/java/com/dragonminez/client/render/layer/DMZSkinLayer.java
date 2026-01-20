@@ -8,6 +8,9 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.BioAndroidForms;
+import com.dragonminez.common.util.lists.FrostDemonForms;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -59,6 +62,18 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         String currentForm = character.getActiveForm();
         boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
 
+
+        if (raceName.equals("saiyan") && Objects.equals(currentForm, SaiyanForms.OOZARU)) {
+            String oozaruPath = "textures/entity/races/humansaiyan/oozaru_";
+
+            float[] furColor = ColorUtils.rgbIntToFloat(0x6B1E0E);
+            float[] skinColor = ColorUtils.rgbIntToFloat(0xCC978D);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, oozaruPath + "layer1.png", furColor, partialTick, packedLight, packedOverlay);
+            renderColoredLayer(model, poseStack, animatable, bufferSource, oozaruPath + "layer2.png", skinColor, partialTick, packedLight, packedOverlay);
+
+            return;
+        }
+
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
 
         float[] bodyTint = hexToRGB(character.getBodyColor());
@@ -96,12 +111,12 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
                 String transformTexture = raceName;
                 switch (raceName) {
                     case "bioandroid" -> {
-                        if (currentForm.equals("semi_perfect")) transformTexture = "bioandroid_semi";
-                        else if (currentForm.equals("perfect")) transformTexture = "bioandroid_perfect";
+                        if (currentForm == BioAndroidForms.SEMI_PERFECT) transformTexture = "bioandroid_semi";
+                        else if (currentForm == BioAndroidForms.PERFECT) transformTexture = "bioandroid_perfect";
                     }
                     case "frostdemon" -> {
-                        if (currentForm.equals("form2")) transformTexture = "frostdemon_form2";
-                        else if (currentForm.equals("form3")) transformTexture = "frostdemon_form3";
+                        if (currentForm == FrostDemonForms.SECOND_FORM) transformTexture = "frostdemon_form2";
+                        else if (currentForm == FrostDemonForms.THIRD_FORM) transformTexture = "frostdemon_form3";
                         else if (currentForm.equals("golden")) transformTexture = "frostdemon_golden";
                     }
                     default -> filePrefix = "";
@@ -180,7 +195,16 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
     private void renderFace(PoseStack poseStack, DMZAnimatable animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
         var character = stats.getCharacter();
         String raceName = character.getRace().toLowerCase();
+        String currentForm = character.getActiveForm();
         int bodyType = character.getBodyType();
+
+        if (raceName.equals("saiyan") && Objects.equals(currentForm, SaiyanForms.OOZARU)) {
+            String oozaruFacePath = "textures/entity/races/humansaiyan/oozaru_layer3.png";
+            float[] whiteTint = {1.0f, 1.0f, 1.0f};
+
+            renderColoredLayer(model, poseStack, animatable, bufferSource, oozaruFacePath, whiteTint, partialTick, packedLight, packedOverlay);
+            return;
+        }
 
         boolean isVanillaPlayer = raceName.equals("human") || raceName.equals("saiyan");
         if (isVanillaPlayer && bodyType == 0) {
@@ -350,13 +374,11 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
     private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, DMZAnimatable animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay) {
         poseStack.pushPose();
 
-        float baseScale = 1.0f / 0.9375f;
+        if (scaleInflation > 1.0f) {
+            poseStack.scale(scaleInflation, scaleInflation, scaleInflation);
+        }
 
-        float finalScale = baseScale * scaleInflation;
-
-        poseStack.scale(finalScale, finalScale, finalScale);
-
-        poseStack.translate(0, -0.001f, 0);
+        poseStack.translate(0, 0, 0);
 
         getRenderer().reRender(model, poseStack, bufferSource, (T)animatable, renderType,
                 bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay,

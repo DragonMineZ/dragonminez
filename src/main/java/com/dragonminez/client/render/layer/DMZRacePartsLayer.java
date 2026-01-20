@@ -92,7 +92,7 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
         RenderType partsRenderType = RenderType.entityCutoutNoCull(RACES_PARTS_TEXTURE);
 
         poseStack.pushPose();
-        float baseScale = 1.0666667f;
+        float baseScale = 1.0f;
         poseStack.scale(baseScale, baseScale, baseScale);
 
         getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,

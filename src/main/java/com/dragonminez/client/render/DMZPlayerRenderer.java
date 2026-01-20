@@ -61,24 +61,41 @@ public class DMZPlayerRenderer extends GeoReplacedEntityRenderer<AbstractClientP
     }
 
     @Override
-    public void scaleModelForRender(float widthScale, float heightScale, PoseStack poseStack, DMZAnimatable animatable,
-                                    BakedGeoModel model, boolean isReRender, float partialTick, int packedLight,
-                                    int packedOverlay) {
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, this.currentEntity);
-        var stats = statsCap.orElse(new StatsData(this.currentEntity));
+    public void render(AbstractClientPlayer entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        if (entity == null) {
+            super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+            return;
+        }
 
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
+        var stats = statsCap.orElse(new StatsData(entity));
         var character = stats.getCharacter();
         var activeForm = character.getActiveFormData();
 
+        String race = character.getRaceName().toLowerCase();
+        String currentForm = character.getActiveForm();
+
         float scaling;
-        if (activeForm != null) {
-            scaling = activeForm.getModelScaling();
+
+        if (race.equals("saiyan") && "oozaru".equalsIgnoreCase(currentForm)) {
+            scaling = 1.0f;
         } else {
-            scaling = (float) character.getModelScaling();
+            if (activeForm != null) {
+                scaling = activeForm.getModelScaling();
+            } else {
+                scaling = (float) character.getModelScaling();
+            }
         }
 
+        poseStack.pushPose();
+
         poseStack.scale(scaling, scaling, scaling);
+
+        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+
         this.shadowRadius = 0.4f * scaling;
+
+        poseStack.popPose();
     }
 
     private static EntityRendererProvider.Context createContext() {

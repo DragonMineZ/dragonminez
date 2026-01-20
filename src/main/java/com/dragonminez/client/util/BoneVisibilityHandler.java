@@ -8,6 +8,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 
 public class BoneVisibilityHandler {
 
@@ -15,7 +16,7 @@ public class BoneVisibilityHandler {
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
         if (stats == null) return;
 
-        boolean isFemale = stats.getCharacter().getGender().equals("female");
+        String race = stats.getCharacter().getRaceName().toLowerCase();
 
         hideBone(model, "armorHead", true);
         hideBone(model, "armorBody", true);
@@ -24,10 +25,19 @@ public class BoneVisibilityHandler {
         hideBone(model, "armorRightArm", true);
         hideBone(model, "armorLeftArm", true);
 
-        hideBone(model, "boobas", !isFemale);
+        if (race.equals("human")) {
+            model.getBone("tail1").ifPresent(bone -> setHiddenRecursive(bone, true));
+        }
     }
 
     private static void hideBone(BakedGeoModel model, String boneName, boolean shouldHide) {
         model.getBone(boneName).ifPresent(bone -> bone.setHidden(shouldHide));
+    }
+
+    private static void setHiddenRecursive(GeoBone bone, boolean shouldHide) {
+        bone.setHidden(shouldHide);
+        for (GeoBone child : bone.getChildBones()) {
+            setHiddenRecursive(child, shouldHide);
+        }
     }
 }

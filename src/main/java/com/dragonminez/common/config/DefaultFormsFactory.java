@@ -165,7 +165,7 @@ public class DefaultFormsFactory {
         oozaru.setName(SaiyanForms.OOZARU);
         oozaru.setUnlockOnSkillLevel(0);
         oozaru.setCustomModel("oozaru");
-        oozaru.setModelScaling(2.5f);
+        oozaru.setModelScaling(3.8f);
         oozaru.setStrMultiplier(1.2);
         oozaru.setSkpMultiplier(1.2);
         oozaru.setStmMultiplier(1.0);

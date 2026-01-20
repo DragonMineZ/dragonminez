@@ -5,6 +5,7 @@ import com.dragonminez.client.render.layer.base.ItemArmorLayer;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -44,6 +45,7 @@ public class DMZPlayerArmorLayer<T extends DMZAnimatable> extends ItemArmorLayer
         var character = stats.getCharacter();
         String race = character.getRace().toLowerCase();
         String gender = character.getGender().toLowerCase();
+        String currentForm = character.getActiveForm(); // Obtenemos la forma actual
 
         boolean isArmored = character.getArmored();
 
@@ -51,8 +53,9 @@ public class DMZPlayerArmorLayer<T extends DMZAnimatable> extends ItemArmorLayer
 
             boolean isMajin = race.equals("majin");
             boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
+            boolean isOozaru = race.equals("saiyan") && SaiyanForms.OOZARU.equalsIgnoreCase(currentForm);
 
-            if (isMajin || isFemaleHumanOrSaiyan) {
+            if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
                 if (!isArmored) {
                     return null;
                 } else {
@@ -62,7 +65,6 @@ public class DMZPlayerArmorLayer<T extends DMZAnimatable> extends ItemArmorLayer
 
         return switch (boneName) {
             case "armorHead", "armor_head" -> this.helmetStack;
-
             case "armorBody", "armor_body",
                  "armorRightArm", "armor_right_arm",
                  "armorLeftArm", "armor_left_arm" -> this.chestplateStack;

@@ -124,8 +124,9 @@ public class TransformationsHelper {
 			nextGroup = unlockedGroups.get(index + 1);
 		}
 
-		statsData.getCharacter().setSelectedFormGroup(nextGroup);
-	}
+        if(nextGroup != null ) statsData.getCharacter().setSelectedFormGroup(nextGroup);
+
+    }
 
 	private static boolean isDefaultGroup(String race, String group) {
 		return switch (race) {
