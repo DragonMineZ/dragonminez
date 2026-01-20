@@ -96,7 +96,7 @@ public class TexturedTextButton extends Button {
         private int backgroundColor = 0;
         private Component message = Component.empty();
         private OnPress onPress;
-        private SoundEvent sound = MainSounds.UI_NAVE_COOLDOWN.get();
+		private SoundEvent sound = MainSounds.PIP_MENU.get();
 
         public Builder position(int x, int y) {
             this.x = x;

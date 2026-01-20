@@ -3,11 +3,6 @@ package com.dragonminez.common.init.entities;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
-import com.dragonminez.common.init.MainSounds;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -96,7 +91,7 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
                     if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) {
                         verticalSpeed = 0.4;
                     }
-                    else if (KeyBinds.DESCEND_KEY.isDown()) {
+                    else if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
                         verticalSpeed = -0.4;
                     }
                 }

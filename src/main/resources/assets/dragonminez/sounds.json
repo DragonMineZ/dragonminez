@@ -280,6 +280,71 @@
     "sounds": [
       "dragonminez:tp"
     ]
+  },
+  "tp_short": {
+    "subtitle": "sounds.dragonminez.tp_short",
+    "sounds": [
+      "dragonminez:tp_short"
+    ]
+  },
+  "knockback_character": {
+    "subtitle": "sounds.dragonminez.knockback_character",
+    "sounds": [
+      "dragonminez:knockback_character"
+    ]
+  },
+  "lockon": {
+    "subtitle": "sounds.dragonminez.lockon",
+    "sounds": [
+      "dragonminez:lockon"
+    ]
+  },
+  "evasion1": {
+    "subtitle": "sounds.dragonminez.evasion1",
+    "sounds": [
+      "dragonminez:evasion1"
+    ]
+  },
+  "evasion2": {
+    "subtitle": "sounds.dragonminez.evasion2",
+    "sounds": [
+      "dragonminez:evasion2"
+    ]
+  },
+  "confirm_menu": {
+    "subtitle": "sounds.dragonminez.confirm_menu",
+    "sounds": [
+      "dragonminez:confirm_menu"
+    ]
+  },
+  "absorb1": {
+    "subtitle": "sounds.dragonminez.absorb1",
+    "sounds": [
+      "dragonminez:absorb1"
+    ]
+  },
+  "absorb2": {
+    "subtitle": "sounds.dragonminez.absorb2",
+    "sounds": [
+      "dragonminez:absorb2"
+    ]
+  },
+  "switch_off": {
+    "subtitle": "sounds.dragonminez.switch_off",
+    "sounds": [
+      "dragonminez:switch_off"
+    ]
+  },
+  "switch_on": {
+    "subtitle": "sounds.dragonminez.switch_on",
+    "sounds": [
+      "dragonminez:switch_on"
+    ]
+  },
+  "pip_menu": {
+    "subtitle": "sounds.dragonminez.pip_menu",
+    "sounds": [
+      "dragonminez:pip_menu"
+    ]
   }
-
 }

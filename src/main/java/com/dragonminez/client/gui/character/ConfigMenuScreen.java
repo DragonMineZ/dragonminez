@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
+import com.dragonminez.common.init.MainSounds;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -116,6 +117,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
     private void initConfigButtons() {
         clearConfigButtons();
+		LivingEntity player = this.minecraft.player;
 
         int rightPanelX = this.width - 163;
         int centerY = this.height / 2;
@@ -137,6 +139,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
                 SwitchButton switchBtn = new SwitchButton(switchX, switchY, isOn, Component.empty(), button -> {
                     modifyConfigValue(index, 1);
                     ((SwitchButton) button).toggle();
+					if (isOn) player.playSound(MainSounds.SWITCH_OFF.get());
+					else player.playSound(MainSounds.SWITCH_ON.get());
                 });
                 switchButtons.add(switchBtn);
                 this.addRenderableWidget(switchBtn);

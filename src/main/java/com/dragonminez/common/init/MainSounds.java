@@ -8,6 +8,8 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.rmi.registry.Registry;
+
 public final class MainSounds {
 
 	public static final DeferredRegister<SoundEvent> SOUND_EVENTS_REGISTER =
@@ -26,6 +28,9 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> BLOCK3 = registerSoundEvent("block3");
     public static final RegistryObject<SoundEvent> PARRY = registerSoundEvent("parry");
     public static final RegistryObject<SoundEvent> UNBLOCK = registerSoundEvent("unblock");
+	public static final RegistryObject<SoundEvent> EVASION1 = registerSoundEvent("evasion1");
+	public static final RegistryObject<SoundEvent> EVASION2 = registerSoundEvent("evasion2");
+	public static final RegistryObject<SoundEvent> KNOCKBACK_CHARACTER = registerSoundEvent("knockback_character");
 
     public static final RegistryObject<SoundEvent> DRAGONRADAR = registerSoundEvent("dragonradar");
 	public static final RegistryObject<SoundEvent> NUBE = registerSoundEvent("nube");
@@ -47,10 +52,18 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> KI_CHARGE_LOOP = registerSoundEvent("ki_charge_loop");
 	public static final RegistryObject<SoundEvent> TURBO_LOOP = registerSoundEvent("turbo_loop");
     public static final RegistryObject<SoundEvent> TP = registerSoundEvent("tp");
+	public static final RegistryObject<SoundEvent> TP_SHORT = registerSoundEvent("tp_short");
+	public static final RegistryObject<SoundEvent> ABSORB1 = registerSoundEvent("absorb1");
+	public static final RegistryObject<SoundEvent> ABSORB2 = registerSoundEvent("absorb2");
 
 	public static final RegistryObject<SoundEvent> UI_MENU_SWITCH = registerSoundEvent("ui_menu_switch");
+	public static final RegistryObject<SoundEvent> CONFIRM_MENU = registerSoundEvent("confirm_menu");
+	public static final RegistryObject<SoundEvent> PIP_MENU = registerSoundEvent("pip_menu");
 	public static final RegistryObject<SoundEvent> UI_NAVE_COOLDOWN = registerSoundEvent("ui_nave_cooldown");
 	public static final RegistryObject<SoundEvent> UI_NAVE_TAKEOFF = registerSoundEvent("ui_nave_takeoff");
+	public static final RegistryObject<SoundEvent> SWITCH_OFF = registerSoundEvent("switch_off");
+	public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvent("switch_on");
+	public static final RegistryObject<SoundEvent> LOCKON = registerSoundEvent("lockon");
 
 	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_AMBIENT = registerSoundEvent("entity.frieza.s.ambient");
 	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_HURT = registerSoundEvent("entity.frieza.s.hurt");

@@ -8,13 +8,13 @@
 
   "//": "KEYS",
   "key.categories.dragonminez": "DragonMine Z",
-  "key.dragonminez.open_character_menu": "Open Character Menu",
+  "key.dragonminez.stats_menu": "Stats Menu",
   "key.dragonminez.ki_charge": "Charge Ki",
-  "key.dragonminez.descend_key": "Descend",
-  "key.dragonminez.transform_key": "Transform",
+  "key.dragonminez.second_function_key": "Second Func",
+  "key.dragonminez.action_key": "Action",
   "key.dragonminez.spacepod_menu": "Spacepod Menu",
   "key.dragonminez.utility_menu": "Utility Menu",
-  "key.dragonminez.lock_on_target": "Lock on Target",
+  "key.dragonminez.lock_on": "Lock on",
   "key.dragonminez.ki_sense": "Ki Sense",
 
   "//": "GUI",

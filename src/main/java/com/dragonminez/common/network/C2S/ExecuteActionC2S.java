@@ -63,7 +63,6 @@ public class ExecuteActionC2S {
 							data.getStatus().setSelectedAction(ActionMode.FORM);
 							TransformationsHelper.cycleSelectedFormGroup(data);
 							needsSync = true;
-							player.playSound(MainSounds.UI_MENU_SWITCH.get());
 						}
 						case "instant_transform" -> {
 							FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
@@ -89,7 +88,6 @@ public class ExecuteActionC2S {
 						case "toggle_tail" -> {
 							data.getStatus().setTailVisible(!data.getStatus().isTailVisible());
 							needsSync = true;
-							player.playSound(MainSounds.UI_MENU_SWITCH.get());
 						}
 						case "toggle_ki_weapon" -> {
 							switch (kiWeaponCycle) {
@@ -115,7 +113,6 @@ public class ExecuteActionC2S {
 								}
 							}
 							needsSync = true;
-							player.playSound(MainSounds.UI_MENU_SWITCH.get());
 						}
 					}
 

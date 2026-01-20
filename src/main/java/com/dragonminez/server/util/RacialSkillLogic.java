@@ -3,6 +3,7 @@ package com.dragonminez.server.util;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.stats.Cooldowns;
@@ -158,6 +159,8 @@ public class RacialSkillLogic {
 		data.getStatus().setDrainingTargetId(target.getId());
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN_ACTIVE, duration);
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);
+		player.playSound(MainSounds.TP_SHORT.get());
+		target.playSound(MainSounds.TP_SHORT.get());
 	}
 
 	private static void teleportBehindTarget(ServerPlayer player, LivingEntity target) {

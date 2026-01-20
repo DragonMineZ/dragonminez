@@ -7,6 +7,7 @@ import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
@@ -470,6 +471,7 @@ public class TickHandler {
 					if (data.getResources().getCurrentEnergy() < data.getMaxEnergy()) {
 						data.getResources().addEnergy((int)(drainPerSecond * 5));
 					}
+					target.level().playLocalSound(target.blockPosition(), MainSounds.ABSORB1.get(), target.getSoundSource(), 1.0f, 1.0f, false);
 
 					if (target.getHealth() <= 1.0f) {
 						target.hurtMarked = true;
@@ -494,6 +496,8 @@ public class TickHandler {
 				target.hurtMarked = true;
 				player.setDeltaMovement(look.scale(-1.0).add(0, 0.3, 0));
 				player.hurtMarked = true;
+				target.playSound(MainSounds.KNOCKBACK_CHARACTER.get());
+				player.playSound(MainSounds.KNOCKBACK_CHARACTER.get());
 			}
 			data.getStatus().setDrainingTargetId(-1);
 			player.removeEffect(MainEffects.STUN.get());

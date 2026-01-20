@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -55,6 +56,7 @@ public class LockOnEvent {
 			findTargetInFront(player, range).ifPresent(target -> {
 				lockedTarget = target;
 			});
+			player.playSound(MainSounds.LOCKON.get());
 		});
 	}
 

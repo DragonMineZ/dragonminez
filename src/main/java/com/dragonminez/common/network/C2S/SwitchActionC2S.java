@@ -36,7 +36,6 @@ public class SwitchActionC2S {
 					} else {
 						data.getStatus().setSelectedAction(ActionMode.FORM);
 					}
-					player.playSound(MainSounds.UI_MENU_SWITCH.get());
 				});
 			}
 		});
