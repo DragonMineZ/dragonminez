@@ -3,7 +3,6 @@
     import com.dragonminez.Reference;
     import com.dragonminez.client.render.DMZPlayerRenderer;
     import com.dragonminez.client.render.data.DMZAnimatable;
-    import com.dragonminez.client.util.BoneVisibilityHandler;
     import com.dragonminez.common.init.armor.DbzArmorItem;
     import com.dragonminez.common.stats.StatsCapability;
     import com.dragonminez.common.stats.StatsProvider;
@@ -23,15 +22,13 @@
     import net.minecraftforge.registries.ForgeRegistries;
     import software.bernie.geckolib.cache.object.BakedGeoModel;
     import software.bernie.geckolib.cache.object.GeoBone;
-    import software.bernie.geckolib.model.GeoModel;
     import software.bernie.geckolib.renderer.GeoRenderer;
     import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
     import java.util.HashMap;
     import java.util.Map;
-    import java.util.Optional;
 
-    public class DMZMajinArmorLayer extends GeoRenderLayer<DMZAnimatable> {
+    public class DMZCustomArmorLayer extends GeoRenderLayer<DMZAnimatable> {
 
         private static final ResourceLocation MAJIN_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
                 "geo/armor/armormajinfat.geo.json");
@@ -40,7 +37,7 @@
             private static final ResourceLocation OOZARU_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
                     "geo/armor/armoroozaru.geo.json");
 
-        public DMZMajinArmorLayer(GeoRenderer<DMZAnimatable> entityRendererIn) {
+        public DMZCustomArmorLayer(GeoRenderer<DMZAnimatable> entityRendererIn) {
             super(entityRendererIn);
         }
 

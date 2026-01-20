@@ -1,6 +1,5 @@
 package com.dragonminez.client.render;
 
-import com.dragonminez.Reference;
 import com.dragonminez.client.model.DMZPlayerModel;
 import com.dragonminez.client.render.data.DMZAnimatable;
 import com.dragonminez.client.render.layer.*;
@@ -18,19 +17,13 @@ import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoReplacedEntityRenderer;
-
-import java.util.Optional;
 
 public class DMZPlayerRenderer extends GeoReplacedEntityRenderer<AbstractClientPlayer, DMZAnimatable> {
 
@@ -42,7 +35,7 @@ public class DMZPlayerRenderer extends GeoReplacedEntityRenderer<AbstractClientP
         this.shadowRadius = 0.4f;
         this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
         this.addRenderLayer(new DMZPlayerArmorLayer<>(this));
-        this.addRenderLayer(new DMZMajinArmorLayer(this));
+        this.addRenderLayer(new DMZCustomArmorLayer(this));
         this.addRenderLayer(new DMZSkinLayer<>(this));
         this.addRenderLayer(new DMZHairLayer<>(this));
         this.addRenderLayer(new DMZRacePartsLayer(this));
