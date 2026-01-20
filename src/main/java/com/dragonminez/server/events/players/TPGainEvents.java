@@ -24,7 +24,7 @@ public class TPGainEvents {
 		final int[] modifiedTP = {event.getTpGain()};
 
         if (event.getPlayer().level().dimension().equals(HTCDimension.HTC_KEY)) {
-            double htcMultiplier = ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier();
+            double htcMultiplier = ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier() - 1.0;
             modifiedTP[0] = (int) (baseTP + baseTP * htcMultiplier);
         }
 
@@ -50,7 +50,7 @@ public class TPGainEvents {
 		if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isFrostDemonRacialSkill()) {
 			StatsProvider.get(StatsCapability.INSTANCE, event.getPlayer()).ifPresent(data -> {
 				if (data.getCharacter().getRace().equals("frostdemon")) {
-					double frostDemonMultiplier = ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost();
+					double frostDemonMultiplier = ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost() - 1.0;
 					modifiedTP[0] = (int) (modifiedTP[0] + baseTP * frostDemonMultiplier);
 				}
 			});

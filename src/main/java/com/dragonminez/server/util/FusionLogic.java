@@ -24,10 +24,10 @@ import java.util.UUID;
 public class FusionLogic {
 	public static final int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
 
-	public static void executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
+	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
 		if (!lData.getCharacter().getRaceName().equals(pData.getCharacter().getRaceName())) {
 			leader.sendSystemMessage(Component.translatable("message.dragonminez.fusion.different_race"));
-			return;
+			return false;
 		}
 
 		int lvl1 = getPlayerPowerLevel(lData);
@@ -38,15 +38,16 @@ public class FusionLogic {
 			double diff = (double) Math.abs(lvl1 - lvl2) / Math.max(lvl1, lvl2);
 			if (diff > threshold) {
 				leader.sendSystemMessage(Component.translatable("message.dragonminez.fusion.level_gap"));
-				return;
+				return false;
 			}
 		}
 
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.METAMORU);
-		if (MinecraftForge.EVENT_BUS.post(event)) return;
+		if (MinecraftForge.EVENT_BUS.post(event)) return false;
 		applyFusion(leader, partner, lData, pData, "METAMORU", lvl1, lvl2);
 		lData.getStatus().setFusionTimer(FUSION_DURATION);
 		leader.sendSystemMessage(Component.translatable("message.dragonminez.fusion.metamoru.success"));
+		return true;
 	}
 
 	public static void executePothala(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
@@ -98,9 +99,6 @@ public class FusionLogic {
 		StatsData leaderData = isLeader ? data : (partner != null ? StatsProvider.get(StatsCapability.INSTANCE, partner).orElse(null) : null);
 
 		if (leaderData != null) {
-			if (leaderData.getStatus().getOriginalAppearance() != null) {
-				leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
-			}
 			leaderData.getBonusStats().removeAllBonuses("FusionBonus");
 
 			leaderData.getStatus().setFused(false);
@@ -108,11 +106,15 @@ public class FusionLogic {
 			leaderData.getStatus().setFusionPartnerUUID(null);
 			leaderData.getStatus().setFusionTimer(0);
 
+			if (leaderData.getStatus().getOriginalAppearance() != null) {
+				leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
+			}
+
 			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) {
 				leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 			}
 
-			if (forcedByDeath && "POTHALA".equals(leaderData.getStatus().getFusionType()) && leaderRef != null) {
+			if ("POTHALA".equals(leaderData.getStatus().getFusionType())) {
 				removeEarring(leaderRef);
 			}
 
@@ -131,9 +133,7 @@ public class FusionLogic {
 
 				partner.stopRiding();
 				partner.setGameMode(GameType.SURVIVAL);
-				if (leaderRef != null) {
-					partner.teleportTo(leaderRef.getX() + 1, leaderRef.getY(), leaderRef.getZ() + 1);
-				}
+				partner.teleportTo(leaderRef.getX() + 1, leaderRef.getY(), leaderRef.getZ() + 1);
 
 				if (forcedByDeath && "POTHALA".equals(pData.getStatus().getFusionType())) {
 					removeEarring(partner);

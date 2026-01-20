@@ -18,9 +18,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -385,11 +382,12 @@ public class TickHandler {
 
 		for (ServerPlayer target : nearby) {
 			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(targetData -> {
-				if (targetData.getStatus().getSelectedAction() == ActionMode.FUSION && targetData.getResources().getActionCharge() >= 100 && targetData.getStatus().isActionCharging()) {
+				if (targetData.getStatus().getSelectedAction() == ActionMode.FUSION && targetData.getResources().getActionCharge() >= 50 && targetData.getStatus().isActionCharging()) {
 					if (data.getResources().getActionCharge() >= 100) {
-						FusionLogic.executeMetamoru(player, target, data, targetData);
-						data.getResources().setActionCharge(0);
-						targetData.getResources().setActionCharge(0);
+						if (FusionLogic.executeMetamoru(player, target, data, targetData)) {
+							data.getResources().setActionCharge(0);
+							targetData.getResources().setActionCharge(0);
+						}
 					}
 				}
 			});
@@ -471,7 +469,8 @@ public class TickHandler {
 					if (data.getResources().getCurrentEnergy() < data.getMaxEnergy()) {
 						data.getResources().addEnergy((int)(drainPerSecond * 5));
 					}
-					target.level().playLocalSound(target.blockPosition(), MainSounds.ABSORB1.get(), target.getSoundSource(), 1.0f, 1.0f, false);
+					target.playSound(MainSounds.ABSORB1.get());
+					player.playSound(MainSounds.ABSORB1.get());
 
 					if (target.getHealth() <= 1.0f) {
 						target.hurtMarked = true;

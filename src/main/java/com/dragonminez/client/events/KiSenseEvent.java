@@ -51,8 +51,9 @@ public class KiSenseEvent {
 			if (skillLevel > 0) {
 				double maxDistance = 5 + 3.0 * skillLevel;
 				if (entity.distanceToSqr(player) <= (maxDistance * maxDistance)) {
-
-					renderHealthBar(event.getPoseStack(), entity, event.getMultiBufferSource());
+					if (!entity.isInvisible() || !entity.isInvisibleTo(player)) {
+						renderHealthBar(event.getPoseStack(), entity, event.getMultiBufferSource());
+					}
 				}
 			}
 		});

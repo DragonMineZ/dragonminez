@@ -147,7 +147,7 @@ public class RacialSkillLogic {
 		if (!config.isBioAndroidRacialSkill()) return;
 
 		if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {
-			player.sendSystemMessage(Component.translatable("message.dragonminez.racial.cooldown"));
+			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);
 			return;
 		}
 
@@ -177,12 +177,8 @@ public class RacialSkillLogic {
 	}
 
 	private static boolean canOverpowerTarget(ServerPlayer player, StatsData playerData, LivingEntity target) {
-		double maxDmg = Math.max(playerData.getMeleeDamage(),
-				Math.max(playerData.getStrikeDamage(), playerData.getKiDamage()));
-
-		if (target.getHealth() > maxDmg) {
-			return false;
-		}
+		double maxDmg = Math.max(playerData.getMaxMeleeDamage(), Math.max(playerData.getMaxStrikeDamage(), playerData.getMaxKiDamage()));
+		if (target.getHealth() > maxDmg) return false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
 			AtomicBoolean levelCheck = new AtomicBoolean(false);

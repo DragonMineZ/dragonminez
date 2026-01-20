@@ -118,7 +118,7 @@ public class UtilityMenuScreen extends Screen {
 			case 2 -> {
 				if (statsData.getSkills().hasSkill("fusion")) {
 					line1 = Component.translatable("gui.action.dragonminez.fusion").withStyle(ChatFormatting.BOLD);
-					line2 = Component.translatable("gui.action.dragonminez." + statsData.getSkills().isSkillActive("fusion"));
+					line2 = Component.translatable("gui.action.dragonminez." + (statsData.getStatus().getSelectedAction() == ActionMode.FUSION ? "true" : "false"));
 					isSelected = currentMode == ActionMode.FUSION;
 				}
 			}

@@ -247,8 +247,8 @@ public class StatsCommand {
             }
 			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 
-			float newMaxHealth = data.getMaxHealth();
-			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
+			float newMaxHealth = player.getMaxHealth();
+			if (newMaxHealth > oldMaxHealth) player.setHealth(newMaxHealth);
 			int newMaxEnergy = data.getMaxEnergy();
 			if (newMaxEnergy > oldMaxEnergy) data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
 			int newMaxStamina = data.getMaxStamina();
@@ -281,6 +281,7 @@ public class StatsCommand {
 			data.getSkills().removeAllSkills();
 			data.getEffects().removeAllEffects();
 			data.getCooldowns().clearCooldowns();
+			data.getBonusStats().clearAllStats();
 
 			player.setHealth(20.0F);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
