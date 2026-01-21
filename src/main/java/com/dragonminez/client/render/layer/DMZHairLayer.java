@@ -4,6 +4,7 @@ import com.dragonminez.client.render.data.DMZAnimatable;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -16,6 +17,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Matrix4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -38,19 +40,15 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
     }
 
     @Override
-    public void render(
-            PoseStack poseStack,
-            T animatable,
-            BakedGeoModel model,
-            RenderType renderType,
-            MultiBufferSource bufferSource,
-            VertexConsumer buffer,
-            float partialTick,
-            int packedLight,
-            int packedOverlay) {
-
+    public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
         AbstractClientPlayer player = getPlayer();
         if (player == null) return;
+
+        // No renderizar si tiene un casco que no sea pothala, es invisible o spectator
+        if (player.isInvisible() || player.isSpectator()) return;
+
+        var headItem = player.getItemBySlot(EquipmentSlot.HEAD);
+        if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")) return;
 
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
         var stats = statsCap.orElse(new StatsData(player));
@@ -94,16 +92,7 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         }
 
         RenderUtils.translateToPivotPoint(poseStack, headBone);
-
-        HairRenderer.render(
-                poseStack,
-                bufferSource,
-                effectiveHair,
-                character.getHairColor(),
-                packedLight,
-                packedOverlay
-        );
-
+        HairRenderer.render(poseStack, bufferSource, effectiveHair, character, character.getHairColor(), packedLight, packedOverlay);
         poseStack.popPose();
     }
 

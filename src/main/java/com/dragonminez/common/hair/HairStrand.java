@@ -3,7 +3,8 @@ package com.dragonminez.common.hair;
 import net.minecraft.nbt.CompoundTag;
 
 public class HairStrand {
-    public static final int MAX_LENGTH = 4;
+    public static final int MAX_CUBE_COUNT = 4;
+    public static final int MAX_LENGTH = 6;
     private int length = 0;
 
     private float offsetX = 0.0f;
@@ -56,6 +57,22 @@ public class HairStrand {
     
     public boolean isVisible() {
         return length > 0;
+    }
+
+    // Obtener la cantidad real de cubos (máximo 4)
+    public int getCubeCount() {
+        return Math.min(length, MAX_CUBE_COUNT);
+    }
+
+    // Obtener el factor de estiramiento (1.0 a 2.5)
+    // De 0-4: factor 1.0
+    // De 5-10: factor 1.0 a 2.5
+    public float getStretchFactor() {
+        if (length <= MAX_CUBE_COUNT) {
+            return 1.0f;
+        }
+        int extraLength = length - MAX_CUBE_COUNT;
+        return 1.0f + (extraLength * 0.25f); // 0.25 por cada nivel extra
     }
 
     public float getOffsetX() { return offsetX; }

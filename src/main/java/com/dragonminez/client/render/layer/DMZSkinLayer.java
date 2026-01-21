@@ -71,7 +71,7 @@ public class DMZSkinLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         boolean isDefaultBody = (bodyType == 0);
 
 
-        if (raceName.equals("saiyan") && !stats.getStatus().isTailVisible()) {
+        if (raceName.equals("saiyan") && stats.getStatus().isTailVisible() && !player.isSpectator() && !player.isInvisible()) {
             var tailColor = ColorUtils.rgbIntToFloat(0x6B1E0E);
 
             String racePartsPath = "textures/entity/races/tail1.png";

@@ -98,8 +98,11 @@ public class ForgeClientEvents {
 
 		if (KeyBinds.UTILITY_MENU.isDown()) {
 			if (mc.screen == null) {
-				mc.setScreen(new UtilityMenuScreen());
-				mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+				StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+					if (!data.getStatus().hasCreatedCharacter()) return;
+					mc.setScreen(new UtilityMenuScreen());
+					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+				});
 			}
 		}
 

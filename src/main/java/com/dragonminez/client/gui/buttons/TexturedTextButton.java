@@ -26,7 +26,7 @@ public class TexturedTextButton extends Button {
     private final int hoverV;
     private final int normalTextColor;
     private final int hoverTextColor;
-    private final int backgroundColor;
+    private int backgroundColor;
     private final SoundEvent sound;
 
     public TexturedTextButton(int x, int y, int width, int height, ResourceLocation texture,
@@ -83,6 +83,10 @@ public class TexturedTextButton extends Button {
                 this.getX() + this.width / 2,
                 this.getY() + (this.height - 8) / 2,
                 textColor);
+    }
+
+    public void setBackgroundColor(int color) {
+        this.backgroundColor = color;
     }
 
     public static class Builder {

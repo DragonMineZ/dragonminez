@@ -117,6 +117,7 @@ public class FusionLogic {
 			if ("POTHALA".equals(leaderData.getStatus().getFusionType())) {
 				removeEarring(leaderRef);
 			}
+			PartyManager.leaveParty(leaderRef);
 
 			NetworkHandler.sendToPlayer(new StatsSyncS2C(leaderRef), leaderRef);
 		}
@@ -138,6 +139,7 @@ public class FusionLogic {
 				if (forcedByDeath && "POTHALA".equals(pData.getStatus().getFusionType())) {
 					removeEarring(partner);
 				}
+				PartyManager.leaveParty(partner);
 
 				NetworkHandler.sendToPlayer(new StatsSyncS2C(partner), partner);
 			});
@@ -192,7 +194,7 @@ public class FusionLogic {
 
 	private static void removeEarring(ServerPlayer player) {
 		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (head.getItem().getDescriptionId().contains("potahala")) {
+		if (head.getItem().getDescriptionId().contains("pothala")) {
 			Inventory inv = player.getInventory();
 			inv.setItem(39, ItemStack.EMPTY);
 		}

@@ -98,6 +98,12 @@ public class NetworkHandler {
 				.encoder(ExecuteActionC2S::encode)
 				.consumerMainThread(ExecuteActionC2S::handle)
 				.add();
+
+		net.messageBuilder(UpdateCustomHairC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(UpdateCustomHairC2S::decode)
+				.encoder(UpdateCustomHairC2S::encode)
+				.consumerMainThread(UpdateCustomHairC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */

@@ -63,19 +63,19 @@ public class CustomHair {
 
         switch (face) {
             case FRONT -> {
-                strand.setOffset(gridX, 5, 3.5f);
-                strand.setRotation(90, 0, 0);
-            }
-            case BACK -> {
-                strand.setOffset(gridX, 5 + rowYOffset, -gridZ);
+                strand.setOffset(gridX, 7.15f, -4f);
                 strand.setRotation(-90, 0, 0);
             }
+            case BACK -> {
+                strand.setOffset(gridX, 7.15f + rowYOffset, 4f);
+                strand.setRotation(90, 0, 0);
+            }
             case LEFT -> {
-                strand.setOffset(-3f, 7 + rowYOffset, gridX);
+                strand.setOffset(-3.95f, 7.15f + rowYOffset, 0f + gridX);
                 strand.setRotation(0, 0, 90);
             }
             case RIGHT -> {
-                strand.setOffset(3f, 7 + rowYOffset, -gridX);
+                strand.setOffset(3.95f, 7.15f + rowYOffset, -0f - gridX);
                 strand.setRotation(0, 0, -90);
             }
             case TOP -> {
@@ -134,6 +134,21 @@ public class CustomHair {
         this.globalColor = color;
     }
 
+    public String getEffectiveColor(HairStrand strand, com.dragonminez.common.stats.Character character) {
+        if (character != null && character.hasActiveForm()) return character.getHairColor();
+        if (strand.hasCustomColor()) return strand.getColor();
+
+        if (character != null) {
+            String hairColor = character.getHairColor();
+            if (hairColor != null && !hairColor.isEmpty()) {
+                return hairColor;
+            }
+        }
+
+        return globalColor;
+    }
+
+    @Deprecated
     public String getEffectiveColor(HairStrand strand) {
         if (strand.hasCustomColor()) {
             return strand.getColor();

@@ -80,11 +80,11 @@ public class ColorSlider extends AbstractSliderButton {
         Component msg = this.getMessage();
         String messageText = msg.getString();
 
-        if (messageText.equals("Hue")) {
+        if (messageText.equals("Hue") || messageText.equals("H")) {
             drawHueGradient(graphics);
-        } else if (messageText.equals("Saturation")) {
+        } else if (messageText.equals("Saturation") || messageText.equals("S")) {
             drawSaturationGradient(graphics);
-        } else if (messageText.equals("Value")) {
+        } else if (messageText.equals("Value") || messageText.equals("V")) {
             drawValueGradient(graphics);
         } else {
             graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0xFF808080);

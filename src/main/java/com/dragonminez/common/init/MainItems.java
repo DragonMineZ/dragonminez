@@ -48,13 +48,13 @@ public final class MainItems {
 
 	//POTHALAS
 	public static final RegistryObject<Item> POTHALA_LEFT =
-			ITEM_REGISTER.register("pothala_left", () -> new Item(properties.stacksTo(1).fireResistant()));
+			ITEM_REGISTER.register("pothala_left", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_left", false, false));
 	public static final RegistryObject<Item> POTHALA_RIGHT =
-			ITEM_REGISTER.register("pothala_right", () -> new Item(properties.stacksTo(1).fireResistant()));
+			ITEM_REGISTER.register("pothala_right", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_right", false, false));
 	public static final RegistryObject<Item> GREEN_POTHALA_LEFT =
-			ITEM_REGISTER.register("green_pothala_left", () -> new Item(properties.stacksTo(1).fireResistant()));
+			ITEM_REGISTER.register("green_pothala_left", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_left", false, false));
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
-			ITEM_REGISTER.register("green_pothala_right", () -> new Item(properties.stacksTo(1).fireResistant()));
+			ITEM_REGISTER.register("green_pothala_right", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_right", false, false));
 
     public static final RegistryObject<Item> RED_SCOUTER =
             ITEM_REGISTER.register("red_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));

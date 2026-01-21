@@ -36,20 +36,27 @@ public class RaceSelectionScreen extends Screen {
     private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
     private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
     private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-    private static final ResourceLocation PANORAMA_COLD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
+    private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
     private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
 
     private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
     private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
     private final PanoramaRenderer panoramaNamek = new PanoramaRenderer(new CubeMap(PANORAMA_NAMEK));
     private final PanoramaRenderer panoramaBio = new PanoramaRenderer(new CubeMap(PANORAMA_BIO));
-    private final PanoramaRenderer panoramaCold = new PanoramaRenderer(new CubeMap(PANORAMA_COLD));
+    private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
     private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
+
+    protected static boolean GLOBAL_SWITCHING = false;
 
     private final Character character;
     private final String[] availableRaces;
     private int selectedRaceIndex = 0;
 	private int oldGuiScale = 0;
+	private boolean isSwitchingMenu = false;
+
+    private float playerRotation = 180.0f;
+    private boolean isDraggingModel = false;
+    private double lastMouseX = 0;
 
     private CustomTextureButton leftButton;
     private CustomTextureButton rightButton;
@@ -143,7 +150,7 @@ public class RaceSelectionScreen extends Screen {
             case "saiyan" -> panoramaSaiyan;
             case "namekian" -> panoramaNamek;
             case "bioandroid" -> panoramaBio;
-            case "frostdemon" -> panoramaCold;
+            case "frostdemon" -> panoramaFrost;
             case "majin" -> panoramaMajin;
             default -> panoramaHuman;
         };
@@ -209,11 +216,8 @@ public class RaceSelectionScreen extends Screen {
         LivingEntity player = Minecraft.getInstance().player;
         if (player == null) return;
 
-        float xRotation = (float) Math.atan((double)((float)y - mouseY) / 40.0F);
-        float yRotation = (float) Math.atan((double)((float)x - mouseX) / 40.0F);
-
         Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
-        Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float)Math.PI / 180F));
+        Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
         pose.mul(cameraOrientation);
 
         float yBodyRotO = player.yBodyRot;
@@ -222,14 +226,14 @@ public class RaceSelectionScreen extends Screen {
         float yHeadRotO = player.yHeadRotO;
         float yHeadRot = player.yHeadRot;
 
-        player.yBodyRot = 180.0F + yRotation * 20.0F;
-        player.setYRot(180.0F + yRotation * 40.0F);
-        player.setXRot(-xRotation * 20.0F);
-        player.yHeadRot = player.getYRot();
-        player.yHeadRotO = player.getYRot();
+        player.yBodyRot = playerRotation;
+        player.setYRot(playerRotation);
+        player.setXRot(0);
+        player.yHeadRot = playerRotation;
+        player.yHeadRotO = playerRotation;
 
         graphics.pose().pushPose();
-        graphics.pose().translate(0.0D, 0.0D, -150.0D);
+        graphics.pose().translate(0.0D, 0.0D, 150.0D);
         InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
         graphics.pose().popPose();
 
@@ -302,8 +306,43 @@ public class RaceSelectionScreen extends Screen {
         character.setRace(selectedRace);
 
         if (this.minecraft != null) {
+            isSwitchingMenu = true;
+            GLOBAL_SWITCHING = true;
             this.minecraft.setScreen(new CharacterCustomizationScreen(this, character));
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int centerX = this.width / 2 + 5;
+        int centerY = this.height / 2 + 70;
+        int modelRadius = 60;
+
+        if (mouseX >= centerX - modelRadius && mouseX <= centerX + modelRadius &&
+            mouseY >= centerY - 100 && mouseY <= centerY + 20) {
+            isDraggingModel = true;
+            lastMouseX = mouseX;
+            return true;
+        }
+
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        isDraggingModel = false;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (isDraggingModel) {
+            double deltaX = mouseX - lastMouseX;
+            playerRotation += (float)(deltaX * 0.8);
+            lastMouseX = mouseX;
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
@@ -327,9 +366,11 @@ public class RaceSelectionScreen extends Screen {
 
 	@Override
 	public void removed() {
-		if (this.minecraft != null) {
-			this.minecraft.options.guiScale().set(oldGuiScale);
-			this.minecraft.resizeDisplay();
+		if (!isSwitchingMenu && this.minecraft != null) {
+			if (this.minecraft.options.guiScale().get() != oldGuiScale) {
+				this.minecraft.options.guiScale().set(oldGuiScale);
+				this.minecraft.resizeDisplay();
+			}
 		}
 		super.removed();
 	}

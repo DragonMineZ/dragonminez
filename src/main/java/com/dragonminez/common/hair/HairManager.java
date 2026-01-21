@@ -11,7 +11,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.math.BigInteger;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -22,8 +21,6 @@ public class HairManager {
     private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
     private static final String CODE_PREFIX = "DMZ_HAIR:";
 
-    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-
     static {
         initializeDefaultPresets();
     }
@@ -32,38 +29,16 @@ public class HairManager {
 
     }
 
-    /**
-     * Convierte los bytes del NBT a una cadena de solo letras (a-z).
-     */
-    private static String encodeToLetters(byte[] bytes) {
-        // Añadimos un byte extra para asegurar que el número sea interpretado como positivo
+    private static String encodeToNumbers(byte[] bytes) {
         byte[] positiveBytes = new byte[bytes.length + 1];
         System.arraycopy(bytes, 0, positiveBytes, 1, bytes.length);
         BigInteger number = new BigInteger(positiveBytes);
 
-        StringBuilder sb = new StringBuilder();
-        BigInteger base = BigInteger.valueOf(26);
-
-        while (number.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger[] quotientAndRemainder = number.divideAndRemainder(base);
-            sb.append(ALPHABET.charAt(quotientAndRemainder[1].intValue()));
-            number = quotientAndRemainder[0];
-        }
-        return sb.reverse().toString();
+        return number.toString();
     }
 
-    /**
-     * Convierte la cadena de letras de vuelta a bytes para cargar el NBT.
-     */
-    private static byte[] decodeFromLetters(String s) {
-        BigInteger number = BigInteger.ZERO;
-        BigInteger base = BigInteger.valueOf(26);
-
-        for (int i = 0; i < s.length(); i++) {
-            int digit = ALPHABET.indexOf(s.charAt(i));
-            if (digit == -1) continue;
-            number = number.multiply(base).add(BigInteger.valueOf(digit));
-        }
+    private static byte[] decodeFromNumbers(String s) {
+        BigInteger number = new BigInteger(s);
 
         byte[] bytes = number.toByteArray();
         if (bytes.length > 0 && bytes[0] == 0) {
@@ -84,7 +59,7 @@ public class HairManager {
             NbtIo.write(tag, dataOutput);
             dataOutput.close();
 
-            return CODE_PREFIX + encodeToLetters(byteStream.toByteArray());
+            return CODE_PREFIX + encodeToNumbers(byteStream.toByteArray());
         } catch (Exception e) {
             return null;
         }
@@ -96,7 +71,7 @@ public class HairManager {
         String rawContent = code.startsWith(CODE_PREFIX) ? code.substring(CODE_PREFIX.length()) : code;
 
         try {
-            byte[] compressed = decodeFromLetters(rawContent);
+            byte[] compressed = decodeFromNumbers(rawContent);
             ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
             DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
             CompoundTag tag = NbtIo.read(dataInput);
