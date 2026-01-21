@@ -69,9 +69,8 @@
 
             boolean shouldRender = false;
             boolean isSlimTarget = false;
-            boolean isOozaruTarget = false; // Nueva bandera para Oozaru
+            boolean isOozaruTarget = false;
 
-            // --- LÓGICA DE DETECCIÓN DE TARGET ---
             if (race.equals("saiyan") && "oozaru".equalsIgnoreCase(currentForm)) {
                 shouldRender = true;
                 isOozaruTarget = true;

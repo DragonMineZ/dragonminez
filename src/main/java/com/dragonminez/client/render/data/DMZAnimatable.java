@@ -3,6 +3,7 @@ package com.dragonminez.client.render.data;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.HumanoidArm;
@@ -22,6 +23,8 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
+
+import java.util.Objects;
 
 import static com.dragonminez.client.animation.Animations.*;
 
@@ -105,22 +108,36 @@ public class DMZAnimatable implements GeoReplacedEntity {
         if (!(state.getData(DataTickets.ENTITY) instanceof AbstractClientPlayer player)) return PlayState.STOP;
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-            String race = data.getCharacter().getRace();
-            boolean hasTail = race.equals("saiyan") && data.getStatus().isTailVisible() || race.equals("frostdemon") || race.equals("bioandroid");
-            if (!hasTail) return PlayState.STOP;
+            var character = data.getCharacter();
+            // Usar toLowerCase() para evitar errores de mayúsculas/minúsculas
+            String race = character.getRace().toLowerCase();
+            String gender = character.getGender().toLowerCase();
+            String currentForm = character.getActiveForm();
 
-//
-//            // 2. CONFLICTO DE MOVIMIENTO
-//            // Si el jugador camina/corre, generalmente la animación "walk" ya incluye el movimiento de la cola.
-//            // Por lo tanto, detenemos esta animación "idle" para que no peleen entre sí.
+            // 1. LÓGICA DE VISIBILIDAD DE COLA
+            // Para Majin, verificamos si es mujer Y está en Super o Ultra
+            boolean isMajinWithTail = race.equals("majin") &&
+                    (gender.equals("female") || gender.equals("mujer")) &&
+                    (Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA));
+
+            boolean hasTail = (race.equals("saiyan") && data.getStatus().isTailVisible())
+                    || race.equals("frostdemon")
+                    || race.equals("bioandroid")
+                    || isMajinWithTail;
+
+            if (!hasTail) {
+                return PlayState.STOP;
+            }
+
+            // 2. PRIORIDAD DE ANIMACIÓN
+            // Si el jugador se está moviendo, es mejor dejar que las animaciones de
+            // walk/run controlen la cola para que el movimiento sea natural.
 //            if (state.isMoving()) {
 //                return PlayState.STOP;
 //            }
-//
-//            // 3. REPRODUCIR (Idle)
-//            // Si tiene cola y está quieto, reproducimos la animación definida.
-            // Si NO tiene cola, paramos la animación para ahorrar recursos.
 
+            // 3. REPRODUCIR IDLE
+            // setAndContinue es ideal para animaciones en bucle como el movimiento suave de la cola
             return state.setAndContinue(TAIL);
 
         }).orElse(PlayState.STOP);

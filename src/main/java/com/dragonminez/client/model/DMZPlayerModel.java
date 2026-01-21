@@ -12,6 +12,8 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.FrostDemonForms;
+import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -19,6 +21,8 @@ import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
+
+import java.util.Objects;
 
 public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
 
@@ -113,17 +117,38 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
         }
 
         String customModel = config.getCustomModel();
-
         final var character = data.getCharacter();
+        String currentForm = character.getActiveForm();
+        final var gender = character.getGender();
+        boolean isMale = gender.equalsIgnoreCase("male") || gender.equalsIgnoreCase("hombre");
+
         if (character.hasActiveForm()) {
             FormConfig.FormData activeFormData = character.getActiveFormData();
-            if (activeFormData != null && activeFormData.hasCustomModel()) {
+
+            if (rawRaceId.equals("frostdemon")) {
+                if (FrostDemonForms.SECOND_FORM.equals(currentForm)) customModel = "frostdemon";
+                else if (FrostDemonForms.THIRD_FORM.equals(currentForm)) customModel = "frostdemon_third";
+                else if (FrostDemonForms.FINAL_FORM.equals(currentForm)) customModel = "frostdemon";
+            }
+
+            else if (rawRaceId.equals("majin")) {
+                boolean isKidOrEvil = Objects.equals(currentForm, MajinForms.KID) || Objects.equals(currentForm, MajinForms.EVIL);
+                if (isKidOrEvil) {
+                    customModel = isMale ? "human_slim" : "majin_slim";
+                }
+                boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
+
+                if (isSuperOrUltra) {
+                    customModel = isMale ? "human" : "majin_slim";
+                }
+            }
+
+            if (customModel == null && activeFormData != null && activeFormData.hasCustomModel()) {
                 customModel = activeFormData.getCustomModel();
             }
         }
 
         final boolean hasCustomModel = customModel != null && !customModel.isEmpty();
-        final var gender = character.getGender();
         int bodyType = character.getBodyType();
 
         var raceId = hasCustomModel ? customModel : rawRaceId;
@@ -132,7 +157,7 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
             raceId = "base";
         }
 
-        if (raceId.equals("majin") && gender.equals("female")) {
+        if (raceId.equals("majin") && !isMale) {
             raceId = "majin_slim";
         }
 
@@ -140,12 +165,12 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
             return player.getSkinTextureLocation();
         }
 
-        boolean isSlimSkin = gender.equals("female") || isSlim(player);
+        boolean isSlimSkin = !isMale || isSlim(player);
 
         if (resource == ResourceType.GEO) {
             boolean isHumanOrSaiyan = rawRaceId.equals("human") || rawRaceId.equals("saiyan");
 
-            if (isHumanOrSaiyan && gender.equals("female")) {
+            if (isHumanOrSaiyan && !isMale) {
                 raceId = "majin_slim";
             }
             else if (raceId.equals("saiyan") || raceId.equals("human") || raceId.equals("namekian")) {
@@ -164,6 +189,7 @@ public class DMZPlayerModel extends GeoModel<DMZAnimatable> {
         return TextureCounter.cache(Reference.MOD_ID, resource.name().toLowerCase()
                 + "/entity/races/" + raceName + resource.extension());
     }
+
 
     private boolean isSlim(AbstractClientPlayer player) {
         return !player.getModelName().equals("default");

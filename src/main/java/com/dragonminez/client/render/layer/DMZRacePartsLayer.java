@@ -6,6 +6,7 @@ import com.dragonminez.client.render.data.DMZAnimatable;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -20,12 +21,12 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.GeoReplacedEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
+import java.util.Objects;
+
 public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
 
     private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID,
             "geo/entity/raceparts.geo.json");
-    private static final ResourceLocation RACES_PARTS_MAJIN_FAT = new ResourceLocation(Reference.MOD_ID,
-            "geo/entity/raceparts_majinfat.geo.json");
     private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
             "textures/entity/races/raceparts.png");
 
@@ -46,20 +47,18 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
         String race = character.getRaceName().toLowerCase();
         String gender = character.getGender().toLowerCase();
         int hairType = character.getHairId();
+        String currentForm = character.getActiveForm();
+        boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
 
         boolean isSaiyan = race.equalsIgnoreCase("saiyan");
-        boolean isTailEnrolled = stats.getStatus().isTailVisible();
+        boolean isTailEnrolled = !stats.getStatus().isTailVisible();
         boolean isNamek = race.equalsIgnoreCase("namekian");
         boolean isMajin = race.equalsIgnoreCase("majin");
         boolean isFrostDemon = race.equalsIgnoreCase("frostdemon");
-        boolean isMale = gender.equalsIgnoreCase("male");
 
         if (!((isSaiyan && isTailEnrolled) || isNamek || isMajin || isFrostDemon)) return;
 
-        ResourceLocation modelLoc = (isMajin && isMale) ? RACES_PARTS_MAJIN_FAT
-                : RACES_PARTS_MODEL;
-
-        BakedGeoModel partsModel = getGeoModel().getBakedModel(modelLoc);
+        BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
         if (partsModel == null) return;
 
         for (GeoBone bone : partsModel.topLevelBones()) {
@@ -70,10 +69,17 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
 
         if (isSaiyan && isTailEnrolled) {
             setupSaiyanParts(partsModel);
-            renderColor = ColorUtils.rgbIntToFloat(0x6B1E0E);
+            renderColor = ColorUtils.hexToRgb("#572117");
+
+            if (hasForm && character.getActiveFormData() != null) {
+                String formHair = character.getActiveFormData().getHairColor();
+                if (formHair != null && !formHair.isEmpty()) {
+                    renderColor = ColorUtils.hexToRgb(formHair);
+                }
+            }
         }
         else if (isFrostDemon) {
-            setupFrostDemon(partsModel);
+            setupFrostDemon(partsModel, currentForm);
             partsModel.getBone("body").ifPresent(b -> setHiddenRecursive(b, true));
             renderColor = ColorUtils.rgbIntToFloat(0x1A1A1A);
         }
@@ -82,9 +88,20 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
             else if (isMajin) setupMajinParts(partsModel, gender, hairType);
 
             partsModel.getBone("body").ifPresent(b -> setHiddenRecursive(b, true));
+
+            // Color de piel base
             renderColor = ColorUtils.hexToRgb(character.getBodyColor());
+
+            // Si la forma cambia el color de piel (BodyColor1), lo aplicamos a orejas/antenas/cola majin
+            if (hasForm && character.getActiveFormData() != null) {
+                String formBody = character.getActiveFormData().getBodyColor1();
+                if (formBody != null && !formBody.isEmpty()) {
+                    renderColor = ColorUtils.hexToRgb(formBody);
+                }
+            }
         }
 
+        // Sincronización perfecta con el modelo del jugador
         for (GeoBone partBone : partsModel.topLevelBones()) {
             syncBoneRecursively(partBone, playerModel);
         }
@@ -92,13 +109,9 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
         RenderType partsRenderType = RenderType.entityCutoutNoCull(RACES_PARTS_TEXTURE);
 
         poseStack.pushPose();
-        float baseScale = 1.0f;
-        poseStack.scale(baseScale, baseScale, baseScale);
-
         getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
                 bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
                 renderColor[0], renderColor[1], renderColor[2], 1.0f);
-
         poseStack.popPose();
     }
 
@@ -135,8 +148,13 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
         }
     }
 
-    private void setupFrostDemon(BakedGeoModel partsModel) {
-        partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
+    private void setupFrostDemon(BakedGeoModel partsModel, String currentForm) {
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base")) {
+            partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
+        }
+        else if (Objects.equals(currentForm, FrostDemonForms.SECOND_FORM)) {
+            partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
+        }
     }
 
     private void setupMajinParts(BakedGeoModel partsModel, String gender, int hairType) {
