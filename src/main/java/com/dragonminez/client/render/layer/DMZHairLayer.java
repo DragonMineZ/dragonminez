@@ -15,6 +15,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -36,12 +37,12 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     @Override
     public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
         // No renderizar si tiene un casco que no sea pothala, es invisible o spectator
-        //if (animatable.isInvisible() || player.isSpectator()) return;
+        if (animatable.isInvisible() || animatable.isSpectator()) return;
 
-        //var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
-        //if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")) return;
+        var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
+        if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")) return;
 
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         var stats = statsCap.orElse(new StatsData(animatable));
         Character character = stats.getCharacter();
 

@@ -13,6 +13,7 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
+import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
@@ -564,6 +565,7 @@ public class CharacterCustomizationScreen extends Screen {
 	}
 
     private void refreshButtons() {
+		NetworkHandler.sendToServer(new StatsSyncC2S());
         String savedColorField = currentColorField;
         boolean wasColorPickerVisible = colorPickerVisible;
 
@@ -628,6 +630,7 @@ public class CharacterCustomizationScreen extends Screen {
             NetworkHandler.sendToServer(new CreateCharacterC2S(character));
             ForgeClientEvents.hasCreatedCharacterCache = true;
             this.minecraft.setScreen(null);
+			this.minecraft.options.guiScale().set(oldGuiScale);
         }
     }
 

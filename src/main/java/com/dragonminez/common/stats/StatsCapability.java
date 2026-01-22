@@ -56,16 +56,7 @@ public class StatsCapability {
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            NetworkHandler.sendToPlayer(
-                new SyncServerConfigS2C(
-                    ConfigManager.getServerConfig(),
-                    ConfigManager.getSkillsConfig(),
-                    ConfigManager.getAllForms(),
-                    ConfigManager.getAllRaceStats(),
-                    ConfigManager.getAllRaceCharacters()
-                ),
-                serverPlayer
-            );
+            NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getServerConfig(), ConfigManager.getSkillsConfig(), ConfigManager.getAllForms(), ConfigManager.getAllRaceStats(), ConfigManager.getAllRaceCharacters()), serverPlayer);
 
             SagaManager.loadSagas(serverPlayer.getServer());
             NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), serverPlayer);

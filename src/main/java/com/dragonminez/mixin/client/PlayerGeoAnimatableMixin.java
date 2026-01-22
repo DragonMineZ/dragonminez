@@ -7,14 +7,11 @@ import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
-import org.joml.Vector3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
-import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
@@ -25,6 +22,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.dragonminez.client.animation.Animations.*;
 import static com.dragonminez.client.animation.Animations.ATTACK;
@@ -162,7 +160,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 
         AnimationController<T> ctl = state.getController();
-        if (player.attackAnim > 0 && !isPlacingBlock(player)) {
+        if (player.attackAnim > 0 && !isPlacingBlock(player) && !isBlocking(player)) {
             if (!animatable.dragonminez$isPlayingAttack()) {
                 animatable.dragonminez$setPlayingAttack(true);
                 ctl.setAnimation(animatable.dragonminez$useAttack2() ? ATTACK2 : ATTACK);
@@ -235,12 +233,20 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         return (hasBlockInMainHand || hasBlockInOffHand) && player.isUsingItem();
     }
 
+	@Unique
+	private static boolean isBlocking(AbstractClientPlayer player) {
+		AtomicBoolean isBlocking = new AtomicBoolean(false);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			isBlocking.set(data.getStatus().isBlocking());
+		});
+		return isBlocking.get();
+	}
+
 
     @Override
     public double getTick(Object o) {
         return ((AbstractClientPlayer) o).tickCount + Minecraft.getInstance().getPartialTick();
     }
-
 
 
     @Unique

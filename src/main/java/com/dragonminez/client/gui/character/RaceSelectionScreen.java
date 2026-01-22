@@ -5,6 +5,8 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.network.C2S.StatsSyncC2S;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
@@ -299,6 +301,7 @@ public class RaceSelectionScreen extends Screen {
             character.setMouthType(config.getDefaultMouthType());
 			character.setTattooType(config.getDefaultTattooType());
         }
+		NetworkHandler.sendToServer(new StatsSyncC2S());
     }
 
     private void selectRace() {
@@ -310,6 +313,7 @@ public class RaceSelectionScreen extends Screen {
             GLOBAL_SWITCHING = true;
             this.minecraft.setScreen(new CharacterCustomizationScreen(this, character));
         }
+		NetworkHandler.sendToServer(new StatsSyncC2S());
     }
 
     @Override

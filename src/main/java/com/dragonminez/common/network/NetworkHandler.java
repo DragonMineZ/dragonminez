@@ -104,6 +104,12 @@ public class NetworkHandler {
 				.encoder(UpdateCustomHairC2S::encode)
 				.consumerMainThread(UpdateCustomHairC2S::handle)
 				.add();
+
+		net.messageBuilder(StatsSyncC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(StatsSyncC2S::decode)
+				.encoder(StatsSyncC2S::encode)
+				.consumerMainThread(StatsSyncC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */
