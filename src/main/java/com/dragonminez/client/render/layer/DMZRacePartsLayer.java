@@ -27,7 +27,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
     private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/raceparts.png");
-    private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/accesories.geo.json");
+    private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
     private static final ResourceLocation ACCESORIES_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/accesories.png");
 
     public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
@@ -40,22 +40,62 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
         if (stats == null) return;
 
+        // 1. RENDERIZADO DE PARTES DE RAZA (Lógica existente)
+        renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight);
+
+        // 2. RENDERIZADO DE ACCESORIOS (Pothala, etc.)
+        renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+    }
+
+    private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight) {
         BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
         if (partsModel == null) return;
 
         resetModelParts(partsModel);
-
         float[] renderColor = setupPartsAndColor(partsModel, stats);
 
-        if (renderColor == null) return;
+        if (renderColor != null) {
+            syncModelToPlayer(partsModel, playerModel);
+            RenderType partsRenderType = RenderType.entityCutoutNoCull(RACES_PARTS_TEXTURE);
 
-        syncModelToPlayer(partsModel, playerModel);
+            poseStack.pushPose();
+            getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
+                    bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+                    renderColor[0], renderColor[1], renderColor[2], 1.0f);
+            poseStack.popPose();
+        }
+    }
 
-        RenderType partsRenderType = RenderType.entityCutoutNoCull(RACES_PARTS_TEXTURE);
+    private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+        boolean hasPothalaRight = animatable.getInventory().armor.stream()
+                .anyMatch(stack -> stack.is(MainItems.POTHALA_RIGHT.get()));
+
+        boolean hasPothalaLeft = animatable.getInventory().armor.stream()
+                .anyMatch(stack -> stack.is(MainItems.POTHALA_LEFT.get()));
+
+        if (!hasPothalaRight && !hasPothalaLeft) return;
+
+        BakedGeoModel accModel = getGeoModel().getBakedModel(ACCESORIES_MODEL);
+        if (accModel == null) return;
+
+        resetModelParts(accModel);
+
+        if (hasPothalaRight) {
+            accModel.getBone("pothala_right").ifPresent(this::showBoneChain);
+        }
+
+        if (hasPothalaLeft) {
+            accModel.getBone("pothala_left").ifPresent(this::showBoneChain);
+        }
+
+        syncModelToPlayer(accModel, playerModel);
+
+        RenderType accRenderType = RenderType.entityCutoutNoCull(ACCESORIES_TEXTURE);
+
         poseStack.pushPose();
-        getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
-                bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-                renderColor[0], renderColor[1], renderColor[2], 1.0f);
+        getRenderer().reRender(accModel, poseStack, bufferSource, animatable, accRenderType,
+                bufferSource.getBuffer(accRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+                1.0f, 1.0f, 1.0f, 1.0f);
         poseStack.popPose();
     }
 
