@@ -1,66 +1,61 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.render.DMZPlayerRenderer;
-import com.dragonminez.client.render.data.DMZAnimatable;
-import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.common.init.armor.DbzArmorItem;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.DyeableArmorItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.registries.ForgeRegistries;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.model.GeoModel;
+    import com.dragonminez.common.stats.StatsCapability;
+    import com.dragonminez.common.stats.StatsProvider;
+    import com.mojang.blaze3d.vertex.PoseStack;
+    import com.mojang.blaze3d.vertex.VertexConsumer;
+    import net.minecraft.client.player.AbstractClientPlayer;
+    import net.minecraft.client.renderer.MultiBufferSource;
+    import net.minecraft.client.renderer.RenderType;
+    import net.minecraft.client.renderer.texture.OverlayTexture;
+    import net.minecraft.resources.ResourceLocation;
+    import net.minecraft.world.entity.EquipmentSlot;
+    import net.minecraft.world.entity.LivingEntity;
+    import net.minecraft.world.item.ArmorItem;
+    import net.minecraft.world.item.DyeableArmorItem;
+    import net.minecraft.world.item.ItemStack;
+    import net.minecraftforge.client.ForgeHooksClient;
+    import net.minecraftforge.registries.ForgeRegistries;
+    import software.bernie.geckolib.cache.object.BakedGeoModel;
+    import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+    import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+    import java.util.HashMap;
+    import java.util.Map;
 
-public class DMZMajinArmorLayer extends GeoRenderLayer<DMZAnimatable> {
+public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
     private static final ResourceLocation MAJIN_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
             "geo/armor/armormajinfat.geo.json");
     private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
             "geo/armor/armormajinslim.geo.json");
+    private static final ResourceLocation OOZARU_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
+            "geo/armor/armoroozaru.geo.json");
 
-    public DMZMajinArmorLayer(GeoRenderer<DMZAnimatable> entityRendererIn) {
+    public DMZCustomArmorLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
 
     @Override
-    public void render(PoseStack poseStack, DMZAnimatable animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+    public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 
-        if (!(this.getRenderer() instanceof DMZPlayerRenderer playerRenderer)) return;
-        AbstractClientPlayer player = playerRenderer.getCurrentEntity();
-        if (player == null) return;
-
-        ItemStack stack = player.getItemBySlot(EquipmentSlot.CHEST);
+        ItemStack stack = animatable.getItemBySlot(EquipmentSlot.CHEST);
         if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem armorItem)) return;
 
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
         if (stats == null) return;
 
-        if (stats.getCharacter().getArmored()) { //si es true no carga nada
+        if (stats.getCharacter().getArmored()) {
             return;
         }
 
         String race = stats.getCharacter().getRaceName().toLowerCase();
         String gender = stats.getCharacter().getGender().toLowerCase();
+        String currentForm = stats.getCharacter().getActiveForm(); // Obtenemos la forma actual
 
         boolean isVanilla = ForgeRegistries.ITEMS.getKey(stack.getItem()).getNamespace().equals("minecraft");
         boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
@@ -69,12 +64,15 @@ public class DMZMajinArmorLayer extends GeoRenderLayer<DMZAnimatable> {
 
         boolean shouldRender = false;
         boolean isSlimTarget = false;
+        boolean isOozaruTarget = false;
 
-        if (race.equals("majin") && gender.equals("male")) {
+        if (race.equals("saiyan") && "oozaru".equalsIgnoreCase(currentForm)) {
+            shouldRender = true;
+            isOozaruTarget = true;
+        } else if (race.equals("majin") && gender.equals("male")) {
             shouldRender = true;
             isSlimTarget = false;
-        }
-        else if (gender.equals("female")) {
+        } else if (gender.equals("female")) {
             if (race.equals("majin") || race.equals("human") || race.equals("saiyan")) {
                 shouldRender = true;
                 isSlimTarget = true;
@@ -82,28 +80,43 @@ public class DMZMajinArmorLayer extends GeoRenderLayer<DMZAnimatable> {
         }
 
         if (!shouldRender) return;
+
         if (isDbzArmor) {
             ResourceLocation texture = getDbzArmorTexture((DbzArmorItem) stack.getItem(), stack);
-
             Map<String, float[]> originalScales = new HashMap<>();
             Map<String, Boolean> originalVisibility = new HashMap<>();
 
             saveStateRecursively(playerModel, originalScales, originalVisibility);
 
-            float inflation = 1.051f;
+            poseStack.pushPose();
+
+            // === AJUSTES DINÁMICOS POR RAZA/FORMA ===
+            // Si es Oozaru, bajamos más el modelo (-0.095f) y usamos menos inflación (1.0f o 1.01f)
+            // Si es Majin/Slim, mantenemos tus valores originales.
+            float translateY = isOozaruTarget ? -0.087f : -0.025f;
+            float inflation = isOozaruTarget ? 1.021f : 1.02f;
+
+            poseStack.translate(0, translateY, 0);
             inflateRecursively(playerModel, inflation);
+
             applyBodyOnlyVisibility(playerModel);
 
             renderModel(playerModel, poseStack, bufferSource, animatable, texture, 1.0F, 1.0F, 1.0F, partialTick, packedLight);
 
+            poseStack.popPose();
             restoreStateRecursively(playerModel, originalScales, originalVisibility);
-        }
-        else {
-            ResourceLocation targetModelLoc = isSlimTarget ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL;
+        } else {
+            ResourceLocation targetModelLoc;
+            if (isOozaruTarget) {
+                targetModelLoc = OOZARU_ARMOR_MODEL;
+            } else {
+                targetModelLoc = isSlimTarget ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL;
+            }
+
             BakedGeoModel vanillaArmorModel = getGeoModel().getBakedModel(targetModelLoc);
 
             if (vanillaArmorModel != null) {
-                ResourceLocation texture = getVanillaArmorTexture(player, stack, EquipmentSlot.CHEST, null);
+                ResourceLocation texture = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, null);
 
                 for (GeoBone bone : vanillaArmorModel.topLevelBones()) {
                     syncBoneRecursively(bone, playerModel);
@@ -112,12 +125,13 @@ public class DMZMajinArmorLayer extends GeoRenderLayer<DMZAnimatable> {
                 renderModel(vanillaArmorModel, poseStack, bufferSource, animatable, texture, 1.0F, 1.0F, 1.0F, partialTick, packedLight);
 
                 if (armorItem instanceof DyeableArmorItem) {
-                    ResourceLocation overlayTex = getVanillaArmorTexture(player, stack, EquipmentSlot.CHEST, "overlay");
+                    ResourceLocation overlayTex = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, "overlay");
                     renderModel(vanillaArmorModel, poseStack, bufferSource, animatable, overlayTex, 1f, 1f, 1f, partialTick, packedLight);
                 }
             }
         }
     }
+
     private void applyBodyOnlyVisibility(BakedGeoModel model) {
         for (GeoBone bone : model.topLevelBones()) {
             setRecursiveVisible(bone, false);
@@ -221,6 +235,7 @@ public class DMZMajinArmorLayer extends GeoRenderLayer<DMZAnimatable> {
             syncBoneRecursively(child, sourceModel);
         }
     }
+
     private ResourceLocation getDbzArmorTexture(DbzArmorItem item, ItemStack stack) {
         String itemId = item.getItemId();
         boolean isDamaged = false;
@@ -248,7 +263,7 @@ public class DMZMajinArmorLayer extends GeoRenderLayer<DMZAnimatable> {
         return new ResourceLocation(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
     }
 
-    private void renderModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, DMZAnimatable animatable, ResourceLocation texture, float r, float g, float b, float partialTick, int packedLight) {
+    private void renderModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float r, float g, float b, float partialTick, int packedLight) {
         RenderType armorRenderType = RenderType.armorCutoutNoCull(texture);
         getRenderer().reRender(model, poseStack, bufferSource, animatable, armorRenderType,
                 bufferSource.getBuffer(armorRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,

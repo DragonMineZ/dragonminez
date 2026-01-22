@@ -1,11 +1,12 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.render.DMZPlayerRenderer;
-import com.dragonminez.client.render.data.DMZAnimatable;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -15,91 +16,94 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.renderer.GeoReplacedEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
+import java.util.Objects;
 
-    private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID,
-            "geo/entity/raceparts.geo.json");
-    private static final ResourceLocation RACES_PARTS_MAJIN_FAT = new ResourceLocation(Reference.MOD_ID,
-            "geo/entity/raceparts_majinfat.geo.json");
-    private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
-            "textures/entity/races/raceparts.png");
+public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
-    public DMZRacePartsLayer(GeoRenderer<DMZAnimatable> entityRendererIn) {
+    private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
+    private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/raceparts.png");
+    private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/accesories.geo.json");
+    private static final ResourceLocation ACCESORIES_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/accesories.png");
+
+    public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
 
     @Override
-    public void render(PoseStack poseStack, DMZAnimatable animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+    public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 
-        AbstractClientPlayer player = player();
-        if (player == null) return;
-
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
         if (stats == null) return;
 
-        var character = stats.getCharacter();
-        String race = character.getRaceName().toLowerCase();
-        String gender = character.getGender().toLowerCase();
-        int hairType = character.getHairId();
-
-        boolean isSaiyan = race.equalsIgnoreCase("saiyan");
-        boolean isTailEnrolled = !stats.getStatus().isTailVisible();
-        boolean isNamek = race.equalsIgnoreCase("namekian");
-        boolean isMajin = race.equalsIgnoreCase("majin");
-        boolean isFrostDemon = race.equalsIgnoreCase("frostdemon");
-        boolean isMale = gender.equalsIgnoreCase("male");
-
-        if (!((isSaiyan && isTailEnrolled) || isNamek || isMajin || isFrostDemon)) return;
-
-        ResourceLocation modelLoc = (isMajin && isMale) ? RACES_PARTS_MAJIN_FAT
-                : RACES_PARTS_MODEL;
-
-        BakedGeoModel partsModel = getGeoModel().getBakedModel(modelLoc);
+        BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
         if (partsModel == null) return;
 
-        for (GeoBone bone : partsModel.topLevelBones()) {
-            setHiddenRecursive(bone, true);
-        }
+        resetModelParts(partsModel);
 
-        float[] renderColor = {1.0f, 1.0f, 1.0f};
+        float[] renderColor = setupPartsAndColor(partsModel, stats);
 
-        if (isSaiyan && isTailEnrolled) {
-            setupSaiyanParts(partsModel);
-            renderColor = ColorUtils.rgbIntToFloat(0x6B1E0E);
-        }
-        else if (isFrostDemon) {
-            setupFrostDemon(partsModel);
-            partsModel.getBone("body").ifPresent(b -> setHiddenRecursive(b, true));
-            renderColor = ColorUtils.rgbIntToFloat(0x1A1A1A);
-        }
-        else {
-            if (isNamek) setupNamekianParts(partsModel, hairType);
-            else if (isMajin) setupMajinParts(partsModel, gender, hairType);
+        if (renderColor == null) return;
 
-            partsModel.getBone("body").ifPresent(b -> setHiddenRecursive(b, true));
-            renderColor = ColorUtils.hexToRgb(character.getBodyColor());
-        }
-
-        for (GeoBone partBone : partsModel.topLevelBones()) {
-            syncBoneRecursively(partBone, playerModel);
-        }
+        syncModelToPlayer(partsModel, playerModel);
 
         RenderType partsRenderType = RenderType.entityCutoutNoCull(RACES_PARTS_TEXTURE);
-
         poseStack.pushPose();
-        float baseScale = 1.0666667f;
-        poseStack.scale(baseScale, baseScale, baseScale);
-
         getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
                 bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
                 renderColor[0], renderColor[1], renderColor[2], 1.0f);
-
         poseStack.popPose();
+    }
+
+    private float[] setupPartsAndColor(BakedGeoModel partsModel, StatsData stats) {
+        var character = stats.getCharacter();
+        String race = character.getRaceName().toLowerCase();
+        String currentForm = character.getActiveForm();
+        boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
+
+        if (race.equals("saiyan") && !stats.getStatus().isTailVisible()) {
+            setupSaiyanParts(partsModel);
+            float[] color = ColorUtils.hexToRgb("#572117");
+            if (hasForm && character.getActiveFormData() != null) {
+                String formHair = character.getActiveFormData().getHairColor();
+                if (formHair != null && !formHair.isEmpty()) color = ColorUtils.hexToRgb(formHair);
+            }
+            return color;
+        }
+
+        if (race.equals("frostdemon")) {
+            setupFrostDemonParts(partsModel, currentForm);
+            return ColorUtils.rgbIntToFloat(0x1A1A1A); // Color cuernos oscuro
+        }
+
+        if (race.equals("namekian") || race.equals("majin")) {
+            if (race.equals("namekian")) setupNamekianParts(partsModel, character.getHairId());
+            else setupMajinParts(partsModel, character.getGender().toLowerCase(), character.getHairId());
+
+            float[] color = ColorUtils.hexToRgb(character.getBodyColor());
+            if (hasForm && character.getActiveFormData() != null) {
+                String formBody = character.getActiveFormData().getBodyColor1();
+                if (formBody != null && !formBody.isEmpty()) color = ColorUtils.hexToRgb(formBody);
+            }
+            return color;
+        }
+
+        return null;
+    }
+
+    private void resetModelParts(BakedGeoModel model) {
+        for (GeoBone bone : model.topLevelBones()) {
+            setHiddenRecursive(bone, true);
+        }
+    }
+
+    private void syncModelToPlayer(BakedGeoModel partsModel, BakedGeoModel playerModel) {
+        for (GeoBone partBone : partsModel.topLevelBones()) {
+            syncBoneRecursively(partBone, playerModel);
+        }
     }
 
     private void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
@@ -113,7 +117,6 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
             destBone.setPivotX(sourceBone.getPivotX());
             destBone.setPivotY(sourceBone.getPivotY());
             destBone.setPivotZ(sourceBone.getPivotZ());
-
             destBone.setScaleX(sourceBone.getScaleX());
             destBone.setScaleY(sourceBone.getScaleY());
             destBone.setScaleZ(sourceBone.getScaleZ());
@@ -135,8 +138,12 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
         }
     }
 
-    private void setupFrostDemon(BakedGeoModel partsModel) {
-        partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
+    private void setupFrostDemonParts(BakedGeoModel partsModel, String currentForm) {
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base")) {
+            partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
+        } else if (Objects.equals(currentForm, FrostDemonForms.SECOND_FORM)) {
+            partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
+        }
     }
 
     private void setupMajinParts(BakedGeoModel partsModel, String gender, int hairType) {
@@ -157,13 +164,6 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
             parent.setHidden(false);
             parent = parent.getParent();
         }
-    }
-
-    public AbstractClientPlayer player() {
-        if (getRenderer() instanceof GeoReplacedEntityRenderer<?, ?> geoRenderer) {
-            return (AbstractClientPlayer) geoRenderer.getCurrentEntity();
-        }
-        return null;
     }
 
     private void setHiddenRecursive(GeoBone bone, boolean hidden) {
