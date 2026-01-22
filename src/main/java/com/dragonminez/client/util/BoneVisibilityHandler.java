@@ -24,7 +24,19 @@ public class BoneVisibilityHandler {
         String gender = character.getGender().toLowerCase();
         String currentForm = character.getActiveForm();
 
-        // Ocultar huesos de armadura por defecto
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        boolean hasChestplate = !chestStack.isEmpty();
+
+        hideBone(model, "right_arm_layer", hasChestplate);
+        hideBone(model, "left_arm_layer", hasChestplate);
+        hideBone(model, "body_layer", hasChestplate);
+
+        ItemStack legsStack = player.getItemBySlot(EquipmentSlot.LEGS);
+        boolean hasLeggings = !legsStack.isEmpty();
+
+        hideBone(model, "left_leg_layer", hasLeggings);
+        hideBone(model, "right_leg_layer", hasLeggings);
+
         hideBone(model, "armorHead", true);
         hideBone(model, "armorBody", true);
         hideBone(model, "armorBody2", true);
@@ -32,21 +44,17 @@ public class BoneVisibilityHandler {
         hideBone(model, "armorRightArm", true);
         hideBone(model, "armorLeftArm", true);
 
-        // --- LÓGICA DE VISIBILIDAD DE COLA MAJIN (tail1m) ---
         boolean isMajin = race.equals("majin");
         boolean isFemale = gender.equals("female") || gender.equals("mujer");
         boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
 
-        if (!isMajin || (!isFemale && !isSuperOrUltra)) {
-            model.getBone("tail1m").ifPresent(bone -> setHiddenRecursive(bone, true));
-        } else {
-            model.getBone("tail1m").ifPresent(bone -> setHiddenRecursive(bone, false));
-        }
+        model.getBone("tail1m").ifPresent(bone ->
+                setHiddenRecursive(bone, !(isMajin && isFemale && isSuperOrUltra))
+        );
 
         if (race.equals("human")) {
             model.getBone("tail1").ifPresent(bone -> setHiddenRecursive(bone, true));
         }
-
     }
 
     private static void hideBone(BakedGeoModel model, String boneName, boolean shouldHide) {

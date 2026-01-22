@@ -1,8 +1,6 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.render.DMZPlayerRenderer;
-import com.dragonminez.client.render.data.DMZAnimatable;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -16,31 +14,27 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.renderer.GeoReplacedEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.Objects;
 
-public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
+public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
     private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID,
             "geo/entity/raceparts.geo.json");
     private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID,
             "textures/entity/races/raceparts.png");
 
-    public DMZRacePartsLayer(GeoRenderer<DMZAnimatable> entityRendererIn) {
+    public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
 
     @Override
-    public void render(PoseStack poseStack, DMZAnimatable animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+    public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 
-        AbstractClientPlayer player = player();
-        if (player == null) return;
-
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
         if (stats == null) return;
 
         var character = stats.getCharacter();
@@ -177,12 +171,6 @@ public class DMZRacePartsLayer extends GeoRenderLayer<DMZAnimatable> {
         }
     }
 
-    public AbstractClientPlayer player() {
-        if (getRenderer() instanceof GeoReplacedEntityRenderer<?, ?> geoRenderer) {
-            return (AbstractClientPlayer) geoRenderer.getCurrentEntity();
-        }
-        return null;
-    }
 
     private void setHiddenRecursive(GeoBone bone, boolean hidden) {
         bone.setHidden(hidden);

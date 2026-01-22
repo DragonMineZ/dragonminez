@@ -207,7 +207,7 @@ public class DefaultFormsFactory {
         goldenOozaru.setCustomModel("oozaru");
         goldenOozaru.setHairColor("#FFD700");
         goldenOozaru.setAuraColor("#FFD700");
-        goldenOozaru.setModelScaling(2.5f);
+        goldenOozaru.setModelScaling(3.8f);
         goldenOozaru.setStrMultiplier(3.0);
         goldenOozaru.setSkpMultiplier(3.0);
         goldenOozaru.setStmMultiplier(1.0);
@@ -602,8 +602,8 @@ public class DefaultFormsFactory {
         FormConfig.FormData third = new FormConfig.FormData();
         third.setName(FrostDemonForms.THIRD_FORM);
         third.setUnlockOnSkillLevel(2);
-        third.setCustomModel("");
-        third.setModelScaling(1.0f);
+        third.setCustomModel("frostdemon_third");
+        third.setModelScaling(1.4f);
         third.setStrMultiplier(2.5);
         third.setSkpMultiplier(2.5);
         third.setStmMultiplier(1.0);
@@ -659,7 +659,7 @@ public class DefaultFormsFactory {
         fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(1.0f);
+        fullPower.setModelScaling(1.2f);
         fullPower.setStrMultiplier(4.5);
         fullPower.setSkpMultiplier(4.5);
         fullPower.setStmMultiplier(1.0);

@@ -2,8 +2,12 @@ package com.dragonminez.client.model;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.RenderUtil;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.MajinForms;
+import com.dragonminez.common.util.lists.SaiyanForms;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -13,12 +17,14 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
+import java.util.Objects;
+
 public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
-    private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/dmzbase.geo.json");
-    private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/dmzbaseslim.geo.json");
-    private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majinfat.geo.json");
-    private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majinslim.geo.json");
+    private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
+    private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
+    private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
+    private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
 
     private final ResourceLocation textureLocation;
     private final ResourceLocation animationLocation;
@@ -29,7 +35,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         this.raceName = raceName.toLowerCase();
         this.customModel = customModel;
 
-        this.textureLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/krillin.png");
+        this.textureLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
         this.animationLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/base.animation.json");
     }
 
@@ -39,46 +45,56 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getModelResource(T player) {
-
-        if (this.customModel != null && !this.customModel.isEmpty()) {
-            return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.customModel + ".geo.json");
-        }
-
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+            var character = data.getCharacter();
+            String race = character.getRaceName().toLowerCase();
+            String gender = character.getGender().toLowerCase();
+            String currentForm = character.getActiveForm();
+            int bodyType = character.getBodyType();
 
-            int bodyType = data.getCharacter().getBodyType();
-            var gender = data.getCharacter().getGender();
+            boolean isMale = gender.equals("male") || gender.equals("hombre");
+            boolean isSlimSkin = player.getModelName().equals("slim");
 
-            boolean isStandardRace = this.raceName.equals("human") ||
-                    this.raceName.equals("saiyan");
+            if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
+                return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
+            }
 
-            if (bodyType == 0 && isStandardRace) {
-
-                if (player.getModelName().equals("slim")) {
-                    return BASE_SLIM;
-                } else {
-                    return BASE_DEFAULT;
+            if (race.equals("majin")) {
+                boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
+                if (isSuperOrUltra) {
+                    return isMale ? BASE_DEFAULT : MAJIN_SLIM;
                 }
             }
-            else {
-                return switch (this.raceName) {
-                    case "human", "saiyan" -> {
-                        if ("female".equals(gender)) {
-                            yield MAJIN_SLIM;
-                        }
-                        yield BASE_DEFAULT;
-                    }
-                    case "namekian" -> BASE_DEFAULT;
-                    case "majin" -> {
-                        if("female".equals(gender)){
-                            yield MAJIN_SLIM;
-                        }
-                        yield MAJIN_FAT;
 
-                    }
-                    default -> ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.raceName + ".geo.json");
-                };
+            var activeFormData = character.getActiveFormData();
+            if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
+                ResourceLocation formLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + activeFormData.getCustomModel() + ".geo.json");
+                if (modelExists(formLoc)) return formLoc;
             }
+
+            if (race.equals("human") || race.equals("saiyan")) {
+                if (!isMale) {
+                    return MAJIN_SLIM;
+                }
+                if (bodyType == 0) {
+                    return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+                }
+                return BASE_DEFAULT;
+            }
+
+            switch (race) {
+                case "namekian" -> { return BASE_DEFAULT; }
+                case "bioandroid" -> { return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json"); }
+                case "frostdemon" -> { return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json"); }
+                case "majin" -> { return isMale ? MAJIN_FAT : MAJIN_SLIM; }
+            }
+
+            if (this.customModel != null && !this.customModel.isEmpty()) {
+                ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.customModel + ".geo.json");
+                if (modelExists(customLoc)) return customLoc;
+            }
+
+            return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
 
         }).orElse(BASE_DEFAULT);
     }
@@ -98,23 +114,9 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         super.setCustomAnimations(animatable, instanceId, animationState);
 
         var head = this.getAnimationProcessor().getBone("head");
-		var waist = this.getAnimationProcessor().getBone("waist");
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
-		float waistContribution = 0.3f;
-		float globalReduction = 0.75f;
-
 		if (head != null) {
-//			float rawPitch = entityData.headPitch();
-//			float rawYaw = entityData.netHeadYaw();
-//			float pitch = Mth.clamp(rawPitch, -90f, 90f);
-//			float yaw = Mth.clamp(rawYaw, -90f, 90f);
-//			float waistPitch = pitch * waistContribution;
-//			float waistYaw = yaw * waistContribution;
-//			if (waist != null) {
-//				waist.setRotX(waist.getRotX() + (waistPitch * Mth.DEG_TO_RAD));
-//				waist.setRotY(waist.getRotY() + (waistYaw * Mth.DEG_TO_RAD));
-//			}
 			head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
 			head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
 		}
@@ -134,5 +136,11 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             }
         } catch (Exception e) {
         }
+
     }
+
+    private boolean modelExists(ResourceLocation location) {
+        return Minecraft.getInstance().getResourceManager().getResource(location).isPresent();
+    }
+
 }

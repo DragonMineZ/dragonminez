@@ -1,47 +1,40 @@
 package com.dragonminez.client.render.layer;
 
-import com.dragonminez.client.render.data.DMZAnimatable;
-import com.dragonminez.client.render.layer.base.ItemArmorLayer;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.SaiyanForms;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
-import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
+import software.bernie.geckolib.renderer.layer.ItemArmorGeoLayer;
 
 import javax.annotation.Nullable;
 
-public class DMZPlayerArmorLayer<T extends DMZAnimatable> extends ItemArmorLayer<T> {
+public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends ItemArmorGeoLayer<T> {
+
     public DMZPlayerArmorLayer(GeoRenderer<T> geoRenderer) {
         super(geoRenderer);
     }
 
     @Override
     protected @Nullable ItemStack getArmorItemForBone(GeoBone bone, T animatable) {
-        final AbstractClientPlayer player = this.player();
-        if (player == null) {
-            return null;
-        }
 
         final String boneName = bone.getName().trim();
 
-        final LazyOptional<StatsData> optStats = StatsProvider.get(StatsCapability.INSTANCE, player);
+        final LazyOptional<StatsData> optStats = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         if (!optStats.isPresent()) {
             return null;
         }
 
-        final var stats = optStats.orElse(new StatsData(player));
+        final var stats = optStats.orElse(new StatsData(animatable));
         var character = stats.getCharacter();
         String race = character.getRace().toLowerCase();
         String gender = character.getGender().toLowerCase();

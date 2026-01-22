@@ -1,6 +1,5 @@
 package com.dragonminez.client.render.layer;
 
-import com.dragonminez.client.render.data.DMZAnimatable;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
@@ -15,23 +14,19 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
-import org.joml.Matrix4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.renderer.GeoRenderer;
-import software.bernie.geckolib.renderer.GeoReplacedEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.util.RenderUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
+public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
     public DMZHairLayer(GeoRenderer<T> renderer) {
         super(renderer);
@@ -49,11 +44,8 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
             int packedLight,
             int packedOverlay) {
 
-        AbstractClientPlayer player = getPlayer();
-        if (player == null) return;
-
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
-        var stats = statsCap.orElse(new StatsData(player));
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+        var stats = statsCap.orElse(new StatsData(animatable));
         Character character = stats.getCharacter();
 
         if (!HairManager.canUseHair(character)) return;
@@ -68,7 +60,7 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
 
         poseStack.pushPose();
 
-        float bodyYaw = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
+        float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - bodyYaw));
 
         List<GeoBone> boneChain = new ArrayList<>();
@@ -107,10 +99,4 @@ public class DMZHairLayer<T extends DMZAnimatable> extends GeoRenderLayer<T> {
         poseStack.popPose();
     }
 
-    private AbstractClientPlayer getPlayer() {
-        if (this.renderer instanceof GeoReplacedEntityRenderer<?, ?> geoRenderer) {
-            return (AbstractClientPlayer) geoRenderer.getCurrentEntity();
-        }
-        return null;
-    }
 }
