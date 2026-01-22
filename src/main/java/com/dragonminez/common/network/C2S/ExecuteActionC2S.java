@@ -117,7 +117,7 @@ public class ExecuteActionC2S {
 					}
 
 					if (needsSync) {
-						NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					}
 				});
 			}

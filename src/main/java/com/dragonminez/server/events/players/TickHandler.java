@@ -64,7 +64,7 @@ public class TickHandler {
 
 				data.getCooldowns().tick();
 				data.getEffects().tick();
-				if (serverPlayer.tickCount % SYNC_INTERVAL == 0) NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+				if (serverPlayer.tickCount % SYNC_INTERVAL == 0) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				return;
 			} else {
 				data.getCooldowns().tick();
@@ -129,7 +129,7 @@ public class TickHandler {
 			fusionTickHandling(serverPlayer, data);
 
             if (shouldSync) {
-                NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
             }
         });
     }
@@ -329,7 +329,7 @@ public class TickHandler {
 				}
 
 				if (!data.getSkills().isSkillActive("kaioken")) data.getSkills().setSkillActive("kaioken", true);
-				NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			}
 			case RACIAL -> RacialSkillLogic.attemptRacialAction(player);
 			case FUSION -> attemptFusion(player, data);
@@ -426,7 +426,7 @@ public class TickHandler {
 
 			data.getResources().addRacialSkillCount(1);
 			data.getCooldowns().addCooldown(Cooldowns.ZENKAI, ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiCooldownSeconds());
-			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			saiyanZenkaiSeconds = 0;
 		}
 	}

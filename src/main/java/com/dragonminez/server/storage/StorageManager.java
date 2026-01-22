@@ -81,7 +81,7 @@ public class StorageManager {
 				stats.getQuestData().unlockSaga("saiyan_saga");
 			}
 
-			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			LogUtil.info(Env.SERVER, "Async data loaded for: " + player.getName().getString());
 		});
 	}

@@ -5,6 +5,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairStrand;
+import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -24,7 +25,7 @@ public class HairRenderer {
         render(poseStack, bufferSource, hair, null, defaultColor, packedLight, packedOverlay);
     }
 
-    public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hair, com.dragonminez.common.stats.Character character, String defaultColor, int packedLight, int packedOverlay) {
+    public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hair, Character character, String defaultColor, int packedLight, int packedOverlay) {
         if (hair == null) return;
 
         for (HairFace face : HairFace.values()) {

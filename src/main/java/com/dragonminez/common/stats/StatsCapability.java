@@ -86,7 +86,7 @@ public class StatsCapability {
                     if (!questData.isSagaUnlocked("saiyan_saga")) {
                         questData.unlockSaga("saiyan_saga");
                     }
-                    NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
                 });
             }
 
@@ -108,7 +108,7 @@ public class StatsCapability {
     public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-                NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
             });
         }
     }

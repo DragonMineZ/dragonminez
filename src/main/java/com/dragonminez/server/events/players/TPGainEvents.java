@@ -38,7 +38,7 @@ public class TPGainEvents {
 							int shareAmount = modifiedTP[0] / 2;
 							StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(pData -> {
 								pData.getResources().addTrainingPoints(shareAmount);
-								NetworkHandler.sendToPlayer(new StatsSyncS2C(partner), partner);
+								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 							});
 						}
 					}

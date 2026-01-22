@@ -13,6 +13,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.stats.Cooldowns;
+import com.dragonminez.common.stats.Stats;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
@@ -41,6 +42,7 @@ import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.Event;
@@ -119,6 +121,15 @@ public class ForgeCommonEvents {
 		}
 	}
 
+	@SubscribeEvent
+	public static void onBlockBreak(BlockEvent.BreakEvent event) {
+		if (event.getPlayer() instanceof ServerPlayer player) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isBlocking()) event.setCanceled(true);
+			});
+		}
+	}
+
     @SubscribeEvent
     public static void onPlayerAttack(AttackEntityEvent event) {
         Entity target = event.getTarget();
@@ -134,7 +145,7 @@ public class ForgeCommonEvents {
 
 			if (target instanceof ServerPlayer targetPlayer) {
 				StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
-					if (!targetData.getStatus().isBlocking()) {
+					if (!targetData.getStatus().isBlocking() && !((ServerPlayer) target).isCreative()) {
 						serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
 					}
 				});

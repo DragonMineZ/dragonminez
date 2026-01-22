@@ -63,7 +63,7 @@ public class EffectsCommand {
 
             data.getEffects().addEffect(effectName, power, durationInTicks);
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
 
             String durationText = duration == -1 ? "permanent" : duration + " seconds";
             source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.give_success", effectName, (1.0 + power), target.getName().getString(), durationText), true);
@@ -76,7 +76,7 @@ public class EffectsCommand {
         StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
             if (data.getEffects().hasEffect(effectName)) {
                 data.getEffects().removeEffect(effectName);
-                NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
+                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
                 source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.remove_success", effectName, target.getName().getString()), true);
             } else {
                 source.sendFailure(Component.translatable("command.dragonminez.effects.no_effect", target.getName().getString(), effectName));
@@ -89,7 +89,7 @@ public class EffectsCommand {
     private static int clearEffects(CommandSourceStack source, ServerPlayer target) {
         StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
             data.getEffects().clear();
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
             source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.clear_success", target.getName().getString()), true);
         });
 

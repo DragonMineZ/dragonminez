@@ -184,7 +184,7 @@ public class StatsCommand {
                     case "ene" -> data.getStats().setEnergy(finalValue);
                 }
             }
-			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
 			float newMaxHealth = data.getMaxHealth();
 			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
@@ -194,7 +194,7 @@ public class StatsCommand {
 			if (newMaxStamina > oldMaxStamina) data.getResources().addStamina(newMaxStamina - oldMaxStamina);
 			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.set.success",
@@ -245,7 +245,7 @@ public class StatsCommand {
                     }
                 }
             }
-			NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
 			float newMaxHealth = player.getMaxHealth();
 			if (newMaxHealth > oldMaxHealth) player.setHealth(newMaxHealth);
@@ -256,7 +256,7 @@ public class StatsCommand {
 			if (newMaxHealth > oldMaxHealth) player.heal(newMaxHealth - oldMaxHealth);
 
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         String key = amount >= 0 ? "command.dragonminez.stats.add.success.added" : "command.dragonminez.stats.add.success.removed";
@@ -286,7 +286,7 @@ public class StatsCommand {
 			player.setHealth(20.0F);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 			player.setHealth(20.0F);
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.success",
@@ -305,7 +305,7 @@ public class StatsCommand {
 
             data.getCharacter().setActiveForm(group, form);
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
             source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.transform.success", player.getName().getString(), group, form), true);
         });
@@ -315,7 +315,7 @@ public class StatsCommand {
     private static int clearTransform(CommandSourceStack source, ServerPlayer player) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             data.getCharacter().clearActiveForm();
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
             source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.untransform.success", player.getName().getString()), true);
         });

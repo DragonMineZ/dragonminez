@@ -55,7 +55,7 @@ public class HairEditorScreen extends Screen {
     private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
     private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
 
-    private static final float MIN_SCALE = 0.1f;
+    private static final float MIN_SCALE = 0.5f;
     private static final float MAX_SCALE = 3.0f;
 
     protected static boolean GLOBAL_SWITCHING = false;
@@ -532,14 +532,17 @@ public class HairEditorScreen extends Screen {
             renderPanorama(partialTick);
         } else {
             this.renderBackground(graphics);
+			this.renderBackground(graphics);
         }
-
-        renderPlayerModel(graphics, this.width / 2, this.height / 2 + 40, 75);
-
         renderLeftPanel(graphics);
         renderRightPanel(graphics, mouseX, mouseY);
 
+        renderPlayerModel(graphics, this.width / 2, this.height / 2 + 220, 150);
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0D, 0.0D, 400.0D);
         super.render(graphics, mouseX, mouseY, partialTick);
+        graphics.pose().popPose();
     }
 
     private void renderPanorama(float partialTick) {
@@ -785,11 +788,13 @@ public class HairEditorScreen extends Screen {
         if (handleFaceSelectorClick(mouseX, mouseY)) return true;
 
         int centerX = this.width / 2;
-        int centerY = this.height / 2 + 40;
-        int modelRadius = 60;
+        int centerY = this.height / 2 + 220;
+        int modelRadius = 100;
+        int bottomY = this.height - 30;
+        int maxDragY = bottomY - 25 - 10;
 
         if (mouseX >= centerX - modelRadius && mouseX <= centerX + modelRadius &&
-            mouseY >= centerY - 100 && mouseY <= centerY + 20) {
+            mouseY >= centerY - 200 && mouseY <= maxDragY) {
             isDraggingModel = true;
             lastMouseX = mouseX;
             return true;

@@ -63,7 +63,7 @@ public class SkillsCommand {
 
 		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
 			data.getSkills().setSkillLevel(skillName, level);
-			NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_success", skillName, level, target.getName().getString()), true);
 		});
 
@@ -88,7 +88,7 @@ public class SkillsCommand {
 			}
 
 			data.getSkills().removeSkill(skillName);
-			NetworkHandler.sendToPlayer(new StatsSyncS2C(target), target);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
 
 
 			boolean isTransformationSkill = lowerName.equals("superform") ||

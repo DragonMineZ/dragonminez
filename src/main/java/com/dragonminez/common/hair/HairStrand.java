@@ -149,26 +149,31 @@ public class HairStrand {
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Id", id);
-        tag.putInt("Length", length);
-        tag.putFloat("OffsetX", offsetX);
-        tag.putFloat("OffsetY", offsetY);
-        tag.putFloat("OffsetZ", offsetZ);
-        tag.putFloat("RotX", rotationX);
-        tag.putFloat("RotY", rotationY);
-        tag.putFloat("RotZ", rotationZ);
-        tag.putFloat("ScaleX", scaleX);
-        tag.putFloat("ScaleY", scaleY);
-        tag.putFloat("ScaleZ", scaleZ);
-        tag.putFloat("CubeW", cubeWidth);
-        tag.putFloat("CubeH", cubeHeight);
-        tag.putFloat("CubeD", cubeDepth);
-        tag.putFloat("CurveX", curveX);
-        tag.putFloat("CurveY", curveY);
-        tag.putFloat("CurveZ", curveZ);
-        if (color != null) {
-            tag.putString("Color", color);
-        }
+        if (id != 0) tag.putInt("Id", id);
+        if (length != 0) tag.putInt("Length", length);
+
+        if (offsetX != 0.0f) tag.putFloat("OffsetX", offsetX);
+        if (offsetY != 0.0f) tag.putFloat("OffsetY", offsetY);
+        if (offsetZ != 0.0f) tag.putFloat("OffsetZ", offsetZ);
+
+        if (rotationX != 0.0f) tag.putFloat("RotX", rotationX);
+        if (rotationY != 0.0f) tag.putFloat("RotY", rotationY);
+        if (rotationZ != 0.0f) tag.putFloat("RotZ", rotationZ);
+
+        if (scaleX != 1.0f) tag.putFloat("ScaleX", scaleX);
+        if (scaleY != 1.0f) tag.putFloat("ScaleY", scaleY);
+        if (scaleZ != 1.0f) tag.putFloat("ScaleZ", scaleZ);
+
+        if (cubeWidth != 2.0f) tag.putFloat("CubeW", cubeWidth);
+        if (cubeHeight != 2.0f) tag.putFloat("CubeH", cubeHeight);
+        if (cubeDepth != 2.0f) tag.putFloat("CubeD", cubeDepth);
+
+        if (curveX != 0.0f) tag.putFloat("CurveX", curveX);
+        if (curveY != 0.0f) tag.putFloat("CurveY", curveY);
+        if (curveZ != 0.0f) tag.putFloat("CurveZ", curveZ);
+
+        if (color != null) tag.putString("Color", color);
+
         return tag;
     }
     

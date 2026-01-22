@@ -50,7 +50,7 @@ public class PointsCommand {
     private static int setPoints(CommandSourceStack source, ServerPlayer player, int amount) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             data.getResources().setTrainingPoints(amount);
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         source.sendSuccess(() -> Component.translatable("command.dragonminez.points.set.success",
@@ -61,7 +61,7 @@ public class PointsCommand {
     private static int addPoints(CommandSourceStack source, ServerPlayer player, int amount) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             data.getResources().addTrainingPoints(amount);
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         String key = amount >= 0 ? "command.dragonminez.points.add.success" : "command.dragonminez.points.remove.success";
@@ -75,7 +75,7 @@ public class PointsCommand {
             int currentPoints = data.getResources().getTrainingPoints();
             int newPoints = Math.max(0, currentPoints - amount);
             data.getResources().setTrainingPoints(newPoints);
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         source.sendSuccess(() -> Component.translatable("command.dragonminez.points.remove.success",

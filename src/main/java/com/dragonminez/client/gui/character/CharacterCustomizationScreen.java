@@ -456,8 +456,17 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void changeHair(int delta) {
-        int maxHair = TextureCounter.getMaxHairTypes(character.getRace());
-        if (maxHair == 0) maxHair = 5;
+        int maxHair = 0;
+		switch (character.getRace().toLowerCase(Locale.ROOT)) {
+			case "human", "saiyan" -> maxHair = HairManager.getPresetCount();
+			case "namekian" -> maxHair = 3;
+			case "frostdemon" -> maxHair = 1;
+			case "bioandroid" -> maxHair = 1;
+			case "majin" -> {
+				if (character.getGender().equals(Character.GENDER_FEMALE)) maxHair = HairManager.getPresetCount();
+				else maxHair = 2;
+			}
+		}
 
         int newHair = character.getHairId() + delta;
 

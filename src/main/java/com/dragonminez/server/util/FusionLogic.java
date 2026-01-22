@@ -84,8 +84,8 @@ public class FusionLogic {
 		calculateAndApplyStats(lData, pData, type, lvl1, lvl2);
 		PartyManager.forceJoinParty(leader, partner);
 
-		NetworkHandler.sendToPlayer(new StatsSyncS2C(leader), leader);
-		NetworkHandler.sendToPlayer(new StatsSyncS2C(partner), partner);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leader), leader);
+		NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 	}
 
 	public static void endFusion(ServerPlayer player, StatsData data, boolean forcedByDeath) {
@@ -119,7 +119,7 @@ public class FusionLogic {
 			}
 			PartyManager.leaveParty(leaderRef);
 
-			NetworkHandler.sendToPlayer(new StatsSyncS2C(leaderRef), leaderRef);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 		}
 
 		if (partner != null) {
@@ -141,7 +141,7 @@ public class FusionLogic {
 				}
 				PartyManager.leaveParty(partner);
 
-				NetworkHandler.sendToPlayer(new StatsSyncS2C(partner), partner);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 			});
 		}
 	}

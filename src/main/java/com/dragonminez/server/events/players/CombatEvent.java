@@ -39,7 +39,7 @@ public class CombatEvent {
 
 		// Attacker Damage Event
         if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
-			if (attacker.hasEffect(MainEffects.STUN.get())) {
+			if (attacker.hasEffect(MainEffects.STUN.get()) || attacker.isBlocking()) {
 				event.setCanceled(true);
 				return;
 			}
@@ -92,7 +92,7 @@ public class CombatEvent {
                 }
 
 				if (attacker instanceof ServerPlayer serverPlayer) {
-					NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				}
 
                 if (isEmptyHandOrNoDamageItem(attacker)) {
@@ -329,7 +329,7 @@ public class CombatEvent {
 							);
 
 							if (victim instanceof ServerPlayer serverPlayer) {
-								NetworkHandler.sendToPlayer(new StatsSyncS2C(serverPlayer), serverPlayer);
+								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 							}
 						}
 					}
