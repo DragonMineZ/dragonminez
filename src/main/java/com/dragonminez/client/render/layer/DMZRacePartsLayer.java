@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.FrostDemonForms;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -64,12 +65,18 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         String currentForm = character.getActiveForm();
         boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
 
-        if (race.equals("saiyan") && !stats.getStatus().isTailVisible()) {
+        if (race.equals("saiyan") && !stats.getStatus().isTailVisible() &&
+                !Objects.equals(currentForm, SaiyanForms.OOZARU) &&
+                !Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)) {
+
             setupSaiyanParts(partsModel);
             float[] color = ColorUtils.hexToRgb("#572117");
+
             if (hasForm && character.getActiveFormData() != null) {
                 String formHair = character.getActiveFormData().getHairColor();
-                if (formHair != null && !formHair.isEmpty()) color = ColorUtils.hexToRgb(formHair);
+                if (formHair != null && !formHair.isEmpty()) {
+                    color = ColorUtils.hexToRgb(formHair);
+                }
             }
             return color;
         }

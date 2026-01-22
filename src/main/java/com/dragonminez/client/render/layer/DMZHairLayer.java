@@ -41,7 +41,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         //var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
         //if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")) return;
 
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         var stats = statsCap.orElse(new StatsData(animatable));
         Character character = stats.getCharacter();
 
