@@ -2,7 +2,6 @@ package com.dragonminez.client.animation;
 
 import software.bernie.geckolib.core.animation.RawAnimation;
 
-//UGLY ASS CLASS
 public class Animations {
     public static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.base.idle");
     public static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.base.walk");
@@ -21,4 +20,6 @@ public class Animations {
     public static final RawAnimation TAIL = RawAnimation.begin().thenLoop("animation.base.tail");
 	public static final RawAnimation BLOCK = RawAnimation.begin().thenPlay("animation.base.block");
 	public static final RawAnimation DRAIN = RawAnimation.begin().thenPlay("animation.base.absorb");
+	public static final RawAnimation MINING1 = RawAnimation.begin().thenPlay("animation.base.mining1");
+	public static final RawAnimation MINING2 = RawAnimation.begin().thenPlay("animation.base.mining2");
 }

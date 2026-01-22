@@ -94,27 +94,39 @@ public class CharacterCustomizationScreen extends Screen {
     private void initializeDefaultColors() {
         RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
         if (config == null) return;
+        boolean hasChanges = false;
 
         if (character.getBodyColor() == null || character.getBodyColor().isEmpty()) {
             character.setBodyColor(config.getDefaultBodyColor());
+            hasChanges = true;
         }
         if (character.getBodyColor2() == null || character.getBodyColor2().isEmpty()) {
             character.setBodyColor2(config.getDefaultBodyColor2());
+            hasChanges = true;
         }
         if (character.getBodyColor3() == null || character.getBodyColor3().isEmpty()) {
             character.setBodyColor3(config.getDefaultBodyColor3());
+            hasChanges = true;
         }
         if (character.getHairColor() == null || character.getHairColor().isEmpty()) {
             character.setHairColor(config.getDefaultHairColor());
+            hasChanges = true;
         }
         if (character.getEye1Color() == null || character.getEye1Color().isEmpty()) {
             character.setEye1Color(config.getDefaultEye1Color());
+            hasChanges = true;
         }
         if (character.getEye2Color() == null || character.getEye2Color().isEmpty()) {
             character.setEye2Color(config.getDefaultEye2Color());
+            hasChanges = true;
         }
         if (character.getAuraColor() == null || character.getAuraColor().isEmpty()) {
             character.setAuraColor(config.getDefaultAuraColor());
+            hasChanges = true;
+        }
+
+        if (hasChanges) {
+            NetworkHandler.sendToServer(new StatsSyncC2S(character));
         }
     }
 
@@ -200,6 +212,7 @@ public class CharacterCustomizationScreen extends Screen {
                             if (character.getRace().equals("majin")) {
                                 character.setHairId(0);
                             }
+                            NetworkHandler.sendToServer(new StatsSyncC2S(character));
                             refreshButtons();
                         }));
             } else {
@@ -209,6 +222,7 @@ public class CharacterCustomizationScreen extends Screen {
                             if (character.getRace().equals("majin")) {
                                 character.setHairId(0);
                             }
+                            NetworkHandler.sendToServer(new StatsSyncC2S(character));
                             refreshButtons();
                         }));
             }
@@ -225,23 +239,27 @@ public class CharacterCustomizationScreen extends Screen {
             addRenderableWidget(createArrowButton(classPosX, classPosY, false,
                     btn -> {
                         character.setCharacterClass(Character.CLASS_WARRIOR);
+                        NetworkHandler.sendToServer(new StatsSyncC2S(character));
                         refreshButtons();
                     }));
         } else if (currentClass.equals(Character.CLASS_WARRIOR)) {
             addRenderableWidget(createArrowButton(classPosX - 105, classPosY, true,
                     btn -> {
                         character.setCharacterClass(Character.CLASS_MARTIALARTIST);
+                        NetworkHandler.sendToServer(new StatsSyncC2S(character));
                         refreshButtons();
                     }));
             addRenderableWidget(createArrowButton(classPosX, classPosY, false,
                     btn -> {
                         character.setCharacterClass(Character.CLASS_SPIRITUALIST);
+                        NetworkHandler.sendToServer(new StatsSyncC2S(character));
                         refreshButtons();
                     }));
         } else {
             addRenderableWidget(createArrowButton(classPosX - 105, classPosY, true,
                     btn -> {
                         character.setCharacterClass(Character.CLASS_WARRIOR);
+                        NetworkHandler.sendToServer(new StatsSyncC2S(character));
                         refreshButtons();
                     }));
         }
@@ -263,6 +281,7 @@ public class CharacterCustomizationScreen extends Screen {
                 .message(Component.empty())
                 .onPress(btn -> {
                     character.setEye2Color(character.getEye1Color());
+                    NetworkHandler.sendToServer(new StatsSyncC2S(character));
                     refreshButtons();
                 })
                 .build());
@@ -478,6 +497,7 @@ public class CharacterCustomizationScreen extends Screen {
         }
 
         character.setHairId(newHair);
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
         refreshButtons();
     }
 
@@ -503,6 +523,7 @@ public class CharacterCustomizationScreen extends Screen {
         }
 
         character.setBodyType(newType);
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
         refreshButtons();
     }
 
@@ -528,6 +549,7 @@ public class CharacterCustomizationScreen extends Screen {
         if (newEyes < 0) newEyes = maxEyes;
         if (newEyes > maxEyes) newEyes = 0;
         character.setEyesType(newEyes);
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
         refreshButtons();
     }
 
@@ -539,6 +561,7 @@ public class CharacterCustomizationScreen extends Screen {
         if (newNose < 0) newNose = maxNose;
         if (newNose > maxNose) newNose = 0;
         character.setNoseType(newNose);
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
         refreshButtons();
     }
 
@@ -550,6 +573,7 @@ public class CharacterCustomizationScreen extends Screen {
         if (newMouth < 0) newMouth = maxMouth;
         if (newMouth > maxMouth) newMouth = 0;
         character.setMouthType(newMouth);
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
         refreshButtons();
     }
 
@@ -560,12 +584,12 @@ public class CharacterCustomizationScreen extends Screen {
 		int newTattoo = character.getTattooType() + delta;
 		if (newTattoo < 0) newTattoo = maxTattoo;
 		if (newTattoo > maxTattoo) newTattoo = 0;
-		character.setTattooType(newTattoo);
-		refreshButtons();
-	}
+	character.setTattooType(newTattoo);
+	NetworkHandler.sendToServer(new StatsSyncC2S(character));
+	refreshButtons();
+}
 
     private void refreshButtons() {
-		NetworkHandler.sendToServer(new StatsSyncC2S());
         String savedColorField = currentColorField;
         boolean wasColorPickerVisible = colorPickerVisible;
 
@@ -623,6 +647,8 @@ public class CharacterCustomizationScreen extends Screen {
             case "eye2Color" -> character.setEye2Color(color);
             case "auraColor" -> character.setAuraColor(color);
         }
+
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
     }
 
     private void finish() {
@@ -631,6 +657,7 @@ public class CharacterCustomizationScreen extends Screen {
             ForgeClientEvents.hasCreatedCharacterCache = true;
             this.minecraft.setScreen(null);
 			this.minecraft.options.guiScale().set(oldGuiScale);
+			this.minecraft.resizeDisplay();
         }
     }
 
