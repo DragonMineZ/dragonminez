@@ -46,6 +46,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         renderBody(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
 
+        renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
+
         renderTattoos(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
 
         renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
@@ -127,6 +129,67 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         String customPath = "textures/entity/races/" + textureBaseName + "/bodytype" + genderPart + "_" + bodyType + ".png";
         renderColoredLayer(model, poseStack, animatable, bufferSource, customPath, bodyTint, partialTick, packedLight, packedOverlay);
     }
+
+    private void renderHair(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+        var character = stats.getCharacter();
+        String raceName = character.getRace().toLowerCase();
+        String currentForm = character.getActiveForm();
+        int hairId = character.getHairId();
+
+        if (!raceName.equals("human") && !raceName.equals("saiyan")) return;
+        if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
+        if (hairId <= 0) return;
+
+        float[] tempTint = hexToRGB(character.getHairColor());
+        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            var activeForm = character.getActiveFormData();
+            if (!activeForm.getHairColor().isEmpty()) {
+                tempTint = hexToRGB(activeForm.getHairColor());
+            }
+        }
+
+        final float[] hairTint = tempTint;
+
+        model.getBone("head").ifPresent(headBone -> {
+            float originalZ = headBone.getPosZ();
+            float originalSX = headBone.getScaleX();
+            float originalSY = headBone.getScaleY();
+            float originalSZ = headBone.getScaleZ();
+
+            float inflation = 0.004f;
+            headBone.setPosZ(originalZ - inflation);
+            headBone.setScaleX(originalSX + inflation);
+            headBone.setScaleY(originalSY + inflation);
+            headBone.setScaleZ(originalSZ + inflation);
+
+            List<String> hiddenBones = new ArrayList<>();
+            for (GeoBone bone : model.topLevelBones()) {
+                if (!bone.isHidden()) {
+                    hiddenBones.add(bone.getName());
+                    bone.setHidden(true);
+                }
+            }
+
+            headBone.setHidden(false);
+            unhideParents(headBone);
+
+            String hairPath = "textures/entity/races/hair_base.png";
+
+            renderColoredLayer(model, poseStack, animatable, bufferSource, hairPath, hairTint, partialTick, packedLight, packedOverlay);
+
+            for (GeoBone bone : model.topLevelBones()) {
+                if (hiddenBones.contains(bone.getName())) {
+                    bone.setHidden(false);
+                }
+            }
+
+            headBone.setPosZ(originalZ);
+            headBone.setScaleX(originalSX);
+            headBone.setScaleY(originalSY);
+            headBone.setScaleZ(originalSZ);
+        });
+    }
+
 
     private void renderSpecializedRace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String race, String form, int bodyType, boolean hasForm, float[] b1, float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
         String filePrefix;
@@ -304,6 +367,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer1.png", b1, pt, pl, po);
             renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer2.png", b2, pt, pl, po);
             renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer3.png", h, pt, pl, po);
+        }
+    }
+
+    private void unhideParents(GeoBone bone) {
+        GeoBone parent = bone.getParent();
+        while (parent != null) {
+            parent.setHidden(false);
+            parent = parent.getParent();
         }
     }
 
