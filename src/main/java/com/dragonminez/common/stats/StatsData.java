@@ -404,6 +404,10 @@ public class StatsData {
         return Math.max(1.0, baseDrain - reduction);
     }
 
+	public void saveApparanceData(CompoundTag nbt) {
+		nbt.put("Character", character.save());
+	}
+
 	public CompoundTag save() {
 		CompoundTag nbt = new CompoundTag();
 		nbt.put("Stats", stats.save());

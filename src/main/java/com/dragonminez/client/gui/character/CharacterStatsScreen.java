@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.IncreaseStatC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -626,12 +627,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int centerY = this.height / 2;
         int buttonX = this.width - 45;
         int buttonY = centerY + 90;
+		LivingEntity player = Minecraft.getInstance().player;
 
         viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
             useHexagonView = !useHexagonView;
             ConfigManager.getUserConfig().getHud().setHexagonStatsDisplay(useHexagonView);
             ConfigManager.saveGeneralUserConfig();
             ((SwitchButton) button).toggle();
+			if (useHexagonView) player.playSound(MainSounds.SWITCH_OFF.get());
+			else player.playSound(MainSounds.SWITCH_ON.get());
         });
         this.addRenderableWidget(viewSwitchButton);
     }

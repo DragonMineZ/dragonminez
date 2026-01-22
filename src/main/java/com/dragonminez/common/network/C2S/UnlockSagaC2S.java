@@ -41,7 +41,7 @@ public class UnlockSagaC2S {
 
 					stats.getQuestData().unlockSaga(sagaId);
 
-					NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				}
 			});
 		});

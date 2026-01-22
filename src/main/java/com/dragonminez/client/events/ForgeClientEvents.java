@@ -10,8 +10,6 @@ import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
-import com.dragonminez.common.network.C2S.ExecuteActionC2S;
-import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -60,7 +58,7 @@ public class ForgeClientEvents {
             });
         }
 
-        if (KeyBinds.OPEN_CHARACTER_MENU.consumeClick()) {
+        if (KeyBinds.STATS_MENU.consumeClick()) {
 			if (mc.player == null || mc.screen != null) return;
 			int oldGuiScale = mc.options.guiScale().get();
 			if (oldGuiScale != 3) {
@@ -100,8 +98,11 @@ public class ForgeClientEvents {
 
 		if (KeyBinds.UTILITY_MENU.isDown()) {
 			if (mc.screen == null) {
-				mc.setScreen(new UtilityMenuScreen());
-				mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+				StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+					if (!data.getStatus().hasCreatedCharacter()) return;
+					mc.setScreen(new UtilityMenuScreen());
+					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+				});
 			}
 		}
 

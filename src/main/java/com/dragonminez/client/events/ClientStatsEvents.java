@@ -72,8 +72,8 @@ public class ClientStatsEvents {
 			boolean isStunned = data.getStatus().isStunned();
 
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
-			boolean isDescendKeyPressed = KeyBinds.DESCEND_KEY.isDown() && !isStunned;
-			boolean isActionKeyPressed = KeyBinds.TRANSFORM_KEY.isDown() && !isStunned;
+			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
+			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
 
 			if (transformDoubleTapTimer > 0) {
 				transformDoubleTapTimer--;
@@ -114,7 +114,7 @@ public class ClientStatsEvents {
 				}
 			}
 
-			if (KeyBinds.LOCK_ON_TARGET.consumeClick() && !isStunned) {
+			if (KeyBinds.LOCK_ON.consumeClick() && !isStunned) {
 				Skill kiSense = data.getSkills().getSkill("kisense");
 				if (kiSense == null) return;
 				LockOnEvent.toggleLock();

@@ -36,16 +36,6 @@ public class TextureCounter {
         return count;
     }
 
-    public static int getMaxHairTypes(String race) {
-        if (HAIR_TYPE_CACHE.containsKey(race)) {
-            return HAIR_TYPE_CACHE.get(race);
-        }
-
-        int count = countTextures(race, "hair");
-        HAIR_TYPE_CACHE.put(race, count);
-        return count;
-    }
-
     public static int getMaxEyesTypes(String race) {
         if (EYES_TYPE_CACHE.containsKey(race)) {
             return EYES_TYPE_CACHE.get(race);

@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
+import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -10,9 +11,12 @@ import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -43,19 +47,23 @@ public class CharacterCustomizationScreen extends Screen {
     private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
     private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
     private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-    private static final ResourceLocation PANORAMA_COLD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
+    private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
     private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
 
     private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
     private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
     private final PanoramaRenderer panoramaNamek = new PanoramaRenderer(new CubeMap(PANORAMA_NAMEK));
     private final PanoramaRenderer panoramaBio = new PanoramaRenderer(new CubeMap(PANORAMA_BIO));
-    private final PanoramaRenderer panoramaCold = new PanoramaRenderer(new CubeMap(PANORAMA_COLD));
+    private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
     private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
+
+    protected static boolean GLOBAL_SWITCHING = false;
 
     private final Screen previousScreen;
     private final Character character;
     private int currentPage = 0;
+    private final int oldGuiScale;
+    private boolean isSwitchingMenu = false;
 
     private ColorSlider hueSlider;
     private ColorSlider saturationSlider;
@@ -63,10 +71,21 @@ public class CharacterCustomizationScreen extends Screen {
     private boolean colorPickerVisible = false;
     private String currentColorField = "";
 
+    private float playerRotation = 180.0f;
+    private boolean isDraggingModel = false;
+    private double lastMouseX = 0;
+
     public CharacterCustomizationScreen(Screen previousScreen, Character character) {
         super(Component.translatable("gui.dragonminez.customization.title"));
         this.previousScreen = previousScreen;
         this.character = character;
+
+        Minecraft mc = Minecraft.getInstance();
+        this.oldGuiScale = mc.options.guiScale().get();
+        if (oldGuiScale != 3) {
+            mc.options.guiScale().set(3);
+            mc.resizeDisplay();
+        }
 
         initializeDefaultColors();
     }
@@ -262,6 +281,10 @@ public class CharacterCustomizationScreen extends Screen {
                     .message(Component.translatable("gui.dragonminez.customization.back"))
                     .onPress(btn -> {
                         if (this.minecraft != null) {
+                            isSwitchingMenu = true;
+                            if (previousScreen instanceof RaceSelectionScreen) {
+                                GLOBAL_SWITCHING = true;
+                            }
                             this.minecraft.setScreen(previousScreen);
                         }
                     })
@@ -433,8 +456,17 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void changeHair(int delta) {
-        int maxHair = TextureCounter.getMaxHairTypes(character.getRace());
-        if (maxHair == 0) maxHair = 5;
+        int maxHair = 0;
+		switch (character.getRace().toLowerCase(Locale.ROOT)) {
+			case "human", "saiyan" -> maxHair = HairManager.getPresetCount();
+			case "namekian" -> maxHair = 3;
+			case "frostdemon" -> maxHair = 1;
+			case "bioandroid" -> maxHair = 1;
+			case "majin" -> {
+				if (character.getGender().equals(Character.GENDER_FEMALE)) maxHair = HairManager.getPresetCount();
+				else maxHair = 2;
+			}
+		}
 
         int newHair = character.getHairId() + delta;
 
@@ -594,7 +626,7 @@ public class CharacterCustomizationScreen extends Screen {
     private void finish() {
         if (this.minecraft != null) {
             NetworkHandler.sendToServer(new CreateCharacterC2S(character));
-			ForgeClientEvents.hasCreatedCharacterCache = true;
+            ForgeClientEvents.hasCreatedCharacterCache = true;
             this.minecraft.setScreen(null);
         }
     }
@@ -646,7 +678,7 @@ public class CharacterCustomizationScreen extends Screen {
             case "saiyan" -> panoramaSaiyan;
             case "namekian" -> panoramaNamek;
             case "bioandroid" -> panoramaBio;
-            case "frostdemon" -> panoramaCold;
+            case "frostdemon" -> panoramaFrost;
             case "majin" -> panoramaMajin;
             default -> panoramaHuman;
         };
@@ -686,7 +718,16 @@ public class CharacterCustomizationScreen extends Screen {
             }
 
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hair").getString(), textX, centerY + 10, 0xFF9B9B);
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 22, 0xFFFFFF);
+
+			if (HairManager.canUseHair(character)) {
+				if (character.getHairId() == 0) {
+					drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hairtype." + character.getHairId()).getString(), textX, centerY + 22, 0x00FFFF);
+				} else {
+					drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.hairtype." + character.getHairId()).getString(), textX, centerY + 22, 0xFFFFFF);
+				}
+			} else {
+				drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 22, 0xFFFFFF);
+			}
 
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.tattoo").getString(), textX, centerY + 40, 0xFF9B9B);
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getTattooType() + 1).getString(), textX, centerY + 52, 0xFFFFFF);
@@ -717,11 +758,8 @@ public class CharacterCustomizationScreen extends Screen {
         LivingEntity player = Minecraft.getInstance().player;
         if (player == null) return;
 
-        float xRotation = (float) Math.atan((double)((float)y - mouseY) / 40.0F);
-        float yRotation = (float) Math.atan((double)((float)x - mouseX) / 40.0F);
-
         Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
-        Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float)Math.PI / 180F));
+        Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
         pose.mul(cameraOrientation);
 
         float yBodyRotO = player.yBodyRot;
@@ -730,14 +768,14 @@ public class CharacterCustomizationScreen extends Screen {
         float yHeadRotO = player.yHeadRotO;
         float yHeadRot = player.yHeadRot;
 
-        player.yBodyRot = 180.0F + yRotation * 20.0F;
-        player.setYRot(180.0F + yRotation * 40.0F);
-        player.setXRot(-xRotation * 20.0F);
-        player.yHeadRot = player.getYRot();
-        player.yHeadRotO = player.getYRot();
+        player.yBodyRot = playerRotation;
+        player.setYRot(playerRotation);
+        player.setXRot(0);
+        player.yHeadRot = playerRotation;
+        player.yHeadRotO = playerRotation;
 
         graphics.pose().pushPose();
-        graphics.pose().translate(0.0D, 0.0D, -150.0D);
+        graphics.pose().translate(0.0D, 0.0D, 150.0D);
         InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
         graphics.pose().popPose();
 
@@ -917,6 +955,45 @@ public class CharacterCustomizationScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Detectar click en el modelo del jugador para arrastre
+        int centerX = this.width / 2 + 5;
+        int centerY = this.height / 2 + 70;
+        int modelRadius = 60;
+
+        if (mouseX >= centerX - modelRadius && mouseX <= centerX + modelRadius &&
+            mouseY >= centerY - 100 && mouseY <= centerY + 20) {
+            isDraggingModel = true;
+            lastMouseX = mouseX;
+            return true;
+        }
+
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
+			if (HairManager.canUseHair(stats.getCharacter())) {
+				if (currentPage == 0 && character.getHairId() == 0) {
+					int centerYText = this.height / 2 - 15;
+					int textX = 79;
+					int hairTypeY = centerYText + 22;
+
+					String hairTypeText = Component.translatable("gui.dragonminez.customization.hairtype.0").getString();
+					int textWidth = this.font.width(hairTypeText);
+					int textHeight = this.font.lineHeight;
+
+					int textLeft = textX - textWidth / 2;
+					int textRight = textX + textWidth / 2;
+					int textTop = hairTypeY;
+					int textBottom = hairTypeY + textHeight;
+
+					if (mouseX >= textLeft && mouseX <= textRight && mouseY >= textTop && mouseY <= textBottom) {
+						if (this.minecraft != null) {
+							isSwitchingMenu = true;
+							GLOBAL_SWITCHING = true;
+							this.minecraft.setScreen(new HairEditorScreen(this, character));
+						}
+					}
+				}
+			}
+		});
+
         if (colorPickerVisible) {
             int sliderX = 180;
             int sliderY = this.height / 2 - 50;
@@ -936,6 +1013,23 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        isDraggingModel = false;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (isDraggingModel) {
+            double deltaX = mouseX - lastMouseX;
+            playerRotation += (float)(deltaX * 0.8);
+            lastMouseX = mouseX;
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256) {
             if (colorPickerVisible) {
@@ -943,6 +1037,7 @@ public class CharacterCustomizationScreen extends Screen {
                 return true;
             }
             if (this.minecraft != null) {
+                isSwitchingMenu = true;
                 this.minecraft.setScreen(previousScreen);
             }
             return true;
@@ -954,12 +1049,28 @@ public class CharacterCustomizationScreen extends Screen {
     @Override
     public void onClose() {
         if (this.minecraft != null) {
+            isSwitchingMenu = true;
             this.minecraft.setScreen(previousScreen);
         }
     }
 
     @Override
+    public void removed() {
+        if (!isSwitchingMenu && this.minecraft != null) {
+            if (this.minecraft.options.guiScale().get() != oldGuiScale) {
+                this.minecraft.options.guiScale().set(oldGuiScale);
+                this.minecraft.resizeDisplay();
+            }
+        }
+        super.removed();
+    }
+
+    @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    public int getOldGuiScale() {
+        return oldGuiScale;
     }
 }

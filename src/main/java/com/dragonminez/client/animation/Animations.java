@@ -20,4 +20,5 @@ public class Animations {
     public static final RawAnimation CRAWLING_MOVE = RawAnimation.begin().thenLoop("animation.base.crawling_move");
     public static final RawAnimation TAIL = RawAnimation.begin().thenLoop("animation.base.tail");
 	public static final RawAnimation BLOCK = RawAnimation.begin().thenPlay("animation.base.block");
+	public static final RawAnimation DRAIN = RawAnimation.begin().thenPlay("animation.base.absorb");
 }

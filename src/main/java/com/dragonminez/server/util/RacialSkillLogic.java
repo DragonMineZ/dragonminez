@@ -3,6 +3,7 @@ package com.dragonminez.server.util;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.stats.Cooldowns;
@@ -146,7 +147,7 @@ public class RacialSkillLogic {
 		if (!config.isBioAndroidRacialSkill()) return;
 
 		if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {
-			player.sendSystemMessage(Component.translatable("message.dragonminez.racial.cooldown"));
+			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);
 			return;
 		}
 
@@ -158,6 +159,8 @@ public class RacialSkillLogic {
 		data.getStatus().setDrainingTargetId(target.getId());
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN_ACTIVE, duration);
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);
+		player.playSound(MainSounds.TP_SHORT.get());
+		target.playSound(MainSounds.TP_SHORT.get());
 	}
 
 	private static void teleportBehindTarget(ServerPlayer player, LivingEntity target) {
@@ -174,12 +177,8 @@ public class RacialSkillLogic {
 	}
 
 	private static boolean canOverpowerTarget(ServerPlayer player, StatsData playerData, LivingEntity target) {
-		double maxDmg = Math.max(playerData.getMeleeDamage(),
-				Math.max(playerData.getStrikeDamage(), playerData.getKiDamage()));
-
-		if (target.getHealth() > maxDmg) {
-			return false;
-		}
+		double maxDmg = Math.max(playerData.getMaxMeleeDamage(), Math.max(playerData.getMaxStrikeDamage(), playerData.getMaxKiDamage()));
+		if (target.getHealth() > maxDmg) return false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
 			AtomicBoolean levelCheck = new AtomicBoolean(false);

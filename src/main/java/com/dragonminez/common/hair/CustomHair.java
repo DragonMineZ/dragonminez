@@ -1,8 +1,10 @@
 package com.dragonminez.common.hair;
 
+import com.dragonminez.common.stats.Character;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -63,23 +65,23 @@ public class CustomHair {
 
         switch (face) {
             case FRONT -> {
-                strand.setOffset(gridX, 5, 3.5f);
-                strand.setRotation(90, 0, 0);
-            }
-            case BACK -> {
-                strand.setOffset(gridX, 5 + rowYOffset, -gridZ);
+                strand.setOffset(gridX, 7.25f, -4f);
                 strand.setRotation(-90, 0, 0);
             }
+            case BACK -> {
+                strand.setOffset(gridX, 7.25f + rowYOffset, 4f);
+                strand.setRotation(90, 0, 0);
+            }
             case LEFT -> {
-                strand.setOffset(-3f, 7 + rowYOffset, gridX);
+                strand.setOffset(-3.95f, 7.25f + rowYOffset, 0f + gridX);
                 strand.setRotation(0, 0, 90);
             }
             case RIGHT -> {
-                strand.setOffset(3f, 7 + rowYOffset, -gridX);
+                strand.setOffset(3.95f, 7.25f + rowYOffset, -0f - gridX);
                 strand.setRotation(0, 0, -90);
             }
             case TOP -> {
-                strand.setOffset(gridX, 8f, gridZ);
+                strand.setOffset(gridX, 7.85f, gridZ);
                 strand.setRotation(0, 0, 0);
             }
         }
@@ -95,11 +97,6 @@ public class CustomHair {
             return strands[index];
         }
         return null;
-    }
-
-    public HairStrand getStrand(HairFace face, int row, int col) {
-        int index = row * face.cols + col;
-        return getStrand(face, index);
     }
 
     public int getVisibleStrandCount() {
@@ -134,6 +131,21 @@ public class CustomHair {
         this.globalColor = color;
     }
 
+    public String getEffectiveColor(HairStrand strand, Character character) {
+        if (character != null && character.hasActiveForm()) return character.getHairColor();
+        if (strand.hasCustomColor()) return strand.getColor();
+
+        if (character != null) {
+            String hairColor = character.getHairColor();
+            if (hairColor != null && !hairColor.isEmpty()) {
+                return hairColor;
+            }
+        }
+
+        return globalColor;
+    }
+
+    @Deprecated
     public String getEffectiveColor(HairStrand strand) {
         if (strand.hasCustomColor()) {
             return strand.getColor();
@@ -158,15 +170,19 @@ public class CustomHair {
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putInt("Version", version);
-        tag.putString("Name", name);
+        if (name != null && !name.isEmpty()) tag.putString("Name", name);
         tag.putString("GlobalColor", globalColor);
 
         for (HairFace face : HairFace.values()) {
             ListTag strandsList = new ListTag();
             for (HairStrand strand : strandsByFace.get(face)) {
-                strandsList.add(strand.save());
+                if (strand.isVisible()) {
+                    strandsList.add(strand.save());
+                }
             }
-            tag.put(face.name(), strandsList);
+            if (!strandsList.isEmpty()) {
+                tag.put(face.name(), strandsList);
+            }
         }
 
         return tag;
@@ -210,11 +226,11 @@ public class CustomHair {
         return copy;
     }
 
-    public void writeToBuffer(net.minecraft.network.FriendlyByteBuf buf) {
+    public void writeToBuffer(FriendlyByteBuf buf) {
         buf.writeNbt(this.save());
     }
 
-    public static CustomHair readFromBuffer(net.minecraft.network.FriendlyByteBuf buf) {
+    public static CustomHair readFromBuffer(FriendlyByteBuf buf) {
         CompoundTag tag = buf.readNbt();
         if (tag == null) {
             return new CustomHair();

@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.ActionMode;
@@ -88,12 +89,6 @@ public class ExecuteActionC2S {
 							data.getStatus().setTailVisible(!data.getStatus().isTailVisible());
 							needsSync = true;
 						}
-						case "toggle_ki_sense" -> {
-							boolean isActive = data.getSkills().isSkillActive("kisense");
-							data.getSkills().setSkillActive("kisense", !isActive);
-							player.sendSystemMessage(Component.translatable(isActive ? "message.dragonminez.skill.kisense.off" : "message.dragonminez.skill.kisense.on"));
-							needsSync = true;
-						}
 						case "toggle_ki_weapon" -> {
 							switch (kiWeaponCycle) {
 								case 0 -> {
@@ -122,7 +117,7 @@ public class ExecuteActionC2S {
 					}
 
 					if (needsSync) {
-						NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					}
 				});
 			}

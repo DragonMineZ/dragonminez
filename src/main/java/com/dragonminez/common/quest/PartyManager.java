@@ -101,8 +101,14 @@ public class PartyManager {
         }
     }
 
-    private static void syncQuestProgress(ServerPlayer fromPlayer, ServerPlayer toPlayer) {
-    }
+    private static void syncQuestProgress(ServerPlayer fromPlayer, ServerPlayer toPlayer) {}
+
+	public static void forceJoinParty(ServerPlayer leader, ServerPlayer member) {
+		Scoreboard scoreboard = leader.getServer().getScoreboard();
+		PlayerTeam leaderTeam = getOrCreateParty(leader);
+		leaveParty(member);
+		scoreboard.addPlayerToTeam(member.getScoreboardName(), leaderTeam);
+	}
 
     public static class PendingInvite {
         private final UUID inviterUUID;

@@ -45,6 +45,7 @@ public class GeneralServerConfig {
         private Map<String, float[]> foodRegenerations = createDefaultFoodRegenerations();
         private double mightFruitPower = 1.2;
         private double majinPower = 1.3;
+		private double metamoruFusionThreshold = 0.5;
 		private int fusionDurationSeconds = 300;
 		private int fusionCooldownSeconds = 1800;
 
@@ -66,6 +67,9 @@ public class GeneralServerConfig {
 
         public double getMightFruitPower() { return Math.max(0, mightFruitPower); }
         public double getMajinPower() { return Math.max(0, majinPower); }
+		public double getMetamoruFusionThreshold() { return Math.max(0, metamoruFusionThreshold); }
+		public int getFusionDurationSeconds() { return Math.max(0, fusionDurationSeconds); }
+		public int getFusionCooldownSeconds() { return Math.max(0, fusionCooldownSeconds); }
 
         private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();
@@ -125,13 +129,13 @@ public class GeneralServerConfig {
 		private boolean saiyanRacialSkill = true;
 		private int saiyanZenkaiAmount = 3;
 		private double saiyanZenkaiHealthRegen = 0.20;
-		private double saiyanZenkaiStatBoost = 1.10;
+		private double saiyanZenkaiStatBoost = 0.10;
 		private String[] saiyanZenkaiBoosts = {"STR", "SKP", "PWR"};
 		private int saiyanZenkaiCooldownSeconds = 900;
 		private boolean namekianRacialSkill = true;
 		private int namekianAssimilationAmount = 4;
 		private double namekianAssimilationHealthRegen = 0.35;
-		private double namekianAssimilationStatBoost = 1.15;
+		private double namekianAssimilationStatBoost = 0.15;
 		private String[] namekianAssimilationBoosts = {"STR", "SKP", "PWR"};
 		private boolean namekianAssimilationOnNamekNpcs = true;
 		private boolean frostDemonRacialSkill = true;
@@ -143,7 +147,7 @@ public class GeneralServerConfig {
 		private boolean majinReviveSkill = true;
 		private int majinAbsorptionAmount = 3;
 		private double majinAbsorptionHealthRegen = 0.30;
-		private double majinAbsorptionStatsCopy = 1.10;
+		private double majinAbsorptionStatsCopy = 0.10;
 		private String[] majinAbsorptionBoosts = {"STR", "SKP", "PWR"};
 		private boolean majinAbsorptionOnMobs = true;
 		private int majinReviveCooldownSeconds = 3600;
@@ -155,7 +159,7 @@ public class GeneralServerConfig {
 		public boolean isSaiyanRacialSkill() { return saiyanRacialSkill; }
 		public int getSaiyanZenkaiAmount() { return Math.max(0, saiyanZenkaiAmount); }
 		public double getSaiyanZenkaiHealthRegen() { return Math.max(0, saiyanZenkaiHealthRegen); }
-		public double getSaiyanZenkaiStatBoost() { return Math.max(1, saiyanZenkaiStatBoost); }
+		public double getSaiyanZenkaiStatBoost() { return Math.max(0, saiyanZenkaiStatBoost); }
 		public String[] getSaiyanZenkaiBoosts() { return saiyanZenkaiBoosts; }
 		public int getSaiyanZenkaiCooldownSeconds() { return Math.max(0, saiyanZenkaiCooldownSeconds); }
 		public boolean isNamekianRacialSkill() { return namekianRacialSkill; }

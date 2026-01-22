@@ -139,7 +139,7 @@ public class StoryCommand {
                     boolean isCompleted = questData.isQuestCompleted(saga.getId(), quest.getId());
                     player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed_nbt", isCompleted));
 
-                    NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
                     player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed", quest.getTitle()));
                     player.sendSystemMessage(Component.translatable("command.dragonminez.story.objectives_completed", objectives.size()));
@@ -200,7 +200,7 @@ public class StoryCommand {
                         }
                     }
 
-                    NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
                 });
                 successCount++;
             }

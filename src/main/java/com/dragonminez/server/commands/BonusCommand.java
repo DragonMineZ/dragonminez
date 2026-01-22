@@ -77,7 +77,7 @@ public class BonusCommand {
                         bonusName, finalStat, operation + value, player.getName().getString()), true);
             }
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         return 1;
@@ -108,7 +108,7 @@ public class BonusCommand {
                         bonusName, finalStat, player.getName().getString()), true);
             }
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         return 1;
@@ -134,7 +134,7 @@ public class BonusCommand {
                         finalStat, player.getName().getString()), true);
             }
 
-            NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
 
         return 1;

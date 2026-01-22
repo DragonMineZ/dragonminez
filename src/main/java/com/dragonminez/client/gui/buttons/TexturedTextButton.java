@@ -26,7 +26,7 @@ public class TexturedTextButton extends Button {
     private final int hoverV;
     private final int normalTextColor;
     private final int hoverTextColor;
-    private final int backgroundColor;
+    private int backgroundColor;
     private final SoundEvent sound;
 
     public TexturedTextButton(int x, int y, int width, int height, ResourceLocation texture,
@@ -85,6 +85,10 @@ public class TexturedTextButton extends Button {
                 textColor);
     }
 
+    public void setBackgroundColor(int color) {
+        this.backgroundColor = color;
+    }
+
     public static class Builder {
         private int x, y, width, height;
         private ResourceLocation texture;
@@ -96,7 +100,7 @@ public class TexturedTextButton extends Button {
         private int backgroundColor = 0;
         private Component message = Component.empty();
         private OnPress onPress;
-        private SoundEvent sound = MainSounds.UI_NAVE_COOLDOWN.get();
+		private SoundEvent sound = MainSounds.PIP_MENU.get();
 
         public Builder position(int x, int y) {
             this.x = x;

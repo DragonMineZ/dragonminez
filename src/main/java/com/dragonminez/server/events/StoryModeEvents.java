@@ -41,7 +41,7 @@ public class StoryModeEvents {
 					int currentProgress = questData.getQuestObjectiveProgress(sagaId, quest.getId(), objIndex);
 					if (currentProgress < newProgress) {
 						questData.setQuestObjectiveProgress(sagaId, quest.getId(), objIndex, newProgress);
-						NetworkHandler.sendToPlayer(new StatsSyncS2C(member), member);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(member), member);
 
 						boolean isQuestNowComplete = true;
 						for (int i = 0; i < quest.getObjectives().size(); i++) {

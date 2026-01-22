@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui;
 
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -117,7 +118,7 @@ public class UtilityMenuScreen extends Screen {
 			case 2 -> {
 				if (statsData.getSkills().hasSkill("fusion")) {
 					line1 = Component.translatable("gui.action.dragonminez.fusion").withStyle(ChatFormatting.BOLD);
-					line2 = Component.translatable("gui.action.dragonminez." + statsData.getSkills().isSkillActive("fusion"));
+					line2 = Component.translatable("gui.action.dragonminez." + (statsData.getStatus().getSelectedAction() == ActionMode.FUSION ? "true" : "false"));
 					isSelected = currentMode == ActionMode.FUSION;
 				}
 			}
@@ -184,35 +185,65 @@ public class UtilityMenuScreen extends Screen {
 
 	private void handleSlotClick(int index) {
 		String race = statsData.getCharacter().getRaceName();
+		Minecraft mc = Minecraft.getInstance();
 
 		switch (index) {
 			case 0 -> {
-				if (statsData.getSkills().hasSkill("kaioken"))
+				if (statsData.getSkills().hasSkill("kaioken")) {
+					boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.KAIOKEN;
 					NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.KAIOKEN));
+					playToggleSound(mc, !wasActive);
+				}
 			}
 			case 1 -> {
 				if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1) {
+					boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.FORM;
 					NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FORM));
+					playToggleSound(mc, !wasActive);
 				}
 			}
 			case 2 -> {
-				if (statsData.getSkills().hasSkill("fusion"))
+				if (statsData.getSkills().hasSkill("fusion")) {
+					boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.FUSION;
 					NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FUSION));
+					playToggleSound(mc, !wasActive);
+				}
 			}
 			case 5 -> {
-				if (statsData.getSkills().hasSkill("kimanipulation") && statsData.getSkills().hasSkill("kicontrol"))
+				if (statsData.getSkills().hasSkill("kimanipulation") && statsData.getSkills().hasSkill("kicontrol")) {
+					boolean wasActive = statsData.getSkills().isSkillActive("kimanipulation");
 					NetworkHandler.sendToServer(new ExecuteActionC2S("toggle_ki_weapon"));
+					playToggleSound(mc, !wasActive);
+				}
 			}
 			case 6 -> {
-				if ("saiyan".equals(race))
+				if ("saiyan".equals(race)) {
+					boolean wasActive = statsData.getStatus().isTailVisible();
 					NetworkHandler.sendToServer(new ExecuteActionC2S("toggle_tail"));
-				else if ("namekian".equals(race) || "bioandroid".equals(race) || "majin".equals(race))
+					playToggleSound(mc, !wasActive);
+				}
+				else if ("namekian".equals(race) || "bioandroid".equals(race) || "majin".equals(race)) {
+					boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.RACIAL;
 					NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.RACIAL));
+					playToggleSound(mc, !wasActive);
+				}
 			}
 			case 7 -> {
 				if ("frostdemon".equals(race) || "majin".equals(race) || "bioandroid".equals(race)) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
+					// Descender siempre es desactivar, entonces suena OFF
+					playToggleSound(mc, false);
 				}
+			}
+		}
+	}
+
+	private void playToggleSound(Minecraft mc, boolean turnedOn) {
+		if (mc.player != null) {
+			if (turnedOn) {
+				mc.player.playSound(MainSounds.SWITCH_ON.get(), 1.0F, 1.0F);
+			} else {
+				mc.player.playSound(MainSounds.SWITCH_OFF.get(), 1.0F, 1.0F);
 			}
 		}
 	}

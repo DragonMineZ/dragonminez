@@ -43,7 +43,7 @@ public class XenoverseHUD {
 				int maxStm = data.getMaxStamina();
 				int powerRelease = resources.getPowerRelease();
 				int formRelease;
-				if (resources.getActionCharge() < 20) formRelease = 20 + resources.getActionCharge();
+				if (resources.getActionCharge() < 10) formRelease = 10 + resources.getActionCharge();
 				else formRelease = resources.getActionCharge();
 				String raceName = character.getRaceName();
 				String auraColor = character.getAuraColor();

@@ -3,6 +3,7 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -33,18 +34,14 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     }
 
     @Override
-    public void render(
-            PoseStack poseStack,
-            T animatable,
-            BakedGeoModel model,
-            RenderType renderType,
-            MultiBufferSource bufferSource,
-            VertexConsumer buffer,
-            float partialTick,
-            int packedLight,
-            int packedOverlay) {
+    public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+        // No renderizar si tiene un casco que no sea pothala, es invisible o spectator
+        //if (animatable.isInvisible() || player.isSpectator()) return;
 
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+        //var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
+        //if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")) return;
+
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
         var stats = statsCap.orElse(new StatsData(animatable));
         Character character = stats.getCharacter();
 
@@ -86,16 +83,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         RenderUtils.translateToPivotPoint(poseStack, headBone);
-
-        HairRenderer.render(
-                poseStack,
-                bufferSource,
-                effectiveHair,
-                character.getHairColor(),
-                packedLight,
-                packedOverlay
-        );
-
+        HairRenderer.render(poseStack, bufferSource, effectiveHair, character, character.getHairColor(), packedLight, packedOverlay);
         poseStack.popPose();
     }
 

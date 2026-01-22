@@ -63,7 +63,7 @@ public class ClaimRewardC2S {
 					}
 
 					if (anyClaimed) {
-						NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					}
 				}
 			});

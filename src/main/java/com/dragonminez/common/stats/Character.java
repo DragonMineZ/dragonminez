@@ -227,6 +227,26 @@ public class Character {
         return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
     }
 
+	public void saveAppearance(CompoundTag tag) {
+		tag.putString("BodyColor", bodyColor);
+		tag.putString("BodyColor2", bodyColor2);
+		tag.putString("BodyColor3", bodyColor3);
+		tag.putString("HairColor", hairColor);
+		tag.putString("Eye1Color", eye1Color);
+		tag.putString("Eye2Color", eye2Color);
+		tag.putString("AuraColor", auraColor);
+	}
+
+	public void loadAppearance(CompoundTag tag) {
+		if (tag.contains("BodyColor")) this.bodyColor = tag.getString("BodyColor");
+		if (tag.contains("BodyColor2")) this.bodyColor2 = tag.getString("BodyColor2");
+		if (tag.contains("BodyColor3")) this.bodyColor3 = tag.getString("BodyColor3");
+		if (tag.contains("HairColor")) this.hairColor = tag.getString("HairColor");
+		if (tag.contains("Eye1Color")) this.eye1Color = tag.getString("Eye1Color");
+		if (tag.contains("Eye2Color")) this.eye2Color = tag.getString("Eye2Color");
+		if (tag.contains("AuraColor")) this.auraColor = tag.getString("AuraColor");
+	}
+
     public void copyFrom(Character other) {
         this.race = other.race;
         this.gender = other.gender;

@@ -78,7 +78,7 @@ public class SpacePodEntity extends Mob implements GeoEntity {
                     if (net.minecraft.client.Minecraft.getInstance().options.keyJump.isDown()) {
                         verticalSpeed = 0.35;
                     }
-                    else if (KeyBinds.DESCEND_KEY.isDown()) {
+                    else if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
                         verticalSpeed = -0.35;
                     }
                 }

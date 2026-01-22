@@ -30,10 +30,10 @@ public class OverworldBiomes {
 		BiomeDefaultFeatures.addDefaultCrystalFormations(biomeBuilder);
 		BiomeDefaultFeatures.addDefaultOres(biomeBuilder);
 		BiomeDefaultFeatures.addDefaultSoftDisks(biomeBuilder);
-		BiomeDefaultFeatures.addDesertExtraVegetation(biomeBuilder);
 		BiomeDefaultFeatures.addDesertVegetation(biomeBuilder);
+		BiomeDefaultFeatures.addDesertExtraVegetation(biomeBuilder);
 
-		biomeBuilder.addFeature(GenerationStep.Decoration.SURFACE_STRUCTURES,
+		biomeBuilder.addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION,
 				context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.STONE_SPIKE_PLACED_KEY));
 
 		BiomeSpecialEffects.Builder effectsBuilder = new BiomeSpecialEffects.Builder()
