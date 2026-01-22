@@ -59,7 +59,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         String currentForm = character.getActiveForm();
         boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
 
-        // Definición de colores iniciales
         float[] bodyTint = hexToRGB(character.getBodyColor());
         float[] bodyTint2 = hexToRGB(character.getBodyColor2());
         float[] bodyTint3 = hexToRGB(character.getBodyColor3());
@@ -80,18 +79,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             model.getBone("tail4").ifPresent(bone -> bone.setHidden(false));
 
             float[] tailColor = hasForm ? hairTint : ColorUtils.hexToRgb("#572117");
+
             renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", tailColor, partialTick, packedLight, packedOverlay);
         }
 
         if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
             String oozaruPath = "textures/entity/races/humansaiyan/oozaru_";
 
-            float[] furColor = hexToRGB("#6B1E0E");
+            float[] furColor = Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU) ? hexToRGB("#FFD700") : hexToRGB("#6B1E0E");
             float[] skinColor = hexToRGB("#CC978D");
-
-            if (Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)) {
-                furColor = hexToRGB("#FFD700");
-            }
 
             if (hasForm && character.getActiveFormData() != null) {
                 var form = character.getActiveFormData();
@@ -117,9 +113,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         boolean isMajin = raceName.equals("majin");
         boolean isFemale = gender.equals("female") || gender.equals("mujer");
-        boolean isSuperOrUltraMajin = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
-
-        if (isMajin && isFemale && isSuperOrUltraMajin) {
+        if (isMajin && isFemale && (Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA))) {
             renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", bodyTint, partialTick, packedLight, packedOverlay);
         }
 
