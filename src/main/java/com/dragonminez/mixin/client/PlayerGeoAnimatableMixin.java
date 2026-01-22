@@ -1,15 +1,14 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.item.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -44,10 +43,61 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
+    @Unique
+    private double dragonminez$lastPosX = Double.NaN;
+    @Unique
+    private double dragonminez$lastPosZ = Double.NaN;
+    @Unique
+    private int dragonminez$stoppedTicks = 0;
+    @Unique
+    private boolean dragonminez$isMovingState = false;
+    @Unique
+    private int dragonminez$lastTickCount = -1;
+    @Unique
+    private static final int STOPPED_THRESHOLD_TICKS = 3;
+
+    @Unique
+    private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
+        int currentTick = player.tickCount;
+
+        if (currentTick == dragonminez$lastTickCount) {
+            return dragonminez$isMovingState;
+        }
+        dragonminez$lastTickCount = currentTick;
+
+        if (Double.isNaN(dragonminez$lastPosX)) {
+            dragonminez$lastPosX = player.getX();
+            dragonminez$lastPosZ = player.getZ();
+            return false;
+        }
+
+        double deltaX = player.getX() - dragonminez$lastPosX;
+        double deltaZ = player.getZ() - dragonminez$lastPosZ;
+        double distanceSq = deltaX * deltaX + deltaZ * deltaZ;
+
+        dragonminez$lastPosX = player.getX();
+        dragonminez$lastPosZ = player.getZ();
+
+        boolean isCurrentlyMoving = distanceSq > 0.0001;
+
+        if (isCurrentlyMoving) {
+            dragonminez$isMovingState = true;
+            dragonminez$stoppedTicks = 0;
+        } else {
+            dragonminez$stoppedTicks++;
+            if (dragonminez$stoppedTicks >= STOPPED_THRESHOLD_TICKS) {
+                dragonminez$isMovingState = false;
+            }
+        }
+
+        return dragonminez$isMovingState;
+    }
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
         registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
         registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
+		registrar.add(new AnimationController<>(this, "mining_controller", 0, this::miningPredicate));
         registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
         registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
         registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
@@ -58,60 +108,57 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
         IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 
-        AnimationController<T> ctl = state.getController();
-        RawAnimation playing = ctl.getCurrentRawAnimation();
+        boolean isMoving = dragonminez$isActuallyMoving(player);
 
-        return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-            String raceName = data.getCharacter().getRace();
-            // Si no es humano no hace ninguna animacion, esto lo usare luego para la raza majin o no se
-//            if (!raceName.equals("human")) {
-//                return PlayState.STOP;
-//            }
+        AtomicBoolean isDraining = new AtomicBoolean(false);
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+            isDraining.set(data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE));
+        });
 
-            // Swimming
-            if (player.isSwimming()) return state.setAndContinue(SWIMMING);
+        if (isDraining.get()) {
+            return state.setAndContinue(DRAIN);
+        }
 
-            if (player.isVisuallyCrawling()) {
-                if (state.isMoving()) return state.setAndContinue(CRAWLING_MOVE);
-                else return state.setAndContinue(CRAWLING);
+        // Swimming
+        if (player.isSwimming()) {
+            return state.setAndContinue(SWIMMING);
+        }
+
+        if (player.isVisuallyCrawling()) {
+            if (isMoving) {
+                return state.setAndContinue(CRAWLING_MOVE);
+            } else {
+                return state.setAndContinue(CRAWLING);
             }
+        }
 
-            // Flying
-            if (player.isFallFlying() || animatable.dragonminez$isCreativeFlying()) {
-                if (playing != FLY) ctl.setAnimation(FLY);
-                return PlayState.CONTINUE;
-            }
+        // Flying
+        if (player.isFallFlying() || animatable.dragonminez$isCreativeFlying()) {
+            return state.setAndContinue(FLY);
+        }
 
-            if (player.onGround()) {
-                // Crouching
-                if (player.isCrouching()) {
-                    if (state.isMoving()) {
-                        // Walking
-                        if (playing != CROUCHING_WALK) ctl.setAnimation(CROUCHING_WALK);
-                    } else {
-                        // Still
-                        if (playing != CROUCHING) ctl.setAnimation(CROUCHING);
-
-                    }
-                } else if (state.isMoving() && player.isSprinting()) {
-                    // Running
-                    if (playing != RUN) ctl.setAnimation(RUN);
-                } else if (state.isMoving()) {
-                    // Walking
-                    if (playing != WALK) ctl.setAnimation(WALK);
+        if (player.onGround()) {
+            // Crouching
+            if (player.isCrouching()) {
+                if (isMoving) {
+                    return state.setAndContinue(CROUCHING_WALK);
                 } else {
-                    // Idle
-                    if (playing != IDLE) ctl.setAnimation(IDLE);
+                    return state.setAndContinue(CROUCHING);
                 }
-                return PlayState.CONTINUE;
+            } else if (isMoving && player.isSprinting()) {
+                // Running
+                return state.setAndContinue(RUN);
+            } else if (isMoving) {
+                // Walking
+                return state.setAndContinue(WALK);
+            } else {
+                // Idle
+                return state.setAndContinue(IDLE);
             }
+        }
 
-            if (playing != JUMP) {
-                ctl.setAnimation(JUMP);
-            }
-            return PlayState.CONTINUE;
-
-        }).orElse(PlayState.STOP);
+        // Jumping/Falling
+        return state.setAndContinue(JUMP);
     }
 
     @Unique
@@ -120,35 +167,23 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
             var character = data.getCharacter();
-            // Usar toLowerCase() para evitar errores de mayúsculas/minúsculas
             String race = character.getRace().toLowerCase();
             String gender = character.getGender().toLowerCase();
             String currentForm = character.getActiveForm();
 
-            // 1. LÓGICA DE VISIBILIDAD DE COLA
-            // Para Majin, verificamos si es mujer Y está en Super o Ultra
             boolean isMajinWithTail = race.equals("majin") &&
                     (gender.equals("female") || gender.equals("mujer")) &&
                     (Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA));
 
             boolean hasTail = (race.equals("saiyan") && data.getStatus().isTailVisible())
                     || race.equals("frostdemon")
-                    || race.equals("bioandroid")
+                    || (race.equals("bioandroid") && !data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))
                     || isMajinWithTail;
 
             if (!hasTail) {
                 return PlayState.STOP;
             }
 
-            // 2. PRIORIDAD DE ANIMACIÓN
-            // Si el jugador se está moviendo, es mejor dejar que las animaciones de
-            // walk/run controlen la cola para que el movimiento sea natural.
-//            if (state.isMoving()) {
-//                return PlayState.STOP;
-//            }
-
-            // 3. REPRODUCIR IDLE
-            // setAndContinue es ideal para animaciones en bucle como el movimiento suave de la cola
             return state.setAndContinue(TAIL);
 
         }).orElse(PlayState.STOP);
@@ -160,7 +195,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 
         AnimationController<T> ctl = state.getController();
-        if (player.attackAnim > 0 && !isPlacingBlock(player) && !isBlocking(player)) {
+        if (player.attackAnim > 0 && !isPlacingBlock(player) && !isBlocking(player) && !isUsingTool(player)) {
             if (!animatable.dragonminez$isPlayingAttack()) {
                 animatable.dragonminez$setPlayingAttack(true);
                 ctl.setAnimation(animatable.dragonminez$useAttack2() ? ATTACK2 : ATTACK);
@@ -172,6 +207,25 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
             return PlayState.STOP;
         }
     }
+
+	@Unique
+	private <T extends GeoAnimatable> PlayState miningPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		AnimationController<T> ctl = state.getController();
+		if (player.attackAnim > 0 && isUsingTool(player) && !isPlacingBlock(player) && !isBlocking(player)) {
+			if (ctl.getAnimationState() == AnimationController.State.STOPPED) {
+				if (isMainHandTool(player)) {
+					ctl.setAnimation(MINING1);
+				} else if (dragonminez$isOffHandTool(player)) {
+					ctl.setAnimation(MINING2);
+				}
+				ctl.forceAnimationReset();
+			}
+			return PlayState.CONTINUE;
+		} else {
+			return PlayState.STOP;
+		}
+	}
 
     @Unique
     private <T extends GeoAnimatable> PlayState blockPredicate(AnimationState<T> state) {
@@ -221,6 +275,27 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
         return PlayState.STOP;
     }
+
+	@Unique
+	private static boolean isUsingTool(AbstractClientPlayer player) {
+		Item mainHand = player.getMainHandItem().getItem();
+		Item offHand = player.getOffhandItem().getItem();
+
+		return mainHand.getDescriptionId().contains("pickaxe") || mainHand.getDescriptionId().contains("axe") || mainHand.getDescriptionId().contains("shovel") || mainHand.getDescriptionId().contains("hoe")
+				|| offHand.getDescriptionId().contains("pickaxe") || offHand.getDescriptionId().contains("axe") || offHand.getDescriptionId().contains("shovel") || offHand.getDescriptionId().contains("hoe");
+	}
+
+	@Unique
+	private static boolean isMainHandTool(AbstractClientPlayer player) {
+		Item mainHand = player.getMainHandItem().getItem();
+		return mainHand.getDescriptionId().contains("pickaxe") || mainHand.getDescriptionId().contains("axe") || mainHand.getDescriptionId().contains("shovel") || mainHand.getDescriptionId().contains("hoe");
+	}
+
+	@Unique
+	private static boolean dragonminez$isOffHandTool(AbstractClientPlayer player) {
+		Item offHand = player.getOffhandItem().getItem();
+		return offHand.getDescriptionId().contains("pickaxe") || offHand.getDescriptionId().contains("axe") || offHand.getDescriptionId().contains("shovel") || offHand.getDescriptionId().contains("hoe");
+	}
 
     @Unique
     private static boolean isPlacingBlock(AbstractClientPlayer player) {
@@ -292,5 +367,4 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.geoCache;
     }
-
 }

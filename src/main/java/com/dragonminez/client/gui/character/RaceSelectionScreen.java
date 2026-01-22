@@ -301,7 +301,8 @@ public class RaceSelectionScreen extends Screen {
             character.setMouthType(config.getDefaultMouthType());
 			character.setTattooType(config.getDefaultTattooType());
         }
-		NetworkHandler.sendToServer(new StatsSyncC2S());
+
+		NetworkHandler.sendToServer(new StatsSyncC2S(character));
     }
 
     private void selectRace() {
@@ -313,7 +314,8 @@ public class RaceSelectionScreen extends Screen {
             GLOBAL_SWITCHING = true;
             this.minecraft.setScreen(new CharacterCustomizationScreen(this, character));
         }
-		NetworkHandler.sendToServer(new StatsSyncC2S());
+
+		NetworkHandler.sendToServer(new StatsSyncC2S(character));
     }
 
     @Override
