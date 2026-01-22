@@ -237,7 +237,7 @@ public class ForgeCommonEvents {
 		Mob mob = event.getEntity();
 		if (mob.getType().getCategory() == MobCategory.MONSTER) {
 			List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class,
-					new AABB(mob.blockPosition()).inflate(40));
+					new AABB(mob.blockPosition()).inflate(80));
 
 			if (!masters.isEmpty()) {
 				event.setSpawnCancelled(true);

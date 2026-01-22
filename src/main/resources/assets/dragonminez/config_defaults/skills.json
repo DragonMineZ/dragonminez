@@ -1,0 +1,149 @@
+{
+  // Configuration file for skill costs and Kaioken multipliers
+  // Each cost represents a level, with -1 indicating the skill can't be leveled at that stage
+  // If you remove a cost, you also remove a max level for that skill, but skills cannot
+  // have more than 10 levels, except potential unlock which can have 13 levels.
+  "skills": {
+    "fusion": {
+      "costs": [
+        -1,
+        10000,
+        30000,
+        50000,
+        75000
+      ]
+    },
+    "fly": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "kicontrol": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "potentialunlock": {
+      "costs": [
+        -1,
+        4000,
+        6000,
+        8000,
+        10000,
+        12000,
+        14000,
+        16000,
+        18000,
+        20000,
+        -1,
+        22000,
+        24000
+      ]
+    },
+    "kaioken": {
+      "costs": [
+        -1,
+        5000,
+        7000,
+        9000,
+        11000,
+        13000,
+        15000,
+        17000,
+        19000,
+        21000
+      ],
+      // Kaioken increases its multipliers every 2 levels
+      "multipliers": [
+        1.1,
+        1.2,
+        1.35,
+        1.5,
+        1.65
+      ],
+      // Kaioken also increases its drain rate every 2 levels
+      // 0.01 = 1% drain per second, not per tick
+      "drainRate": [
+        0.01,
+        0.02,
+        0.04,
+        0.075,
+        0.1
+      ]
+    },
+    "meditation": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "kimanipulation": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "kisense": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    },
+    "jump": {
+      "costs": [
+        -1,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000
+      ]
+    }
+  }
+}

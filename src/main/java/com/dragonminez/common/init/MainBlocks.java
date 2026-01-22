@@ -216,7 +216,7 @@ public final class MainBlocks {
 
 	//Bloques Especiales
 	public static final RegistryObject<Block> TIME_CHAMBER_PORTAL = registerBlock("time_chamber_portal",
-			() -> new TimeChamberPortalBlock());
+			TimeChamberPortalBlock::new);
 	//public static final RegistryObject<Block> GETE_FURNACE = registerBlock("gete_furnace",
 	//        () -> new GeteFurnaceBlock(BlockBehaviour.Properties.of()
 	//                .mapColor(MapColor.STONE).requiresCorrectToolForDrops().strength(3.5F)

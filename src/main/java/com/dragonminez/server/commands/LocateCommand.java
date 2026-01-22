@@ -2,10 +2,9 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
-import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
-import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
-import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
+import com.dragonminez.server.world.structure.helper.StructureLocator;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -15,17 +14,11 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.Structure;
-import net.minecraft.world.level.levelgen.structure.StructureSet;
-import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 
 import java.util.Map;
 
@@ -36,7 +29,8 @@ public class LocateCommand {
 			"roshi_house", Pair.of(DMZStructures.ROSHI_HOUSE, Level.OVERWORLD),
 			"elder_guru", Pair.of(DMZStructures.ELDER_GURU, NamekDimension.NAMEK_KEY),
 			"timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY),
-			"kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD)
+			"kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD),
+			"enma_palace", Pair.of(DMZStructures.ENMA_PALACE, OtherworldDimension.OTHERWORLD_KEY)
 	);
 
 	private static final SuggestionProvider<CommandSourceStack> SUGGESTIONS = (context, builder) ->
@@ -76,51 +70,7 @@ public class LocateCommand {
 			return 0;
 		}
 
-		var structureRegistry = targetLevel.registryAccess().registryOrThrow(Registries.STRUCTURE);
-		var structureSetRegistry = targetLevel.registryAccess().registryOrThrow(Registries.STRUCTURE_SET);
-
-		StructurePlacement placement = null;
-
-		for (var entry : structureSetRegistry.entrySet()) {
-			StructureSet set = entry.getValue();
-			for (var structureEntry : set.structures()) {
-				if (structureEntry.structure().is(structureKey)) {
-					placement = set.placement();
-					break;
-				}
-			}
-			if (placement != null) break;
-		}
-
-		if (placement == null) {
-			source.sendFailure(Component.translatable("command.dragonminez.locate.structureset_not_found", structName));
-			return 0;
-		}
-
-		BlockPos foundPos = null;
-
-		if (placement instanceof BiomeAwareUniquePlacement uniquePlacement) {
-			ChunkPos chunkPos = uniquePlacement.getStructureChunk(
-					targetLevel.getSeed(),
-					targetLevel.getChunkSource().getGenerator().getBiomeSource(),
-					targetLevel.getChunkSource().randomState()
-			);
-			if (chunkPos != null) {
-				foundPos = new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());
-			}
-		} else if (placement instanceof FixedStructurePlacement fixedPlacement) {
-			int x = (fixedPlacement.getFixedX() << 4) + 8;
-			int z = (fixedPlacement.getFixedZ() << 4) + 8;
-			foundPos = new BlockPos(x, 30, z);
-		} else if (placement instanceof UniqueNearSpawnPlacement spawnPlacement) {
-			ChunkPos chunkPos = spawnPlacement.getStructureChunk(targetLevel.getSeed());
-			foundPos = new BlockPos(chunkPos.getMiddleBlockX(), 90, chunkPos.getMiddleBlockZ());
-		} else {
-			HolderSet<Structure> holderSet = HolderSet.direct(structureRegistry.getHolderOrThrow(structureKey));
-			Pair<BlockPos, Holder<Structure>> result = targetLevel.getChunkSource().getGenerator()
-					.findNearestMapStructure(targetLevel, holderSet, BlockPos.containing(source.getPosition()), 100, false);
-			if (result != null) foundPos = result.getFirst();
-		}
+		BlockPos foundPos = StructureLocator.locateStructure(targetLevel, structureKey, BlockPos.containing(source.getPosition()));
 
 		if (foundPos == null) {
 			source.sendFailure(Component.translatable("command.dragonminez.locate.not_found", structName));
@@ -128,7 +78,7 @@ public class LocateCommand {
 		}
 
 		final BlockPos finalPos = foundPos;
-		int distance = (source.getLevel() == targetLevel) ? (int) Math.sqrt(BlockPos.containing(source.getPosition()).distSqr(finalPos)) : -1;
+		int distance = (source.getLevel() == targetLevel) ? StructureLocator.getDistanceTo(BlockPos.containing(source.getPosition()), finalPos) : -1;
 
 		Component coordComponent = ComponentUtils.wrapInSquareBrackets(
 				Component.literal(finalPos.getX() + ", " + finalPos.getY() + ", " + finalPos.getZ())

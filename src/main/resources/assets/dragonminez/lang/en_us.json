@@ -266,6 +266,12 @@
   "message.dragonminez.racial.bio.success": "§2Vital energy drained successfully!",
   "message.dragonminez.racial.zenkai.used": "§aZenkai Boost used! You feel stronger!",
 
+  "//": "EFFECTS",
+  "effect.dragonminez.stun": "Stunned",
+  "effect.dragonminez.stagger": "Staggered",
+  "effect.dragonminez.dash_cd": "Dash",
+  "effect.dragonminez.doubledash_cd": "Double Dash",
+
   "//": "ENTITIES",
   "entity.dragonminez.master_karin": "Master Korin",
   "entity.dragonminez.master_goku": "Master Goku",

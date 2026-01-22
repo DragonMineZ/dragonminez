@@ -138,28 +138,27 @@ dependencies {
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
 
-    // Database Libraries
-    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.0.8,3.1)") {
-        jarJar.ranged(this, "[3.0.8,3.1)")
-    }
-    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[4.0.3,5.0)") {
-        jarJar.ranged(this, "[4.0.3,5.0)")
-    }
-
+    // Database Libraries for database storage lol
+    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.0.8,3.1)") { jarJar.ranged(this, "[3.0.8,3.1)") }
+    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[4.0.3,5.0)") { jarJar.ranged(this, "[4.0.3,5.0)") }
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.0.8")
     compileOnly("com.zaxxer:HikariCP:4.0.3")
 
     // Dev utility mods (not included while building)
+    // JEI for recipe viewing and testing, also we need the API to test the integration with the Kikono Station
     compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-common-api:$jei_version"))
     compileOnly(fg.deobf("mezz.jei:jei-$minecraft_version-forge-api:$jei_version"))
     runtimeOnly(fg.deobf("mezz.jei:jei-$minecraft_version-forge:$jei_version"))
+    // Embeddium for optimizations, WorldEdit for in-game building, Cyanide for crash reporting
     runtimeOnly(fg.deobf("org.embeddedt:embeddium-1.20.1:0.3.9-git.f603a93+mc1.20.1"))
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
-    runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
-    runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
+    // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)
     runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
     runtimeOnly(fg.deobf("curse.maven:naturecompass-252848:4712189"))
+    // Armors mods for testing armor layer on Oozaru/Majin models, we may delete this once fully finished
+    runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
+    runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
 }
 
 sourceSets.main {

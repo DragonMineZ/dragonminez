@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
@@ -17,11 +18,25 @@ import java.util.Optional;
 public class UniqueNearSpawnPlacement extends StructurePlacement {
 
     public static final Codec<UniqueNearSpawnPlacement> CODEC = RecordCodecBuilder.create(instance ->
-            placementCodec(instance).apply(instance, UniqueNearSpawnPlacement::new));
+            placementCodec(instance).and(
+                    Rotation.CODEC.optionalFieldOf("rotation", Rotation.NONE).forGetter(p -> p.rotation)
+            ).apply(instance, UniqueNearSpawnPlacement::new));
+
+    private final Rotation rotation;
+
+    public UniqueNearSpawnPlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,
+                                   float frequency, int salt, Optional<ExclusionZone> exclusionZone, Rotation rotation) {
+        super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
+        this.rotation = rotation;
+    }
 
     public UniqueNearSpawnPlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,
                                    float frequency, int salt, Optional<ExclusionZone> exclusionZone) {
-        super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
+        this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, Rotation.NONE);
+    }
+
+    public Rotation getRotation() {
+        return this.rotation;
     }
 
 	@Override

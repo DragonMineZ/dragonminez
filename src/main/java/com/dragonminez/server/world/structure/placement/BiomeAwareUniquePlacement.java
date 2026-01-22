@@ -8,6 +8,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.RandomState;
@@ -21,25 +22,39 @@ import java.util.Optional;
 public class BiomeAwareUniquePlacement extends StructurePlacement {
 
 	public static final Codec<BiomeAwareUniquePlacement> CODEC = RecordCodecBuilder.create(instance ->
-			placementCodec(instance).and(
+			placementCodec(instance).and(instance.group(
 					RegistryCodecs.homogeneousList(Registries.BIOME)
 							.fieldOf("valid_biomes")
-							.forGetter(BiomeAwareUniquePlacement::validBiomes)
-			).apply(instance, BiomeAwareUniquePlacement::new));
+							.forGetter(BiomeAwareUniquePlacement::validBiomes),
+					Rotation.CODEC.optionalFieldOf("rotation", Rotation.NONE)
+							.forGetter(BiomeAwareUniquePlacement::getRotation)
+			)).apply(instance, BiomeAwareUniquePlacement::new));
 
 	private final HolderSet<Biome> validBiomes;
+	private final Rotation rotation;
 
 	private static Field biomeSourceField = null;
 
 	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,
 									 float frequency, int salt, Optional<ExclusionZone> exclusionZone,
-									 HolderSet<Biome> validBiomes) {
+									 HolderSet<Biome> validBiomes, Rotation rotation) {
 		super(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone);
 		this.validBiomes = validBiomes;
+		this.rotation = rotation;
+	}
+
+	public BiomeAwareUniquePlacement(Vec3i locateOffset, FrequencyReductionMethod frequencyReductionMethod,
+									 float frequency, int salt, Optional<ExclusionZone> exclusionZone,
+									 HolderSet<Biome> validBiomes) {
+		this(locateOffset, frequencyReductionMethod, frequency, salt, exclusionZone, validBiomes, Rotation.NONE);
 	}
 
 	public HolderSet<Biome> validBiomes() {
 		return this.validBiomes;
+	}
+
+	public Rotation getRotation() {
+		return this.rotation;
 	}
 
 	private BiomeSource getBiomeSourceReflection(ChunkGeneratorStructureState state) {
