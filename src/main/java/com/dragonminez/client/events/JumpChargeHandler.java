@@ -1,6 +1,9 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.stats.Stats;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -69,39 +72,11 @@ public class JumpChargeHandler {
         }
 
         if (isOnGround) {
-            if (airTicks > 0) {
-            }
-            airTicks = 0;
+            if (airTicks > 0) airTicks = 0;
             hasAppliedBaseBoost = false;
         }
 
         wasJumping = isJumping;
     }
-
-	@SubscribeEvent
-	public static void onFall(LivingFallEvent event) {
-		if (!(event.getEntity() instanceof Player player)) return;
-
-		final int[] jumpLevel = {0};
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (data.getStatus().hasCreatedCharacter()) {
-				jumpLevel[0] = data.getSkills().getSkillLevel("jump");
-			}
-		});
-
-		if (jumpLevel[0] <= 0) return;
-
-		float maxHeight = 1.25f + (jumpLevel[0] * 1.0f);
-		float safeHeight = maxHeight + 1.0f;
-
-		float fallDistance = event.getDistance();
-
-		if (fallDistance <= safeHeight) {
-			event.setCanceled(true);
-		} else {
-			float reducedDistance = fallDistance - safeHeight;
-			event.setDistance(reducedDistance);
-		}
-	}
 }
 

@@ -33,10 +33,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -412,6 +409,33 @@ public class StatsEvents {
             });
         }
     }
+
+	@SubscribeEvent
+	public static void onFall(LivingFallEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+		final int[] jumpLevel = {0};
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (data.getStatus().hasCreatedCharacter()) {
+				jumpLevel[0] = data.getSkills().getSkillLevel("jump");
+			}
+		});
+
+		if (jumpLevel[0] <= 0) return;
+
+		float maxHeight = 1.25f + (jumpLevel[0] * 1.0f);
+		float safeHeight = maxHeight + 1.0f;
+
+		float fallDistance = event.getDistance();
+
+		if (fallDistance <= safeHeight) {
+			player.resetFallDistance();
+			event.setCanceled(true);
+		} else {
+			float reducedDistance = fallDistance - safeHeight;
+			event.setDistance(reducedDistance);
+		}
+	}
 
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size event) {

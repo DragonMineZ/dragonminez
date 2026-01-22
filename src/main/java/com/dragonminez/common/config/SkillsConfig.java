@@ -135,7 +135,7 @@ public class SkillsConfig {
 		kaiokenDrainRates.add(0.04);
 		kaiokenDrainRates.add(0.075);
 		kaiokenDrainRates.add(0.1);
-		skills.put("kaioken", new SkillCosts(kaiokenCosts, kaiokenMultipliers));
+		skills.put("kaioken", new SkillCosts(kaiokenCosts, kaiokenMultipliers, kaiokenDrainRates));
 
 		List<Integer> fusionCosts = new ArrayList<>();
 		fusionCosts.add(-1);

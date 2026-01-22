@@ -37,7 +37,6 @@ public class GeneralServerConfig {
 		private int tpPerHit = 2;
 		private double HTCTpMultiplier = 2.5;
         private int maxStatValue = 10000;
-		private boolean formsUnlockWithStoryProgression = false;
 		private boolean storyModeEnabled = true;
 		private boolean createDefaultSagas = true;
         private boolean kaiokenStackable = true;
@@ -55,7 +54,6 @@ public class GeneralServerConfig {
 		public int getTpPerHit() { return Math.max(0, tpPerHit); }
 		public double getHTCTpMultiplier() { return Math.max(1.0, HTCTpMultiplier); }
         public int getMaxStatValue() { return Math.max(1000, maxStatValue); }
-		public boolean isFormsUnlockWithStoryProgression() { return formsUnlockWithStoryProgression; }
 		public boolean isStoryModeEnabled() { return storyModeEnabled; }
 		public boolean isCreateDefaultSagas() { return createDefaultSagas; }
 		public boolean isKaiokenStackable() { return kaiokenStackable; }

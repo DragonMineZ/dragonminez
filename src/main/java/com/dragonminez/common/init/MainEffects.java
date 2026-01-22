@@ -3,7 +3,6 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.effects.DMZEffect;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.eventbus.api.IEventBus;

@@ -67,6 +67,7 @@ public class HairEditorScreen extends Screen {
     private final int oldGuiScale;
     private final boolean usePanorama;
     private boolean isSwitchingMenu = false;
+    private final int originalHairId;
 
     private HairFace currentFace = HairFace.FRONT;
     private int selectedStrandIndex = 0;
@@ -110,21 +111,27 @@ public class HairEditorScreen extends Screen {
         this.previousScreen = previousScreen;
         this.character = character;
 
-        // Detectar si viene de CharacterCustomizationScreen para usar panorama
         this.usePanorama = previousScreen instanceof CharacterCustomizationScreen;
 
         Minecraft mc = Minecraft.getInstance();
 
-        // Si viene de CharacterCustomizationScreen, heredar su oldGuiScale
         if (previousScreen instanceof CharacterCustomizationScreen) {
             this.oldGuiScale = ((CharacterCustomizationScreen) previousScreen).getOldGuiScale();
-            // NO cambiar guiScale, CharacterCustomizationScreen ya lo tiene en 3
         } else {
-            // Si viene de null u otro lugar, guardar y establecer guiScale
             this.oldGuiScale = mc.options.guiScale().get();
             if (oldGuiScale != 3) {
                 mc.options.guiScale().set(3);
                 mc.resizeDisplay();
+            }
+        }
+
+        this.originalHairId = character.getHairId();
+
+        if (!(previousScreen instanceof CharacterCustomizationScreen) && character.getHairId() > 0) {
+            CustomHair presetHair = HairManager.getPresetHair(character.getHairId(), character.getHairColor());
+            if (presetHair != null) {
+                character.setCustomHair(presetHair.copy());
+                character.setHairId(0);
             }
         }
 
@@ -976,6 +983,7 @@ public class HairEditorScreen extends Screen {
 
     private void cancelAndClose() {
         copyHairData(backupHair, editingHair);
+        character.setHairId(originalHairId);
         if (previousScreen != null) {
             isSwitchingMenu = true;
             GLOBAL_SWITCHING = true;
