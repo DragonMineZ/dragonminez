@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.buttons.AxisSlider;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -55,9 +56,6 @@ public class HairEditorScreen extends Screen {
     private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
     private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
 
-    private static final float MIN_SCALE = 0.5f;
-    private static final float MAX_SCALE = 3.0f;
-
     protected static boolean GLOBAL_SWITCHING = false;
 
     private final Screen previousScreen;
@@ -73,7 +71,6 @@ public class HairEditorScreen extends Screen {
     private int selectedStrandIndex = 0;
 
     private EditMode editMode = EditMode.LENGTH;
-    private float editStep = 1.0f;
 
     private float playerRotation = 180.0f;
     private boolean isDraggingModel = false;
@@ -88,6 +85,7 @@ public class HairEditorScreen extends Screen {
     private ColorSlider valueSlider;
     private boolean colorPickerVisible = false;
     private TexturedTextButton colorButton;
+
 
     public enum EditMode {
         LENGTH("gui.dragonminez.hair_editor.mode.length"),
@@ -127,11 +125,12 @@ public class HairEditorScreen extends Screen {
 
         this.originalHairId = character.getHairId();
 
-        if (!(previousScreen instanceof CharacterCustomizationScreen) && character.getHairId() > 0) {
+        if (character.getHairId() > 0) {
             CustomHair presetHair = HairManager.getPresetHair(character.getHairId(), character.getHairColor());
             if (presetHair != null) {
                 character.setCustomHair(presetHair.copy());
                 character.setHairId(0);
+                NetworkHandler.sendToServer(new UpdateCustomHairC2S(character.getCustomHair()));
             }
         }
 
@@ -172,23 +171,6 @@ public class HairEditorScreen extends Screen {
             ).bounds(modeX, buttonY, 28, 16).build());
             modeX += 30;
         }
-
-        buttonY += 20;
-
-        addRenderableWidget(Button.builder(
-            Component.literal("0.5"),
-            btn -> editStep = 0.5f
-        ).bounds(leftPanelX + 26, buttonY, 28, 16).build());
-
-        addRenderableWidget(Button.builder(
-            Component.literal("1"),
-            btn -> editStep = 1.0f
-        ).bounds(leftPanelX + 56, buttonY, 24, 16).build());
-
-        addRenderableWidget(Button.builder(
-            Component.literal("5"),
-            btn -> editStep = 5.0f
-        ).bounds(leftPanelX + 82, buttonY, 24, 16).build());
     }
 
     private void initControlButtons() {
@@ -212,7 +194,10 @@ public class HairEditorScreen extends Screen {
                         .textureSize(10, 10)
                         .onPress(button -> {
                             HairStrand s = getSelectedStrand();
-                            if (s != null) s.removeCube();
+                            if (s != null) {
+                                s.removeCube();
+                                syncHairToServer();
+                            }
                         })
                         .sound(MainSounds.UI_MENU_SWITCH.get())
                         .build();
@@ -227,7 +212,10 @@ public class HairEditorScreen extends Screen {
                         .textureSize(10, 10)
                         .onPress(button -> {
                             HairStrand s = getSelectedStrand();
-                            if (s != null) s.addCube();
+                            if (s != null) {
+                                s.addCube();
+                                syncHairToServer();
+                            }
                         })
                         .sound(MainSounds.UI_MENU_SWITCH.get())
                         .build();
@@ -246,55 +234,147 @@ public class HairEditorScreen extends Screen {
     }
 
     private void createAxisButtons(int panelX, int btnY) {
-        int btnX = panelX + 30;
+        int sliderX = panelX + 30;
+        int sliderWidth = 79;
+        int sliderHeight = 11;
 
-        // X-
-        controlButtons.add(createControlButton(btnX, btnY, false, () -> applyAxisEdit(-editStep, 0, 0)));
-        // X+
-        controlButtons.add(createControlButton(btnX + 65, btnY, true, () -> applyAxisEdit(editStep, 0, 0)));
+        HairStrand strand = getSelectedStrand();
+        if (strand == null) return;
 
-        // Y-
-        controlButtons.add(createControlButton(btnX, btnY + 26, false, () -> applyAxisEdit(0, -editStep, 0)));
-        // Y+
-        controlButtons.add(createControlButton(btnX + 65, btnY + 26, true, () -> applyAxisEdit(0, editStep, 0)));
+        float minValue, maxValue;
+        if (editMode == EditMode.ROTATION) {
+            minValue = -180f;
+            maxValue = 180f;
+        } else {
+            minValue = -50f;
+            maxValue = 50f;
+        }
 
-        // Z-
-        controlButtons.add(createControlButton(btnX, btnY + 52, false, () -> applyAxisEdit(0, 0, -editStep)));
-        // Z+
-        controlButtons.add(createControlButton(btnX + 65, btnY + 52, true, () -> applyAxisEdit(0, 0, editStep)));
+        // Slider X
+        AxisSlider sliderX_axis = new AxisSlider.Builder()
+                .position(sliderX, btnY)
+                .size(sliderWidth, sliderHeight)
+                .range(minValue, maxValue)
+                .value(editMode == EditMode.ROTATION ? strand.getRotationX() : strand.getCurveX())
+                .axis(AxisSlider.Axis.X)
+                .onValueChange(value -> {
+                    HairStrand s = getSelectedStrand();
+                    if (s != null) {
+                        if (editMode == EditMode.ROTATION) {
+                            s.setRotation(value, s.getRotationY(), s.getRotationZ());
+                        } else {
+                            s.setCurve(value, s.getCurveY(), s.getCurveZ());
+                        }
+                        syncHairToServer();
+                    }
+                })
+                .build();
+        this.addRenderableWidget(sliderX_axis);
+
+        // Slider Y
+        AxisSlider sliderY = new AxisSlider.Builder()
+                .position(sliderX, btnY + 26)
+                .size(sliderWidth, sliderHeight)
+                .range(minValue, maxValue)
+                .value(editMode == EditMode.ROTATION ? strand.getRotationY() : strand.getCurveY())
+                .axis(AxisSlider.Axis.Y)
+                .onValueChange(value -> {
+                    HairStrand s = getSelectedStrand();
+                    if (s != null) {
+                        if (editMode == EditMode.ROTATION) {
+                            s.setRotation(s.getRotationX(), value, s.getRotationZ());
+                        } else {
+                            s.setCurve(s.getCurveX(), value, s.getCurveZ());
+                        }
+                        syncHairToServer();
+                    }
+                })
+                .build();
+        this.addRenderableWidget(sliderY);
+
+        // Slider Z
+        AxisSlider sliderZ = new AxisSlider.Builder()
+                .position(sliderX, btnY + 52)
+                .size(sliderWidth, sliderHeight)
+                .range(minValue, maxValue)
+                .value(editMode == EditMode.ROTATION ? strand.getRotationZ() : strand.getCurveZ())
+                .axis(AxisSlider.Axis.Z)
+                .onValueChange(value -> {
+                    HairStrand s = getSelectedStrand();
+                    if (s != null) {
+                        if (editMode == EditMode.ROTATION) {
+                            s.setRotation(s.getRotationX(), s.getRotationY(), value);
+                        } else {
+                            s.setCurve(s.getCurveX(), s.getCurveY(), value);
+                        }
+                        syncHairToServer();
+                    }
+                })
+                .build();
+        this.addRenderableWidget(sliderZ);
     }
 
     private void createScaleButtons(int panelX, int btnY) {
-        int btnX = panelX + 30;
+        int sliderX = panelX + 30;
+        int sliderWidth = 79;
+        int sliderHeight = 11;
 
-        // X-
-        controlButtons.add(createControlButton(btnX, btnY, false, () -> applyScaleEdit(-editStep * 0.1f, 0, 0)));
-        // X+
-        controlButtons.add(createControlButton(btnX + 65, btnY, true, () -> applyScaleEdit(editStep * 0.1f, 0, 0)));
+        HairStrand strand = getSelectedStrand();
+        if (strand == null) return;
 
-        // Y-
-        controlButtons.add(createControlButton(btnX, btnY + 26, false, () -> applyScaleEdit(0, -editStep * 0.1f, 0)));
-        // Y+
-        controlButtons.add(createControlButton(btnX + 65, btnY + 26, true, () -> applyScaleEdit(0, editStep * 0.1f, 0)));
+        float minValue = 0.5f;
+        float maxValue = 3.0f;
 
-        // Z-
-        controlButtons.add(createControlButton(btnX, btnY + 52, false, () -> applyScaleEdit(0, 0, -editStep * 0.1f)));
-        // Z+
-        controlButtons.add(createControlButton(btnX + 65, btnY + 52, true, () -> applyScaleEdit(0, 0, editStep * 0.1f)));
-    }
-
-    private CustomTextureButton createControlButton(int x, int y, boolean isIncrease, Runnable action) {
-        CustomTextureButton btn = new CustomTextureButton.Builder()
-                .position(x, y)
-                .size(14, 11)
-                .texture(STAT_BUTTONS)
-                .textureCoords(isIncrease ? 0 : 142, 0, isIncrease ? 0 : 142, 10)
-                .textureSize(10, 10)
-                .onPress(button -> action.run())
-                .sound(MainSounds.UI_MENU_SWITCH.get())
+        // Slider X
+        AxisSlider sliderX_axis = new AxisSlider.Builder()
+                .position(sliderX, btnY)
+                .size(sliderWidth, sliderHeight)
+                .range(minValue, maxValue)
+                .value(strand.getScaleX())
+                .axis(AxisSlider.Axis.X)
+                .onValueChange(value -> {
+                    HairStrand s = getSelectedStrand();
+                    if (s != null) {
+                        s.setScale(value, s.getScaleY(), s.getScaleZ());
+                        syncHairToServer();
+                    }
+                })
                 .build();
-        this.addRenderableWidget(btn);
-        return btn;
+        this.addRenderableWidget(sliderX_axis);
+
+        // Slider Y
+        AxisSlider sliderY = new AxisSlider.Builder()
+                .position(sliderX, btnY + 26)
+                .size(sliderWidth, sliderHeight)
+                .range(minValue, maxValue)
+                .value(strand.getScaleY())
+                .axis(AxisSlider.Axis.Y)
+                .onValueChange(value -> {
+                    HairStrand s = getSelectedStrand();
+                    if (s != null) {
+                        s.setScale(s.getScaleX(), value, s.getScaleZ());
+                        syncHairToServer();
+                    }
+                })
+                .build();
+        this.addRenderableWidget(sliderY);
+
+        // Slider Z
+        AxisSlider sliderZ = new AxisSlider.Builder()
+                .position(sliderX, btnY + 52)
+                .size(sliderWidth, sliderHeight)
+                .range(minValue, maxValue)
+                .value(strand.getScaleZ())
+                .axis(AxisSlider.Axis.Z)
+                .onValueChange(value -> {
+                    HairStrand s = getSelectedStrand();
+                    if (s != null) {
+                        s.setScale(s.getScaleX(), s.getScaleY(), value);
+                        syncHairToServer();
+                    }
+                })
+                .build();
+        this.addRenderableWidget(sliderZ);
     }
 
     private void clearControlButtons() {
@@ -531,6 +611,11 @@ public class HairEditorScreen extends Screen {
         setSlidersVisible(false);
         updateColorButton();
         initControlButtons();
+        syncHairToServer();
+    }
+
+    private void syncHairToServer() {
+        NetworkHandler.sendToServer(new UpdateCustomHairC2S(editingHair));
     }
 
     @Override
@@ -603,10 +688,6 @@ public class HairEditorScreen extends Screen {
                 panelX + 15, startY, 0x00FF00);
         startY += 15;
 
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.step", editStep),
-                panelX + 15, startY, 0x00FF00);
-        startY += 20;
-
         switch (editMode) {
             case LENGTH -> {
                 int cubeCount = strand.getCubeCount();
@@ -621,36 +702,7 @@ public class HairEditorScreen extends Screen {
                 }
                 drawStringWithBorder(graphics, lengthText, panelX + 15, startY, 0xFFFFFF);
             }
-            case ROTATION -> {
-                graphics.pose().pushPose();
-                graphics.pose().scale(0.85f, 0.85f, 0.85f);
-                int scaledX = (int)(panelX / 0.85f) + 18;
-                int scaledY = (int)(startY / 0.85f);
-                drawStringWithBorder(graphics, Component.literal(String.format("X: %.1f", strand.getRotationX())), scaledX + 45, scaledY, 0xFF6666);
-                drawStringWithBorder(graphics, Component.literal(String.format("Y: %.1f", strand.getRotationY())), scaledX + 45, scaledY + 30, 0x66FF66);
-                drawStringWithBorder(graphics, Component.literal(String.format("Z: %.1f", strand.getRotationZ())), scaledX + 45, scaledY + 60, 0x6666FF);
-                graphics.pose().popPose();
-            }
-            case CURVE -> {
-                graphics.pose().pushPose();
-                graphics.pose().scale(0.85f, 0.85f, 0.85f);
-                int scaledX = (int)(panelX / 0.85f) + 18;
-                int scaledY = (int)(startY / 0.85f);
-                drawStringWithBorder(graphics, Component.literal(String.format("X: %.1f", strand.getCurveX())), scaledX + 45, scaledY, 0xFF6666);
-                drawStringWithBorder(graphics, Component.literal(String.format("Y: %.1f", strand.getCurveY())), scaledX + 45, scaledY + 30, 0x66FF66);
-                drawStringWithBorder(graphics, Component.literal(String.format("Z: %.1f", strand.getCurveZ())), scaledX + 45, scaledY + 60, 0x6666FF);
-                graphics.pose().popPose();
-            }
-            case SCALE -> {
-                graphics.pose().pushPose();
-                graphics.pose().scale(0.85f, 0.85f, 0.85f);
-                int scaledX = (int)(panelX / 0.85f) + 18;
-                int scaledY = (int)(startY / 0.85f);
-                drawStringWithBorder(graphics, Component.literal(String.format("X: %.2f", strand.getScaleX())), scaledX + 45, scaledY, 0xFF6666);
-                drawStringWithBorder(graphics, Component.literal(String.format("Y: %.2f", strand.getScaleY())), scaledX + 45, scaledY + 30, 0x66FF66);
-                drawStringWithBorder(graphics, Component.literal(String.format("Z: %.2f", strand.getScaleZ())), scaledX + 45, scaledY + 60, 0x6666FF);
-                graphics.pose().popPose();
-            }
+            case ROTATION, CURVE, SCALE -> {}
         }
     }
 
@@ -795,13 +847,13 @@ public class HairEditorScreen extends Screen {
         if (handleFaceSelectorClick(mouseX, mouseY)) return true;
 
         int centerX = this.width / 2;
-        int centerY = this.height / 2 + 220;
+        int centerY = this.height / 2 + 20;
         int modelRadius = 100;
         int bottomY = this.height - 30;
         int maxDragY = bottomY - 25 - 10;
 
         if (mouseX >= centerX - modelRadius && mouseX <= centerX + modelRadius &&
-            mouseY >= centerY - 200 && mouseY <= maxDragY) {
+            mouseY >= centerY - 400 && mouseY <= maxDragY) {
             isDraggingModel = true;
             lastMouseX = mouseX;
             return true;
@@ -899,31 +951,6 @@ public class HairEditorScreen extends Screen {
         return editingHair.getStrand(currentFace, selectedStrandIndex);
     }
 
-    private void applyAxisEdit(float dx, float dy, float dz) {
-        HairStrand strand = getSelectedStrand();
-        if (strand == null) return;
-
-        switch (editMode) {
-            case ROTATION -> strand.addRotation(dx * 10, dy * 10, dz * 10);
-            case CURVE -> strand.setCurve(
-                strand.getCurveX() + dx,
-                strand.getCurveY() + dy,
-                strand.getCurveZ() + dz
-            );
-            default -> {}
-        }
-    }
-
-    private void applyScaleEdit(float dx, float dy, float dz) {
-        HairStrand strand = getSelectedStrand();
-        if (strand == null) return;
-
-        float newX = Math.max(MIN_SCALE, Math.min(MAX_SCALE, strand.getScaleX() + dx));
-        float newY = Math.max(MIN_SCALE, Math.min(MAX_SCALE, strand.getScaleY() + dy));
-        float newZ = Math.max(MIN_SCALE, Math.min(MAX_SCALE, strand.getScaleZ() + dz));
-
-        strand.setScale(newX, newY, newZ);
-    }
 
     private void exportCode() {
         String code = HairManager.toCode(editingHair);

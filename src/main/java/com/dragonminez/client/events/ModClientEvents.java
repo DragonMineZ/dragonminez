@@ -59,7 +59,6 @@ public class ModClientEvents {
 			BlockEntityRenderers.register(MainBlockEntities.ENERGY_CABLE_BE.get(), EnergyCableBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.KIKONO_STATION_BE.get(), KikonoStationBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.FUEL_GENERATOR_BE.get(), FuelGeneratorBlockRenderer::new);
-			//ItemBlockRenderTypes.setRenderLayer(MainBlocks.KIKONO_ARMOR_STATION.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_AJISSA_LOG.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_STRIPPED_AJISSA_LOG.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.NAMEK_SACRED_LOG.get(), RenderType.cutout());
@@ -69,6 +68,12 @@ public class ModClientEvents {
 			//MENÚS
 			MenuScreens.register(MainMenus.KIKONO_STATION_MENU.get(), KikonoStationScreen::new);
 			MenuScreens.register(MainMenus.FUEL_GENERATOR_MENU.get(), FuelGeneratorScreen::new);
+
+			// Fluids
+			ItemBlockRenderTypes.setRenderLayer(MainFluids.SOURCE_NAMEK.get(), RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(MainFluids.FLOWING_NAMEK.get(), RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(MainFluids.FLOWING_HEALING.get(), RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(MainFluids.SOURCE_HEALING.get(), RenderType.translucent());
 
 			//Vegetacion
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.CHRYSANTHEMUM_FLOWER.get(), RenderType.cutout());

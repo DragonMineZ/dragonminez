@@ -1,5 +1,6 @@
 package com.dragonminez.common;
 
+import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.ModCommonEvents;
 import com.dragonminez.common.init.*;
@@ -40,6 +41,8 @@ public class DMZCommon {
 		OverworldFeatures.register(modEventBus);
 
 		MainGameRules.register();
+
+		WorldGuardCompat.init();
     }
 }
 

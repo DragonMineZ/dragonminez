@@ -1,21 +1,18 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -191,10 +188,7 @@ public class KiVolleyEntity extends AbstractKiProjectile {
 	}
 
 	private void explodeAndDie() {
-		boolean shouldDestroyBlocks;
-		if (this.getOwner() instanceof Player || this.getOwner() instanceof ServerPlayer) {
-			shouldDestroyBlocks = this.level().getGameRules().getBoolean(MainGameRules.ALLOW_KI_GRIEFING_PLAYERS);
-		} else shouldDestroyBlocks = this.level().getGameRules().getBoolean(MainGameRules.ALLOW_KI_GRIEFING_MOBS);
+		boolean shouldDestroyBlocks = MainGameRules.canKiGrief(this.level(), this.blockPosition(), this.getOwner());
 		float radius = 2.0F;
 
 		AABB area = this.getBoundingBox().inflate(radius);

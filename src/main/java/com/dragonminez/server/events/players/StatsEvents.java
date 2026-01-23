@@ -6,6 +6,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -17,6 +18,7 @@ import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.DragonBallsHandler;
+import com.dragonminez.server.util.FusionLogic;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
@@ -435,6 +437,53 @@ public class StatsEvents {
 			float reducedDistance = fallDistance - safeHeight;
 			event.setDistance(reducedDistance);
 		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
+		if (event.getLevel().isClientSide) return;
+		if (!(event.getTarget() instanceof ServerPlayer target)) return;
+
+		ServerPlayer source = (ServerPlayer) event.getEntity();
+
+		if (!source.getMainHandItem().isEmpty()) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, source).ifPresent(sData -> {
+			StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(tData -> {
+
+				if (!tData.getStatus().isBlocking()) return;
+
+				boolean sHasRight = hasPothala(source, "right");
+				boolean tHasLeft = hasPothala(target, "left");
+
+				boolean sameColor = checkPothalaColorMatch(source, target);
+
+				if (sHasRight && tHasLeft && sameColor) {
+					FusionLogic.executePothala(source, target, sData, tData);
+					event.setCanceled(true);
+				}
+			});
+		});
+	}
+
+	private static boolean hasPothala(ServerPlayer player, String side) {
+		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
+		if (side.equals("left") && (head.getItem() == MainItems.POTHALA_LEFT.get() || head.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) {
+			return true;
+		} else return side.equals("right") && (head.getItem() == MainItems.POTHALA_RIGHT.get() || head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
+	}
+
+	private static boolean checkPothalaColorMatch(ServerPlayer p1, ServerPlayer p2) {
+		if (hasPothala(p1, "right") && hasPothala(p2, "left")) {
+			ItemStack p1Head = p1.getItemBySlot(EquipmentSlot.HEAD);
+			ItemStack p2Head = p2.getItemBySlot(EquipmentSlot.HEAD);
+
+			boolean p1IsGreen = (p1Head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
+			boolean p2IsGreen = (p2Head.getItem() == MainItems.GREEN_POTHALA_LEFT.get());
+
+			return p1IsGreen == p2IsGreen;
+		}
+		return false;
 	}
 
     @SubscribeEvent

@@ -26,7 +26,7 @@ public class FusionLogic {
 
 	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
 		if (!lData.getCharacter().getRaceName().equals(pData.getCharacter().getRaceName())) {
-			leader.sendSystemMessage(Component.translatable("message.dragonminez.fusion.different_race"));
+			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.different_race"), true);
 			return false;
 		}
 
@@ -37,7 +37,7 @@ public class FusionLogic {
 		if (threshold > 0) {
 			double diff = (double) Math.abs(lvl1 - lvl2) / Math.max(lvl1, lvl2);
 			if (diff > threshold) {
-				leader.sendSystemMessage(Component.translatable("message.dragonminez.fusion.level_gap"));
+				leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.level_gap"), true);
 				return false;
 			}
 		}
@@ -46,7 +46,8 @@ public class FusionLogic {
 		if (MinecraftForge.EVENT_BUS.post(event)) return false;
 		applyFusion(leader, partner, lData, pData, "METAMORU", lvl1, lvl2);
 		lData.getStatus().setFusionTimer(FUSION_DURATION);
-		leader.sendSystemMessage(Component.translatable("message.dragonminez.fusion.metamoru.success"));
+		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()),true);
+		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
 		return true;
 	}
 
@@ -58,7 +59,8 @@ public class FusionLogic {
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 		applyFusion(leader, partner, lData, pData, "POTHALA", lvl1, lvl2);
 		lData.getStatus().setFusionTimer(FUSION_DURATION);
-		leader.sendSystemMessage(Component.translatable("message.dragonminez.fusion.pothala.success"));
+		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
+		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
 	}
 
 	private static void applyFusion(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData, String type, int lvl1, int lvl2) {
