@@ -72,7 +72,11 @@
     "blockBreakStunDurationTicks": 60,
     "perfectEvasionWindowMs": 150,
     "dashCooldownSeconds": 4,
-    "doubleDashCooldownSeconds": 12
+    "doubleDashCooldownSeconds": 12,
+    // Ki weapons config, first value is damage multiplier, second value is Ki Cost multiplier
+    "kiBladeConfig": [1.0, 1.0],
+    "kiScytheConfig": [1.5, 1.5],
+    "kiClawLanceConfig": [2.0, 2.0]
   },
   "racialSkills": {
     // Needs to be true for racial skills to work, but you can disable a specific skill if needed

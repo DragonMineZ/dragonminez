@@ -110,6 +110,12 @@ public class NetworkHandler {
 				.encoder(StatsSyncC2S::encode)
 				.consumerMainThread(StatsSyncC2S::handle)
 				.add();
+
+		net.messageBuilder(FlyToggleC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(FlyToggleC2S::decode)
+				.encoder(FlyToggleC2S::encode)
+				.consumerMainThread(FlyToggleC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */

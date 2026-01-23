@@ -1,6 +1,7 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -24,22 +25,9 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.dragonminez.client.animation.Animations.*;
-import static com.dragonminez.client.animation.Animations.ATTACK;
-import static com.dragonminez.client.animation.Animations.ATTACK2;
-import static com.dragonminez.client.animation.Animations.BLOCK;
-import static com.dragonminez.client.animation.Animations.CROUCHING;
-import static com.dragonminez.client.animation.Animations.CROUCHING_WALK;
-import static com.dragonminez.client.animation.Animations.FLY;
-import static com.dragonminez.client.animation.Animations.IDLE;
-import static com.dragonminez.client.animation.Animations.JUMP;
-import static com.dragonminez.client.animation.Animations.RUN;
-import static com.dragonminez.client.animation.Animations.SHIELD_LEFT;
-import static com.dragonminez.client.animation.Animations.SHIELD_RIGHT;
-import static com.dragonminez.client.animation.Animations.TAIL;
-import static com.dragonminez.client.animation.Animations.WALK;
 
 @Mixin(AbstractClientPlayer.class)
-public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayerAnimatable {
+public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayerAnimatable {
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
@@ -111,8 +99,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         boolean isMoving = dragonminez$isActuallyMoving(player);
 
         AtomicBoolean isDraining = new AtomicBoolean(false);
+		AtomicBoolean flySkillActive = new AtomicBoolean(false);
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             isDraining.set(data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE));
+			flySkillActive.set(data.getSkills().isSkillActive("fly"));
         });
 
         if (isDraining.get()) {
@@ -133,7 +123,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
         }
 
         // Flying
-        if (player.isFallFlying() || animatable.dragonminez$isCreativeFlying()) {
+        if (player.isFallFlying() || animatable.dragonminez$isCreativeFlying() || flySkillActive.get()) {
+            if (FlySkillEvent.isFlyingFast()) {
+                return state.setAndContinue(FLY_FAST);
+            }
             return state.setAndContinue(FLY);
         }
 

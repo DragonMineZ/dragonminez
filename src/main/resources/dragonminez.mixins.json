@@ -17,7 +17,9 @@
     "client.SoundManagerMixin",
     "client.WorldOpenFlowsMixin",
     "client.WorldSelectionListMixin",
-    "client.TitleScreenMixin"
+    "client.TitleScreenMixin",
+    "client.FlightCameraMixin",
+    "client.FlightGameRendererMixin"
   ],
   "server": [],
   "injectors": {

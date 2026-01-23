@@ -101,6 +101,9 @@ public class GeneralServerConfig {
 		private int perfectEvasionWindowMs = 150;
 		private int dashCooldownSeconds = 4;
 		private int doubleDashCooldownSeconds = 12;
+		private double[] kiBladeConfig = {1.0, 0.05};
+		private double[] kiScytheConfig = {1.5, 0.75};
+		private double[] kiClawLanceConfig = {2.0, 0.125};
 
 		public boolean isKillPlayersOnCombatLogout() { return killPlayersOnCombatLogout; }
 		public double getStaminaConsumptionRatio() { return Math.max(0, staminaConsumptionRatio); }
@@ -118,6 +121,9 @@ public class GeneralServerConfig {
 		public int getPerfectEvasionWindowMs() { return Math.max(0, perfectEvasionWindowMs); }
 		public int getDashCooldownSeconds() { return Math.max(0, dashCooldownSeconds); }
 		public int getDoubleDashCooldownSeconds() { return Math.max(0, doubleDashCooldownSeconds); }
+		public double[] getKiBladeConfig() {return new double[] {Math.max(0, kiBladeConfig[0]), Math.max(0, kiBladeConfig[1])};}
+		public double[] getKiScytheConfig() {return new double[] {Math.max(0, kiScytheConfig[0]), Math.max(0, kiScytheConfig[1])};}
+		public double[] getKiClawLanceConfig() {return new double[] {Math.max(0, kiClawLanceConfig[0]), Math.max(0, kiClawLanceConfig[1])};}
 	}
 
 	public static class RacialSkillsConfig {

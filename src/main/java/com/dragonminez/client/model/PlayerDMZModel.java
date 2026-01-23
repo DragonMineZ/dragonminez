@@ -1,6 +1,7 @@
 package com.dragonminez.client.model;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -133,8 +134,17 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
 		if (head != null) {
-			head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
-			head.setRotY(entityData.netHeadYaw() * Mth.DEG_TO_RAD);
+            float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
+            float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
+
+            if (FlySkillEvent.isFlyingFast()) {
+                float flySpeedFactor = Math.min(1.0F, FlySkillEvent.getFlightSpeed() / 2.0F);
+                float pitchCorrection = 70F * Mth.DEG_TO_RAD * flySpeedFactor;
+                headPitch += pitchCorrection;
+            }
+
+			head.setRotX(headPitch);
+			head.setRotY(headYaw);
 		}
 
         try {

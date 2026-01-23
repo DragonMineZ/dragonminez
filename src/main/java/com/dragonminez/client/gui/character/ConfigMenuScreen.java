@@ -113,6 +113,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
         configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
                 ConfigType.BOOLEAN, hudConfig.isStoryHardDifficulty() ? 1 : 0, 0, 1,
                 v -> hudConfig.setStoryHardDifficulty(v > 0)));
+
+		configOptions.add(new ConfigOption("config.cameraMovementDurintFlight",
+				ConfigType.BOOLEAN, hudConfig.isCameraMovementDurintFlight() ? 1 : 0, 0, 1,
+				v -> hudConfig.setCameraMovementDurintFlight(v > 0)));
     }
 
     private void initConfigButtons() {

@@ -1,13 +1,17 @@
 package com.dragonminez.client.render;
 
+import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.util.BoneVisibilityHandler;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.stats.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -68,6 +72,21 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         }
 
         poseStack.pushPose();
+
+        boolean isFlying = false;
+        Skill flySkill = stats.getSkills().getSkill("fly");
+        if (flySkill != null && flySkill.isActive()) {
+            isFlying = true;
+        }
+
+		if (isFlying || FlightRollHandler.hasActiveRoll()) {
+			float roll = FlightRollHandler.getRoll(partialTick);
+			if (Math.abs(roll) > 0.1F) {
+				poseStack.translate(0.0F, 0.9F * scaling, 0.0F);
+				poseStack.mulPose(Axis.ZN.rotationDegrees(roll));
+				poseStack.translate(0.0F, -0.9F * scaling, 0.0F);
+			}
+		}
 
         poseStack.scale(scaling, scaling, scaling);
 

@@ -4,13 +4,7 @@ public class GeneralUserConfig {
 
     private HudConfig hud = new HudConfig();
 
-    public HudConfig getHud() {
-        return hud;
-    }
-
-    public void setHud(HudConfig hud) {
-        this.hud = hud;
-    }
+    public HudConfig getHud() { return hud; }
 
     public static class HudConfig {
 		private int xenoverseHudPosX = 5;
@@ -26,6 +20,7 @@ public class GeneralUserConfig {
         private int staminaBarPosX = 10;
         private int staminaBarPosY = 10;
         private boolean storyHardDifficulty = false;
+		private boolean cameraMovementDurintFlight = true;
 
 		public int getXenoverseHudPosX() { return xenoverseHudPosX; }
 		public void setXenoverseHudPosX(int xenoverseHudPosX) { this.xenoverseHudPosX = xenoverseHudPosX; }
@@ -62,6 +57,9 @@ public class GeneralUserConfig {
 
         public boolean isStoryHardDifficulty() { return storyHardDifficulty; }
         public void setStoryHardDifficulty(boolean storyHardDifficulty) { this.storyHardDifficulty = storyHardDifficulty; }
-    }
+
+		public boolean isCameraMovementDurintFlight() { return cameraMovementDurintFlight; }
+		public void setCameraMovementDurintFlight(boolean cameraMovementDurintFlight) { this.cameraMovementDurintFlight = cameraMovementDurintFlight; }
+	}
 }
 

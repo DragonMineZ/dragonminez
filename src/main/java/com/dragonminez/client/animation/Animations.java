@@ -9,6 +9,7 @@ public class Animations {
     public static final RawAnimation ATTACK = RawAnimation.begin().thenPlay("animation.base.attack1");
     public static final RawAnimation ATTACK2 = RawAnimation.begin().thenPlay("animation.base.attack2");
     public static final RawAnimation FLY = RawAnimation.begin().thenLoop("animation.base.fly");
+	public static final RawAnimation FLY_FAST = RawAnimation.begin().thenLoop("animation.base.fly_fast");
     public static final RawAnimation JUMP = RawAnimation.begin().thenPlay("animation.base.jump");
     public static final RawAnimation SWIMMING = RawAnimation.begin().thenLoop("animation.base.swimming");
     public static final RawAnimation CROUCHING = RawAnimation.begin().thenLoop("animation.base.crouching");

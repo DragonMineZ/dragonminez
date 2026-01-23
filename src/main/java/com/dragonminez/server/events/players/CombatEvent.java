@@ -29,6 +29,8 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.Locale;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
 
@@ -91,15 +93,41 @@ public class CombatEvent {
                     }
                 }
 
-				if (attacker instanceof ServerPlayer serverPlayer) {
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-				}
-
                 if (isEmptyHandOrNoDamageItem(attacker)) {
                     currentDamage[0] = finalDmzDamage;
                 } else {
                     currentDamage[0] = mcBaseDamage + finalDmzDamage;
                 }
+
+				boolean kiWeaponActive = attackerData.getSkills().isSkillActive("kimanipulation");
+
+				if (kiWeaponActive) {
+					String weaponType = attackerData.getStatus().getKiWeaponType();
+					int kiCost = 0;
+					switch (weaponType.toLowerCase()) {
+						case "blade" -> {
+							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
+							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
+								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[0];
+							}
+						}
+						case "scythe" -> {
+							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
+							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
+								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[0];
+							}
+						}
+						case "clawlance" -> {
+							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
+							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
+								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[0];
+							}
+						}
+					}
+					attackerData.getResources().removeEnergy(kiCost);
+				}
+
+				if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 
 				if (event.getEntity() instanceof Player) {
 					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
@@ -342,14 +370,8 @@ public class CombatEvent {
 
     private static boolean isEmptyHandOrNoDamageItem(Player player) {
         ItemStack mainHand = player.getMainHandItem();
-
-        if (mainHand.isEmpty()) {
-            return true;
-        }
-
-        var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND)
-                .get(Attributes.ATTACK_DAMAGE);
-
+        if (mainHand.isEmpty()) return true;
+        var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE);
         return attackDamageModifier.isEmpty();
     }
 }

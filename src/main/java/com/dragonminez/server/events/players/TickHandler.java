@@ -119,6 +119,7 @@ public class TickHandler {
 			if (tickCounter % 20 == 0) {
 				handleActionCharge(serverPlayer, data);
 				handleKaiokenEffects(serverPlayer, data);
+				handleFlightKiDrain(serverPlayer, data);
 			}
 
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
@@ -528,6 +529,35 @@ public class TickHandler {
 					FusionLogic.endFusion(serverPlayer, data, true);
 				}
 			}
+		}
+	}
+
+	private static void handleFlightKiDrain(ServerPlayer player, StatsData data) {
+		if (!data.getSkills().isSkillActive("fly")) return;
+		if (player.isCreative() || player.isSpectator()) return;
+
+		int flyLevel = data.getSkills().getSkillLevel("fly");
+		int maxEnergy = data.getMaxEnergy();
+
+		// Calcular coste de ki (se reduce con el nivel)
+		// Sprint gasta más ki (2% base vs 1% base)
+		double basePercent = player.isSprinting() ? 0.02 : 0.01;
+		double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.001));
+		int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
+
+		int currentEnergy = data.getResources().getCurrentEnergy();
+
+		if (currentEnergy >= energyCost) {
+			data.getResources().removeEnergy(energyCost);
+		} else {
+			// Sin suficiente ki, desactivar vuelo
+			data.getSkills().setSkillActive("fly", false);
+			if (!player.isCreative() && !player.isSpectator()) {
+				player.getAbilities().mayfly = false;
+				player.getAbilities().flying = false;
+				player.onUpdateAbilities();
+			}
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		}
 	}
 
