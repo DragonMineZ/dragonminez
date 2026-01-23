@@ -473,7 +473,7 @@ public class DefaultFormsFactory {
         giantForm.setName(NamekianForms.GIANT);
         giantForm.setUnlockOnSkillLevel(1);
         giantForm.setCustomModel("");
-        giantForm.setModelScaling(3.0f);
+        giantForm.setModelScaling(3.6f);
         giantForm.setStrMultiplier(1.95);
         giantForm.setSkpMultiplier(1.95);
         giantForm.setStmMultiplier(1.0);
@@ -705,8 +705,8 @@ public class DefaultFormsFactory {
         FormConfig.FormData kid = new FormConfig.FormData();
         kid.setName(MajinForms.KID);
         kid.setUnlockOnSkillLevel(1);
-        kid.setCustomModel("");
-        kid.setModelScaling(1.0f);
+        kid.setCustomModel("human_slim");
+        kid.setModelScaling(0.7f);
         kid.setStrMultiplier(1.75);
         kid.setSkpMultiplier(1.75);
         kid.setStmMultiplier(1.0);
@@ -747,8 +747,8 @@ public class DefaultFormsFactory {
         evil.setStaminaDrain(1.0);
         evil.setAttackSpeed(1.0);
         evil.setHairColor("");
-        evil.setEye1Color("");
-        evil.setEye2Color("");
+        evil.setEye1Color("#FFFFFF");
+        evil.setEye2Color("#FFFFFF");
         evil.setAuraColor("");
         evil.setBodyColor1("#917979");
         evil.setBodyColor2("#917979");
@@ -790,7 +790,7 @@ public class DefaultFormsFactory {
         ultra.setName(MajinForms.ULTRA);
         ultra.setUnlockOnSkillLevel(4);
         ultra.setCustomModel("");
-        ultra.setModelScaling(1.0f);
+        ultra.setModelScaling(1.2f);
         ultra.setStrMultiplier(4.5);
         ultra.setSkpMultiplier(4.5);
         ultra.setStmMultiplier(1.0);
@@ -836,8 +836,8 @@ public class DefaultFormsFactory {
         FormConfig.FormData semiPerfect = new FormConfig.FormData();
         semiPerfect.setName(BioAndroidForms.SEMI_PERFECT);
         semiPerfect.setUnlockOnSkillLevel(1);
-        semiPerfect.setCustomModel("");
-        semiPerfect.setModelScaling(1.0f);
+        semiPerfect.setCustomModel("bioandroid_semi");
+        semiPerfect.setModelScaling(1.3f);
         semiPerfect.setStrMultiplier(1.95);
         semiPerfect.setSkpMultiplier(1.95);
         semiPerfect.setStmMultiplier(1.0);
@@ -864,8 +864,8 @@ public class DefaultFormsFactory {
         FormConfig.FormData perfect = new FormConfig.FormData();
         perfect.setName(BioAndroidForms.PERFECT);
         perfect.setUnlockOnSkillLevel(2);
-        perfect.setCustomModel("");
-        perfect.setModelScaling(1.0f);
+        perfect.setCustomModel("bioandroid_perfect");
+        perfect.setModelScaling(1.1f);
         perfect.setStrMultiplier(2.85);
         perfect.setSkpMultiplier(2.85);
         perfect.setStmMultiplier(1.0);
@@ -892,8 +892,8 @@ public class DefaultFormsFactory {
         FormConfig.FormData superPerfect = new FormConfig.FormData();
         superPerfect.setName(BioAndroidForms.SUPER_PERFECT);
         superPerfect.setUnlockOnSkillLevel(3);
-        superPerfect.setCustomModel("");
-        superPerfect.setModelScaling(1.0f);
+        superPerfect.setCustomModel("bioandroid_perfect");
+        superPerfect.setModelScaling(1.2f);
         superPerfect.setStrMultiplier(4.0);
         superPerfect.setSkpMultiplier(4.0);
         superPerfect.setStmMultiplier(1.0);

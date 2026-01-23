@@ -52,6 +52,8 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             String currentForm = character.getActiveForm();
             int bodyType = character.getBodyType();
 
+            boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
+
             boolean isMale = gender.equals("male") || gender.equals("hombre");
             boolean isSlimSkin = player.getModelName().equals("slim");
 
@@ -61,8 +63,14 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
             if (race.equals("majin")) {
                 boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
+                boolean isEvil = Objects.equals(currentForm, MajinForms.EVIL);
+
                 if (isSuperOrUltra) {
                     return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+                }
+
+                if (isEvil) {
+                    return isMale ? BASE_SLIM : MAJIN_SLIM;
                 }
             }
 
@@ -70,6 +78,14 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
                 ResourceLocation formLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + activeFormData.getCustomModel() + ".geo.json");
                 if (modelExists(formLoc)) return formLoc;
+            }
+
+            if (race.equals("majin") && hasForm) {
+                return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+            }
+
+            if (race.equals("bioandroid") && hasForm) {
+                return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
             }
 
             if (race.equals("human") || race.equals("saiyan")) {
