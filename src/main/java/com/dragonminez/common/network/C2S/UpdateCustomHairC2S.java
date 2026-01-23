@@ -45,7 +45,6 @@ public class UpdateCustomHairC2S {
                     data.getCharacter().setCustomHair(msg.customHair);
                     data.getCharacter().setHairId(0);
 
-                    // Sincronizar con todos los jugadores cercanos
                     NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
                 }
             });

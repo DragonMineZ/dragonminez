@@ -256,7 +256,7 @@
   "race.dragonminez.majin.form.pureforms.super": "Super Majin",
   "race.dragonminez.majin.form.pureforms.ultra": "Ultra Majin",
 
-  "//": "RACIAL SKILLS",
+  "//": "SKILLS",
   "message.dragonminez.racial.target_too_strong": "§cThe target is too strong to be absorbed or assimilated.",
   "message.dragonminez.racial.limit_reached": "§cYou have reached the limit of absorptions.",
   "message.dragonminez.racial.cooldown": "§cThis ability is on cooldown, %s §cseconds remaining.",
@@ -265,6 +265,9 @@
   "message.dragonminez.racial.majin.success": "§dAbsorption complete!",
   "message.dragonminez.racial.bio.success": "§2Vital energy drained successfully!",
   "message.dragonminez.racial.zenkai.used": "§aZenkai Boost used! You feel stronger!",
+  "message.dragonminez.fusion.different_race": "§cYou can only fuse (Metamoru) with players of the same race.",
+  "message.dragonminez.fusion.level_gap": "§cYou can only fuse (Metamoru) with a player similar in level to you.",
+  "message.dragonminez.fusion.success": "§aYou have successfully fused with %s §a!",
 
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
