@@ -40,10 +40,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
         if (stats == null) return;
 
-        // 1. RENDERIZADO DE PARTES DE RAZA (Lógica existente)
         renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight);
 
-        // 2. RENDERIZADO DE ACCESORIOS (Pothala, etc.)
         renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
     }
 
@@ -123,7 +121,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         if (race.equals("frostdemon")) {
             setupFrostDemonParts(partsModel, currentForm);
-            return ColorUtils.rgbIntToFloat(0x1A1A1A); // Color cuernos oscuro
+            return ColorUtils.rgbIntToFloat(0x1A1A1A);
         }
 
         if (race.equals("namekian") || race.equals("majin")) {

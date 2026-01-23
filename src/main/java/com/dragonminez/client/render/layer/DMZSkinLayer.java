@@ -145,7 +145,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         if (!raceName.equals("human") && !raceName.equals("saiyan")) return;
         if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
-        if (hairId <= 0) return;
+        if (hairId == 5) return;
 
         float[] tempTint = hexToRGB(character.getHairColor());
         if (character.hasActiveForm() && character.getActiveFormData() != null) {
@@ -163,7 +163,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             float originalSY = headBone.getScaleY();
             float originalSZ = headBone.getScaleZ();
 
-            float inflation = 0.004f;
+            float inflation = 0.006f;
             headBone.setPosZ(originalZ - inflation);
             headBone.setScaleX(originalSX + inflation);
             headBone.setScaleY(originalSY + inflation);
