@@ -271,6 +271,12 @@
   "effect.dragonminez.stagger": "Staggered",
   "effect.dragonminez.dash_cd": "Dash",
   "effect.dragonminez.doubledash_cd": "Double Dash",
+  "effect.dragonminez.kicharge": "Ki Charge",
+  "effect.dragonminez.transform": "Transforming",
+  "effect.dragonminez.kaioken": "Kaioken",
+  "effect.dragonminez.fly": "Flying",
+  "effect.dragonminez.majin": "Majin Mark",
+  "effect.dragonminez.mightfruit": "Might Fruit",
 
   "//": "ENTITIES",
   "entity.dragonminez.master_karin": "Master Korin",

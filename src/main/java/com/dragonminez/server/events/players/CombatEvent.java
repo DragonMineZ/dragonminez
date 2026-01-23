@@ -143,7 +143,7 @@ public class CombatEvent {
 									victimData.getStatus().setBlocking(false);
 
 									int stunDuration = ConfigManager.getServerConfig().getCombat().getBlockBreakStunDurationTicks();
-									victim.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false));
+									victim.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 
@@ -189,7 +189,7 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 
 											// Efecto de Parry (temblor de pantalla pequeño) al atacante
-                                            attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 50, false, false));
+                                            attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 50, false, false, true));
                                         }
 										//System.out.println("Parry!");
                                         //SONIDO PARRY

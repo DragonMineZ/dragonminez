@@ -154,8 +154,8 @@ public class RacialSkillLogic {
 		int duration = 120;
 
 		teleportBehindTarget(player, target);
-		target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false));
-		player.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false));
+		target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false, true));
+		player.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false, true));
 		data.getStatus().setDrainingTargetId(target.getId());
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN_ACTIVE, duration);
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);

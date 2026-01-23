@@ -16,6 +16,7 @@ import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.RacialSkillLogic;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -127,6 +128,7 @@ public class TickHandler {
 			}
 
 			fusionTickHandling(serverPlayer, data);
+			handleStatusEffects(serverPlayer, data);
 
             if (shouldSync) {
                 NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
@@ -526,6 +528,56 @@ public class TickHandler {
 					FusionLogic.endFusion(serverPlayer, data, true);
 				}
 			}
+		}
+	}
+
+	private static void handleStatusEffects(ServerPlayer player, StatsData data) {
+		if (data.getStatus().isChargingKi()) {
+			if (!player.hasEffect(MainEffects.KICHARGE.get())) {
+				player.addEffect(new MobEffectInstance(MainEffects.KICHARGE.get(), -1, 0, false, false, true));
+			}
+		} else {
+			player.removeEffect(MainEffects.KICHARGE.get());
+		}
+
+		if (data.getStatus().isActionCharging()) {
+			if (!player.hasEffect(MainEffects.TRANSFORM.get())) {
+				player.addEffect(new MobEffectInstance(MainEffects.TRANSFORM.get(), -1, 0, false, false, true));
+			}
+		} else {
+			player.removeEffect(MainEffects.TRANSFORM.get());
+		}
+
+		if (data.getSkills().isSkillActive("kaioken")) {
+			if (!player.hasEffect(MainEffects.KAIOKEN.get())) {
+				player.addEffect(new MobEffectInstance(MainEffects.KAIOKEN.get(), -1, 0, false, false, true));
+			}
+		} else {
+			player.removeEffect(MainEffects.KAIOKEN.get());
+		}
+
+		if (data.getSkills().isSkillActive("fly")) {
+			if (!player.hasEffect(MainEffects.FLY.get())) {
+				player.addEffect(new MobEffectInstance(MainEffects.FLY.get(), -1, 0, false, false, true));
+			}
+		} else {
+			player.removeEffect(MainEffects.FLY.get());
+		}
+
+		if (data.getEffects().hasEffect("majin")) {
+			if (!player.hasEffect(MainEffects.MAJIN.get())) {
+				player.addEffect(new MobEffectInstance(MainEffects.MAJIN.get(), -1, 0, false, false, true));
+			}
+		} else {
+			player.removeEffect(MainEffects.MAJIN.get());
+		}
+
+		if (data.getEffects().hasEffect("mightfruit")) {
+			if (!player.hasEffect(MainEffects.MIGHTFRUIT.get())) {
+				player.addEffect(new MobEffectInstance(MainEffects.MIGHTFRUIT.get(), -1, 0, false, false, true));
+			}
+		} else {
+			player.removeEffect(MainEffects.MIGHTFRUIT.get());
 		}
 	}
 }

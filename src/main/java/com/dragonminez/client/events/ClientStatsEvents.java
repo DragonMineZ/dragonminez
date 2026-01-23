@@ -59,17 +59,6 @@ public class ClientStatsEvents {
 					player.attackAnim = 0;
 				}
 			}
-		});
-	}
-
-	@SubscribeEvent
-	public static void onKeyPressed(InputEvent.Key event) {
-		LocalPlayer player = Minecraft.getInstance().player;
-		if (player == null) return;
-
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().hasCreatedCharacter()) return;
-			boolean isStunned = data.getStatus().isStunned();
 
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
@@ -84,7 +73,7 @@ public class ClientStatsEvents {
 					NetworkHandler.sendToServer(new ExecuteActionC2S("instant_transform"));
 					transformDoubleTapTimer = 0;
 				} else {
-					transformDoubleTapTimer = 8;
+					transformDoubleTapTimer = 20;
 				}
 			}
 			wasTransformKeyDown = isActionKeyPressed;
@@ -104,6 +93,16 @@ public class ClientStatsEvents {
 			if (isDescendKeyPressed && isActionKeyPressed && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.KAIOKEN))) {
 				NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
 			}
+		});
+	}
+
+	@SubscribeEvent
+	public static void onKeyPressed(InputEvent.Key event) {
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player == null) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {if (!data.getStatus().hasCreatedCharacter()) return;
+			boolean isStunned = data.getStatus().isStunned();
 
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				Skill kiSense = data.getSkills().getSkill("kisense");

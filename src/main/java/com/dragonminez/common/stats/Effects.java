@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
 public class Effects {
     private final Map<String, Effect> effectMap = new HashMap<>();
 
-    public Effects() {
-    }
+    public Effects() {}
 
     public void addEffect(String name, double power, int duration) {
         effectMap.put(name.toLowerCase(), new Effect(name.toLowerCase(), power, duration));
