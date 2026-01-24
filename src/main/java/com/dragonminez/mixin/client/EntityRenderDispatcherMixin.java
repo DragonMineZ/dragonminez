@@ -4,6 +4,8 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.client.model.PlayerDMZModel;
 import com.dragonminez.client.render.PlayerDMZRenderer;
+import com.dragonminez.client.render.firstperson.PlayerDMZPOVRenderer;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
@@ -29,70 +31,88 @@ import java.util.Map;
 @Mixin(EntityRenderDispatcher.class)
 public abstract class EntityRenderDispatcherMixin {
 
-    // Caché para no crear renderizadores en cada frame (evita lag y crasheos)
+    // Cache: third-person renderers
     @Unique
-    private final Map<Integer, GeoEntityRenderer<?>> dmzRenderers = new HashMap<>();
+    private final Map<Integer, GeoEntityRenderer<?>> dragonminez$dmzRenderers = new HashMap<>();
 
-    // Contexto de renderizado de Minecraft (necesario para crear nuevos renderizadores)
+    // Cache: first-person POV renderers (hide head + offset)
     @Unique
-    private EntityRendererProvider.Context dmzContext;
+    private final Map<Integer, GeoEntityRenderer<?>> dragonminez$dmzPOVRenderers = new HashMap<>();
 
-    /**
-     * Inyectamos en el método que Minecraft usa para buscar el renderizador de una entidad.
-     * Si la entidad es un jugador, devolvemos nuestro renderizador personalizado de GeckoLib.
-     */
+    // Render context (needed to create renderers)
+    @Unique
+    private EntityRendererProvider.Context dragonminez$dmzContext;
+
     @Inject(
             method = "getRenderer(Lnet/minecraft/world/entity/Entity;)Lnet/minecraft/client/renderer/entity/EntityRenderer;",
             at = @At("HEAD"),
             cancellable = true
     )
+    @SuppressWarnings("unchecked")
     public <E extends Entity> void dmz$getRenderer(E entity, CallbackInfoReturnable<EntityRenderer<? super E>> cir) {
+        if (!(entity instanceof AbstractClientPlayer player)) return;
 
-        if (entity instanceof AbstractClientPlayer player) {
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+            if (dragonminez$dmzContext == null) return;
 
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                var character = data.getCharacter();
-                String race = character.getRaceName().toLowerCase();
-                String gender = character.getGender().toLowerCase();
-                String form = character.getActiveForm();
+            var character = data.getCharacter();
+            String race = character.getRaceName().toLowerCase();
+            String gender = character.getGender().toLowerCase();
+            String form = character.getActiveForm();
 
-                String rendererKey = race + "_" + gender + "_" + (form != null ? form : "base");
-                int rendererId = rendererKey.hashCode();
+            String baseKey = race + "_" + gender + "_" + (form != null ? form : "base");
 
-                GeoEntityRenderer<?> morphRenderer = dmzRenderers.get(rendererId);
+            boolean pov = FirstPersonManager.shouldRenderFirstPerson(player);
 
-                if (morphRenderer == null) {
-                    if (dmzContext == null) return;
+            // Make keys distinct so both can exist in cache for same morph
+            int rendererId = (baseKey + (pov ? "_pov" : "_tp")).hashCode();
 
-                    morphRenderer = dmz$createRendererForRace(race, gender, form, dmzContext);
-                    dmzRenderers.put(rendererId, morphRenderer);
-                }
-                cir.setReturnValue((EntityRenderer<? super E>) morphRenderer);
-            });
-        }
+            Map<Integer, GeoEntityRenderer<?>> cache = pov ? dragonminez$dmzPOVRenderers : dragonminez$dmzRenderers;
+            GeoEntityRenderer<?> renderer = cache.get(rendererId);
+
+            if (renderer == null) {
+                renderer = dmz$createRendererForRace(race, gender, form, dragonminez$dmzContext, pov);
+                cache.put(rendererId, renderer);
+            }
+
+            cir.setReturnValue((EntityRenderer<? super E>) renderer);
+        });
     }
+
     @Inject(
             method = "onResourceManagerReload(Lnet/minecraft/server/packs/resources/ResourceManager;)V",
             at = @At("TAIL"),
             locals = LocalCapture.CAPTURE_FAILHARD
     )
     public void dmz$onResourceManagerReload(ResourceManager resourceManager, CallbackInfo ci, EntityRendererProvider.Context context) {
-        this.dmzContext = context;
-        this.dmzRenderers.clear();
+        this.dragonminez$dmzContext = context;
+        this.dragonminez$dmzRenderers.clear();
+        this.dragonminez$dmzPOVRenderers.clear();
         LogUtil.info(Env.CLIENT, "DMZ Renderers Cache cleared on Resource Reload");
     }
 
     @Unique
-    private GeoEntityRenderer<?> dmz$createRendererForRace(String race, String gender, String form, EntityRendererProvider.Context ctx) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private GeoEntityRenderer<?> dmz$createRendererForRace(
+            String race, String gender, String form,
+            EntityRendererProvider.Context ctx,
+            boolean pov
+    ) {
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
-
         String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
+
         try {
-            PlayerDMZModel<?> model = new PlayerDMZModel<>(race, customModel);
-            return new PlayerDMZRenderer<>(ctx, model);
+            PlayerDMZModel model = new PlayerDMZModel<>(race, customModel);
+
+            if (pov) {
+                return new PlayerDMZPOVRenderer(ctx, model);
+            }
+            return new PlayerDMZRenderer(ctx, model);
+
         } catch (Exception e) {
-            LogUtil.error(Env.CLIENT, "Error creando renderizador para: " + race);
-            return new PlayerDMZRenderer<>(ctx, new PlayerDMZModel<>("human", ""));
+            LogUtil.error(Env.CLIENT, "Error creando renderizador para: " + race + " (pov=" + pov + ")");
+            PlayerDMZModel fallbackModel = new PlayerDMZModel<>("human", "");
+            return pov ? new PlayerDMZPOVRenderer(ctx, fallbackModel) : new PlayerDMZRenderer(ctx, fallbackModel);
         }
     }
 }
