@@ -22,6 +22,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -67,7 +68,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.leftArm, this.model.leftSleeve);
             pPoseStack.popPose();
         } else {
-            // Render normal de la mano derecha si no bloquea
             pPoseStack.pushPose();
             this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.rightArm, this.model.rightSleeve);
             pPoseStack.popPose();
@@ -77,16 +77,26 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, pPlayer);
         var stats = statsCap.orElse(new StatsData(pPlayer));
 
-        pPoseStack.pushPose();
         if (stats.getStatus().isBlocking()) {
+            pPoseStack.pushPose();
+            applyBlockingTransform(pPoseStack, 1.0F);
+            this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.rightArm, this.model.rightSleeve);
+            pPoseStack.popPose();
+
+            pPoseStack.pushPose();
             applyBlockingTransform(pPoseStack, -1.0F);
+            this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.leftArm, this.model.leftSleeve);
+            pPoseStack.popPose();
+        } else {
+            pPoseStack.pushPose();
+            this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.leftArm, this.model.leftSleeve);
+            pPoseStack.popPose();
         }
-        this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.leftArm, this.model.leftSleeve);
-        pPoseStack.popPose();
+
     }
 
     private void applyBlockingTransform(PoseStack stack, float side) {
-        stack.translate(side * -0.25F, -0.05F, -0.4F);
+        stack.translate(side * -0.25F, -0.15F, -0.4F);
         stack.mulPose(Axis.XP.rotationDegrees(-20.0F));
         stack.mulPose(Axis.YP.rotationDegrees(100.0F));
         stack.mulPose(Axis.ZP.rotationDegrees(side * 322.0F));
@@ -133,6 +143,8 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         }
 
         renderTattoos(pPoseStack, pBuffer, pCombinedLight, pRendererArm, stats);
+
+        renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer,pRendererArm);
     }
 
     private void renderRaceLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String race, String form, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
@@ -167,9 +179,29 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer4.png"), h);
             }
 
-            // --- LAYER 5 (Naranja Bio/Frost) ---
             if (isBio || (isFrost && bodyType == 0)) {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer5.png"), ColorUtils.hexToRgb("#e67d40"));
+            }
+        }
+    }
+
+    private void renderDbzArmor(PoseStack ps, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer player,ModelPart pRendererArm) {
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+
+        if (!chestStack.isEmpty() && chestStack.getItem() instanceof DbzArmorItem armorItem) {
+            String texturePath = "textures/armor/" + armorItem.getItemId() + "_layer1.png";
+            ResourceLocation armorResource = new ResourceLocation(Reference.MOD_ID, texturePath);
+
+            if (textureExists(armorResource)) {
+                ps.pushPose();
+
+                float armorInflation = 1.05F;
+                ps.scale(armorInflation, armorInflation, armorInflation);
+                ps.translate(0.02D, 0.02D, 0.0D);
+
+                renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, new float[]{1.0F, 1.0F, 1.0F});
+
+                ps.popPose();
             }
         }
     }
