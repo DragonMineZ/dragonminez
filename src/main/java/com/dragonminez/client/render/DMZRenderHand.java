@@ -99,7 +99,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         stack.translate(side * -0.25F, -0.15F, -0.4F);
         stack.mulPose(Axis.XP.rotationDegrees(-20.0F));
         stack.mulPose(Axis.YP.rotationDegrees(100.0F));
-        stack.mulPose(Axis.ZP.rotationDegrees(side * 322.0F));
+        stack.mulPose(Axis.ZP.rotationDegrees(side * 330.0F));
     }
 
     private void renderHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer, ModelPart pRendererArm, ModelPart pRendererArmwear) {
