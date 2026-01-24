@@ -1,15 +1,12 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.common.network.C2S.ExecuteActionC2S;
-import com.dragonminez.common.network.C2S.UpdateSkillC2S;
-import com.dragonminez.common.network.C2S.UpdateStatC2S;
+import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.ActionMode;
-import com.dragonminez.common.stats.Skill;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.stats.*;
 import com.dragonminez.server.events.players.StatsEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -25,8 +22,14 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
+	private static FlightSoundInstance flightSound;
+
 	private static int transformDoubleTapTimer = 0;
+	private static int kiBlastTimer = 0;
 	private static boolean wasTransformKeyDown = false;
+	private static long lastDashTime = 0;
+	private static boolean wasDashKeyDown = false;
+	private static boolean wasRightClickDown = false;
 
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -41,12 +44,13 @@ public class ClientStatsEvents {
 			if (!data.getStatus().hasCreatedCharacter()) return;
 
 			boolean isStunned = data.getStatus().isStunned();
+			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
+			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
+			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
 			boolean mainHandEmpty = player.getMainHandItem().isEmpty();
-
 			boolean isRightClickDown = mc.options.keyUse.isDown();
 
-			boolean shouldBlock = isRightClickDown && mainHandEmpty && !isStunned;
-
+			boolean shouldBlock = isRightClickDown && mainHandEmpty && !isStunned && !isDescendKeyPressed;
 			if (shouldBlock != data.getStatus().isBlocking()) {
 				data.getStatus().setBlocking(shouldBlock);
 				NetworkHandler.sendToServer(new UpdateStatC2S("isBlocking", shouldBlock));
@@ -60,9 +64,18 @@ public class ClientStatsEvents {
 				}
 			}
 
-			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
-			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
-			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
+				NetworkHandler.sendToServer(new KiBlastC2S());
+				kiBlastTimer = 10;
+			}
+			wasRightClickDown = isRightClickDown;
+
+			if (kiBlastTimer > 0) {
+				if (kiBlastTimer == 1) {
+					NetworkHandler.sendToServer(new TriggerAnimationS2C("ki_blast_shot", 1));
+				}
+				kiBlastTimer--;
+			}
 
 			if (transformDoubleTapTimer > 0) {
 				transformDoubleTapTimer--;
@@ -93,6 +106,17 @@ public class ClientStatsEvents {
 			if (isDescendKeyPressed && isActionKeyPressed && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.KAIOKEN))) {
 				NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
 			}
+
+			boolean isFlying = data.getSkills().isSkillActive("fly") && !player.onGround() && !player.isInWater();
+
+			if (isFlying) {
+				if (flightSound == null || !mc.getSoundManager().isActive(flightSound)) {
+					flightSound = new FlightSoundInstance(player);
+					mc.getSoundManager().play(flightSound);
+				}
+			} else {
+				flightSound = null;
+			}
 		});
 	}
 
@@ -103,6 +127,28 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {if (!data.getStatus().hasCreatedCharacter()) return;
 			boolean isStunned = data.getStatus().isStunned();
+
+			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
+			if (isDashKeyDown && !wasDashKeyDown && !isStunned) {
+				long currentTime = System.currentTimeMillis();
+				boolean isDoubleDash = (currentTime - lastDashTime) <= 300 && data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE);
+				lastDashTime = currentTime;
+
+				float xInput = 0;
+				float zInput = 0;
+
+				if (player.input.up) zInput += 1;
+				if (player.input.down) zInput -= 1;
+				if (player.input.left) xInput -= 1;
+				if (player.input.right) xInput += 1;
+
+				if (xInput == 0 && zInput == 0) {
+					zInput = 1;
+				}
+
+				NetworkHandler.sendToServer(new DashC2S(xInput, zInput, isDoubleDash));
+			}
+			wasDashKeyDown = isDashKeyDown;
 
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				Skill kiSense = data.getSkills().getSkill("kisense");
@@ -137,6 +183,4 @@ public class ClientStatsEvents {
 			}
 		}
 	}
-
-
 }

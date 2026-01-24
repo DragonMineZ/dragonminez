@@ -3,12 +3,12 @@
   "biomes": "#dragonminez:has_dinosaurs",
   "spawners": [{
     "type": "dragonminez:dino1",
-    "weight": 10,
+    "weight": 20,
     "minCount": 1,
     "maxCount": 3
   },{
     "type": "dragonminez:dino2",
-    "weight": 10,
+    "weight": 15,
     "minCount": 1,
     "maxCount": 3
   },{
@@ -16,5 +16,10 @@
     "weight": 10,
     "minCount": 1,
     "maxCount": 3
+  },{
+    "type": "dragonminez:dinokid",
+    "weight": 5,
+    "minCount": 2,
+    "maxCount": 5
   }]
 }

@@ -3,9 +3,8 @@ package com.dragonminez.client.util;
 public class ColorUtils {
 
     public static float[] hexToRgb(String hex) {
-        if (hex == null || hex.isEmpty()) {
-            return new float[]{1.0f, 1.0f, 1.0f};
-        }
+        if (hex == null || hex.isEmpty()) return new float[]{1.0f, 1.0f, 1.0f};
+
         try {
             if (hex.startsWith("#")) {
                 hex = hex.substring(1);
@@ -115,17 +114,26 @@ public class ColorUtils {
     }
 
     public static int hexToInt(String hex) {
-        if (hex == null || hex.isEmpty()) {
-            return 0xFFFFFF;
-        }
-        if (hex.startsWith("#")) {
-            hex = hex.substring(1);
-        }
+        if (hex == null || hex.isEmpty()) return 0xFFFFFF;
+
         try {
-            return Integer.parseInt(hex, 16);
+			if (hex.startsWith("#")) hex = hex.substring(1);
+            return (int) Long.parseLong(hex, 16);
         } catch (NumberFormatException e) {
             return 0xFFFFFF;
         }
     }
+
+	public static int darkenColor(int color, float factor) {
+		int r = (color >> 16) & 0xFF;
+		int g = (color >> 8) & 0xFF;
+		int b = color & 0xFF;
+
+		r = (int) (r * factor);
+		g = (int) (g * factor);
+		b = (int) (b * factor);
+
+		return (r << 16) | (g << 8) | b;
+	}
 }
 

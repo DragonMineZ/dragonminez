@@ -165,6 +165,62 @@ public abstract class DMZEvent extends Event {
 	}
 
 	/**
+	 * Event fired when a player performs a dash.
+	 * This event is cancelable; if canceled, the dash will not occur.
+	 */
+	@Cancelable
+	public static class PlayerDashEvent extends Event {
+		private final ServerPlayer player;
+		private final DashType dashType;
+		private double distance;
+		private int kiCost;
+
+		public PlayerDashEvent(ServerPlayer player, DashType dashType, double distance, int kiCost) {
+			this.player = player;
+			this.dashType = dashType;
+			this.distance = distance;
+			this.kiCost = kiCost;
+		}
+
+		public ServerPlayer getPlayer() { return player; }
+		public DashType getDashType() { return dashType; }
+		public double getDistance() { return distance; }
+		public void setDistance(double distance) { this.distance = distance; }
+		public int getKiCost() { return kiCost; }
+		public void setKiCost(int kiCost) { this.kiCost = kiCost; }
+
+		public enum DashType {
+			NORMAL,
+			DOUBLE
+		}
+	}
+
+	/**
+	 * Event fired when a player successfully evades an attack.
+	 * This event is cancelable; if canceled, the evasion will not occur.
+	 */
+	@Cancelable
+	public static class PlayerEvasionEvent extends Event {
+		private final ServerPlayer player;
+		private final LivingEntity attacker;
+		private final float originalDamage;
+		private int kiCost;
+
+		public PlayerEvasionEvent(ServerPlayer player, LivingEntity attacker, float originalDamage, int kiCost) {
+			this.player = player;
+			this.attacker = attacker;
+			this.originalDamage = originalDamage;
+			this.kiCost = kiCost;
+		}
+
+		public ServerPlayer getPlayer() { return player; }
+		public LivingEntity getAttacker() { return attacker; }
+		public float getOriginalDamage() { return originalDamage; }
+		public int getKiCost() { return kiCost; }
+		public void setKiCost(int kiCost) { this.kiCost = kiCost; }
+	}
+
+	/**
 	 * Event fired when two entities are about to fuse.
 	 * This event is cancelable; if canceled, the fusion will not occur.
 	 */

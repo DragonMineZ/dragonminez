@@ -1,6 +1,10 @@
 package com.dragonminez.common.init.entities.animal;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -9,6 +13,8 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerLevelAccessor;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -100,4 +106,18 @@ public class DinoGlobalEntity extends Monster implements GeoEntity {
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return geoCache;
     }
+
+	@Override
+	public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
+		return true;
+	}
+
+	public static boolean canSpawnHere(EntityType<? extends DinoGlobalEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
+		System.out.println("Checking spawn conditions for DinoGlobalEntity at " + pos + " | entity: " + entity.getDescriptionId());
+		if (world.getDifficulty() != Difficulty.PEACEFUL) {
+			System.out.println("Spawn allowed: Difficulty is not Peaceful");
+			return world.getBlockState(pos.below()).isValidSpawn(world, pos.below(), entity);
+		}
+		return false;
+	}
 }

@@ -1,6 +1,6 @@
 package com.dragonminez.client.flight;
 
-import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -10,134 +10,97 @@ import net.minecraft.util.Mth;
 
 public class FlightRollHandler {
 
-    private static final float ROLL_SPEED = 2.5F;
-    private static final float ROLL_SMOOTHING = 0.2F;
+	private static final float ROLL_ACCELERATION = 2.5F;
+	private static final float MAX_ROLL_SPEED = 6.0F;
+	private static final float ROLL_FRICTION = 0.9F;
+	private static final float STABILIZE_SPEED = 0.6F;
+	private static final float MOUSE_SENSITIVITY = 0.25F;
 
-    private static float currentRoll = 0F;
-    private static float prevRoll = 0F;
-    private static float targetRoll = 0F;
-    private static float lastYaw = 0F;
-    private static boolean wasFlying = false;
+	private static float currentRoll = 0F;
+	private static float prevRoll = 0F;
+	private static float rollVelocity = 0F;
+	private static float lastYaw = 0F;
 
-    public static void tick() {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
+	public static void tick() {
+		Minecraft mc = Minecraft.getInstance();
+		LocalPlayer player = mc.player;
 
-        if (player == null) {
-            reset();
-            return;
-        }
+		if (player == null) {
+			reset();
+			return;
+		}
 
-        if (!ConfigManager.getUserConfig().getHud().isCameraMovementDurintFlight()) {
-            if (currentRoll != 0F) {
-                prevRoll = currentRoll;
-                currentRoll = Mth.lerp(0.1F, currentRoll, 0F);
-            }
-            return;
-        }
+		prevRoll = currentRoll;
+		float currentYaw = player.getYRot();
 
-        boolean isFlying = isPlayerFlying(player);
+		float deltaYaw = currentYaw - lastYaw;
+		while (deltaYaw >= 180) deltaYaw -= 360;
+		while (deltaYaw < -180) deltaYaw += 360;
 
-        if (!isFlying) {
-            if (Math.abs(currentRoll) > 0.1F) {
-                prevRoll = currentRoll;
-                float normalizedRoll = normalizeAngle(currentRoll);
-                currentRoll = Mth.lerp(0.08F, currentRoll, currentRoll - normalizedRoll);
-            } else {
-                currentRoll = 0F;
-                prevRoll = 0F;
-            }
-            targetRoll = 0F;
-            lastYaw = player.getYRot();
-            wasFlying = false;
-            return;
-        }
+		if (isPlayerFlying(player) && FlySkillEvent.isFlyingFast()) {
 
-        if (!wasFlying) {
-            lastYaw = player.getYRot();
-            wasFlying = true;
-        }
+			float input = 0;
+			if (player.input.left) input += 1;
+			if (player.input.right) input -= 1;
 
-        prevRoll = currentRoll;
+			float keyForce = input * ROLL_ACCELERATION;
+			float mouseForce = deltaYaw * MOUSE_SENSITIVITY;
+			float totalForce = keyForce - mouseForce;
 
-        float currentYaw = player.getYRot();
-        float deltaYaw = currentYaw - lastYaw;
-        lastYaw = currentYaw;
+			if (Math.abs(totalForce) > 0.01F) {
+				rollVelocity += totalForce;
+			} else {
+				float normalizedRoll = currentRoll % 360;
+				if (normalizedRoll > 180) normalizedRoll -= 360;
+				if (normalizedRoll < -180) normalizedRoll += 360;
 
-        deltaYaw = normalizeAngle(deltaYaw);
+				if (Math.abs(normalizedRoll) < 90) {
+					float distTo0 = -normalizedRoll;
+					if (Math.abs(distTo0) > 0.1f) {
+						float stabilizeForce = Mth.clamp(distTo0 * 0.1f, -STABILIZE_SPEED, STABILIZE_SPEED);
+						rollVelocity += stabilizeForce;
+					}
+				}
+			}
 
-        boolean isLeft = mc.options.keyLeft.isDown();
-        boolean isRight = mc.options.keyRight.isDown();
+			rollVelocity *= ROLL_FRICTION;
+			rollVelocity = Mth.clamp(rollVelocity, -MAX_ROLL_SPEED, MAX_ROLL_SPEED);
 
-        float rollChange = 0F;
+			currentRoll += rollVelocity;
+			currentRoll = currentRoll % 360F;
+		} else {
+			float target = Math.round(currentRoll / 360f) * 360f;
+			currentRoll = Mth.lerp(0.1F, currentRoll, target);
+			rollVelocity = 0;
+		}
 
-        if (isLeft) {
-            rollChange = -ROLL_SPEED;
-        } else if (isRight) {
-            rollChange = ROLL_SPEED;
-        } else if (Math.abs(deltaYaw) > 0.1F) {
-            rollChange = deltaYaw * 0.8F;
-        }
+		lastYaw = currentYaw;
+	}
 
-        if (Math.abs(rollChange) > 0.01F) {
-            targetRoll = currentRoll + rollChange;
-        } else {
-            targetRoll = currentRoll * 0.85F;
-            if (Math.abs(targetRoll) < 0.5F) {
-                targetRoll = 0F;
-            }
-        }
+	private static boolean isPlayerFlying(LocalPlayer player) {
+		var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
+		if (statsOpt.isPresent()) {
+			var data = statsOpt.resolve().orElse(null);
+			if (data != null) {
+				Skill flySkill = data.getSkills().getSkill("fly");
+				return flySkill != null && flySkill.isActive();
+			}
+		}
+		return false;
+	}
 
-        currentRoll = Mth.lerp(ROLL_SMOOTHING, currentRoll, targetRoll);
-    }
+	public static void reset() {
+		currentRoll = 0F;
+		prevRoll = 0F;
+		rollVelocity = 0F;
+		lastYaw = 0F;
+	}
 
-    private static float normalizeAngle(float angle) {
-        while (angle > 180F) angle -= 360F;
-        while (angle < -180F) angle += 360F;
-        return angle;
-    }
+	public static float getRoll(float partialTicks) {
+		return Mth.lerp(partialTicks, prevRoll, currentRoll);
+	}
 
-    private static boolean isPlayerFlying(LocalPlayer player) {
-        var statsOpt = StatsProvider.get(StatsCapability.INSTANCE, player);
-        if (statsOpt.isPresent()) {
-            var data = statsOpt.resolve().orElse(null);
-            if (data != null) {
-                Skill flySkill = data.getSkills().getSkill("fly");
-                return flySkill != null && flySkill.isActive();
-            }
-        }
-        return false;
-    }
-
-    public static float getRoll(float partialTicks) {
-        return Mth.lerp(partialTicks, prevRoll, currentRoll);
-    }
-
-    public static float getCurrentRoll() {
-        return currentRoll;
-    }
-
-    public static boolean isRolling() {
-        if (!ConfigManager.getUserConfig().getHud().isCameraMovementDurintFlight()) {
-            return false;
-        }
-
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-
-        if (player == null) return false;
-
-        return isPlayerFlying(player);
-    }
-
-    public static boolean hasActiveRoll() {
-        return Math.abs(currentRoll) > 0.1F;
-    }
-
-    public static void reset() {
-        currentRoll = 0F;
-        prevRoll = 0F;
-        targetRoll = 0F;
-        wasFlying = false;
-    }
+	public static boolean hasActiveRoll() {
+		return Math.abs(currentRoll) > 0.1f || Math.abs(rollVelocity) > 0.01f;
+	}
 }

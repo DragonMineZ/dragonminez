@@ -28,7 +28,6 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
         this.setPersistenceRequired();
     }
 
-
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
@@ -66,8 +65,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	}
 
     @Override
-    protected void doPush(Entity p_20971_) {
-    }
+    protected void doPush(Entity p_20971_) {}
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
@@ -94,4 +92,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	public boolean isPersistenceRequired() {
 		return true;
 	}
+
+	@Override
+	public void checkDespawn() {}
 }

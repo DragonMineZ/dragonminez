@@ -33,6 +33,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -98,19 +99,14 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         poseStack.pushPose();
 
-        boolean isFlying = false;
-        Skill flySkill = stats.getSkills().getSkill("fly");
-        if (flySkill != null && flySkill.isActive()) {
-            isFlying = true;
-        }
-
-		if (isFlying || FlightRollHandler.hasActiveRoll()) {
+		if (FlightRollHandler.hasActiveRoll()) {
 			float roll = FlightRollHandler.getRoll(partialTick);
-			if (Math.abs(roll) > 0.1F) {
-				poseStack.translate(0.0F, 0.9F * scaling, 0.0F);
-				poseStack.mulPose(Axis.ZN.rotationDegrees(roll));
-				poseStack.translate(0.0F, -0.9F * scaling, 0.0F);
-			}
+			float pivotY = entity.getBbHeight() / 2f;
+			poseStack.translate(0, pivotY, 0);
+			float yawRad = entityYaw * Mth.DEG_TO_RAD;
+			Vector3f rotationAxis = new Vector3f((float) -Math.sin(yawRad), 0, (float) Math.cos(yawRad));
+			poseStack.mulPose(Axis.of(rotationAxis).rotationDegrees(-roll));
+			poseStack.translate(0, -pivotY, 0);
 		}
 
         poseStack.scale(scaling, scaling, scaling);

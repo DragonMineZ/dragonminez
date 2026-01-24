@@ -1,6 +1,7 @@
 package com.dragonminez.client.model;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
@@ -147,6 +148,18 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 			head.setRotY(headYaw);
 		}
 
+		if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
+			var rightArm = this.getAnimationProcessor().getBone("right_arm");
+
+			if (rightArm != null) {
+				float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
+				float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
+
+				rightArm.setRotX(headPitch + (float)(Math.PI / 2));
+				rightArm.setRotY(headYaw);
+			}
+		}
+
         try {
             float partialTick = animationState.getPartialTick();
             float ageInTicks = (float) animatable.getTick(animatable);
@@ -160,8 +173,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             if (leftArm != null) {
                 RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
             }
-        } catch (Exception e) {
-        }
+        } catch (Exception ignore) {}
 
     }
 

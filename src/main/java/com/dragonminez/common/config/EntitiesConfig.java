@@ -1,6 +1,5 @@
 package com.dragonminez.common.config;
 
-import com.google.gson.annotations.SerializedName;
 import java.util.HashMap;
 import java.util.Map;
 

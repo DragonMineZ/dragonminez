@@ -21,23 +21,17 @@ public class PlayerAnimationsSyncHandler {
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
-        if (!(event.player instanceof ServerPlayer serverPlayer)) return;
+        if (!(event.player instanceof ServerPlayer)) return;
 
         Player player = event.player;
         UUID uuid = player.getUUID();
 
-        boolean isCurrentlyFlying = player.getAbilities().flying && !player.isFallFlying();
+        boolean isCurrentlyFlying = player.getAbilities().flying || player.isFallFlying();
 
         Boolean lastState = lastFlyingState.get(uuid);
         if (lastState == null || lastState != isCurrentlyFlying) {
             lastFlyingState.put(uuid, isCurrentlyFlying);
-
-            PlayerAnimationsSync packet = new PlayerAnimationsSync(uuid, isCurrentlyFlying);
-
-            NetworkHandler.INSTANCE.send(
-                PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> serverPlayer),
-                packet
-            );
+            NetworkHandler.sendToTrackingEntityAndSelf(new PlayerAnimationsSync(uuid, isCurrentlyFlying), player);
         }
     }
 }

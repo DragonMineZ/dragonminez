@@ -49,10 +49,10 @@ public class Resources {
     public void setTrainingPoints(int points) { this.trainingPoints = Math.max(0, points); }
     public void setRacialSkillCount(int count) { this.racialSkillCount = Math.max(0, count); }
 
-    public void addEnergy(int amount) { setCurrentEnergy(currentEnergy + amount); }
-    public void addStamina(int amount) { setCurrentStamina(currentStamina + amount); }
-	public void addPoise(int amount) { setCurrentPoise(currentPoise + amount); }
-    public void addAlignment(int amount) { setAlignment(alignment + amount); }
+    public void addEnergy(int amount) { setCurrentEnergy(Math.max(0, currentEnergy + amount)); }
+    public void addStamina(int amount) { setCurrentStamina(Math.max(0, currentStamina + amount)); }
+	public void addPoise(int amount) { setCurrentPoise(Math.max(0, currentPoise + amount)); }
+    public void addAlignment(int amount) { setAlignment(Math.max(0, alignment + amount)); }
 
     public void addTrainingPoints(int amount) {
         if (amount <= 0 || player == null) {
@@ -70,11 +70,11 @@ public class Resources {
 
     public void addRacialSkillCount(int amount) { setRacialSkillCount(racialSkillCount + amount); }
 
-    public void removeEnergy(int amount) { setCurrentEnergy(currentEnergy - amount); }
-    public void removeStamina(int amount) { setCurrentStamina(currentStamina - amount); }
-	public void removePoise(int amount) { setCurrentPoise(currentPoise - amount); }
-    public void removeAlignment(int amount) { setAlignment(alignment - amount); }
-    public void removeTrainingPoints(int amount) { setTrainingPoints(trainingPoints - amount); }
+    public void removeEnergy(int amount) { setCurrentEnergy(Math.max(0, currentEnergy - amount)); }
+    public void removeStamina(int amount) { setCurrentStamina(Math.max(0, currentStamina - amount)); }
+	public void removePoise(int amount) { setCurrentPoise(Math.max(0, currentPoise - amount)); }
+    public void removeAlignment(int amount) { setAlignment(Math.max(0, alignment - amount)); }
+    public void removeTrainingPoints(int amount) { setTrainingPoints(Math.max(0, trainingPoints - amount)); }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();

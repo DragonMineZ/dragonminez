@@ -116,6 +116,18 @@ public class NetworkHandler {
 				.encoder(FlyToggleC2S::encode)
 				.consumerMainThread(FlyToggleC2S::handle)
 				.add();
+
+		net.messageBuilder(DashC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(DashC2S::new)
+				.encoder(DashC2S::encode)
+				.consumerMainThread(DashC2S::handle)
+				.add();
+
+		net.messageBuilder(KiBlastC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(KiBlastC2S::new)
+				.encoder(KiBlastC2S::encode)
+				.consumerMainThread(KiBlastC2S::handle)
+				.add();
 		/*
 		  SERVER -> CLIENT
 		 */
@@ -153,6 +165,12 @@ public class NetworkHandler {
 				.decoder(RadarSyncS2C::decode)
 				.encoder(RadarSyncS2C::encode)
 				.consumerMainThread(RadarSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(TriggerAnimationS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TriggerAnimationS2C::new)
+				.encoder(TriggerAnimationS2C::encode)
+				.consumerMainThread(TriggerAnimationS2C::handle)
 				.add();
     }
 

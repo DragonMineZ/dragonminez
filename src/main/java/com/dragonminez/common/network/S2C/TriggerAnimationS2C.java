@@ -1,0 +1,63 @@
+package com.dragonminez.common.network.S2C;
+
+import com.dragonminez.client.animation.IPlayerAnimatable;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.network.NetworkEvent;
+
+import java.util.function.Supplier;
+
+public class TriggerAnimationS2C {
+	private final String animationType;
+	private final int variant;
+	private final int entityId;
+
+	public TriggerAnimationS2C(String animationType, int variant) {
+		this.animationType = animationType;
+		this.variant = variant;
+		this.entityId = -1;
+	}
+
+	public TriggerAnimationS2C(String animationType, int variant, int entityId) {
+		this.animationType = animationType;
+		this.variant = variant;
+		this.entityId = entityId;
+	}
+
+	public TriggerAnimationS2C(FriendlyByteBuf buffer) {
+		this.animationType = buffer.readUtf();
+		this.variant = buffer.readInt();
+		this.entityId = buffer.readInt();
+	}
+
+	public void encode(FriendlyByteBuf buffer) {
+		buffer.writeUtf(animationType);
+		buffer.writeInt(variant);
+		buffer.writeInt(entityId);
+	}
+
+	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
+		NetworkEvent.Context context = contextSupplier.get();
+		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+			Player targetPlayer;
+			if (entityId == -1 || Minecraft.getInstance().level == null) {
+				targetPlayer = Minecraft.getInstance().player;
+			} else {
+				var entity = Minecraft.getInstance().level.getEntity(entityId);
+				targetPlayer = entity instanceof Player p ? p : Minecraft.getInstance().player;
+			}
+
+			if (targetPlayer instanceof IPlayerAnimatable animatable) {
+				switch (animationType) {
+					case "evasion" -> animatable.dragonminez$triggerEvasion();
+					case "dash" -> animatable.dragonminez$triggerDash(variant);
+					case "ki_blast_shot" -> animatable.dragonminez$setShootingKi(variant == 0);
+				}
+			}
+		}));
+		context.setPacketHandled(true);
+	}
+}

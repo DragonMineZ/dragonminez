@@ -19,6 +19,7 @@ public class KeyBinds {
 	public static final KeyMapping LOCK_ON = registerKey("lock_on", GLFW.GLFW_KEY_Z);
 	public static final KeyMapping KI_SENSE = registerKey("ki_sense", GLFW.GLFW_KEY_F4);
 	public static final KeyMapping FLY_KEY = registerKey("fly_key", GLFW.GLFW_KEY_F);
+	public static final KeyMapping DASH_KEY = registerKey("dash_key", GLFW.GLFW_KEY_R);
 
     private static KeyMapping registerKey(String name, int keyCode) {
         return new KeyMapping(

@@ -19,6 +19,10 @@ public class Cooldowns {
 	public static final String POISE_CD = "PoiseCooldown";
 	public static final String FUSION_CD = "FusionCooldown";
 	public static final String DRAIN_ACTIVE = "DrainActive";
+	public static final String DASH_CD = "DashCooldown";
+	public static final String DOUBLEDASH_CD = "DoubleDashCooldown";
+	public static final String DASH_ACTIVE = "DashActive";
+	public static final String KI_BLAST_CD = "KiBlastCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

@@ -1,27 +1,14 @@
 package com.dragonminez.common.init.item;
 
-import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 public class BlasterCannonItem extends Item {
 	public BlasterCannonItem( ) {
@@ -50,9 +37,4 @@ public class BlasterCannonItem extends Item {
 
         return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
     }
-
-	@Override
-	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-		pTooltipComponents.add(Component.translatable("item.dragonminez.saiyan_ship.tooltip").withStyle(ChatFormatting.GRAY));
-	}
 }

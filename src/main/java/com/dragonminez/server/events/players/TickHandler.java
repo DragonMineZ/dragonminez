@@ -1,6 +1,7 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -16,6 +17,9 @@ import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.RacialSkillLogic;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -113,6 +117,26 @@ public class TickHandler {
 				} else if (isDescending && currentRelease > 0) {
 					int newRelease = Math.max(0, currentRelease - 5);
 					data.getResources().setPowerRelease(newRelease);
+				}
+			}
+
+			if (data.getSkills().isSkillActive("fly") && !serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
+				if (serverPlayer.horizontalCollision) {
+					double dx = serverPlayer.getX() - serverPlayer.xOld;
+					double dz = serverPlayer.getZ() - serverPlayer.zOld;
+					double speed = Math.sqrt(dx * dx + dz * dz);
+					double minImpactSpeed = 0.35D;
+
+					if (speed > minImpactSpeed) {
+						float maxHealth = serverPlayer.getMaxHealth();
+						double maxImpactSpeedRef = 1.5D;
+						double factor = (speed - minImpactSpeed) / (maxImpactSpeedRef - minImpactSpeed);
+						factor = Mth.clamp(factor, 0.0, 1.0);
+						float finalPct = (float) Mth.lerp(factor, 0.05f, 0.35f);
+						float damage = maxHealth * finalPct;
+						serverPlayer.hurt(serverPlayer.damageSources().flyIntoWall(), damage);
+						serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 1.0F, (float) (0.5F + (factor * 0.5F)));
+					}
 				}
 			}
 
@@ -240,8 +264,7 @@ public class TickHandler {
 			double baseRegen = 0.1;
 			double regenAmount = maxPoise * baseRegen * meditationBonus;
 			if (regenAmount < 1.0) regenAmount = 1.0;
-			int newPoise = (int) Math.min(maxPoise, currentPoise + Math.ceil(regenAmount));
-			data.getResources().setCurrentPoise(newPoise);
+			data.getResources().addPoise((int) regenAmount);
 		}
 	}
 
@@ -537,11 +560,10 @@ public class TickHandler {
 		if (player.isCreative() || player.isSpectator()) return;
 
 		int flyLevel = data.getSkills().getSkillLevel("fly");
+		if (flyLevel >= data.getSkills().getMaxSkillLevel("fly")) return;
 		int maxEnergy = data.getMaxEnergy();
 
-		// Calcular coste de ki (se reduce con el nivel)
-		// Sprint gasta más ki (2% base vs 1% base)
-		double basePercent = player.isSprinting() ? 0.02 : 0.01;
+		double basePercent = player.isSprinting() ? 0.08 : 0.03;
 		double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.001));
 		int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
@@ -550,7 +572,6 @@ public class TickHandler {
 		if (currentEnergy >= energyCost) {
 			data.getResources().removeEnergy(energyCost);
 		} else {
-			// Sin suficiente ki, desactivar vuelo
 			data.getSkills().setSkillActive("fly", false);
 			if (!player.isCreative() && !player.isSpectator()) {
 				player.getAbilities().mayfly = false;
@@ -608,6 +629,14 @@ public class TickHandler {
 			}
 		} else {
 			player.removeEffect(MainEffects.MIGHTFRUIT.get());
+		}
+		
+		if (!data.getCooldowns().hasCooldown(Cooldowns.DASH_CD)) {
+			player.removeEffect(MainEffects.DASH_CD.get());
+		}
+		
+		if (!data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD)) {
+			player.removeEffect(MainEffects.DOUBLEDASH_CD.get());
 		}
 	}
 }

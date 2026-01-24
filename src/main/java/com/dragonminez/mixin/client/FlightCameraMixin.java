@@ -30,12 +30,12 @@ public abstract class FlightCameraMixin implements RollCamera {
 
     @Inject(method = "setup", at = @At("TAIL"))
     private void dragonminez$updateRoll(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
-        if (FlightRollHandler.isRolling() || FlightRollHandler.hasActiveRoll()) {
-            this.dragonminez$roll = FlightRollHandler.getRoll(partialTick);
-        } else {
-            this.dragonminez$roll = Mth.lerp(0.1F, this.dragonminez$roll, 0F);
-        }
-    }
+		if (FlightRollHandler.hasActiveRoll()) {
+			this.dragonminez$roll = FlightRollHandler.getRoll(partialTick);
+		} else {
+			this.dragonminez$roll = Mth.lerp(0.1F, this.dragonminez$roll, 0F);
+		}
+	}
 
     @Override
     public float dragonminez$getRoll() {

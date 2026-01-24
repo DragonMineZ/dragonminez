@@ -43,27 +43,22 @@ public class FlyToggleC2S {
                 int flyLevel = flySkill.getLevel();
                 int maxEnergy = data.getMaxEnergy();
 
-                // El coste de ki se reduce con cada nivel (4% al nivel 1, menos en niveles superiores)
                 double energyCostPercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
                 int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
-                // Si está activando el vuelo, verificar que tenga suficiente ki
                 if (!flySkill.isActive()) {
                     if (data.getResources().getCurrentEnergy() < energyCost) {
-                        return; // No tiene suficiente ki para empezar a volar
+                        return;
                     }
                 }
 
-                // Toggle el estado del vuelo
                 flySkill.setActive(!flySkill.isActive());
 
-                // Si activó el vuelo, permitir que vuele
                 if (flySkill.isActive()) {
                     player.getAbilities().mayfly = true;
                     player.getAbilities().flying = true;
                     player.onUpdateAbilities();
                 } else {
-                    // Si desactivó el vuelo, quitar la habilidad de volar
                     if (!player.isCreative() && !player.isSpectator()) {
                         player.getAbilities().mayfly = false;
                         player.getAbilities().flying = false;

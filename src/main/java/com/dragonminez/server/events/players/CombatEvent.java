@@ -7,14 +7,18 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -28,8 +32,6 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.Locale;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
@@ -45,6 +47,8 @@ public class CombatEvent {
 				event.setCanceled(true);
 				return;
 			}
+
+			boolean isPunchMachine = event.getEntity() instanceof PunchMachineEntity;
 
             StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
                 if (!attackerData.getStatus().hasCreatedCharacter()) return;
@@ -73,11 +77,12 @@ public class CombatEvent {
                 double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
                 int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
                 int currentStamina = attackerData.getResources().getCurrentStamina();
+				if (isPunchMachine) staminaRequired = 0;
 
                 double finalDmzDamage;
                 if (currentStamina >= staminaRequired) {
                     finalDmzDamage = dmzDamage;
-                    attackerData.getResources().addStamina(-staminaRequired);
+                    attackerData.getResources().removeStamina(staminaRequired);
                 } else {
                     double staminaRatio = (double) currentStamina / staminaRequired;
                     finalDmzDamage = dmzDamage * staminaRatio;
@@ -124,6 +129,7 @@ public class CombatEvent {
 							}
 						}
 					}
+					if (isPunchMachine) kiCost = 0;
 					attackerData.getResources().removeEnergy(kiCost);
 				}
 
@@ -132,6 +138,15 @@ public class CombatEvent {
 				if (event.getEntity() instanceof Player) {
 					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 				}
+
+				if (event.getEntity() instanceof PunchMachineEntity punchMachineEntity) {
+					punchMachineEntity.processHit((float) currentDamage[0], attacker);
+					event.setCanceled(true);
+					event.setAmount(0);
+					return;
+				}
+
+				event.setAmount((float) currentDamage[0]);
             });
         }
 
@@ -139,6 +154,7 @@ public class CombatEvent {
         if (event.getEntity() instanceof Player victim) {
             StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
                 if (victimData.getStatus().hasCreatedCharacter()) {
+					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
 					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 					double defense = victimData.getDefense();
 					boolean blocked = false;
@@ -374,4 +390,152 @@ public class CombatEvent {
         var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE);
         return attackDamageModifier.isEmpty();
     }
+
+	public static void handleDash(ServerPlayer player, float xInput, float zInput, boolean isDoubleDash) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (player.hasEffect(MainEffects.STUN.get())) return;
+
+			long currentTime = System.currentTimeMillis();
+			long lastHurtTime = data.getStatus().getLastHurtTime();
+			int evasionWindow = ConfigManager.getServerConfig().getCombat().getPerfectEvasionWindowMs();
+			boolean isEvasion = (currentTime - lastHurtTime) <= evasionWindow;
+
+			if (isEvasion) {
+				int maxEnergy = data.getMaxEnergy();
+				int kiCost = (int) Math.ceil(maxEnergy * 0.08);
+
+				DMZEvent.PlayerEvasionEvent evasionEvent = new DMZEvent.PlayerEvasionEvent(player, null, 0, kiCost);
+				MinecraftForge.EVENT_BUS.post(evasionEvent);
+
+				if (evasionEvent.isCanceled()) return;
+
+				kiCost = evasionEvent.getKiCost();
+				int currentEnergy = data.getResources().getCurrentEnergy();
+
+				if (currentEnergy >= kiCost) {
+					data.getResources().addEnergy(-kiCost);
+					data.getStatus().setLastHurtTime(0);
+
+					player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+						MainSounds.PARRY.get(),
+						SoundSource.PLAYERS,
+						1.0F,
+						1.2F + player.getRandom().nextFloat() * 0.2F);
+
+					if (player.level() instanceof ServerLevel serverLevel) {
+						Vec3 spawnPos = player.getEyePosition().subtract(0, 0.3, 0);
+						for (int i = 0; i < 20; i++) {
+							serverLevel.sendParticles(
+								MainParticles.KI_TRAIL.get(),
+								spawnPos.x, spawnPos.y, spawnPos.z,
+								0,
+								1.0, 1.0, 1.0,
+								1.0
+							);
+						}
+					}
+
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C("evasion", 0), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					return;
+				}
+			}
+
+			boolean canDoubleDash = isDoubleDash && data.getCooldowns().hasCooldown(Cooldowns.DASH_ACTIVE) && !data.getCooldowns().hasCooldown(Cooldowns.DOUBLEDASH_CD);
+			boolean canNormalDash = !isDoubleDash && !data.getCooldowns().hasCooldown(Cooldowns.DASH_CD);
+
+			if (!canDoubleDash && !canNormalDash) return;
+
+			double baseDistance = 4.0;
+			double speedMultiplier = player.getAttributeValue(Attributes.MOVEMENT_SPEED) / 0.1;
+			double distance = baseDistance * speedMultiplier;
+
+			int maxEnergy = data.getMaxEnergy();
+			int kiCost;
+			DMZEvent.PlayerDashEvent.DashType dashType;
+
+			if (canDoubleDash) {
+				distance = distance * 2;
+				kiCost = (int) Math.ceil(maxEnergy * 0.12);
+				dashType = DMZEvent.PlayerDashEvent.DashType.DOUBLE;
+			} else {
+				kiCost = (int) Math.ceil(maxEnergy * 0.05);
+				dashType = DMZEvent.PlayerDashEvent.DashType.NORMAL;
+			}
+
+			DMZEvent.PlayerDashEvent dashEvent = new DMZEvent.PlayerDashEvent(
+				player, dashType, distance, kiCost
+			);
+			MinecraftForge.EVENT_BUS.post(dashEvent);
+
+			if (dashEvent.isCanceled()) return;
+
+			distance = dashEvent.getDistance();
+			kiCost = dashEvent.getKiCost();
+			int currentEnergy = data.getResources().getCurrentEnergy();
+
+			if (currentEnergy < kiCost) return;
+
+			data.getResources().addEnergy(-kiCost);
+
+			float yaw = player.getYRot();
+			double yawRad = Math.toRadians(yaw);
+
+			Vec3 forward = new Vec3(Math.sin(yawRad), 0, Math.cos(yawRad)).normalize();
+			Vec3 right = new Vec3(Math.cos(yawRad), 0, -Math.sin(yawRad)).normalize();
+
+			Vec3 direction = forward.scale(zInput).add(right.scale(xInput)).normalize();
+
+			Vec3 velocity = direction.scale(distance * 0.3);
+			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, 0.2, velocity.z));
+			player.hurtMarked = true;
+
+			int dashCdSeconds = ConfigManager.getServerConfig().getCombat().getDashCooldownSeconds();
+			int doubleDashCdSeconds = ConfigManager.getServerConfig().getCombat().getDoubleDashCooldownSeconds();
+			int dashCdTicks = dashCdSeconds * 20;
+			int doubleDashCdTicks = doubleDashCdSeconds * 20;
+
+			if (canDoubleDash) {
+				data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
+				data.getCooldowns().setCooldown(Cooldowns.DOUBLEDASH_CD, doubleDashCdTicks);
+				data.getCooldowns().removeCooldown(Cooldowns.DASH_ACTIVE);
+				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
+				player.addEffect(new MobEffectInstance(MainEffects.DOUBLEDASH_CD.get(), doubleDashCdTicks, 0, false, false, true));
+			} else {
+				data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
+				data.getCooldowns().setCooldown(Cooldowns.DASH_ACTIVE, 15);
+				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
+			}
+
+			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5F, 1.5F + player.getRandom().nextFloat() * 0.3F);
+
+			if (player.level() instanceof ServerLevel serverLevel) {
+				Vec3 spawnPos = player.position().add(0, 0.5, 0);
+				for (int i = 0; i < (canDoubleDash ? 15 : 8); i++) {
+					serverLevel.sendParticles(
+						MainParticles.KI_TRAIL.get(),
+						spawnPos.x, spawnPos.y, spawnPos.z,
+						0,
+						direction.x * 0.5, 0.1, direction.z * 0.5,
+						0.3
+					);
+				}
+			}
+
+			int dashDirection = getDashDirectionFromInput(xInput, zInput);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C("dash", dashDirection, player.getId()), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+		});
+	}
+
+	private static int getDashDirectionFromInput(float xInput, float zInput) {
+		if (zInput > 0 && xInput == 0) return 1;
+		if (zInput < 0 && xInput == 0) return 2;
+		if (xInput < 0 && zInput == 0) return 4;
+		if (xInput > 0 && zInput == 0) return 3;
+		if (zInput > 0) return 1;
+		if (zInput < 0) return 2;
+		return 1;
+	}
 }

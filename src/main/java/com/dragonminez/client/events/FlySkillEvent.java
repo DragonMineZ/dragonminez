@@ -29,10 +29,10 @@ public class FlySkillEvent {
     private static float hovering = 0F;
     private static float prevHovering = 0F;
 
-    private static final float NORMAL_MAX_SPEED = 0.9F;
-    private static final float SPRINT_MAX_SPEED = 1.8F;
-    private static final float ACCELERATION = 0.08F;
-    private static final float DECELERATION = 0.02F;
+    private static final float NORMAL_MAX_SPEED = 0.75F;
+    private static final float SPRINT_MAX_SPEED = 1.5F;
+    private static final float ACCELERATION = 0.06F;
+    private static final float DECELERATION = 0.035F;
     private static final float SLOW_DESCENT_RATE = -0.02F;
     private static final float TURN_SPEED = 0.15F;
 
@@ -160,11 +160,7 @@ public class FlySkillEvent {
             double targetSpeed = Math.min(currentSpeed + currentAccel, currentMaxSpeed);
             Vec3 targetVelocity = targetDirection.scale(targetSpeed);
 
-            flightVector = new Vec3(
-                Mth.lerp(TURN_SPEED, flightVector.x, targetVelocity.x),
-                Mth.lerp(TURN_SPEED, flightVector.y, targetVelocity.y),
-                Mth.lerp(TURN_SPEED, flightVector.z, targetVelocity.z)
-            );
+            flightVector = new Vec3(Mth.lerp(TURN_SPEED, flightVector.x, targetVelocity.x), Mth.lerp(TURN_SPEED, flightVector.y, targetVelocity.y), Mth.lerp(TURN_SPEED, flightVector.z, targetVelocity.z));
 
             hovering = Math.min(1F, hovering + 0.1F);
         } else {

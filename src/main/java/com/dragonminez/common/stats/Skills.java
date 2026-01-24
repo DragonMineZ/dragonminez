@@ -55,6 +55,11 @@ public class Skills {
         return skill != null ? skill.getLevel() : 0;
     }
 
+	public int getMaxSkillLevel(String name) {
+		Skill skill = skillMap.get(name.toLowerCase());
+		return skill != null ? skill.getMaxLevel() : 0;
+	}
+
     public void setSkillLevel(String name, int level) {
         String lowerName = name.toLowerCase();
         if (!skillMap.containsKey(lowerName)) {

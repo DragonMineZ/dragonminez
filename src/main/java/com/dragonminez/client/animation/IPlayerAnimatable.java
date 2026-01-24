@@ -10,8 +10,16 @@ public interface IPlayerAnimatable {
 
     boolean dragonminez$isPlayingAttack();
 
-    void dragonminez$isCreativeFlying(boolean flying);
+    void dragonminez$setFlying(boolean flying);
 
-    boolean dragonminez$isCreativeFlying();
+    boolean dragonminez$isFlying();
+
+    void dragonminez$triggerDash(int direction);
+
+    void dragonminez$triggerEvasion();
+
+	void dragonminez$setShootingKi(boolean shootingKi);
+
+	boolean dragonminez$isShootingKi();
 }
 
