@@ -60,12 +60,7 @@ public abstract class EntityRenderDispatcherMixin {
 
             String baseKey = race + "_" + gender + "_" + (form != null ? form : "base");
 
-			Minecraft mc = Minecraft.getInstance();
-			boolean isGuiOpen = mc.screen != null && !(mc.screen instanceof ChatScreen);
-			boolean isClientPlayer = (player == mc.player);
-			boolean pov;
-			if (isClientPlayer && isGuiOpen) pov = false;
-			else pov = FirstPersonManager.shouldRenderFirstPerson(player);
+			boolean pov = FirstPersonManager.shouldRenderFirstPerson(player);
 
 
             // Make keys distinct so both can exist in cache for same morph
@@ -103,11 +98,7 @@ public abstract class EntityRenderDispatcherMixin {
 
     @Unique
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private GeoEntityRenderer<?> dmz$createRendererForRace(
-            String race, String gender, String form,
-            EntityRendererProvider.Context ctx,
-            boolean pov
-    ) {
+    private GeoEntityRenderer<?> dmz$createRendererForRace(String race, String gender, String form, EntityRendererProvider.Context ctx, boolean pov) {
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
         String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
 
@@ -115,7 +106,6 @@ public abstract class EntityRenderDispatcherMixin {
             PlayerDMZModel model = new PlayerDMZModel<>(race, customModel);
             if (pov) return new PlayerDMZPOVRenderer(ctx, model);
             return new PlayerDMZRenderer(ctx, model);
-
         } catch (Exception e) {
             LogUtil.error(Env.CLIENT, "Error creando renderizador para: " + race + " (pov=" + pov + ")");
             PlayerDMZModel fallbackModel = new PlayerDMZModel<>("human", "");

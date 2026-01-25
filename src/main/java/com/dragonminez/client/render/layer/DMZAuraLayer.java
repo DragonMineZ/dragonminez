@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.stats.StatsCapability;
@@ -60,9 +61,8 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         float scale = 1.025f;
         poseStack.scale(scale, scale, scale);
 
-        getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType,
-                bufferSource.getBuffer(auraRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-                color[0], color[1], color[2], 1.0f);
+        //getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType, bufferSource.getBuffer(auraRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 1.0f);
+		AuraRenderQueue.add(animatable, playerModel, poseStack, partialTick, packedLight);
 
         poseStack.popPose();
     }

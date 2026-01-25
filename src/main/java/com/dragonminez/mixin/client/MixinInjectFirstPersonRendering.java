@@ -19,8 +19,7 @@ public class MixinInjectFirstPersonRendering {
     private void onRenderHand(PoseStack pPoseStack, Camera pActiveRenderInfo, float pPartialTicks, CallbackInfo ci) {
         final Minecraft client = Minecraft.getInstance();
         final Player clientPlayer = client.player;
-		boolean shouldRender = FirstPersonManager.shouldRenderFirstPerson(clientPlayer) && ConfigManager.getUserConfig().getHud().isFirstPersonAnimated();
-        if (clientPlayer == null || !shouldRender) return;
+        if (clientPlayer == null || !FirstPersonManager.shouldRenderFirstPerson(clientPlayer)) return;
 		ci.cancel();
     }
 }

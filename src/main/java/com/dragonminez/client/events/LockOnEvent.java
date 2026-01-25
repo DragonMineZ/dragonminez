@@ -126,7 +126,7 @@ public class LockOnEvent {
 
 	@SubscribeEvent
 	public static void onRenderWorldLast(RenderLevelStageEvent event) {
-		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
+		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
 		if (lockedTarget == null || !lockedTarget.isAlive()) return;
 
 		PoseStack poseStack = event.getPoseStack();

@@ -60,8 +60,7 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         float scaling;
 
-        if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU)) ||
-                (Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
+        if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU)) || (Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
             scaling = 1.0f;
         } else {
             if (activeForm != null) {
