@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
@@ -65,14 +66,17 @@ public class ClientStatsEvents {
 			}
 
 			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
-				NetworkHandler.sendToServer(new KiBlastC2S());
+				String hexColor = data.getCharacter().getAuraColor();
+				int colorMain = ColorUtils.hexToInt(hexColor);
+				int colorBorder = ColorUtils.darkenColor(colorMain, 0.4f);
+				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
 			}
 			wasRightClickDown = isRightClickDown;
 
 			if (kiBlastTimer > 0) {
 				if (kiBlastTimer == 1) {
-					NetworkHandler.sendToServer(new TriggerAnimationS2C("ki_blast_shot", 1));
+					NetworkHandler.sendToServer(new KiBlastC2S(false, 0, 0));
 				}
 				kiBlastTimer--;
 			}
