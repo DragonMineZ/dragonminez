@@ -12,7 +12,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -62,7 +61,7 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         poseStack.scale(scale, scale, scale);
 
         //getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType, bufferSource.getBuffer(auraRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 1.0f);
-		AuraRenderQueue.add(animatable, playerModel, poseStack, partialTick, packedLight);
+		AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
 
         poseStack.popPose();
     }

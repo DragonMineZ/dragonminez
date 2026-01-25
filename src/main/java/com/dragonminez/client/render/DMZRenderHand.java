@@ -206,41 +206,49 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         String pathPrefix;
         boolean isBio = race.equals("bioandroid");
         boolean isFrost = race.equals("frostdemon");
+        boolean isNamek = race.equals("namekian");
 
+        // 1. CASO ESPECIAL: Frost Demon en Forma Final (No depende de género)
         if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER))) {
             pathPrefix = "textures/entity/races/frostdemon/finalform_bodytype_" + bodyType + "_";
-            if (bodyType == 0) {
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), h);
+            renderFrostFinalLayers(stack, buffer, light, arm, pathPrefix, bodyType, b1, b2, b3, h);
+        } else {
+            // 2. CONSTRUCCIÓN DEL PATH SEGÚN LA RAZA
+            if (isBio) {
+                pathPrefix = "textures/entity/races/bioandroid/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_";
+            }
+            else if (race.equals("majin")) {
+                // Los Majin suelen tener dimorfismo, lo dejamos con género o un default
+                pathPrefix = "textures/entity/races/majin/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_" + gender + "_";
+            }
+            else if (isFrost || isNamek) {
+                // --- RAZAS SIN GÉNERO ---
+                // Usamos bodytype_X_ donde X es el ID del cuerpo (0, 1, 2...)
+                pathPrefix = "textures/entity/races/" + race + "/bodytype_" + bodyType + "_";
+            }
+            else {
+                // --- HUMANOS Y SAIYANS ---
+                // Ellos sí usan la carpeta por género (male/female)
+                pathPrefix = "textures/entity/races/humansaiyan/bodytype_" + gender + "_";
+            }
+
+            // 3. RENDERIZADO DE CAPAS ESTÁNDAR
+            // Chequeo especial para el sistema de 2 capas de humanos/saiyans base
+            if (pathPrefix.contains("humansaiyan") && (form == null || !form.contains("oozaru"))) {
+                renderPart(stack, buffer, light, arm, loc(pathPrefix + "1.png"), b1);
+                renderPart(stack, buffer, light, arm, loc(pathPrefix + "2.png"), b2);
             } else {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), (bodyType == 1 ? b3 : h));
-            }
-        } else {
-            if (isBio) {
-                pathPrefix = "textures/entity/races/bioandroid/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_";
-            } else if (race.equals("majin")) {
-                pathPrefix = "textures/entity/races/majin/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_male_";
-            } else {
-                pathPrefix = "textures/entity/races/" + (race.equals("human") || race.equals("saiyan") ? "humansaiyan" : race) + "/bodytype_" + gender + "_";
+                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
             }
 
-			if (pathPrefix.contains("humansaiyan") && (form == null || !form.contains("oozaru"))) {
-				renderPart(stack, buffer, light, arm, loc(pathPrefix + "1.png"), b1);
-				renderPart(stack, buffer, light, arm, loc(pathPrefix + "2.png"), b2);
-			} else {
-				renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
-				renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
-				renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
-			}
-
-			if (isFrost || isBio) {
+            // Capas extra de Bio y Frost
+            if (isFrost || isBio) {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer4.png"), h);
-            }
-
-            if (isBio || (isFrost && bodyType == 0)) {
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer5.png"), ColorUtils.hexToRgb("#e67d40"));
+                if (bodyType == 0) { // El detalle naranja solo en el modelo base
+                    renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer5.png"), ColorUtils.hexToRgb("#e67d40"));
+                }
             }
         }
     }
@@ -401,6 +409,20 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks);
         }
 
+    }
+
+    private void renderFrostFinalLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String pathPrefix, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
+        if (bodyType == 0) {
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), h);
+        }
+        else {
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
+            float[] detailColor = (bodyType == 1) ? b3 : h;
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), detailColor);
+        }
     }
 
     @Override

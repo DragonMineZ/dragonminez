@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -31,59 +32,92 @@ public class AuraRenderHandler {
 	private static final ResourceLocation AURA_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
 	private static final ResourceLocation AURA_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
 
-	@SubscribeEvent
-	public static void onRenderLevelStage(RenderLevelStageEvent event) {
-		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+    private static final ResourceLocation KI_WEAPONS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
+    private static final ResourceLocation KI_WEAPONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 
-		var queue = AuraRenderQueue.getAndClear();
-		if (queue.isEmpty()) return;
+    @SubscribeEvent
+    public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
 
-		Minecraft mc = Minecraft.getInstance();
-		EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
-		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        Minecraft mc = Minecraft.getInstance();
+        EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        PoseStack poseStack = event.getPoseStack();
 
-		for (var entry : queue) {
-			var player = entry.player();
-			if (!(player instanceof GeoAnimatable animatable)) continue;
+        var auras = AuraRenderQueue.getAndClearAuras();
+        for (var entry : auras) {
+            renderAuraEntry(entry, poseStack, buffers, dispatcher, mc);
+        }
 
-			EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-			if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")PlayerDMZRenderer renderer)) continue;
+        var weapons = AuraRenderQueue.getAndClearWeapons();
+        for (var entry : weapons) {
+            var player = entry.player();
+            EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
 
-			BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
-			if (auraModel == null) continue;
+            if (genericRenderer instanceof PlayerDMZRenderer renderer) {
+                BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
+                if (weaponModel == null) continue;
 
-			long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
-			ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
+                resetModelParts(weaponModel);
+                boolean isRight = player.getMainArm() == HumanoidArm.RIGHT;
+                String boneName = getWeaponBoneName(entry.weaponType(), isRight);
 
-			var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-			if (stats == null) continue;
-			float[] color = getKiColor(stats);
+                if (!boneName.isEmpty()) {
+                    weaponModel.getBone(boneName).ifPresent(AuraRenderHandler::showBoneChain);
+                    syncModelToPlayer(weaponModel, entry.playerModel());
 
-			syncModelToPlayer(auraModel, entry.playerModel());
+                    poseStack.pushPose();
+                    poseStack.last().pose().set(entry.poseMatrix());
 
-			PoseStack poseStack = event.getPoseStack();
-			poseStack.pushPose();
+                    renderer.reRender(weaponModel, poseStack, buffers, (GeoAnimatable)player,
+                            ModRenderTypes.energy(KI_WEAPONS_TEXTURE),
+                            buffers.getBuffer(ModRenderTypes.energy(KI_WEAPONS_TEXTURE)),
+                            entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
+                            entry.color()[0], entry.color()[1], entry.color()[2], 0.85f);
 
-			poseStack.last().pose().set(entry.poseMatrix());
+                    poseStack.popPose();
+                }
+            }
+        }
+        buffers.endBatch();
+    }
 
-			float scale = 1.025f;
-			poseStack.scale(scale, scale, scale);
-
-			boolean isLocalPlayer = player == mc.player;
-			float transparency = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
-			renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture), buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
-
-			poseStack.popPose();
-		}
-
-		buffers.endBatch();
-	}
+    private static String getWeaponBoneName(String type, boolean isRight) {
+        return switch (type.toLowerCase()) {
+            case "blade" -> isRight ? "blade_right" : "blade_left";
+            case "scythe" -> isRight ? "scythe_right" : "scythe_left";
+            case "clawlance" -> isRight ? "trident_right" : "trident_left";
+            default -> "";
+        };
+    }
 
 	private static void syncModelToPlayer(BakedGeoModel auraModel, BakedGeoModel playerModel) {
 		for (GeoBone auraBone : auraModel.topLevelBones()) {
 			syncBoneRecursively(auraBone, playerModel);
 		}
 	}
+
+    private static void showBoneChain(GeoBone bone) {
+        setHiddenRecursive(bone, false);
+
+        GeoBone parent = bone.getParent();
+        while (parent != null) {
+            parent.setHidden(false);
+            parent = parent.getParent();
+        }
+    }
+
+    private static void resetModelParts(BakedGeoModel model) {
+        for (GeoBone bone : model.topLevelBones()) {
+            setHiddenRecursive(bone, true);
+        }
+    }
+    private static void setHiddenRecursive(GeoBone bone, boolean hidden) {
+        bone.setHidden(hidden);
+        for (GeoBone child : bone.getChildBones()) {
+            setHiddenRecursive(child, hidden);
+        }
+    }
 
 	private static void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
 		sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
@@ -112,4 +146,39 @@ public class AuraRenderHandler {
 		}
 		return ColorUtils.hexToRgb(kiHex);
 	}
+
+    private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
+        var player = entry.player();
+        if (!(player instanceof GeoAnimatable animatable)) return;
+
+        EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")PlayerDMZRenderer renderer)) return;
+
+        BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
+        if (auraModel == null) return;
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        if (stats == null) return;
+        float[] color = getKiColor(stats);
+
+        syncModelToPlayer(auraModel, entry.playerModel());
+
+        poseStack.pushPose();
+        poseStack.last().pose().set(entry.poseMatrix());
+
+        float scale = 1.025f;
+        poseStack.scale(scale, scale, scale);
+
+        long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
+        ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
+
+        boolean isLocalPlayer = player == mc.player;
+        float transparency = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
+
+        renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
+                buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880,
+                OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
+
+        poseStack.popPose();
+    }
 }
