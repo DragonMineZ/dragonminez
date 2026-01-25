@@ -44,7 +44,7 @@ public class KiBlastC2S {
 
 				String hexColor = data.getCharacter().getAuraColor();
 				int colorMain = ColorUtils.hexToInt(hexColor);
-				int colorBorder = ColorUtils.darkenColor(colorMain, 0.6f);
+				int colorBorder = ColorUtils.darkenColor(colorMain, 0.9f);
 
 				KiBlastEntity kiBlast = new KiBlastEntity(player.level(), player);
 				kiBlast.setup(player, damage, 0.5F, 0.0f, colorMain, colorBorder);
