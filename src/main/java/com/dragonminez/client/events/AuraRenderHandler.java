@@ -70,7 +70,7 @@ public class AuraRenderHandler {
 			poseStack.scale(scale, scale, scale);
 
 			boolean isLocalPlayer = player == mc.player;
-			float transparency = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.25f : 0.65f;
+			float transparency = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
 			renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture), buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
 
 			poseStack.popPose();
