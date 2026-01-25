@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -28,7 +29,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
     private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/raceparts.png");
     private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
-    private static final ResourceLocation ACCESORIES_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/accesories.png");
 
     public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
@@ -65,11 +65,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     }
 
     private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-        boolean hasPothalaRight = animatable.getInventory().armor.stream()
-                .anyMatch(stack -> stack.is(MainItems.POTHALA_RIGHT.get()));
-
-        boolean hasPothalaLeft = animatable.getInventory().armor.stream()
-                .anyMatch(stack -> stack.is(MainItems.POTHALA_LEFT.get()));
+        boolean hasPothalaRight = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_right");
+        boolean hasPothalaLeft = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_left");
 
         if (!hasPothalaRight && !hasPothalaLeft) return;
 
@@ -88,7 +85,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         syncModelToPlayer(accModel, playerModel);
 
-        RenderType accRenderType = RenderType.entityCutoutNoCull(ACCESORIES_TEXTURE);
+		String pothalaColor = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("green") ? "green" : "yellow";
+        RenderType accRenderType = RenderType.entityCutoutNoCull(new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + pothalaColor + "pothala.png"));
 
         poseStack.pushPose();
         getRenderer().reRender(accModel, poseStack, bufferSource, animatable, accRenderType,

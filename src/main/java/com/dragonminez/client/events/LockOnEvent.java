@@ -55,8 +55,8 @@ public class LockOnEvent {
 
 			findTargetInFront(player, range).ifPresent(target -> {
 				lockedTarget = target;
+				player.playSound(MainSounds.LOCKON.get());
 			});
-			player.playSound(MainSounds.LOCKON.get());
 		});
 	}
 
@@ -126,7 +126,7 @@ public class LockOnEvent {
 
 	@SubscribeEvent
 	public static void onRenderWorldLast(RenderLevelStageEvent event) {
-		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
 		if (lockedTarget == null || !lockedTarget.isAlive()) return;
 
 		PoseStack poseStack = event.getPoseStack();
