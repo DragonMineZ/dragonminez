@@ -13,7 +13,6 @@
     "client.PlayerGeoAnimatableMixin",
     "client.EntityRenderDispatcherMixin",
     "client.HeldItemRendererMixin",
-    "client.InventoryScreenMixin",
     "client.MixinInjectFirstPersonRendering",
     "client.PrimaryLevelDataMixin",
     "client.SoundManagerMixin",

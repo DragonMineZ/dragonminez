@@ -139,6 +139,7 @@
   "gui.dragonminez.config.title": "Configuration",
   "gui.dragonminez.config.options": "Options",
   "gui.dragonminez.config.values": "Values",
+  "gui.dragonminez.config.firstPersonAnimated": "Use Animated First Person Model",
   "gui.dragonminez.config.xenoverseHudPosX": "Xenoverse HUD - Position X",
   "gui.dragonminez.config.xenoverseHudPosY": "Xenoverse HUD - Position Y",
   "gui.dragonminez.config.xenoverseHudScale": "Xenoverse HUD - Scale",

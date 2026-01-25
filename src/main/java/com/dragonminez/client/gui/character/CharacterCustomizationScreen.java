@@ -684,8 +684,11 @@ public class CharacterCustomizationScreen extends Screen {
         RenderSystem.disableBlend();
 
 		FirstPersonManager.isRenderingInGui = true;
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-		FirstPersonManager.isRenderingInGui = false;
+		try {
+			renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		} finally {
+			FirstPersonManager.isRenderingInGui = false;
+		}
 
         if (colorPickerVisible) {
             renderColorPickerBackground(graphics);

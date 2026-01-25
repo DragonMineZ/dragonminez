@@ -2,6 +2,7 @@ package com.dragonminez.client.render;
 
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonListener;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -40,7 +41,6 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
     public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
         BoneVisibilityHandler.updateVisibility(model, animatable);
-
     }
 
     @Override

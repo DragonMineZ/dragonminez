@@ -7,6 +7,7 @@ public class GeneralUserConfig {
     public HudConfig getHud() { return hud; }
 
     public static class HudConfig {
+		private boolean firstPersonAnimated = true;
 		private int xenoverseHudPosX = 5;
 		private int xenoverseHudPosY = 5;
 		private boolean advancedDescription = true;
@@ -22,6 +23,8 @@ public class GeneralUserConfig {
         private boolean storyHardDifficulty = false;
 		private boolean cameraMovementDurintFlight = true;
 
+		public boolean isFirstPersonAnimated() { return firstPersonAnimated; }
+		public void setFirstPersonAnimated(boolean firstPersonAnimated) { this.firstPersonAnimated = firstPersonAnimated; }
 		public int getXenoverseHudPosX() { return xenoverseHudPosX; }
 		public void setXenoverseHudPosX(int xenoverseHudPosX) { this.xenoverseHudPosX = xenoverseHudPosX; }
 		public int getXenoverseHudPosY() { return xenoverseHudPosY; }

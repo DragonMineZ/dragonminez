@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
@@ -38,6 +39,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
         // No renderizar si tiene un casco que no sea pothala, es invisible o spectator
         if (animatable.isInvisible() || animatable.isSpectator()) return;
+		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
         var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
         if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")) return;

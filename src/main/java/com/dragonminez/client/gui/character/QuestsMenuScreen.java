@@ -354,8 +354,11 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         this.renderBackground(graphics);
 
 		FirstPersonManager.isRenderingInGui = true;
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-		FirstPersonManager.isRenderingInGui = false;
+		try {
+			renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		} finally {
+			FirstPersonManager.isRenderingInGui = false;
+		}
 
         renderLeftPanel(graphics, mouseX, mouseY);
         renderRightPanel(graphics, mouseX, mouseY);

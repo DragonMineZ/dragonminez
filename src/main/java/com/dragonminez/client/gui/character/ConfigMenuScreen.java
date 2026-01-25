@@ -63,6 +63,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
     private void initializeConfigOptions() {
         configOptions.clear();
 
+		configOptions.add(new ConfigOption("config.firstPersonAnimated",
+			ConfigType.BOOLEAN, hudConfig.isFirstPersonAnimated() ? 1 : 0, 0, 1,
+			v -> hudConfig.setFirstPersonAnimated(v > 0)));
+
         configOptions.add(new ConfigOption("config.xenoverseHudPosX",
             ConfigType.INT, hudConfig.getXenoverseHudPosX(), -1000, 2000,
             v -> hudConfig.setXenoverseHudPosX(v.intValue())));
@@ -204,11 +208,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-
 		FirstPersonManager.isRenderingInGui = true;
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-		FirstPersonManager.isRenderingInGui = false;
-
+		try {
+			renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		} finally {
+			FirstPersonManager.isRenderingInGui = false;
+		}
         renderLeftPanel(graphics, mouseX, mouseY);
         renderRightPanel(graphics, mouseX, mouseY);
 

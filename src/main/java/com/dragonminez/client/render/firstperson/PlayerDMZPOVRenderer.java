@@ -11,7 +11,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
@@ -40,12 +39,10 @@ public class PlayerDMZPOVRenderer<T extends AbstractClientPlayer & GeoAnimatable
 
     @Override
     public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        if (bone.getName().equals("right_arm") && FirstPersonManager.shouldRenderFirstPerson(animatable) && animatable.getMainArm() == HumanoidArm.RIGHT) bone.setHidden(true);
-        if (bone.getName().equals("left_arm") && animatable.getMainArm() == HumanoidArm.LEFT && FirstPersonManager.shouldRenderFirstPerson(animatable)) bone.setHidden(true);
-		if (bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable)) bone.setHidden(true);
-
-        super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-    }
+		if (!FirstPersonManager.shouldRenderFirstPerson(animatable)) bone.setHidden(false);
+		else bone.setHidden(bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable));
+		super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+	}
 
     @Override
     public boolean shouldRender(@NonNull T pLivingEntity, @NonNull Frustum pCamera, double pCamX, double pCamY, double pCamZ) {

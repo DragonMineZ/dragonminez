@@ -120,6 +120,10 @@ public class TickHandler {
 				}
 			}
 
+			if (isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.KAIOKEN))) {
+				data.getStatus().setAuraActive(true);
+			}
+
 			if (data.getSkills().isSkillActive("fly") && !serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
 				if (serverPlayer.horizontalCollision) {
 					double dx = serverPlayer.getX() - serverPlayer.xOld;

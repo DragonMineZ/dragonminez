@@ -45,11 +45,7 @@ public abstract class EntityRenderDispatcherMixin {
     @Unique
     private EntityRendererProvider.Context dragonminez$dmzContext;
 
-    @Inject(
-            method = "getRenderer(Lnet/minecraft/world/entity/Entity;)Lnet/minecraft/client/renderer/entity/EntityRenderer;",
-            at = @At("HEAD"),
-            cancellable = true
-    )
+    @Inject(method = "getRenderer(Lnet/minecraft/world/entity/Entity;)Lnet/minecraft/client/renderer/entity/EntityRenderer;", at = @At("HEAD"), cancellable = true)
     @SuppressWarnings("unchecked")
     public <E extends Entity> void dmz$getRenderer(E entity, CallbackInfoReturnable<EntityRenderer<? super E>> cir) {
         if (!(entity instanceof AbstractClientPlayer player)) return;
@@ -64,7 +60,13 @@ public abstract class EntityRenderDispatcherMixin {
 
             String baseKey = race + "_" + gender + "_" + (form != null ? form : "base");
 
-			boolean pov = FirstPersonManager.shouldRenderFirstPerson(player);
+			Minecraft mc = Minecraft.getInstance();
+			boolean isGuiOpen = mc.screen != null && !(mc.screen instanceof ChatScreen);
+			boolean isClientPlayer = (player == mc.player);
+			boolean pov;
+			if (isClientPlayer && isGuiOpen) pov = false;
+			else pov = FirstPersonManager.shouldRenderFirstPerson(player);
+
 
             // Make keys distinct so both can exist in cache for same morph
             int rendererId = (baseKey + (pov ? "_pov" : "_tp")).hashCode();
@@ -81,11 +83,17 @@ public abstract class EntityRenderDispatcherMixin {
         });
     }
 
-    @Inject(
-            method = "onResourceManagerReload(Lnet/minecraft/server/packs/resources/ResourceManager;)V",
-            at = @At("TAIL"),
-            locals = LocalCapture.CAPTURE_FAILHARD
-    )
+	@Unique
+	private boolean isCalledFromInventory() {
+		for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+			if (element.getClassName().contains("InventoryScreen") && (element.getMethodName().equals("renderEntityInInventory") || element.getMethodName().equals("m_280047_"))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+    @Inject(method = "onResourceManagerReload(Lnet/minecraft/server/packs/resources/ResourceManager;)V", at = @At("TAIL"), locals = LocalCapture.CAPTURE_FAILHARD)
     public void dmz$onResourceManagerReload(ResourceManager resourceManager, CallbackInfo ci, EntityRendererProvider.Context context) {
         this.dragonminez$dmzContext = context;
         this.dragonminez$dmzRenderers.clear();

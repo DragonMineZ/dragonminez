@@ -104,8 +104,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		applyZoom(graphics);
 
 		FirstPersonManager.isRenderingInGui = true;
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-		FirstPersonManager.isRenderingInGui = false;
+		try {
+			renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		} finally {
+			FirstPersonManager.isRenderingInGui = false;
+		}
         renderMenuPanels(graphics);
         renderPlayerInfo(graphics, mouseX, mouseY);
         renderStatsInfo(graphics, mouseX, mouseY);
@@ -403,7 +406,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                         .withStyle(ChatFormatting.AQUA).getVisualOrderText());
                     for (var bonus : bonuses) {
                         String bonusText = bonus.name + ": " + bonus.operation +
-                            (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
+                            (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : java.lang.String.format(Locale.US, "%.0f", bonus.value));
                         tooltip.add(Component.literal("  " + bonusText)
                             .withStyle(ChatFormatting.GREEN).getVisualOrderText());
                     }
@@ -538,12 +541,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int kiDamageColor = pwrTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
         int energyColor = eneTotalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
 
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", meleeDamage)), valueX + 15, labelStartY, meleeDamageColor, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", strikeDamage)), valueX + 15, labelStartY + 12, strikeDamageColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(java.lang.String.format(Locale.US, "%.1f", meleeDamage)), valueX + 15, labelStartY, meleeDamageColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(java.lang.String.format(Locale.US, "%.1f", strikeDamage)), valueX + 15, labelStartY + 12, strikeDamageColor, 0x000000);
         drawStringWithBorder(graphics, Component.literal(numberFormatter.format(stamina)), valueX + 15, labelStartY + 24, staminaColor, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", defense)), valueX + 15, labelStartY + 36, defenseColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(java.lang.String.format(Locale.US, "%.1f", defense)), valueX + 15, labelStartY + 36, defenseColor, 0x000000);
         drawStringWithBorder(graphics, Component.literal(numberFormatter.format(health)), valueX + 15, labelStartY + 48, healthColor, 0x000000);
-        drawStringWithBorder(graphics, Component.literal(String.format(Locale.US, "%.1f", kiDamage)), valueX + 15, labelStartY + 60, kiDamageColor, 0x000000);
+        drawStringWithBorder(graphics, Component.literal(java.lang.String.format(Locale.US, "%.1f", kiDamage)), valueX + 15, labelStartY + 60, kiDamageColor, 0x000000);
         drawStringWithBorder(graphics, Component.literal(numberFormatter.format(energy)), valueX + 15, labelStartY + 72, energyColor, 0x000000);
 	}
 

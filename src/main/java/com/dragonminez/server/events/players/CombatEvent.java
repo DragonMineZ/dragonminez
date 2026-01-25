@@ -482,8 +482,8 @@ public class CombatEvent {
 			float yaw = player.getYRot();
 			double yawRad = Math.toRadians(yaw);
 
-			Vec3 forward = new Vec3(Math.sin(yawRad), 0, Math.cos(yawRad)).normalize();
-			Vec3 right = new Vec3(Math.cos(yawRad), 0, -Math.sin(yawRad)).normalize();
+			Vec3 forward = new Vec3(-Math.sin(yawRad), 0, Math.cos(yawRad)).normalize();
+			Vec3 right = new Vec3(Math.cos(yawRad), 0, Math.sin(yawRad)).normalize();
 
 			Vec3 direction = forward.scale(zInput).add(right.scale(xInput)).normalize();
 

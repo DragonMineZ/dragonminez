@@ -135,11 +135,12 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
         boolean isStandard = raceName.equals("human") || raceName.equals("saiyan");
         boolean forceVanilla = (raceConfig != null && raceConfig.useVanillaSkin());
+		String gender = character.getGender().toLowerCase();
 
         if (forceVanilla || (isStandard && bodyType == 0)) {
             renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), new float[]{1, 1, 1});
         } else {
-            renderRaceLayers(pPoseStack, pBuffer, pCombinedLight, pRendererArm, raceName, currentForm, bodyType, b1, b2, b3, hair);
+            renderRaceLayers(pPoseStack, pBuffer, pCombinedLight, pRendererArm, raceName, currentForm, gender, bodyType, b1, b2, b3, hair);
         }
 
         renderTattoos(pPoseStack, pBuffer, pCombinedLight, pRendererArm, stats);
@@ -147,7 +148,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer,pRendererArm);
     }
 
-    private void renderRaceLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String race, String form, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
+    private void renderRaceLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String race, String form, String gender, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
         String pathPrefix;
         boolean isBio = race.equals("bioandroid");
         boolean isFrost = race.equals("frostdemon");
@@ -168,14 +169,19 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             } else if (race.equals("majin")) {
                 pathPrefix = "textures/entity/races/majin/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_male_";
             } else {
-                pathPrefix = "textures/entity/races/" + (race.equals("human") || race.equals("saiyan") ? "humansaiyan" : race) + "/bodytype_" + bodyType + "_";
+                pathPrefix = "textures/entity/races/" + (race.equals("human") || race.equals("saiyan") ? "humansaiyan" : race) + "/bodytype_" + gender + "_";
             }
 
-            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
-            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
-            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
+			if (pathPrefix.contains("humansaiyan") && (form == null || !form.contains("oozaru"))) {
+				renderPart(stack, buffer, light, arm, loc(pathPrefix + "1.png"), b1);
+				renderPart(stack, buffer, light, arm, loc(pathPrefix + "2.png"), b2);
+			} else {
+				renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+				renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
+				renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
+			}
 
-            if (isFrost || isBio) {
+			if (isFrost || isBio) {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer4.png"), h);
             }
 

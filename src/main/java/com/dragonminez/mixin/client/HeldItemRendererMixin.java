@@ -2,6 +2,7 @@ package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.render.DMZRenderHand;
 import com.dragonminez.client.render.PlayerDMZRenderer;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -36,13 +37,10 @@ public class HeldItemRendererMixin {
 
     @Unique
     private void dmz$ensureRenderer() {
+		if (ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) return;
         if (dmz$handRenderer == null) {
             Minecraft mc = Minecraft.getInstance();
-            EntityRendererProvider.Context context = new EntityRendererProvider.Context(
-                    mc.getEntityRenderDispatcher(), mc.getItemRenderer(), mc.getBlockRenderer(),
-                    mc.getEntityRenderDispatcher().getItemInHandRenderer(), mc.getResourceManager(),
-                    mc.getEntityModels(), mc.font
-            );
+            EntityRendererProvider.Context context = new EntityRendererProvider.Context(mc.getEntityRenderDispatcher(), mc.getItemRenderer(), mc.getBlockRenderer(), mc.getEntityRenderDispatcher().getItemInHandRenderer(), mc.getResourceManager(), mc.getEntityModels(), mc.font);
             dmz$handRenderer = new DMZRenderHand(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false));
         }
     }
@@ -72,7 +70,6 @@ public class HeldItemRendererMixin {
             pPoseStack.mulPose(Axis.XP.rotationDegrees(200.0F));
             pPoseStack.mulPose(Axis.YP.rotationDegrees(f * -135.0F));
             pPoseStack.translate(f * 5.6F, 0.0F, 0.0F);
-            // ---------------------------------------
 
             if (isRight) {
                 dmz$handRenderer.renderRightHand(pPoseStack, pBuffer, pCombinedLight, player);
