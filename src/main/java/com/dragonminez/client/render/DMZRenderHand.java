@@ -1,7 +1,11 @@
 package com.dragonminez.client.render;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.model.KiBladeModel;
+import com.dragonminez.client.model.KiScytheModel;
+import com.dragonminez.client.model.KiTridentModel;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -48,7 +52,11 @@ import java.util.Objects;
 public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
 
     private static final Map<ResourceLocation, Boolean> TEXTURE_CACHE = new HashMap<>();
+    public static final ResourceLocation KI_WEAPON_TEX = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 
+    public static final KiScytheModel KI_SCYTHE_MODEL = new KiScytheModel(KiScytheModel.createBodyLayer().bakeRoot());
+    public static final KiBladeModel KI_BLADE_MODEL = new KiBladeModel(KiBladeModel.createBodyLayer().bakeRoot());
+    public static final KiTridentModel KI_TRIDENT_MODEL = new KiTridentModel(KiTridentModel.createBodyLayer().bakeRoot());
 
     public DMZRenderHand(EntityRendererProvider.Context pContext, PlayerModel<AbstractClientPlayer> pModel) {
         super(pContext,  new PlayerModel(pContext.bakeLayer(ModelLayers.PLAYER), false),0.4f);
@@ -72,6 +80,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.rightArm, this.model.rightSleeve);
             pPoseStack.popPose();
         }
+
+        this.renderKiWeapon(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, HumanoidArm.RIGHT);
+
     }
     public void renderLeftHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer) {
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, pPlayer);
@@ -92,6 +103,8 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             this.renderHand(pPoseStack, pBuffer, pCombinedLight, pPlayer, this.model.leftArm, this.model.leftSleeve);
             pPoseStack.popPose();
         }
+
+        this.renderKiWeapon(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, HumanoidArm.LEFT);
 
     }
 
@@ -146,6 +159,48 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         renderTattoos(pPoseStack, pBuffer, pCombinedLight, pRendererArm, stats);
 
         renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer,pRendererArm);
+
+    }
+
+    private void renderKiWeapon(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, StatsData stats, HumanoidArm arm) {
+        if (!stats.getSkills().isSkillActive("kimanipulation")) return;
+
+        String type = stats.getStatus().getKiWeaponType();
+        if (type == null || type.equalsIgnoreCase("none")) return;
+
+        float[] color = getKiColor(stats);
+        boolean isRight = arm == HumanoidArm.RIGHT;
+
+        ps.pushPose();
+
+        // --- AJUSTES DE POSICIÓN MANUALES POR TIPO ---
+        switch (type.toLowerCase()) {
+            case "blade" -> {
+                KI_BLADE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
+
+                ps.translate(isRight ? -0.02D : 0.02D, 0.1D, -0.1D);
+                ps.mulPose(Axis.XP.rotationDegrees(5.0F));
+
+                renderKiPart(ps, buffer, light, isRight ? KI_BLADE_MODEL.rightArm : KI_BLADE_MODEL.leftArm, color);
+            }
+            case "scythe" -> {
+                KI_SCYTHE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
+
+                // Ajustes manuales para la Guadaña (ej: inclinada para que se vea el filo en 1ra persona)
+                ps.translate(isRight ? -0.1D : 0.1D, -0.2D, -0.2D);
+                ps.mulPose(Axis.ZP.rotationDegrees(isRight ? 15.0F : -15.0F));
+
+                renderKiPart(ps, buffer, light, isRight ? KI_SCYTHE_MODEL.rightArm : KI_SCYTHE_MODEL.leftArm, color);
+            }
+            case "clawlance" -> {
+                KI_TRIDENT_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
+
+                ps.translate(0.0D, 0.0D, -0.3D);
+                renderKiPart(ps, buffer, light, isRight ? KI_TRIDENT_MODEL.rightArm : KI_TRIDENT_MODEL.leftArm, color);
+            }
+        }
+
+        ps.popPose();
     }
 
     private void renderRaceLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String race, String form, String gender, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
@@ -350,6 +405,21 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
     @Override
     public ResourceLocation getTextureLocation(AbstractClientPlayer pEntity) {
         return pEntity.getSkinTextureLocation();
+    }
+
+    private void renderKiPart(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color) {
+        VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucent(KI_WEAPON_TEX));
+        part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
+    }
+
+    private float[] getKiColor(StatsData stats) {
+        var character = stats.getCharacter();
+        String kiHex = character.getAuraColor();
+        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            String formColor = character.getActiveFormData().getAuraColor();
+            if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
+        }
+        return ColorUtils.hexToRgb(kiHex);
     }
 
 }
