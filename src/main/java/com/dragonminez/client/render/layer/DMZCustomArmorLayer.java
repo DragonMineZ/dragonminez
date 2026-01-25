@@ -59,8 +59,9 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         boolean isVanilla = ForgeRegistries.ITEMS.getKey(stack.getItem()).getNamespace().equals("minecraft");
         boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
+		boolean isPothala = stack.getItem().getDescriptionId().contains("pothala");
 
-        if (!isVanilla && !isDbzArmor) return;
+        if (isPothala || (!isVanilla && !isDbzArmor)) return;
 
         boolean shouldRender = false;
         boolean isSlimTarget = false;

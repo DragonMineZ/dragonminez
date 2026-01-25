@@ -51,7 +51,6 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
                 if (!isArmored) {
                     return null;
-                } else {
                 }
             }
         }
