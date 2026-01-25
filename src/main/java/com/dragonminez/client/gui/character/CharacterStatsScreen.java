@@ -103,12 +103,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		pose.pushPose();
 		applyZoom(graphics);
 
-		FirstPersonManager.isRenderingInGui = true;
-		try {
-			renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-		} finally {
-			FirstPersonManager.isRenderingInGui = false;
-		}
+        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
         renderMenuPanels(graphics);
         renderPlayerInfo(graphics, mouseX, mouseY);
         renderStatsInfo(graphics, mouseX, mouseY);

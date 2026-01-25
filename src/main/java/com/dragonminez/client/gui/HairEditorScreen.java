@@ -629,12 +629,7 @@ public class HairEditorScreen extends Screen {
         }
         renderLeftPanel(graphics);
         renderRightPanel(graphics, mouseX, mouseY);
-		FirstPersonManager.isRenderingInGui = true;
-		try {
-			renderPlayerModel(graphics, this.width / 2, this.height / 2 + 220, 150);
-		} finally {
-			FirstPersonManager.isRenderingInGui = false;
-		}
+        renderPlayerModel(graphics, this.width / 2, this.height / 2 + 220, 150);
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 400.0D);
         super.render(graphics, mouseX, mouseY, partialTick);

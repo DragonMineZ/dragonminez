@@ -252,12 +252,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
         updateButtonAnimations(mouseX, mouseY, partialTick);
 
-		FirstPersonManager.isRenderingInGui = true;
-		try {
-			renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-		} finally {
-			FirstPersonManager.isRenderingInGui = false;
-		}
+        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
 
         renderLeftPanel(graphics, mouseX, mouseY);
         renderRightPanel(graphics, mouseX, mouseY);

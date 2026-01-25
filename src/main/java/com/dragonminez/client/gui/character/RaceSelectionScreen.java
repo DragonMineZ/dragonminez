@@ -139,12 +139,7 @@ public class RaceSelectionScreen extends Screen {
         graphics.blit(MENU_BIG, (this.width / 2) - 70, (this.height / 2) + 85, 0, 215, 149, 21);
 		RenderSystem.disableBlend();
 
-		FirstPersonManager.isRenderingInGui = true;
-		try {
-			renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-		} finally {
-			FirstPersonManager.isRenderingInGui = false;
-		}
+        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
 
         super.render(graphics, mouseX, mouseY, partialTick);
 

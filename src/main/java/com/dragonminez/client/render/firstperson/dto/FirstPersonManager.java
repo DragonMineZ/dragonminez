@@ -6,11 +6,10 @@ import net.minecraft.world.entity.player.Player;
 import org.joml.Vector3f;
 
 public class FirstPersonManager {
-	public static boolean isRenderingInGui = false;
 
 	public static boolean shouldRenderFirstPerson(Player player) {
 		if (!ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) return false;
-		if (isRenderingInGui) return false;
+		if (Minecraft.getInstance().screen != null) return false;
 		return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 	}
 

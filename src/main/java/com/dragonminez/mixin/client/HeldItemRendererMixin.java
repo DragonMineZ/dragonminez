@@ -71,11 +71,14 @@ public class HeldItemRendererMixin {
             pPoseStack.mulPose(Axis.YP.rotationDegrees(f * -135.0F));
             pPoseStack.translate(f * 5.6F, 0.0F, 0.0F);
 
-            if (isRight) {
-                dmz$handRenderer.renderRightHand(pPoseStack, pBuffer, pCombinedLight, player);
-            } else {
-                dmz$handRenderer.renderLeftHand(pPoseStack, pBuffer, pCombinedLight, player);
+            if(dmz$handRenderer != null){
+                if (isRight) {
+                    dmz$handRenderer.renderRightHand(pPoseStack, pBuffer, pCombinedLight, player);
+                } else {
+                    dmz$handRenderer.renderLeftHand(pPoseStack, pBuffer, pCombinedLight, player);
+                }
             }
+
 
             pPoseStack.popPose();
             ci.cancel();
