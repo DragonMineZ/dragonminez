@@ -122,6 +122,8 @@ public class TickHandler {
 
 			if (isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.KAIOKEN))) {
 				data.getStatus().setAuraActive(true);
+			} else {
+				data.getStatus().setAuraActive(false);
 			}
 
 			if (data.getSkills().isSkillActive("fly") && !serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
