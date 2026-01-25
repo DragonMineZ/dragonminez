@@ -3,29 +3,32 @@ package com.dragonminez.client.model;
 import com.dragonminez.Reference;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 public class KiBladeModel extends HumanoidModel {
-    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(Reference.MOD_ID, "kiweapons"), "kiblade");
+    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(Reference.MOD_ID, "kiweapons"), "ki_blade");
+	public final ModelPart right_arm;
 	private final ModelPart blade_right;
 
 	public KiBladeModel(ModelPart root) {
         super(root);
-        this.blade_right = root.getChild("blade_right");
+        this.right_arm = root.getChild("right_arm");
+		this.blade_right = this.right_arm.getChild("blade_right");
 	}
 
 	public static LayerDefinition createBodyLayer() {
         MeshDefinition meshdefinition = HumanoidModel.createMesh(CubeDeformation.NONE, 0.0f);
 		PartDefinition partdefinition = meshdefinition.getRoot();
 
-		PartDefinition blade_right = partdefinition.addOrReplaceChild("blade_right", CubeListBuilder.create().texOffs(0, 0).addBox(-2.0F, 9.0F, -1.5F, 2.0F, 4.0F, 3.0F, new CubeDeformation(0.0F))
+		PartDefinition right_arm = partdefinition.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.offset(-5.0F, 2.0F, 0.0F));
+
+		PartDefinition blade_right = right_arm.addOrReplaceChild("blade_right", CubeListBuilder.create().texOffs(0, 0).addBox(-2.0F, 9.0F, -1.5F, 2.0F, 4.0F, 3.0F, new CubeDeformation(0.0F))
 		.texOffs(1, 0).addBox(-1.5F, 13.0F, -1.5F, 1.0F, 3.0F, 3.0F, new CubeDeformation(0.0F))
 		.texOffs(3, 2).addBox(-1.5F, 9.0F, -2.5F, 1.0F, 4.0F, 1.0F, new CubeDeformation(0.0F))
 		.texOffs(3, 2).addBox(-1.5F, 9.0F, 1.5F, 1.0F, 4.0F, 1.0F, new CubeDeformation(0.0F))
@@ -42,7 +45,7 @@ public class KiBladeModel extends HumanoidModel {
 		.texOffs(2, 1).addBox(-1.15F, 19.0F, -1.0F, 0.25F, 2.0F, 2.0F, new CubeDeformation(0.0F))
 		.texOffs(3, 2).addBox(-1.15F, 16.0F, 1.0F, 0.25F, 3.0F, 1.0F, new CubeDeformation(0.0F))
 		.texOffs(2, 1).addBox(-1.5F, 16.0F, -1.0F, 1.0F, 3.0F, 2.0F, new CubeDeformation(0.0F))
-		.texOffs(40, 16).addBox(-3.25F, 7.0F, -2.25F, 4.5F, 4.0F, 4.5F, new CubeDeformation(0.0F)), PartPose.offset(-5.0F, 2.0F, 0.0F));
+		.texOffs(40, 16).addBox(-3.25F, 7.0F, -2.25F, 4.5F, 4.0F, 4.5F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
 		PartDefinition plano_r1 = blade_right.addOrReplaceChild("plano_r1", CubeListBuilder.create().texOffs(45, 21).addBox(-2.25F, -2.0F, 0.0F, 4.5F, 4.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-1.0F, 9.0F, 2.9F, -0.3054F, 0.0F, 0.0F));
 
@@ -63,13 +66,13 @@ public class KiBladeModel extends HumanoidModel {
 		return LayerDefinition.create(meshdefinition, 64, 64);
 	}
 
-	@Override
-	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+    @Override
+    public void setupAnim(LivingEntity pEntity, float pLimbSwing, float pLimbSwingAmount, float pAgeInTicks, float pNetHeadYaw, float pHeadPitch) {
+        super.setupAnim(pEntity, pLimbSwing, pLimbSwingAmount, pAgeInTicks, pNetHeadYaw, pHeadPitch);
+    }
 
-	}
-
-	@Override
+    @Override
 	public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-		blade_right.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+		right_arm.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
 	}
 }

@@ -14,8 +14,8 @@ import net.minecraft.world.entity.Entity;
 
 public class KiScytheModel extends HumanoidModel {
 	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(Reference.MOD_ID, "kiweapons"), "kiscythe");
-	private final ModelPart scythe_right;
-	private final ModelPart hoja;
+	public final ModelPart scythe_right;
+    public final ModelPart hoja;
 
 	public KiScytheModel(ModelPart root) {
         super(root);

@@ -173,30 +173,29 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
         ps.pushPose();
 
-        // --- AJUSTES DE POSICIÓN MANUALES POR TIPO ---
         switch (type.toLowerCase()) {
             case "blade" -> {
                 KI_BLADE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
 
-                ps.translate(isRight ? -0.02D : 0.02D, 0.1D, -0.1D);
+                ps.translate(isRight ? -0.02D : 0.15D, 0.1D, -0.1D);
                 ps.mulPose(Axis.XP.rotationDegrees(5.0F));
 
-                renderKiPart(ps, buffer, light, isRight ? KI_BLADE_MODEL.rightArm : KI_BLADE_MODEL.leftArm, color);
+                renderKiPart(ps, buffer, light,KI_BLADE_MODEL.right_arm, color);
             }
             case "scythe" -> {
                 KI_SCYTHE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
 
-                // Ajustes manuales para la Guadaña (ej: inclinada para que se vea el filo en 1ra persona)
-                ps.translate(isRight ? -0.1D : 0.1D, -0.2D, -0.2D);
-                ps.mulPose(Axis.ZP.rotationDegrees(isRight ? 15.0F : -15.0F));
+                ps.translate(isRight ? -0.06D : 0.65D, isRight ? 0.1D : 0.1d, isRight ? -0.2D : 0.5D);
+                ps.mulPose(Axis.YP.rotationDegrees(isRight ? 15.0F : -15.0F));
 
-                renderKiPart(ps, buffer, light, isRight ? KI_SCYTHE_MODEL.rightArm : KI_SCYTHE_MODEL.leftArm, color);
+                renderKiPart(ps, buffer, light,KI_SCYTHE_MODEL.scythe_right, color);
             }
             case "clawlance" -> {
                 KI_TRIDENT_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
 
-                ps.translate(0.0D, 0.0D, -0.3D);
-                renderKiPart(ps, buffer, light, isRight ? KI_TRIDENT_MODEL.rightArm : KI_TRIDENT_MODEL.leftArm, color);
+                ps.translate(isRight ? -0.05D : 0.8D, isRight ? 0.0D : 0, isRight ? -0.3D : 0.5);
+                ps.mulPose(Axis.XP.rotationDegrees(isRight ? 25.0F : -05.0F));
+                renderKiPart(ps, buffer, light,KI_TRIDENT_MODEL.trident_right, color);
             }
         }
 
@@ -256,9 +255,11 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             if (textureExists(armorResource)) {
                 ps.pushPose();
 
+                boolean isRightArm = (pRendererArm == this.model.rightArm);
+
                 float armorInflation = 1.05F;
                 ps.scale(armorInflation, armorInflation, armorInflation);
-                ps.translate(0.02D, 0.02D, 0.0D);
+                ps.translate(isRightArm ? 0.02D : -0.01, 0.02D, 0.0D);
 
                 renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, new float[]{1.0F, 1.0F, 1.0F});
 
@@ -408,7 +409,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
     }
 
     private void renderKiPart(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color) {
-        VertexConsumer vc = buffer.getBuffer(RenderType.entityTranslucent(KI_WEAPON_TEX));
+        VertexConsumer vc = buffer.getBuffer(ModRenderTypes.energy(KI_WEAPON_TEX));
         part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
     }
 

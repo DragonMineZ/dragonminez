@@ -14,9 +14,9 @@ import net.minecraft.world.entity.Entity;
 
 public class KiTridentModel extends HumanoidModel{
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(Reference.MOD_ID, "kiweapons"), "kitrident");
-	private final ModelPart trident_right;
-	private final ModelPart trident;
-	private final ModelPart kisword2;
+	public final ModelPart trident_right;
+    public final ModelPart trident;
+    public final ModelPart kisword2;
 
 	public KiTridentModel(ModelPart root) {
         super(root);
@@ -75,7 +75,7 @@ public class KiTridentModel extends HumanoidModel{
 
 	@Override
 	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-
+        this.trident_right.copyFrom(rightArm);
 	}
 
 	@Override
