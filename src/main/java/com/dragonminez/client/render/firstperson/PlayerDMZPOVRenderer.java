@@ -2,6 +2,7 @@ package com.dragonminez.client.render.firstperson;
 
 import com.dragonminez.client.render.PlayerDMZRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -14,6 +15,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
@@ -38,11 +40,23 @@ public class PlayerDMZPOVRenderer<T extends AbstractClientPlayer & GeoAnimatable
     }
 
     @Override
+    public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+        BoneVisibilityHandler.updateVisibility(model, animatable);
+
+    }
+
+    @Override
     public void renderRecursively(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-		if (!FirstPersonManager.shouldRenderFirstPerson(animatable)) bone.setHidden(false);
-		else bone.setHidden(bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable));
-		super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-	}
+        boolean originallyHidden = bone.isHidden();
+
+        if (bone.getName().equals("head") && FirstPersonManager.shouldRenderFirstPerson(animatable)) {
+            bone.setHidden(true);
+        }
+        super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
+
+        bone.setHidden(originallyHidden);
+    }
 
     @Override
     public boolean shouldRender(@NonNull T pLivingEntity, @NonNull Frustum pCamera, double pCamX, double pCamY, double pCamZ) {
