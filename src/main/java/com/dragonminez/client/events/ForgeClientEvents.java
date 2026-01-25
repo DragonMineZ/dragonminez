@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
@@ -47,10 +48,7 @@ public class ForgeClientEvents {
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
         Minecraft mc = Minecraft.getInstance();
-
-        if (mc.player == null || mc.screen != null) {
-            return;
-        }
+        if (mc.player == null || mc.screen != null) return;
 
         if (KeyBinds.SPACEPOD_MENU.consumeClick()) {
             StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {

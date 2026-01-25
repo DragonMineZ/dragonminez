@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ClaimRewardC2S;
 import com.dragonminez.common.network.C2S.StartQuestC2S;
@@ -352,7 +353,9 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
 
+		FirstPersonManager.isRenderingInGui = true;
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		FirstPersonManager.isRenderingInGui = false;
 
         renderLeftPanel(graphics, mouseX, mouseY);
         renderRightPanel(graphics, mouseX, mouseY);

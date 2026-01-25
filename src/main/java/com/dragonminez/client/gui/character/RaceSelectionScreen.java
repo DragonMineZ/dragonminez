@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
@@ -138,7 +139,9 @@ public class RaceSelectionScreen extends Screen {
         graphics.blit(MENU_BIG, (this.width / 2) - 70, (this.height / 2) + 85, 0, 215, 149, 21);
 		RenderSystem.disableBlend();
 
+		FirstPersonManager.isRenderingInGui = true;
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		FirstPersonManager.isRenderingInGui = false;
 
         super.render(graphics, mouseX, mouseY, partialTick);
 

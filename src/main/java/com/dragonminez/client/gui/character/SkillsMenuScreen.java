@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
@@ -251,7 +252,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
         updateButtonAnimations(mouseX, mouseY, partialTick);
 
+		FirstPersonManager.isRenderingInGui = true;
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		FirstPersonManager.isRenderingInGui = false;
 
         renderLeftPanel(graphics, mouseX, mouseY);
         renderRightPanel(graphics, mouseX, mouseY);

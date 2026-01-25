@@ -14,16 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public class MixinInjectFirstPersonRendering {
 
-    @Inject(method = "renderItemInHand", at = @At("HEAD"), cancellable = true)
-    private void onRenderHand(PoseStack pPoseStack, Camera pActiveRenderInfo, float pPartialTicks, CallbackInfo ci) {
-        final Minecraft client = Minecraft.getInstance();
-        final Player clientPlayer = client.player;
-        if (clientPlayer == null) {
-            return;
-        }
-        if (!FirstPersonManager.shouldRenderFirstPerson(clientPlayer)) {
-            return;
-        }
-        ci.cancel();
-    }
+    //@Inject(method = "renderItemInHand", at = @At("HEAD"), cancellable = true)
+    //private void onRenderHand(PoseStack pPoseStack, Camera pActiveRenderInfo, float pPartialTicks, CallbackInfo ci) {
+    //    final Minecraft client = Minecraft.getInstance();
+    //    final Player clientPlayer = client.player;
+    //    if (clientPlayer == null) return;
+    //    if (!FirstPersonManager.shouldRenderFirstPerson(clientPlayer)) return;
+	//	  ci.cancel();
+    //}
 }

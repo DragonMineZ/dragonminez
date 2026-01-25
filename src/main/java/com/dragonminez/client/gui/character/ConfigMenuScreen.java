@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
@@ -204,7 +205,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
 
+		FirstPersonManager.isRenderingInGui = true;
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		FirstPersonManager.isRenderingInGui = false;
 
         renderLeftPanel(graphics, mouseX, mouseY);
         renderRightPanel(graphics, mouseX, mouseY);

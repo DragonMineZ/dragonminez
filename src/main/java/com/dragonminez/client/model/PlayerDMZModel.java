@@ -138,14 +138,13 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
             float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
 
-            if (FlySkillEvent.isFlyingFast()) {
-                float flySpeedFactor = Math.min(1.0F, FlySkillEvent.getFlightSpeed() / 2.0F);
-                float pitchCorrection = 70F * Mth.DEG_TO_RAD * flySpeedFactor;
-                headPitch += pitchCorrection;
-            }
-
-			head.setRotX(headPitch);
-			head.setRotY(headYaw);
+			if (FlySkillEvent.isFlyingFast()) {
+				head.setRotX(45);
+				head.setRotY(0);
+			} else {
+				head.setRotX(headPitch);
+				head.setRotY(headYaw);
+			}
 		}
 
 		if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {

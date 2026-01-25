@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
@@ -629,7 +630,9 @@ public class HairEditorScreen extends Screen {
         renderLeftPanel(graphics);
         renderRightPanel(graphics, mouseX, mouseY);
 
+		FirstPersonManager.isRenderingInGui = true;
         renderPlayerModel(graphics, this.width / 2, this.height / 2 + 220, 150);
+		FirstPersonManager.isRenderingInGui = false;
 
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 400.0D);

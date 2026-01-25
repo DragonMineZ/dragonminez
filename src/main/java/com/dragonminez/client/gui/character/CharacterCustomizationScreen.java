@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
@@ -682,7 +683,9 @@ public class CharacterCustomizationScreen extends Screen {
 
         RenderSystem.disableBlend();
 
+		FirstPersonManager.isRenderingInGui = true;
         renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+		FirstPersonManager.isRenderingInGui = false;
 
         if (colorPickerVisible) {
             renderColorPickerBackground(graphics);

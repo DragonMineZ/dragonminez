@@ -5,22 +5,24 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "dragonminez.refmap.json",
   "mixins": [
+    "common.RangedAttributeMixin",
     "common.ItemStackMixin",
-    "common.PlayerMixin",
-    "common.RangedAttributeMixin"
+    "common.PlayerMixin"
   ],
   "client": [
-    "client.EntityRenderDispatcherMixin",
-    "client.FlightCameraMixin",
-    "client.FlightGameRendererMixin",
-    "client.HeldItemRendererMixin",
-    "client.MixinInjectFirstPersonRendering",
     "client.PlayerGeoAnimatableMixin",
+    "client.EntityRenderDispatcherMixin",
+    "client.HeldItemRendererMixin",
+    "client.InventoryScreenMixin",
+    "client.MixinInjectFirstPersonRendering",
     "client.PrimaryLevelDataMixin",
     "client.SoundManagerMixin",
-    "client.TitleScreenMixin",
     "client.WorldOpenFlowsMixin",
-    "client.WorldSelectionListMixin"
+    "client.WorldSelectionListMixin",
+    "client.TitleScreenMixin",
+    "client.FlightCameraMixin",
+    "client.FlightGameRendererMixin",
+    "client.MouseHandlerMixin"
   ],
   "server": [],
   "injectors": {

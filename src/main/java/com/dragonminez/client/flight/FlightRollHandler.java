@@ -10,11 +10,11 @@ import net.minecraft.util.Mth;
 
 public class FlightRollHandler {
 
-	private static final float ROLL_ACCELERATION = 2.5F;
-	private static final float MAX_ROLL_SPEED = 6.0F;
+	private static final float ROLL_ACCELERATION = 1.5F;
+	private static final float MAX_ROLL_SPEED = 4.0F;
 	private static final float ROLL_FRICTION = 0.9F;
-	private static final float STABILIZE_SPEED = 0.6F;
-	private static final float MOUSE_SENSITIVITY = 0.25F;
+	private static final float STABILIZE_SPEED = 0.5F;
+	private static final float MOUSE_SENSITIVITY = 0.05F;
 
 	private static float currentRoll = 0F;
 	private static float prevRoll = 0F;

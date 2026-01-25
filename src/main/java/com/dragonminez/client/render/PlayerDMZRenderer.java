@@ -1,5 +1,6 @@
 package com.dragonminez.client.render;
 
+import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.util.BoneVisibilityHandler;
@@ -13,8 +14,6 @@ import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.util.Mth;
-import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
@@ -73,13 +72,15 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         poseStack.pushPose();
 
-		if (FlightRollHandler.hasActiveRoll()) {
+		if (FlySkillEvent.isFlyingFast()) {
 			float roll = FlightRollHandler.getRoll(partialTick);
+			float pitch = entity.getViewXRot(partialTick);
 			float pivotY = entity.getBbHeight() / 2f;
 			poseStack.translate(0, pivotY, 0);
-			float yawRad = entityYaw * Mth.DEG_TO_RAD;
-			Vector3f rotationAxis = new Vector3f((float) -Math.sin(yawRad), 0, (float) Math.cos(yawRad));
-			poseStack.mulPose(Axis.of(rotationAxis).rotationDegrees(-roll));
+			poseStack.mulPose(Axis.YP.rotationDegrees(180 - entityYaw));
+			poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
+			poseStack.mulPose(Axis.ZP.rotationDegrees(roll));
+			poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - entityYaw)));
 			poseStack.translate(0, -pivotY, 0);
 		}
 

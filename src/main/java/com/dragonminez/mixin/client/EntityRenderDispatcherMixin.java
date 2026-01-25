@@ -10,6 +10,8 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -17,6 +19,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -30,7 +33,6 @@ import java.util.Map;
 
 @Mixin(EntityRenderDispatcher.class)
 public abstract class EntityRenderDispatcherMixin {
-
     // Cache: third-person renderers
     @Unique
     private final Map<Integer, GeoEntityRenderer<?>> dragonminez$dmzRenderers = new HashMap<>();
@@ -62,7 +64,7 @@ public abstract class EntityRenderDispatcherMixin {
 
             String baseKey = race + "_" + gender + "_" + (form != null ? form : "base");
 
-            boolean pov = FirstPersonManager.shouldRenderFirstPerson(player);
+			boolean pov = FirstPersonManager.shouldRenderFirstPerson(player);
 
             // Make keys distinct so both can exist in cache for same morph
             int rendererId = (baseKey + (pov ? "_pov" : "_tp")).hashCode();
@@ -103,10 +105,7 @@ public abstract class EntityRenderDispatcherMixin {
 
         try {
             PlayerDMZModel model = new PlayerDMZModel<>(race, customModel);
-
-            if (pov) {
-                return new PlayerDMZPOVRenderer(ctx, model);
-            }
+            if (pov) return new PlayerDMZPOVRenderer(ctx, model);
             return new PlayerDMZRenderer(ctx, model);
 
         } catch (Exception e) {
