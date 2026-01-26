@@ -275,9 +275,9 @@ public class ConfigManager {
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFFFF");
 
-        config.setSuperformTpCost(new int[]{});
-        config.setGodformTpCost(new int[]{});
-        config.setLegendaryformsTpCost(new int[]{});
+        config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
+		config.setGodformTpCost(new int[]{});
+		config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
@@ -296,9 +296,9 @@ public class ConfigManager {
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFFFF");
 
-        config.setSuperformTpCost(new int[]{1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000});
-        config.setGodformTpCost(new int[]{10000, 20000, 30000});
-        config.setLegendaryformsTpCost(new int[]{50000, 100000});
+        config.setSuperformTpCost(new int[]{20000, 40000, 60000, 80000, 100000, 120000, 140000, 160000});
+        config.setGodformTpCost(new int[]{});
+        config.setLegendaryformsTpCost(new int[]{});
     }
 
     private static void setupNamekianCharacter(RaceCharacterConfig config) {
@@ -317,7 +317,7 @@ public class ConfigManager {
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFF00");
 
-        config.setSuperformTpCost(new int[]{1000, 2000});
+        config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
         config.setGodformTpCost(new int[]{});
         config.setLegendaryformsTpCost(new int[]{});
     }
@@ -338,7 +338,7 @@ public class ConfigManager {
         config.setDefaultEye2Color("#FF001D");
         config.setDefaultAuraColor("#5F00FF");
 
-        config.setSuperformTpCost(new int[]{});
+		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
         config.setGodformTpCost(new int[]{});
         config.setLegendaryformsTpCost(new int[]{});
     }
@@ -359,7 +359,7 @@ public class ConfigManager {
         config.setDefaultEye2Color("#960909");
         config.setDefaultAuraColor("#1AA700");
 
-        config.setSuperformTpCost(new int[]{});
+		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
         config.setGodformTpCost(new int[]{});
         config.setLegendaryformsTpCost(new int[]{});
     }
@@ -380,7 +380,7 @@ public class ConfigManager {
         config.setDefaultEye2Color("#B40000");
         config.setDefaultAuraColor("#FF6DFF");
 
-        config.setSuperformTpCost(new int[]{});
+		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
         config.setGodformTpCost(new int[]{});
         config.setLegendaryformsTpCost(new int[]{});
     }

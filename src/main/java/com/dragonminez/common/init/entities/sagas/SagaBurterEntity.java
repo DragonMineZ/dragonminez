@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.SPBlueHurricaneEntity;
 import net.minecraft.util.Mth;
@@ -25,6 +26,9 @@ public class SagaBurterEntity extends DBSagasEntity {
 
     public SagaBurterEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(40000);
+		}
     }
 
     public static AttributeSupplier.Builder createAttributes() {

@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -26,6 +27,9 @@ public class SagaRaditzEntity extends DBSagasEntity{
 
     public SagaRaditzEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(1200);
+		}
     }
 
     @Override
@@ -170,6 +174,4 @@ public class SagaRaditzEntity extends DBSagasEntity{
 
         return PlayState.STOP;
     }
-
-
 }

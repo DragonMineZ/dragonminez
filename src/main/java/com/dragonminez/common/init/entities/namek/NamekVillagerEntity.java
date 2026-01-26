@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.namek;
 
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.goals.VillageAlertSystem;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.serialization.Dynamic;
@@ -42,6 +43,9 @@ public class NamekVillagerEntity extends Villager implements GeoEntity {
         super(pEntityType, pLevel);
         this.setPersistenceRequired();
         this.setVillagerData(this.getVillagerData().setProfession(VillagerProfession.FLETCHER));
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(20);
+		}
     }
 
     public static AttributeSupplier.Builder createAttributes() {

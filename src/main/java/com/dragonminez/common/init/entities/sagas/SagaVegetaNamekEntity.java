@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -25,6 +26,13 @@ public class SagaVegetaNamekEntity extends DBSagasEntity {
 
     public SagaVegetaNamekEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			if (this.getName().toString().contains("ginyu") || this.getName().toString().contains("goku")) {
+				bp.setBattlePower(23000);
+			} else {
+				bp.setBattlePower(24000);
+			}
+		}
     }
 
     @Override

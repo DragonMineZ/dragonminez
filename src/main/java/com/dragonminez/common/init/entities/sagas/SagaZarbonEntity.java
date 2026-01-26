@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -28,6 +29,9 @@ public class SagaZarbonEntity extends DBSagasEntity{
 
     public SagaZarbonEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(23000);
+		}
     }
 
     @Override

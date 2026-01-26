@@ -203,4 +203,12 @@ public class TransformationsHelper {
 
 		return finalDrain;
 	}
+
+	public static String getFirstFormGroup(String groupName, String raceName) {
+		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
+		if (formConfig == null) return null;
+
+		Optional<String> firstForm = formConfig.getForms().keySet().stream().findFirst();
+		return firstForm.orElse(null);
+	}
 }

@@ -1,6 +1,8 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.crowdin.CrowdinManager;
+import com.dragonminez.client.crowdin.CrowdinPackResources;
 import com.dragonminez.client.gui.hud.AlternativeHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
@@ -30,12 +32,18 @@ import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
 import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
 import com.dragonminez.common.init.particles.*;
 import com.dragonminez.server.world.dimension.CustomSpecialEffects;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
+import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -53,6 +61,21 @@ public class ModClientEvents {
     public static void onKeyRegister(RegisterKeyMappingsEvent event) {
         KeyBinds.registerAll(event);
     }
+
+	@SubscribeEvent
+	public static void onAddPackFinders(AddPackFindersEvent event) {
+		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
+			String currentLang = Minecraft.getInstance().options.languageCode;
+			CrowdinManager.fetchLanguage(currentLang);
+
+			event.addRepositorySource((packConsumer) -> {
+				Pack crowdinPack = Pack.readMetaAndCreate("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), true,
+						CrowdinPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
+
+				if (crowdinPack != null) packConsumer.accept(crowdinPack);
+			});
+		}
+	}
 
 	@SubscribeEvent
 	public static void onClientSetup(FMLClientSetupEvent event) {

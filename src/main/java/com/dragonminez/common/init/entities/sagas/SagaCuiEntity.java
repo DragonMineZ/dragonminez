@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -25,6 +26,9 @@ public class SagaCuiEntity extends DBSagasEntity {
 
     public SagaCuiEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(18000);
+		}
     }
 
     @Override

@@ -59,6 +59,9 @@ public class UpdateSkillC2S {
 								skill.addLevel(1);
 							}
 							break;
+						case "purchase":
+							data.getResources().removeTrainingPoints(cost);
+							data.getSkills().setSkillLevel(skillName, 1);
 					}
 
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

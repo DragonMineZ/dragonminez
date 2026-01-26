@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
@@ -26,6 +27,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
 	public static boolean hasCreatedCharacterCache = false;
+	private static String lastLang = "";
 
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
@@ -113,6 +115,12 @@ public class ForgeClientEvents {
                 }
             });
         }
+
+		String current = mc.options.languageCode;
+		if (!current.equals(lastLang)) {
+			lastLang = current;
+			CrowdinManager.fetchLanguage(current);
+		}
     }
 
     @SubscribeEvent

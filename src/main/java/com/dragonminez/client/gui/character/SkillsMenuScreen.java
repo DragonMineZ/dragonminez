@@ -233,17 +233,33 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     }
 
     private int getUpgradeCost(String skillName, int currentLevel) {
-        var skillConfig = ConfigManager.getSkillsConfig();
-        var skillData = skillConfig.getSkills().get(skillName);
+		if (skillName.contains("form")) {
+			var raceConfig = ConfigManager.getRaceCharacter(statsData.getCharacter().getRaceName());
+			int[] costs = null;
+			switch (skillName) {
+				case "superform" -> costs = raceConfig.getSuperformTpCost();
+				case "godform" -> costs = raceConfig.getGodformTpCost();
+				case "legendaryforms" -> costs = raceConfig.getLegendaryformsTpCost();
+			}
 
-        if (skillData != null && skillData.getCosts() != null) {
-            var costs = skillData.getCosts();
-            if (currentLevel+1 < costs.size()) {
-                return costs.get(currentLevel+1);
-            }
-        }
+			if (costs != null && currentLevel + 1 < costs.length) {
+				return costs[currentLevel];
+			} else {
+				return Integer.MAX_VALUE;
+			}
+		} else {
+			var skillConfig = ConfigManager.getSkillsConfig();
+			var skillData = skillConfig.getSkills().get(skillName);
 
-        return Integer.MAX_VALUE;
+			if (skillData != null && skillData.getCosts() != null) {
+				var costs = skillData.getCosts();
+				if (currentLevel+1 < costs.size()) {
+					return costs.get(currentLevel);
+				}
+			}
+
+			return Integer.MAX_VALUE;
+		}
     }
 
     @Override

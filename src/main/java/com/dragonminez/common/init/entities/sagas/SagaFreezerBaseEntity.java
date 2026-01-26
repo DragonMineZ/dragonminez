@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import net.minecraft.sounds.SoundEvents;
@@ -29,6 +30,13 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
 
     public SagaFreezerBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			if (this.getName().toString().contains("fp")) {
+				bp.setBattlePower(120000000);
+			} else {
+				bp.setBattlePower(60000000);
+			}
+		}
     }
 
     @Override

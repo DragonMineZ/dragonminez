@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -23,6 +24,9 @@ public class SagaNappaEntity extends DBSagasEntity{
 
     public SagaNappaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(4000);
+		}
     }
 
     @Override

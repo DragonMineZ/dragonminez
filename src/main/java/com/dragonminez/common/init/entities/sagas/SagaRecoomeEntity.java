@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -32,6 +33,9 @@ public class SagaRecoomeEntity extends DBSagasEntity {
 
     public SagaRecoomeEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(40000);
+		}
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.namek;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.goals.VillageAlertSystem;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -37,7 +38,7 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class NamekWarriorEntity extends Monster implements GeoEntity {
+public class NamekWarriorEntity extends PathfinderMob implements GeoEntity {
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
     private boolean isAttacking = false;
@@ -55,11 +56,14 @@ public class NamekWarriorEntity extends Monster implements GeoEntity {
         }
     }
 
-    public NamekWarriorEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+    public NamekWarriorEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 
         VillageAlertSystem.registerWarrior(this);
         this.setPersistenceRequired();
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(750);
+		}
     }
 
     public static AttributeSupplier.Builder createAttributes() {

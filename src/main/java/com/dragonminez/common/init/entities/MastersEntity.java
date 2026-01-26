@@ -1,5 +1,14 @@
 package com.dragonminez.common.init.entities;
 
+import com.dragonminez.client.gui.MastersSkillsScreen;
+import com.dragonminez.client.gui.character.CharacterStatsScreen;
+import com.dragonminez.client.gui.character.RaceSelectionScreen;
+import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -22,6 +31,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 public class MastersEntity extends PathfinderMob implements GeoEntity {
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+	protected String masterName = null;
 
     protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -95,4 +105,27 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 
 	@Override
 	public void checkDespawn() {}
+
+
+
+	@Override
+	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+		if (this.level().isClientSide && masterName != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
+				if (data.getStatus().hasCreatedCharacter()) {
+					Minecraft mc = Minecraft.getInstance();
+					int oldGuiScale = mc.options.guiScale().get();
+					if (oldGuiScale != 3) {
+						mc.options.guiScale().set(3);
+						mc.resizeDisplay();
+					}
+					mc.setScreen(new MastersSkillsScreen(oldGuiScale, masterName, this));
+					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+				}
+			});
+			return InteractionResult.SUCCESS;
+		}
+
+		return super.mobInteract(pPlayer, pHand);
+	}
 }

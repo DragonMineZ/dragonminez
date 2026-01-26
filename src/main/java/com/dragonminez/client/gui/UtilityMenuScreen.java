@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
@@ -111,7 +112,7 @@ public class UtilityMenuScreen extends Screen {
 			case 1 -> {
 				if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1) {
 					line1 = Component.translatable("race.dragonminez." + race + ".group." + statsData.getCharacter().getSelectedFormGroup()).withStyle(ChatFormatting.BOLD);
-					line2 = Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + statsData.getCharacter().getActiveForm());
+					line2 = Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + TransformationsHelper.getFirstFormGroup(statsData.getCharacter().getSelectedFormGroup(), race));
 					isSelected = currentMode == ActionMode.FORM;
 				}
 			}
@@ -198,7 +199,8 @@ public class UtilityMenuScreen extends Screen {
 			case 1 -> {
 				if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1) {
 					boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.FORM;
-					NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FORM));
+					if (!wasActive) NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FORM));
+					if (wasActive) NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_form_group"));
 					playToggleSound(mc, !wasActive);
 				}
 			}

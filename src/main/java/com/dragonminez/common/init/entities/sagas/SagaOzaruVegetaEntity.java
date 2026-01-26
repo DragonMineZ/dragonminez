@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -28,8 +29,10 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
 
     public SagaOzaruVegetaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-
         this.roarCooldown = 400;
+		if (this instanceof IBattlePower bp) {
+			bp.setBattlePower(180000);
+		}
     }
 
     public static AttributeSupplier.Builder createAttributes() {

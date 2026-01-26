@@ -205,6 +205,171 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                             }
                     ));
 
+					// Quest 4
+					quests.add(createQuest(4, "dmz.quest.frieza4.name", "dmz.quest.frieza4.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza4.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza4.obj2", null, "dragonminez:saga_zarbon", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 6500, null, 0, null)}
+							}
+					));
+
+					// Quest 5
+					quests.add(createQuest(5, "dmz.quest.frieza5.name", "dmz.quest.frieza5.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza5.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza5.obj2", null, "dragonminez:saga_vegeta_namek", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 7000, null, 0, null)}
+							}
+					));
+
+					// Quest 6
+					quests.add(createQuest(6, "dmz.quest.frieza6.name", "dmz.quest.frieza6.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza6.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza6.obj2", null, "dragonminez:saga_zarbont1", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 8000, null, 0, null)}
+							}
+					));
+
+					// Quest 7
+					quests.add(createQuest(7, "dmz.quest.frieza7.name", "dmz.quest.frieza7.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza7.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza7.obj2", null, "dragonminez:saga_guldo", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 8500, null, 0, null)}
+							}
+					));
+
+					// Quest 8
+					quests.add(createQuest(8, "dmz.quest.frieza8.name", "dmz.quest.frieza8.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza8.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza8.obj2", null, "dragonminez:saga_recoome", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 9000, null, 0, null)}
+							}
+					));
+
+					// Quest 9
+					quests.add(createQuest(9, "dmz.quest.frieza9.name", "dmz.quest.frieza9.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza9.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza9.obj2", null, "dragonminez:saga_burter", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 9500, null, 0, null)}
+							}
+					));
+
+					// Quest 10
+					quests.add(createQuest(10, "dmz.quest.frieza10.name", "dmz.quest.frieza10.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza10.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza10.obj2", null, "dragonminez:saga_jeice", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 10000, null, 0, null)}
+							}
+					));
+
+					// Quest 11
+					quests.add(createQuest(11, "dmz.quest.frieza11.name", "dmz.quest.frieza11.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza11.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza11.obj2", null, "dragonminez:saga_ginyu", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 11000, null, 0, null)}
+							}
+					));
+
+					// Quest 12
+					quests.add(createQuest(12, "dmz.quest.frieza12.name", "dmz.quest.frieza12.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza12.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza12.obj2", null, "dragonminez:saga_ginyu_goku", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 12000, null, 0, null)}
+							}
+					));
+
+					// Quest 13
+					quests.add(createQuest(13, "dmz.quest.frieza13.name", "dmz.quest.frieza13.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza13.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza13.obj2", null, "dragonminez:saga_frieza_first", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 13000, null, 0, null)}
+							}
+					));
+
+					// Quest 14
+					quests.add(createQuest(14, "dmz.quest.frieza14.name", "dmz.quest.frieza14.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza14.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza14.obj2", null, "dragonminez:saga_frieza_second", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 14000, null, 0, null)}
+							}
+					));
+
+					// Quest 15
+					quests.add(createQuest(15, "dmz.quest.frieza15.name", "dmz.quest.frieza15.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza15.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza15.obj2", null, "dragonminez:saga_frieza_third", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 15000, null, 0, null)}
+							}
+					));
+
+					// Quest 16
+					quests.add(createQuest(16, "dmz.quest.frieza16.name", "dmz.quest.frieza16.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza16.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza16.obj2", null, "dragonminez:saga_frieza_base", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 16000, null, 0, null)}
+							}
+					));
+
+					// Quest 17
+					quests.add(createQuest(17, "dmz.quest.frieza17.name", "dmz.quest.frieza17.desc",
+							new JsonObject[][]{
+									{createObjective("BIOME", "dmz.quest.frieza17.obj1", "dragonminez:ajissa_plains", null, 0)},
+									{createObjective("KILL", "dmz.quest.frieza17.obj2", null, "dragonminez:saga_frieza_fp", 1)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 17000, null, 0, null)}
+							}
+					));
+
+					// Quest 18
+					quests.add(createQuest(18, "dmz.quest.frieza18.name", "dmz.quest.frieza18.desc",
+							new JsonObject[][]{
+									{createObjective("STRUCTURE", "dmz.quest.frieza18.obj1", "dragonminez:rocky", null, 0)}
+							},
+							new JsonObject[][]{
+									{createReward("TPS", 5000, null, 0, null)}
+							}
+					));
+
+
                     root.add("quests", quests);
                     GSON.toJson(root, writer);
                 }

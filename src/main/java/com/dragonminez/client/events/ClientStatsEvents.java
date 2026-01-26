@@ -31,6 +31,7 @@ public class ClientStatsEvents {
 	private static long lastDashTime = 0;
 	private static boolean wasDashKeyDown = false;
 	private static boolean wasRightClickDown = false;
+	private static boolean wasDescendActionDown = false;
 
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -107,9 +108,11 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new UpdateStatC2S("isActionCharging", isActionKeyPressed));
 			}
 
-			if (isDescendKeyPressed && isActionKeyPressed && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.KAIOKEN))) {
+			boolean isDescendActionDown = isDescendKeyPressed && isActionKeyPressed;
+			if (isDescendActionDown && !wasDescendActionDown && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.KAIOKEN))) {
 				NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
 			}
+			wasDescendActionDown = isDescendActionDown;
 
 			boolean isFlying = data.getSkills().isSkillActive("fly") && !player.onGround() && !player.isInWater();
 
