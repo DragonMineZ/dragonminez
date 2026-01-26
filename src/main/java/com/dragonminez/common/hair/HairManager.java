@@ -19,7 +19,8 @@ import java.util.zip.GZIPOutputStream;
 public class HairManager {
     private static final String[] DEFAULT_HAIR_RACES = {"human", "saiyan"};
     private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
-    private static final String CODE_PREFIX = "DMZ_HAIR:";
+	private static final String CODE_PREFIX_V1 = "DMZ_HAIR:";
+	private static final String CODE_PREFIX_V2 = "DMZHair_v2:";
 
     static {
         initializeDefaultPresets();
@@ -27,11 +28,11 @@ public class HairManager {
 
     private static void initializeDefaultPresets() {
 		// Goku
-		registerPreset(1, "DMZ_HAIR:1EsjS8N8fJ1zQCTewaqwJy2nV19XxhwF4pmF70rZO7bZ6J2ZZfHuqsuXSpnpzhtqTTHdvxUijTdZHWy0C8FXtW3uOrBold6CgPYzrsMoz9wpTeSg6EUdbc4pkpMqyo2jm8DYRgBy8RWvaAa2HlNwogTlwkCvaOyBjPCNXBely6O8PaQFrj47EuZNrPj83osOY6MXNk7huPxONdUmToCY20AgoqmEMj6RKmJsvxddMbrAcaCvIySMHk08AV8TKjd8Awjaxusw3K8yRr2OvO6nvmlXp3qeTTjpSn1ynE4T87X0ZuAJ2wZJeUXze0OffXnvw712sUJWVH7eSrcwRPQYOPQAwsDhi9NI77YqHGcJQRfrwgjS5ARfj9xvNs6wX7d2vqrgcQRQDBvMx8jU13XKAE4FYSDmV02G8m1AtLUVNIegiQEqOqu0cbfshCYpdbwfhWZP0C0rSuovCmyOfyaNFe9t34fOD97GXqND42hCxGFYrYfiQP9zH0RH72yOqbjVSB6nDySQo0cW1JGaBf3HrlXLwQdZuyHKNW0g1ZtjnEWyiXNNLYtuVQlElIDZEj3bYyQ27K94TjfnIVrZhzxusOLQnigijsO85aDDvmSLDsxyw2HbEf6lvq6P41AzBnNkexqLHnp5W4J5dDlfHx20CikMLjlyN7EyaE85di6wuKbp1KfIfBX5fddIahQZlqN9ccPpT8V6jkTq7cWaMUqFXqQorwRn17DktFfaThCmQY4Ku9YBZ20yhMfhnBQG44HWcVA0kxcCY7K06Zjhhqp03plbtsrPIBTwRYifrkcyVuFJkUgUCb0kfpMRpn8zCg0vlRqo22RSPW8zz6MmBOBw0OfHevGvhCpgoXy4QBlWwLNTuR3qUy46Gj7TtqDh08lrHZLsn7SIFmFKaIvuYCimjIlcIHPgW4xQfuMjwuoXO4XBTOlu6uOg4dmWEIxZTxeAxVyotLyGJ8TaPhmjFFi7kuyhp6rAr5CDwUY11ryO88CiCm7jUhaH4fzLubGroCfulSZOf767fahiwW0KcNafC3N0d3E9ws7jocweSitwxYInCRQDvbbb9Krlr2woM1bV0vOVBp9aSF7Pbd592FXJOM0b3WNUqmCQp8EhZLcyRI64ojhdiMJvaE93KYlUwn4gpNPEG35UOv9UXPpEi1TikJBlAsuBDWbQJ2XLvgetr6MBfdP6mtwOwyvJR8mP6xfvKHHpaLRvZPymmd4BbaXAmMvoAmXUNdB3DxynO3Y5WHeLWH8MnYY8E0etMuZdmOsP7oll82iJnAESiPgeK5mJdRAYTKSEVw5zNzWHiHDFT2ec3nO8AcdB6nxoOKQa");
+		registerPreset(1, "DMZHair_v2:8gcUTqeXsS0jsuijpI1VGNoUiW2a7QxMTfXLhaG4zE3gVjeV0a69NHwsAm0ueiNtwcBzZ2gB0Q20ZenhGdlEGt7RLVgveZFpZPxHZ0d8Eeakui3bSx62N4G5J4nCeUID9G9eq1QYa9NIYPjRDGkBmdTFIu7quXwoKkd5GOE9mkRBXFetj2bxjMhTqkmUPQPaTW2NprHrkO8mqw5vtBtLJ7nuqVFyPQScsCQw3ar0BXgxxzEEGrLP5VjWkgOK6r1k4AksoTN9RT88ON1fw0kqZgD9XSn1RAjv77MRUBRKoOnZ64R8yKCSoxy9tzR68JNUXSwZXiPCG26CrSgiX0Z1chDIH0u9eANvPZfEDAyC0OBmgVf0EIHCnaqYuWDmpnvDjMqwxW54Mj391iPldSPiJv3797GAE7mTv4mOgvvDybtmaCWlHUDiOW3EiWOgyvSc9UkQ2DaTTjG6Jb9Lxyzo0bVuHAZttyBYTl32xcTf9jpOFDXL7t41WgKGkKM3kMTmWy1kwVabDVjchaLCwhi5AyRRzTZv3iaRmeV4bPwsTGFpYuar4y30Jz9yyn4lfHdRC436XkyKy1iwoefUG4Gz1aMYdGh3dbiiQjt1LcAnoaOW76vOgFyMZt7CvA3UpRLpeSJxT0TNJi1YntuJkxyl79ouA2DgUjsAElmXgxDeC5kqli8BmLCoiMNRXqzGdRKxfClPjOw0de1bYgvEP8btq69DvNCV4UF4hS1PT1mT7xKe1IJoXSMRcSRTdVSWHvWmRj1E1EWGPEymXWAhFqfGbCuJ6pIY39gnL1I5O75UPpata3I5Ulty9YF0spHxskQcdkBfQiMI3bDOGhIucjg7k6uCWwUXsPMDn8r4HTlk5ykJrPgBHt07nlm6RjKevzgCkfrx3kCGIZHGdOd9NfJATIAm1EvdHQlX04jmxym8pZNWZ2idOtFefHtu7i0cGF9wYRZEBFVSR6Dk7l4PCZJmxt1JLiyqibyWNznmdo3560TNASqqG80eLuoWcycC0lP9rkTCbph3W51M9LrZsCL2NuDwjjPc");
     	// Vegeta
 		//registerPreset(2, "DMZ_HAIR:...");
 		// Trunks
-		//registerPreset(3, "DMZ_HAIR:...");
+		registerPreset(3, "DMZHair_v2:109u3NyEBqNT1hlTR4XJ1Tyk4bG7d5naHigcDM6fNgwOLp8Vu1yFt7qrMLRkEpAsCSZ6WPbxoeLbLdF4VMbTTcjF8Muq6BDvdx9mjcHkIdQW3vrcedSao01KfxVfSyw9ARFke5DbijCG7hmPZ0KfHw5CX5kyruspUjLbov2tNPtkrso5mNqA98g5DmqFAaA5Ovz0qeh1jm6FgkrWK1SwOfDQ8gzEcLUX8m3Cma8quXWAnPAWbMxUDkpzdyxdE53JMsrEN8Pfvnp0BvLDB0Ud0Fql5iyiMxQU7PRYA4RfL8ExamfHX2ljXDWxl9C9DoemUZ4MRdE8wshyFhyt3ZYb2Ud46aO9cFd4zDPtS8vrDhxf4o5w81rP5r5rut7fwI68luYLJpRkiWhYE1MhrDcwI8MxEAcYmq2DQxIVnqARinUHYG2KMOTwEQfvUCeKCMc8rQENnoizYncBMY5jfRmi7e6wpmJhPzm69MdYEYb9u8YAWzcZvRFn8KC1mD37LCEcis2FhqKIw2OEdjIxkIRkPycAlTKQ26syx6JSM3rMQHPWLnTGeVl0XPKJJyzM34c3b0VGSQOQmyWgBpv8QxETafedUY8DpCnY2eDuNE3tAauTZxxtgUkM4mVRthM0IQQ01s4lgaQks7DftbDlNQG3rlvSIYjUA7NMr6gdEqpk1Z7m7NabVeaLcUSTl0g7TG7HJn41tWtw5EiXw2qieW");
 		// Gohan
 		//registerPreset(4, "DMZ_HAIR:...");
 		// Krillin
@@ -93,38 +94,53 @@ public class HairManager {
     public static String toCode(CustomHair hair) {
         if (hair == null) return null;
 
-        try {
-            CompoundTag tag = hair.save();
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
-            NbtIo.write(tag, dataOutput);
-            dataOutput.close();
+		try {
+			CompoundTag tag = hair.save();
+			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+			DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
+			NbtIo.write(tag, dataOutput);
+			dataOutput.close();
 
-            return CODE_PREFIX + encodeToNumbers(byteStream.toByteArray());
-        } catch (Exception e) {
-            return null;
-        }
-    }
+			return CODE_PREFIX_V2 + encodeToNumbers(byteStream.toByteArray());
+		} catch (Exception e) {
+			return null;
+		}
+	}
 
     public static CustomHair fromCode(String code) {
         if (code == null || code.isEmpty()) return null;
 
-        String rawContent = code.startsWith(CODE_PREFIX) ? code.substring(CODE_PREFIX.length()) : code;
+		String rawContent;
+		boolean isV1 = false;
 
-        try {
-            byte[] compressed = decodeFromNumbers(rawContent);
-            ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
-            DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
-            CompoundTag tag = NbtIo.read(dataInput);
-            dataInput.close();
+		if (code.startsWith(CODE_PREFIX_V2)) {
+			rawContent = code.substring(CODE_PREFIX_V2.length());
+		} else if (code.startsWith(CODE_PREFIX_V1)) {
+			rawContent = code.substring(CODE_PREFIX_V1.length());
+			isV1 = true;
+		} else {
+			rawContent = code;
+		}
 
-            CustomHair hair = new CustomHair();
-            hair.load(tag);
-            return hair;
-        } catch (Exception e) {
-            return null;
-        }
-    }
+		try {
+			byte[] compressed = decodeFromNumbers(rawContent);
+			ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
+			DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
+			CompoundTag tag = NbtIo.read(dataInput);
+			dataInput.close();
+
+			CustomHair hair = new CustomHair();
+
+			if (isV1 && !tag.contains("Version")) {
+				tag.putInt("Version", 1);
+			}
+
+			hair.load(tag);
+			return hair;
+		} catch (Exception e) {
+			return null;
+		}
+	}
 
     public static boolean canUseHair(Character character) {
         if (character == null) return false;

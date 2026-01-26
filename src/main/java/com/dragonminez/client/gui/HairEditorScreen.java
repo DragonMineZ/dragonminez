@@ -6,7 +6,6 @@ import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
-import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
@@ -508,6 +507,7 @@ public class HairEditorScreen extends Screen {
 
         String newColor = ColorUtils.hsvToHex(h, s, v);
         applyColorToStrand(newColor);
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editingHair));
     }
 
     private void applyColorToStrand(String color) {
@@ -966,12 +966,16 @@ public class HairEditorScreen extends Screen {
         }
 
 		if (HairManager.isValidCode(code)) {
+			character.setHairId(0);
+
 			copyHairData(HairManager.fromCode(code), editingHair);
 			selectedStrandIndex = 0;
 			colorPickerVisible = false;
 			setSlidersVisible(false);
 			updateColorButton();
 			initControlButtons();
+
+			syncHairToServer();
 		}
     }
 
@@ -986,7 +990,6 @@ public class HairEditorScreen extends Screen {
                 HairStrand src = srcStrands[i];
                 HairStrand dst = dstStrands[i];
                 dst.setLength(src.getLength());
-                dst.setOffset(src.getOffsetX(), src.getOffsetY(), src.getOffsetZ());
                 dst.setRotation(src.getRotationX(), src.getRotationY(), src.getRotationZ());
                 dst.setCurve(src.getCurveX(), src.getCurveY(), src.getCurveZ());
                 dst.setScale(src.getScaleX(), src.getScaleY(), src.getScaleZ());

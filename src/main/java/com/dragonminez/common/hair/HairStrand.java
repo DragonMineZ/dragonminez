@@ -7,10 +7,6 @@ public class HairStrand {
     public static final int MAX_LENGTH = 6;
     private int length = 0;
 
-    private float offsetX = 0.0f;
-    private float offsetY = 0.0f;
-    private float offsetZ = 0.0f;
-
     private float rotationX = 0.0f;
     private float rotationY = 0.0f;
     private float rotationZ = 0.0f;
@@ -59,36 +55,16 @@ public class HairStrand {
         return length > 0;
     }
 
-    // Obtener la cantidad real de cubos (máximo 4)
     public int getCubeCount() {
         return Math.min(length, MAX_CUBE_COUNT);
     }
 
-    // Obtener el factor de estiramiento (1.0 a 2.5)
-    // De 0-4: factor 1.0
-    // De 5-10: factor 1.0 a 2.5
     public float getStretchFactor() {
         if (length <= MAX_CUBE_COUNT) {
             return 1.0f;
         }
         int extraLength = length - MAX_CUBE_COUNT;
-        return 1.0f + (extraLength * 0.25f); // 0.25 por cada nivel extra
-    }
-
-    public float getOffsetX() { return offsetX; }
-    public float getOffsetY() { return offsetY; }
-    public float getOffsetZ() { return offsetZ; }
-    
-    public void setOffset(float x, float y, float z) {
-        this.offsetX = x;
-        this.offsetY = y;
-        this.offsetZ = z;
-    }
-    
-    public void addOffset(float dx, float dy, float dz) {
-        this.offsetX += dx;
-        this.offsetY += dy;
-        this.offsetZ += dz;
+        return 1.0f + (extraLength * 0.25f);
     }
 
     public float getRotationX() { return rotationX; }
@@ -99,12 +75,6 @@ public class HairStrand {
         this.rotationX = x;
         this.rotationY = y;
         this.rotationZ = z;
-    }
-    
-    public void addRotation(float dx, float dy, float dz) {
-        this.rotationX += dx;
-        this.rotationY += dy;
-        this.rotationZ += dz;
     }
 
     public float getScaleX() { return scaleX; }
@@ -120,12 +90,6 @@ public class HairStrand {
     public float getCubeWidth() { return cubeWidth; }
     public float getCubeHeight() { return cubeHeight; }
     public float getCubeDepth() { return cubeDepth; }
-    
-    public void setCubeDimensions(float width, float height, float depth) {
-        this.cubeWidth = Math.max(0.5f, width);
-        this.cubeHeight = Math.max(0.5f, height);
-        this.cubeDepth = Math.max(0.5f, depth);
-    }
 
     public float getCurveX() { return curveX; }
     public float getCurveY() { return curveY; }
@@ -145,16 +109,12 @@ public class HairStrand {
     }
 
     public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+	protected void setId(int id) { this.id = id; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         if (id != 0) tag.putInt("Id", id);
         if (length != 0) tag.putInt("Length", length);
-
-        if (offsetX != 0.0f) tag.putFloat("OffsetX", offsetX);
-        if (offsetY != 0.0f) tag.putFloat("OffsetY", offsetY);
-        if (offsetZ != 0.0f) tag.putFloat("OffsetZ", offsetZ);
 
         if (rotationX != 0.0f) tag.putFloat("RotX", rotationX);
         if (rotationY != 0.0f) tag.putFloat("RotY", rotationY);
@@ -180,9 +140,6 @@ public class HairStrand {
     public void load(CompoundTag tag) {
         this.id = tag.getInt("Id");
         this.length = tag.getInt("Length");
-        this.offsetX = tag.getFloat("OffsetX");
-        this.offsetY = tag.getFloat("OffsetY");
-        this.offsetZ = tag.getFloat("OffsetZ");
         this.rotationX = tag.getFloat("RotX");
         this.rotationY = tag.getFloat("RotY");
         this.rotationZ = tag.getFloat("RotZ");
@@ -203,9 +160,6 @@ public class HairStrand {
     public HairStrand copy() {
         HairStrand copy = new HairStrand(this.id);
         copy.length = this.length;
-        copy.offsetX = this.offsetX;
-        copy.offsetY = this.offsetY;
-        copy.offsetZ = this.offsetZ;
         copy.rotationX = this.rotationX;
         copy.rotationY = this.rotationY;
         copy.rotationZ = this.rotationZ;

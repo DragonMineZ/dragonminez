@@ -5,11 +5,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import org.joml.Vector3f;
 
 import java.util.EnumMap;
 import java.util.Map;
 
 public class CustomHair {
+	private static final int VERSION = 2;
     public static final int FRONT_STRANDS = 4;
     public static final int SIDE_STRANDS = 16;
 
@@ -34,7 +36,7 @@ public class CustomHair {
     private final Map<HairFace, HairStrand[]> strandsByFace = new EnumMap<>(HairFace.class);
     private String globalColor = "#000000";
     private String name = "Custom";
-    private int version = 1;
+    private int version = VERSION;
 
     public CustomHair() {
         initializeStrands();
@@ -45,47 +47,53 @@ public class CustomHair {
         int idCounter = 0;
         for (HairFace face : HairFace.values()) {
             HairStrand[] strands = new HairStrand[face.maxStrands];
-            for (int i = 0; i < face.maxStrands; i++) {
-                strands[i] = new HairStrand(idCounter++);
-                initializeStrandPosition(strands[i], face, i);
-            }
+			for (int i = 0; i < face.maxStrands; i++) {
+				int staticId = (face.ordinal() * 100) + i;
+				strands[i] = new HairStrand(staticId);
+				Vector3f rot = getBaseRotation(face);
+				strands[i].setRotation(rot.x, rot.y, rot.z);
+			}
             strandsByFace.put(face, strands);
         }
     }
 
-    private void initializeStrandPosition(HairStrand strand, HairFace face, int index) {
-        int row = index / face.cols;
-        int col = index % face.cols;
-        float[] positions = {-3f, -1f, 1f, 3f};
-        float[] yOffsets = {0f, -1.5f, -3f, -4.5f};
+	public static Vector3f getStrandBasePosition(HairFace face, int index) {
+		int row = index / face.cols;
+		int col = index % face.cols;
 
-        float gridX = positions[col % 4];
-        float gridZ = positions[row % 4];
-        float rowYOffset = yOffsets[row % 4];
+		float[] positions = {-3f, -1f, 1f, 3f};
+		float[] yOffsets = {0f, -1.5f, -3f, -4.5f};
 
-        switch (face) {
-            case FRONT -> {
-                strand.setOffset(gridX, 7.25f, -4f);
-                strand.setRotation(-90, 0, 0);
-            }
-            case BACK -> {
-                strand.setOffset(gridX, 7.25f + rowYOffset, 4f);
-                strand.setRotation(90, 0, 0);
-            }
-            case LEFT -> {
-                strand.setOffset(-3.95f, 7.25f + rowYOffset, 0f + gridX);
-                strand.setRotation(0, 0, 90);
-            }
-            case RIGHT -> {
-                strand.setOffset(3.95f, 7.25f + rowYOffset, -0f - gridX);
-                strand.setRotation(0, 0, -90);
-            }
-            case TOP -> {
-                strand.setOffset(gridX, 7.85f, gridZ);
-                strand.setRotation(0, 0, 0);
-            }
-        }
-    }
+		float gridX = positions[col % 4];
+		float gridZ = positions[row % 4];
+		float rowYOffset = yOffsets[row % 4];
+
+		switch (face) {
+			case FRONT:
+				return new Vector3f(gridX, 7.25f, -4.0f);
+			case BACK:
+				return new Vector3f(gridX, 7.25f + rowYOffset, 4.0f);
+			case LEFT:
+				return new Vector3f(-3.95f, 7.25f + rowYOffset, gridX);
+			case RIGHT:
+				return new Vector3f(3.95f, 7.25f + rowYOffset, -gridX);
+			case TOP:
+				return new Vector3f(gridX, 7.85f, gridZ);
+			default:
+				return new Vector3f(0, 0, 0);
+		}
+	}
+
+	public static Vector3f getBaseRotation(HairFace face) {
+		switch (face) {
+			case FRONT: return new Vector3f(-90, 0, 0);
+			case BACK: return new Vector3f(90, 0, 0);
+			case LEFT: return new Vector3f(0, 0, 90);
+			case RIGHT: return new Vector3f(0, 0, -90);
+			case TOP: return new Vector3f(0, 0, 0);
+			default: return new Vector3f(0,0,0);
+		}
+	}
 
     public HairStrand[] getStrands(HairFace face) {
         return strandsByFace.get(face);
@@ -156,20 +164,21 @@ public class CustomHair {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public void clear() {
-        for (HairFace face : HairFace.values()) {
-            HairStrand[] strands = strandsByFace.get(face);
-            for (int i = 0; i < strands.length; i++) {
-                int id = strands[i].getId();
-                strands[i] = new HairStrand(id);
-                initializeStrandPosition(strands[i], face, i);
-            }
-        }
-    }
+	public void clear() {
+		for (HairFace face : HairFace.values()) {
+			HairStrand[] strands = strandsByFace.get(face);
+			for (int i = 0; i < strands.length; i++) {
+				int staticId = (face.ordinal() * 100) + i;
+				strands[i] = new HairStrand(staticId);
+				Vector3f rot = getBaseRotation(face);
+				strands[i].setRotation(rot.x, rot.y, rot.z);
+			}
+		}
+	}
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Version", version);
+        tag.putInt("Version", VERSION);
         if (name != null && !name.isEmpty()) tag.putString("Name", name);
         tag.putString("GlobalColor", globalColor);
 
@@ -189,7 +198,8 @@ public class CustomHair {
     }
 
     public void load(CompoundTag tag) {
-        this.version = tag.getInt("Version");
+		int loadedVersion = tag.contains("Version") ? tag.getInt("Version") : 1;
+		this.version = loadedVersion;
         this.name = tag.getString("Name");
         this.globalColor = tag.getString("GlobalColor");
 
@@ -197,16 +207,34 @@ public class CustomHair {
             globalColor = "#000000";
         }
 
-        for (HairFace face : HairFace.values()) {
-            if (tag.contains(face.name())) {
-                ListTag strandsList = tag.getList(face.name(), Tag.TAG_COMPOUND);
-                HairStrand[] strands = strandsByFace.get(face);
+		for (HairFace face : HairFace.values()) {
+			if (tag.contains(face.name())) {
+				ListTag strandsList = tag.getList(face.name(), Tag.TAG_COMPOUND);
+				HairStrand[] strands = strandsByFace.get(face);
 
-                for (int i = 0; i < Math.min(strandsList.size(), strands.length); i++) {
-                    strands[i].load(strandsList.getCompound(i));
-                }
-            }
-        }
+				for (int i = 0; i < strandsList.size(); i++) {
+					CompoundTag strandTag = strandsList.getCompound(i);
+					int idInTag = strandTag.getInt("Id");
+
+					int targetIndex = i;
+					if (loadedVersion >= 2) {
+						int calculatedIndex = idInTag - (face.ordinal() * 100);
+						if (calculatedIndex >= 0 && calculatedIndex < strands.length) {
+							targetIndex = calculatedIndex;
+						}
+					}
+
+					if (targetIndex < strands.length) {
+						strands[targetIndex].load(strandTag);
+
+						int staticId = (face.ordinal() * 100) + targetIndex;
+						strands[targetIndex].setId(staticId);
+					}
+				}
+			}
+		}
+
+		this.version = VERSION;
     }
 
     public CustomHair copy() {
