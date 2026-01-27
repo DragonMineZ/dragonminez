@@ -1,5 +1,6 @@
 package com.dragonminez.client.util;
 
+import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
@@ -26,10 +27,12 @@ public class BoneVisibilityHandler {
 
         ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
         boolean hasChestplate = !chestStack.isEmpty();
+        boolean isCape = hasChestplate && (chestStack.getItem() instanceof DbzArmorCapeItem);
 
         hideBone(model, "right_arm_layer", hasChestplate);
         hideBone(model, "left_arm_layer", hasChestplate);
         hideBone(model, "body_layer", hasChestplate);
+        hideBone(model, "boobas", isCape);
 
         ItemStack legsStack = player.getItemBySlot(EquipmentSlot.LEGS);
         boolean hasLeggings = !legsStack.isEmpty();

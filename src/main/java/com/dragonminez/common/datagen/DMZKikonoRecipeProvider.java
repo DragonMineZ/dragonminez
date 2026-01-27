@@ -23,7 +23,6 @@ public class DMZKikonoRecipeProvider {
 	protected void generate(){
 		buildArmorNoHelmetSet("goku_kid", MainItems.GOKU_KID_ARMOR, MainItems.PATTERN_GOKU_KID.get());
 		buildArmorNoHelmetSet("goku", MainItems.GOKU_ARMOR, MainItems.PATTERN_GOKU1.get());
-		buildArmorNoHelmetSet("goku_kaito", MainItems.GOKU_KAITO_ARMOR, MainItems.PATTERN_GOKU2.get());
 		buildArmorNoHelmetSet("goku_super", MainItems.GOKU_SUPER_ARMOR, MainItems.PATTERN_GOKU_SUPER.get());
 		buildArmorNoHelmetSet("goku_gt", MainItems.GOKU_GT_ARMOR, MainItems.PATTERN_GOKU_GT.get());
 		buildArmorNoHelmetSet("yardrat", MainItems.YARDRAT_ARMOR, MainItems.PATTERN_YARDRAT.get());
