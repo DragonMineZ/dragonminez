@@ -282,6 +282,7 @@ public class StatsCommand {
 			data.getEffects().removeAllEffects();
 			data.getCooldowns().clearCooldowns();
 			data.getBonusStats().clearAllStats();
+			data.getCharacter().clearActiveForm();
 
 			player.setHealth(20.0F);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);

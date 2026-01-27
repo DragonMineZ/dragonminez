@@ -2,6 +2,8 @@ package com.dragonminez.client.render.hair;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairStrand;
@@ -28,6 +30,7 @@ public class HairRenderer {
 
     public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hair, Character character, String defaultColor, int packedLight, int packedOverlay) {
         if (hair == null) return;
+		if (!character.getRace().equals("human") && !character.getRace().equals("saiyan") && !(character.getRace().equals("majin") && character.getGender().equals(Character.GENDER_FEMALE))) return;
 
 		for (HairFace face : HairFace.values()) {
 			HairStrand[] strands = hair.getStrands(face);
@@ -35,14 +38,20 @@ public class HairRenderer {
 			for (int i = 0; i < strands.length; i++) {
 				HairStrand strand = strands[i];
 				if (!strand.isVisible()) continue;
+				boolean hasForm = !character.getActiveForm().isEmpty() || character.getActiveForm() != null;
 
-				String color;
-				if (character != null) {
+				String color = "";
+				if (!hasForm) {
 					color = hair.getEffectiveColor(strand, character);
-				} else {
-					color = hair.getEffectiveColor(strand);
-					if (color == null || color.isEmpty()) color = defaultColor;
-				}
+				} else if (hasForm) {
+					FormConfig.FormData formData = character.getActiveFormData();
+					if (formData != null) {
+						color = formData.getHairColor();
+					} else {
+						color = hair.getEffectiveColor(strand);
+						if (color == null || color.isEmpty()) color = defaultColor;
+					}
+				} 
 
 				Vector3f staticPos = CustomHair.getStrandBasePosition(face, i);
 				renderStrand(poseStack, bufferSource, strand, staticPos, color, packedLight, packedOverlay);

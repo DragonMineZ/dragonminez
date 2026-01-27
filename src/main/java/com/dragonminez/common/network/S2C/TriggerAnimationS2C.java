@@ -2,6 +2,7 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -41,23 +42,18 @@ public class TriggerAnimationS2C {
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			Player targetPlayer;
-			if (entityId == -1 || Minecraft.getInstance().level == null) {
-				targetPlayer = Minecraft.getInstance().player;
-			} else {
-				var entity = Minecraft.getInstance().level.getEntity(entityId);
-				targetPlayer = entity instanceof Player p ? p : Minecraft.getInstance().player;
-			}
-
-			if (targetPlayer instanceof IPlayerAnimatable animatable) {
-				switch (animationType) {
-					case "evasion" -> animatable.dragonminez$triggerEvasion();
-					case "dash" -> animatable.dragonminez$triggerDash(variant);
-					case "ki_blast_shot" -> animatable.dragonminez$setShootingKi(variant == 0);
+		context.enqueueWork(() -> {
+			if (Minecraft.getInstance().level != null) {
+				Player player = Minecraft.getInstance().level.getPlayerByUUID(contextSupplier.get().getSender().getUUID());
+				if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
+					switch (animationType) {
+						case "evasion" -> animatable.dragonminez$triggerEvasion();
+						case "dash" -> animatable.dragonminez$triggerDash(variant);
+						case "ki_blast_shot" -> animatable.dragonminez$setShootingKi(variant == 0);
+					}
 				}
 			}
-		}));
+		});
 		context.setPacketHandled(true);
 	}
 }

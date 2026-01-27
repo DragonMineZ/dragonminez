@@ -88,9 +88,13 @@ public class LockOnEvent {
 				return;
 			}
 
-			double maxRange = 5 + 3.0 * level;
+			double maxRange = 5 + 2.0 * level;
 
 			if (player.distanceTo(lockedTarget) > maxRange) {
+				shouldUnlock.set(true);
+			}
+
+			if (player.hasLineOfSight(lockedTarget)) {
 				shouldUnlock.set(true);
 			}
 		});
@@ -212,6 +216,7 @@ public class LockOnEvent {
 		for (LivingEntity e : list) {
 			AABB axisalignedbb = e.getBoundingBox().inflate(e.getPickRadius());
 			Optional<Vec3> hit = axisalignedbb.clip(eyePos, endPos);
+			if (e.isInvisible() || e.isInvisibleTo(player) || !player.hasLineOfSight(e)) continue;
 
 			if (axisalignedbb.contains(eyePos)) {
 				if (closestDist >= 0.0D) {

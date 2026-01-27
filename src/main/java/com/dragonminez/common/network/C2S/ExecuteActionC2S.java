@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class ExecuteActionC2S {
@@ -41,23 +42,26 @@ public class ExecuteActionC2S {
 					switch (action) {
 						case "descend" -> {
 							if (data.getSkills().isSkillActive("kaioken") && data.getStatus().getActiveKaiokenPhase() != 0) {
-								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) {
-									data.getSkills().setSkillActive("kaioken", false);
-								}
+								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) data.getSkills().setSkillActive("kaioken", false);
 								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
-								needsSync = true;
 							} else if (TransformationsHelper.canDescend(data)) {
 								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-								if (previousForm != null) {
-									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-								} else {
-									data.getCharacter().clearActiveForm();
-								}
-								needsSync = true;
+								if (previousForm != null) data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+								else data.getCharacter().clearActiveForm();
+							} else data.getResources().setPowerRelease(0);
+							needsSync = true;
+						}
+						case "force_descend" -> {
+							if (data.getSkills().isSkillActive("kaioken") && data.getStatus().getActiveKaiokenPhase() != 0) {
+								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) data.getSkills().setSkillActive("kaioken", false);
+								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
 							} else {
-								data.getResources().setPowerRelease(0);
-								needsSync = true;
+								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+								if (previousForm != null) data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+								else data.getCharacter().clearActiveForm();
+								if (data.getCharacter().getActiveForm().isEmpty()) data.getResources().setPowerRelease(0);
 							}
+							needsSync = true;
 						}
 						case "cycle_form_group" -> {
 							data.getStatus().setSelectedAction(ActionMode.FORM);
