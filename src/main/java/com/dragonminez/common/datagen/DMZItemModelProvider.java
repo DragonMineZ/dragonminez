@@ -108,7 +108,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.GOTEN_ARMOR);
 		generateArmorSetModels(MainItems.GOTEN_SUPER_ARMOR);
 		generateArmorSetModels(MainItems.GOHAN_SUPER_ARMOR);
-//		generateArmorSetModels(MainItems.GREAT_SAIYAMAN_ARMOR);
+		generateArmorSetModels(MainItems.GREAT_SAIYAMAN_ARMOR);
 		generateArmorSetModels(MainItems.FUTURE_GOHAN_ARMOR);
 		generateArmorSetModels(MainItems.VEGETA_SAIYAN_ARMOR);
 		generateArmorSetModels(MainItems.VEGETA_NAMEK_ARMOR);
@@ -135,9 +135,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.PRIDE_TROOPS_ARMOR);
 		generateArmorSetModels(MainItems.HIT_ARMOR);
 		generateArmorSetModels(MainItems.GAS_ARMOR);
-//		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
-//		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
-//		generateArmorSetModels(MainItems.GAMMA2_ARMOR);
+		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
+		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
+		generateArmorSetModels(MainItems.GAMMA2_ARMOR);
 		generateArmorSetModels(MainItems.INVENCIBLE_ARMOR);
 
 		//Crafting Armaduras
