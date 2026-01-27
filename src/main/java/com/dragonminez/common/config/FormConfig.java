@@ -55,7 +55,7 @@ public class FormConfig {
         private String bodyColor1 = "";
         private String bodyColor2 = "";
         private String bodyColor3 = "";
-        private int hairType = -1;
+        private String hairCode = "";
         private String hairColor = "";
         private String eye1Color = "";
         private String eye2Color = "";
@@ -88,7 +88,7 @@ public class FormConfig {
         public String getBodyColor1() { return bodyColor1; }
         public String getBodyColor2() { return bodyColor2; }
         public String getBodyColor3() { return bodyColor3; }
-        public int getHairType() { return hairType; }
+        public String getHairCode() { return hairCode; }
         public String getHairColor() { return hairColor; }
         public String getEye1Color() { return eye1Color; }
         public String getEye2Color() { return eye2Color; }
@@ -119,7 +119,7 @@ public class FormConfig {
         public void setBodyColor1(String bodyColor1) { this.bodyColor1 = bodyColor1; }
         public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
         public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
-        public void setHairType(int hairType) { this.hairType = hairType; }
+        public void setHairCode(String hairCode) { this.hairCode = hairCode; }
         public void setHairColor(String hairColor) { this.hairColor = hairColor; }
         public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
         public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
@@ -152,8 +152,8 @@ public class FormConfig {
             return !bodyColor1.isEmpty() || !bodyColor2.isEmpty() || !bodyColor3.isEmpty();
         }
 
-        public boolean hasHairTypeOverride() {
-            return hairType >= 0;
+        public boolean hasHairCodeOverride() {
+            return !hairCode.equals("");
         }
 
         public boolean hasHairColorOverride() {

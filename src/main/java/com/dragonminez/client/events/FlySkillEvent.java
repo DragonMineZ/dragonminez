@@ -49,6 +49,7 @@ public class FlySkillEvent {
                 StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                     if (!data.getStatus().hasCreatedCharacter()) return;
                     if (data.getStatus().isStunned()) return;
+					if (data.getResources().getPowerRelease() < 5) return;
 
                     Skill flySkill = data.getSkills().getSkill("fly");
                     if (flySkill == null || flySkill.getLevel() <= 0) return;

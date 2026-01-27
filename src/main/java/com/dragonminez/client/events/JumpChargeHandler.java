@@ -33,10 +33,11 @@ public class JumpChargeHandler {
         final int[] jumpLevel = {0};
 		final boolean[] isStunned = {false};
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            if (data.getStatus().hasCreatedCharacter()) {
-                jumpLevel[0] = data.getSkills().getSkillLevel("jump");
-				isStunned[0] = data.getStatus().isStunned();
-            }
+            if (!data.getStatus().hasCreatedCharacter()) return;
+			if (data.getResources().getPowerRelease() < 5) return;
+
+            jumpLevel[0] = data.getSkills().getSkillLevel("jump");
+			isStunned[0] = data.getStatus().isStunned();
         });
 
         if (jumpLevel[0] <= 0 || isStunned[0]) {

@@ -435,7 +435,6 @@ public class TickHandler {
 		else saiyanZenkaiSeconds = 0;
 
 		if (saiyanZenkaiSeconds >= 8) {
-			data.getResources().setRacialSkillCount(data.getResources().getRacialSkillCount() + 1);
 			player.heal((float) (maxHealth * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiHealthRegen()));
 			String[] boosts = ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiBoosts();
 			for (String boost : boosts) {
@@ -450,7 +449,8 @@ public class TickHandler {
 					default -> bonusValue = 0;
 				}
 				if (bonusValue >= 1) {
-					data.getBonusStats().addBonus(boost, "Zenkai_" + data.getResources().getRacialSkillCount(), "+", bonusValue);
+					data.getBonusStats().addBonus(boost, "Zenkai_" + data.getResources().getRacialSkillCount() + 1, "+", bonusValue);
+					data.getResources().addRacialSkillCount(1);
 				}
 			}
 

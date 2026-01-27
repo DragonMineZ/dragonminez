@@ -2,96 +2,210 @@ package com.dragonminez.client.render.hair;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairStrand;
+import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.StatsData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 
 public class HairRenderer {
+	public static boolean PHYSICS_ENABLED = true;
     private static final float UNIT_SCALE = 1.0f / 16.0f;
     private static final float SIZE_DECAY = 0.85f;
     private static final ResourceLocation HAIR_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/hair.png");
 
-    public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hair, String defaultColor, int packedLight, int packedOverlay) {
-        render(poseStack, bufferSource, hair, null, defaultColor, packedLight, packedOverlay);
-    }
+	public static void render(PoseStack poseStack, MultiBufferSource bufferSource,
+							  CustomHair hairFrom, CustomHair hairTo, float transitionFactor,
+							  Character character, StatsData stats, AbstractClientPlayer player,
+							  String defaultColor, float partialTick, int packedLight, int packedOverlay) {
 
-    public static void render(PoseStack poseStack, MultiBufferSource bufferSource, CustomHair hair, Character character, String defaultColor, int packedLight, int packedOverlay) {
-        if (hair == null) return;
+		if (hairFrom == null) hairFrom = new CustomHair();
+		if (hairTo == null) hairTo = hairFrom;
+
+		if (character != null && !character.getRace().equals("human") && !character.getRace().equals("saiyan") && !(character.getRace().equals("majin") && character.getGender().equals(Character.GENDER_FEMALE))) return;
+
+		float movementIntensity = 0.0f;
+		boolean isCharging = false;
+		float time = 0;
+
+		if (stats != null && player != null && PHYSICS_ENABLED) {
+			time = player.tickCount + partialTick;
+			double velocity = player.getDeltaMovement().lengthSqr();
+			boolean isMoving = velocity > 0.002 || player.isSprinting() || player.isSwimming();
+			movementIntensity = isMoving ? 1.0f : 0.2f;
+			isCharging = stats.getStatus().isChargingKi() || stats.getStatus().isActionCharging();
+		}
 
 		for (HairFace face : HairFace.values()) {
-			HairStrand[] strands = hair.getStrands(face);
-			if (strands == null) continue;
-			for (int i = 0; i < strands.length; i++) {
-				HairStrand strand = strands[i];
-				if (!strand.isVisible()) continue;
+			HairStrand[] strandsFrom = hairFrom.getStrands(face);
+			HairStrand[] strandsTo = hairTo.getStrands(face);
 
-				String color;
-				if (character != null) {
-					color = hair.getEffectiveColor(strand, character);
-				} else {
-					color = hair.getEffectiveColor(strand);
-					if (color == null || color.isEmpty()) color = defaultColor;
-				}
+			int maxStrands = Math.max(strandsFrom != null ? strandsFrom.length : 0, strandsTo != null ? strandsTo.length : 0);
+
+			for (int i = 0; i < maxStrands; i++) {
+				HairStrand s1 = (strandsFrom != null && i < strandsFrom.length) ? strandsFrom[i] : null;
+				HairStrand s2 = (strandsTo != null && i < strandsTo.length) ? strandsTo[i] : null;
+
+				boolean v1 = s1 != null && s1.isVisible();
+				boolean v2 = s2 != null && s2.isVisible();
+
+				if (!v1 && !v2) continue;
+				if (!v1) s1 = createZeroScaleStrand(s2);
+				if (!v2) s2 = createZeroScaleStrand(s1);
+
+				String color = getColor(character, s1, s2, transitionFactor, defaultColor);
+
+				float lerpRotX = Mth.lerp(transitionFactor, s1.getRotationX(), s2.getRotationX());
+				float lerpRotY = Mth.lerp(transitionFactor, s1.getRotationY(), s2.getRotationY());
+				float lerpRotZ = Mth.lerp(transitionFactor, s1.getRotationZ(), s2.getRotationZ());
+
+				float lerpScaleX = Mth.lerp(transitionFactor, s1.getScaleX(), s2.getScaleX());
+				float lerpScaleY = Mth.lerp(transitionFactor, s1.getScaleY(), s2.getScaleY());
+				float lerpScaleZ = Mth.lerp(transitionFactor, s1.getScaleZ(), s2.getScaleZ());
+
+				float lerpCurveX = Mth.lerp(transitionFactor, s1.getCurveX(), s2.getCurveX());
+				float lerpCurveY = Mth.lerp(transitionFactor, s1.getCurveY(), s2.getCurveY());
+				float lerpCurveZ = Mth.lerp(transitionFactor, s1.getCurveZ(), s2.getCurveZ());
+
+				float lerpW = Mth.lerp(transitionFactor, s1.getCubeWidth(), s2.getCubeWidth());
+				float lerpH = Mth.lerp(transitionFactor, s1.getCubeHeight(), s2.getCubeHeight());
+				float lerpD = Mth.lerp(transitionFactor, s1.getCubeDepth(), s2.getCubeDepth());
+
+				int length = Math.max(s1.getLength(), s2.getLength());
 
 				Vector3f staticPos = CustomHair.getStrandBasePosition(face, i);
-				renderStrand(poseStack, bufferSource, strand, staticPos, color, packedLight, packedOverlay);
+
+				renderStrandInterpolated(poseStack, bufferSource,
+						staticPos, color, packedLight, packedOverlay,
+						time, movementIntensity, isCharging,
+						lerpRotX, lerpRotY, lerpRotZ,
+						lerpScaleX, lerpScaleY, lerpScaleZ,
+						lerpCurveX, lerpCurveY, lerpCurveZ,
+						lerpW, lerpH, lerpD, length, s1.getId(), face);
 			}
 		}
-    }
+	}
 
-	private static void renderStrand(PoseStack poseStack, MultiBufferSource bufferSource, HairStrand strand, Vector3f pos, String colorHex, int packedLight, int packedOverlay) {
-		if (strand.getLength() <= 0) return;
+	private static HairStrand createZeroScaleStrand(HairStrand source) {
+		HairStrand empty = source.copy();
+		empty.setScale(0, 0, 0);
+		return empty;
+	}
 
-        float[] rgb = ColorUtils.hexToRgb(colorHex);
-        poseStack.pushPose();
+	private static String getColor(Character character, HairStrand s1, HairStrand s2, float factor, String defaultColor) {
+		HairStrand targetStrand = (factor > 0.5f) ? s2 : s1;
 
+		if (character != null) {
+			FormConfig.FormData activeForm = character.getActiveFormData();
+			if (activeForm != null && activeForm.hasHairColorOverride()) {
+				return activeForm.getHairColor();
+			}
+		}
+
+		if (targetStrand != null && targetStrand.hasCustomColor()) {
+			return targetStrand.getColor();
+		}
+
+		if (character != null) {
+			String charColor = character.getHairColor();
+			if (charColor != null && !charColor.isEmpty()) {
+				return charColor;
+			}
+		}
+
+		return defaultColor;
+	}
+
+	private static void renderStrandInterpolated(PoseStack poseStack, MultiBufferSource bufferSource, Vector3f pos, String colorHex, int packedLight, int packedOverlay,
+												 float time, float moveIntensity, boolean isCharging,
+												 float rotX, float rotY, float rotZ,
+												 float scaleX, float scaleY, float scaleZ,
+												 float curveX, float curveY, float curveZ,
+												 float width, float height, float depth, int length, int id, HairFace face) {
+
+		float[] rgb = ColorUtils.hexToRgb(colorHex);
+		poseStack.pushPose();
 		poseStack.translate(pos.x * UNIT_SCALE, pos.y * UNIT_SCALE, pos.z * UNIT_SCALE);
-		applyRotation(poseStack, strand.getRotationX(), strand.getRotationY(), strand.getRotationZ());
-        poseStack.scale(strand.getScaleX(), strand.getScaleY(), strand.getScaleZ());
 
-        float baseW = strand.getCubeWidth() * UNIT_SCALE;
-        float baseH = strand.getCubeHeight() * UNIT_SCALE;
-        float baseD = strand.getCubeDepth() * UNIT_SCALE;
+		float offset = (id * 13.0f);
+		float swaySpeed = isCharging ? 0.8f : (moveIntensity > 0.5f ? 0.4f : 0.1f);
+		float swayAmount = isCharging ? 3.0f : (moveIntensity > 0.5f ? 5.0f : 1.5f);
 
-        float stretchFactor = strand.getStretchFactor();
+		float animRotX = (time == 0) ? 0 : Mth.sin((time + offset) * swaySpeed) * swayAmount;
+		float animRotZ = (time == 0) ? 0 : Mth.cos((time + offset) * swaySpeed * 0.7f) * (swayAmount * 0.5f);
 
-        float accumulatedHeight = 0;
-        int cubeCount = strand.getCubeCount();
+		if (isCharging && time != 0) {
+			float chargeLift = Mth.abs(Mth.sin(time * 0.5f)) * 5.0f;
+			curveX -= chargeLift;
+		}
 
-        for (int i = 0; i < cubeCount; i++) {
-            float sizeFactor = (float) Math.pow(SIZE_DECAY, i);
-            float cubeW = baseW * sizeFactor;
-            float cubeH = baseH * sizeFactor * stretchFactor;
-            float cubeD = baseD * sizeFactor;
 
-            if (i > 0) {
-                poseStack.translate(0, accumulatedHeight, 0);
-                applyRotation(poseStack, strand.getCurveX(), strand.getCurveY(), strand.getCurveZ());
-            }
+		float finalRotX = rotX + animRotX;
+		float finalRotZ = rotZ + animRotZ;
 
-            renderCube(poseStack, bufferSource, cubeW, cubeH, cubeD, rgb[0], rgb[1], rgb[2], packedLight, packedOverlay);
-            accumulatedHeight = cubeH;
-        }
+		switch (face) {
+			case FRONT:
+				if (animRotX > 0) finalRotX = Math.min(finalRotX, rotX);
+				break;
+			case BACK:
+				if (animRotX < 0) finalRotX = Math.max(finalRotX, rotX);
+				break;
+			case LEFT:
+				if (animRotZ < 0) finalRotZ = Math.max(finalRotZ, rotZ);
+				break;
+			case RIGHT:
+				if (animRotZ > 0) finalRotZ = Math.min(finalRotZ, rotZ);
+				break;
+			default: break;
+		}
 
-        poseStack.popPose();
-    }
+		applyRotation(poseStack, finalRotX, rotY, finalRotZ);
+		poseStack.scale(scaleX, scaleY, scaleZ);
 
-    private static void applyRotation(PoseStack poseStack, float rotX, float rotY, float rotZ) {
-        if (rotX != 0) poseStack.mulPose(Axis.XP.rotationDegrees(rotX));
-        if (rotY != 0) poseStack.mulPose(Axis.YP.rotationDegrees(rotY));
-        if (rotZ != 0) poseStack.mulPose(Axis.ZP.rotationDegrees(rotZ));
-    }
+		float baseW = width * UNIT_SCALE;
+		float baseH = height * UNIT_SCALE;
+		float baseD = depth * UNIT_SCALE;
+		float stretchFactor = 1.0f + (Math.max(0, length - 4) * 0.25f);
+		float accumulatedHeight = 0;
+
+		for (int i = 0; i < length; i++) {
+			float sizeFactor = (float) Math.pow(SIZE_DECAY, i);
+			float cubeW = baseW * sizeFactor;
+			float cubeH = baseH * sizeFactor * stretchFactor;
+			float cubeD = baseD * sizeFactor;
+
+			if (i > 0) {
+				poseStack.translate(0, accumulatedHeight, 0);
+				applyRotation(poseStack, curveX, curveY, curveZ);
+			}
+
+			renderCube(poseStack, bufferSource, cubeW, cubeH, cubeD, rgb[0], rgb[1], rgb[2], packedLight, packedOverlay);
+			accumulatedHeight = cubeH;
+		}
+
+		poseStack.popPose();
+	}
+
+	private static void applyRotation(PoseStack poseStack, float rotX, float rotY, float rotZ) {
+		if (rotX != 0) poseStack.mulPose(Axis.XP.rotationDegrees(rotX));
+		if (rotY != 0) poseStack.mulPose(Axis.YP.rotationDegrees(rotY));
+		if (rotZ != 0) poseStack.mulPose(Axis.ZP.rotationDegrees(rotZ));
+	}
 
     private static void renderCube(PoseStack poseStack, MultiBufferSource bufferSource, float width, float height, float depth, float r, float g, float b, int packedLight, int packedOverlay) {
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(HAIR_TEXTURE));

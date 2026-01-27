@@ -37,7 +37,7 @@ public class StatsSyncC2S {
 		this.gender = character.getGender();
 		this.characterClass = character.getCharacterClass();
 		this.hairId = character.getHairId();
-		this.customHair = character.getCustomHair();
+		this.customHair = character.getHairBase();
 		this.bodyType = character.getBodyType();
 		this.eyesType = character.getEyesType();
 		this.noseType = character.getNoseType();
@@ -139,7 +139,7 @@ public class StatsSyncC2S {
 				character.setGender(msg.gender);
 				character.setCharacterClass(msg.characterClass);
 				character.setHairId(msg.hairId);
-				character.setCustomHair(msg.customHair);
+				character.setHairBase(msg.customHair);
 				character.setBodyType(msg.bodyType);
 				character.setEyesType(msg.eyesType);
 				character.setNoseType(msg.noseType);

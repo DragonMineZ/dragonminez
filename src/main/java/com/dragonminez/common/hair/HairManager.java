@@ -21,6 +21,7 @@ public class HairManager {
     private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
 	private static final String CODE_PREFIX_V1 = "DMZ_HAIR:";
 	private static final String CODE_PREFIX_V2 = "DMZHair_v2:";
+	private static final String CODE_PREFIX_V3 = "DMZHair_v3:";
 
     static {
         initializeDefaultPresets();
@@ -28,15 +29,17 @@ public class HairManager {
 
     private static void initializeDefaultPresets() {
 		// Goku
-		registerPreset(1, "DMZHair_v2:8gcUTqeXsS0jsuijpI1VGNoUiW2a7QxMTfXLhaG4zE3gVjeV0a69NHwsAm0ueiNtwcBzZ2gB0Q20ZenhGdlEGt7RLVgveZFpZPxHZ0d8Eeakui3bSx62N4G5J4nCeUID9G9eq1QYa9NIYPjRDGkBmdTFIu7quXwoKkd5GOE9mkRBXFetj2bxjMhTqkmUPQPaTW2NprHrkO8mqw5vtBtLJ7nuqVFyPQScsCQw3ar0BXgxxzEEGrLP5VjWkgOK6r1k4AksoTN9RT88ON1fw0kqZgD9XSn1RAjv77MRUBRKoOnZ64R8yKCSoxy9tzR68JNUXSwZXiPCG26CrSgiX0Z1chDIH0u9eANvPZfEDAyC0OBmgVf0EIHCnaqYuWDmpnvDjMqwxW54Mj391iPldSPiJv3797GAE7mTv4mOgvvDybtmaCWlHUDiOW3EiWOgyvSc9UkQ2DaTTjG6Jb9Lxyzo0bVuHAZttyBYTl32xcTf9jpOFDXL7t41WgKGkKM3kMTmWy1kwVabDVjchaLCwhi5AyRRzTZv3iaRmeV4bPwsTGFpYuar4y30Jz9yyn4lfHdRC436XkyKy1iwoefUG4Gz1aMYdGh3dbiiQjt1LcAnoaOW76vOgFyMZt7CvA3UpRLpeSJxT0TNJi1YntuJkxyl79ouA2DgUjsAElmXgxDeC5kqli8BmLCoiMNRXqzGdRKxfClPjOw0de1bYgvEP8btq69DvNCV4UF4hS1PT1mT7xKe1IJoXSMRcSRTdVSWHvWmRj1E1EWGPEymXWAhFqfGbCuJ6pIY39gnL1I5O75UPpata3I5Ulty9YF0spHxskQcdkBfQiMI3bDOGhIucjg7k6uCWwUXsPMDn8r4HTlk5ykJrPgBHt07nlm6RjKevzgCkfrx3kCGIZHGdOd9NfJATIAm1EvdHQlX04jmxym8pZNWZ2idOtFefHtu7i0cGF9wYRZEBFVSR6Dk7l4PCZJmxt1JLiyqibyWNznmdo3560TNASqqG80eLuoWcycC0lP9rkTCbph3W51M9LrZsCL2NuDwjjPc");
+		registerPreset(1, "DMZHair_v3:63yOwN8GQ5KHD1VZGNkDq8oPFrEsqxbtABZNaFFZwkIyd0ttKDcabgjSupBCTQndQZXcYPDDNtfuHwy0K42l1hJIznl8ZXTu4gLwL4t1mwGTyvJkQbNoHywi36KaGGOOiT0IdflK7CfCjRd2uj4F8k0xwzJGUkTvwFmBS4k64T981kyNdtfQFxRsNrRsfMz5zYizZuiuIoQdCANGFV0TM9kE8tylpjUZnrftedeADwf9Vkd3nOzHDL0KVZR9ZD93CLweqFyrttMmTGeFV7HTUOM6OWX2Ohr5izD7RVudKOHq67Yfr7bUXD5ilJv9plKEq1zDQaryNr18zLoyRjUKmTX3Bj31UCbOnvZxYtEgDeCHwoGdNUaS9tEkWD5jk5ftXbitXx3QGbFHPbuT1tklVv3ZiMz2DFpc0zPS3utawvqV0aKdpnwDE0OZvGRzGyyafFdSrffPXOacUxFfeF2Z7unTOKc3orpJ73cYuvEiEQaw14YznhemcA19XJSWInuYSvFY9wm5npRl2M6W7XhTLC4Xjwiv1udvRmN7C6OPCPzQcbeZPPIlSL3zHKOGc3XjlEECpKGroYHDCOpsOF8cqYupLOyiDB7o0Yn8Uxm7wDPg6vnMDpHr13FCCdGuI6du3nIwAQHMVa2ItRyoqALTun5d7BVPcEzHswTPaGbInJyxuB661YpevcmcnNaSxvAlPUBf2wuTOmtR32jPQ2lAwDxqS7LHwwpIwKPda4JzmbKPzixTBYnnl0D1z2c0sK0hOW1NJfTXD1VkuP8p4MuASeb4t8dZACeLjstRMTzewtJL7cYH3GuJBEC6zJyoxTunRcSFLuoQniJ6XbSlOHjKaHX2vgecrb0n6MqGZXFpZ9zZNTD1GC8WNgRvtibAdeJDlat0Wu67AJhOQwr0nFEyEHCpSsH2EwqLY86MPgRgA8A8zjSILHF0VY46DvZuvzrcV9PrRkLy65KJdS1XyL09nkPAaZssviE3GzcLR4J0WYdZlgzEWOTkz58Y76obR4TyQDI07TEnqk0MgpnVzv7zXCBz5owXEtA1y3iCfPrIYyJyV9PsKs08gBTh66n6Tct9UUUiK5CqKSTawargy3cBdj24aI5plIqrzQD7Cc5WTQeBqH6PUcDktjkucgtz59nzQ4cNQ9iZ1WGO27jwp7zbb2Tr57KblprzW5K0IZ627q6kFUEKPzaEY8KD1uYINPROuJ0jFUxC09owNO4bMinu6KcqMm5xsv2QSnJh53yhWFM");
     	// Vegeta
-		//registerPreset(2, "DMZ_HAIR:...");
+		registerPreset(2, "DMZHair_v3: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");
 		// Trunks
-		registerPreset(3, "DMZHair_v2:109u3NyEBqNT1hlTR4XJ1Tyk4bG7d5naHigcDM6fNgwOLp8Vu1yFt7qrMLRkEpAsCSZ6WPbxoeLbLdF4VMbTTcjF8Muq6BDvdx9mjcHkIdQW3vrcedSao01KfxVfSyw9ARFke5DbijCG7hmPZ0KfHw5CX5kyruspUjLbov2tNPtkrso5mNqA98g5DmqFAaA5Ovz0qeh1jm6FgkrWK1SwOfDQ8gzEcLUX8m3Cma8quXWAnPAWbMxUDkpzdyxdE53JMsrEN8Pfvnp0BvLDB0Ud0Fql5iyiMxQU7PRYA4RfL8ExamfHX2ljXDWxl9C9DoemUZ4MRdE8wshyFhyt3ZYb2Ud46aO9cFd4zDPtS8vrDhxf4o5w81rP5r5rut7fwI68luYLJpRkiWhYE1MhrDcwI8MxEAcYmq2DQxIVnqARinUHYG2KMOTwEQfvUCeKCMc8rQENnoizYncBMY5jfRmi7e6wpmJhPzm69MdYEYb9u8YAWzcZvRFn8KC1mD37LCEcis2FhqKIw2OEdjIxkIRkPycAlTKQ26syx6JSM3rMQHPWLnTGeVl0XPKJJyzM34c3b0VGSQOQmyWgBpv8QxETafedUY8DpCnY2eDuNE3tAauTZxxtgUkM4mVRthM0IQQ01s4lgaQks7DftbDlNQG3rlvSIYjUA7NMr6gdEqpk1Z7m7NabVeaLcUSTl0g7TG7HJn41tWtw5EiXw2qieW");
+		registerPreset(3, "DMZHair_v3:Fj83WA31xa0nLyisZeefvAMIrXOtHHl7FdawUgwyaWljK9HMyHQl7YmZ7zugjFDl6gLAXMv93UyVZ7JB8XkSjv7C4OjLNdEQ80YmHOfeah4z26hongLJKxe9I26YqFUUbV5TvCcm8ArPvlb3kN6Eh9f08e5Wuj90lpKmcNV5FrX2abj5mkHIr7dS9BbnUWU1KAl5bnDbAFnyILtqkoFx1sqgS4PGnjFJKqOTEUXFijCyWPBE0fNJgN0fXwWMsSaM3NWHxSoHnbQeHKjekjhxMEFoRBGc1Q3WBJQLDs4rsfAoZK4hk92jUVA83MM19t1HIOOX4ggOYdnRg5fsYnCbmnSk7EE1GAU5uGdZOoszlDQPpTm2moHo64OdvpIckOlHZ1YoKC1otxXpQHEKMQ190GrWlaS2I9aRpIfOwptZy2M4QpFuV8DDJ3kP0lRaqz6SXyKI3m5YKNjk3fGSQjOjWcEvaoMc0ESM3VrArvGTZcvs1ZFYZTqkMemZrA9zc9pclPRzXeCsMA9lMg04QakEqY4a3afGan5lacO04FdSbCIekmOxpSnROEEW2nwo0vRg0ygODFIZ2iPvxHeaqdjbPqXtfJap1kMegJEJBKTzGZxAFvP7PSObCflyx1SyckxdBJOGkqZQW1di2FgrTEW6zlhplYXPakUHyYMdMhT8jZwN9Q4qzqon7lYV88D1soetuyzyon1c2wG5tQcn0YdSW5HGjcG3MRNiK6I3xvSzu7mvDSBap1VSUcPpaFnj3blTJxPCx7ErDuBQDxDXkRFsJxR3h9hDQQpmHtNtE73V9PTvrEIUO4idob6O7abkMYVhkXfDmUzKxgctKIVLeK4XYemrjJ1Fgkvc9xoPGZFUSBGfoqfaoQJN2qIBeSaIIzXqGSkKrLCclVm9Jd7VhudI12CC9YQUwv9d82TJaBTeTAeYanw19OTGtAy9Ep24Opbj7hiAsadJk8WgiAtaD2QfHraLOG6a8J4QYUNph4fPHzu2BAo2IbGSEXY9JVxI5qPn9lO0AlWaABSKhHXQ6QIxpyhp0tFMP80bjwRT6fJBMRiInOHUDtInmjycE9AFNbRtaJp6KofmAqUu95AeMuqGrcQW6jrWuB01tnxFhXhWXTBUKZkea5evCUyGHazjxm2bmNR3RWq5zk3UO0NYFJbRSs4KCL50nENz4WcgxcfbM6ITc9yKoNanL6dJBifPNupexpDee7w9F4HCNbtFBqCVkmpwiJwlQYUD7k9WgkxDvJKdEZZC0WZWli6Mke7lV4RxNPm851rd78cb7k1iBc9X3w0zpVAuZjguqWJxNU7tuC1TK07lPwZi6Bww6gdjKEOFZyHiSZlKOsgp3j2AScKCDUkzsufoNUzPK4ZPU6Arv6M4STOtWoHQwsm8daQy5ZYQM5WQzSQCmBabMKWRwphAU1is94iIgZK7JPG9ZxBM1anjPwmGLpFEVRvv916QvzZ60kBdSOJEMvK2iwoVjO8y0hbUAy8Jry4mgtltzGY2ChXxk7QcS0jazjol0OZf72Oyzm3IF66GkTNDBG0fXLMDiuSEi7GRFmxtZlHtmU7IvJcs4YOQfjwX2Vo3k8PRerwQyvMEYnGmVWXRGOIqrrhITVJlilXgEdP5z7hQz3prYyqz12EvnupAemmIYNCQovFKYAoNk3Wxpyn7i2gK4e");
 		// Gohan
 		//registerPreset(4, "DMZ_HAIR:...");
 		// Krillin
-		//registerPreset(5, "DMZ_HAIR:...");
+		registerPreset(5, "DMZHair_v3:7z1cOemO44pBikeI5FSI0DrDGspiel2bhjue82OvVpztIB5YAfJW7zaPvS8cX1waoOVBoNy3SqRTPVqrBGufxb1YHGbVTyPsAX806mL8PAy3ZuDg2lzZ1XVGTIWeujMCCeYRQFl1PWhs9l9KHj66nvVzLswY8w1JlD1EZC9vdx6bqVGh4R9IWMOBm7JRXoSPiGTx0JgWMiiAQEjN9yvNvbHGr4NijAcIB2lUdA13fpdQcpzYy7KzN3SQXG2aFdp7K6YpIJ6dlHrhDW0jJ9GoIlwL6bNww417eWkfA2pptqiYLUDv5BaxjuFgEk27nwOGHxWOlbgNh2oXxz4p7Esh4rckvyxyEBzrU0fVKimRr5lD7yDzKtNuPnqykI7ydWE8nZ2E9X30J4Y991VUnznY7RPaxTS5Q0yW38I0W25OrMlrtbiQHR5Rsyy6qdgM002g7Ep7ulA5JkYARA9X2AJ56Q6rWXWcb6VLYpvEmjrMSgf3vrRhV20AIpLiqmrbpfrwbWdtTBSEhNnKBlCwwm5EEROfRDJgIFNfNB65uQZcuxy5UeTJxIotfOU2cfyzPX1E3MwLVRnBmU56rnfHOkmEbf756nesSq34VXQtlojCpnlYe2TQAoiMHiShDpW4raA01gqq9PsUZ2tecTDXO0jqX7r0Wiyr0hMHbE9uS6TvBFcYcqfnVTxlpkCgu0RXut061gDs1CPUzK77Yu9kjyM9yAVoU7UWUU3ikfHbjRCwBr6Se7iioMPnrEamB9xQygpAZkavEv5S1juBgIVTQeJ6V4eSd68X59UqvnlDgU6p6ZuXusGeKtD8F1bndPWmInUbZ751LGCsVHtdyyrCkfdCqTdeLyv7fnoJRbDn4bej0I3tcgVzZfVvhTzscEPDPGAGSmeEiCpKwuSVabf6eESNqNkL2fq2Be5vfJhzm5RCPcJtH3sDxnYfFWXNwbHcoexJN4rQbmA0e7GnNnvVCtnOXH9KcZnuD508xAVTqbx1x3q7l6Q4mz93LbGgfijUlXHHZJqqagN7j5tOBxEAxqKzLHaX0uQOI8gGD97sCujLrVV5KbmzjDQCq92NskFuTFbEmfiScSYUkQzVYgW7mxzbevtFl6Bg4JbPApp87p3EdFynQwuWF092iVhRKCRIL2seH3V1yKk1YOcKoQ3XnqXQk6Cb83EPbE0wgSteeHR9NBPrWzma0SeyQAahHV3iwiKnMPkh7e5o");
+		// Trunks (Large)
+		registerPreset(6, "DMZHair_v3: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");
 	}
 
     private static final String BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -91,20 +94,106 @@ public class HairManager {
         return bytes;
     }
 
+	public static String saveFullSet(Character character) {
+		if (character == null) return null;
+
+		try {
+			CompoundTag fullTag = new CompoundTag();
+			fullTag.putInt("Version", 3);
+
+			CustomHair base = character.getHairBase();
+			if (base != null) fullTag.put("Base", base.save());
+
+			CustomHair ssj = character.getHairSSJ();
+			if (ssj != null && !ssj.isEmpty()) fullTag.put("SSJ", ssj.save());
+
+			CustomHair ssj3 = character.getHairSSJ3();
+			if (ssj3 != null && !ssj3.isEmpty()) fullTag.put("SSJ3", ssj3.save());
+
+			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+			DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
+			NbtIo.write(fullTag, dataOutput);
+			dataOutput.close();
+
+			return CODE_PREFIX_V3 + encodeToNumbers(byteStream.toByteArray());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	public static void loadFullSet(String code, Character character) {
+		if (code == null || code.isEmpty() || character == null) return;
+
+		String rawContent;
+		int version = 0;
+
+		if (code.startsWith(CODE_PREFIX_V3)) {
+			rawContent = code.substring(CODE_PREFIX_V3.length());
+			version = 3;
+		} else if (code.startsWith(CODE_PREFIX_V2)) {
+			rawContent = code.substring(CODE_PREFIX_V2.length());
+			version = 2;
+		} else if (code.startsWith(CODE_PREFIX_V1)) {
+			rawContent = code.substring(CODE_PREFIX_V1.length());
+			version = 1;
+		} else {
+			rawContent = code;
+		}
+
+		try {
+			byte[] compressed = decodeFromNumbers(rawContent);
+			ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
+			DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
+			CompoundTag tag = NbtIo.read(dataInput);
+			dataInput.close();
+
+			if (version == 3) {
+				if (tag.contains("Base")) {
+					CustomHair h = new CustomHair();
+					h.load(tag.getCompound("Base"));
+					character.setHairBase(h);
+				}
+				if (tag.contains("SSJ")) {
+					CustomHair h = new CustomHair();
+					h.load(tag.getCompound("SSJ"));
+					character.setHairSSJ(h);
+				} else {
+					character.setHairSSJ(new CustomHair());
+				}
+				if (tag.contains("SSJ3")) {
+					CustomHair h = new CustomHair();
+					h.load(tag.getCompound("SSJ3"));
+					character.setHairSSJ3(h);
+				} else {
+					character.setHairSSJ3(new CustomHair());
+				}
+			} else {
+				CustomHair hair = new CustomHair();
+				if (version == 1 && !tag.contains("Version")) {
+					tag.putInt("Version", 1);
+				}
+				hair.load(tag);
+
+				character.setHairBase(hair);
+				character.setHairSSJ(new CustomHair());
+				character.setHairSSJ3(new CustomHair());
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
     public static String toCode(CustomHair hair) {
         if (hair == null) return null;
-
 		try {
 			CompoundTag tag = hair.save();
 			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 			DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
 			NbtIo.write(tag, dataOutput);
 			dataOutput.close();
-
 			return CODE_PREFIX_V2 + encodeToNumbers(byteStream.toByteArray());
-		} catch (Exception e) {
-			return null;
-		}
+		} catch (Exception e) { return null; }
 	}
 
     public static CustomHair fromCode(String code) {
@@ -113,7 +202,11 @@ public class HairManager {
 		String rawContent;
 		boolean isV1 = false;
 
-		if (code.startsWith(CODE_PREFIX_V2)) {
+		if (code.startsWith(CODE_PREFIX_V3)) {
+			Character tempChar = new Character();
+			loadFullSet(code, tempChar);
+			return tempChar.getHairBase();
+		} else if (code.startsWith(CODE_PREFIX_V2)) {
 			rawContent = code.substring(CODE_PREFIX_V2.length());
 		} else if (code.startsWith(CODE_PREFIX_V1)) {
 			rawContent = code.substring(CODE_PREFIX_V1.length());
@@ -165,10 +258,10 @@ public class HairManager {
         int hairId = character.getHairId();
 
         if (hairId == 0) {
-            CustomHair custom = character.getCustomHair();
+            CustomHair custom = character.getHairBase();
             if (custom == null) {
                 custom = new CustomHair();
-                character.setCustomHair(custom);
+                character.setHairBase(custom);
             }
             return custom;
         }
@@ -207,6 +300,6 @@ public class HairManager {
     }
 
     public static boolean isValidCode(String code) {
-        return fromCode(code) != null;
-    }
+		return code != null && (code.startsWith(CODE_PREFIX_V3) || fromCode(code) != null);
+	}
 }

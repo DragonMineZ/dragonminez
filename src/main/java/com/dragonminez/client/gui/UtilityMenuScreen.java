@@ -232,7 +232,7 @@ public class UtilityMenuScreen extends Screen {
 			}
 			case 7 -> {
 				if ("frostdemon".equals(race) || "majin".equals(race) || "bioandroid".equals(race)) {
-					NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
+					NetworkHandler.sendToServer(new ExecuteActionC2S("force_descend"));
 					// Descender siempre es desactivar, entonces suena OFF
 					playToggleSound(mc, false);
 				}
