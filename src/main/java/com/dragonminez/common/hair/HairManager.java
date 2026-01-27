@@ -19,6 +19,8 @@ import java.util.zip.GZIPOutputStream;
 public class HairManager {
     private static final String[] DEFAULT_HAIR_RACES = {"human", "saiyan"};
     private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
+	private static final Map<Integer, CustomHair> PRESET_CACHE = new HashMap<>();
+
 	private static final String CODE_PREFIX_V1 = "DMZ_HAIR:";
 	private static final String CODE_PREFIX_V2 = "DMZHair_v2:";
 	private static final String CODE_PREFIX_V3 = "DMZHair_v3:";
@@ -94,96 +96,6 @@ public class HairManager {
         return bytes;
     }
 
-	public static String saveFullSet(Character character) {
-		if (character == null) return null;
-
-		try {
-			CompoundTag fullTag = new CompoundTag();
-			fullTag.putInt("Version", 3);
-
-			CustomHair base = character.getHairBase();
-			if (base != null) fullTag.put("Base", base.save());
-
-			CustomHair ssj = character.getHairSSJ();
-			if (ssj != null && !ssj.isEmpty()) fullTag.put("SSJ", ssj.save());
-
-			CustomHair ssj3 = character.getHairSSJ3();
-			if (ssj3 != null && !ssj3.isEmpty()) fullTag.put("SSJ3", ssj3.save());
-
-			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-			DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
-			NbtIo.write(fullTag, dataOutput);
-			dataOutput.close();
-
-			return CODE_PREFIX_V3 + encodeToNumbers(byteStream.toByteArray());
-		} catch (Exception e) {
-			return null;
-		}
-	}
-
-	public static void loadFullSet(String code, Character character) {
-		if (code == null || code.isEmpty() || character == null) return;
-
-		String rawContent;
-		int version = 0;
-
-		if (code.startsWith(CODE_PREFIX_V3)) {
-			rawContent = code.substring(CODE_PREFIX_V3.length());
-			version = 3;
-		} else if (code.startsWith(CODE_PREFIX_V2)) {
-			rawContent = code.substring(CODE_PREFIX_V2.length());
-			version = 2;
-		} else if (code.startsWith(CODE_PREFIX_V1)) {
-			rawContent = code.substring(CODE_PREFIX_V1.length());
-			version = 1;
-		} else {
-			rawContent = code;
-		}
-
-		try {
-			byte[] compressed = decodeFromNumbers(rawContent);
-			ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
-			DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
-			CompoundTag tag = NbtIo.read(dataInput);
-			dataInput.close();
-
-			if (version == 3) {
-				if (tag.contains("Base")) {
-					CustomHair h = new CustomHair();
-					h.load(tag.getCompound("Base"));
-					character.setHairBase(h);
-				}
-				if (tag.contains("SSJ")) {
-					CustomHair h = new CustomHair();
-					h.load(tag.getCompound("SSJ"));
-					character.setHairSSJ(h);
-				} else {
-					character.setHairSSJ(new CustomHair());
-				}
-				if (tag.contains("SSJ3")) {
-					CustomHair h = new CustomHair();
-					h.load(tag.getCompound("SSJ3"));
-					character.setHairSSJ3(h);
-				} else {
-					character.setHairSSJ3(new CustomHair());
-				}
-			} else {
-				CustomHair hair = new CustomHair();
-				if (version == 1 && !tag.contains("Version")) {
-					tag.putInt("Version", 1);
-				}
-				hair.load(tag);
-
-				character.setHairBase(hair);
-				character.setHairSSJ(new CustomHair());
-				character.setHairSSJ3(new CustomHair());
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
     public static String toCode(CustomHair hair) {
         if (hair == null) return null;
 		try {
@@ -192,20 +104,18 @@ public class HairManager {
 			DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
 			NbtIo.write(tag, dataOutput);
 			dataOutput.close();
-			return CODE_PREFIX_V2 + encodeToNumbers(byteStream.toByteArray());
+			return CODE_PREFIX_V3 + encodeToNumbers(byteStream.toByteArray());
 		} catch (Exception e) { return null; }
 	}
 
-    public static CustomHair fromCode(String code) {
-        if (code == null || code.isEmpty()) return null;
+	public static CustomHair fromCode(String code) {
+		if (code == null || code.isEmpty()) return null;
 
 		String rawContent;
 		boolean isV1 = false;
 
 		if (code.startsWith(CODE_PREFIX_V3)) {
-			Character tempChar = new Character();
-			loadFullSet(code, tempChar);
-			return tempChar.getHairBase();
+			rawContent = code.substring(CODE_PREFIX_V3.length());
 		} else if (code.startsWith(CODE_PREFIX_V2)) {
 			rawContent = code.substring(CODE_PREFIX_V2.length());
 		} else if (code.startsWith(CODE_PREFIX_V1)) {
@@ -222,12 +132,18 @@ public class HairManager {
 			CompoundTag tag = NbtIo.read(dataInput);
 			dataInput.close();
 
-			CustomHair hair = new CustomHair();
+			if (code.startsWith(CODE_PREFIX_V3) && tag.contains("Base") && tag.contains("SSJ")) {
+				CustomHair base = new CustomHair();
+				if (tag.contains("Base")) {
+					base.load(tag.getCompound("Base"));
+				}
+				return base;
+			}
 
+			CustomHair hair = new CustomHair();
 			if (isV1 && !tag.contains("Version")) {
 				tag.putInt("Version", 1);
 			}
-
 			hair.load(tag);
 			return hair;
 		} catch (Exception e) {
@@ -254,9 +170,7 @@ public class HairManager {
 
     public static CustomHair getEffectiveHair(Character character) {
         if (character == null || !canUseHair(character)) return null;
-
         int hairId = character.getHairId();
-
         if (hairId == 0) {
             CustomHair custom = character.getHairBase();
             if (custom == null) {
@@ -271,23 +185,31 @@ public class HairManager {
 
     public static CustomHair getPresetHair(int presetId, String hairColor) {
         String code = PRESET_CODES.get(presetId);
+		if (code == null) return new CustomHair();
 
-        if (code != null) {
-            CustomHair hair = fromCode(code);
-            if (hair != null) {
-                if (hairColor != null && !hairColor.isEmpty()) {
-                    hair.setGlobalColor(hairColor);
-                }
-                return hair;
-            }
-        }
+		if (!PRESET_CACHE.containsKey(presetId)) {
+			CustomHair baseHair = fromCode(code);
+			if (baseHair != null) {
+				PRESET_CACHE.put(presetId, baseHair);
+			} else {
+				return new CustomHair();
+			}
+		}
 
-        CustomHair basic = new CustomHair();
-        if (hairColor != null && !hairColor.isEmpty()) {
-            basic.setGlobalColor(hairColor);
-        }
-        return basic;
-    }
+		CustomHair hair = PRESET_CACHE.get(presetId).copy();
+		if (hair != null) {
+			if (hairColor != null && !hairColor.isEmpty()) {
+				hair.setGlobalColor(hairColor);
+			}
+			return hair;
+		}
+
+		CustomHair basic = new CustomHair();
+		if (hairColor != null && !hairColor.isEmpty()) {
+			basic.setGlobalColor(hairColor);
+		}
+		return basic;
+	}
 
     public static void registerPreset(int presetId, String code) {
         if (presetId > 0 && code != null && !code.isEmpty()) {

@@ -1021,7 +1021,7 @@ public class HairEditorScreen extends Screen {
 
 
 	private void exportCode() {
-		String code = HairManager.saveFullSet(character);
+		String code = HairManager.toCode(editingHair);
 		if (code != null) {
 			codeField.setValue(code);
 			Minecraft.getInstance().keyboardHandler.setClipboard(code);
@@ -1030,16 +1030,13 @@ public class HairEditorScreen extends Screen {
 
 	private void importCode() {
 		String code = codeField.getValue();
-		if (code.isEmpty()) {
-			code = Minecraft.getInstance().keyboardHandler.getClipboard();
-		}
+		if (code.isEmpty()) code = Minecraft.getInstance().keyboardHandler.getClipboard();
 
 		if (HairManager.isValidCode(code)) {
 			character.setHairId(0);
 
-			HairManager.loadFullSet(code, character);
-
-			updateEditingHairReference();
+			CustomHair imported = HairManager.fromCode(code);
+			if (imported != null) copyHairData(imported, editingHair);
 
 			selectedStrandIndex = 0;
 			colorPickerVisible = false;
