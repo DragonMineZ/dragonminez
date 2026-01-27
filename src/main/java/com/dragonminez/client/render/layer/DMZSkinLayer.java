@@ -214,8 +214,21 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             renderFrostDemonFinalForm(model, poseStack, animatable, bufferSource, filePrefix, bodyType, b1, b2, b3, h, pt, pl, po);
         } else {
             if (isBio) {
-                String formName = (form == null || form.isEmpty()) ? "base" : form.toLowerCase();
-                filePrefix = "textures/entity/races/bioandroid/" + formName + "_" + bodyType + "_";
+                String textureFormName = "base";
+                if (form != null && !form.isEmpty()) {
+                    String f = form.toLowerCase();
+
+                    if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
+                        textureFormName = "semi_perfect";
+                    }
+                    else if (f.equals(BioAndroidForms.BASE)) {
+                        textureFormName = "base";
+                    }
+                    else {
+                        textureFormName = "perfect";
+                    }
+                }
+                filePrefix = "textures/entity/races/bioandroid/" + textureFormName + "_" + bodyType + "_";
             }
             else if (isMajin) {
                 String formName = (form == null || form.isEmpty()) ? "base" : form.toLowerCase();
@@ -321,7 +334,22 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         float[] white = {1.0f, 1.0f, 1.0f}, black = {0.0f, 0.0f, 0.0f};
 
         if (raceName.equals("bioandroid")) {
-            String fP = (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) ? "base" : currentForm.toLowerCase();
+            String fP = "base";
+
+            if (currentForm != null && !currentForm.isEmpty()) {
+                String f = currentForm.toLowerCase();
+
+                if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
+                    fP = "semi_perfect";
+                }
+                else if (f.equals(BioAndroidForms.BASE) || f.equals("imperfect")) {
+                    fP = "base";
+                }
+                else {
+                    fP = "perfect";
+                }
+            }
+
             float[] colorLayer0 = fP.equals("base") ? eye1 : white;
 
             float[] colorLayer1 = eye2;
@@ -379,7 +407,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     }
 
     private void renderStandardLayers(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String prefix, boolean isFrost, boolean isBio, int bodyType, float[] b1, float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
-        // Capas 1, 2 y 3 (Cuerpo y detalles)
         renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer1.png", b1, pt, pl, po);
         renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer2.png", b2, pt, pl, po);
         renderColoredLayer(model, poseStack, animatable, bufferSource, prefix + "layer3.png", b3, pt, pl, po);

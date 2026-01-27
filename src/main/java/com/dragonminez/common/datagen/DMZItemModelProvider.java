@@ -102,14 +102,13 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		//Armaduras
 		generateArmorSetModels(MainItems.GOKU_KID_ARMOR);
 		generateArmorSetModels(MainItems.GOKU_ARMOR);
-		generateArmorSetModels(MainItems.GOKU_KAITO_ARMOR);
 		generateArmorSetModels(MainItems.GOKU_SUPER_ARMOR);
 		generateArmorSetModels(MainItems.GOKU_GT_ARMOR);
 		generateArmorSetModels(MainItems.YARDRAT_ARMOR);
 		generateArmorSetModels(MainItems.GOTEN_ARMOR);
 		generateArmorSetModels(MainItems.GOTEN_SUPER_ARMOR);
 		generateArmorSetModels(MainItems.GOHAN_SUPER_ARMOR);
-//		generateArmorSetModels(MainItems.GREAT_SAIYAMAN_ARMOR);
+		generateArmorSetModels(MainItems.GREAT_SAIYAMAN_ARMOR);
 		generateArmorSetModels(MainItems.FUTURE_GOHAN_ARMOR);
 		generateArmorSetModels(MainItems.VEGETA_SAIYAN_ARMOR);
 		generateArmorSetModels(MainItems.VEGETA_NAMEK_ARMOR);
@@ -136,9 +135,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.PRIDE_TROOPS_ARMOR);
 		generateArmorSetModels(MainItems.HIT_ARMOR);
 		generateArmorSetModels(MainItems.GAS_ARMOR);
-//		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
-//		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
-//		generateArmorSetModels(MainItems.GAMMA2_ARMOR);
+		generateArmorSetModels(MainItems.MAJIN_BUU_ARMOR);
+		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
+		generateArmorSetModels(MainItems.GAMMA2_ARMOR);
 		generateArmorSetModels(MainItems.INVENCIBLE_ARMOR);
 
 		//Crafting Armaduras
@@ -149,7 +148,6 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.BLANK_PATTERN_SUPER);
 		patternItem(MainItems.PATTERN_GOKU_KID);
 		patternItem(MainItems.PATTERN_GOKU1);
-		patternItem(MainItems.PATTERN_GOKU2);
 		patternItem(MainItems.PATTERN_GOKU_SUPER);
 		patternItem(MainItems.PATTERN_GOKU_GT);
 		patternItem(MainItems.PATTERN_YARDRAT);

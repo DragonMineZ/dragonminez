@@ -19,13 +19,12 @@ import java.util.function.Consumer;
 public class DbzArmorItem extends ArmorItem {
 
     private final String itemId;
-    private final boolean isDamageOn; private final boolean hasCape;
+    private final boolean isDamageOn;
 
-    public DbzArmorItem(ArmorMaterial pMaterial, Type pType, Properties pProperties, String itemId, boolean isDamageOn, boolean hasCape) {
+    public DbzArmorItem(ArmorMaterial pMaterial, Type pType, Properties pProperties, String itemId, boolean isDamageOn) {
         super(pMaterial, pType, pProperties);
         this.itemId = itemId; // ID del item
         this.isDamageOn = isDamageOn;
-        this.hasCape = hasCape;
     }
 
     @Override
@@ -41,7 +40,6 @@ public class DbzArmorItem extends ArmorItem {
             // Determinamos si la armadura está dañada (menos de la mitad de durabilidad)
             boolean isDamaged = currentDamage > maxDamage / 2;
 
-            // Retornamos las texturas dependiendo del daño
             switch (slot) {
                 case HEAD:
                     return texturePath + (isDamaged ? "_damaged_layer1.png" : "_layer1.png");
@@ -92,9 +90,5 @@ public class DbzArmorItem extends ArmorItem {
 
     public boolean isDamageOn() {
         return isDamageOn;
-    }
-
-    public boolean hasCape() {
-        return hasCape;
     }
 }

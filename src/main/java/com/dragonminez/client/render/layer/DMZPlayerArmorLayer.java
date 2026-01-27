@@ -38,7 +38,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         var character = stats.getCharacter();
         String race = character.getRace().toLowerCase();
         String gender = character.getGender().toLowerCase();
-        String currentForm = character.getActiveForm(); // Obtenemos la forma actual
+        String currentForm = character.getActiveForm();
 
         boolean isArmored = character.getArmored();
 

@@ -8,10 +8,12 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.BioAndroidForms;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -208,32 +210,37 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean isFrost = race.equals("frostdemon");
         boolean isNamek = race.equals("namekian");
 
-        // 1. CASO ESPECIAL: Frost Demon en Forma Final (No depende de género)
         if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER))) {
             pathPrefix = "textures/entity/races/frostdemon/finalform_bodytype_" + bodyType + "_";
             renderFrostFinalLayers(stack, buffer, light, arm, pathPrefix, bodyType, b1, b2, b3, h);
         } else {
-            // 2. CONSTRUCCIÓN DEL PATH SEGÚN LA RAZA
             if (isBio) {
-                pathPrefix = "textures/entity/races/bioandroid/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_";
+                String textureFormName = "base";
+                if (form != null && !form.isEmpty()) {
+                    String f = form.toLowerCase();
+
+                    if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
+                        textureFormName = "semi_perfect";
+                    }
+                    else if (f.equals(BioAndroidForms.BASE)) {
+                        textureFormName = "base";
+                    }
+                    else {
+                        textureFormName = "perfect";
+                    }
+                }
+                pathPrefix = "textures/entity/races/bioandroid/" + textureFormName + "_" + bodyType + "_";
             }
             else if (race.equals("majin")) {
-                // Los Majin suelen tener dimorfismo, lo dejamos con género o un default
                 pathPrefix = "textures/entity/races/majin/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_" + gender + "_";
             }
             else if (isFrost || isNamek) {
-                // --- RAZAS SIN GÉNERO ---
-                // Usamos bodytype_X_ donde X es el ID del cuerpo (0, 1, 2...)
                 pathPrefix = "textures/entity/races/" + race + "/bodytype_" + bodyType + "_";
             }
             else {
-                // --- HUMANOS Y SAIYANS ---
-                // Ellos sí usan la carpeta por género (male/female)
                 pathPrefix = "textures/entity/races/humansaiyan/bodytype_" + gender + "_";
             }
 
-            // 3. RENDERIZADO DE CAPAS ESTÁNDAR
-            // Chequeo especial para el sistema de 2 capas de humanos/saiyans base
             if (pathPrefix.contains("humansaiyan") && (form == null || !form.contains("oozaru"))) {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "1.png"), b1);
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "2.png"), b2);
@@ -246,18 +253,28 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             // Capas extra de Bio y Frost
             if (isFrost || isBio) {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer4.png"), h);
-                if (bodyType == 0) { // El detalle naranja solo en el modelo base
+                if (bodyType == 0) {
                     renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer5.png"), ColorUtils.hexToRgb("#e67d40"));
                 }
             }
         }
     }
 
-    private void renderDbzArmor(PoseStack ps, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer player,ModelPart pRendererArm) {
+    private void renderDbzArmor(PoseStack ps, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer player, ModelPart pRendererArm) {
         ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (chestStack.isEmpty()) return;
 
-        if (!chestStack.isEmpty() && chestStack.getItem() instanceof DbzArmorItem armorItem) {
-            String texturePath = "textures/armor/" + armorItem.getItemId() + "_layer1.png";
+        String itemId = null;
+
+        if (chestStack.getItem() instanceof DbzArmorItem armorItem) {
+            itemId = armorItem.getItemId();
+        }
+        else if (chestStack.getItem() instanceof DbzArmorCapeItem capeItem) {
+            itemId = capeItem.getItemId();
+        }
+
+        if (itemId != null) {
+            String texturePath = "textures/armor/" + itemId + "_layer1.png";
             ResourceLocation armorResource = new ResourceLocation(Reference.MOD_ID, texturePath);
 
             if (textureExists(armorResource)) {
@@ -267,6 +284,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
                 float armorInflation = 1.05F;
                 ps.scale(armorInflation, armorInflation, armorInflation);
+
                 ps.translate(isRightArm ? 0.02D : -0.01, 0.02D, 0.0D);
 
                 renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, new float[]{1.0F, 1.0F, 1.0F});

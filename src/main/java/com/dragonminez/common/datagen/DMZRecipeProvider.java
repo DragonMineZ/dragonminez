@@ -311,17 +311,6 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.BLANK_PATTERN_Z.get()), has(MainItems.BLANK_PATTERN_Z.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, MainItems.PATTERN_GOKU2.get(), 1)
-				.pattern("B#B")
-				.pattern("OBO")
-				.pattern("ONO")
-				.define('B', Items.BLUE_DYE)
-				.define('O', Items.ORANGE_DYE)
-				.define('N', Items.BLACK_DYE)
-				.define('#', MainItems.BLANK_PATTERN_Z.get())
-				.unlockedBy(getHasName(MainItems.BLANK_PATTERN_Z.get()), has(MainItems.BLANK_PATTERN_Z.get()))
-				.group(Reference.MOD_ID).save(pWriter);
-
 		ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, MainItems.PATTERN_GOKU_SUPER.get(), 1)
 				.pattern("C#C")
 				.pattern("OCO")

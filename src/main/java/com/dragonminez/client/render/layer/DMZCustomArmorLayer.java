@@ -55,7 +55,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
         String race = stats.getCharacter().getRaceName().toLowerCase();
         String gender = stats.getCharacter().getGender().toLowerCase();
-        String currentForm = stats.getCharacter().getActiveForm(); // Obtenemos la forma actual
+        String currentForm = stats.getCharacter().getActiveForm();
 
         boolean isVanilla = ForgeRegistries.ITEMS.getKey(stack.getItem()).getNamespace().equals("minecraft");
         boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
