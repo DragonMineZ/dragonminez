@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
+import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
@@ -60,8 +61,8 @@ public class HairEditorScreen extends Screen {
 
     private final Screen previousScreen;
     private final Character character;
-    private final CustomHair editingHair;
-    private final CustomHair backupHair;
+    private CustomHair editingHair;
+    private CustomHair backupHair;
     private final int oldGuiScale;
     private final boolean usePanorama;
     private boolean isSwitchingMenu = false;
@@ -86,6 +87,10 @@ public class HairEditorScreen extends Screen {
     private boolean colorPickerVisible = false;
     private TexturedTextButton colorButton;
 
+	private int editorMode = 0;
+	private boolean physicsEnabled = true;
+	private CustomTextureButton modeButton;
+	private CustomTextureButton physicsButton;
 
     public enum EditMode {
         LENGTH("gui.dragonminez.hair_editor.mode.length"),
@@ -128,17 +133,17 @@ public class HairEditorScreen extends Screen {
         if (character.getHairId() > 0) {
             CustomHair presetHair = HairManager.getPresetHair(character.getHairId(), character.getHairColor());
             if (presetHair != null) {
-                character.setCustomHair(presetHair.copy());
+                character.setHairBase(presetHair.copy());
                 character.setHairId(0);
-                NetworkHandler.sendToServer(new UpdateCustomHairC2S(character.getCustomHair()));
+                NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, character.getHairBase()));
             }
         }
 
-        if (character.getCustomHair() == null) {
-            character.setCustomHair(new CustomHair());
+        if (character.getHairBase() == null) {
+            character.setHairBase(new CustomHair());
         }
 
-        this.editingHair = character.getCustomHair();
+        this.editingHair = character.getHairBase();
         this.backupHair = editingHair.copy();
     }
 
@@ -150,6 +155,7 @@ public class HairEditorScreen extends Screen {
         initControlButtons();
         initColorPicker();
         initBottomButtons();
+		this.editingHair = character.getHairBase();
     }
 
     private void initLeftPanelButtons() {
@@ -171,7 +177,52 @@ public class HairEditorScreen extends Screen {
             ).bounds(modeX, buttonY, 28, 16).build());
             modeX += 30;
         }
+
+		modeButton = new CustomTextureButton.Builder()
+				.position(leftPanelX + 50, leftPanelY + 185)
+				.size(10, 15)
+				.texture(STAT_BUTTONS)
+				.textureCoords(20, 0, 20, 14)
+				.textureSize(8, 14)
+				.message(Component.empty())
+				.onPress(btn -> cycleEditorMode())
+				.build();
+		addRenderableWidget(modeButton);
+
+		physicsButton = new CustomTextureButton.Builder()
+				.position(leftPanelX + 105, leftPanelY + 185)
+				.size(10, 15)
+				.texture(STAT_BUTTONS)
+				.textureCoords(20, 0, 20, 14)
+				.textureSize(8, 14)
+				.message(Component.empty())
+				.onPress(btn -> physicsEnabled = !physicsEnabled)
+				.build();
+		addRenderableWidget(physicsButton);
     }
+
+	private void cycleEditorMode() {
+		editorMode++;
+		if (editorMode > 2) editorMode = 0;
+
+		updateEditingHairReference();
+		selectedStrandIndex = 0;
+	}
+
+	private void updateEditingHairReference() {
+		switch (editorMode) {
+			case 0 -> this.editingHair = character.getHairBase();
+			case 1 -> {
+				if (character.getHairSSJ().isEmpty()) character.setHairSSJ(character.getHairBase().copy());
+				this.editingHair = character.getHairSSJ();
+			}
+			case 2 -> {
+				if (character.getHairSSJ3().isEmpty()) character.setHairSSJ3(character.getHairBase().copy());
+				this.editingHair = character.getHairSSJ3();
+			}
+		}
+		this.backupHair = this.editingHair.copy();
+	}
 
     private void initControlButtons() {
         clearControlButtons();
@@ -507,7 +558,13 @@ public class HairEditorScreen extends Screen {
 
         String newColor = ColorUtils.hsvToHex(h, s, v);
         applyColorToStrand(newColor);
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editingHair));
+		character.setHairId(0);
+		switch (editorMode) {
+			case 1 -> character.setHairSSJ(editingHair);
+			case 2 -> character.setHairSSJ3(editingHair);
+			default -> character.setHairBase(editingHair);
+		}
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
     }
 
     private void applyColorToStrand(String color) {
@@ -616,7 +673,7 @@ public class HairEditorScreen extends Screen {
     }
 
     private void syncHairToServer() {
-        NetworkHandler.sendToServer(new UpdateCustomHairC2S(editingHair));
+        NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
     }
 
     @Override
@@ -667,8 +724,9 @@ public class HairEditorScreen extends Screen {
 
         graphics.pose().pushPose();
         graphics.pose().scale(0.75f, 0.75f, 0.75f);
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.color"),
-                (int)((leftPanelX + 80) / 0.75f), (int)((leftPanelY + 149) / 0.75f), 0xFFFFFF);
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.color"), (int)((leftPanelX + 80) / 0.75f), (int)((leftPanelY + 149) / 0.75f), 0xFFFFFF);
+		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.mode." + editorMode), (int)((leftPanelX + 20) / 0.75f), (int)(((this.height / 2) + 83) / 0.75f), 0xFFFFFF);
+		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.physics"), (int)((leftPanelX + 70) / 0.75f), (int)(((this.height / 2) + 83) / 0.75f), physicsEnabled ? 0x00FF00 : 0xFF5555);
         graphics.pose().popPose();
     }
 
@@ -812,6 +870,13 @@ public class HairEditorScreen extends Screen {
         LivingEntity player = this.minecraft.player;
         if (player == null) return;
 
+		boolean oldPhysics = HairRenderer.PHYSICS_ENABLED;
+		HairRenderer.PHYSICS_ENABLED = this.physicsEnabled;
+		int originalHairId = character.getHairId();
+		CustomHair originalBaseHair = character.getHairBase();
+		character.setHairId(0);
+		character.setHairBase(this.editingHair);
+
         Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
         Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
         pose.mul(cameraOrientation);
@@ -838,6 +903,10 @@ public class HairEditorScreen extends Screen {
         player.setXRot(xRotO);
         player.yHeadRotO = yHeadRotO;
         player.yHeadRot = yHeadRot;
+
+		HairRenderer.PHYSICS_ENABLED = oldPhysics;
+		character.setHairBase(originalBaseHair);
+		character.setHairId(originalHairId);
     }
 
     @Override
@@ -951,24 +1020,27 @@ public class HairEditorScreen extends Screen {
     }
 
 
-    private void exportCode() {
-        String code = HairManager.toCode(editingHair);
-        if (code != null) {
-            codeField.setValue(code);
-            Minecraft.getInstance().keyboardHandler.setClipboard(code);
-        }
-    }
+	private void exportCode() {
+		String code = HairManager.saveFullSet(character);
+		if (code != null) {
+			codeField.setValue(code);
+			Minecraft.getInstance().keyboardHandler.setClipboard(code);
+		}
+	}
 
-    private void importCode() {
-        String code = codeField.getValue();
-        if (code.isEmpty()) {
-            code = Minecraft.getInstance().keyboardHandler.getClipboard();
-        }
+	private void importCode() {
+		String code = codeField.getValue();
+		if (code.isEmpty()) {
+			code = Minecraft.getInstance().keyboardHandler.getClipboard();
+		}
 
 		if (HairManager.isValidCode(code)) {
 			character.setHairId(0);
 
-			copyHairData(HairManager.fromCode(code), editingHair);
+			HairManager.loadFullSet(code, character);
+
+			updateEditingHairReference();
+
 			selectedStrandIndex = 0;
 			colorPickerVisible = false;
 			setSlidersVisible(false);
@@ -977,7 +1049,7 @@ public class HairEditorScreen extends Screen {
 
 			syncHairToServer();
 		}
-    }
+	}
 
     private void copyHairData(CustomHair source, CustomHair dest) {
         dest.setGlobalColor(source.getGlobalColor());
@@ -1001,7 +1073,9 @@ public class HairEditorScreen extends Screen {
     private void saveAndClose() {
         character.setHairId(0);
 
-        NetworkHandler.sendToServer(new UpdateCustomHairC2S(editingHair));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, character.getHairBase()));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, character.getHairSSJ()));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, character.getHairSSJ3()));
 
         if (previousScreen != null) {
             isSwitchingMenu = true;

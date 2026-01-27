@@ -152,9 +152,7 @@ public class HairStrand {
         this.curveX = tag.getFloat("CurveX");
         this.curveY = tag.getFloat("CurveY");
         this.curveZ = tag.getFloat("CurveZ");
-        if (tag.contains("Color")) {
-            this.color = tag.getString("Color");
-        }
+		this.color = tag.contains("Color") ? tag.getString("Color") : null;
     }
     
     public HairStrand copy() {

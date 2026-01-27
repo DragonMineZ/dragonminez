@@ -2,13 +2,14 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
-import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -42,16 +43,33 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
         var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
-        if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala")) return;
+        if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala") && !headItem.getItem().getDescriptionId().contains("scouter")) return;
 
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         var stats = statsCap.orElse(new StatsData(animatable));
         Character character = stats.getCharacter();
-
         if (!HairManager.canUseHair(character)) return;
 
         CustomHair effectiveHair = HairManager.getEffectiveHair(character);
         if (effectiveHair == null || effectiveHair.isEmpty()) return;
+
+		CustomHair hairFrom = character.getHairBase();
+		CustomHair hairTo = character.getHairBase();
+		float factor = 0.0f;
+
+		if (character.hasActiveForm()) {
+			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
+			hairTo = hairFrom;
+			factor = 1.0f;
+		} else if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+			hairFrom = character.getHairBase();
+			String targetGroup = character.getSelectedFormGroup();
+			var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+			if (nextForm != null) {
+				hairTo = getHairForForm(character, targetGroup, nextForm.getName());
+			}
+			factor = stats.getResources().getActionCharge() / 100.0f;
+		}
 
         Optional<GeoBone> headBoneOpt = model.getBone("head");
         if (headBoneOpt.isEmpty()) return;
@@ -86,8 +104,29 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         RenderUtils.translateToPivotPoint(poseStack, headBone);
-        HairRenderer.render(poseStack, bufferSource, effectiveHair, character, character.getHairColor(), packedLight, packedOverlay);
-        poseStack.popPose();
-    }
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, character.getHairColor(), partialTick, packedLight, packedOverlay);
 
+		poseStack.popPose();
+	}
+
+	private CustomHair getHairForForm(Character character, String group, String formName) {
+		FormConfig config = ConfigManager.getFormGroup(character.getRaceName(), group);
+		if (config != null) {
+			var formData = config.getForm(formName);
+			if (formData != null && formData.hasHairCodeOverride()) {
+				CustomHair override = HairManager.fromCode(formData.getHairCode());
+				if (override != null) return override;
+			}
+		}
+
+		String lowerForm = formName.toLowerCase();
+
+		if (lowerForm.contains("ssj3") || lowerForm.contains("3")) {
+			return character.getHairSSJ3();
+		} else if (lowerForm.contains("super") || lowerForm.contains("rose") || lowerForm.contains("blue") || lowerForm.contains("ssj")) {
+			return character.getHairSSJ();
+		}
+
+		return character.getHairBase();
+	}
 }

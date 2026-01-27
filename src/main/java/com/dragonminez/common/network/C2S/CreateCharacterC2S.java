@@ -37,7 +37,7 @@ public class CreateCharacterC2S {
         this.className = character.getCharacterClass();
         this.gender = character.getGender();
         this.hairId = character.getHairId();
-		this.customHair = character.getCustomHair();
+		this.customHair = character.getHairBase();
         this.bodyType = character.getBodyType();
         this.eyesType = character.getEyesType();
         this.noseType = character.getNoseType();

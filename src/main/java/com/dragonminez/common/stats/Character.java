@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.CustomHair;
+import com.dragonminez.common.hair.HairManager;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
@@ -26,7 +27,9 @@ public class Character {
     public static final String CLASS_MARTIALARTIST = "martialartist";
 
     private int hairId;
-    private CustomHair customHair = new CustomHair();
+    private CustomHair hairBase = new CustomHair();
+	private CustomHair hairSSJ = new CustomHair();
+	private CustomHair hairSSJ3 = new CustomHair();
     private int bodyType;
     private int eyesType;
     private int noseType;
@@ -71,7 +74,20 @@ public class Character {
     public String getActiveFormGroup() { return activeFormGroup; }
     public String getActiveForm() { return activeForm; }
     public int getHairId() { return hairId; }
-	public CustomHair getCustomHair() { return customHair; }
+	public CustomHair getHairBase() {
+		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
+		return hairBase;
+	}
+	public CustomHair getHairSSJ() {
+		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
+		if (hairSSJ == null || hairSSJ.isEmpty()) return hairBase;
+		return hairSSJ;
+	}
+	public CustomHair getHairSSJ3() {
+		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
+		if (hairSSJ3 == null || hairSSJ3.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
+		return hairSSJ3;
+	}
     public int getBodyType() { return bodyType; }
     public int getEyesType() { return eyesType; }
     public int getNoseType() { return noseType; }
@@ -100,7 +116,9 @@ public class Character {
     public void setGender(String gender) { this.gender = gender; }
     public void setCharacterClass(String characterClass) { this.characterClass = characterClass; }
     public void setHairId(int hairId) { this.hairId = hairId; }
-    public void setCustomHair(CustomHair customHair) { this.customHair = customHair; }
+    public void setHairBase(CustomHair hairBase) { this.hairBase = hairBase; }
+	public void setHairSSJ(CustomHair hairSSJ) { this.hairSSJ = hairSSJ; }
+	public void setHairSSJ3(CustomHair hairSSJ3) { this.hairSSJ3 = hairSSJ3; }
     public void setBodyType(int bodyType) { this.bodyType = bodyType; }
     public void setEyesType(int eyesType) { this.eyesType = eyesType; }
     public void setNoseType(int noseType) { this.noseType = noseType; }
@@ -135,6 +153,13 @@ public class Character {
         return raceConfig.getDefaultModelScaling();
     }
 
+	public CustomHair getHairByType(int type) {
+		return switch (type) {
+			case 1 -> hairSSJ;
+			case 2 -> hairSSJ3;
+			default -> hairBase;
+		};
+	}
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -142,9 +167,9 @@ public class Character {
         tag.putString("Gender", gender);
         tag.putString("Class", characterClass);
         tag.putInt("HairId", hairId);
-        if (customHair != null && !customHair.isEmpty()) {
-            tag.put("CustomHair", customHair.save());
-        }
+		tag.put("HairBase", hairBase.save());
+		tag.put("HairSSJ", hairSSJ.save());
+		tag.put("HairSSJ3", hairSSJ3.save());
         tag.putInt("BodyType", bodyType);
         tag.putInt("EyesType", eyesType);
         tag.putInt("NoseType", noseType);
@@ -179,12 +204,9 @@ public class Character {
         this.gender = tag.getString("Gender");
         this.characterClass = tag.getString("Class");
         this.hairId = tag.getInt("HairId");
-        if (tag.contains("CustomHair")) {
-            this.customHair = new CustomHair();
-            this.customHair.load(tag.getCompound("CustomHair"));
-        } else {
-            this.customHair = new CustomHair();
-        }
+		if (tag.contains("HairBase")) this.hairBase.load(tag.getCompound("HairBase"));
+		if (tag.contains("HairSSJ")) this.hairSSJ.load(tag.getCompound("HairSSJ"));
+		if (tag.contains("HairSSJ3")) this.hairSSJ3.load(tag.getCompound("HairSSJ3"));
         this.bodyType = tag.getInt("BodyType");
         this.eyesType = tag.getInt("EyesType");
         this.noseType = tag.getInt("NoseType");
@@ -200,9 +222,7 @@ public class Character {
         this.selectedFormGroup = tag.getString("SelectedFormGroup");
         this.activeFormGroup = tag.getString("CurrentFormGroup");
         this.activeForm = tag.getString("CurrentForm");
-        if (tag.contains("FormMasteries")) {
-            formMasteries.load(tag.getCompound("FormMasteries"));
-        }
+        if (tag.contains("FormMasteries")) formMasteries.load(tag.getCompound("FormMasteries"));
         this.armored = tag.getBoolean("isArmored");
     }
 
@@ -252,7 +272,9 @@ public class Character {
         this.gender = other.gender;
         this.characterClass = other.characterClass;
         this.hairId = other.hairId;
-        this.customHair = other.customHair != null ? other.customHair.copy() : new CustomHair();
+		this.hairBase = other.hairBase.copy();
+		this.hairSSJ = other.hairSSJ.copy();
+		this.hairSSJ3 = other.hairSSJ3.copy();
         this.bodyType = other.bodyType;
         this.eyesType = other.eyesType;
         this.noseType = other.noseType;

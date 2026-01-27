@@ -113,9 +113,7 @@ public class DinoGlobalEntity extends Monster implements GeoEntity {
 	}
 
 	public static boolean canSpawnHere(EntityType<? extends DinoGlobalEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
-		System.out.println("Checking spawn conditions for DinoGlobalEntity at " + pos + " | entity: " + entity.getDescriptionId());
 		if (world.getDifficulty() != Difficulty.PEACEFUL) {
-			System.out.println("Spawn allowed: Difficulty is not Peaceful");
 			return world.getBlockState(pos.below()).isValidSpawn(world, pos.below(), entity);
 		}
 		return false;

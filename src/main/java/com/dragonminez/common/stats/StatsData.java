@@ -187,7 +187,7 @@ public class StatsData {
         character.setCharacterClass(characterClass);
         character.setHairId(hairId);
         if (customHair != null) {
-            character.setCustomHair(customHair);
+            character.setHairBase(customHair);
         }
         character.setBodyType(bodyType);
         character.setEyesType(eyesType);

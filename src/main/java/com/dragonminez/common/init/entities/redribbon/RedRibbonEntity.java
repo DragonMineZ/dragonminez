@@ -118,9 +118,7 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
 	}
 
 	public static boolean canSpawnHere(EntityType<? extends RedRibbonEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
-		System.out.println("Checking spawn conditions for RedRibbonEntity at " + pos + " | entity: " + entity.getDescriptionId());
 		if (world.getDifficulty() != Difficulty.PEACEFUL) {
-			System.out.println("Spawn allowed: World difficulty is not Peaceful.");
 			return world.getBlockState(pos.below()).isValidSpawn(world, pos.below(), entity);
 		}
 		return false;
