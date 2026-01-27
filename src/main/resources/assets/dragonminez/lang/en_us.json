@@ -688,6 +688,10 @@
   "item.dragonminez.invencible_armor_chestplate": "Super Hero Armor Chestplate (§eInv§binc§eib§7le§r)",
   "item.dragonminez.invencible_armor_leggings": "Super Hero Armor Leggings (§eInv§binc§eib§7le§r)",
   "item.dragonminez.invencible_armor_boots": "Super Hero Armor Boots (§eInv§binc§eib§7le§r)",
+  "item.dragonminez.invencible_blue_armor_helmet": "Super Hero Armor Helmet (§9Invincible§r)",
+  "item.dragonminez.invencible_blue_armor_chestplate": "Super Hero Armor Chestplate (§9Invincible§r)",
+  "item.dragonminez.invencible_blue_armor_leggings": "Super Hero Armor Leggings (§9Invincible§r)",
+  "item.dragonminez.invencible_blue_armor_boots": "Super Hero Armor Boots (§9Invincible§r)",
 
   "//": "COMMANDS",
   "command.dragonminez.stats.set.success": "§e[DMZ-Stats]§r Stat %s set to %s for %s",

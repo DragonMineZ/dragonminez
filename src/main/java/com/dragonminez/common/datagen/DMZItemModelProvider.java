@@ -139,6 +139,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.GAMMA1_ARMOR);
 		generateArmorSetModels(MainItems.GAMMA2_ARMOR);
 		generateArmorSetModels(MainItems.INVENCIBLE_ARMOR);
+        generateArmorSetModels(MainItems.INVENCIBLE_BLUE_ARMOR);
 
 		//Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);

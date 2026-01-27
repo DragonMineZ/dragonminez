@@ -98,7 +98,7 @@ public final class MainItems {
     // GOHAN GI (SUPER)
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOHAN_SUPER_ARMOR = fullArmorNoHelmetSet("gohan_super_armor", "gohan_dbs", false);
     // GOHAN GREAT SAIYAMAN
-	public static final Map<ArmorItem.Type, RegistryObject<Item>> GREAT_SAIYAMAN_ARMOR = fullArmorCapeSet("great_saiyaman_armor", "saiyaman_gi", false);
+	public static final Map<ArmorItem.Type, RegistryObject<Item>>  GREAT_SAIYAMAN_ARMOR = fullArmorCapeSet("great_saiyaman_armor", "saiyaman_gi", false);
     // FUTURE GOHAN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> FUTURE_GOHAN_ARMOR = fullArmorNoHelmetSet("future_gohan_armor", "future_gohan", false);
     // VEGETA SAGA SAIYAJIN (Cambiar luego a saiyanArmor para hombreras)
@@ -119,7 +119,7 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> PICCOLO_ARMOR = fullArmorCapeSet("piccolo_armor", "piccolo_gi", false);
     // DEMON GI (AZUL)
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> DEMON_GI_BLUE_ARMOR = fullArmorNoHelmetSet("demon_gi_blue_armor", "demon_gi_gohan", false);
-    // BARDOCK DBZ (Cambiar luego a saiyanArmor para hombreras)
+    // BARDOCK DBZ
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BARDOCK_DBZ_ARMOR = fullArmorNoHelmetSet("bardock_dbz_armor", "bardock_armor", false);
     // BARDOCK SUPER
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BARDOCK_SUPER_ARMOR = fullArmorNoHelmetSet("bardock_super_armor", "bardockdbs_armor", false);
@@ -157,8 +157,10 @@ public final class MainItems {
     public static final Map<ArmorItem.Type, RegistryObject<Item>>  GAMMA1_ARMOR = fullArmorCapeNoHelmetSet("gamma1_armor", "gamma1", false);
     // GAMMA 2
     public static final Map<ArmorItem.Type, RegistryObject<Item>>  GAMMA2_ARMOR = fullArmorCapeNoHelmetSet("gamma2_armor", "gamma2", false);
+
     //INVENCIBLE
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_ARMOR = fullArmorSet("invencible_armor", "invencible", false);
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_BLUE_ARMOR = fullArmorSet("invencible_blue_armor", "invencible_blue", false);
 
 	//LÍQUIDOS
 	public static final RegistryObject<Item> HEALING_BUCKET = ITEM_REGISTER.register("healing_liquid_bucket",
