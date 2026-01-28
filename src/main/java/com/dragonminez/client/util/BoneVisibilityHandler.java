@@ -58,6 +58,10 @@ public class BoneVisibilityHandler {
         if (race.equals("human")) {
             model.getBone("tail1").ifPresent(bone -> setHiddenRecursive(bone, true));
         }
+
+        if (isMajin && isFemale) {
+            model.getBone("tail1").ifPresent(bone -> setHiddenRecursive(bone, true));
+        }
     }
 
     private static void hideBone(BakedGeoModel model, String boneName, boolean shouldHide) {

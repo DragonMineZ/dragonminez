@@ -6,6 +6,7 @@ import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.HumanoidArm;
@@ -171,11 +172,17 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
             String gender = character.getGender().toLowerCase();
             String currentForm = character.getActiveForm();
 
+            boolean isOozaru = race.equals("saiyan") && (
+                    Objects.equals(currentForm, SaiyanForms.OOZARU) ||
+                            Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)
+            );
+
             boolean isMajinWithTail = race.equals("majin") &&
                     (gender.equals("female") || gender.equals("mujer")) &&
                     (Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA));
 
-            boolean hasTail = (race.equals("saiyan") && data.getStatus().isTailVisible())
+            boolean hasTail = isOozaru
+                    || (race.equals("saiyan") && data.getStatus().isTailVisible())
                     || race.equals("frostdemon")
                     || (race.equals("bioandroid") && !data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))
                     || isMajinWithTail;

@@ -152,10 +152,41 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean forceVanilla = (raceConfig != null && raceConfig.useVanillaSkin());
 		String gender = character.getGender().toLowerCase();
 
-        if (forceVanilla || (isStandard && bodyType == 0)) {
+        boolean isOozaru = currentForm != null && (
+                currentForm.contains(SaiyanForms.OOZARU) ||
+                        currentForm.contains(SaiyanForms.GOLDEN_OOZARU)
+        );
+
+        boolean useDefaultSkin = isStandard && bodyType == 0 && !isOozaru;
+
+        if (forceVanilla || useDefaultSkin) {
             renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), new float[]{1, 1, 1});
         } else {
-            renderRaceLayers(pPoseStack, pBuffer, pCombinedLight, pRendererArm, raceName, currentForm, gender, bodyType, b1, b2, b3, hair);
+            if (raceName.equals("saiyan") && isOozaru) {
+
+                String oozaruPath = "textures/entity/races/humansaiyan/oozaru_";
+
+                float[] furColor = (currentForm.contains(SaiyanForms.GOLDEN_OOZARU)) ?
+                        ColorUtils.hexToRgb("#FFD700") : ColorUtils.hexToRgb("#6B1E0E");
+
+                float[] skinColor = ColorUtils.hexToRgb("#CC978D");
+
+                if (hasForm && character.getActiveFormData() != null) {
+                    var form = character.getActiveFormData();
+
+                    if (form.getHairColor() != null && !form.getHairColor().isEmpty()) {
+                        furColor = ColorUtils.hexToRgb(form.getHairColor());
+                    }
+
+                    if (!form.getBodyColor1().isEmpty()) skinColor = ColorUtils.hexToRgb(form.getBodyColor1());
+                }
+
+                renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(oozaruPath + "layer1.png"), furColor);
+                renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(oozaruPath + "layer2.png"), skinColor);
+
+            } else {
+                renderRaceLayers(pPoseStack, pBuffer, pCombinedLight, pRendererArm, raceName, currentForm, gender, bodyType, b1, b2, b3, hair);
+            }
         }
 
         renderTattoos(pPoseStack, pBuffer, pCombinedLight, pRendererArm, stats);
@@ -220,7 +251,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
                     String f = form.toLowerCase();
 
                     if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
-                        textureFormName = "semi_perfect";
+                        textureFormName = "semiperfect";
                     }
                     else if (f.equals(BioAndroidForms.BASE)) {
                         textureFormName = "base";

@@ -87,7 +87,15 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             model.getBone("tail3").ifPresent(bone -> bone.setHidden(false));
             model.getBone("tail4").ifPresent(bone -> bone.setHidden(false));
 
-            float[] tailColor = hasForm ? hairTint : ColorUtils.hexToRgb("#572117");
+            float[] tailColor = ColorUtils.hexToRgb("#572117");
+
+            if (hasForm && character.getActiveFormData() != null) {
+                String formHairInfo = character.getActiveFormData().getHairColor();
+
+                if (formHairInfo != null && !formHairInfo.isEmpty()) {
+                    tailColor = hexToRGB(formHairInfo);
+                }
+            }
 
             renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", tailColor, partialTick, packedLight, packedOverlay);
         }
@@ -100,7 +108,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
             if (hasForm && character.getActiveFormData() != null) {
                 var form = character.getActiveFormData();
-                if (!form.getHairColor().isEmpty()) furColor = hexToRGB(form.getHairColor());
+
+                if (form.getHairColor() != null && !form.getHairColor().isEmpty()) {
+                    furColor = ColorUtils.hexToRgb(form.getHairColor());
+                }
+
                 if (!form.getBodyColor1().isEmpty()) skinColor = hexToRGB(form.getBodyColor1());
             }
 
@@ -219,7 +231,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                     String f = form.toLowerCase();
 
                     if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
-                        textureFormName = "semi_perfect";
+                        textureFormName = "semiperfect";
                     }
                     else if (f.equals(BioAndroidForms.BASE)) {
                         textureFormName = "base";
@@ -340,7 +352,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 String f = currentForm.toLowerCase();
 
                 if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
-                    fP = "semi_perfect";
+                    fP = "semiperfect";
                 }
                 else if (f.equals(BioAndroidForms.BASE) || f.equals("imperfect")) {
                     fP = "base";

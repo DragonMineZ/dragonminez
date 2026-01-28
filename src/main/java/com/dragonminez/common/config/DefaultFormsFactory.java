@@ -747,8 +747,8 @@ public class DefaultFormsFactory {
         evil.setStaminaDrain(1.0);
         evil.setAttackSpeed(1.0);
         evil.setHairColor("");
-        evil.setEye1Color("#FFFFFF");
-        evil.setEye2Color("#FFFFFF");
+        evil.setEye1Color("#F52746");
+        evil.setEye2Color("#F52746");
         evil.setAuraColor("");
         evil.setBodyColor1("#917979");
         evil.setBodyColor2("#917979");
