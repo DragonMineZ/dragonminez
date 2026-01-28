@@ -22,6 +22,7 @@ import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.commands.*;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.storage.StorageManager;
+import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -53,6 +55,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.List;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeCommonEvents {
@@ -80,9 +83,7 @@ public class ForgeCommonEvents {
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) {
-					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) {
-						player.kill();
-					}
+					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
 				}
 			});
 		}
@@ -93,10 +94,10 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) {
-					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) {
-						player.kill();
-					}
+					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
 				}
+
+				if (data.getStatus().isFused()) FusionLogic.endFusion(player, data, true);
 			});
 		}
 	}
@@ -106,6 +107,15 @@ public class ForgeCommonEvents {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			DragonBallsHandler.syncRadar(player.serverLevel());
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isFused()) {
+					UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
+					if (partnerUUID != null) {
+						ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
+						if (partner != null && !partner.isDeadOrDying()) partner.kill();
+					}
+					FusionLogic.endFusion(player, data, true);
+				}
+
 				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
 					data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().isInKaioPlanet();
@@ -118,6 +128,15 @@ public class ForgeCommonEvents {
 		if (event.getSource().getEntity() instanceof ServerPlayer player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
+			});
+		}
+	}
+
+	@SubscribeEvent
+	public static void onGamemodeChange(PlayerEvent.PlayerChangeGameModeEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player && event.getNewGameMode() != GameType.SPECTATOR) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getStatus().isFused() && !data.getStatus().isFusionLeader()) FusionLogic.endFusion(player, data, true);
 			});
 		}
 	}

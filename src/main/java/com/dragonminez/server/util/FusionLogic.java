@@ -57,6 +57,10 @@ public class FusionLogic {
 
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
+
+		removeEarring(leader);
+		removeEarring(partner);
+
 		applyFusion(leader, partner, lData, pData, "POTHALA", lvl1, lvl2);
 		lData.getStatus().setFusionTimer(FUSION_DURATION);
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
@@ -95,10 +99,13 @@ public class FusionLogic {
 
 		boolean isLeader = data.getStatus().isFusionLeader();
 		UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
-		ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
 
+		ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
 		ServerPlayer leaderRef = isLeader ? player : partner;
-		StatsData leaderData = isLeader ? data : (partner != null ? StatsProvider.get(StatsCapability.INSTANCE, partner).orElse(null) : null);
+
+		StatsData leaderData = null;
+		if (isLeader) leaderData = data;
+		else if (leaderRef != null) leaderData = StatsProvider.get(StatsCapability.INSTANCE, leaderRef).orElse(null);
 
 		if (leaderData != null) {
 			leaderData.getBonusStats().removeAllBonuses("FusionBonus");
@@ -116,12 +123,10 @@ public class FusionLogic {
 				leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 			}
 
-			if ("POTHALA".equals(leaderData.getStatus().getFusionType())) {
-				removeEarring(leaderRef);
+			if (leaderRef != null) {
+				PartyManager.leaveParty(leaderRef);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 			}
-			PartyManager.leaveParty(leaderRef);
-
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 		}
 
 		if (partner != null) {
@@ -130,19 +135,13 @@ public class FusionLogic {
 				pData.getStatus().setFusionLeader(false);
 				pData.getStatus().setFusionPartnerUUID(null);
 
-				if ("METAMORU".equals(pData.getStatus().getFusionType())) {
-					pData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
-				}
+				if ("METAMORU".equals(pData.getStatus().getFusionType())) pData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 
 				partner.stopRiding();
-				partner.setGameMode(GameType.SURVIVAL);
-				partner.teleportTo(leaderRef.getX() + 1, leaderRef.getY(), leaderRef.getZ() + 1);
+				if (!partner.isDeadOrDying()) partner.setGameMode(GameType.SURVIVAL);
+				if (leaderRef != null) partner.teleportTo(leaderRef.getX() + 1, leaderRef.getY(), leaderRef.getZ() + 1);
 
-				if (forcedByDeath && "POTHALA".equals(pData.getStatus().getFusionType())) {
-					removeEarring(partner);
-				}
 				PartyManager.leaveParty(partner);
-
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 			});
 		}
@@ -197,8 +196,7 @@ public class FusionLogic {
 	private static void removeEarring(ServerPlayer player) {
 		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
 		if (head.getItem().getDescriptionId().contains("pothala")) {
-			Inventory inv = player.getInventory();
-			inv.setItem(39, ItemStack.EMPTY);
+			player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
 		}
 	}
 }

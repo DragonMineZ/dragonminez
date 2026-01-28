@@ -333,21 +333,25 @@ public class TickHandler {
 		}
 
 		if (increment > 0) {
-			currentRelease += increment;
+			if (!(mode == ActionMode.FUSION && currentRelease >= 100)) {
+				currentRelease += increment;
+			}
 			if (currentRelease >= 100) {
-				currentRelease = 0;
+				currentRelease = 100;
 				execute = true;
 			}
 			data.getResources().setActionCharge(currentRelease);
 		}
 
 		if (execute) {
-			performAction(player, data, mode);
-			data.getResources().setActionCharge(0);
+			boolean success = performAction(player, data, mode);
+			if (success) {
+				data.getResources().setActionCharge(0);
+			}
 		}
 	}
 
-	private static void performAction(ServerPlayer player, StatsData data, ActionMode mode) {
+	private static boolean performAction(ServerPlayer player, StatsData data, ActionMode mode) {
 		switch (mode) {
 			case KAIOKEN -> {
 				int currentPhase = data.getStatus().getActiveKaiokenPhase();
@@ -362,11 +366,21 @@ public class TickHandler {
 
 				if (!data.getSkills().isSkillActive("kaioken")) data.getSkills().setSkillActive("kaioken", true);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				return true;
 			}
-			case RACIAL -> RacialSkillLogic.attemptRacialAction(player);
-			case FUSION -> attemptFusion(player, data);
-			case FORM -> attemptTransform(player, data);
+			case RACIAL -> {
+				RacialSkillLogic.attemptRacialAction(player);
+				return true;
+			}
+			case FUSION -> {
+				return attemptFusion(player, data);
+			}
+			case FORM -> {
+				attemptTransform(player, data);
+				return true;
+			}
 		}
+		return false;
 	}
 
 	private static void handleKaiokenEffects(ServerPlayer player, StatsData data) {
@@ -408,7 +422,7 @@ public class TickHandler {
 		}
 	}
 
-	private static void attemptFusion(ServerPlayer player, StatsData data) {
+	private static boolean attemptFusion(ServerPlayer player, StatsData data) {
 		List<ServerPlayer> nearby = player.level().getEntitiesOfClass(ServerPlayer.class,
 				player.getBoundingBox().inflate(5.0), p -> p != player);
 
@@ -423,7 +437,9 @@ public class TickHandler {
 					}
 				}
 			});
+			if (data.getStatus().isFused()) return true;
 		}
+		return false;
 	}
 
 	private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {
@@ -547,14 +563,17 @@ public class TickHandler {
 				}
 				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 				ServerPlayer partner = serverPlayer.getServer().getPlayerList().getPlayer(partnerUUID);
-				if (partner == null || partner.hasDisconnected() || partner.isDeadOrDying()) {
+				if (partner == null || partner.hasDisconnected()) {
+					FusionLogic.endFusion(serverPlayer, data, true);
+				} else if (partner.isDeadOrDying()) {
 					FusionLogic.endFusion(serverPlayer, data, true);
 				} else if (partner.distanceTo(serverPlayer) > 5.0) {
 					partner.teleportTo(serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ());
 				}
 			} else {
 				UUID leaderUUID = data.getStatus().getFusionPartnerUUID();
-				if (leaderUUID == null || serverPlayer.getServer().getPlayerList().getPlayer(leaderUUID) == null) {
+				ServerPlayer leader = serverPlayer.getServer().getPlayerList().getPlayer(leaderUUID);
+				if (leader == null || leader.hasDisconnected() || leader.isDeadOrDying()) {
 					FusionLogic.endFusion(serverPlayer, data, true);
 				}
 			}
