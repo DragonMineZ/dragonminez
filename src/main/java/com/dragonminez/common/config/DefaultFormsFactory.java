@@ -46,7 +46,7 @@ public class DefaultFormsFactory {
         buffed.setName(HumanForms.BUFFED);
         buffed.setUnlockOnSkillLevel(1);
         buffed.setCustomModel("");
-        buffed.setModelScaling(1.1f);
+        buffed.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
         buffed.setStrMultiplier(1.75);
         buffed.setSkpMultiplier(1.75);
         buffed.setStmMultiplier(1.0);
@@ -65,7 +65,7 @@ public class DefaultFormsFactory {
         buffed.setBodyColor1("");
         buffed.setBodyColor2("");
         buffed.setBodyColor3("");
-        buffed.setHairCode("");;
+        buffed.setHairCode("");
         setDefaultMasteryValues(buffed);
         buffed.setKaiokenStackable(true);
         buffed.setKaiokenDrainMultiplier(2.0);
@@ -74,7 +74,7 @@ public class DefaultFormsFactory {
         fullPower.setName(HumanForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(2);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(1.0f);
+        fullPower.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         fullPower.setStrMultiplier(2.5);
         fullPower.setSkpMultiplier(2.5);
         fullPower.setStmMultiplier(1.0);
@@ -93,7 +93,7 @@ public class DefaultFormsFactory {
         fullPower.setBodyColor1("");
         fullPower.setBodyColor2("");
         fullPower.setBodyColor3("");
-        fullPower.setHairCode("");;
+        fullPower.setHairCode("");
         setDefaultMasteryValues(fullPower);
         fullPower.setKaiokenStackable(true);
         fullPower.setKaiokenDrainMultiplier(2.0);
@@ -102,7 +102,7 @@ public class DefaultFormsFactory {
         overdrive.setName(HumanForms.OVERDRIVE);
         overdrive.setUnlockOnSkillLevel(3);
         overdrive.setCustomModel("");
-        overdrive.setModelScaling(1.0f);
+        overdrive.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         overdrive.setStrMultiplier(3.5);
         overdrive.setSkpMultiplier(3.5);
         overdrive.setStmMultiplier(1.0);
@@ -121,7 +121,7 @@ public class DefaultFormsFactory {
         overdrive.setBodyColor1("");
         overdrive.setBodyColor2("");
         overdrive.setBodyColor3("");
-        overdrive.setHairCode("");;
+        overdrive.setHairCode("");
         setDefaultMasteryValues(overdrive);
         overdrive.setKaiokenStackable(true);
         overdrive.setKaiokenDrainMultiplier(2.0);
@@ -130,7 +130,7 @@ public class DefaultFormsFactory {
         solaris.setName(HumanForms.SOLARIS);
         solaris.setUnlockOnSkillLevel(4);
         solaris.setCustomModel("");
-        solaris.setModelScaling(1.0f);
+        solaris.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         solaris.setStrMultiplier(4.5);
         solaris.setSkpMultiplier(4.5);
         solaris.setStmMultiplier(1.0);
@@ -149,7 +149,7 @@ public class DefaultFormsFactory {
         solaris.setBodyColor1("");
         solaris.setBodyColor2("");
         solaris.setBodyColor3("");
-        solaris.setHairCode("");;
+        solaris.setHairCode("");
         setDefaultMasteryValues(solaris);
         solaris.setKaiokenStackable(true);
         solaris.setKaiokenDrainMultiplier(2.0);
@@ -177,7 +177,7 @@ public class DefaultFormsFactory {
         oozaru.setName(SaiyanForms.OOZARU);
         oozaru.setUnlockOnSkillLevel(0);
         oozaru.setCustomModel("oozaru");
-        oozaru.setModelScaling(3.8f);
+        oozaru.setModelScaling(new float[]{3.8f, 3.8f, 3.8f});
         oozaru.setStrMultiplier(1.2);
         oozaru.setSkpMultiplier(1.2);
         oozaru.setStmMultiplier(1.0);
@@ -196,7 +196,7 @@ public class DefaultFormsFactory {
         oozaru.setBodyColor1("");
         oozaru.setBodyColor2("");
         oozaru.setBodyColor3("");
-        oozaru.setHairCode("");;
+        oozaru.setHairCode("");
         setDefaultMasteryValues(oozaru);
 		oozaru.setKaiokenStackable(true);
 		oozaru.setKaiokenDrainMultiplier(2.0);
@@ -207,7 +207,7 @@ public class DefaultFormsFactory {
         goldenOozaru.setCustomModel("oozaru");
         goldenOozaru.setHairColor("#FFD700");
         goldenOozaru.setAuraColor("#FFD700");
-        goldenOozaru.setModelScaling(3.8f);
+        goldenOozaru.setModelScaling(new float[]{3.8f, 3.8f, 3.8f});
         goldenOozaru.setStrMultiplier(3.0);
         goldenOozaru.setSkpMultiplier(3.0);
         goldenOozaru.setStmMultiplier(1.0);
@@ -224,7 +224,7 @@ public class DefaultFormsFactory {
         goldenOozaru.setBodyColor1("");
         goldenOozaru.setBodyColor2("");
         goldenOozaru.setBodyColor3("");
-        goldenOozaru.setHairCode("");;
+        goldenOozaru.setHairCode("");
         setDefaultMasteryValues(goldenOozaru);
 		goldenOozaru.setKaiokenStackable(false);
 		goldenOozaru.setKaiokenDrainMultiplier(2.0);
@@ -240,7 +240,7 @@ public class DefaultFormsFactory {
         ssj4.setBodyColor1("");
         ssj4.setBodyColor2("");
         ssj4.setBodyColor3("");
-        ssj4.setModelScaling(0.9375f);
+        ssj4.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         ssj4.setStrMultiplier(4.5);
         ssj4.setSkpMultiplier(4.5);
         ssj4.setStmMultiplier(1.0);
@@ -252,7 +252,7 @@ public class DefaultFormsFactory {
         ssj4.setEnergyDrain(0.22);
         ssj4.setStaminaDrain(1.0);
         ssj4.setAttackSpeed(1.0);
-        ssj4.setHairCode("");;
+        ssj4.setHairCode("");
         setDefaultMasteryValues(ssj4);
 		ssj4.setKaiokenStackable(false);
 		ssj4.setKaiokenDrainMultiplier(2.0);
@@ -278,7 +278,7 @@ public class DefaultFormsFactory {
         ssj1.setBodyColor1("");
         ssj1.setBodyColor2("");
         ssj1.setBodyColor3("");
-        ssj1.setModelScaling(0.9375f);
+        ssj1.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         ssj1.setStrMultiplier(1.75);
         ssj1.setSkpMultiplier(1.75);
         ssj1.setStmMultiplier(1.0);
@@ -290,7 +290,7 @@ public class DefaultFormsFactory {
         ssj1.setEnergyDrain(0.08);
         ssj1.setStaminaDrain(1.0);
         ssj1.setAttackSpeed(1.0);
-        ssj1.setHairCode("");;
+        ssj1.setHairCode("");
         setDefaultMasteryValues(ssj1);
         ssj1.setKaiokenStackable(true);
         ssj1.setKaiokenDrainMultiplier(2.0);
@@ -306,7 +306,7 @@ public class DefaultFormsFactory {
         ssg2.setBodyColor1("");
         ssg2.setBodyColor2("");
         ssg2.setBodyColor3("");
-        ssg2.setModelScaling(1.1f);
+        ssg2.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
         ssg2.setStrMultiplier(2.0);
         ssg2.setSkpMultiplier(2.0);
         ssg2.setStmMultiplier(1.0);
@@ -318,7 +318,7 @@ public class DefaultFormsFactory {
         ssg2.setEnergyDrain(0.12);
         ssg2.setStaminaDrain(1.3);
         ssg2.setAttackSpeed(1.0);
-        ssg2.setHairCode("");;
+        ssg2.setHairCode("");
         setDefaultMasteryValues(ssg2);
         ssg2.setKaiokenStackable(true);
         ssg2.setKaiokenDrainMultiplier(2.0);
@@ -334,7 +334,7 @@ public class DefaultFormsFactory {
         ssg3.setBodyColor1("");
         ssg3.setBodyColor2("");
         ssg3.setBodyColor3("");
-        ssg3.setModelScaling(1.2f);
+        ssg3.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
         ssg3.setStrMultiplier(2.8);
         ssg3.setSkpMultiplier(2.8);
         ssg3.setStmMultiplier(1.0);
@@ -346,7 +346,7 @@ public class DefaultFormsFactory {
         ssg3.setEnergyDrain(0.28);
         ssg3.setStaminaDrain(2.5);
         ssg3.setAttackSpeed(1.0);
-        ssg3.setHairCode("");;
+        ssg3.setHairCode("");
         setDefaultMasteryValues(ssg3);
         ssg3.setKaiokenStackable(true);
         ssg3.setKaiokenDrainMultiplier(2.0);
@@ -372,7 +372,7 @@ public class DefaultFormsFactory {
         ssj1Mastered.setBodyColor1("");
         ssj1Mastered.setBodyColor2("");
         ssj1Mastered.setBodyColor3("");
-        ssj1Mastered.setModelScaling(0.9375f);
+        ssj1Mastered.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         ssj1Mastered.setStrMultiplier(1.9);
         ssj1Mastered.setSkpMultiplier(1.9);
         ssj1Mastered.setStmMultiplier(1.0);
@@ -384,7 +384,7 @@ public class DefaultFormsFactory {
         ssj1Mastered.setEnergyDrain(0.03);
         ssj1Mastered.setStaminaDrain(1.0);
         ssj1Mastered.setAttackSpeed(1.0);
-        ssj1Mastered.setHairCode("");;
+        ssj1Mastered.setHairCode("");
         setDefaultMasteryValues(ssj1Mastered);
         ssj1Mastered.setKaiokenStackable(true);
         ssj1Mastered.setKaiokenDrainMultiplier(2.0);
@@ -400,7 +400,7 @@ public class DefaultFormsFactory {
         ssj2.setBodyColor1("");
         ssj2.setBodyColor2("");
         ssj2.setBodyColor3("");
-        ssj2.setModelScaling(0.9375f);
+        ssj2.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         ssj2.setStrMultiplier(2.5);
         ssj2.setSkpMultiplier(2.5);
         ssj2.setStmMultiplier(1.0);
@@ -412,7 +412,7 @@ public class DefaultFormsFactory {
         ssj2.setEnergyDrain(0.16);
         ssj2.setStaminaDrain(1.0);
         ssj2.setAttackSpeed(1.0);
-        ssj2.setHairCode("");;
+        ssj2.setHairCode("");
         setDefaultMasteryValues(ssj2);
         ssj2.setKaiokenStackable(true);
         ssj2.setKaiokenDrainMultiplier(2.0);
@@ -429,7 +429,7 @@ public class DefaultFormsFactory {
         ssj3.setBodyColor1("");
         ssj3.setBodyColor2("");
         ssj3.setBodyColor3("");
-        ssj3.setModelScaling(0.9375f);
+        ssj3.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         ssj3.setStrMultiplier(3.5);
         ssj3.setSkpMultiplier(3.5);
         ssj3.setStmMultiplier(1.0);
@@ -473,7 +473,7 @@ public class DefaultFormsFactory {
         giantForm.setName(NamekianForms.GIANT);
         giantForm.setUnlockOnSkillLevel(1);
         giantForm.setCustomModel("");
-        giantForm.setModelScaling(3.6f);
+        giantForm.setModelScaling(new float[]{3.6f, 3.6f, 3.6f});
         giantForm.setStrMultiplier(1.95);
         giantForm.setSkpMultiplier(1.95);
         giantForm.setStmMultiplier(1.0);
@@ -492,7 +492,7 @@ public class DefaultFormsFactory {
         giantForm.setBodyColor1("");
         giantForm.setBodyColor2("");
         giantForm.setBodyColor3("");
-        giantForm.setHairCode("");;
+        giantForm.setHairCode("");
         setDefaultMasteryValues(giantForm);
         giantForm.setKaiokenStackable(true);
         giantForm.setKaiokenDrainMultiplier(2.0);
@@ -501,7 +501,7 @@ public class DefaultFormsFactory {
         fullPower.setName(NamekianForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(2);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(1.0f);
+        fullPower.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         fullPower.setStrMultiplier(2.85);
         fullPower.setSkpMultiplier(2.85);
         fullPower.setStmMultiplier(1.0);
@@ -520,7 +520,7 @@ public class DefaultFormsFactory {
         fullPower.setBodyColor1("");
         fullPower.setBodyColor2("");
         fullPower.setBodyColor3("");
-        fullPower.setHairCode("");;
+        fullPower.setHairCode("");
         setDefaultMasteryValues(fullPower);
         fullPower.setKaiokenStackable(true);
         fullPower.setKaiokenDrainMultiplier(2.0);
@@ -530,7 +530,7 @@ public class DefaultFormsFactory {
         superNamekian.setUnlockOnSkillLevel(3);
         superNamekian.setCustomModel("");
         superNamekian.setAuraColor("#7FFF00");
-        superNamekian.setModelScaling(1.05f);
+        superNamekian.setModelScaling(new float[]{1.05f, 1.05f, 1.05f});
         superNamekian.setStrMultiplier(4.0);
         superNamekian.setSkpMultiplier(4.0);
         superNamekian.setStmMultiplier(1.0);
@@ -548,7 +548,7 @@ public class DefaultFormsFactory {
         superNamekian.setBodyColor1("");
         superNamekian.setBodyColor2("");
         superNamekian.setBodyColor3("");
-        superNamekian.setHairCode("");;
+        superNamekian.setHairCode("");
         setDefaultMasteryValues(superNamekian);
         superNamekian.setKaiokenStackable(true);
         superNamekian.setKaiokenDrainMultiplier(2.0);
@@ -575,7 +575,7 @@ public class DefaultFormsFactory {
         second.setName(FrostDemonForms.SECOND_FORM);
         second.setUnlockOnSkillLevel(1);
         second.setCustomModel("");
-        second.setModelScaling(1.3f);
+        second.setModelScaling(new float[]{1.3f, 1.3f, 1.3f});
         second.setStrMultiplier(1.75);
         second.setSkpMultiplier(1.75);
         second.setStmMultiplier(1.0);
@@ -594,7 +594,7 @@ public class DefaultFormsFactory {
         second.setBodyColor1("");
         second.setBodyColor2("");
         second.setBodyColor3("");
-        second.setHairCode("");;
+        second.setHairCode("");
         setDefaultMasteryValues(second);
         second.setKaiokenStackable(true);
         second.setKaiokenDrainMultiplier(2.0);
@@ -603,7 +603,7 @@ public class DefaultFormsFactory {
         third.setName(FrostDemonForms.THIRD_FORM);
         third.setUnlockOnSkillLevel(2);
         third.setCustomModel("frostdemon_third");
-        third.setModelScaling(1.4f);
+        third.setModelScaling(new float[]{1.4f, 1.4f, 1.4f});
         third.setStrMultiplier(2.5);
         third.setSkpMultiplier(2.5);
         third.setStmMultiplier(1.0);
@@ -622,7 +622,7 @@ public class DefaultFormsFactory {
         third.setBodyColor1("");
         third.setBodyColor2("");
         third.setBodyColor3("");
-        third.setHairCode("");;
+        third.setHairCode("");
         setDefaultMasteryValues(third);
         third.setKaiokenStackable(true);
         third.setKaiokenDrainMultiplier(2.0);
@@ -631,7 +631,7 @@ public class DefaultFormsFactory {
         finalForm.setName(FrostDemonForms.FINAL_FORM);
         finalForm.setUnlockOnSkillLevel(3);
         finalForm.setCustomModel("");
-        finalForm.setModelScaling(1.0f);
+        finalForm.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         finalForm.setStrMultiplier(3.5);
         finalForm.setSkpMultiplier(3.5);
         finalForm.setStmMultiplier(1.0);
@@ -650,7 +650,7 @@ public class DefaultFormsFactory {
         finalForm.setBodyColor1("");
         finalForm.setBodyColor2("");
         finalForm.setBodyColor3("");
-        finalForm.setHairCode("");;
+        finalForm.setHairCode("");
         setDefaultMasteryValues(finalForm);
         finalForm.setKaiokenStackable(true);
         finalForm.setKaiokenDrainMultiplier(2.0);
@@ -659,7 +659,7 @@ public class DefaultFormsFactory {
         fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(1.2f);
+        fullPower.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
         fullPower.setStrMultiplier(4.5);
         fullPower.setSkpMultiplier(4.5);
         fullPower.setStmMultiplier(1.0);
@@ -678,7 +678,7 @@ public class DefaultFormsFactory {
         fullPower.setBodyColor1("");
         fullPower.setBodyColor2("");
         fullPower.setBodyColor3("");
-        fullPower.setHairCode("");;
+        fullPower.setHairCode("");
         setDefaultMasteryValues(fullPower);
         fullPower.setKaiokenStackable(true);
         fullPower.setKaiokenDrainMultiplier(2.0);
@@ -706,7 +706,7 @@ public class DefaultFormsFactory {
         kid.setName(MajinForms.KID);
         kid.setUnlockOnSkillLevel(1);
         kid.setCustomModel("human_slim");
-        kid.setModelScaling(0.7f);
+        kid.setModelScaling(new float[]{0.7f, 0.7f, 0.7f});
         kid.setStrMultiplier(1.75);
         kid.setSkpMultiplier(1.75);
         kid.setStmMultiplier(1.0);
@@ -725,7 +725,7 @@ public class DefaultFormsFactory {
         kid.setBodyColor1("");
         kid.setBodyColor2("");
         kid.setBodyColor3("");
-        kid.setHairCode("");;
+        kid.setHairCode("");
         setDefaultMasteryValues(kid);
         kid.setKaiokenStackable(true);
         kid.setKaiokenDrainMultiplier(2.0);
@@ -734,7 +734,7 @@ public class DefaultFormsFactory {
         evil.setName(MajinForms.EVIL);
         evil.setUnlockOnSkillLevel(2);
         evil.setCustomModel("");
-        evil.setModelScaling(1.0f);
+        evil.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         evil.setStrMultiplier(2.5);
         evil.setSkpMultiplier(2.5);
         evil.setStmMultiplier(1.0);
@@ -746,14 +746,14 @@ public class DefaultFormsFactory {
         evil.setEnergyDrain(0.0);
         evil.setStaminaDrain(1.0);
         evil.setAttackSpeed(1.0);
-        evil.setHairColor("");
+        evil.setHairColor("#917979");
         evil.setEye1Color("#F52746");
         evil.setEye2Color("#F52746");
         evil.setAuraColor("");
         evil.setBodyColor1("#917979");
         evil.setBodyColor2("#917979");
         evil.setBodyColor3("#917979");
-        evil.setHairCode("");;
+        evil.setHairCode("");
         setDefaultMasteryValues(evil);
         evil.setKaiokenStackable(true);
         evil.setKaiokenDrainMultiplier(2.0);
@@ -762,7 +762,7 @@ public class DefaultFormsFactory {
         superForm.setName(MajinForms.SUPER);
         superForm.setUnlockOnSkillLevel(3);
         superForm.setCustomModel("");
-        superForm.setModelScaling(1.0f);
+        superForm.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         superForm.setStrMultiplier(3.5);
         superForm.setSkpMultiplier(3.5);
         superForm.setStmMultiplier(1.0);
@@ -781,7 +781,7 @@ public class DefaultFormsFactory {
         superForm.setBodyColor1("");
         superForm.setBodyColor2("");
         superForm.setBodyColor3("");
-        superForm.setHairCode("");;
+        superForm.setHairCode("");
         setDefaultMasteryValues(superForm);
         superForm.setKaiokenStackable(true);
         superForm.setKaiokenDrainMultiplier(2.0);
@@ -790,7 +790,7 @@ public class DefaultFormsFactory {
         ultra.setName(MajinForms.ULTRA);
         ultra.setUnlockOnSkillLevel(4);
         ultra.setCustomModel("");
-        ultra.setModelScaling(1.2f);
+        ultra.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
         ultra.setStrMultiplier(4.5);
         ultra.setSkpMultiplier(4.5);
         ultra.setStmMultiplier(1.0);
@@ -809,7 +809,7 @@ public class DefaultFormsFactory {
         ultra.setBodyColor1("");
         ultra.setBodyColor2("");
         ultra.setBodyColor3("");
-        ultra.setHairCode("");;
+        ultra.setHairCode("");
         setDefaultMasteryValues(ultra);
         ultra.setKaiokenStackable(true);
         ultra.setKaiokenDrainMultiplier(2.0);
@@ -837,7 +837,7 @@ public class DefaultFormsFactory {
         semiPerfect.setName(BioAndroidForms.SEMI_PERFECT);
         semiPerfect.setUnlockOnSkillLevel(1);
         semiPerfect.setCustomModel("bioandroid_semi");
-        semiPerfect.setModelScaling(1.3f);
+        semiPerfect.setModelScaling(new float[]{1.3f, 1.3f, 1.3f});
         semiPerfect.setStrMultiplier(1.95);
         semiPerfect.setSkpMultiplier(1.95);
         semiPerfect.setStmMultiplier(1.0);
@@ -856,7 +856,7 @@ public class DefaultFormsFactory {
         semiPerfect.setBodyColor1("");
         semiPerfect.setBodyColor2("");
         semiPerfect.setBodyColor3("");
-        semiPerfect.setHairCode("");;
+        semiPerfect.setHairCode("");
         setDefaultMasteryValues(semiPerfect);
         semiPerfect.setKaiokenStackable(true);
         semiPerfect.setKaiokenDrainMultiplier(2.0);
@@ -865,7 +865,7 @@ public class DefaultFormsFactory {
         perfect.setName(BioAndroidForms.PERFECT);
         perfect.setUnlockOnSkillLevel(2);
         perfect.setCustomModel("bioandroid_perfect");
-        perfect.setModelScaling(1.1f);
+        perfect.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
         perfect.setStrMultiplier(2.85);
         perfect.setSkpMultiplier(2.85);
         perfect.setStmMultiplier(1.0);
@@ -884,7 +884,7 @@ public class DefaultFormsFactory {
         perfect.setBodyColor1("");
         perfect.setBodyColor2("");
         perfect.setBodyColor3("");
-        perfect.setHairCode("");;
+        perfect.setHairCode("");
         setDefaultMasteryValues(perfect);
         perfect.setKaiokenStackable(true);
         perfect.setKaiokenDrainMultiplier(2.0);
@@ -893,7 +893,7 @@ public class DefaultFormsFactory {
         superPerfect.setName(BioAndroidForms.SUPER_PERFECT);
         superPerfect.setUnlockOnSkillLevel(3);
         superPerfect.setCustomModel("bioandroid_perfect");
-        superPerfect.setModelScaling(1.2f);
+        superPerfect.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
         superPerfect.setStrMultiplier(4.0);
         superPerfect.setSkpMultiplier(4.0);
         superPerfect.setStmMultiplier(1.0);
@@ -912,7 +912,7 @@ public class DefaultFormsFactory {
         superPerfect.setBodyColor1("");
         superPerfect.setBodyColor2("");
         superPerfect.setBodyColor3("");
-        superPerfect.setHairCode("");;
+        superPerfect.setHairCode("");
         setDefaultMasteryValues(superPerfect);
         superPerfect.setKaiokenStackable(true);
         superPerfect.setKaiokenDrainMultiplier(2.0);

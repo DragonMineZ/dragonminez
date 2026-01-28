@@ -58,15 +58,19 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         String race = character.getRaceName().toLowerCase();
         String currentForm = character.getActiveForm();
 
-        float scaling;
+        float scalingX, scalingY, scalingZ;
 
         if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU)) || (Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
-            scaling = 1.0f;
+            scalingX = 1.0f; scalingY = 1.0f; scalingZ = 1.0f;
         } else {
             if (activeForm != null) {
-                scaling = activeForm.getModelScaling();
+                scalingX = activeForm.getModelScaling()[0];
+				scalingY = activeForm.getModelScaling()[1];
+				scalingZ = activeForm.getModelScaling()[2];
             } else {
-                scaling = (float) character.getModelScaling();
+                scalingX = character.getModelScaling()[0];
+				scalingY = character.getModelScaling()[1];
+				scalingZ = character.getModelScaling()[2];
             }
         }
 
@@ -84,11 +88,11 @@ public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			poseStack.translate(0, -pivotY, 0);
 		}
 
-        poseStack.scale(scaling, scaling, scaling);
+        poseStack.scale(scalingX, scalingY, scalingZ);
 
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 
-        this.shadowRadius = 0.4f * scaling;
+        this.shadowRadius = 0.4f * ((scalingX + scalingZ) / 2.0f);
 
         poseStack.popPose();
     }

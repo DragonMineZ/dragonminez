@@ -1,13 +1,11 @@
 package com.dragonminez.server.events.players;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
-import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -20,7 +18,6 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -31,7 +28,6 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityEvent;
@@ -490,27 +486,36 @@ public class StatsEvents {
     public static void onEntitySize(EntityEvent.Size event) {
         if (!(event.getEntity() instanceof Player player)) return;
 
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            float configScale = 0.9375f;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			float[] scaling = data.getCharacter().getModelScaling();
+			if (scaling == null || scaling.length < 2) scaling = new float[]{0.9375f, 0.9375f, 0.9375f};
 
-            if (data.getCharacter().hasActiveForm()) {
-                FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-                if (activeForm != null) {
-                    configScale *= activeForm.getModelScaling();
-                }
-            } else {
-                configScale = (float) data.getCharacter().getModelScaling();
-            }
+			float currentScaleX = scaling[0];
+			float currentScaleY = scaling[1];
 
-            if (Math.abs(configScale - 0.9375f) > 0.001F) {
-                float ratio = configScale / 0.9375f;
-                EntityDimensions newDims = EntityDimensions.scalable(0.6F * ratio, 1.8F * ratio);
-                event.setNewSize(newDims);
-                float defaultEyeHeight = player.getEyeHeight(Pose.STANDING);
-                float currentBaseEye = event.getNewEyeHeight() > 0 ? event.getNewEyeHeight() : defaultEyeHeight;
-                event.setNewEyeHeight(currentBaseEye * ratio);
-            }
-        });
-    }
+			if (data.getCharacter().hasActiveForm()) {
+				FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+				if (activeForm != null) {
+					float[] formMultiplier = activeForm.getModelScaling();
+					currentScaleX *= formMultiplier[0];
+					currentScaleY *= formMultiplier[1];
+				}
+			}
+
+			final float BASE_SCALE = 0.9375f;
+
+			float ratioX = currentScaleX / BASE_SCALE;
+			float ratioY = currentScaleY / BASE_SCALE;
+
+			if (Math.abs(ratioX - 1.0f) > 0.001F || Math.abs(ratioY - 1.0f) > 0.001F) {
+
+				EntityDimensions newDims = EntityDimensions.scalable(0.6F * ratioX, 1.8F * ratioY);
+				event.setNewSize(newDims);
+				float defaultEyeHeight = player.getEyeHeight(Pose.STANDING);
+				float baseEye = event.getNewEyeHeight() > 0 ? event.getNewEyeHeight() : defaultEyeHeight;
+				event.setNewEyeHeight(baseEye * ratioY);
+			}
+		});
+	}
 
 }
