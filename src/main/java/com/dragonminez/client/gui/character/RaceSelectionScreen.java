@@ -132,6 +132,7 @@ public class RaceSelectionScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderPanorama(graphics, partialTick);
+        this.renderCinematicBars(graphics);
 
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -144,6 +145,31 @@ public class RaceSelectionScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
 
         renderRaceInfo(graphics);
+    }
+
+    private void renderCinematicBars(GuiGraphics guiGraphics) {
+        int totalBarHeight = (int) (this.height * 0.12);
+
+        int fadeSize = 60;
+
+        if (totalBarHeight <= fadeSize) {
+            totalBarHeight = fadeSize + 1;
+        }
+
+        int solidHeight = totalBarHeight - fadeSize;
+
+        int colorSolid = 0xFF000000;
+        int colorTransparent = 0x00000000;
+
+        guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
+
+        guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
+
+        int bottomBarStartY = this.height - totalBarHeight;
+
+        guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
+
+        guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
     }
 
     private void renderPanorama(GuiGraphics graphics, float partialTick) {
