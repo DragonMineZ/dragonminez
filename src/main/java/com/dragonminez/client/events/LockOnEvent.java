@@ -94,7 +94,7 @@ public class LockOnEvent {
 				shouldUnlock.set(true);
 			}
 
-			if (player.hasLineOfSight(lockedTarget)) {
+			if (!player.hasLineOfSight(lockedTarget)) {
 				shouldUnlock.set(true);
 			}
 		});

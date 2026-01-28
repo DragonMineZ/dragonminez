@@ -140,7 +140,9 @@ public class AuraRenderHandler {
 	private static float[] getKiColor(StatsData stats) {
 		var character = stats.getCharacter();
 		String kiHex = character.getAuraColor();
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+		if (stats.getStatus().getActiveKaiokenPhase() >= 1) {
+			kiHex = "#DB182C";
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			String formColor = character.getActiveFormData().getAuraColor();
 			if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
 		}

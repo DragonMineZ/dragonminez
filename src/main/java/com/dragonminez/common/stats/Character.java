@@ -148,7 +148,7 @@ public class Character {
         return raceConfig.hasGender();
     }
 
-    public double getModelScaling() {
+    public float[] getModelScaling() {
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
         return raceConfig.getDefaultModelScaling();
     }

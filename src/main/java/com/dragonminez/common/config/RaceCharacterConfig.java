@@ -5,7 +5,7 @@ public class RaceCharacterConfig {
     private boolean hasGender = true;
     private boolean useVanillaSkin = false;
     private String customModel = "";
-	private float defaultModelScaling = 0.9375f;
+	private float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
     private int defaultBodyType = 0;
     private int defaultHairType = 0;
     private boolean canUseHair = true;
@@ -30,7 +30,7 @@ public class RaceCharacterConfig {
     public boolean hasGender() { return hasGender; }
     public boolean useVanillaSkin() { return useVanillaSkin; }
 	public String getCustomModel() { return customModel; }
-	public float getDefaultModelScaling() { return defaultModelScaling; }
+	public float[] getDefaultModelScaling() { return defaultModelScaling; }
     public int getDefaultBodyType() { return defaultBodyType; }
     public int getDefaultHairType() { return defaultHairType; }
     public boolean canUseHair() { return canUseHair; }
@@ -53,7 +53,7 @@ public class RaceCharacterConfig {
     public void setHasGender(boolean hasGender) { this.hasGender = hasGender; }
     public void setUseVanillaSkin(boolean useVanillaSkin) { this.useVanillaSkin = useVanillaSkin; }
 	public void setCustomModel(String customModel) { this.customModel = customModel; }
-	public void setDefaultModelScaling(float defaultModelScaling) { this.defaultModelScaling = defaultModelScaling; }
+	public void setDefaultModelScaling(float[] defaultModelScaling) { this.defaultModelScaling = defaultModelScaling; }
     public void setDefaultBodyType(int defaultBodyType) { this.defaultBodyType = defaultBodyType; }
     public void setDefaultHairType(int defaultHairType) { this.defaultHairType = defaultHairType; }
     public void setCanUseHair(boolean canUseHair) { this.canUseHair = canUseHair; }
