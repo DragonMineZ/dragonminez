@@ -36,13 +36,13 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
-    public static void onLivingHurt(LivingHurtEvent event) {
-        DamageSource source = event.getSource();
-        final double[] currentDamage = {event.getAmount()};
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onLivingHurt(LivingHurtEvent event) {
+		DamageSource source = event.getSource();
+		final double[] currentDamage = {event.getAmount()};
 
 		// Attacker Damage Event
-        if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
+		if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
 			if (attacker.hasEffect(MainEffects.STUN.get()) || attacker.isBlocking()) {
 				event.setCanceled(true);
 				return;
@@ -50,59 +50,59 @@ public class CombatEvent {
 
 			boolean isPunchMachine = event.getEntity() instanceof PunchMachineEntity;
 
-            StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-                if (!attackerData.getStatus().hasCreatedCharacter()) return;
+			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
+				if (!attackerData.getStatus().hasCreatedCharacter()) return;
 
-                double mcBaseDamage = currentDamage[0];
-                double dmzDamage = attackerData.getMeleeDamage();
+				double mcBaseDamage = currentDamage[0];
+				double dmzDamage = attackerData.getMeleeDamage();
 
-                if (ConfigManager.getServerConfig().getCombat().isRespectAttackCooldown()) {
-                    float attackStrength = attacker.getAttackStrengthScale(0.5F);
-                    float adjustedStrength = attackStrength;
+				if (ConfigManager.getServerConfig().getCombat().isRespectAttackCooldown()) {
+					float attackStrength = attacker.getAttackStrengthScale(0.5F);
+					float adjustedStrength = attackStrength;
 
-                    if (attackerData.getCharacter().hasActiveForm()) {
-                        FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-                        if (activeForm != null) {
-                            adjustedStrength *= (float) activeForm.getAttackSpeed();
-                        }
-                    }
+					if (attackerData.getCharacter().hasActiveForm()) {
+						FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+						if (activeForm != null) {
+							adjustedStrength *= (float) activeForm.getAttackSpeed();
+						}
+					}
 
-                    if (adjustedStrength > 1.0F) adjustedStrength = 1.0F;
+					if (adjustedStrength > 1.0F) adjustedStrength = 1.0F;
 
-                    float damageScale = 0.2F + adjustedStrength * adjustedStrength * 0.8F;
-                    dmzDamage *= damageScale;
-                }
+					float damageScale = 0.2F + adjustedStrength * adjustedStrength * 0.8F;
+					dmzDamage *= damageScale;
+				}
 
-                int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
-                double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
-                int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
-                int currentStamina = attackerData.getResources().getCurrentStamina();
+				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
+				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
+				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
+				int currentStamina = attackerData.getResources().getCurrentStamina();
 				if (isPunchMachine) staminaRequired = 0;
 
-                double finalDmzDamage;
-                if (currentStamina >= staminaRequired) {
-                    finalDmzDamage = dmzDamage;
-                    attackerData.getResources().removeStamina(staminaRequired);
-                } else {
-                    double staminaRatio = (double) currentStamina / staminaRequired;
-                    finalDmzDamage = dmzDamage * staminaRatio;
-                    attackerData.getResources().setCurrentStamina(0);
-                }
+				double finalDmzDamage;
+				if (currentStamina >= staminaRequired) {
+					finalDmzDamage = dmzDamage;
+					attackerData.getResources().removeStamina(staminaRequired);
+				} else {
+					double staminaRatio = (double) currentStamina / staminaRequired;
+					finalDmzDamage = dmzDamage * staminaRatio;
+					attackerData.getResources().setCurrentStamina(0);
+				}
 
-                if (attackerData.getCharacter().hasActiveForm()) {
-                    FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-                    if (activeForm != null) {
-                        String formGroup = attackerData.getCharacter().getActiveFormGroup();
-                        String formName = attackerData.getCharacter().getActiveForm();
-                        attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
-                    }
-                }
+				if (attackerData.getCharacter().hasActiveForm()) {
+					FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+					if (activeForm != null) {
+						String formGroup = attackerData.getCharacter().getActiveFormGroup();
+						String formName = attackerData.getCharacter().getActiveForm();
+						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
+					}
+				}
 
-                if (isEmptyHandOrNoDamageItem(attacker)) {
-                    currentDamage[0] = finalDmzDamage;
-                } else {
-                    currentDamage[0] = mcBaseDamage + finalDmzDamage;
-                }
+				if (isEmptyHandOrNoDamageItem(attacker)) {
+					currentDamage[0] = finalDmzDamage;
+				} else {
+					currentDamage[0] = mcBaseDamage + finalDmzDamage;
+				}
 
 				boolean kiWeaponActive = attackerData.getSkills().isSkillActive("kimanipulation");
 
@@ -133,10 +133,12 @@ public class CombatEvent {
 					attackerData.getResources().removeEnergy(kiCost);
 				}
 
-				if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				if (attacker instanceof ServerPlayer serverPlayer)
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 
 				if (event.getEntity() instanceof Player) {
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
+						attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 				}
 
 				if (event.getEntity() instanceof PunchMachineEntity punchMachineEntity) {
@@ -147,15 +149,16 @@ public class CombatEvent {
 				}
 
 				event.setAmount((float) currentDamage[0]);
-            });
-        }
+			});
+		}
 
 		// Victim Defense Event
-        if (event.getEntity() instanceof Player victim) {
-            StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
-                if (victimData.getStatus().hasCreatedCharacter()) {
+		if (event.getEntity() instanceof Player victim) {
+			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+				if (victimData.getStatus().hasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
+						victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 					double defense = victimData.getDefense();
 					boolean blocked = false;
 
@@ -197,24 +200,24 @@ public class CombatEvent {
 									currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 
 									// Acá pondríamos sonido de Rotura de Guardia
-                                    victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-                                            MainSounds.UNBLOCK.get(),
-                                            net.minecraft.sounds.SoundSource.PLAYERS,
-                                            1.0F,
-                                            0.9F + victim.getRandom().nextFloat() * 0.1F);
+									victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+											MainSounds.UNBLOCK.get(),
+											net.minecraft.sounds.SoundSource.PLAYERS,
+											1.0F,
+											0.9F + victim.getRandom().nextFloat() * 0.1F);
 
-                                    if (victim.level() instanceof ServerLevel serverLevel) {
-                                        Vec3 look = victim.getLookAngle();
-                                        Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+									if (victim.level() instanceof ServerLevel serverLevel) {
+										Vec3 look = victim.getLookAngle();
+										Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
-                                        serverLevel.sendParticles(
-                                                MainParticles.GUARD_BLOCK.get(),
-                                                spawnPos.x, spawnPos.y, spawnPos.z,
-                                                0,
-                                                1.0, 0.1, 0.1,
-                                                1.0
-                                        );
-                                    }
+										serverLevel.sendParticles(
+												MainParticles.GUARD_BLOCK.get(),
+												spawnPos.x, spawnPos.y, spawnPos.z,
+												0,
+												1.0, 0.1, 0.1,
+												1.0
+										);
+									}
 
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
@@ -233,97 +236,103 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 
 											// Efecto de Parry (temblor de pantalla pequeño) al atacante
-                                            attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 50, false, false, true));
-                                        }
+											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 50, false, false, true));
+										}
 										//System.out.println("Parry!");
-                                        //SONIDO PARRY
-                                        victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-                                                MainSounds.PARRY.get(),
-                                                net.minecraft.sounds.SoundSource.PLAYERS,
-                                                1.0F,
-                                                0.9F + victim.getRandom().nextFloat() * 0.1F);
+										//SONIDO PARRY
+										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+												MainSounds.PARRY.get(),
+												net.minecraft.sounds.SoundSource.PLAYERS,
+												1.0F,
+												0.9F + victim.getRandom().nextFloat() * 0.1F);
 
-                                        if (victim.level() instanceof ServerLevel serverLevel) {
-                                            Vec3 look = victim.getLookAngle();
-                                            Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+										if (victim.level() instanceof ServerLevel serverLevel) {
+											Vec3 look = victim.getLookAngle();
+											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
-                                            serverLevel.sendParticles(
-                                                    MainParticles.GUARD_BLOCK.get(),
-                                                    spawnPos.x, spawnPos.y, spawnPos.z,
-                                                    0,
-                                                    1.0, 1.0, 1.0,
-                                                    1.0
-                                            );
-                                            for (int i = 0; i < 15; i++) {
-                                                serverLevel.sendParticles(
-                                                        MainParticles.KI_TRAIL.get(),
-                                                        spawnPos.x, spawnPos.y, spawnPos.z,
-                                                        0,
-                                                        1.0, 1.0, 1.0,
-                                                        1.0
-                                                );
-                                                serverLevel.sendParticles(
-                                                        MainParticles.SPARKS.get(),
-                                                        spawnPos.x, spawnPos.y, spawnPos.z,
-                                                        0,
-                                                        1.0, 1.0, 1.0,
-                                                        1.0
-                                                );
-                                            }
-                                        }
+											serverLevel.sendParticles(
+													MainParticles.GUARD_BLOCK.get(),
+													spawnPos.x, spawnPos.y, spawnPos.z,
+													0,
+													1.0, 1.0, 1.0,
+													1.0
+											);
+											for (int i = 0; i < 15; i++) {
+												serverLevel.sendParticles(
+														MainParticles.KI_TRAIL.get(),
+														spawnPos.x, spawnPos.y, spawnPos.z,
+														0,
+														1.0, 1.0, 1.0,
+														1.0
+												);
+												serverLevel.sendParticles(
+														MainParticles.SPARKS.get(),
+														spawnPos.x, spawnPos.y, spawnPos.z,
+														0,
+														1.0, 1.0, 1.0,
+														1.0
+												);
+											}
+										}
 
-                                    } else {
+									} else {
 										double reductionCap = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionCap();
 										double reductionMin = ConfigManager.getServerConfig().getCombat().getBlockDamageReductionMin();
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
 										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
 
 										finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
-                                        int randomSound = victim.getRandom().nextInt(3);
-                                        SoundEvent soundToPlay;
+										int randomSound = victim.getRandom().nextInt(3);
+										SoundEvent soundToPlay;
 
-                                        if (randomSound == 0) {
-                                            soundToPlay = MainSounds.BLOCK1.get();
-                                        } else if (randomSound == 1) {
-                                            soundToPlay = MainSounds.BLOCK2.get();
-                                        } else {
-                                            soundToPlay = MainSounds.BLOCK3.get();
-                                        }
+										if (randomSound == 0) {
+											soundToPlay = MainSounds.BLOCK1.get();
+										} else if (randomSound == 1) {
+											soundToPlay = MainSounds.BLOCK2.get();
+										} else {
+											soundToPlay = MainSounds.BLOCK3.get();
+										}
 
 //                                        System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
 
-                                        victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-                                                soundToPlay,
-                                                net.minecraft.sounds.SoundSource.PLAYERS,
-                                                1.0F,
-                                                0.9F + victim.getRandom().nextFloat() * 0.1F);
+										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+												soundToPlay,
+												net.minecraft.sounds.SoundSource.PLAYERS,
+												1.0F,
+												0.9F + victim.getRandom().nextFloat() * 0.1F);
 
-                                        //EFECTOS
-                                        if (victim.level() instanceof ServerLevel serverLevel) {
-                                            double maxPoise = victimData.getMaxPoise();
-                                            double currentPoiseVal = victimData.getResources().getCurrentPoise();
-                                            double percentage = (currentPoiseVal / maxPoise) * 100.0;
-                                            double r, g, b;
+										//EFECTOS
+										if (victim.level() instanceof ServerLevel serverLevel) {
+											double maxPoise = victimData.getMaxPoise();
+											double currentPoiseVal = victimData.getResources().getCurrentPoise();
+											double percentage = (currentPoiseVal / maxPoise) * 100.0;
+											double r, g, b;
 
-                                            if (percentage > 66) {
-                                                r = 0.2; g = 0.9; b = 1.0;
-                                            } else if (percentage > 33) {
-                                                r = 1.0; g = 0.5; b = 0.0;
-                                            } else {
-                                                r = 1.0; g = 0.1; b = 0.1;
-                                            }
+											if (percentage > 66) {
+												r = 0.2;
+												g = 0.9;
+												b = 1.0;
+											} else if (percentage > 33) {
+												r = 1.0;
+												g = 0.5;
+												b = 0.0;
+											} else {
+												r = 1.0;
+												g = 0.1;
+												b = 0.1;
+											}
 
-                                            Vec3 look = victim.getLookAngle();
-                                            Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
+											Vec3 look = victim.getLookAngle();
+											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
-                                            serverLevel.sendParticles(
-                                                    MainParticles.BLOCK_PARTICLE.get(),
-                                                    spawnPos.x, spawnPos.y, spawnPos.z,
-                                                    0,
-                                                    r, g, b,
-                                                    1.0
-                                            );
-                                        }
+											serverLevel.sendParticles(
+													MainParticles.BLOCK_PARTICLE.get(),
+													spawnPos.x, spawnPos.y, spawnPos.z,
+													0,
+													r, g, b,
+													1.0
+											);
+										}
 
 									}
 
@@ -381,15 +390,15 @@ public class CombatEvent {
 			});
 		}
 
-        event.setAmount((float) currentDamage[0]);
-    }
+		event.setAmount((float) currentDamage[0]);
+	}
 
-    private static boolean isEmptyHandOrNoDamageItem(Player player) {
-        ItemStack mainHand = player.getMainHandItem();
-        if (mainHand.isEmpty()) return true;
-        var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE);
-        return attackDamageModifier.isEmpty();
-    }
+	private static boolean isEmptyHandOrNoDamageItem(Player player) {
+		ItemStack mainHand = player.getMainHandItem();
+		if (mainHand.isEmpty()) return true;
+		var attackDamageModifier = mainHand.getAttributeModifiers(EquipmentSlot.MAINHAND).get(Attributes.ATTACK_DAMAGE);
+		return attackDamageModifier.isEmpty();
+	}
 
 	public static void handleDash(ServerPlayer player, float xInput, float zInput, boolean isDoubleDash) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -418,25 +427,25 @@ public class CombatEvent {
 					data.getStatus().setLastHurtTime(0);
 
 					player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-						MainSounds.PARRY.get(),
-						SoundSource.PLAYERS,
-						1.0F,
-						1.2F + player.getRandom().nextFloat() * 0.2F);
+							MainSounds.PARRY.get(),
+							SoundSource.PLAYERS,
+							1.0F,
+							1.2F + player.getRandom().nextFloat() * 0.2F);
 
 					if (player.level() instanceof ServerLevel serverLevel) {
 						Vec3 spawnPos = player.getEyePosition().subtract(0, 0.3, 0);
 						for (int i = 0; i < 20; i++) {
 							serverLevel.sendParticles(
-								MainParticles.KI_TRAIL.get(),
-								spawnPos.x, spawnPos.y, spawnPos.z,
-								0,
-								1.0, 1.0, 1.0,
-								1.0
+									MainParticles.KI_TRAIL.get(),
+									spawnPos.x, spawnPos.y, spawnPos.z,
+									0,
+									1.0, 1.0, 1.0,
+									1.0
 							);
 						}
 					}
 
-					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C("evasion", 0), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "evasion", 0), player);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					return;
 				}
@@ -464,31 +473,23 @@ public class CombatEvent {
 				dashType = DMZEvent.PlayerDashEvent.DashType.NORMAL;
 			}
 
-			DMZEvent.PlayerDashEvent dashEvent = new DMZEvent.PlayerDashEvent(
-				player, dashType, distance, kiCost
-			);
+			DMZEvent.PlayerDashEvent dashEvent = new DMZEvent.PlayerDashEvent(player, dashType, distance, kiCost);
 			MinecraftForge.EVENT_BUS.post(dashEvent);
-
 			if (dashEvent.isCanceled()) return;
-
 			distance = dashEvent.getDistance();
 			kiCost = dashEvent.getKiCost();
 			int currentEnergy = data.getResources().getCurrentEnergy();
-
 			if (currentEnergy < kiCost) return;
-
 			data.getResources().addEnergy(-kiCost);
 
-			float yaw = player.getYRot();
-			double yawRad = Math.toRadians(yaw);
-
-			Vec3 forward = new Vec3(-Math.sin(yawRad), 0, Math.cos(yawRad)).normalize();
-			Vec3 right = new Vec3(Math.cos(yawRad), 0, Math.sin(yawRad)).normalize();
-
+			Vec3 forward = Vec3.directionFromRotation(0, player.getYRot()).normalize();
+			Vec3 right = forward.cross(new Vec3(0, 1, 0)).normalize();
 			Vec3 direction = forward.scale(zInput).add(right.scale(xInput)).normalize();
 
+			double yVel = player.onGround() ? 0.35 : 0.2;
+
 			Vec3 velocity = direction.scale(distance * 0.3);
-			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, 0.2, velocity.z));
+			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
 			player.hurtMarked = true;
 
 			int dashCdSeconds = ConfigManager.getServerConfig().getCombat().getDashCooldownSeconds();
@@ -514,17 +515,18 @@ public class CombatEvent {
 				Vec3 spawnPos = player.position().add(0, 0.5, 0);
 				for (int i = 0; i < (canDoubleDash ? 15 : 8); i++) {
 					serverLevel.sendParticles(
-						MainParticles.KI_TRAIL.get(),
-						spawnPos.x, spawnPos.y, spawnPos.z,
-						0,
-						direction.x * 0.5, 0.1, direction.z * 0.5,
-						0.3
+							MainParticles.KI_TRAIL.get(),
+							spawnPos.x, spawnPos.y, spawnPos.z,
+							0,
+							direction.x * 0.5, 0.1, direction.z * 0.5,
+							0.3
 					);
 				}
 			}
 
 			int dashDirection = getDashDirectionFromInput(xInput, zInput);
-			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C("dash", dashDirection, player.getId()), player);
+			if (canDoubleDash) dashDirection += 4;
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "dash", dashDirection, player.getId()), player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 	}

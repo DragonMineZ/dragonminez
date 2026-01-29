@@ -61,11 +61,11 @@ public class KiBlastC2S {
 					kiBlast.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 2.0F, 0.5F);
 					player.level().addFreshEntity(kiBlast);
 
-					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C("ki_blast_shot", 0, player.getId()), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "ki_blast_shot", 0, player.getId()), player);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				});
 			} else {
-				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C("ki_blast_shot", 1, player.getId()), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "ki_blast_shot", 1, player.getId()), player);
 			}
 		});
 

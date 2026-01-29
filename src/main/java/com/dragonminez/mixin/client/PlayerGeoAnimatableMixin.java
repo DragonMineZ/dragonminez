@@ -44,6 +44,12 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
     private int dragonminez$lastTickCount = -1;
     @Unique
     private static final int STOPPED_THRESHOLD_TICKS = 3;
+	@Unique
+	private int dragonminez$lastDashTickRun = -1;
+	@Unique
+	private int dragonminez$lastAttackTick = -1;
+	@Unique
+	private int dragonminez$lastAttackTickRun = -1;
 
     @Unique
     private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
@@ -97,6 +103,7 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
     private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> state) {
         AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
         IPlayerAnimatable animatable = (IPlayerAnimatable) this;
+		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 
         boolean isMoving = dragonminez$isActuallyMoving(player);
 
@@ -109,43 +116,32 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 			isBlocking.set(data.getStatus().isBlocking());
         });
 
-        if (isDraining.get()) {
-            return state.setAndContinue(DRAIN);
-        }
+        if (isDraining.get()) return state.setAndContinue(DRAIN);
 
-		if (isChargingKi.get() && !isMoving && !isBlocking.get()) {
-			return state.setAndContinue(KI_CHARGE);
-		}
+		if (player.isPassenger()) return state.setAndContinue(SIT);
+
+		if (isChargingKi.get() && !isMoving && !isBlocking.get()) return state.setAndContinue(KI_CHARGE);
+
 
         // Swimming
-        if (player.isSwimming()) {
-            return state.setAndContinue(SWIMMING);
-        }
+        if (player.isSwimming()) return state.setAndContinue(SWIMMING);
 
         if (player.isVisuallyCrawling()) {
-            if (isMoving) {
-                return state.setAndContinue(CRAWLING_MOVE);
-            } else {
-                return state.setAndContinue(CRAWLING);
-            }
+            if (isMoving) return state.setAndContinue(CRAWLING_MOVE);
+            else return state.setAndContinue(CRAWLING);
         }
 
         // Flying
         if (flySkillActive.get() || player.isFallFlying() || animatable.dragonminez$isFlying()) {
-            if (FlySkillEvent.isFlyingFast()) {
-                return state.setAndContinue(FLY_FAST);
-            }
-            return state.setAndContinue(FLY);
+            if (FlySkillEvent.isFlyingFast()) return state.setAndContinue(FLY_FAST);
+            else return state.setAndContinue(FLY);
         }
 
         if (player.onGround()) {
             // Crouching
             if (player.isCrouching()) {
-                if (isMoving) {
-                    return state.setAndContinue(CROUCHING_WALK);
-                } else {
-                    return state.setAndContinue(CROUCHING);
-                }
+                if (isMoving) return state.setAndContinue(CROUCHING_WALK);
+                else return state.setAndContinue(CROUCHING);
             } else if (isMoving && player.isSprinting()) {
                 // Running
                 return state.setAndContinue(RUN);
@@ -196,32 +192,40 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
         }).orElse(PlayState.STOP);
     }
 
-    @Unique
-    private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
-        AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
-        IPlayerAnimatable animatable = (IPlayerAnimatable) this;
+	@Unique
+	private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
+	AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+	IPlayerAnimatable animatable = (IPlayerAnimatable) this;
+	AnimationController<T> ctl = state.getController();
 
-        AnimationController<T> ctl = state.getController();
+		if (player.tickCount != dragonminez$lastAttackTickRun) {
+			dragonminez$lastAttackTickRun = player.tickCount;
+			if (dragonminez$attackAnimTicks > 0) dragonminez$attackAnimTicks--;
 
-        if (player.attackAnim > 0 && !isPlacingBlock(player) && !isBlocking(player) && !isUsingTool(player)) {
-            if (!animatable.dragonminez$isPlayingAttack()) {
-                animatable.dragonminez$setPlayingAttack(true);
-                ctl.setAnimation(animatable.dragonminez$useAttack2() ? ATTACK2 : ATTACK);
-                animatable.dragonminez$setUseAttack2(!animatable.dragonminez$useAttack2());
-                dragonminez$attackAnimTicks = 10;
-            }
-            return PlayState.CONTINUE;
-        }
+		}
 
+		boolean isValidAttackContext = player.swinging && !isPlacingBlock(player) && !isBlocking(player) && !isUsingTool(player);
 
-        if (dragonminez$attackAnimTicks > 0) {
-            dragonminez$attackAnimTicks--;
-            return PlayState.CONTINUE;
-        }
+		if (isValidAttackContext) {
+			boolean isNewAttackFrame = player.swingTime == 0;
+			boolean alreadyProcessedThisTick = player.tickCount == dragonminez$lastAttackTick;
 
-        animatable.dragonminez$setPlayingAttack(false);
-        return PlayState.STOP;
-    }
+			if (isNewAttackFrame && !alreadyProcessedThisTick) {
+				dragonminez$lastAttackTick = player.tickCount;
+				animatable.dragonminez$setPlayingAttack(true);
+				animatable.dragonminez$setUseAttack2(!animatable.dragonminez$useAttack2());
+				ctl.setAnimation(animatable.dragonminez$useAttack2() ? ATTACK2 : ATTACK);
+				ctl.forceAnimationReset();
+				dragonminez$attackAnimTicks = 12;
+
+				return PlayState.CONTINUE;
+			}
+		}
+
+		if (dragonminez$attackAnimTicks > 0) return PlayState.CONTINUE;
+		animatable.dragonminez$setPlayingAttack(false);
+		return PlayState.STOP;
+	}
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState miningPredicate(AnimationState<T> state) {
@@ -302,20 +306,25 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState dashPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 		AnimationController<T> ctl = state.getController();
 
-		if (dragonminez$dashAnimTicks > 0) {
-			dragonminez$dashAnimTicks--;
-			return PlayState.CONTINUE;
+		if (player.tickCount != dragonminez$lastDashTickRun) {
+			dragonminez$lastDashTickRun = player.tickCount;
+			if (dragonminez$dashAnimTicks > 0) dragonminez$dashAnimTicks--;
 		}
+
+		if (dragonminez$dashAnimTicks > 0) return PlayState.CONTINUE;
 
 		if (dragonminez$isEvading) {
 			RawAnimation evasionAnim = switch (dragonminez$evasionVariant) {
 				case 1 -> EVASION1;
 				case 2 -> EVASION2;
-				default -> EVASION3;
+				case 3 -> EVASION3;
+				default -> EVASION4;
 			};
 			ctl.setAnimation(evasionAnim);
+			ctl.forceAnimationReset();
 			dragonminez$dashAnimTicks = 12;
 			dragonminez$isEvading = false;
 			return PlayState.CONTINUE;
@@ -323,14 +332,19 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 
 		if (dragonminez$dashDirection != 0) {
 			RawAnimation dashAnim = switch (dragonminez$dashDirection) {
-				case 1 -> DASH_FORWARD;
 				case 2 -> DASH_BACKWARD;
 				case 3 -> DASH_RIGHT;
 				case 4 -> DASH_LEFT;
+
+				case 6 -> DOUBLEDASH_BACKWARD;
+				case 7 -> DOUBLEDASH_RIGHT;
+				case 8 -> DOUBLEDASH_LEFT;
+
 				default -> DASH_FORWARD;
 			};
 			ctl.setAnimation(dashAnim);
-			dragonminez$dashAnimTicks = 8;
+			ctl.forceAnimationReset();
+			dragonminez$dashAnimTicks = 12;
 			dragonminez$dashDirection = 0;
 			return PlayState.CONTINUE;
 		}
@@ -382,7 +396,7 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 
     @Override
     public double getTick(Object o) {
-        return ((AbstractClientPlayer) o).tickCount + Minecraft.getInstance().getPartialTick();
+        return ((AbstractClientPlayer) o).tickCount;
     }
 
     @Unique
@@ -450,7 +464,7 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
     @Override
     public void dragonminez$triggerEvasion() {
         this.dragonminez$isEvading = true;
-        this.dragonminez$evasionVariant = (int) (Math.random() * 3) + 1;
+        this.dragonminez$evasionVariant = (int) (Math.random() * 4) + 1;
     }
 
 	@Override
