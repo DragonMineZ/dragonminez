@@ -5,6 +5,7 @@ import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.ModArmorMaterials;
 import com.dragonminez.common.init.item.*;
+import com.dragonminez.common.init.item.weapons.BraveSwordItem;
 import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -75,10 +76,13 @@ public final class MainItems {
 //			ITEM_REGISTER.register("baculo_item", () -> new DMZWeaponItem(8, -1.6F, 0, "baculo_item"));
 //	public static final RegistryObject<Item> TRUNKS_SWORD =
 //			ITEM_REGISTER.register("trunks_sword", () -> new TrunksSword(new Item.Properties().fireResistant()));
-//	public static final RegistryObject<SwordItem> Z_SWORD =
-//			ITEM_REGISTER.register("z_sword", () -> new ZSword(new Item.Properties().fireResistant()));
-//	public static final RegistryObject<SwordItem> KATANA_YAJIROBE =
-//			ITEM_REGISTER.register("yajirobe_katana", () -> new YajirobeKatana(new Item.Properties().fireResistant()));
+
+	public static final RegistryObject<SwordItem> KATANA_YAJIROBE =
+			ITEM_REGISTER.register("yajirobe_katana", () -> new YajirobeKatanaItem(new Item.Properties().fireResistant()));
+    public static final RegistryObject<SwordItem> Z_SWORD =
+            ITEM_REGISTER.register("z_sword", () -> new ZSwordItem(new Item.Properties().fireResistant()));
+    public static final RegistryObject<SwordItem> BRAVE_SWORD =
+            ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem(new Item.Properties().fireResistant()));
 
 	//ARMADURAS
     // GOKU NIÑO

@@ -46,7 +46,7 @@ public class DefaultFormsFactory {
         buffed.setName(HumanForms.BUFFED);
         buffed.setUnlockOnSkillLevel(1);
         buffed.setCustomModel("");
-        buffed.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
+        buffed.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
         buffed.setStrMultiplier(1.75);
         buffed.setSkpMultiplier(1.75);
         buffed.setStmMultiplier(1.0);
@@ -102,7 +102,7 @@ public class DefaultFormsFactory {
         overdrive.setName(HumanForms.OVERDRIVE);
         overdrive.setUnlockOnSkillLevel(3);
         overdrive.setCustomModel("");
-        overdrive.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+        overdrive.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
         overdrive.setStrMultiplier(3.5);
         overdrive.setSkpMultiplier(3.5);
         overdrive.setStmMultiplier(1.0);
@@ -334,7 +334,7 @@ public class DefaultFormsFactory {
         ssg3.setBodyColor1("");
         ssg3.setBodyColor2("");
         ssg3.setBodyColor3("");
-        ssg3.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
+        ssg3.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
         ssg3.setStrMultiplier(2.8);
         ssg3.setSkpMultiplier(2.8);
         ssg3.setStmMultiplier(1.0);
@@ -659,7 +659,7 @@ public class DefaultFormsFactory {
         fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
+        fullPower.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
         fullPower.setStrMultiplier(4.5);
         fullPower.setSkpMultiplier(4.5);
         fullPower.setStmMultiplier(1.0);
@@ -734,7 +734,7 @@ public class DefaultFormsFactory {
         evil.setName(MajinForms.EVIL);
         evil.setUnlockOnSkillLevel(2);
         evil.setCustomModel("");
-        evil.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+        evil.setModelScaling(new float[]{0.9f, 1.0f, 0.9f});
         evil.setStrMultiplier(2.5);
         evil.setSkpMultiplier(2.5);
         evil.setStmMultiplier(1.0);
@@ -790,7 +790,7 @@ public class DefaultFormsFactory {
         ultra.setName(MajinForms.ULTRA);
         ultra.setUnlockOnSkillLevel(4);
         ultra.setCustomModel("");
-        ultra.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
+        ultra.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
         ultra.setStrMultiplier(4.5);
         ultra.setSkpMultiplier(4.5);
         ultra.setStmMultiplier(1.0);

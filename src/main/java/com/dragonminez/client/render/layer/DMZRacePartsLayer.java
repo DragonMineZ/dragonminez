@@ -10,6 +10,7 @@ import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -28,7 +29,16 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     private static final ResourceLocation RACES_PARTS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
     private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/raceparts.png");
+
     private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
+
+    private static final ResourceLocation YAJIROBE_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
+    private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/yajirobe_katana.png");
+    private static final ResourceLocation Z_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/z_sword.geo.json");
+    private static final ResourceLocation Z_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/z_sword.png");
+    private static final ResourceLocation BRAVE_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
+    private static final ResourceLocation BRAVE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/brave_sword.png");
+
 
     public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
@@ -43,6 +53,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight);
 
         renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+
+        renderSword(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
     }
 
     private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight) {
@@ -93,6 +105,87 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                 bufferSource.getBuffer(accRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
                 1.0f, 1.0f, 1.0f, 1.0f);
         poseStack.popPose();
+    }
+
+    private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+
+
+        boolean hasYajirobe = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.KATANA_YAJIROBE.get()));
+
+        boolean holdingYajirobe = animatable.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get()
+                || animatable.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
+
+        if (hasYajirobe && !holdingYajirobe) {
+            BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
+            if (yajirobeModel != null) {
+                RenderType type = RenderType.entityCutoutNoCull(YAJIROBE_SWORD_TEXTURE);
+
+                syncModelToPlayer(yajirobeModel, playerModel);
+
+                poseStack.pushPose();
+                getRenderer().reRender(yajirobeModel, poseStack, bufferSource, animatable, type,
+                        bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+                        1.0f, 1.0f, 1.0f, 1.0f);
+                poseStack.popPose();
+            }
+        }
+
+        boolean hasZSword = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.Z_SWORD.get()));
+
+        boolean holdingZSword = animatable.getMainHandItem().getItem() == MainItems.Z_SWORD.get()
+                || animatable.getOffhandItem().getItem() == MainItems.Z_SWORD.get();
+
+        if (hasZSword && !holdingZSword) {
+            BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
+            if (zModel != null) {
+                RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
+
+                syncModelToPlayer(zModel, playerModel);
+
+                poseStack.pushPose();
+                getRenderer().reRender(zModel, poseStack, bufferSource, animatable, type,
+                        bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+                        1.0f, 1.0f, 1.0f, 1.0f);
+                poseStack.popPose();
+            }
+        }
+
+
+        boolean hasBraveSword = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.BRAVE_SWORD.get()));
+        boolean holdingBraveSword = animatable.getMainHandItem().getItem() == MainItems.BRAVE_SWORD.get()
+                || animatable.getOffhandItem().getItem() == MainItems.BRAVE_SWORD.get();
+
+        if (hasBraveSword) {
+            BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
+            if (braveModel != null) {
+                RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
+
+                for (GeoBone bone : braveModel.topLevelBones()) {
+                    setHiddenRecursive(bone, false);
+                }
+
+                if (holdingBraveSword) {
+                    braveModel.getBone("espada").ifPresent(bone -> bone.setHidden(true));
+                }
+
+                syncModelToPlayer(braveModel, playerModel);
+
+                poseStack.pushPose();
+
+                float scale = 0.9f;
+                poseStack.scale(scale, scale, scale);
+
+                getRenderer().reRender(braveModel, poseStack, bufferSource, animatable, type,
+                        bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+                        1.0f, 1.0f, 1.0f, 1.0f);
+                poseStack.popPose();
+
+                if (holdingBraveSword) {
+                    braveModel.getBone("espada").ifPresent(bone -> bone.setHidden(false));
+                }
+            }
+        }
+
     }
 
     private float[] setupPartsAndColor(BakedGeoModel partsModel, StatsData stats) {
