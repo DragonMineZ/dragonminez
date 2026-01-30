@@ -21,5 +21,7 @@ public interface IPlayerAnimatable {
 	void dragonminez$setShootingKi(boolean shootingKi);
 
 	boolean dragonminez$isShootingKi();
+
+	void dragonminez$triggerCombo(int comboNumber);
 }
 

@@ -79,6 +79,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         if (tickCount >= 10) {
             tickCount = 0;
             updateStatsData();
+			refreshButtons();
         }
 
         if (isHotZoneHovered) {
@@ -190,6 +191,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
     private void refreshButtons() {
         this.clearWidgets();
+		if (upgradeButton != null) this.removeWidget(upgradeButton);
+
+		this.upgradeButton = null;
         initDynamicButtons();
         initNavigationButtons();
         initUpgradeButton();
@@ -222,7 +226,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 						if (canUpgrade) {
 							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("upgrade", selectedSkill, cost));
 							updateStatsData();
-							refreshButtons();
 						}
 					})
 					.build();

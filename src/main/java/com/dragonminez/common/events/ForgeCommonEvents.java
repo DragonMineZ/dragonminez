@@ -18,6 +18,7 @@ import com.dragonminez.common.stats.Stats;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
+import com.dragonminez.common.util.ComboManager;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.commands.*;
 import com.dragonminez.server.events.DragonBallsHandler;
@@ -29,6 +30,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
@@ -165,7 +167,7 @@ public class ForgeCommonEvents {
 
 			if (target instanceof ServerPlayer targetPlayer) {
 				StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
-					if (!targetData.getStatus().isBlocking() && !((ServerPlayer) target).isCreative()) {
+					if (!targetData.getStatus().isBlocking() && !((ServerPlayer) target).isCreative() && ComboManager.getCombo(attacker.getUUID()) != 4) {
 						serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
 					}
 				});
@@ -185,12 +187,14 @@ public class ForgeCommonEvents {
             int indiceRandom = level.random.nextInt(sonidosGolpe.length);
             SoundEvent sonidoElegido = sonidosGolpe[indiceRandom].get();
 
-            level.playSound(
-                    null, attacker.getX(), attacker.getY(), attacker.getZ(), sonidoElegido,
-                    net.minecraft.sounds.SoundSource.PLAYERS,
-                    1.0F,
-                    1.0F                      
-            );
+			if (ComboManager.getCombo(attacker.getUUID()) != 4) {
+				level.playSound(
+						null, attacker.getX(), attacker.getY(), attacker.getZ(), sonidoElegido,
+						SoundSource.PLAYERS,
+						1.0F,
+						1.0F
+				);
+			}
         }
     }
 

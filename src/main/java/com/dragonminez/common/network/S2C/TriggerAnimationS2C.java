@@ -54,10 +54,9 @@ public class TriggerAnimationS2C {
 				if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
 					switch (animationType) {
 						case "evasion" -> animatable.dragonminez$triggerEvasion();
-						case "dash" -> {
-							animatable.dragonminez$triggerDash(variant);
-						}
+						case "dash" -> animatable.dragonminez$triggerDash(variant);
 						case "ki_blast_shot" -> animatable.dragonminez$setShootingKi(variant == 0);
+						case "combo" -> animatable.dragonminez$triggerCombo(variant);
 					}
 				}
 			}

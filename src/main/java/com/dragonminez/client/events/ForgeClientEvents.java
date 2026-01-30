@@ -52,12 +52,6 @@ public class ForgeClientEvents {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) return;
 
-        if (KeyBinds.SPACEPOD_MENU.consumeClick()) {
-            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-                mc.setScreen(new HairEditorScreen(null, data.getCharacter()));
-            });
-        }
-
         if (KeyBinds.STATS_MENU.consumeClick()) {
 			if (mc.player == null || mc.screen != null) return;
 			int oldGuiScale = mc.options.guiScale().get();

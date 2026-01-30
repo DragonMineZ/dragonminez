@@ -6,7 +6,6 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.server.events.players.StatsEvents;
 import net.minecraft.client.Minecraft;
@@ -34,6 +33,16 @@ public class ClientStatsEvents {
 	private static boolean wasDescendActionDown = false;
 
 	@SubscribeEvent
+	public static void onMouseInput(InputEvent.MouseButton.Pre event) {
+		if (Minecraft.getInstance().player == null) return;
+		if (event.getButton() == 0 && event.getAction() == 1) {
+			if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
+				NetworkHandler.sendToServer(new ComboAttackC2S());
+			}
+		}
+	}
+
+	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
 
@@ -50,9 +59,10 @@ public class ClientStatsEvents {
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
 			boolean mainHandEmpty = player.getMainHandItem().isEmpty();
+			boolean offHandEmpty = player.getOffhandItem().isEmpty();
 			boolean isRightClickDown = mc.options.keyUse.isDown();
 
-			boolean shouldBlock = isRightClickDown && mainHandEmpty && !isStunned && !isDescendKeyPressed;
+			boolean shouldBlock = isRightClickDown && mainHandEmpty && offHandEmpty && !isStunned && !isDescendKeyPressed;
 			if (shouldBlock != data.getStatus().isBlocking()) {
 				data.getStatus().setBlocking(shouldBlock);
 				NetworkHandler.sendToServer(new UpdateStatC2S("isBlocking", shouldBlock));
@@ -69,7 +79,7 @@ public class ClientStatsEvents {
 			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
 				String hexColor = data.getCharacter().getAuraColor();
 				int colorMain = ColorUtils.hexToInt(hexColor);
-				int colorBorder = ColorUtils.darkenColor(colorMain, 0.4f);
+				int colorBorder = ColorUtils.darkenColor(colorMain, 0.2f);
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
 			}

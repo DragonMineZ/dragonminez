@@ -14,6 +14,7 @@ import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.ComboManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -21,6 +22,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -29,9 +31,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
@@ -55,10 +60,12 @@ public class CombatEvent {
 
 				double mcBaseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
+				boolean wantsCombo = ComboManager.isNextHitCombo(attacker.getUUID());
+				ComboManager.setNextHitAsCombo(attacker.getUUID(), false);
+				boolean isCooldownFull = false;
 
 				if (ConfigManager.getServerConfig().getCombat().isRespectAttackCooldown()) {
-					float attackStrength = attacker.getAttackStrengthScale(0.5F);
-					float adjustedStrength = attackStrength;
+					float adjustedStrength = attacker.getAttackStrengthScale(0.5F);
 
 					if (attackerData.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
@@ -68,9 +75,12 @@ public class CombatEvent {
 					}
 
 					if (adjustedStrength > 1.0F) adjustedStrength = 1.0F;
+					isCooldownFull = adjustedStrength >= 0.9F;
 
 					float damageScale = 0.2F + adjustedStrength * adjustedStrength * 0.8F;
 					dmzDamage *= damageScale;
+				} else {
+					isCooldownFull = true;
 				}
 
 				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
@@ -78,6 +88,44 @@ public class CombatEvent {
 				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
 				int currentStamina = attackerData.getResources().getCurrentStamina();
 				if (isPunchMachine) staminaRequired = 0;
+
+				if (wantsCombo) {
+					if (isCooldownFull) {
+						int currentCombo = ComboManager.getCombo(attacker.getUUID());
+						Entity target = event.getEntity();
+						if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target)) currentCombo = 0;
+
+
+						int nextCombo = (currentCombo % 4) + 1;
+						ComboManager.setCombo(attacker.getUUID(), nextCombo);
+						ComboManager.registerHit(attacker.getUUID(), target);
+
+						double dmgBonus = 1.0 + (0.03 * nextCombo);
+						dmzDamage *= dmgBonus;
+						staminaRequired = (int) (staminaRequired * 1.25);
+
+						if (attacker instanceof ServerPlayer serverPlayer) {
+							NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), "combo", nextCombo), serverPlayer);
+						}
+
+						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (nextCombo * 0.1F));
+
+						if (nextCombo == 4) {
+							Entity victim = event.getEntity();
+							Vec3 look = attacker.getLookAngle();
+							victim.setDeltaMovement(look.x * 3.0, 0.5, look.z * 3.0);
+							victim.hurtMarked = true;
+							ComboManager.enableTeleportWindow(attacker.getUUID(), victim.getId());
+							attacker.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
+							ComboManager.resetCombo(attacker.getUUID());
+						}
+					} else {
+						ComboManager.resetCombo(attacker.getUUID());
+						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
+					}
+				} else {
+					ComboManager.resetCombo(attacker.getUUID());
+				}
 
 				double finalDmzDamage;
 				if (currentStamina >= staminaRequired) {
@@ -404,6 +452,25 @@ public class CombatEvent {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().hasCreatedCharacter()) return;
 			if (player.hasEffect(MainEffects.STUN.get())) return;
+
+			if (ComboManager.canTeleport(player.getUUID())) {
+				int targetId = ComboManager.getTeleportTarget(player.getUUID());
+				Entity target = player.level().getEntity(targetId);
+
+				if (target instanceof LivingEntity livingTarget) {
+					Vec3 targetPos = livingTarget.position();
+					Vec3 targetLook = livingTarget.getLookAngle();
+					Vec3 teleportPos = targetPos.subtract(targetLook.scale(1.5));
+
+					player.teleportTo(teleportPos.x, targetPos.y, teleportPos.z);
+					player.setYRot(livingTarget.getYRot());
+					player.setYHeadRot(livingTarget.getYRot());
+					player.hurtMarked = true;
+					player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TP_SHORT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+					ComboManager.consumeTeleport(player.getUUID());
+					return;
+				}
+			}
 
 			long currentTime = System.currentTimeMillis();
 			long lastHurtTime = data.getStatus().getLastHurtTime();

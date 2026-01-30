@@ -30,178 +30,209 @@ import static com.dragonminez.client.animation.Animations.*;
 @Mixin(AbstractClientPlayer.class)
 public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayerAnimatable {
 
-    private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
-    @Unique
-    private double dragonminez$lastPosX = Double.NaN;
-    @Unique
-    private double dragonminez$lastPosZ = Double.NaN;
-    @Unique
-    private int dragonminez$stoppedTicks = 0;
-    @Unique
-    private boolean dragonminez$isMovingState = false;
-    @Unique
-    private int dragonminez$lastTickCount = -1;
-    @Unique
-    private static final int STOPPED_THRESHOLD_TICKS = 3;
+	@Unique
+	private double dragonminez$lastPosX = Double.NaN;
+	@Unique
+	private double dragonminez$lastPosZ = Double.NaN;
+	@Unique
+	private int dragonminez$stoppedTicks = 0;
+	@Unique
+	private boolean dragonminez$isMovingState = false;
+	@Unique
+	private int dragonminez$lastTickCount = -1;
+	@Unique
+	private static final int STOPPED_THRESHOLD_TICKS = 3;
 	@Unique
 	private int dragonminez$lastDashTickRun = -1;
 	@Unique
 	private int dragonminez$lastAttackTick = -1;
 	@Unique
 	private int dragonminez$lastAttackTickRun = -1;
+	@Unique
+	private int dragonminez$comboVariant = 0;
+	@Unique
+	private int dragonminez$comboAnimTicks = 0;
+	@Unique
+	private int dragonminez$lastComboTickRun = -1;
 
-    @Unique
-    private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
-        int currentTick = player.tickCount;
+	@Unique
+	private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
+		int currentTick = player.tickCount;
 
-        if (currentTick == dragonminez$lastTickCount) {
-            return dragonminez$isMovingState;
-        }
-        dragonminez$lastTickCount = currentTick;
+		if (currentTick == dragonminez$lastTickCount) {
+			return dragonminez$isMovingState;
+		}
+		dragonminez$lastTickCount = currentTick;
 
-        if (Double.isNaN(dragonminez$lastPosX)) {
-            dragonminez$lastPosX = player.getX();
-            dragonminez$lastPosZ = player.getZ();
-            return false;
-        }
+		if (Double.isNaN(dragonminez$lastPosX)) {
+			dragonminez$lastPosX = player.getX();
+			dragonminez$lastPosZ = player.getZ();
+			return false;
+		}
 
-        double deltaX = player.getX() - dragonminez$lastPosX;
-        double deltaZ = player.getZ() - dragonminez$lastPosZ;
-        double distanceSq = deltaX * deltaX + deltaZ * deltaZ;
+		double deltaX = player.getX() - dragonminez$lastPosX;
+		double deltaZ = player.getZ() - dragonminez$lastPosZ;
+		double distanceSq = deltaX * deltaX + deltaZ * deltaZ;
 
-        dragonminez$lastPosX = player.getX();
-        dragonminez$lastPosZ = player.getZ();
+		dragonminez$lastPosX = player.getX();
+		dragonminez$lastPosZ = player.getZ();
 
-        boolean isCurrentlyMoving = distanceSq > 0.0001;
+		boolean isCurrentlyMoving = distanceSq > 0.0001;
 
-        if (isCurrentlyMoving) {
-            dragonminez$isMovingState = true;
-            dragonminez$stoppedTicks = 0;
-        } else {
-            dragonminez$stoppedTicks++;
-            if (dragonminez$stoppedTicks >= STOPPED_THRESHOLD_TICKS) {
-                dragonminez$isMovingState = false;
-            }
-        }
+		if (isCurrentlyMoving) {
+			dragonminez$isMovingState = true;
+			dragonminez$stoppedTicks = 0;
+		} else {
+			dragonminez$stoppedTicks++;
+			if (dragonminez$stoppedTicks >= STOPPED_THRESHOLD_TICKS) {
+				dragonminez$isMovingState = false;
+			}
+		}
 
-        return dragonminez$isMovingState;
-    }
+		return dragonminez$isMovingState;
+	}
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
-        registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
-        registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar registrar) {
+		registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
+		registrar.add(new AnimationController<>(this, "combo_controller", 0, this::comboPredicate));
+		registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
 		registrar.add(new AnimationController<>(this, "mining_controller", 0, this::miningPredicate));
-        registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
-        registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
-        registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
-        registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
-    }
+		registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
+		registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
+		registrar.add(new AnimationController<>(this, "tailcontroller", 0, this::tailpredicate));
+		registrar.add(new AnimationController<>(this, "dash_controller", 0, this::dashPredicate));
+	}
 
-    @Unique
-    private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> state) {
-        AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
-        IPlayerAnimatable animatable = (IPlayerAnimatable) this;
+	@Unique
+	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 
-        boolean isMoving = dragonminez$isActuallyMoving(player);
+		boolean isMoving = dragonminez$isActuallyMoving(player);
 
-        AtomicBoolean isDraining = new AtomicBoolean(false), flySkillActive = new AtomicBoolean(false),
+		AtomicBoolean isDraining = new AtomicBoolean(false), flySkillActive = new AtomicBoolean(false),
 				isChargingKi = new AtomicBoolean(false), isBlocking = new AtomicBoolean(false);
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            isDraining.set(data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE));
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			isDraining.set(data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE));
 			flySkillActive.set(data.getSkills().isSkillActive("fly"));
 			isChargingKi.set(data.getStatus().isChargingKi() || data.getStatus().isActionCharging());
 			isBlocking.set(data.getStatus().isBlocking());
-        });
+		});
 
-        if (isDraining.get()) return state.setAndContinue(DRAIN);
+		if (isDraining.get()) return state.setAndContinue(DRAIN);
 
 		if (player.isPassenger()) return state.setAndContinue(SIT);
 
 		if (isChargingKi.get() && !isMoving && !isBlocking.get()) return state.setAndContinue(KI_CHARGE);
 
 
-        // Swimming
-        if (player.isSwimming()) return state.setAndContinue(SWIMMING);
+		// Swimming
+		if (player.isSwimming()) return state.setAndContinue(SWIMMING);
 
-        if (player.isVisuallyCrawling()) {
-            if (isMoving) return state.setAndContinue(CRAWLING_MOVE);
-            else return state.setAndContinue(CRAWLING);
-        }
+		if (player.isVisuallyCrawling()) {
+			if (isMoving) return state.setAndContinue(CRAWLING_MOVE);
+			else return state.setAndContinue(CRAWLING);
+		}
 
-        // Flying
-        if (flySkillActive.get() || player.isFallFlying() || animatable.dragonminez$isFlying()) {
-            if (FlySkillEvent.isFlyingFast()) return state.setAndContinue(FLY_FAST);
-            else return state.setAndContinue(FLY);
-        }
+		// Flying
+		if (flySkillActive.get() || player.isFallFlying() || animatable.dragonminez$isFlying()) {
+			if (FlySkillEvent.isFlyingFast()) return state.setAndContinue(FLY_FAST);
+			else return state.setAndContinue(FLY);
+		}
 
-        if (player.onGround()) {
-            // Crouching
-            if (player.isCrouching()) {
-                if (isMoving) return state.setAndContinue(CROUCHING_WALK);
-                else return state.setAndContinue(CROUCHING);
-            } else if (isMoving && player.isSprinting()) {
-                // Running
-                return state.setAndContinue(RUN);
-            } else if (isMoving) {
-                // Walking
-                return state.setAndContinue(WALK);
-            } else {
-                // Idle
-                return state.setAndContinue(IDLE);
-            }
-        }
+		if (player.onGround()) {
+			// Crouching
+			if (player.isCrouching()) {
+				if (isMoving) return state.setAndContinue(CROUCHING_WALK);
+				else return state.setAndContinue(CROUCHING);
+			} else if (isMoving && player.isSprinting()) {
+				// Running
+				return state.setAndContinue(RUN);
+			} else if (isMoving) {
+				// Walking
+				return state.setAndContinue(WALK);
+			} else {
+				// Idle
+				return state.setAndContinue(IDLE);
+			}
+		}
 
-        // Jumping/Falling
-        return state.setAndContinue(JUMP);
-    }
+		// Jumping/Falling
+		return state.setAndContinue(JUMP);
+	}
 
-    @Unique
-    private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
-        AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+	@Unique
+	private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-        return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-            var character = data.getCharacter();
-            String race = character.getRace().toLowerCase();
-            String gender = character.getGender().toLowerCase();
-            String currentForm = character.getActiveForm();
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			var character = data.getCharacter();
+			String race = character.getRace().toLowerCase();
+			String gender = character.getGender().toLowerCase();
+			String currentForm = character.getActiveForm();
 
-            boolean isOozaru = race.equals("saiyan") && (
-                    Objects.equals(currentForm, SaiyanForms.OOZARU) ||
-                            Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)
-            );
+			boolean isOozaru = race.equals("saiyan") && (
+					Objects.equals(currentForm, SaiyanForms.OOZARU) ||
+							Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)
+			);
 
-            boolean isMajinWithTail = race.equals("majin") &&
-                    (gender.equals("female") || gender.equals("mujer")) &&
-                    (Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA));
+			boolean isMajinWithTail = race.equals("majin") &&
+					(gender.equals("female") || gender.equals("mujer")) &&
+					(Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA));
 
-            boolean hasTail = isOozaru
-                    || (race.equals("saiyan") && data.getStatus().isTailVisible())
-                    || race.equals("frostdemon")
-                    || (race.equals("bioandroid") && !data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))
-                    || isMajinWithTail;
+			boolean hasTail = isOozaru
+					|| (race.equals("saiyan") && data.getStatus().isTailVisible())
+					|| race.equals("frostdemon")
+					|| (race.equals("bioandroid") && !data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))
+					|| isMajinWithTail;
 
-            if (!hasTail) {
-                return PlayState.STOP;
-            }
+			if (!hasTail) {
+				return PlayState.STOP;
+			}
 
-            return state.setAndContinue(TAIL);
+			return state.setAndContinue(TAIL);
 
-        }).orElse(PlayState.STOP);
-    }
+		}).orElse(PlayState.STOP);
+	}
+
+	@Unique
+	private <T extends GeoAnimatable> PlayState comboPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+
+		if (player.tickCount != dragonminez$lastComboTickRun) {
+			dragonminez$lastComboTickRun = player.tickCount;
+			if (dragonminez$comboAnimTicks > 0) dragonminez$comboAnimTicks--;
+		}
+
+		if (dragonminez$comboAnimTicks > 0) {
+			RawAnimation anim = switch (dragonminez$comboVariant) {
+				case 2 -> COMBO2;
+				case 3 -> COMBO3;
+				case 4 -> COMBO4;
+				default -> COMBO1;
+			};
+
+			state.getController().setAnimation(anim);
+			return PlayState.CONTINUE;
+		}
+		return PlayState.STOP;
+	}
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
-	AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
-	IPlayerAnimatable animatable = (IPlayerAnimatable) this;
-	AnimationController<T> ctl = state.getController();
+		if (dragonminez$comboAnimTicks > 0) return PlayState.STOP;
+
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
+		AnimationController<T> ctl = state.getController();
 
 		if (player.tickCount != dragonminez$lastAttackTickRun) {
 			dragonminez$lastAttackTickRun = player.tickCount;
 			if (dragonminez$attackAnimTicks > 0) dragonminez$attackAnimTicks--;
-
 		}
 
 		boolean isValidAttackContext = player.swinging && !isPlacingBlock(player) && !isBlocking(player) && !isUsingTool(player);
@@ -252,51 +283,51 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 		return PlayState.STOP;
 	}
 
-    @Unique
-    private <T extends GeoAnimatable> PlayState blockPredicate(AnimationState<T> state) {
-        AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+	@Unique
+	private <T extends GeoAnimatable> PlayState blockPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-        AnimationController<T> ctl = state.getController();
+		AnimationController<T> ctl = state.getController();
 
-        return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-            if (data.getStatus().isBlocking()) {
-                if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(BLOCK)) {
-                    ctl.setAnimation(BLOCK);
-                    ctl.forceAnimationReset();
-                }
-                return PlayState.CONTINUE;
-            }
-            return PlayState.STOP;
-        }).orElse(PlayState.STOP);
-    }
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			if (data.getStatus().isBlocking()) {
+				if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(BLOCK)) {
+					ctl.setAnimation(BLOCK);
+					ctl.forceAnimationReset();
+				}
+				return PlayState.CONTINUE;
+			}
+			return PlayState.STOP;
+		}).orElse(PlayState.STOP);
+	}
 
-    @Unique
-    private <T extends GeoAnimatable> PlayState shieldPredicate(AnimationState<T> state) {
-        AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+	@Unique
+	private <T extends GeoAnimatable> PlayState shieldPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-        AnimationController<T> ctl = state.getController();
+		AnimationController<T> ctl = state.getController();
 
-        ItemStack mainHand = player.getMainHandItem();
-        ItemStack offHand = player.getOffhandItem();
+		ItemStack mainHand = player.getMainHandItem();
+		ItemStack offHand = player.getOffhandItem();
 
-        boolean mainHandIsShield = mainHand.getItem() instanceof ShieldItem;
-        boolean offHandIsShield = offHand.getItem() instanceof ShieldItem;
+		boolean mainHandIsShield = mainHand.getItem() instanceof ShieldItem;
+		boolean offHandIsShield = offHand.getItem() instanceof ShieldItem;
 
-        if (player.isUsingItem()) {
-            if (mainHandIsShield || offHandIsShield) {
-                RawAnimation targetAnimation;
-                boolean isRightHanded = player.getMainArm() == HumanoidArm.RIGHT;
+		if (player.isUsingItem()) {
+			if (mainHandIsShield || offHandIsShield) {
+				RawAnimation targetAnimation;
+				boolean isRightHanded = player.getMainArm() == HumanoidArm.RIGHT;
 
-                if (mainHandIsShield) targetAnimation = isRightHanded ? SHIELD_RIGHT : SHIELD_LEFT;
-                else targetAnimation = isRightHanded ? SHIELD_LEFT : SHIELD_RIGHT;
+				if (mainHandIsShield) targetAnimation = isRightHanded ? SHIELD_RIGHT : SHIELD_LEFT;
+				else targetAnimation = isRightHanded ? SHIELD_LEFT : SHIELD_RIGHT;
 
-                if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(targetAnimation)) {
-                    ctl.setAnimation(targetAnimation);
-                    ctl.forceAnimationReset();
-                }
-                return PlayState.CONTINUE;
-            }
-        }
+				if (ctl.getAnimationState() == AnimationController.State.STOPPED || !ctl.getCurrentRawAnimation().equals(targetAnimation)) {
+					ctl.setAnimation(targetAnimation);
+					ctl.forceAnimationReset();
+				}
+				return PlayState.CONTINUE;
+			}
+		}
 
 		return PlayState.STOP;
 	}
@@ -373,16 +404,16 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 		return offHand.getDescriptionId().contains("pickaxe") || offHand.getDescriptionId().contains("axe") || offHand.getDescriptionId().contains("shovel") || offHand.getDescriptionId().contains("hoe");
 	}
 
-    @Unique
-    private static boolean isPlacingBlock(AbstractClientPlayer player) {
-        ItemStack mainHand = player.getMainHandItem();
-        ItemStack offHand = player.getOffhandItem();
+	@Unique
+	private static boolean isPlacingBlock(AbstractClientPlayer player) {
+		ItemStack mainHand = player.getMainHandItem();
+		ItemStack offHand = player.getOffhandItem();
 
-        boolean hasBlockInMainHand = mainHand.getItem() instanceof BlockItem;
-        boolean hasBlockInOffHand = offHand.getItem() instanceof BlockItem;
+		boolean hasBlockInMainHand = mainHand.getItem() instanceof BlockItem;
+		boolean hasBlockInOffHand = offHand.getItem() instanceof BlockItem;
 
-        return (hasBlockInMainHand || hasBlockInOffHand) && player.isUsingItem();
-    }
+		return (hasBlockInMainHand || hasBlockInOffHand) && player.isUsingItem();
+	}
 
 	@Unique
 	private static boolean isBlocking(AbstractClientPlayer player) {
@@ -394,78 +425,78 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 	}
 
 
-    @Override
-    public double getTick(Object o) {
-        return ((AbstractClientPlayer) o).tickCount;
-    }
+	@Override
+	public double getTick(Object o) {
+		return ((AbstractClientPlayer) o).tickCount;
+	}
 
-    @Unique
-    private boolean dragonminez$useAttack2 = false;
+	@Unique
+	private boolean dragonminez$useAttack2 = false;
 
-    @Unique
-    private boolean dragonminez$isPlayingAttack = false;
+	@Unique
+	private boolean dragonminez$isPlayingAttack = false;
 
-    @Unique
-    private boolean dragonminez$isFlying = false;
+	@Unique
+	private boolean dragonminez$isFlying = false;
 
-    @Unique
-    private int dragonminez$dashDirection = 0;
+	@Unique
+	private int dragonminez$dashDirection = 0;
 
-    @Unique
-    private boolean dragonminez$isEvading = false;
+	@Unique
+	private boolean dragonminez$isEvading = false;
 
-    @Unique
-    private int dragonminez$evasionVariant = 0;
+	@Unique
+	private int dragonminez$evasionVariant = 0;
 
-    @Unique
-    private int dragonminez$attackAnimTicks = 0;
+	@Unique
+	private int dragonminez$attackAnimTicks = 0;
 
-    @Unique
-    private int dragonminez$miningAnimTicks = 0;
+	@Unique
+	private int dragonminez$miningAnimTicks = 0;
 
 	@Unique
 	private boolean dragonminez$isShootingKi = false;
 
-    @Override
-    public void dragonminez$setUseAttack2(boolean useAttack2) {
-        this.dragonminez$useAttack2 = useAttack2;
-    }
+	@Override
+	public void dragonminez$setUseAttack2(boolean useAttack2) {
+		this.dragonminez$useAttack2 = useAttack2;
+	}
 
-    @Override
-    public boolean dragonminez$useAttack2() {
-        return this.dragonminez$useAttack2;
-    }
+	@Override
+	public boolean dragonminez$useAttack2() {
+		return this.dragonminez$useAttack2;
+	}
 
-    @Override
-    public void dragonminez$setPlayingAttack(boolean playingAttack) {
-        dragonminez$isPlayingAttack = playingAttack;
-    }
+	@Override
+	public void dragonminez$setPlayingAttack(boolean playingAttack) {
+		dragonminez$isPlayingAttack = playingAttack;
+	}
 
-    @Override
-    public boolean dragonminez$isPlayingAttack() {
-        return dragonminez$isPlayingAttack;
-    }
+	@Override
+	public boolean dragonminez$isPlayingAttack() {
+		return dragonminez$isPlayingAttack;
+	}
 
-    @Override
-    public void dragonminez$setFlying(boolean flying) {
-        this.dragonminez$isFlying = flying;
-    }
+	@Override
+	public void dragonminez$setFlying(boolean flying) {
+		this.dragonminez$isFlying = flying;
+	}
 
-    @Override
-    public boolean dragonminez$isFlying() {
-        return dragonminez$isFlying;
-    }
+	@Override
+	public boolean dragonminez$isFlying() {
+		return dragonminez$isFlying;
+	}
 
-    @Override
-    public void dragonminez$triggerDash(int direction) {
-        this.dragonminez$dashDirection = direction;
-    }
+	@Override
+	public void dragonminez$triggerDash(int direction) {
+		this.dragonminez$dashDirection = direction;
+	}
 
-    @Override
-    public void dragonminez$triggerEvasion() {
-        this.dragonminez$isEvading = true;
-        this.dragonminez$evasionVariant = (int) (Math.random() * 4) + 1;
-    }
+	@Override
+	public void dragonminez$triggerEvasion() {
+		this.dragonminez$isEvading = true;
+		this.dragonminez$evasionVariant = (int) (Math.random() * 4) + 1;
+	}
 
 	@Override
 	public void dragonminez$setShootingKi(boolean shootingKi) {
@@ -475,6 +506,12 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 	@Override
 	public boolean dragonminez$isShootingKi() {
 		return dragonminez$isShootingKi;
+	}
+
+	@Override
+	public void dragonminez$triggerCombo(int variant) {
+		this.dragonminez$comboVariant = variant;
+		this.dragonminez$comboAnimTicks = 10;
 	}
 
     @Override

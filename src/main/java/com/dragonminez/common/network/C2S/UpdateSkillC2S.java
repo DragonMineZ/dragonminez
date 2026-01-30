@@ -42,26 +42,30 @@ public class UpdateSkillC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-
-					if (!data.getSkills().hasSkill(skillName)) return;
 					Skill skill = data.getSkills().getSkill(skillName);
 
 					switch (action.toLowerCase(Locale.ROOT)) {
 						case "toggle":
-							if (skill.getLevel() > 0) {
+							if (skill != null && skill.getLevel() > 0) {
 								skill.setActive(!skill.isActive());
 							}
 							break;
 
 						case "upgrade":
-							if (!skill.isMaxLevel()) {
-								data.getResources().removeTrainingPoints(cost);
-								skill.addLevel(1);
+							if (skill != null && !skill.isMaxLevel()) {
+								if (data.getResources().getTrainingPoints() >= cost) {
+									data.getResources().removeTrainingPoints(cost);
+									skill.addLevel(1);
+								}
 							}
 							break;
 						case "purchase":
-							data.getResources().removeTrainingPoints(cost);
-							data.getSkills().setSkillLevel(skillName, 1);
+							if (!data.getSkills().hasSkill(skillName)) {
+								if (data.getResources().getTrainingPoints() >= cost) {
+									data.getResources().removeTrainingPoints(cost);
+									data.getSkills().setSkillLevel(skillName, 1);
+								}
+							}
 					}
 
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

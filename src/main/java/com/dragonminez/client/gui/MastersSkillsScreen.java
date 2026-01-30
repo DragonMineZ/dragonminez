@@ -83,6 +83,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (tickCount >= 10) {
 			tickCount = 0;
 			updateStatsData();
+			refreshButtons();
 		}
 
 		if (isHotZoneHovered) {
@@ -231,7 +232,6 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 						if (canAfford) {
 							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("purchase", selectedSkill, cost));
 							updateStatsData();
-							refreshButtons();
 						}
 					})
 					.build();

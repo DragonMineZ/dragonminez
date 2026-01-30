@@ -128,6 +128,13 @@ public class NetworkHandler {
 				.encoder(KiBlastC2S::encode)
 				.consumerMainThread(KiBlastC2S::handle)
 				.add();
+
+		net.messageBuilder(ComboAttackC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ComboAttackC2S::new)
+				.encoder(ComboAttackC2S::encode)
+				.consumerMainThread(ComboAttackC2S::handle)
+				.add();
+		
 		/*
 		  SERVER -> CLIENT
 		 */

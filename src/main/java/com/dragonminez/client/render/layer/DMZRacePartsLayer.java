@@ -17,6 +17,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -80,20 +82,25 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         boolean hasPothalaRight = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_right");
         boolean hasPothalaLeft = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_left");
 
-        if (!hasPothalaRight && !hasPothalaLeft) return;
+		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+		var stats = statsCap.orElse(new StatsData(animatable));
+
+		boolean isFused = stats.getStatus().isFused();
+
+        if (!isFused && !hasPothalaRight && !hasPothalaLeft) return;
 
         BakedGeoModel accModel = getGeoModel().getBakedModel(ACCESORIES_MODEL);
         if (accModel == null) return;
 
         resetModelParts(accModel);
 
-        if (hasPothalaRight) {
-            accModel.getBone("pothala_right").ifPresent(this::showBoneChain);
-        }
+        if (hasPothalaRight) accModel.getBone("pothala_right").ifPresent(this::showBoneChain);
+        if (hasPothalaLeft) accModel.getBone("pothala_left").ifPresent(this::showBoneChain);
 
-        if (hasPothalaLeft) {
-            accModel.getBone("pothala_left").ifPresent(this::showBoneChain);
-        }
+		if (isFused) {
+			accModel.getBone("pothala_right").ifPresent(this::showBoneChain);
+			accModel.getBone("pothala_left").ifPresent(this::showBoneChain);
+		}
 
         syncModelToPlayer(accModel, playerModel);
 
@@ -108,8 +115,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     }
 
     private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-
-
         boolean hasYajirobe = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.KATANA_YAJIROBE.get()));
 
         boolean holdingYajirobe = animatable.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get()
@@ -130,12 +135,22 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             }
         }
 
-        boolean hasZSword = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.Z_SWORD.get()));
+        Item backSwordToRender = null;
+        for (int i = 0; i < animatable.getInventory().getContainerSize(); i++) {
+            ItemStack stack = animatable.getInventory().getItem(i);
+            if (stack.isEmpty()) continue;
+            Item item = stack.getItem();
 
-        boolean holdingZSword = animatable.getMainHandItem().getItem() == MainItems.Z_SWORD.get()
-                || animatable.getOffhandItem().getItem() == MainItems.Z_SWORD.get();
+            if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get()) {
+                boolean isHeld = animatable.getMainHandItem().getItem() == item || animatable.getOffhandItem().getItem() == item;
+                if (!isHeld) {
+                    backSwordToRender = item;
+                    break;
+                }
+            }
+        }
 
-        if (hasZSword && !holdingZSword) {
+        if (backSwordToRender == MainItems.Z_SWORD.get()) {
             BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
             if (zModel != null) {
                 RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
@@ -148,24 +163,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                         1.0f, 1.0f, 1.0f, 1.0f);
                 poseStack.popPose();
             }
-        }
-
-
-        boolean hasBraveSword = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.BRAVE_SWORD.get()));
-        boolean holdingBraveSword = animatable.getMainHandItem().getItem() == MainItems.BRAVE_SWORD.get()
-                || animatable.getOffhandItem().getItem() == MainItems.BRAVE_SWORD.get();
-
-        if (hasBraveSword) {
+        } else if (backSwordToRender == MainItems.BRAVE_SWORD.get()) {
             BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
             if (braveModel != null) {
                 RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
 
                 for (GeoBone bone : braveModel.topLevelBones()) {
                     setHiddenRecursive(bone, false);
-                }
-
-                if (holdingBraveSword) {
-                    braveModel.getBone("espada").ifPresent(bone -> bone.setHidden(true));
                 }
 
                 syncModelToPlayer(braveModel, playerModel);
@@ -179,13 +183,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                         bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
                         1.0f, 1.0f, 1.0f, 1.0f);
                 poseStack.popPose();
-
-                if (holdingBraveSword) {
-                    braveModel.getBone("espada").ifPresent(bone -> bone.setHidden(false));
-                }
             }
         }
-
     }
 
     private float[] setupPartsAndColor(BakedGeoModel partsModel, StatsData stats) {
