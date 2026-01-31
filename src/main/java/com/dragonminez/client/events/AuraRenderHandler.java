@@ -32,6 +32,12 @@ public class AuraRenderHandler {
 	private static final ResourceLocation AURA_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
 	private static final ResourceLocation AURA_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
 
+    private static final ResourceLocation SPARK_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
+    private static final ResourceLocation SPARK_TEX_0 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
+    private static final ResourceLocation SPARK_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_1.png");
+    private static final ResourceLocation SPARK_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_2.png");
+
+
     private static final ResourceLocation KI_WEAPONS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
     private static final ResourceLocation KI_WEAPONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 
@@ -47,6 +53,11 @@ public class AuraRenderHandler {
         var auras = AuraRenderQueue.getAndClearAuras();
         for (var entry : auras) {
             renderAuraEntry(entry, poseStack, buffers, dispatcher, mc);
+        }
+
+        var sparks = AuraRenderQueue.getAndClearSparks();
+        for (var entry : sparks) {
+            renderSparkEntry(entry, poseStack, buffers, dispatcher, mc);
         }
 
         var weapons = AuraRenderQueue.getAndClearWeapons();
@@ -148,6 +159,41 @@ public class AuraRenderHandler {
 		}
 		return ColorUtils.hexToRgb(kiHex);
 	}
+
+    private static void renderSparkEntry(AuraRenderQueue.SparkRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
+        var player = entry.player();
+        if (!(player instanceof GeoAnimatable animatable)) return;
+
+        EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")PlayerDMZRenderer renderer)) return;
+
+        BakedGeoModel sparkModel = renderer.getGeoModel().getBakedModel(SPARK_MODEL);
+        if (sparkModel == null) return;
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        if (stats == null) return;
+
+        float[] color = ColorUtils.hexToRgb("#BFECFF");
+
+        syncModelToPlayer(sparkModel, entry.playerModel());
+
+        poseStack.pushPose();
+        poseStack.last().pose().set(entry.poseMatrix());
+
+        float scale = 1.0f;
+        poseStack.scale(scale, scale, scale);
+
+        long frame = (long) ((player.level().getGameTime() / 1.0f) % 3);
+        ResourceLocation currentTexture = (frame == 0) ? SPARK_TEX_0 : (frame == 1) ? SPARK_TEX_1 : SPARK_TEX_2;
+
+        float transparency = 0.8f;
+
+        renderer.reRender(sparkModel, poseStack, buffers, animatable, ModRenderTypes.glow(currentTexture),
+                buffers.getBuffer(ModRenderTypes.glow(currentTexture)), entry.partialTick(), 15728880, // Luz máxima
+                OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
+
+        poseStack.popPose();
+    }
 
     private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
         var player = entry.player();

@@ -1,0 +1,51 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 6,
+				"visible_bounds_height": 5.5,
+				"visible_bounds_offset": [0, 2.25, 0]
+			},
+			"bones": [
+				{
+					"name": "root",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "rayos",
+					"parent": "root",
+					"pivot": [0, 43, 0],
+					"rotation": [0, 95, 0]
+				},
+				{
+					"name": "rayo1",
+					"parent": "rayos",
+					"pivot": [0, 36, 0],
+					"rotation": [0, 95, 0],
+					"cubes": [
+						{"origin": [-29, 14, -7], "size": [16, 36, 0], "pivot": [-8, 41, -8], "rotation": [-15, 45, 0], "uv": [0, 0]},
+						{"origin": [-8, 14, -11], "size": [16, 36, 0], "pivot": [8, 41, -8], "rotation": [-15, -45, 0], "uv": [32, 0]},
+						{"origin": [10, 18, 3], "size": [16, 36, 0], "pivot": [8, 41, 8], "rotation": [15, 45, 0], "uv": [0, 0]},
+						{"origin": [-12, 14, 2], "size": [16, 36, 0], "pivot": [-8, 41, 8], "rotation": [15, -45, 0], "uv": [32, 0]}
+					]
+				},
+				{
+					"name": "rayo2",
+					"parent": "rayos",
+					"pivot": [0, 21, 0],
+					"rotation": [0, 170, 0],
+					"cubes": [
+						{"origin": [-25, -1, -15], "size": [16, 36, 0], "pivot": [-8, 26, -8], "rotation": [15, 45, 0], "uv": [32, 0]},
+						{"origin": [-7, -1, -9], "size": [16, 36, 0], "pivot": [8, 26, -8], "rotation": [15, -45, 0], "uv": [0, 0]},
+						{"origin": [0, 3, 10], "size": [16, 36, 0], "pivot": [8, 26, 8], "rotation": [-15, 45, 0], "uv": [32, 0]},
+						{"origin": [-16, -1, 15], "size": [16, 36, 0], "pivot": [-8, 26, 8], "rotation": [-15, -45, 0], "uv": [0, 0]}
+					]
+				}
+			]
+		}
+	]
+}

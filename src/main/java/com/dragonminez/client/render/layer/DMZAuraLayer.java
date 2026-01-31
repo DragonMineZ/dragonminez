@@ -26,6 +26,12 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     private static final ResourceLocation AURA_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
     private static final ResourceLocation AURA_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
 
+    private static final ResourceLocation SPARK_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
+    private static final ResourceLocation SPARK_TEX_0 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
+    private static final ResourceLocation SPARK_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_1.png");
+    private static final ResourceLocation SPARK_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_2.png");
+
+
     public DMZAuraLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
@@ -62,6 +68,7 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         //getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType, bufferSource.getBuffer(auraRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 1.0f);
 		AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
+        AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
 
         poseStack.popPose();
     }
