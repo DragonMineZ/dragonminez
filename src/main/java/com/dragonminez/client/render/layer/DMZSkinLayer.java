@@ -243,9 +243,19 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 filePrefix = "textures/entity/races/bioandroid/" + textureFormName + "_" + bodyType + "_";
             }
             else if (isMajin) {
-                String formName = (form == null || form.isEmpty()) ? "base" : form.toLowerCase();
-                filePrefix = "textures/entity/races/majin/" + formName + "_" + bodyType + "_" + gender + "_";
+                String f = (form == null || form.isEmpty()) ? "base" : form.toLowerCase();
+
+                boolean isStandardForm = f.equals("base") || f.equals("pure") || f.equals("kid") ||
+                        f.equals("ultra") || f.equals("evil");
+
+                if (!isStandardForm) {
+                    f = "super";
+                    bodyType = 0;
+                }
+
+                filePrefix = "textures/entity/races/majin/" + f + "_" + bodyType + "_" + gender + "_";
             }
+
             else if (isNamek || !hasForm || (isFrost && Objects.equals(form, FrostDemonForms.SECOND_FORM))) {
                 filePrefix = "textures/entity/races/" + race + "/bodytype_" + bodyType + "_";
             }
@@ -335,7 +345,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!f.getBodyColor2().isEmpty()) b2 = hexToRGB(f.getBodyColor2());
         }
 
-        float[] skinTint = (raceName.equals("namekian") || raceName.equals("majin")) ? b1 : b2;
+        float[] skinTint = (raceName.equals("namekian") || raceName.equals("majin") ||
+                raceName.equals("human") || raceName.equals("saiyan")) ? b1 : b2;
 
         if (raceName.equals("frostdemon")) {
             boolean isFinal = Objects.equals(currentForm, FrostDemonForms.FINAL_FORM) || Objects.equals(currentForm, FrostDemonForms.FULLPOWER);

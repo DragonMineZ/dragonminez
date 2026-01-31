@@ -240,6 +240,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean isBio = race.equals("bioandroid");
         boolean isFrost = race.equals("frostdemon");
         boolean isNamek = race.equals("namekian");
+        boolean isMajin = race.equals("majin");
 
         if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER))) {
             pathPrefix = "textures/entity/races/frostdemon/finalform_bodytype_" + bodyType + "_";
@@ -262,9 +263,20 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
                 }
                 pathPrefix = "textures/entity/races/bioandroid/" + textureFormName + "_" + bodyType + "_";
             }
-            else if (race.equals("majin")) {
-                pathPrefix = "textures/entity/races/majin/" + (form == null || form.isEmpty() ? "base" : form.toLowerCase()) + "_" + bodyType + "_" + gender + "_";
+            else if (isMajin) {
+                String f = (form == null || form.isEmpty()) ? "base" : form.toLowerCase();
+
+                boolean isStandardForm = f.equals("base") || f.equals("pure") || f.equals("kid") ||
+                        f.equals("ultra") || f.equals("evil");
+
+                if (!isStandardForm) {
+                    f = "super";
+                    bodyType = 0;
+                }
+
+                pathPrefix = "textures/entity/races/majin/" + f + "_" + bodyType + "_" + gender + "_";
             }
+
             else if (isFrost || isNamek) {
                 pathPrefix = "textures/entity/races/" + race + "/bodytype_" + bodyType + "_";
             }
@@ -274,7 +286,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
             if (pathPrefix.contains("humansaiyan") && (form == null || !form.contains("oozaru"))) {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "1.png"), b1);
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "2.png"), b2);
             } else {
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
