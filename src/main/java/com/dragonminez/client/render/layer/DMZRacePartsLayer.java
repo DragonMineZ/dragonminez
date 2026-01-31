@@ -40,6 +40,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     private static final ResourceLocation Z_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/z_sword.png");
     private static final ResourceLocation BRAVE_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/brave_sword.geo.json");
     private static final ResourceLocation BRAVE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/brave_sword.png");
+    private static final ResourceLocation POWER_POLE_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
+    private static final ResourceLocation POWER_POLE_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/power_pole.png");
+
 
 
     public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
@@ -116,7 +119,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
         boolean hasYajirobe = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.KATANA_YAJIROBE.get()));
-
         boolean holdingYajirobe = animatable.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get()
                 || animatable.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
 
@@ -129,6 +131,25 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
                 poseStack.pushPose();
                 getRenderer().reRender(yajirobeModel, poseStack, bufferSource, animatable, type,
+                        bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+                        1.0f, 1.0f, 1.0f, 1.0f);
+                poseStack.popPose();
+            }
+        }
+
+        boolean hasPowerPole = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.POWER_POLE.get()));
+        boolean holdingPowerPole = animatable.getMainHandItem().getItem() == MainItems.POWER_POLE.get()
+                || animatable.getOffhandItem().getItem() == MainItems.POWER_POLE.get();
+
+        if (hasPowerPole && !holdingPowerPole) {
+            BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
+            if (powerpole != null) {
+                RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
+
+                syncModelToPlayer(powerpole, playerModel);
+
+                poseStack.pushPose();
+                getRenderer().reRender(powerpole, poseStack, bufferSource, animatable, type,
                         bufferSource.getBuffer(type), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
                         1.0f, 1.0f, 1.0f, 1.0f);
                 poseStack.popPose();

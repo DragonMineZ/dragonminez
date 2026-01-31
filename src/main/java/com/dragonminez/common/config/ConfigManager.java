@@ -333,7 +333,7 @@ public class ConfigManager {
         config.setDefaultBodyColor("#FFFFFF");
         config.setDefaultBodyColor2("#E8A2FF");
         config.setDefaultBodyColor3("#FF39A9");
-        config.setDefaultHairColor("#FF001D");
+        config.setDefaultHairColor("#8B1BCC");
         config.setDefaultEye1Color("#FF001D");
         config.setDefaultEye2Color("#FF001D");
         config.setDefaultAuraColor("#5F00FF");

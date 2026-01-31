@@ -83,6 +83,8 @@ public final class MainItems {
             ITEM_REGISTER.register("z_sword", () -> new ZSwordItem(new Item.Properties().fireResistant()));
     public static final RegistryObject<SwordItem> BRAVE_SWORD =
             ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem(new Item.Properties().fireResistant()));
+    public static final RegistryObject<SwordItem> POWER_POLE =
+            ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem(new Item.Properties().fireResistant()));
 
 	//ARMADURAS
     // GOKU NIÑO

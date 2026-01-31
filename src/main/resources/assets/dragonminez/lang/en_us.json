@@ -494,6 +494,11 @@
   "item.dragonminez.flying_nimbus": "§eFlying Nimbus",
   "item.dragonminez.black_nimbus": "§7Black Nimbus",
   "item.dragonminez.saiyan_ship": "§eSaiyan Space Pod",
+  "item.dragonminez.yajirobe_katana": "Katana",
+  "item.dragonminez.z_sword": "§eZ§b-§fSword",
+  "item.dragonminez.brave_sword": "§bBrave §fSword",
+  "item.dragonminez.power_pole": "§cPower Pole",
+
 
   "//": "ARMOR CRAFTING",
   "item.dragonminez.armor_crafting_kit": "Armor Crafting Kit",
