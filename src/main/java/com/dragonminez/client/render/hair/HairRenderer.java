@@ -78,6 +78,8 @@ public class HairRenderer {
 				float lerpScaleY = Mth.lerp(transitionFactor, s1.getScaleY(), s2.getScaleY());
 				float lerpScaleZ = Mth.lerp(transitionFactor, s1.getScaleZ(), s2.getScaleZ());
 
+				float lerpStretch = Mth.lerp(transitionFactor, s1.getLengthScale(), s2.getLengthScale());
+
 				float lerpCurveX = Mth.lerp(transitionFactor, s1.getCurveX(), s2.getCurveX());
 				float lerpCurveY = Mth.lerp(transitionFactor, s1.getCurveY(), s2.getCurveY());
 				float lerpCurveZ = Mth.lerp(transitionFactor, s1.getCurveZ(), s2.getCurveZ());
@@ -94,7 +96,7 @@ public class HairRenderer {
 						staticPos, color, packedLight, packedOverlay,
 						time, movementIntensity, isCharging,
 						lerpRotX, lerpRotY, lerpRotZ,
-						lerpScaleX, lerpScaleY, lerpScaleZ,
+						lerpScaleX, lerpScaleY, lerpScaleZ, lerpStretch,
 						lerpCurveX, lerpCurveY, lerpCurveZ,
 						lerpW, lerpH, lerpD, length, s1.getId(), face);
 			}
@@ -134,7 +136,7 @@ public class HairRenderer {
 	private static void renderStrandInterpolated(PoseStack poseStack, MultiBufferSource bufferSource, Vector3f pos, String colorHex, int packedLight, int packedOverlay,
 												 float time, float moveIntensity, boolean isCharging,
 												 float rotX, float rotY, float rotZ,
-												 float scaleX, float scaleY, float scaleZ,
+												 float scaleX, float scaleY, float scaleZ, float stretchFactor,
 												 float curveX, float curveY, float curveZ,
 												 float width, float height, float depth, int length, int id, HairFace face) {
 
@@ -143,8 +145,8 @@ public class HairRenderer {
 		poseStack.translate(pos.x * UNIT_SCALE, pos.y * UNIT_SCALE, pos.z * UNIT_SCALE);
 
 		float offset = (id * 13.0f);
-		float swaySpeed = isCharging ? 0.8f : (moveIntensity > 0.5f ? 0.4f : 0.1f);
-		float swayAmount = isCharging ? 3.0f : (moveIntensity > 0.5f ? 5.0f : 1.5f);
+		float swaySpeed = isCharging ? 0.8f : (moveIntensity > 0.5f ? 0.4f : 0.05f);
+		float swayAmount = isCharging ? 3.0f : (moveIntensity > 0.5f ? 5.0f : 0.6f);
 
 		float animRotX = (time == 0) ? 0 : Mth.sin((time + offset) * swaySpeed) * swayAmount;
 		float animRotZ = (time == 0) ? 0 : Mth.cos((time + offset) * swaySpeed * 0.7f) * (swayAmount * 0.5f);
@@ -153,7 +155,6 @@ public class HairRenderer {
 			float chargeLift = Mth.abs(Mth.sin(time * 0.5f)) * 5.0f;
 			curveX -= chargeLift;
 		}
-
 
 		float finalRotX = rotX + animRotX;
 		float finalRotZ = rotZ + animRotZ;
@@ -180,7 +181,6 @@ public class HairRenderer {
 		float baseW = width * UNIT_SCALE;
 		float baseH = height * UNIT_SCALE;
 		float baseD = depth * UNIT_SCALE;
-		float stretchFactor = 1.0f + (Math.max(0, length - 4) * 0.25f);
 		float accumulatedHeight = 0;
 
 		for (int i = 0; i < length; i++) {

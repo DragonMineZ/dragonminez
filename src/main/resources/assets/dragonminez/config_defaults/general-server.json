@@ -62,7 +62,8 @@
     "enableBlocking": true,
     // Parrying needs blocking to be true to work
     "enableParrying": true,
-    "enablePerfectAttack": true,
+    "enableComboAttacks": true,
+    "comboAttacksCooldownSeconds": 8,
     "enablePerfectEvasion": true,
     "parryWindowMs": 150,
     "blockDamageReductionCap": 0.8,

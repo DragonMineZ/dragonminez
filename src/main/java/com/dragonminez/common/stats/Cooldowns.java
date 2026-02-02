@@ -23,6 +23,7 @@ public class Cooldowns {
 	public static final String DOUBLEDASH_CD = "DoubleDashCooldown";
 	public static final String DASH_ACTIVE = "DashActive";
 	public static final String KI_BLAST_CD = "KiBlastCooldown";
+	public static final String COMBO_ATTACK_CD = "ComboAttackCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

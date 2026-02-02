@@ -3,7 +3,7 @@ package com.dragonminez.common.hair;
 import net.minecraft.nbt.CompoundTag;
 
 public class HairStrand {
-    public static final int MAX_CUBE_COUNT = 4;
+    public static final int MAX_CUBE_COUNT = 8;
     public static final int MAX_LENGTH = 50;
     private int length = 0;
 
@@ -61,7 +61,7 @@ public class HairStrand {
     }
 
     public int getCubeCount() {
-        return Math.min(length, MAX_CUBE_COUNT);
+        return length;
     }
 
     public float getStretchFactor() {

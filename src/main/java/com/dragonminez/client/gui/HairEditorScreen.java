@@ -26,6 +26,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -60,7 +61,7 @@ public class HairEditorScreen extends Screen {
 
     protected static boolean GLOBAL_SWITCHING = false;
 
-	private static final Set<String> DEV_NAMES = Set.of("ImYuseix", "ezShokkoh", "narukebaransu");
+	private static final Set<String> DEV_NAMES = Set.of("Dev", "ImYuseix", "ezShokkoh", "narukebaransu");
 
     private final Screen previousScreen;
     private final Character character;
@@ -77,6 +78,8 @@ public class HairEditorScreen extends Screen {
     private EditMode editMode = EditMode.LENGTH;
 
     private float playerRotation = 180.0f;
+	private float playerPitch = 0.0f;
+	private double lastMouseY = 0;
     private boolean isDraggingModel = false;
     private double lastMouseX = 0;
 
@@ -142,10 +145,9 @@ public class HairEditorScreen extends Screen {
             }
         }
 
-        if (character.getHairBase() == null) {
-            character.setHairBase(new CustomHair());
-        }
+        if (character.getHairBase() == null) character.setHairBase(new CustomHair());
 
+		this.editorMode = 0;
         this.editingHair = character.getHairBase();
         this.backupHair = editingHair.copy();
     }
@@ -158,7 +160,8 @@ public class HairEditorScreen extends Screen {
         initControlButtons();
         initColorPicker();
         initBottomButtons();
-		this.editingHair = character.getHairBase();
+
+		updateEditingHairReference();
     }
 
     private void initLeftPanelButtons() {
@@ -217,11 +220,11 @@ public class HairEditorScreen extends Screen {
 		switch (editorMode) {
 			case 0 -> this.editingHair = character.getHairBase();
 			case 1 -> {
-				if (character.getHairSSJ().isEmpty()) character.setHairSSJ(character.getHairBase().copy());
+				if (character.getHairSSJ() == null || character.getHairSSJ().isEmpty()) character.setHairSSJ(character.getHairBase().copy());
 				this.editingHair = character.getHairSSJ();
 			}
 			case 2 -> {
-				if (character.getHairSSJ3().isEmpty()) character.setHairSSJ3(character.getHairBase().copy());
+				if (character.getHairSSJ3() == null || character.getHairSSJ3().isEmpty()) character.setHairSSJ3(character.getHairBase().copy());
 				this.editingHair = character.getHairSSJ3();
 			}
 		}
@@ -238,7 +241,7 @@ public class HairEditorScreen extends Screen {
 		boolean isSSJ3 = (this.editorMode == 2);
 
 		int maxCubes = 4;
-		if (isDev) maxCubes = 100;
+		if (isDev) maxCubes = 12;
 		else if (isSSJ3) maxCubes = 8;
 
 		int len = strand.getLength();
@@ -248,11 +251,16 @@ public class HairEditorScreen extends Screen {
 			if (len < 4) {
 				len++;
 				scale = 1.0f;
-			} else if (len == 4 && scale < 1.5f) {
-				scale += 0.1f;
-			} else if (len >= 4 && len < maxCubes && scale >= 1.5f) {
+			} else if (len == 4) {
+				if (scale < 1.5f) {
+					scale += 0.1f;
+				} else if (maxCubes > 4) {
+					len++;
+					scale = 1.5f;
+				}
+			} else if (len > 4 && len < maxCubes) {
 				len++;
-				scale = 1.5f;
+				if (scale < 1.5f) scale = 1.5f;
 			} else if (len == maxCubes && scale < 2.0f) {
 				scale += 0.1f;
 			} else if (isDev && scale >= 2.0f) {
@@ -263,7 +271,7 @@ public class HairEditorScreen extends Screen {
 				len--;
 			} else if (len == maxCubes && scale > 1.5f) {
 				scale -= 0.1f;
-			} else if (len > 4 && scale <= 1.55f) {
+			} else if (len > 4) {
 				len--;
 				if (len == 4) scale = 1.5f;
 			} else if (len == 4 && scale > 1.0f) {
@@ -730,14 +738,22 @@ public class HairEditorScreen extends Screen {
         syncHairToServer();
     }
 
-    private void syncHairToServer() {
-        NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
-    }
+	private void syncHairToServer() {
+		character.setHairId(0);
+		switch (editorMode) {
+			case 1 -> character.setHairSSJ(editingHair);
+			case 2 -> character.setHairSSJ3(editingHair);
+			default -> character.setHairBase(editingHair);
+		}
+
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
+	}
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (usePanorama) {
             renderPanorama(partialTick);
+			this.renderCinematicBars(graphics);
         } else {
             this.renderBackground(graphics);
 			this.renderBackground(graphics);
@@ -750,6 +766,31 @@ public class HairEditorScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.pose().popPose();
     }
+
+	private void renderCinematicBars(GuiGraphics guiGraphics) {
+		int totalBarHeight = (int) (this.height * 0.12);
+
+		int fadeSize = 60;
+
+		if (totalBarHeight <= fadeSize) {
+			totalBarHeight = fadeSize + 1;
+		}
+
+		int solidHeight = totalBarHeight - fadeSize;
+
+		int colorSolid = 0xFF000000;
+		int colorTransparent = 0x00000000;
+
+		guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
+
+		guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
+
+		int bottomBarStartY = this.height - totalBarHeight;
+
+		guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
+
+		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
+	}
 
     private void renderPanorama(float partialTick) {
         String currentRace = character.getRace();
@@ -805,7 +846,7 @@ public class HairEditorScreen extends Screen {
 
         switch (editMode) {
             case LENGTH -> {
-                int cubeCount = strand.getCubeCount();
+                int cubeCount = strand.getLength();
                 float stretchFactor = strand.getStretchFactor();
                 Component lengthText;
                 if (stretchFactor > 1.0f) {
@@ -933,34 +974,42 @@ public class HairEditorScreen extends Screen {
 		int originalHairId = character.getHairId();
 		CustomHair originalBaseHair = character.getHairBase();
 		character.setHairId(0);
-		character.setHairBase(this.editingHair);
+		if (editorMode == 1) character.setHairBase(character.getHairSSJ());
+		else if (editorMode == 2) character.setHairBase(character.getHairSSJ3());
+		else character.setHairBase(this.editingHair);
 
         Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
         Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
         pose.mul(cameraOrientation);
 
-        float yBodyRotO = player.yBodyRot;
-        float yRotO = player.getYRot();
-        float xRotO = player.getXRot();
-        float yHeadRotO = player.yHeadRotO;
-        float yHeadRot = player.yHeadRot;
+		float yBodyRotO = player.yBodyRot;
+		float yBodyRotO_field = player.yBodyRotO;
+		float yRotO = player.getYRot();
+		float xRotO = player.getXRot();
+		float xRotO_field = player.xRotO;
+		float yHeadRotO = player.yHeadRotO;
+		float yHeadRot = player.yHeadRot;
 
-        player.yBodyRot = playerRotation;
-        player.setYRot(playerRotation);
-        player.setXRot(0);
-        player.yHeadRot = playerRotation;
-        player.yHeadRotO = playerRotation;
+		player.yBodyRot = playerRotation;
+		player.yBodyRotO = playerRotation;
+		player.setYRot(playerRotation);
+		player.setXRot(this.playerPitch);
+		player.xRotO = this.playerPitch;
+		player.yHeadRot = playerRotation;
+		player.yHeadRotO = playerRotation;
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0D, 0.0D, 150.0D);
-        InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
-        graphics.pose().popPose();
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 150.0D);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
+		graphics.pose().popPose();
 
-        player.yBodyRot = yBodyRotO;
-        player.setYRot(yRotO);
-        player.setXRot(xRotO);
-        player.yHeadRotO = yHeadRotO;
-        player.yHeadRot = yHeadRot;
+		player.yBodyRot = yBodyRotO;
+		player.yBodyRotO = yBodyRotO_field;
+		player.setYRot(yRotO);
+		player.setXRot(xRotO);
+		player.xRotO = xRotO_field;
+		player.yHeadRotO = yHeadRotO;
+		player.yHeadRot = yHeadRot;
 
 		HairRenderer.PHYSICS_ENABLED = oldPhysics;
 		character.setHairBase(originalBaseHair);
@@ -982,6 +1031,7 @@ public class HairEditorScreen extends Screen {
             mouseY >= centerY - 400 && mouseY <= maxDragY) {
             isDraggingModel = true;
             lastMouseX = mouseX;
+			lastMouseY = mouseY;
             return true;
         }
 
@@ -998,8 +1048,15 @@ public class HairEditorScreen extends Screen {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (isDraggingModel) {
             double deltaX = mouseX - lastMouseX;
+			double deltaY = mouseY - this.lastMouseY;
+
+			this.playerRotation -= (float)deltaX;
+			this.playerPitch += (float)deltaY;
+
+			this.playerPitch = Math.max(-90.0f, Math.min(90.0f, this.playerPitch));
             playerRotation += (float)(deltaX * 0.8);
             lastMouseX = mouseX;
+			lastMouseY = mouseY;
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -1077,32 +1134,55 @@ public class HairEditorScreen extends Screen {
         return editingHair.getStrand(currentFace, selectedStrandIndex);
     }
 
-
 	private void exportCode() {
-		String code = HairManager.toCode(editingHair);
-		if (code != null) {
+		String code;
+
+		if (hasShiftDown()) code = HairManager.toFullSetCode(character.getHairBase(), character.getHairSSJ(), character.getHairSSJ3());
+		else code = HairManager.toCode(editingHair);
+
+		if (code != null && !code.isEmpty()) {
 			codeField.setValue(code);
 			Minecraft.getInstance().keyboardHandler.setClipboard(code);
+			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.UI_MENU_SWITCH.get(), 1.0F));
 		}
 	}
 
 	private void importCode() {
-		String code = codeField.getValue();
-		if (code.isEmpty()) code = Minecraft.getInstance().keyboardHandler.getClipboard();
+		String code = this.codeField.getValue();
+		if (code != null && !code.isEmpty()) {
 
-		if (HairManager.isValidCode(code)) {
-			character.setHairId(0);
+			if (Screen.hasShiftDown() && HairManager.isFullSetCode(code)) {
+				CustomHair[] fullSet = HairManager.fromFullSetCode(code);
+
+				if (fullSet != null) {
+					this.character.setHairBase(fullSet[0]);
+					this.character.setHairSSJ(fullSet[1]);
+					this.character.setHairSSJ3(fullSet[2]);
+
+					updateEditingHairReference();
+					this.backupHair = this.editingHair.copy();
+
+					NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, fullSet[0]));
+					NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, fullSet[1]));
+					NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, fullSet[2]));
+
+					rebuildWidgets();
+					Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.UI_MENU_SWITCH.get(), 1.2F));
+				}
+				return;
+			}
 
 			CustomHair imported = HairManager.fromCode(code);
-			if (imported != null) copyHairData(imported, editingHair);
+			if (imported != null) {
+				this.editingHair = imported;
+				if (this.editorMode == 1) this.character.setHairSSJ(imported);
+				else if (this.editorMode == 2) this.character.setHairSSJ3(imported);
+				else this.character.setHairBase(imported);
 
-			selectedStrandIndex = 0;
-			colorPickerVisible = false;
-			setSlidersVisible(false);
-			updateColorButton();
-			initControlButtons();
-
-			syncHairToServer();
+				this.backupHair = imported.copy();
+				NetworkHandler.sendToServer(new UpdateCustomHairC2S(this.editorMode, this.editingHair));
+				rebuildWidgets();
+			}
 		}
 	}
 

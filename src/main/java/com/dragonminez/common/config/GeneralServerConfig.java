@@ -90,7 +90,8 @@ public class GeneralServerConfig {
 		private boolean respectAttackCooldown = true;
 		private boolean enableBlocking = true;
 		private boolean enableParrying = true;
-		private boolean enablePerfectAttack = true;
+		private boolean enableComboAttacks = true;
+		private int comboAttacksCooldownSeconds = 8;
 		private boolean enablePerfectEvasion = true;
 		private int parryWindowMs = 150;
 		private double blockDamageReductionCap = 0.80;
@@ -110,8 +111,9 @@ public class GeneralServerConfig {
 		public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
 		public boolean isEnableBlocking() { return enableBlocking; }
 		public boolean isEnableParrying() { return enableParrying; }
-		public boolean isEnablePerfectAttack() { return enablePerfectAttack; }
+		public boolean isEnableComboAttacks() { return enableComboAttacks; }
 		public boolean isEnablePerfectEvasion() { return enablePerfectEvasion; }
+		public int getComboAttacksCooldownSeconds() { return Math.max(0, comboAttacksCooldownSeconds); }
 		public int getParryWindowMs() { return Math.max(0, parryWindowMs); }
 		public double getBlockDamageReductionCap() { return Math.max(0, blockDamageReductionCap); }
 		public double getBlockDamageReductionMin() { return Math.max(0, blockDamageReductionMin); }

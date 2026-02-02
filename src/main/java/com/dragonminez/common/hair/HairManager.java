@@ -25,6 +25,10 @@ public class HairManager {
 	private static final String CODE_PREFIX_V2 = "DMZHair_v2:";
 	private static final String CODE_PREFIX_V3 = "DMZHair_v3:";
 
+	private static final String CODE_PREFIX_FULL = "DMZHairFull_v3:";
+	private static final String FULL_SET_SEPARATOR = "\\|";
+	private static final String FULL_SET_JOINER = "|";
+
     static {
         initializeDefaultPresets();
     }
@@ -97,58 +101,88 @@ public class HairManager {
     }
 
     public static String toCode(CustomHair hair) {
-        if (hair == null) return null;
+		if (hair == null) return "";
 		try {
+			ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+			GZIPOutputStream gzipOut = new GZIPOutputStream(byteOut);
+			DataOutputStream dataOut = new DataOutputStream(gzipOut);
 			CompoundTag tag = hair.save();
-			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-			DataOutputStream dataOutput = new DataOutputStream(new GZIPOutputStream(byteStream));
-			NbtIo.write(tag, dataOutput);
-			dataOutput.close();
-			return CODE_PREFIX_V3 + encodeToNumbers(byteStream.toByteArray());
-		} catch (Exception e) { return null; }
+			NbtIo.write(tag, dataOut);
+			dataOut.close();
+			gzipOut.close();
+			byte[] compressed = byteOut.toByteArray();
+			return CODE_PREFIX_V3 + new BigInteger(1, compressed).toString(36);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "";
+		}
 	}
 
 	public static CustomHair fromCode(String code) {
 		if (code == null || code.isEmpty()) return null;
 
-		String rawContent;
-		boolean isV1 = false;
-
-		if (code.startsWith(CODE_PREFIX_V3)) {
-			rawContent = code.substring(CODE_PREFIX_V3.length());
-		} else if (code.startsWith(CODE_PREFIX_V2)) {
-			rawContent = code.substring(CODE_PREFIX_V2.length());
-		} else if (code.startsWith(CODE_PREFIX_V1)) {
-			rawContent = code.substring(CODE_PREFIX_V1.length());
-			isV1 = true;
-		} else {
-			rawContent = code;
+		if (isFullSetCode(code)) {
+			CustomHair[] set = fromFullSetCode(code);
+			return (set != null && set.length > 0) ? set[0] : null;
 		}
 
 		try {
-			byte[] compressed = decodeFromNumbers(rawContent);
-			ByteArrayInputStream byteStream = new ByteArrayInputStream(compressed);
-			DataInputStream dataInput = new DataInputStream(new GZIPInputStream(byteStream));
-			CompoundTag tag = NbtIo.read(dataInput);
-			dataInput.close();
+			String cleanCode = code;
+			if (code.startsWith(CODE_PREFIX_V3)) cleanCode = code.substring(CODE_PREFIX_V3.length());
+			else if (code.startsWith(CODE_PREFIX_V2)) cleanCode = code.substring(CODE_PREFIX_V2.length());
+			else if (code.startsWith(CODE_PREFIX_V1)) cleanCode = code.substring(CODE_PREFIX_V1.length());
 
-			if (code.startsWith(CODE_PREFIX_V3) && tag.contains("Base") && tag.contains("SSJ")) {
-				CustomHair base = new CustomHair();
-				if (tag.contains("Base")) {
-					base.load(tag.getCompound("Base"));
-				}
-				return base;
+			byte[] bytes = new BigInteger(cleanCode, 36).toByteArray();
+			if (bytes[0] == 0 && bytes.length > 1) {
+				byte[] tmp = new byte[bytes.length - 1];
+				System.arraycopy(bytes, 1, tmp, 0, tmp.length);
+				bytes = tmp;
 			}
 
+			ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
+			GZIPInputStream gzipIn = new GZIPInputStream(byteIn);
+			DataInputStream dataIn = new DataInputStream(gzipIn);
+
+			CompoundTag tag = NbtIo.read(dataIn);
 			CustomHair hair = new CustomHair();
-			if (isV1 && !tag.contains("Version")) {
-				tag.putInt("Version", 1);
-			}
 			hair.load(tag);
 			return hair;
-		} catch (Exception e) {
-			return null;
-		}
+		} catch (Exception e) { return null; }
+	}
+
+	public static String toFullSetCode(CustomHair base, CustomHair ssj, CustomHair ssj3) {
+		if (base == null) base = new CustomHair();
+		if (ssj == null) ssj = base.copy();
+		if (ssj3 == null) ssj3 = base.copy();
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(CODE_PREFIX_FULL);
+		sb.append(toCode(base)).append(FULL_SET_JOINER);
+		sb.append(toCode(ssj)).append(FULL_SET_JOINER);
+		sb.append(toCode(ssj3));
+
+		return sb.toString();
+	}
+
+	public static CustomHair[] fromFullSetCode(String code) {
+		if (code == null || !code.startsWith(CODE_PREFIX_FULL)) return null;
+
+		String rawData = code.substring(CODE_PREFIX_FULL.length());
+		String[] parts = rawData.split(FULL_SET_SEPARATOR);
+
+		if (parts.length < 3) return null;
+
+		CustomHair base = fromCode(parts[0]);
+		CustomHair ssj = fromCode(parts[1]);
+		CustomHair ssj3 = fromCode(parts[2]);
+
+		if (base == null || ssj == null || ssj3 == null) return null;
+
+		return new CustomHair[]{base, ssj, ssj3};
+	}
+
+	public static boolean isFullSetCode(String code) {
+		return code != null && code.startsWith(CODE_PREFIX_FULL);
 	}
 
     public static boolean canUseHair(Character character) {
@@ -220,8 +254,4 @@ public class HairManager {
     public static int getPresetCount() {
         return PRESET_CODES.size();
     }
-
-    public static boolean isValidCode(String code) {
-		return code != null && (code.startsWith(CODE_PREFIX_V3) || fromCode(code) != null);
-	}
 }

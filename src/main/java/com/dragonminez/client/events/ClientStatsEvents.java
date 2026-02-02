@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
@@ -35,11 +36,20 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onMouseInput(InputEvent.MouseButton.Pre event) {
 		if (Minecraft.getInstance().player == null) return;
-		if (event.getButton() == 0 && event.getAction() == 1) {
-			if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
-				NetworkHandler.sendToServer(new ComboAttackC2S());
+		if (!ConfigManager.getServerConfig().getCombat().isEnableComboAttacks()) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (data.getStatus().isStunned()) return;
+			if (data.getCooldowns().hasCooldown(Cooldowns.COMBO_ATTACK_CD)) return;
+
+			if (event.getButton() == 0 && event.getAction() == 1) {
+				if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
+					NetworkHandler.sendToServer(new ComboAttackC2S());
+				}
 			}
-		}
+		});
+
 	}
 
 	@SubscribeEvent

@@ -118,13 +118,16 @@ public class CombatEvent {
 							ComboManager.enableTeleportWindow(attacker.getUUID(), victim.getId());
 							attacker.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
 							ComboManager.resetCombo(attacker.getUUID());
+							attackerData.getCooldowns().addCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 						}
 					} else {
 						ComboManager.resetCombo(attacker.getUUID());
 						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
+						attackerData.getCooldowns().addCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 					}
 				} else {
 					ComboManager.resetCombo(attacker.getUUID());
+					attackerData.getCooldowns().addCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 				}
 
 				double finalDmzDamage;
@@ -476,8 +479,9 @@ public class CombatEvent {
 			long lastHurtTime = data.getStatus().getLastHurtTime();
 			int evasionWindow = ConfigManager.getServerConfig().getCombat().getPerfectEvasionWindowMs();
 			boolean isEvasion = (currentTime - lastHurtTime) <= evasionWindow;
+			boolean evasionActive = ConfigManager.getServerConfig().getCombat().isEnablePerfectEvasion();
 
-			if (isEvasion) {
+			if (isEvasion && evasionActive) {
 				int maxEnergy = data.getMaxEnergy();
 				int kiCost = (int) Math.ceil(maxEnergy * 0.08);
 
