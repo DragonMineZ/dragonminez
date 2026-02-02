@@ -9,6 +9,8 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class MasterEnmaEntity extends MastersEntity {
 
@@ -30,10 +32,10 @@ public class MasterEnmaEntity extends MastersEntity {
 		if (this.yHeadRot != 180.0F) this.yHeadRot = 180.0F;
 	}
 
+	@OnlyIn(Dist.CLIENT)
     @Override
     protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
-
-        if (!this.level().isClientSide && pHand == InteractionHand.MAIN_HAND) {
+        if (this.level().isClientSide && pHand == InteractionHand.MAIN_HAND) {
             pPlayer.sendSystemMessage(Component.literal("Menu"));
             return InteractionResult.SUCCESS;
         }

@@ -1,5 +1,6 @@
 package com.dragonminez.server.events;
 
+import com.dragonminez.Reference;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.PlayerAnimationsSync;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber
+@Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class PlayerAnimationsSyncHandler {
 
     private static final Map<UUID, Boolean> lastFlyingState = new HashMap<>();

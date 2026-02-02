@@ -154,11 +154,11 @@ dependencies {
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)
-    runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
-    runtimeOnly(fg.deobf("curse.maven:naturecompass-252848:4712189"))
+    //runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
+    //runtimeOnly(fg.deobf("curse.maven:naturecompass-252848:4712189"))
     // Armors mods for testing armor layer on Oozaru/Majin models, we may delete this once fully finished
-    runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
-    runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
+    //runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
+    //runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
 }
 
 sourceSets.main {

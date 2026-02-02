@@ -6,6 +6,8 @@ import com.dragonminez.common.wish.WishManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
@@ -57,7 +59,7 @@ public class SyncWishesS2C {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            WishManager.applySyncedWishes(wishes);
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> WishManager.applySyncedWishes(wishes));
         });
         ctx.get().setPacketHandled(true);
     }

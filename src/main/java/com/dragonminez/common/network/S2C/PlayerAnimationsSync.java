@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.UUID;
@@ -31,13 +33,15 @@ public class PlayerAnimationsSync {
 
 	public boolean handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
-			Minecraft mc = Minecraft.getInstance();
-			if (mc.level != null) {
-				Player player = mc.level.getPlayerByUUID(playerUUID);
-				if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
-					animatable.dragonminez$setFlying(isFlying);
+			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+				Minecraft mc = Minecraft.getInstance();
+				if (mc.level != null) {
+					Player player = mc.level.getPlayerByUUID(playerUUID);
+					if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
+						animatable.dragonminez$setFlying(isFlying);
+					}
 				}
-			}
+			});
 		});
 		ctx.get().setPacketHandled(true);
 		return true;

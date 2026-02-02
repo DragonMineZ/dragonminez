@@ -5,6 +5,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.lang.reflect.Type;
@@ -46,19 +48,21 @@ public class SyncServerConfigS2C {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            GeneralServerConfig serverConfig = GSON.fromJson(generalServerJson, GeneralServerConfig.class);
-            SkillsConfig skillsConfig = GSON.fromJson(skillsJson, SkillsConfig.class);
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                GeneralServerConfig serverConfig = GSON.fromJson(generalServerJson, GeneralServerConfig.class);
+                SkillsConfig skillsConfig = GSON.fromJson(skillsJson, SkillsConfig.class);
 
-            Type formsType = new TypeToken<Map<String, Map<String, FormConfig>>>() {}.getType();
-            Map<String, Map<String, FormConfig>> formsConfigs = GSON.fromJson(formsJson, formsType);
+                Type formsType = new TypeToken<Map<String, Map<String, FormConfig>>>() {}.getType();
+                Map<String, Map<String, FormConfig>> formsConfigs = GSON.fromJson(formsJson, formsType);
 
-            Type statsType = new TypeToken<Map<String, RaceStatsConfig>>() {}.getType();
-            Map<String, RaceStatsConfig> statsConfigs = GSON.fromJson(raceStatsJson, statsType);
+                Type statsType = new TypeToken<Map<String, RaceStatsConfig>>() {}.getType();
+                Map<String, RaceStatsConfig> statsConfigs = GSON.fromJson(raceStatsJson, statsType);
 
-            Type characterType = new TypeToken<Map<String, RaceCharacterConfig>>() {}.getType();
-            Map<String, RaceCharacterConfig> characterConfigs = GSON.fromJson(raceCharacterJson, characterType);
+                Type characterType = new TypeToken<Map<String, RaceCharacterConfig>>() {}.getType();
+                Map<String, RaceCharacterConfig> characterConfigs = GSON.fromJson(raceCharacterJson, characterType);
 
-            ConfigManager.applySyncedServerConfig(serverConfig, skillsConfig, formsConfigs, statsConfigs, characterConfigs);
+                ConfigManager.applySyncedServerConfig(serverConfig, skillsConfig, formsConfigs, statsConfigs, characterConfigs);
+            });
         });
         ctx.get().setPacketHandled(true);
     }

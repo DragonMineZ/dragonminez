@@ -21,6 +21,8 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
@@ -106,8 +108,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	@Override
 	public void checkDespawn() {}
 
-
-
+	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
 		if (this.level().isClientSide && masterName != null) {

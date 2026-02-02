@@ -4,8 +4,10 @@ import net.minecraft.nbt.CompoundTag;
 
 public class HairStrand {
     public static final int MAX_CUBE_COUNT = 4;
-    public static final int MAX_LENGTH = 6;
+    public static final int MAX_LENGTH = 50;
     private int length = 0;
+
+	private float lengthScale = 1.0f;
 
     private float rotationX = 0.0f;
     private float rotationY = 0.0f;
@@ -32,6 +34,9 @@ public class HairStrand {
     public HairStrand(int id) {
         this.id = id;
     }
+
+	public float getLengthScale() { return lengthScale; }
+	public void setLengthScale(float scale) { this.lengthScale = scale; }
 
     public int getLength() { return length; }
     
@@ -60,11 +65,7 @@ public class HairStrand {
     }
 
     public float getStretchFactor() {
-        if (length <= MAX_CUBE_COUNT) {
-            return 1.0f;
-        }
-        int extraLength = length - MAX_CUBE_COUNT;
-        return 1.0f + (extraLength * 0.25f);
+		return lengthScale;
     }
 
     public float getRotationX() { return rotationX; }
@@ -115,6 +116,7 @@ public class HairStrand {
         CompoundTag tag = new CompoundTag();
         if (id != 0) tag.putInt("Id", id);
         if (length != 0) tag.putInt("Length", length);
+		if (lengthScale != 1.0f) tag.putFloat("LengthScale", lengthScale);
 
         if (rotationX != 0.0f) tag.putFloat("RotX", rotationX);
         if (rotationY != 0.0f) tag.putFloat("RotY", rotationY);
@@ -140,6 +142,7 @@ public class HairStrand {
     public void load(CompoundTag tag) {
         this.id = tag.getInt("Id");
         this.length = tag.getInt("Length");
+		this.lengthScale = tag.contains("LengthScale") ? tag.getFloat("LengthScale") : 1.0f;
         this.rotationX = tag.getFloat("RotX");
         this.rotationY = tag.getFloat("RotY");
         this.rotationZ = tag.getFloat("RotZ");
@@ -158,6 +161,7 @@ public class HairStrand {
     public HairStrand copy() {
         HairStrand copy = new HairStrand(this.id);
         copy.length = this.length;
+		copy.lengthScale = this.lengthScale;
         copy.rotationX = this.rotationX;
         copy.rotationY = this.rotationY;
         copy.rotationZ = this.rotationZ;

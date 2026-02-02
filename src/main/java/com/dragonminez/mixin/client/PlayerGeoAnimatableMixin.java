@@ -171,7 +171,7 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 
 		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
 			var character = data.getCharacter();
-			String race = character.getRace().toLowerCase();
+			String race = character.getRaceName().toLowerCase();
 			String gender = character.getGender().toLowerCase();
 			String currentForm = character.getActiveForm();
 
@@ -194,7 +194,8 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 				return PlayState.STOP;
 			}
 
-			return state.setAndContinue(TAIL);
+			state.getController().setAnimation(TAIL);
+			return PlayState.CONTINUE;
 
 		}).orElse(PlayState.STOP);
 	}

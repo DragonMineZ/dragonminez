@@ -46,21 +46,24 @@ public class TriggerAnimationS2C {
 		buffer.writeInt(entityId);
 	}
 
-	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
+	public boolean handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
 		context.enqueueWork(() -> {
-			if (Minecraft.getInstance().level != null) {
-				Player player = Minecraft.getInstance().level.getPlayerByUUID(playerUUID);
-				if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
-					switch (animationType) {
-						case "evasion" -> animatable.dragonminez$triggerEvasion();
-						case "dash" -> animatable.dragonminez$triggerDash(variant);
-						case "ki_blast_shot" -> animatable.dragonminez$setShootingKi(variant == 0);
-						case "combo" -> animatable.dragonminez$triggerCombo(variant);
+			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+				if (Minecraft.getInstance().level != null) {
+					Player player = Minecraft.getInstance().level.getPlayerByUUID(playerUUID);
+					if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
+						switch (animationType) {
+							case "evasion" -> animatable.dragonminez$triggerEvasion();
+							case "dash" -> animatable.dragonminez$triggerDash(variant);
+							case "ki_blast_shot" -> animatable.dragonminez$setShootingKi(variant == 0);
+							case "combo" -> animatable.dragonminez$triggerCombo(variant);
+						}
 					}
 				}
-			}
+			});
 		});
 		context.setPacketHandled(true);
+		return true;
 	}
 }

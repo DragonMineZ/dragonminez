@@ -35,6 +35,7 @@ import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
 public class HairEditorScreen extends Screen {
@@ -58,6 +59,8 @@ public class HairEditorScreen extends Screen {
     private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
 
     protected static boolean GLOBAL_SWITCHING = false;
+
+	private static final Set<String> DEV_NAMES = Set.of("ImYuseix", "ezShokkoh", "narukebaransu");
 
     private final Screen previousScreen;
     private final Character character;
@@ -207,6 +210,7 @@ public class HairEditorScreen extends Screen {
 
 		updateEditingHairReference();
 		selectedStrandIndex = 0;
+		rebuildWidgets();
 	}
 
 	private void updateEditingHairReference() {
@@ -222,6 +226,62 @@ public class HairEditorScreen extends Screen {
 			}
 		}
 		this.backupHair = this.editingHair.copy();
+	}
+
+	private void modifyLength(int direction) {
+		if (editingHair == null || selectedStrandIndex == -1) return;
+		HairStrand strand = getSelectedStrand();
+		if (strand == null) return;
+
+		String username = this.minecraft.getUser().getName();
+		boolean isDev = DEV_NAMES.contains(username);
+		boolean isSSJ3 = (this.editorMode == 2);
+
+		int maxCubes = 4;
+		if (isDev) maxCubes = 100;
+		else if (isSSJ3) maxCubes = 8;
+
+		int len = strand.getLength();
+		float scale = Math.round(strand.getLengthScale() * 10.0f) / 10.0f;
+
+		if (direction > 0) {
+			if (len < 4) {
+				len++;
+				scale = 1.0f;
+			} else if (len == 4 && scale < 1.5f) {
+				scale += 0.1f;
+			} else if (len >= 4 && len < maxCubes && scale >= 1.5f) {
+				len++;
+				scale = 1.5f;
+			} else if (len == maxCubes && scale < 2.0f) {
+				scale += 0.1f;
+			} else if (isDev && scale >= 2.0f) {
+				len++;
+			}
+		} else {
+			if (len > maxCubes) {
+				len--;
+			} else if (len == maxCubes && scale > 1.5f) {
+				scale -= 0.1f;
+			} else if (len > 4 && scale <= 1.55f) {
+				len--;
+				if (len == 4) scale = 1.5f;
+			} else if (len == 4 && scale > 1.0f) {
+				scale -= 0.1f;
+			} else if (len > 0 && scale <= 1.05f) {
+				len--;
+				scale = 1.0f;
+			}
+		}
+
+		scale = Math.round(scale * 10.0f) / 10.0f;
+		if (scale < 1.0f) scale = 1.0f;
+		if (scale > 2.0f) scale = 2.0f;
+
+		strand.setLength(len);
+		strand.setLengthScale(scale);
+
+		syncHairToServer();
 	}
 
     private void initControlButtons() {
@@ -246,8 +306,7 @@ public class HairEditorScreen extends Screen {
                         .onPress(button -> {
                             HairStrand s = getSelectedStrand();
                             if (s != null) {
-                                s.removeCube();
-                                syncHairToServer();
+								modifyLength(-1);
                             }
                         })
                         .sound(MainSounds.UI_MENU_SWITCH.get())
@@ -264,8 +323,7 @@ public class HairEditorScreen extends Screen {
                         .onPress(button -> {
                             HairStrand s = getSelectedStrand();
                             if (s != null) {
-                                s.addCube();
-                                syncHairToServer();
+								modifyLength(1);
                             }
                         })
                         .sound(MainSounds.UI_MENU_SWITCH.get())

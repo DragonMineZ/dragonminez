@@ -8,6 +8,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class MasterKarinEntity extends MastersEntity {
 
@@ -17,10 +19,10 @@ public class MasterKarinEntity extends MastersEntity {
         this.setPersistenceRequired();
     }
 
+	@OnlyIn(Dist.CLIENT)
     @Override
     protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
-
-        if (!this.level().isClientSide && pHand == InteractionHand.MAIN_HAND) {
+        if (this.level().isClientSide && pHand == InteractionHand.MAIN_HAND) {
             pPlayer.sendSystemMessage(Component.literal("Menu"));
             return InteractionResult.SUCCESS;
         }

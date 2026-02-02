@@ -9,6 +9,8 @@ import com.dragonminez.common.util.QuestRewardTypeAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.HashMap;
@@ -49,7 +51,7 @@ public class SyncSagasS2C {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            SagaManager.applySyncedSagas(sagas);
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> SagaManager.applySyncedSagas(sagas));
         });
         ctx.get().setPacketHandled(true);
     }

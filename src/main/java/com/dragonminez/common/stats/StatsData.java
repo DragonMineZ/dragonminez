@@ -71,10 +71,10 @@ public class StatsData {
 
     public int getBattlePower() {
         int str = stats.getStrength();
-        int skp = stats.getStrikePower();
-        int res = stats.getResistance();
-        int vit = stats.getVitality();
-        int pwr = stats.getKiPower();
+		int skp = stats.getStrikePower();
+		int res = stats.getResistance();
+		int vit = stats.getVitality();
+		int pwr = stats.getKiPower();
 
         double releaseMultiplier = (double) resources.getPowerRelease() / 100.0;
 
@@ -103,7 +103,7 @@ public class StatsData {
     }
 
 	public int getMaxPoise() {
-		return (int) (100 + stats.getResistance() * 0.1);
+		return (int) (20 + stats.getResistance() * 0.1);
 	}
 
 	public double getMaxMeleeDamage() {
@@ -320,7 +320,6 @@ public class StatsData {
         double baseMult = switch (statName.toUpperCase()) {
             case "STR" -> formData.getStrMultiplier() - 1.0;
             case "SKP" -> formData.getSkpMultiplier() - 1.0;
-			case "STM" -> formData.getStmMultiplier() - 1.0;
 			case "RES" -> (formData.getDefMultiplier() - 1.0 + formData.getStmMultiplier() - 1.0) / 2.0;
             case "VIT" -> formData.getVitMultiplier() - 1.0;
             case "PWR" -> formData.getPwrMultiplier() - 1.0;
@@ -328,10 +327,10 @@ public class StatsData {
             default -> 0.0;
         };
 
-        double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
-        double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
+		double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
+		double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
 
-        return baseMult + masteryBonus;
+		return baseMult * (1.0 + masteryBonus);
     }
 
     public double getKaiokenMultiplier(String statName) {
