@@ -67,7 +67,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 owner.getZ(),
                 MainSounds.KI_LASER.get(),
                 SoundSource.PLAYERS,
-                1.0F,
+                0.4F,
                 1.0F + (this.random.nextFloat() * 0.2F)
         );
     }

@@ -47,6 +47,10 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     private static final int QUEST_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_QUESTS = 8;
 
+	private static int SAVED_SAGA_INDEX = 0;
+	private static int SAVED_QUEST_ID = -1;
+	private static int SAVED_SCROLL_OFFSET = 0;
+
     private StatsData statsData;
     private int tickCount = 0;
 	private static final Map<String, Long> QUEST_COOLDOWNS = new HashMap<>();
@@ -71,8 +75,21 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         super.init();
         updateStatsData();
         loadAvailableSagas();
+
+		if (SAVED_SAGA_INDEX < availableSagas.size()) this.currentSagaIndex = SAVED_SAGA_INDEX;
+		else this.currentSagaIndex = 0;
+		if (SAVED_QUEST_ID != -1 && !availableSagas.isEmpty()) {
+			Saga currentSaga = availableSagas.get(this.currentSagaIndex);
+			this.selectedQuest = currentSaga.getQuestById(SAVED_QUEST_ID);
+		}
+
+		this.scrollOffset = SAVED_SCROLL_OFFSET;
+
         initSagaNavigationButtons();
         updateQuestsList();
+
+		this.scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
+		if (this.selectedQuest != null) refreshButtons();
     }
 
     private void loadAvailableSagas() {
@@ -117,8 +134,11 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		if (currentSagaIndex > 0) {
 			CustomTextureButton leftArrow = createArrowButton(leftPanelX + 10, bottomPanelY - 25, true, btn -> {
 				currentSagaIndex--;
+				SAVED_SAGA_INDEX = currentSagaIndex;
+				SAVED_QUEST_ID = -1;
 				selectedQuest = null;
 				scrollOffset = 0;
+				SAVED_SCROLL_OFFSET = 0;
 				objectivesScrollOffset = 0;
 				updateQuestsList();
 				refreshButtons();
@@ -136,13 +156,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			if (canAdvance) {
 				CustomTextureButton rightArrow = createArrowButton(leftPanelX + 122, bottomPanelY - 25, false, btn -> {
 					currentSagaIndex++;
-
-					if (!statsData.getQuestData().isSagaUnlocked(nextSaga.getId())) {
-						NetworkHandler.sendToServer(new UnlockSagaC2S(nextSaga.getId()));
-					}
-
+					if (!statsData.getQuestData().isSagaUnlocked(nextSaga.getId())) NetworkHandler.sendToServer(new UnlockSagaC2S(nextSaga.getId()));
+					SAVED_SAGA_INDEX = currentSagaIndex;
+					SAVED_QUEST_ID = -1;
 					selectedQuest = null;
 					scrollOffset = 0;
+					SAVED_SCROLL_OFFSET = 0;
 					objectivesScrollOffset = 0;
 					updateQuestsList();
 					refreshButtons();
@@ -603,6 +622,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		if (mouseX >= leftPanelX && mouseX <= leftPanelX + 148 &&
 				mouseY >= leftPanelY + 40 && mouseY <= leftPanelY + 219) {
 			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
+			SAVED_SCROLL_OFFSET = scrollOffset;
 			return true;
 		}
 
@@ -628,12 +648,11 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         for (int i = visibleStart; i < visibleEnd; i++) {
             int itemY = startY + ((i - visibleStart) * QUEST_ITEM_HEIGHT);
 
-            if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 110 &&
-                    mouseY >= itemY && mouseY <= itemY + QUEST_ITEM_HEIGHT) {
-
+            if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 110 && mouseY >= itemY && mouseY <= itemY + QUEST_ITEM_HEIGHT) {
                 Quest quest = quests.get(i);
                 if (quest != null) {
                     selectedQuest = quest;
+					SAVED_QUEST_ID = quest.getId();
                     refreshButtons();
                 }
                 return true;

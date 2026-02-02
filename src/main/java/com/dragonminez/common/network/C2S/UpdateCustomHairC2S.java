@@ -24,18 +24,15 @@ public class UpdateCustomHairC2S {
 		buf.writeInt(msg.hairIndex);
         boolean hasHair = msg.customHair != null;
         buf.writeBoolean(hasHair);
-        if (hasHair) {
-            msg.customHair.writeToBuffer(buf);
-        }
+        if (hasHair) msg.customHair.writeToBuffer(buf);
+
     }
 
     public static UpdateCustomHairC2S decode(FriendlyByteBuf buf) {
 		int hairIndex = buf.readInt();
         boolean hasHair = buf.readBoolean();
         CustomHair hair = null;
-        if (hasHair) {
-            hair = CustomHair.readFromBuffer(buf);
-        }
+        if (hasHair) hair = CustomHair.readFromBuffer(buf);
         return new UpdateCustomHairC2S(hairIndex, hair);
     }
 

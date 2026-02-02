@@ -112,7 +112,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
                         this.getX(), this.getY(), this.getZ(),
                         MainSounds.KI_EXPLOSION_CHARGE.get(),
                         SoundSource.HOSTILE,
-                        2.0F, 1.0F
+                        1.0F, 1.0F
                 );
             }
 
@@ -122,7 +122,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
                         this.getX(), this.getY(), this.getZ(),
                         MainSounds.KI_EXPLOSION_IMPACT.get(),
                         SoundSource.HOSTILE,
-                        2.0F,
+                        1.0F,
                         1.2F
                 );
             }

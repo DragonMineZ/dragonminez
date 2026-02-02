@@ -27,6 +27,7 @@ public class Status {
 	private int fusionTimer;
 	private String fusionType;
 	private CompoundTag originalAppearance;
+	private boolean androidUpgraded;
 
     public Status() {
         this.isAlive = true;
@@ -51,6 +52,7 @@ public class Status {
 		this.fusionTimer = 0;
 		this.fusionType = "";
 		this.originalAppearance = new CompoundTag();
+		this.androidUpgraded = false;
     }
 
     public boolean isAlive() { return isAlive; }
@@ -75,6 +77,7 @@ public class Status {
 	public int getFusionTimer() { return fusionTimer; }
 	public String getFusionType() { return fusionType; }
 	public CompoundTag getOriginalAppearance() { return originalAppearance; }
+	public boolean isAndroidUpgraded() { return androidUpgraded; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -98,6 +101,7 @@ public class Status {
 	public void setFusionTimer(int timer) { this.fusionTimer = timer; }
 	public void setFusionType(String type) { this.fusionType = type; }
 	public void setOriginalAppearance(CompoundTag tag) { this.originalAppearance = tag; }
+	public void setAndroidUpgraded(boolean upgraded) { this.androidUpgraded = upgraded; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -119,12 +123,11 @@ public class Status {
 		tag.putInt("DrainingTargetId", drainingTargetId);
 		tag.putBoolean("IsFused", isFused);
 		tag.putBoolean("IsFusionLeader", isFusionLeader);
-		if (fusionPartnerUUID != null) {
-			tag.putUUID("FusionPartnerUUID", fusionPartnerUUID);
-		}
+		if (fusionPartnerUUID != null) tag.putUUID("FusionPartnerUUID", fusionPartnerUUID);
 		tag.putInt("FusionTimer", fusionTimer);
 		tag.putString("FusionType", fusionType);
 		tag.put("OriginalAppearance", originalAppearance);
+		tag.putBoolean("AndroidUpgraded", androidUpgraded);
         return tag;
     }
 
@@ -142,27 +145,19 @@ public class Status {
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.lastHurtTime = tag.getLong("LastHurtTime");
 		this.isStunned = tag.getBoolean("IsStunned");
-		if (tag.contains("SelectedAction")) {
-			this.selectedAction = ActionMode.values()[tag.getInt("SelectedAction")];
-		} else {
-			this.selectedAction = ActionMode.FORM;
-		}
+		if (tag.contains("SelectedAction")) this.selectedAction = ActionMode.values()[tag.getInt("SelectedAction")];
+		else this.selectedAction = ActionMode.FORM;
 		this.kiWeaponType = tag.getString("KiWeaponType");
 		this.drainingTargetId = tag.getInt("DrainingTargetId");
 		this.isFused = tag.getBoolean("IsFused");
 		this.isFusionLeader = tag.getBoolean("IsFusionLeader");
-		if (tag.hasUUID("FusionPartnerUUID")) {
-			this.fusionPartnerUUID = tag.getUUID("FusionPartnerUUID");
-		} else {
-			this.fusionPartnerUUID = null;
-		}
+		if (tag.hasUUID("FusionPartnerUUID")) this.fusionPartnerUUID = tag.getUUID("FusionPartnerUUID");
+		else this.fusionPartnerUUID = null;
 		this.fusionTimer = tag.getInt("FusionTimer");
 		this.fusionType = tag.getString("FusionType");
-		if (tag.contains("OriginalAppearance")) {
-			this.originalAppearance = tag.getCompound("OriginalAppearance");
-		} else {
-			this.originalAppearance = new CompoundTag();
-		}
+		if (tag.contains("OriginalAppearance")) this.originalAppearance = tag.getCompound("OriginalAppearance");
+		else this.originalAppearance = new CompoundTag();
+		this.androidUpgraded = tag.getBoolean("AndroidUpgraded");
     }
 
     public void copyFrom(Status other) {
@@ -188,6 +183,7 @@ public class Status {
 		this.fusionTimer = other.fusionTimer;
 		this.fusionType = other.fusionType;
 		this.originalAppearance = other.originalAppearance.copy();
+		this.androidUpgraded = other.androidUpgraded;
     }
 }
 

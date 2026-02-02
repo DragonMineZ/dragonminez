@@ -7,6 +7,7 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -57,7 +58,7 @@ public class StructureLocator {
 
 	@Nullable
 	private static BlockPos getPositionFromPlacement(ServerLevel level, ResourceKey<Structure> structureKey,
-													 net.minecraft.core.Registry<Structure> structureRegistry,
+													 Registry<Structure> structureRegistry,
 													 StructurePlacement placement) {
 		if (placement instanceof BiomeAwareUniquePlacement uniquePlacement) {
 			ChunkPos chunkPos = uniquePlacement.getStructureChunk(

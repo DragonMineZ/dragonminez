@@ -47,14 +47,15 @@ public class KiBlastC2S {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (data.getCooldowns().hasCooldown(Cooldowns.KI_BLAST_CD)) return;
 					if (data.getStatus().isStunned()) return;
+					if (!data.getSkills().hasSkill("kicontrol")) return;
 
 					int cost = (int) (data.getMaxEnergy() * 0.08);
 					if (data.getResources().getCurrentEnergy() < cost) return;
 					data.getResources().removeEnergy(cost);
 
-					data.getCooldowns().setCooldown(Cooldowns.KI_BLAST_CD, 30);
+					data.getCooldowns().setCooldown(Cooldowns.KI_BLAST_CD, 32);
 
-					float damage = (float) (data.getKiDamage() * 0.25f);
+					float damage = (float) (data.getKiDamage() * Math.max(0.5f, (0.05f * data.getSkills().getSkillLevel("kicontrol"))));
 
 					KiBlastEntity kiBlast = new KiBlastEntity(player.level(), player);
 					kiBlast.setup(player, damage, 0.5F, 0.0f, msg.colorMain, msg.colorBorder);

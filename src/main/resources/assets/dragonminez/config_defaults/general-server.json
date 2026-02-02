@@ -13,6 +13,7 @@
     "dbSpawnRange": 3000
   },
   "gameplay": {
+    "reviveCooldownSeconds": 300,
     "tpGainMultiplier": 1.0,
     // TP Cost multiplier is not lineal, it increases exponentially.
     // Formula: tpCost = (level * tpCostMultiplier) * tpCostMultiplier * 1.5

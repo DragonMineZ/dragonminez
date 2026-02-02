@@ -31,6 +31,7 @@ public class GeneralServerConfig {
     }
 
     public static class GameplayConfig {
+		private int reviveCooldownSeconds = 300;
         private double tpGainMultiplier = 1.0;
 		private double tpCostMultiplier = 1.0;
 		private double tpHealthRatio = 0.10;
@@ -48,6 +49,7 @@ public class GeneralServerConfig {
 		private int fusionDurationSeconds = 300;
 		private int fusionCooldownSeconds = 1800;
 
+		public int getReviveCooldownSeconds() { return Math.max(0, reviveCooldownSeconds); }
         public double getTpsMultiplier() { return Math.max(0, tpGainMultiplier); }
 		public double getTpCostMultiplier() { return Math.max(0.01, tpCostMultiplier); }
 		public double getTpHealthRatio() { return Math.max(0, tpHealthRatio); }

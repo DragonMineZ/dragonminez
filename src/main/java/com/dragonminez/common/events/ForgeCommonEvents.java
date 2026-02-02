@@ -120,9 +120,10 @@ public class ForgeCommonEvents {
 
 				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
 					data.getStatus().setAlive(false);
-					if (!data.getStatus().isInKaioPlanet()) data.getStatus().isInKaioPlanet();
+					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
 					data.getEffects().removeAllEffects();
 					data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
+					data.getCooldowns().addCooldown(Cooldowns.REVIVE, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
 				}
 			});
 		}

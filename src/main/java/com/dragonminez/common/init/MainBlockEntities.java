@@ -2,10 +2,7 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.block.custom.DragonBallBlock;
-import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
-import com.dragonminez.common.init.block.entity.EnergyCableBlockEntity;
-import com.dragonminez.common.init.block.entity.FuelGeneratorBlockEntity;
-import com.dragonminez.common.init.block.entity.KikonoStationBlockEntity;
+import com.dragonminez.common.init.block.entity.*;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -55,6 +52,12 @@ public final class MainBlockEntities {
 			BLOCK_ENTITY_TYPES_REGISTER.register("energy_cable", () ->
 					BlockEntityType.Builder.of(EnergyCableBlockEntity::new,
 							MainBlocks.ENERGY_CABLE.get()
+					).build(null));
+
+	public static final RegistryObject<BlockEntityType<TimeChamberPortalBlockEntity>> TIME_CHAMBER_PORTAL =
+			BLOCK_ENTITY_TYPES_REGISTER.register("time_chamber_portal", () ->
+					BlockEntityType.Builder.of(TimeChamberPortalBlockEntity::new,
+							MainBlocks.TIME_CHAMBER_PORTAL.get()
 					).build(null));
 
 	public static void register(IEventBus bus) {

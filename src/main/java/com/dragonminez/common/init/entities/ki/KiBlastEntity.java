@@ -37,7 +37,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 				owner.getZ(),
 				MainSounds.KIBLAST_ATTACK.get(),
 				SoundSource.PLAYERS,
-				0.3F,
+				0.1F,
 				1.0F + (this.random.nextFloat() * 0.2F)
 		);
 	}

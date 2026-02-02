@@ -134,6 +134,12 @@ public class NetworkHandler {
 				.encoder(ComboAttackC2S::encode)
 				.consumerMainThread(ComboAttackC2S::handle)
 				.add();
+
+		net.messageBuilder(NPCActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(NPCActionC2S::new)
+				.encoder(NPCActionC2S::toBytes)
+				.consumerMainThread(NPCActionC2S::handle)
+				.add();
 		
 		/*
 		  SERVER -> CLIENT

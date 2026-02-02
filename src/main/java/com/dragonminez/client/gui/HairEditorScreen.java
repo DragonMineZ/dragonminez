@@ -1148,41 +1148,49 @@ public class HairEditorScreen extends Screen {
 	}
 
 	private void importCode() {
-		String code = this.codeField.getValue();
-		if (code != null && !code.isEmpty()) {
+		String rawCode = this.codeField.getValue();
+		if (rawCode == null || rawCode.isEmpty()) return;
+		String code = rawCode.trim().replaceAll("\\s+", "");
 
-			if (Screen.hasShiftDown() && HairManager.isFullSetCode(code)) {
-				CustomHair[] fullSet = HairManager.fromFullSetCode(code);
+		if (hasShiftDown() && HairManager.isFullSetCode(code)) {
+			CustomHair[] fullSet = HairManager.fromFullSetCode(code);
+			if (fullSet != null) {
+				character.setHairBase(fullSet[0]);
+				character.setHairSSJ(fullSet[1]);
+				character.setHairSSJ3(fullSet[2]);
 
-				if (fullSet != null) {
-					this.character.setHairBase(fullSet[0]);
-					this.character.setHairSSJ(fullSet[1]);
-					this.character.setHairSSJ3(fullSet[2]);
+				updateEditingHairReference();
+				this.backupHair = this.editingHair.copy();
 
-					updateEditingHairReference();
-					this.backupHair = this.editingHair.copy();
+				NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, fullSet[0]));
+				NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, fullSet[1]));
+				NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, fullSet[2]));
 
-					NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, fullSet[0]));
-					NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, fullSet[1]));
-					NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, fullSet[2]));
-
-					rebuildWidgets();
-					Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.UI_MENU_SWITCH.get(), 1.2F));
-				}
-				return;
-			}
-
-			CustomHair imported = HairManager.fromCode(code);
-			if (imported != null) {
-				this.editingHair = imported;
-				if (this.editorMode == 1) this.character.setHairSSJ(imported);
-				else if (this.editorMode == 2) this.character.setHairSSJ3(imported);
-				else this.character.setHairBase(imported);
-
-				this.backupHair = imported.copy();
-				NetworkHandler.sendToServer(new UpdateCustomHairC2S(this.editorMode, this.editingHair));
 				rebuildWidgets();
 			}
+			return;
+		}
+
+		CustomHair imported = null;
+
+		if (HairManager.isFullSetCode(code)) {
+			CustomHair[] fullSet = HairManager.fromFullSetCode(code);
+			if (fullSet != null && this.editorMode >= 0 && this.editorMode < fullSet.length) imported = fullSet[this.editorMode];
+		}
+
+		if (imported == null) imported = HairManager.fromCode(code);
+
+
+		if (imported != null) {
+			this.editingHair = imported;
+
+			if (this.editorMode == 1) character.setHairSSJ(imported);
+			else if (this.editorMode == 2) character.setHairSSJ3(imported);
+			else character.setHairBase(imported);
+
+			this.backupHair = imported.copy();
+			NetworkHandler.sendToServer(new UpdateCustomHairC2S(this.editorMode, this.editingHair));
+			rebuildWidgets();
 		}
 	}
 

@@ -9,8 +9,7 @@ public class Cooldowns {
     private final Map<String, Integer> cooldowns;
 
     public static final String SENZU_KARIN = "SenzuKarin";
-    public static final String BABA = "Baba";
-    public static final String BABA_ALIVE = "BabaAlive";
+    public static final String REVIVE = "Revive";
     public static final String ZENKAI = "Zenkai";
 	public static final String ASSIMILATION = "Assimilation";
 	public static final String ABSORPTION = "Absorption";

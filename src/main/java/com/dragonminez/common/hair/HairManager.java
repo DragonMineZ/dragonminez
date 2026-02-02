@@ -1,5 +1,7 @@
 package com.dragonminez.common.hair;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.Character;
@@ -111,9 +113,9 @@ public class HairManager {
 			dataOut.close();
 			gzipOut.close();
 			byte[] compressed = byteOut.toByteArray();
-			return CODE_PREFIX_V3 + new BigInteger(1, compressed).toString(36);
+			return CODE_PREFIX_V3 + encodeToNumbers(compressed);
 		} catch (Exception e) {
-			e.printStackTrace();
+			LogUtil.error(Env.CLIENT, "Failed to serialize CustomHair to code", e);
 			return "";
 		}
 	}
@@ -131,23 +133,25 @@ public class HairManager {
 			if (code.startsWith(CODE_PREFIX_V3)) cleanCode = code.substring(CODE_PREFIX_V3.length());
 			else if (code.startsWith(CODE_PREFIX_V2)) cleanCode = code.substring(CODE_PREFIX_V2.length());
 			else if (code.startsWith(CODE_PREFIX_V1)) cleanCode = code.substring(CODE_PREFIX_V1.length());
-
-			byte[] bytes = new BigInteger(cleanCode, 36).toByteArray();
-			if (bytes[0] == 0 && bytes.length > 1) {
-				byte[] tmp = new byte[bytes.length - 1];
-				System.arraycopy(bytes, 1, tmp, 0, tmp.length);
-				bytes = tmp;
-			}
-
+			byte[] bytes = decodeFromNumbers(cleanCode);
 			ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
 			GZIPInputStream gzipIn = new GZIPInputStream(byteIn);
 			DataInputStream dataIn = new DataInputStream(gzipIn);
 
 			CompoundTag tag = NbtIo.read(dataIn);
+			if (code.startsWith(CODE_PREFIX_V3) && tag.contains("Base") && (tag.contains("SSJ") || tag.contains("SSJ2") || tag.contains("SSJ3"))) {
+				CustomHair base = new CustomHair();
+				if (tag.contains("Base")) base.load(tag.getCompound("Base"));
+				return base;
+			}
+
 			CustomHair hair = new CustomHair();
 			hair.load(tag);
 			return hair;
-		} catch (Exception e) { return null; }
+		} catch (Exception e) {
+			LogUtil.error(Env.CLIENT, "Failed to deserialize CustomHair from code", e);
+			return null;
+		}
 	}
 
 	public static String toFullSetCode(CustomHair base, CustomHair ssj, CustomHair ssj3) {
@@ -155,13 +159,7 @@ public class HairManager {
 		if (ssj == null) ssj = base.copy();
 		if (ssj3 == null) ssj3 = base.copy();
 
-		StringBuilder sb = new StringBuilder();
-		sb.append(CODE_PREFIX_FULL);
-		sb.append(toCode(base)).append(FULL_SET_JOINER);
-		sb.append(toCode(ssj)).append(FULL_SET_JOINER);
-		sb.append(toCode(ssj3));
-
-		return sb.toString();
+		return CODE_PREFIX_FULL + toCode(base) + FULL_SET_JOINER + toCode(ssj) + FULL_SET_JOINER + toCode(ssj3);
 	}
 
 	public static CustomHair[] fromFullSetCode(String code) {
@@ -203,7 +201,7 @@ public class HairManager {
     }
 
     public static CustomHair getEffectiveHair(Character character) {
-        if (character == null || !canUseHair(character)) return null;
+        if (!canUseHair(character)) return null;
         int hairId = character.getHairId();
         if (hairId == 0) {
             CustomHair custom = character.getHairBase();
