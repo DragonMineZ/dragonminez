@@ -115,12 +115,7 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
 				if (data.getStatus().hasCreatedCharacter()) {
 					Minecraft mc = Minecraft.getInstance();
-					int oldGuiScale = mc.options.guiScale().get();
-					if (oldGuiScale != 3) {
-						mc.options.guiScale().set(3);
-						mc.resizeDisplay();
-					}
-					mc.setScreen(new MastersSkillsScreen(oldGuiScale, masterName, this));
+					mc.setScreen(new MastersSkillsScreen(masterName, this));
 					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 				}
 			});

@@ -52,23 +52,17 @@ public class ForgeClientEvents {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) return;
 
-        if (KeyBinds.STATS_MENU.consumeClick()) {
+		if (KeyBinds.STATS_MENU.consumeClick()) {
 			if (mc.player == null || mc.screen != null) return;
-			int oldGuiScale = mc.options.guiScale().get();
-			if (oldGuiScale != 3) {
-				mc.options.guiScale().set(3);
-				mc.resizeDisplay();
-			}
-
 			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 				if (data.getStatus().hasCreatedCharacter()) {
-					mc.setScreen(new CharacterStatsScreen(oldGuiScale));
+					mc.setScreen(new CharacterStatsScreen());
 				} else {
-					mc.setScreen(new RaceSelectionScreen(data.getCharacter(), oldGuiScale));
+					mc.setScreen(new RaceSelectionScreen(data.getCharacter()));
 				}
 				mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 			});
-        }
+		}
 
 		if (KeyBinds.SPACEPOD_MENU.consumeClick() && mc.player.isPassenger() && mc.player.getVehicle() instanceof SpacePodEntity) {
 			mc.setScreen(new SpacePodScreen());

@@ -66,8 +66,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 	private int maxObjectivesScroll = 0;
 	private int objAreaX, objAreaY, objAreaWidth, objAreaHeight;
 
-    public QuestsMenuScreen(int oldGuiScale) {
-        super(Component.translatable("gui.dragonminez.quests.title"), oldGuiScale);
+    public QuestsMenuScreen() {
+        super(Component.translatable("gui.dragonminez.quests.title"));
     }
 
     @Override
@@ -127,7 +127,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		if (availableSagas.isEmpty()) return;
 
 		int leftPanelX = 12;
-		int centerY = this.height / 2;
+		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 		int bottomPanelY = leftPanelY + 213;
 
@@ -261,8 +261,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     private void initActionButton() {
 		if (selectedQuest == null || statsData == null) return;
 
-		int rightPanelX = this.width - 158;
-		int centerY = this.height / 2;
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
 		QuestData questData = statsData.getQuestData();
@@ -372,17 +372,23 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
 
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+        int uiMouseX = (int) Math.round(toUiX(mouseX));
+        int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-        renderLeftPanel(graphics, mouseX, mouseY);
-        renderRightPanel(graphics, mouseX, mouseY);
+        beginUiScale(graphics);
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
+
+        renderLeftPanel(graphics, uiMouseX, uiMouseY);
+        renderRightPanel(graphics, uiMouseX, uiMouseY);
+
+        super.render(graphics, uiMouseX, uiMouseY, partialTick);
+        endUiScale(graphics);
     }
 
     private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -414,7 +420,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_QUESTS, quests.size());
 
-        graphics.enableScissor(panelX + 5, startY, panelX + 144, startY + (MAX_VISIBLE_QUESTS * QUEST_ITEM_HEIGHT));
+        graphics.enableScissor(
+            toScreenCoord(panelX + 5),
+            toScreenCoord(startY),
+            toScreenCoord(panelX + 144),
+            toScreenCoord(startY + (MAX_VISIBLE_QUESTS * QUEST_ITEM_HEIGHT))
+        );
 
         for (int i = visibleStart; i < visibleEnd; i++) {
             Quest quest = quests.get(i);
@@ -467,14 +478,14 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightPanelX = this.width - 158;
-        int centerY = this.height / 2;
+        int rightPanelX = getUiWidth() - 158;
+        int centerY = getUiHeight() / 2;
         int rightPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_SMALL, this.width - 158, centerY + 76, 0, 95, 145, 58, 256, 256);
-		graphics.blit(MENU_BIG, this.width - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_SMALL, getUiWidth() - 158, centerY + 76, 0, 95, 145, 58, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(ChatFormatting.BOLD),
                 rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
@@ -537,7 +548,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 		this.maxObjectivesScroll = Math.max(0, totalContentHeight - objVisibleHeight);
 
-		graphics.enableScissor(panelX + 5, objStartY, panelX + 144, objStartY + objVisibleHeight);
+		graphics.enableScissor(
+			toScreenCoord(panelX + 5),
+			toScreenCoord(objStartY),
+			toScreenCoord(panelX + 144),
+			toScreenCoord(objStartY + objVisibleHeight)
+		);
 
 		int currentRenderY = objStartY - objectivesScrollOffset;
 
@@ -616,19 +632,21 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = 12;
-		int centerY = this.height / 2;
+		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
-		if (mouseX >= leftPanelX && mouseX <= leftPanelX + 148 &&
-				mouseY >= leftPanelY + 40 && mouseY <= leftPanelY + 219) {
+		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
+				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
 			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
 			SAVED_SCROLL_OFFSET = scrollOffset;
 			return true;
 		}
 
 		if (selectedQuest != null && maxObjectivesScroll > 0 &&
-				mouseX >= objAreaX && mouseX <= objAreaX + objAreaWidth &&
-				mouseY >= objAreaY && mouseY <= objAreaY + objAreaHeight) {
+				uiMouseX >= objAreaX && uiMouseX <= objAreaX + objAreaWidth &&
+				uiMouseY >= objAreaY && uiMouseY <= objAreaY + objAreaHeight) {
 			int scrollAmount = (int)(delta * 10);
 			objectivesScrollOffset = Math.max(0, Math.min(maxObjectivesScroll, objectivesScrollOffset - scrollAmount));
 			return true;
@@ -638,8 +656,10 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double uiMouseX = toUiX(mouseX);
+        double uiMouseY = toUiY(mouseY);
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
         List<Quest> quests = getVisibleQuests();
         int startY = leftPanelY + 30;
@@ -648,7 +668,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         for (int i = visibleStart; i < visibleEnd; i++) {
             int itemY = startY + ((i - visibleStart) * QUEST_ITEM_HEIGHT);
 
-            if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 110 && mouseY >= itemY && mouseY <= itemY + QUEST_ITEM_HEIGHT) {
+            if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 110 && uiMouseY >= itemY && uiMouseY <= itemY + QUEST_ITEM_HEIGHT) {
                 Quest quest = quests.get(i);
                 if (quest != null) {
                     selectedQuest = quest;

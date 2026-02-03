@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
@@ -13,9 +14,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public abstract class BaseMenuScreen extends Screen {
-
-    protected final int oldGuiScale;
+public abstract class BaseMenuScreen extends ScaledScreen {
 	protected static boolean GLOBAL_SWITCHING = false;
 	protected boolean isSwitchingMenu = false;
     private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
@@ -23,10 +22,9 @@ public abstract class BaseMenuScreen extends Screen {
 	private boolean suppressOpenAnimation = false;
 	private static final long ANIMATION_DURATION = 100;
 
-    protected BaseMenuScreen(Component title, int oldGuiScale) {
-        super(title);
-        this.oldGuiScale = oldGuiScale;
-    }
+	protected BaseMenuScreen(Component title) {
+		super(title);
+	}
 
 	@Override
 	protected void init() {
@@ -45,8 +43,8 @@ public abstract class BaseMenuScreen extends Screen {
 	}
 
     protected void initNavigationButtons() {
-        int centerX = this.width / 2;
-        int bottomY = this.height - 30;
+		int centerX = getUiWidth() / 2;
+		int bottomY = getUiHeight() - 30;
 
         this.addRenderableWidget(
             new CustomTextureButton.Builder()
@@ -55,7 +53,7 @@ public abstract class BaseMenuScreen extends Screen {
                 .texture(SCREEN_BUTTONS)
                 .textureSize(20, 20)
                 .textureCoords(0, 0, 0, 20)
-				.onPress(btn -> switchMenu(new CharacterStatsScreen(this.oldGuiScale)))
+				.onPress(btn -> switchMenu(new CharacterStatsScreen()))
 				.sound(MainSounds.UI_MENU_SWITCH.get())
                 .build()
         );
@@ -67,7 +65,7 @@ public abstract class BaseMenuScreen extends Screen {
                 .texture(SCREEN_BUTTONS)
                 .textureSize(20, 20)
                 .textureCoords(20, 0, 20, 20)
-				.onPress(btn -> switchMenu(new SkillsMenuScreen(this.oldGuiScale)))
+				.onPress(btn -> switchMenu(new SkillsMenuScreen()))
 				.sound(MainSounds.UI_MENU_SWITCH.get())
 				.build()
         );
@@ -79,7 +77,7 @@ public abstract class BaseMenuScreen extends Screen {
                 .texture(SCREEN_BUTTONS)
                 .textureSize(20, 20)
                 .textureCoords(60, 0, 60, 20)
-                .onPress(btn -> switchMenu(new QuestsMenuScreen(this.oldGuiScale)))
+				.onPress(btn -> switchMenu(new QuestsMenuScreen()))
 				.sound(MainSounds.UI_MENU_SWITCH.get())
 				.build()
         );
@@ -91,7 +89,7 @@ public abstract class BaseMenuScreen extends Screen {
                 .texture(SCREEN_BUTTONS)
                 .textureSize(20, 20)
                 .textureCoords(100, 0, 100, 20)
-                .onPress(btn -> switchMenu(new ConfigMenuScreen(this.oldGuiScale)))
+				.onPress(btn -> switchMenu(new ConfigMenuScreen()))
 				.sound(MainSounds.UI_MENU_SWITCH.get())
 				.build()
         );
@@ -103,18 +101,6 @@ public abstract class BaseMenuScreen extends Screen {
 			GLOBAL_SWITCHING = true;
 			this.minecraft.setScreen(nextScreen);
 		}
-	}
-
-	@Override
-	public void removed() {
-		if (!this.isSwitchingMenu && this.minecraft != null) {
-			if (this.minecraft.options.guiScale().get() != oldGuiScale) {
-				this.minecraft.options.guiScale().set(oldGuiScale);
-				this.minecraft.resizeDisplay();
-			}
-		}
-
-		super.removed();
 	}
 
     @Override
@@ -138,8 +124,10 @@ public abstract class BaseMenuScreen extends Screen {
 		}
 
 		PoseStack pose = graphics.pose();
-		pose.translate(this.width / 2.0, this.height / 2.0, 0);
+		int uiWidth = getUiWidth();
+		int uiHeight = getUiHeight();
+		pose.translate(uiWidth / 2.0, uiHeight / 2.0, 0);
 		pose.scale(scale, scale, 1.0f);
-		pose.translate(-this.width / 2.0, -this.height / 2.0, 0);
+		pose.translate(-uiWidth / 2.0, -uiHeight / 2.0, 0);
 	}
 }
