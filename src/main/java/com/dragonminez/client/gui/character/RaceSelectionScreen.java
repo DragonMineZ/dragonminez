@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
@@ -13,7 +14,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class RaceSelectionScreen extends Screen {
+public class RaceSelectionScreen extends ScaledScreen {
 
     private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
@@ -54,7 +54,6 @@ public class RaceSelectionScreen extends Screen {
     private final Character character;
     private final String[] availableRaces;
     private int selectedRaceIndex = 0;
-	private int oldGuiScale = 0;
 	private boolean isSwitchingMenu = false;
 
     private float playerRotation = 180.0f;
@@ -65,11 +64,10 @@ public class RaceSelectionScreen extends Screen {
     private CustomTextureButton rightButton;
     private TexturedTextButton selectButton;
 
-    public RaceSelectionScreen(Character character, int oldGuiScale) {
+    public RaceSelectionScreen(Character character) {
         super(Component.translatable("gui.dragonminez.character_creation.title"));
         this.character = character;
         this.availableRaces = Character.getRaceNames();
-		this.oldGuiScale = oldGuiScale;
 
         for (int i = 0; i < availableRaces.length; i++) {
             if (availableRaces[i].equals(character.getRace())) {
@@ -83,8 +81,8 @@ public class RaceSelectionScreen extends Screen {
     protected void init() {
         super.init();
 
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
+        int centerX = getUiWidth() / 2;
+        int centerY = getUiHeight() / 2;
 
         leftButton = new CustomTextureButton.Builder()
                 .position(centerX - 60 - 25, centerY + 88)
@@ -115,7 +113,7 @@ public class RaceSelectionScreen extends Screen {
                 .build();
 
         selectButton = new TexturedTextButton.Builder()
-                .position(this.width - 85, this.height - 25)
+                .position(getUiWidth() - 85, getUiHeight() - 25)
                 .size(74, 20)
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(0, 28, 0, 48)
@@ -134,17 +132,24 @@ public class RaceSelectionScreen extends Screen {
         renderPanorama(graphics, partialTick);
         this.renderCinematicBars(graphics);
 
+        int uiMouseX = (int) Math.round(toUiX(mouseX));
+        int uiMouseY = (int) Math.round(toUiY(mouseY));
+
+        beginUiScale(graphics);
+
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        graphics.blit(MENU_BIG, (this.width / 2) - 70, (this.height / 2) + 85, 0, 215, 149, 21);
+        graphics.blit(MENU_BIG, (getUiWidth() / 2) - 70, (getUiHeight() / 2) + 85, 0, 215, 149, 21);
 		RenderSystem.disableBlend();
 
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+        renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
         renderRaceInfo(graphics);
+
+        endUiScale(graphics);
     }
 
     private void renderCinematicBars(GuiGraphics guiGraphics) {
@@ -189,8 +194,8 @@ public class RaceSelectionScreen extends Screen {
 
     private void renderRaceInfo(GuiGraphics graphics) {
         String currentRace = availableRaces[selectedRaceIndex];
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
+        int centerX = getUiWidth() / 2;
+        int centerY = getUiHeight() / 2;
 
         Component raceName = Component.translatable("race." + Reference.MOD_ID + "." + currentRace);
 		drawCenteredStringWithBorder(graphics, raceName, centerX + 3, centerY + 92, 0x7CFDD6);
@@ -347,14 +352,16 @@ public class RaceSelectionScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int centerX = this.width / 2 + 5;
-        int centerY = this.height / 2 + 70;
+        double uiMouseX = toUiX(mouseX);
+        double uiMouseY = toUiY(mouseY);
+        int centerX = getUiWidth() / 2 + 5;
+        int centerY = getUiHeight() / 2 + 70;
         int modelRadius = 60;
 
-        if (mouseX >= centerX - modelRadius && mouseX <= centerX + modelRadius &&
-            mouseY >= centerY - 100 && mouseY <= centerY + 20) {
+        if (uiMouseX >= centerX - modelRadius && uiMouseX <= centerX + modelRadius &&
+            uiMouseY >= centerY - 100 && uiMouseY <= centerY + 20) {
             isDraggingModel = true;
-            lastMouseX = mouseX;
+            lastMouseX = uiMouseX;
             return true;
         }
 
@@ -370,9 +377,10 @@ public class RaceSelectionScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (isDraggingModel) {
-            double deltaX = mouseX - lastMouseX;
+            double uiMouseX = toUiX(mouseX);
+            double deltaX = uiMouseX - lastMouseX;
             playerRotation += (float)(deltaX * 0.8);
-            lastMouseX = mouseX;
+            lastMouseX = uiMouseX;
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -397,23 +405,9 @@ public class RaceSelectionScreen extends Screen {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-	@Override
-	public void removed() {
-		if (!isSwitchingMenu && this.minecraft != null) {
-			if (this.minecraft.options.guiScale().get() != oldGuiScale) {
-				this.minecraft.options.guiScale().set(oldGuiScale);
-				this.minecraft.resizeDisplay();
-			}
-		}
-		super.removed();
-	}
-
     @Override
     public boolean isPauseScreen() {
         return false;
     }
 
-	public int getOldGuiScale() {
-		return oldGuiScale;
-	}
 }

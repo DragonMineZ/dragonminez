@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.HairEditorScreen;
+import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -37,7 +38,7 @@ import org.joml.Quaternionf;
 import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
-public class CharacterCustomizationScreen extends Screen {
+public class CharacterCustomizationScreen extends ScaledScreen {
 
     private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
@@ -64,7 +65,6 @@ public class CharacterCustomizationScreen extends Screen {
     private final Screen previousScreen;
     private final Character character;
     private int currentPage = 0;
-    private final int oldGuiScale;
     private boolean isSwitchingMenu = false;
 
     private ColorSlider hueSlider;
@@ -81,13 +81,6 @@ public class CharacterCustomizationScreen extends Screen {
         super(Component.translatable("gui.dragonminez.customization.title"));
         this.previousScreen = previousScreen;
         this.character = character;
-
-        Minecraft mc = Minecraft.getInstance();
-        this.oldGuiScale = mc.options.guiScale().get();
-        if (oldGuiScale != 3) {
-            mc.options.guiScale().set(3);
-            mc.resizeDisplay();
-        }
 
         initializeDefaultColors();
     }
@@ -139,7 +132,7 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     private void initPage() {
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
 
         if (currentPage == 0) {
             initPage0(centerY);
@@ -294,7 +287,7 @@ public class CharacterCustomizationScreen extends Screen {
     private void initNavigationButtons() {
         if (currentPage == 0) {
             addRenderableWidget(new TexturedTextButton.Builder()
-                    .position(20, this.height - 25)
+                    .position(20, getUiHeight() - 25)
                     .size(74, 20)
                     .texture(BUTTONS_TEXTURE)
                     .textureCoords(0, 28, 0, 48)
@@ -312,7 +305,7 @@ public class CharacterCustomizationScreen extends Screen {
                     .build());
 
             addRenderableWidget(new TexturedTextButton.Builder()
-                    .position(this.width - 85, this.height - 25)
+                    .position(getUiWidth() - 85, getUiHeight() - 25)
                     .size(74, 20)
                     .texture(BUTTONS_TEXTURE)
                     .textureCoords(0, 28, 0, 48)
@@ -326,7 +319,7 @@ public class CharacterCustomizationScreen extends Screen {
 
         } else if (currentPage == 1) {
             addRenderableWidget(new TexturedTextButton.Builder()
-                    .position(20, this.height - 25)
+                    .position(20, getUiHeight() - 25)
                     .size(74, 20)
                     .texture(BUTTONS_TEXTURE)
                     .textureCoords(0, 28, 0, 48)
@@ -339,7 +332,7 @@ public class CharacterCustomizationScreen extends Screen {
                     .build());
 
             addRenderableWidget(new TexturedTextButton.Builder()
-                    .position(this.width - 85, this.height - 25)
+                    .position(getUiWidth() - 85, getUiHeight() - 25)
                     .size(74, 20)
                     .texture(BUTTONS_TEXTURE)
                     .textureCoords(0, 28, 0, 48)
@@ -657,8 +650,6 @@ public class CharacterCustomizationScreen extends Screen {
             NetworkHandler.sendToServer(new CreateCharacterC2S(character));
             ForgeClientEvents.hasCreatedCharacterCache = true;
             this.minecraft.setScreen(null);
-			this.minecraft.options.guiScale().set(oldGuiScale);
-			this.minecraft.resizeDisplay();
         }
     }
 
@@ -667,7 +658,12 @@ public class CharacterCustomizationScreen extends Screen {
         renderPanorama(partialTick);
 		this.renderCinematicBars(graphics);
 
-        int centerY = this.height / 2;
+        int uiMouseX = (int) Math.round(toUiX(mouseX));
+        int uiMouseY = (int) Math.round(toUiY(mouseY));
+
+        beginUiScale(graphics);
+
+        int centerY = getUiHeight() / 2;
         int panelX = 10;
         int panelY = centerY - 110;
 
@@ -676,7 +672,7 @@ public class CharacterCustomizationScreen extends Screen {
         graphics.blit(MENU_BIG, panelX, panelY, 0, 0, 141, 213);
 
         if (currentPage == 1) {
-            int statsPanelX = this.width - 158;
+            int statsPanelX = getUiWidth() - 158;
             int statsPanelY = centerY - 110;
             graphics.blit(MENU_BIG, statsPanelX, statsPanelY, 0, 0, 141, 213);
 			graphics.blit(MENU_BIG, statsPanelX + 32, statsPanelY + 14, 141, 0, 79, 21);
@@ -684,13 +680,13 @@ public class CharacterCustomizationScreen extends Screen {
 
         RenderSystem.disableBlend();
 
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+        renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
         if (colorPickerVisible) {
             renderColorPickerBackground(graphics);
         }
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
         renderPageContent(graphics, centerY);
 
@@ -701,6 +697,8 @@ public class CharacterCustomizationScreen extends Screen {
         if (currentPage == 1) {
             renderBaseStats(graphics, centerY);
         }
+
+        endUiScale(graphics);
     }
 
 	private void renderCinematicBars(GuiGraphics guiGraphics) {
@@ -849,7 +847,7 @@ public class CharacterCustomizationScreen extends Screen {
 
     private void renderColorPickerBackground(GuiGraphics graphics) {
         int sliderX = 180;
-        int sliderY = this.height / 2 - 50;
+        int sliderY = getUiHeight() / 2 - 50;
         int sliderWidth = 80;
         int sliderHeight = 34;
         int previewSize = 34;
@@ -863,7 +861,7 @@ public class CharacterCustomizationScreen extends Screen {
         if (hueSlider == null) return;
 
         int sliderX = 180;
-        int sliderY = this.height / 2 - 50;
+        int sliderY = getUiHeight() / 2 - 50;
         int sliderWidth = 80;
         int previewSize = 34;
         int previewX = sliderX + sliderWidth + 5;
@@ -945,7 +943,7 @@ public class CharacterCustomizationScreen extends Screen {
         RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 
-        int statsPanelX = this.width - 158;
+        int statsPanelX = getUiWidth() - 158;
         int centerX = statsPanelX + 72;
         int startY = centerY - 90;
 
@@ -1016,22 +1014,24 @@ public class CharacterCustomizationScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double uiMouseX = toUiX(mouseX);
+        double uiMouseY = toUiY(mouseY);
         // Detectar click en el modelo del jugador para arrastre
-        int centerX = this.width / 2 + 5;
-        int centerY = this.height / 2 + 70;
+        int centerX = getUiWidth() / 2 + 5;
+        int centerY = getUiHeight() / 2 + 70;
         int modelRadius = 60;
 
-        if (mouseX >= centerX - modelRadius && mouseX <= centerX + modelRadius &&
-            mouseY >= centerY - 100 && mouseY <= centerY + 20) {
+        if (uiMouseX >= centerX - modelRadius && uiMouseX <= centerX + modelRadius &&
+            uiMouseY >= centerY - 100 && uiMouseY <= centerY + 20) {
             isDraggingModel = true;
-            lastMouseX = mouseX;
+            lastMouseX = uiMouseX;
             return true;
         }
 
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
 			if (HairManager.canUseHair(stats.getCharacter())) {
 				if (currentPage == 0 && character.getHairId() == 0) {
-					int centerYText = this.height / 2 - 15;
+					int centerYText = getUiHeight() / 2 - 15;
 					int textX = 79;
 					int hairTypeY = centerYText + 22;
 
@@ -1044,7 +1044,7 @@ public class CharacterCustomizationScreen extends Screen {
 					int textTop = hairTypeY;
 					int textBottom = hairTypeY + textHeight;
 
-					if (mouseX >= textLeft && mouseX <= textRight && mouseY >= textTop && mouseY <= textBottom) {
+					if (uiMouseX >= textLeft && uiMouseX <= textRight && uiMouseY >= textTop && uiMouseY <= textBottom) {
 						if (this.minecraft != null) {
 							isSwitchingMenu = true;
 							GLOBAL_SWITCHING = true;
@@ -1057,14 +1057,14 @@ public class CharacterCustomizationScreen extends Screen {
 
         if (colorPickerVisible) {
             int sliderX = 180;
-            int sliderY = this.height / 2 - 50;
+            int sliderY = getUiHeight() / 2 - 50;
             int sliderWidth = 80;
             int previewSize = 34;
             int totalWidth = sliderWidth + previewSize + 10;
             int totalHeight = 44;
 
-            if (mouseX < sliderX - 5 || mouseX > sliderX + totalWidth ||
-                mouseY < sliderY - 5 || mouseY > sliderY + totalHeight) {
+            if (uiMouseX < sliderX - 5 || uiMouseX > sliderX + totalWidth ||
+                uiMouseY < sliderY - 5 || uiMouseY > sliderY + totalHeight) {
                 hideColorPicker();
                 return true;
             }
@@ -1082,9 +1082,10 @@ public class CharacterCustomizationScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (isDraggingModel) {
-            double deltaX = mouseX - lastMouseX;
+            double uiMouseX = toUiX(mouseX);
+            double deltaX = uiMouseX - lastMouseX;
             playerRotation += (float)(deltaX * 0.8);
-            lastMouseX = mouseX;
+            lastMouseX = uiMouseX;
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -1116,22 +1117,8 @@ public class CharacterCustomizationScreen extends Screen {
     }
 
     @Override
-    public void removed() {
-        if (!isSwitchingMenu && this.minecraft != null) {
-            if (this.minecraft.options.guiScale().get() != oldGuiScale) {
-                this.minecraft.options.guiScale().set(oldGuiScale);
-                this.minecraft.resizeDisplay();
-            }
-        }
-        super.removed();
-    }
-
-    @Override
     public boolean isPauseScreen() {
         return false;
     }
 
-    public int getOldGuiScale() {
-        return oldGuiScale;
-    }
 }

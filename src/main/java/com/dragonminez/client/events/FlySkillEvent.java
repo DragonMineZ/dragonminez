@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.flight.FlightOrientationHandler;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.network.C2S.FlyToggleC2S;
@@ -136,7 +137,12 @@ public class FlySkillEvent {
         float currentMaxSpeed = isSprinting ? maxSprintSpeed : maxNormalSpeed;
         float currentAccel = isSprinting ? ACCELERATION * 1.5F : ACCELERATION;
 
-        Vec3 lookDir = player.getLookAngle();
+        boolean isFastFlight = isFlyingFast();
+        if (!isFastFlight) {
+            FlightOrientationHandler.reset();
+        }
+
+        Vec3 lookDir = isFastFlight ? FlightOrientationHandler.getForwardVector(player) : player.getLookAngle();
         Vec3 targetDirection = Vec3.ZERO;
 
         if (isForward) {
@@ -259,6 +265,7 @@ public class FlySkillEvent {
         prevHovering = 0F;
         kiConsumptionTicks = 0;
         FlightRollHandler.reset();
+        FlightOrientationHandler.reset();
     }
 
     public static float getFlightAnimation(float partialTicks) {
