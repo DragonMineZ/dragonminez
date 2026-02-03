@@ -115,24 +115,6 @@ public class TextureCounter {
         }
     }
 
-    private static int countTextures(String race, String type) {
-        ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
-        int count = 0;
-
-        String basePath = getBasePathForRace(race, type);
-        for (int i = 1; i <= 100; i++) {
-            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + ".png");
-
-            if (resourceManager.getResource(location).isPresent()) {
-                count = i;
-            } else {
-                break;
-            }
-        }
-
-        return count;
-    }
-
     private static int countFaceTextures(String race, String type) {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
         int count = 0;

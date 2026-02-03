@@ -59,24 +59,18 @@ public final class MainItems {
 			ITEM_REGISTER.register("green_pothala_right", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_right", false));
 
     public static final RegistryObject<Item> RED_SCOUTER =
-            ITEM_REGISTER.register("red_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
+            ITEM_REGISTER.register("red_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "red_scouter", false));
     public static final RegistryObject<Item> BLUE_SCOUTER =
-            ITEM_REGISTER.register("blue_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
+            ITEM_REGISTER.register("blue_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "blue_scouter", false));
     public static final RegistryObject<Item> GREEN_SCOUTER =
-            ITEM_REGISTER.register("green_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
-    public static final RegistryObject<Item> YELLOW_SCOUTER =
-            ITEM_REGISTER.register("yellow_scouter", () -> new Item(properties.stacksTo(1).fireResistant()));
+            ITEM_REGISTER.register("green_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "green_scouter", false));
+    public static final RegistryObject<Item> PURPLE_SCOUTER =
+            ITEM_REGISTER.register("purple_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "purple_scouter", false));
     public static final RegistryObject<Item> MERUS_LASER =
             ITEM_REGISTER.register("laser_merus", () -> new MerusLaserItem());
     public static final RegistryObject<Item> BLASTER_CANNON =
             ITEM_REGISTER.register("blaster_cannon", () -> new BlasterCannonItem());
     //ARMAS
-	// 0 + X = Daño | 4 +/- X = Velocidad de ataque | 0 + X = Durabilidad (0 = Irrompible)
-//	public static final RegistryObject<Item> BACULO_SAGRADO =
-//			ITEM_REGISTER.register("baculo_item", () -> new DMZWeaponItem(8, -1.6F, 0, "baculo_item"));
-//	public static final RegistryObject<Item> TRUNKS_SWORD =
-//			ITEM_REGISTER.register("trunks_sword", () -> new TrunksSword(new Item.Properties().fireResistant()));
-
 	public static final RegistryObject<SwordItem> KATANA_YAJIROBE =
 			ITEM_REGISTER.register("yajirobe_katana", () -> new YajirobeKatanaItem(new Item.Properties().fireResistant()));
     public static final RegistryObject<SwordItem> Z_SWORD =

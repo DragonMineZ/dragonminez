@@ -215,7 +215,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (cost == -1 || cost == Integer.MAX_VALUE) return;
 		boolean isSuperForm = selectedSkill.equals("superform") || selectedSkill.equals("godform") || selectedSkill.equals("legendaryforms");
 
-        if ((cost != Integer.MAX_VALUE && skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel()) || (cost != Integer.MAX_VALUE && (isSuperForm))) {
+        if (skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel() || isSuperForm) {
 			upgradeButton = new TexturedTextButton.Builder()
 					.position(rightPanelX + 35, rightPanelY + 196)
 					.size(74, 20)
@@ -246,7 +246,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				case "legendaryforms" -> costs = raceConfig.getLegendaryformsTpCost();
 			}
 
-			if (costs != null && currentLevel + 1 < costs.length) {
+			if (costs != null && currentLevel + 1 <= costs.length) {
 				return costs[currentLevel];
 			} else {
 				return Integer.MAX_VALUE;
@@ -257,7 +257,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			if (skillData != null && skillData.getCosts() != null) {
 				var costs = skillData.getCosts();
-				if (currentLevel+1 < costs.size()) {
+				if (currentLevel + 1 <= costs.size()) {
 					return costs.get(currentLevel);
 				}
 			}
@@ -339,8 +339,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
             Skill skill = statsData.getSkills().getSkill(skillName);
             String displayName = Component.translatable("skill.dragonminez." + skillName).getString();
 
-            drawStringWithBorder(graphics, Component.literal(displayName),
-                panelX + 15, itemY + 5, color);
+            drawCenteredStringWithBorder(graphics, Component.literal(displayName), panelX + 15, itemY + 5, color);
 
             if (skill != null) {
                 String levelText = String.valueOf(skill.getLevel());

@@ -55,6 +55,7 @@ public class TransformationsHelper {
 	}
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
+		if (statsData.getStatus().isAndroidUpgraded()) return null;
 		String race = statsData.getCharacter().getRaceName();
 		String group = statsData.getCharacter().hasActiveForm() ?
 				statsData.getCharacter().getActiveFormGroup() :

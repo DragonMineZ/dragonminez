@@ -66,8 +66,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
         simpleItem(MainItems.GREEN_SCOUTER);
         simpleItem(MainItems.RED_SCOUTER);
         simpleItem(MainItems.BLUE_SCOUTER);
-        simpleItem(MainItems.YELLOW_SCOUTER);
-        simpleItem(MainItems.PUNCH_MACHINE_ITEM);
+        simpleItem(MainItems.PURPLE_SCOUTER);
         // Spawn Eggs
 		withExistingParent(MainItems.DINO_1.getId().getPath(), mcLoc("item/template_spawn_egg"));
 		withExistingParent(MainItems.DINO_2.getId().getPath(), mcLoc("item/template_spawn_egg"));
@@ -144,6 +143,7 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		//Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
 		simpleItem(MainItems.KIKONO_CLOTH);
+		simpleItem(MainItems.KIKONO_STICK);
 		simpleItem(MainItems.ARMOR_CRAFTING_KIT);
 		simpleItem(MainItems.BLANK_PATTERN_Z);
 		simpleItem(MainItems.BLANK_PATTERN_SUPER);
@@ -221,8 +221,6 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COAL);
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_EMERALD);
 		simpleBlockItem(MainBlocks.NAMEK_DEEPSLATE_COPPER);
-		simpleBlockItem(MainBlocks.FUEL_GENERATOR);
-		simpleBlockItem(MainBlocks.ENERGY_CABLE);
 		simpleBlockItem(MainBlocks.TIME_CHAMBER_PORTAL);
 		simpleBlockItem(MainBlocks.OTHERWORLD_CLOUD);
 		simpleBlockItem(MainBlocks.GETE_ORE);

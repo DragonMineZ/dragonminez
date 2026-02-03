@@ -1,5 +1,7 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
@@ -128,9 +130,22 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         if (forceVanilla || (isStandard && bodyType == 0)) {
             ResourceLocation playerSkin = player.getSkinTextureLocation();
             renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(playerSkin), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
-
             return;
         }
+
+		boolean defaultRace = ConfigManager.isDefaultRace(raceName);
+		if (!defaultRace) {
+			String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
+			if (hasForm && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel() && !character.getActiveFormData().getCustomModel().isEmpty()) {
+				ResourceLocation formSkinLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + character.getActiveFormData().getCustomModel() + ".png");
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(formSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+				return;
+			} else if (customModel != null && !customModel.isEmpty()) {
+				ResourceLocation customSkinLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + customModel + ".png");
+				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(customSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+				return;
+			}
+		}
 
         boolean isMajin = raceName.equals("majin");
         boolean isFemale = gender.equals("female") || gender.equals("mujer");

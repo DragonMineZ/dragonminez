@@ -258,6 +258,12 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(Items.SHEARS), has(Items.SHEARS))
 				.group(Reference.MOD_ID).save(pWriter);
 
+		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.KIKONO_STICK.get(), 2)
+				.pattern("K")
+				.pattern("K")
+				.define('K', MainItems.KIKONO_SHARD.get())
+				.unlockedBy(getHasName(MainItems.KIKONO_SHARD.get()), has(MainItems.KIKONO_SHARD.get()))
+				.group(Reference.MOD_ID).save(pWriter);
 
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.REDSTONE, MainItems.KIKONO_STRING.get(), 2)
 				.requires(MainItems.KIKONO_SHARD.get())

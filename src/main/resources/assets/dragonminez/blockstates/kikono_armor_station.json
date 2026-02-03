@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "dragonminez:block/kikono_armor_station" },
-    "facing=east": { "model": "dragonminez:block/kikono_armor_station", "y": 90 },
-    "facing=south": { "model": "dragonminez:block/kikono_armor_station", "y": 180 },
-    "facing=west": { "model": "dragonminez:block/kikono_armor_station", "y": 270 }
-  }
-}

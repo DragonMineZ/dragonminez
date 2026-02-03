@@ -99,7 +99,7 @@
     "namekianRacialSkill": true,
     "namekianAssimilationAmount": 4,
     "namekianAssimilationHealthRegen": 0.35,
-    "namekianAssimilationStatBoost": 1.15,
+    "namekianAssimilationStatBoost": 0.15,
     "namekianAssimilationBoosts": ["STR", "SKP", "PWR"],
     // If true, Namekian assimilation can be done on NPCs from Namek (Traders and Villagers)
     "namekianAssimilationOnNamekNpcs": true,
@@ -114,7 +114,7 @@
     "majinReviveSkill": true,
     "majinAbsorptionAmount": 3,
     "majinAbsorptionHealthRegen": 0.3,
-    "majinAbsorptionStatsCopy": 1.1,
+    "majinAbsorptionStatsCopy": 0.1,
     "majinAbsorptionBoosts": ["STR", "SKP", "PWR"],
     // If true, Majin absorption can be done on mobs (any MOB, not ENTITY)
     "majinAbsorptionOnMobs": true,

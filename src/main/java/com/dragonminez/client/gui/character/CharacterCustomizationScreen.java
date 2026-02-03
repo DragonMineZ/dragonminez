@@ -787,7 +787,11 @@ public class CharacterCustomizationScreen extends Screen {
 			}
 
             drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.tattoo").getString(), textX, centerY + 40, 0xFF9B9B);
-            drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getTattooType() + 1).getString(), textX, centerY + 52, 0xFFFFFF);
+            if (character.getTattooType() == 2) {
+				drawCenteredStringWithBorder(graphics, Component.literal("ezShokkoh").getString(), textX, centerY + 52, 0xFFFFFF);
+			} else {
+				drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.type", character.getTattooType() + 1).getString(), textX, centerY + 52, 0xFFFFFF);
+			}
 
             if (character.canHaveGender()) {
                 drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.gender").getString(), textX, centerY + 70, 0xFF9B9B);

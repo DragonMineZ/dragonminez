@@ -45,7 +45,7 @@ public class MasterTextScreen extends Screen {
 		int buttonX = this.width / 2 - 105;
 		int buttonY = this.height - 23;
 
-		StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(stats -> {
+		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
 			switch (masterName) {
 				case "karin" -> initKarin(buttonX, buttonY, stats);
 				case "guru" -> initGuru(buttonX, buttonY, stats);
@@ -58,8 +58,8 @@ public class MasterTextScreen extends Screen {
 	}
 
 	private void initKarin(int x, int y, StatsData stats) {
-		if (this.minecraft.player.getInventory().contains(new ItemStack(MainItems.NUBE_ITEM.get())) ||
-				this.minecraft.player.getInventory().contains(new ItemStack(MainItems.NUBE_NEGRA_ITEM.get()))) {
+		if (!Minecraft.getInstance().player.getInventory().contains(new ItemStack(MainItems.NUBE_ITEM.get())) &&
+				!Minecraft.getInstance().player.getInventory().contains(new ItemStack(MainItems.NUBE_NEGRA_ITEM.get()))) {
 
 			this.addRenderableWidget(new TexturedTextButton.Builder()
 					.position(x, y)

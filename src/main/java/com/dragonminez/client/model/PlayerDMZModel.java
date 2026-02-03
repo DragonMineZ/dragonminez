@@ -119,7 +119,17 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getTextureResource(T t) {
+		return StatsProvider.get(StatsCapability.INSTANCE, t).map(data -> {
+		var activeFormData = data.getCharacter().getActiveFormData();
+		if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
+			ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + activeFormData.getCustomModel() + ".png");
+			if (Minecraft.getInstance().getResourceManager().getResource(customTex).isPresent()) return customTex;
+		} else if (this.customModel != null && !this.customModel.isEmpty()) {
+			ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + this.customModel + ".png");
+			if (Minecraft.getInstance().getResourceManager().getResource(customTex).isPresent()) return customTex;
+		}
         return textureLocation;
+		}).orElse(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
     }
 
     @Override

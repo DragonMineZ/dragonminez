@@ -316,6 +316,7 @@ public class TickHandler {
 				increment = 25;
 			}
 			case FORM -> {
+				if (data.getStatus().isAndroidUpgraded()) return;
 				FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 				if (nextForm != null) {
 					String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();

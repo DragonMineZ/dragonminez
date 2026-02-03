@@ -1,5 +1,7 @@
 package com.dragonminez.client.render;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
@@ -151,6 +153,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean isStandard = raceName.equals("human") || raceName.equals("saiyan");
         boolean forceVanilla = (raceConfig != null && raceConfig.useVanillaSkin());
 		String gender = character.getGender().toLowerCase();
+		String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
 
         boolean isOozaru = currentForm != null && (
                 currentForm.contains(SaiyanForms.OOZARU) ||
@@ -161,7 +164,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
         if (forceVanilla || useDefaultSkin) {
             renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), new float[]{1, 1, 1});
-        } else {
+        } else if (customModel == null || customModel.isEmpty()) {
             if (raceName.equals("saiyan") && isOozaru) {
 
                 String oozaruPath = "textures/entity/races/humansaiyan/oozaru_";
@@ -187,7 +190,15 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             } else {
                 renderRaceLayers(pPoseStack, pBuffer, pCombinedLight, pRendererArm, raceName, currentForm, gender, bodyType, b1, b2, b3, hair);
             }
-        }
+        } else {
+			if (hasForm && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel() && !character.getActiveFormData().getCustomModel().isEmpty()) {
+				String customPath = "textures/entity/races/" + character.getActiveFormData().getCustomModel() + ".png";
+				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(customPath), new float[]{1, 1, 1});
+			} else {
+				String customPath = "textures/entity/races/" + customModel + ".png";
+				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(customPath), new float[]{1, 1, 1});
+			}
+		}
 
         renderTattoos(pPoseStack, pBuffer, pCombinedLight, pRendererArm, stats);
 

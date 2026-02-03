@@ -115,18 +115,11 @@ public class FusionLogic {
 			leaderData.getStatus().setFusionPartnerUUID(null);
 			leaderData.getStatus().setFusionTimer(0);
 
-			if (leaderData.getStatus().getOriginalAppearance() != null) {
-				leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
-			}
+			if (leaderData.getStatus().getOriginalAppearance() != null) leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
+			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 
-			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) {
-				leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
-			}
-
-			if (leaderRef != null) {
-				PartyManager.leaveParty(leaderRef);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
-			}
+			PartyManager.leaveParty(leaderRef);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 		}
 
 		if (partner != null) {
@@ -134,12 +127,12 @@ public class FusionLogic {
 				pData.getStatus().setFused(false);
 				pData.getStatus().setFusionLeader(false);
 				pData.getStatus().setFusionPartnerUUID(null);
+				pData.getStatus().setFusionTimer(0);
 
 				if ("METAMORU".equals(pData.getStatus().getFusionType())) pData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 
 				partner.stopRiding();
-				if (!partner.isDeadOrDying()) partner.setGameMode(GameType.SURVIVAL);
-				if (leaderRef != null) partner.teleportTo(leaderRef.getX() + 1, leaderRef.getY(), leaderRef.getZ() + 1);
+				partner.setGameMode(GameType.SURVIVAL);
 
 				PartyManager.leaveParty(partner);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);

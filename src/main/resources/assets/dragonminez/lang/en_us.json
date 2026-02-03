@@ -385,6 +385,7 @@
 
   "//": "BLOCKS",
   "block.dragonminez.time_chamber_block": "Hyperbolic Time Chamber Block",
+  "block.dragonminez.invisible_ladder_block": "Invisible Ladder Block",
   "block.dragonminez.otherworld_cloud": "Otherworld Cloud Block",
   "block.dragonminez.namek_block": "Planet Namek Block",
   "block.dragonminez.namek_grass_block": "Namek Grass Block",
@@ -462,7 +463,7 @@
   "block.dragonminez.namek_deepslate_emerald_ore": "Namek Deepslate Emerald Ore",
   "block.dragonminez.namek_deepslate_copper_ore": "Namek Deepslate Copper Ore",
   "block.dragonminez.time_chamber_portal": "Hyperbolic Time Chamber Portal Block",
-  "block.dragonminez.kikono_station": "Dr. Kikono's Armor Station",
+  "block.dragonminez.kikono_station": "Dr. Kikono's Station",
   "block.dragonminez.fuel_generator": "Fuel Generator",
   "block.dragonminez.energy_cable": "Energy Cable",
   "block.dragonminez.namek_grass": "Namek Grass",
@@ -521,10 +522,13 @@
   "item.dragonminez.flying_nimbus": "§eFlying Nimbus",
   "item.dragonminez.black_nimbus": "§7Black Nimbus",
   "item.dragonminez.saiyan_ship": "§eSaiyan Space Pod",
-  "item.dragonminez.yajirobe_katana": "Katana",
-  "item.dragonminez.z_sword": "§eZ§b-§fSword",
-  "item.dragonminez.brave_sword": "§bBrave §fSword",
+  "item.dragonminez.yajirobe_katana": "§eYajirobe's Katana",
+  "item.dragonminez.z_sword": "§eZ§f-§eSword",
+  "item.dragonminez.brave_sword": "§bBrave Sword",
   "item.dragonminez.power_pole": "§cPower Pole",
+  "item.dragonminez.laser_merus": "§bMerus' Laser",
+  "item.dragonminez.blaster_cannon": "§cBlaster Cannon",
+  "item.dragonminez.punch_machine_item": "§ePunch Machine",
 
 
   "//": "ARMOR CRAFTING",

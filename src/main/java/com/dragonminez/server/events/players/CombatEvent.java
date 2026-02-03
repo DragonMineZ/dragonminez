@@ -91,6 +91,7 @@ public class CombatEvent {
 
 				if (wantsCombo) {
 					if (isCooldownFull) {
+						dmzDamage = attackerData.getStrikeDamage();
 						int currentCombo = ComboManager.getCombo(attacker.getUUID());
 						Entity target = event.getEntity();
 						if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target)) currentCombo = 0;
@@ -184,12 +185,10 @@ public class CombatEvent {
 					attackerData.getResources().removeEnergy(kiCost);
 				}
 
-				if (attacker instanceof ServerPlayer serverPlayer)
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 
 				if (event.getEntity() instanceof Player) {
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
-						attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 				}
 
 				if (event.getEntity() instanceof PunchMachineEntity punchMachineEntity) {
@@ -227,9 +226,7 @@ public class CombatEvent {
 								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
 
 								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
-								if (!(source.getEntity() instanceof Player)) {
-									poiseMultiplier *= 5.0;
-								}
+								if (!(source.getEntity() instanceof Player)) poiseMultiplier *= 5.0;
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.75f;
@@ -269,7 +266,6 @@ public class CombatEvent {
 												1.0
 										);
 									}
-
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
 									blocked = true;
@@ -287,7 +283,7 @@ public class CombatEvent {
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 
 											// Efecto de Parry (temblor de pantalla pequeño) al atacante
-											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 50, false, false, true));
+											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
 										}
 										//System.out.println("Parry!");
 										//SONIDO PARRY
@@ -348,7 +344,7 @@ public class CombatEvent {
 
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
 												soundToPlay,
-												net.minecraft.sounds.SoundSource.PLAYERS,
+												SoundSource.PLAYERS,
 												1.0F,
 												0.9F + victim.getRandom().nextFloat() * 0.1F);
 
@@ -537,10 +533,10 @@ public class CombatEvent {
 
 			if (canDoubleDash) {
 				distance = distance * 2;
-				kiCost = (int) Math.ceil(maxEnergy * 0.12);
+				kiCost = (int) Math.ceil(maxEnergy * 0.25);
 				dashType = DMZEvent.PlayerDashEvent.DashType.DOUBLE;
 			} else {
-				kiCost = (int) Math.ceil(maxEnergy * 0.05);
+				kiCost = (int) Math.ceil(maxEnergy * 0.12);
 				dashType = DMZEvent.PlayerDashEvent.DashType.NORMAL;
 			}
 
@@ -551,6 +547,7 @@ public class CombatEvent {
 			kiCost = dashEvent.getKiCost();
 			int currentEnergy = data.getResources().getCurrentEnergy();
 			if (currentEnergy < kiCost) return;
+			if (player.getFoodData().getFoodLevel() < 3) return;
 			data.getResources().addEnergy(-kiCost);
 
 			Vec3 forward = Vec3.directionFromRotation(0, player.getYRot()).normalize();

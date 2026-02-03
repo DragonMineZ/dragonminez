@@ -185,13 +185,10 @@ public class HairManager {
 
     public static boolean canUseHair(Character character) {
         if (character == null) return false;
-
         String race = character.getRace().toLowerCase();
         String gender = character.getGender().toLowerCase();
 
-        for (String defaultRace : DEFAULT_HAIR_RACES) {
-            if (race.equals(defaultRace)) return true;
-        }
+        for (String defaultRace : DEFAULT_HAIR_RACES) if (race.equals(defaultRace)) return true;
 
         if (race.equals("majin")) return gender.equals(Character.GENDER_FEMALE);
         if (race.equals("bioandroid") || race.equals("frostdemon") || race.equals("namekian")) return false;

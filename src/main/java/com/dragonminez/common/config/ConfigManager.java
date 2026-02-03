@@ -591,11 +591,17 @@ public class ConfigManager {
     }
 
     public static List<String> getLoadedRaces() {
+        if (SERVER_SYNCED_CHARACTER != null) {
+            return new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet());
+        }
         return new ArrayList<>(LOADED_RACES);
     }
 
     public static boolean isRaceLoaded(String raceName) {
-        return LOADED_RACES.contains(raceName.toLowerCase());
+        if (SERVER_SYNCED_CHARACTER != null) {
+            return SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
+        }
+        return LOADED_RACES.stream().anyMatch(r -> r.equalsIgnoreCase(raceName));
     }
 
     public static GeneralUserConfig getUserConfig() {
