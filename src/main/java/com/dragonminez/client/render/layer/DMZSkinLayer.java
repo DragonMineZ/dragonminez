@@ -83,7 +83,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             }
         }
 
-        if (raceName.equals("saiyan") && stats.getStatus().isTailVisible()) {
+        boolean isSaiyanTail = raceName.equals("saiyan") && stats.getStatus().isTailVisible();
+        if (isSaiyanTail) {
             model.getBone("tail1").ifPresent(bone -> bone.setHidden(false));
             model.getBone("tail2").ifPresent(bone -> bone.setHidden(false));
             model.getBone("tail3").ifPresent(bone -> bone.setHidden(false));
@@ -128,8 +129,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         boolean forceVanilla = (raceConfig != null && raceConfig.useVanillaSkin());
 
         if (forceVanilla || (isStandard && bodyType == 0)) {
+
+            if (isSaiyanTail) {
+                model.getBone("tail1").ifPresent(bone -> bone.setHidden(true));
+                model.getBone("tail2").ifPresent(bone -> bone.setHidden(true));
+                model.getBone("tail3").ifPresent(bone -> bone.setHidden(true));
+                model.getBone("tail4").ifPresent(bone -> bone.setHidden(true));
+            }
+
             ResourceLocation playerSkin = player.getSkinTextureLocation();
             renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(playerSkin), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+
             return;
         }
 
