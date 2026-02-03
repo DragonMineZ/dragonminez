@@ -728,6 +728,9 @@
   "item.dragonminez.invencible_blue_armor_chestplate": "Super Hero Armor Chestplate (§9Invincible§r)",
   "item.dragonminez.invencible_blue_armor_leggings": "Super Hero Armor Leggings (§9Invincible§r)",
   "item.dragonminez.invencible_blue_armor_boots": "Super Hero Armor Boots (§9Invincible§r)",
+  "item.dragonminez.naruke_armor_chestplate": "Armor Saiyan Chestplate",
+  "item.dragonminez.naruke_armor_leggings": "Armor Saiyan Leggings",
+  "item.dragonminez.naruke_armor_boots": "Armor Saiyan Boots",
 
   "//": "COMMANDS",
   "command.dragonminez.stats.set.success": "§e[DMZ-Stats]§r Stat %s set to %s for %s",

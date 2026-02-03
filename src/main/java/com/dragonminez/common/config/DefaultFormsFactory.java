@@ -46,7 +46,7 @@ public class DefaultFormsFactory {
         buffed.setName(HumanForms.BUFFED);
         buffed.setUnlockOnSkillLevel(1);
         buffed.setCustomModel("");
-        buffed.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
+        buffed.setModelScaling(new float[]{1.2f, 1.0f, 1.2f});
         buffed.setStrMultiplier(1.75);
         buffed.setSkpMultiplier(1.75);
         buffed.setStmMultiplier(1.0);
@@ -334,7 +334,7 @@ public class DefaultFormsFactory {
         ssg3.setBodyColor1("");
         ssg3.setBodyColor2("");
         ssg3.setBodyColor3("");
-        ssg3.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
+        ssg3.setModelScaling(new float[]{1.3f, 1.15f, 1.3f});
         ssg3.setStrMultiplier(2.8);
         ssg3.setSkpMultiplier(2.8);
         ssg3.setStmMultiplier(1.0);
@@ -659,7 +659,7 @@ public class DefaultFormsFactory {
         fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
+        fullPower.setModelScaling(new float[]{1.2f, 1.0f, 1.2f});
         fullPower.setStrMultiplier(4.5);
         fullPower.setSkpMultiplier(4.5);
         fullPower.setStmMultiplier(1.0);
@@ -893,7 +893,7 @@ public class DefaultFormsFactory {
         superPerfect.setName(BioAndroidForms.SUPER_PERFECT);
         superPerfect.setUnlockOnSkillLevel(3);
         superPerfect.setCustomModel("bioandroid_perfect");
-        superPerfect.setModelScaling(new float[]{1.2f, 1.2f, 1.2f});
+        superPerfect.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
         superPerfect.setStrMultiplier(4.0);
         superPerfect.setSkpMultiplier(4.0);
         superPerfect.setStmMultiplier(1.0);

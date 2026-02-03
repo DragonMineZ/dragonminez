@@ -573,6 +573,11 @@ public class ConfigManager {
 			updated = true;
 		}
 
+        if (existing.getDefaultModelScaling() == null && defaults.getDefaultModelScaling() != null) {
+            existing.setDefaultModelScaling(defaults.getDefaultModelScaling());
+            updated = true;
+        }
+
         return updated;
     }
 
