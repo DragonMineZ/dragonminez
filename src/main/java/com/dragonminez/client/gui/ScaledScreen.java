@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui;
 
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -8,7 +9,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class ScaledScreen extends Screen {
-	protected static final float TARGET_GUI_SCALE = 3.0f;
+	protected static final int TARGET_GUI_SCALE = 3;
+	private static final int MIN_GUI_WIDTH = 320;
+	private static final int MIN_GUI_HEIGHT = 240;
 
 	private float uiScale = 1.0f;
 	private int uiWidth;
@@ -26,19 +29,39 @@ public abstract class ScaledScreen extends Screen {
 			return;
 		}
 
-		double currentScale = this.minecraft.getWindow().getGuiScale();
+		Window window = this.minecraft.getWindow();
+		double currentScale = window.getGuiScale();
 		if (currentScale <= 0.0D) {
 			currentScale = 1.0D;
 		}
 
-		float newScale = (float) (TARGET_GUI_SCALE / currentScale);
+		int targetScale = calculateTargetScale(window);
+		float newScale = (float) (targetScale / currentScale);
 		if (newScale <= 0.0f || Float.isNaN(newScale) || Float.isInfinite(newScale)) {
 			newScale = 1.0f;
 		}
 
 		uiScale = newScale;
-		uiWidth = Math.round(this.width / uiScale);
-		uiHeight = Math.round(this.height / uiScale);
+		int currentWidth = window.getGuiScaledWidth();
+		int currentHeight = window.getGuiScaledHeight();
+		uiWidth = Math.max(1, Math.round(currentWidth / uiScale));
+		uiHeight = Math.max(1, Math.round(currentHeight / uiScale));
+	}
+
+	private int calculateTargetScale(Window window) {
+		int targetScale = Math.max(1, TARGET_GUI_SCALE);
+		int scale = 1;
+		while (scale < targetScale
+				&& window.getWidth() / (scale + 1) >= MIN_GUI_WIDTH
+				&& window.getHeight() / (scale + 1) >= MIN_GUI_HEIGHT) {
+			scale++;
+		}
+
+		if (this.minecraft != null && this.minecraft.isEnforceUnicode() && (scale % 2 != 0)) {
+			scale++;
+		}
+
+		return scale;
 	}
 
 	protected float getUiScale() {
