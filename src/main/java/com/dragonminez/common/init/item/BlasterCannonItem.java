@@ -24,7 +24,7 @@ public class BlasterCannonItem extends Item {
             KiBlastEntity kiBlast = new KiBlastEntity(pLevel, pPlayer);
             kiBlast.setup(pPlayer, 10.0F, 1.0F, 0.6f,0xFF5E7C, 0xB5102E);
 
-            kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 0.05F, 0.5F);
+            kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.5F);
 
             pLevel.addFreshEntity(kiBlast);
         }
