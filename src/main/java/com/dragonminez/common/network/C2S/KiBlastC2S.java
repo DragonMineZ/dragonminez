@@ -59,7 +59,8 @@ public class KiBlastC2S {
 
 					KiBlastEntity kiBlast = new KiBlastEntity(player.level(), player);
 					kiBlast.setup(player, damage, 0.5F, 0.0f, msg.colorMain, msg.colorBorder);
-					kiBlast.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 2.0F, 0.5F);
+                    kiBlast.setPos(player.getX(), player.getEyeY() - 0.4, player.getZ());
+                    kiBlast.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 2.0F, 0.5F);
 					player.level().addFreshEntity(kiBlast);
 
 					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "ki_blast_shot", 0, player.getId()), player);

@@ -14,10 +14,7 @@ import com.dragonminez.client.init.entities.model.ki.KiLaserExplosion2Model;
 import com.dragonminez.client.init.entities.model.ki.KiLaserExplosionModel;
 import com.dragonminez.client.init.entities.model.ki.KiLaserModel;
 import com.dragonminez.client.init.entities.renderer.*;
-import com.dragonminez.client.init.entities.renderer.ki.KiExplosionRenderer;
-import com.dragonminez.client.init.entities.renderer.ki.KiLaserRenderer;
-import com.dragonminez.client.init.entities.renderer.ki.KiProjectileRenderer;
-import com.dragonminez.client.init.entities.renderer.ki.SPSkillsRenderer;
+import com.dragonminez.client.init.entities.renderer.ki.*;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonSoldierRenderer;
 import com.dragonminez.client.init.entities.renderer.rr.RobotRRRenderer;
@@ -143,6 +140,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.MASTER_URANAI.get(), MasterEntityRenderer::new);
         event.registerEntityRenderer(MainEntities.MASTER_ENMA.get(), MasterEntityRenderer::new);
         event.registerEntityRenderer(MainEntities.MASTER_DENDE.get(), MasterEntityRenderer::new);
+        event.registerEntityRenderer(MainEntities.MASTER_GERO.get(), MasterEntityRenderer::new);
 
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanRenderer::new);
@@ -204,6 +202,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_LASER.get(), KiLaserRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_WAVE.get(), KiWaveRenderer::new);
 
     }
 

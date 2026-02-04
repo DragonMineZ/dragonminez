@@ -55,11 +55,11 @@ public class KiFlashParticle extends TextureSheetParticle {
                 this.rCol = rgb[0];
                 this.gCol = rgb[1];
                 this.bCol = rgb[2];
-                this.alpha = 1.0F;
+                this.alpha = 0.4F;
                 this.colorSet = true;
             }
             this.setSpriteFromAge(this.spriteSet);
-            this.quadSize = kiBall.getSize() + 0.5F;
+            this.quadSize = kiBall.getSize() + 0.3F;
         }
     }
 

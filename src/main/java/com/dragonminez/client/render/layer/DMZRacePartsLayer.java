@@ -119,6 +119,12 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     }
 
     private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+
+        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+        var stats = statsCap.orElse(new StatsData(animatable));
+
+        if (!stats.getStatus().hasCreatedCharacter()) return;
+
         boolean hasYajirobe = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.KATANA_YAJIROBE.get()));
         boolean holdingYajirobe = animatable.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get()
                 || animatable.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();

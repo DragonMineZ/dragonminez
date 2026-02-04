@@ -4,6 +4,7 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
+import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -53,30 +54,33 @@ public class SaiyanShipItem extends Item {
 		return super.useOn(pContext);
 	}
 
-//    @Override
-//    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
-//        ItemStack itemstack = pPlayer.getItemInHand(pHand);
-//
-//        if (!pLevel.isClientSide) {
-//
-//            KiLaserEntity laser = new KiLaserEntity(pLevel, pPlayer);
-//
-//            laser.setKiDamage(20.0F);
-//            laser.setKiSpeed(3.2F);
-//
-//            laser.setColors(0xFF0000, 0x910000);
-//
-//            pLevel.addFreshEntity(laser);
-//        }
-//
-//
-//        pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
-//                SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 2.0F);
-//
-//        pPlayer.getCooldowns().addCooldown(this, 10);
-//
-//        return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
-//    }
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
+        ItemStack itemstack = pPlayer.getItemInHand(pHand);
+
+        if (!pLevel.isClientSide) {
+
+            KiWaveEntity wave = new KiWaveEntity(pLevel, pPlayer);
+
+            wave.setKiDamage(25.0F);
+
+            wave.setKiSpeed(1.2F);
+
+            wave.setSize(2.5F);
+
+            wave.setColors(0x00AAFF, 0x0000FF);
+
+            pLevel.addFreshEntity(wave);
+        }
+
+        // Sonido: Un tono (pitch) más bajo (0.5F) hace que suene más grave y poderoso
+        pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
+                SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 0.5F);
+
+        pPlayer.getCooldowns().addCooldown(this, 20); // Un poco más de cooldown
+
+        return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
+    }
 
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {

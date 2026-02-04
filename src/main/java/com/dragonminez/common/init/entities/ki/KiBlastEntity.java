@@ -92,7 +92,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 			this.hasSpawnedFlash = true;
 		}
 
-		if (!this.level().isClientSide && this.tickCount % 10 == 0) { //damage cada 0.5 segundos
+		if (!this.level().isClientSide && this.tickCount % 10 == 0) {
 			pulseAreaDamage();
 		}
 	}

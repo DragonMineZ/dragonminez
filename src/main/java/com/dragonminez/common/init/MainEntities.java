@@ -84,6 +84,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(MasterDendeEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_dende").toString()));
+    public static final RegistryObject<EntityType<MasterGeroEntity>> MASTER_GERO =
+            ENTITY_TYPES.register("master_gero",
+                    () -> EntityType.Builder.of(MasterGeroEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_gero").toString()));
 
     public static final RegistryObject<EntityType<Dino1Entity>> DINOSAUR1 =
             ENTITY_TYPES.register("dino1",
@@ -364,6 +369,14 @@ public class MainEntities {
                     .updateInterval(1)
                     .fireImmune()
                     .build("ki_laser")
+    );
+    public static final RegistryObject<EntityType<KiWaveEntity>> KI_WAVE = ENTITY_TYPES.register("ki_wave",
+            () -> EntityType.Builder.<KiWaveEntity>of(KiWaveEntity::new, MobCategory.MISC)
+                    .sized(2.5F, 2.5F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .build(new ResourceLocation(Reference.MOD_ID, "ki_wave").toString())
     );
 
     public static void register(IEventBus eventBus) {

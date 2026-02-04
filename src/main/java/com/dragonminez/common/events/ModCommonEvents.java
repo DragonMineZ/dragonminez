@@ -41,6 +41,7 @@ public class ModCommonEvents {
         event.put(MainEntities.MASTER_URANAI.get(), MastersEntity.createAttributes().build());
         event.put(MainEntities.MASTER_ENMA.get(), MastersEntity.createAttributes().build());
         event.put(MainEntities.MASTER_DENDE.get(), MastersEntity.createAttributes().build());
+        event.put(MainEntities.MASTER_GERO.get(), MastersEntity.createAttributes().build());
 
 		event.put(MainEntities.SHENRON.get(), ShenronEntity.createAttributes().build());
 		event.put(MainEntities.PORUNGA.get(), PorungaEntity.createAttributes().build());
