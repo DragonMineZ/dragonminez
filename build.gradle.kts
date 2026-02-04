@@ -129,8 +129,8 @@ dependencies {
 
     // Vulnerability corrections
     implementation("com.google.guava:guava:33.5.0-jre")
-    implementation("io.netty:netty-codec:4.2.7.Final")
-    implementation("io.netty:netty-handler:4.2.7.Final")
+    implementation("io.netty:netty-codec:4.2.9.Final")
+    implementation("io.netty:netty-handler:4.2.9.Final")
     implementation("org.apache.commons:commons-compress:1.27.1")
 
     // GeckoLib & Terrablender
