@@ -24,7 +24,7 @@ jobs:
         run: ./scripts/check_lang.sh
 
       - name: Crowdin Upload (sources only)
-        uses: crowdin/github-action@v2.13.0
+        uses: crowdin/github-action@v2
         with:
           upload_sources: true
           #Will only upload the source file en_us.json to Crowdin, nothing more.
