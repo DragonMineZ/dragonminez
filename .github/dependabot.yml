@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Update GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/" # Root directory for workflows
+    schedule:
+      interval: "weekly"
+      time: "06:00" # Runs every week at 6 AM UTC
+    reviewers:
+      - "Bruneitor123"
+
+  # Update Gradle dependencies
+  - package-ecosystem: "gradle"
+    directory: "/" # Root directory for Gradle files like build.gradle
+    schedule:
+      interval: "weekly"
+      time: "06:00" # Same, runs same time as github actions
+    reviewers:
+      - "dragonminez/dev-team"
