@@ -28,6 +28,8 @@ public class Status {
 	private String fusionType;
 	private CompoundTag originalAppearance;
 	private boolean androidUpgraded;
+	private boolean renderKatana;
+	private String backWeapon;
 
     public Status() {
         this.isAlive = true;
@@ -53,6 +55,8 @@ public class Status {
 		this.fusionType = "";
 		this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = false;
+		this.renderKatana = false;
+		this.backWeapon = "";
     }
 
     public boolean isAlive() { return isAlive; }
@@ -78,6 +82,8 @@ public class Status {
 	public String getFusionType() { return fusionType; }
 	public CompoundTag getOriginalAppearance() { return originalAppearance; }
 	public boolean isAndroidUpgraded() { return androidUpgraded; }
+	public boolean isRenderKatana() { return renderKatana; }
+	public String getBackWeapon() { return backWeapon; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -102,6 +108,8 @@ public class Status {
 	public void setFusionType(String type) { this.fusionType = type; }
 	public void setOriginalAppearance(CompoundTag tag) { this.originalAppearance = tag; }
 	public void setAndroidUpgraded(boolean upgraded) { this.androidUpgraded = upgraded; }
+	public void setRenderKatana(boolean render) { this.renderKatana = render; }
+	public void setBackWeapon(String weapon) { this.backWeapon = weapon; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
@@ -128,6 +136,8 @@ public class Status {
 		tag.putString("FusionType", fusionType);
 		tag.put("OriginalAppearance", originalAppearance);
 		tag.putBoolean("AndroidUpgraded", androidUpgraded);
+		tag.putBoolean("RenderKatana", renderKatana);
+		tag.putString("BackWeapon", backWeapon);
         return tag;
     }
 
@@ -158,6 +168,8 @@ public class Status {
 		if (tag.contains("OriginalAppearance")) this.originalAppearance = tag.getCompound("OriginalAppearance");
 		else this.originalAppearance = new CompoundTag();
 		this.androidUpgraded = tag.getBoolean("AndroidUpgraded");
+		this.renderKatana = tag.getBoolean("RenderKatana");
+		this.backWeapon = tag.getString("BackWeapon");
     }
 
     public void copyFrom(Status other) {
@@ -184,6 +196,8 @@ public class Status {
 		this.fusionType = other.fusionType;
 		this.originalAppearance = other.originalAppearance.copy();
 		this.androidUpgraded = other.androidUpgraded;
+		this.renderKatana = other.renderKatana;
+		this.backWeapon = other.backWeapon;
     }
 }
 

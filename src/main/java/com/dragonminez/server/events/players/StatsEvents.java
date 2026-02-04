@@ -194,19 +194,11 @@ public class StatsEvents {
 
     @SubscribeEvent
     public static void onEntityHit(LivingHurtEvent event) {
-        if (event.getEntity().level().isClientSide) {
-            return;
-        }
-
-        if (!(event.getSource().getEntity() instanceof Player attacker)) {
-            return;
-        }
+        if (event.getEntity().level().isClientSide) return;
+        if (!(event.getSource().getEntity() instanceof Player attacker)) return;
 
         StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) {
-                return;
-            }
-
+            if (!data.getStatus().hasCreatedCharacter()) return;
             int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
             data.getResources().addTrainingPoints(baseTps);
         });

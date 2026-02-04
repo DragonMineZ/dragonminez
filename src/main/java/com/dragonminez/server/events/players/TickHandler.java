@@ -1,5 +1,7 @@
 package com.dragonminez.server.events.players;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.config.ConfigManager;
@@ -8,6 +10,7 @@ import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -23,6 +26,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -30,10 +35,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TickHandler {
@@ -150,6 +152,31 @@ public class TickHandler {
 				handleActionCharge(serverPlayer, data);
 				handleKaiokenEffects(serverPlayer, data);
 				handleFlightKiDrain(serverPlayer, data);
+
+				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
+				boolean holdingYajirobe = serverPlayer.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get() || serverPlayer.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
+				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe)) data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
+
+				ItemStack backItem = ItemStack.EMPTY;
+				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
+					ItemStack stack = serverPlayer.getInventory().getItem(i);
+					if (stack.isEmpty()) continue;
+					Item item = stack.getItem();
+
+					if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get() || item == MainItems.POWER_POLE.get()) {
+						boolean isHeld = serverPlayer.getMainHandItem().getItem() == item || serverPlayer.getOffhandItem().getItem() == item;
+						if (!isHeld) {
+							backItem = item.getDefaultInstance();
+							break;
+						}
+					}
+				}
+
+				if (backItem != ItemStack.EMPTY) {
+					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId())) data.getStatus().setBackWeapon(backItem.getDescriptionId());
+				} else {
+					data.getStatus().setBackWeapon("");
+				}
 			}
 
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
@@ -558,9 +585,7 @@ public class TickHandler {
 				int timer = data.getStatus().getFusionTimer();
 				if (timer > 0) {
 					data.getStatus().setFusionTimer(timer - 1);
-					if (timer - 1 <= 0) {
-						FusionLogic.endFusion(serverPlayer, data, false);
-					}
+					if (timer - 1 <= 0) FusionLogic.endFusion(serverPlayer, data, false);
 				}
 				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 				ServerPlayer partner = serverPlayer.getServer().getPlayerList().getPlayer(partnerUUID);
@@ -574,9 +599,7 @@ public class TickHandler {
 			} else {
 				UUID leaderUUID = data.getStatus().getFusionPartnerUUID();
 				ServerPlayer leader = serverPlayer.getServer().getPlayerList().getPlayer(leaderUUID);
-				if (leader == null || leader.hasDisconnected() || leader.isDeadOrDying()) {
-					FusionLogic.endFusion(serverPlayer, data, true);
-				}
+				if (leader == null || leader.hasDisconnected() || leader.isDeadOrDying()) FusionLogic.endFusion(serverPlayer, data, true);
 			}
 		}
 	}

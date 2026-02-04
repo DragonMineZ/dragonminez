@@ -14,7 +14,6 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.ChatFormatting;
@@ -60,8 +59,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     private CustomTextureButton multiplierButton;
     private SwitchButton viewSwitchButton;
 
-    public CharacterStatsScreen(int oldGuiScale) {
-        super(Component.translatable("gui.dragonminez.character_stats.title"), oldGuiScale);
+    public CharacterStatsScreen() {
+        super(Component.translatable("gui.dragonminez.character_stats.title"));
     }
 
     @Override
@@ -99,27 +98,30 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (!isAnimating()) this.renderBackground(graphics);
-		PoseStack pose = graphics.pose();
-		pose.pushPose();
+
+		int uiMouseX = (int) Math.round(toUiX(mouseX));
+		int uiMouseY = (int) Math.round(toUiY(mouseY));
+
+		beginUiScale(graphics);
 		applyZoom(graphics);
 
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
+        renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
         renderMenuPanels(graphics);
-        renderPlayerInfo(graphics, mouseX, mouseY);
-        renderStatsInfo(graphics, mouseX, mouseY);
-        renderStatisticsInfo(graphics, mouseX, mouseY);
+        renderPlayerInfo(graphics, uiMouseX, uiMouseY);
+        renderStatsInfo(graphics, uiMouseX, uiMouseY);
+        renderStatisticsInfo(graphics, uiMouseX, uiMouseY);
         renderTPCost(graphics);
 
-		super.render(graphics, mouseX, mouseY, partialTick);
-	    pose.popPose();
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
+		endUiScale(graphics);
     }
 
     private void initStatButtons() {
         if (statsData == null) return;
 
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int buttonX = 27;
-        int startY = centerY - 3;
+        int startY = centerY - 4;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         int availableTPs = statsData.getResources().getTrainingPoints();
@@ -214,7 +216,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     private void renderTPCost(GuiGraphics graphics) {
         if (statsData == null) return;
 
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int tpcY = centerY + 73;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
@@ -230,8 +232,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     }
 
     private void renderMenuPanels(GuiGraphics graphics) {
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
+        int centerX = getUiWidth() / 2;
+        int centerY = getUiHeight() / 2;
 
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -240,8 +242,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 		graphics.blit(MENU_BIG, 43, centerY - 28, 142, 0, 79, 21, 256, 256);
 
-        graphics.blit(MENU_BIG, this.width - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+        graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
 		graphics.blit(MENU_SMALL, centerX - 70, 8, 0, 95, 145, 58, 256, 256);
 
@@ -249,7 +251,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     }
 
     private void renderPlayerInfo(GuiGraphics graphics, int mouseX, int mouseY) {
-        int centerX = this.width / 2;
+        int centerX = getUiWidth() / 2;
 
         if (Minecraft.getInstance().player == null) return;
         String playerName = Minecraft.getInstance().player.getName().getString();
@@ -295,7 +297,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     }
 
     private void renderStatsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int titleY = centerY - 88;
 
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), 85, titleY, 0xFBC51C, 0x000000);
@@ -305,8 +307,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         String characterClass = statsData.getCharacter().getCharacterClass();
         String form = statsData.getCharacter().getActiveForm();
 
-        int labelX = 35;
-        int valueX = 80;
+        int labelX = 30;
+        int valueX = 70;
         int startY = centerY - 72;
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.level").withStyle(style -> style.withBold(true)), labelX, startY, 0xD7FEF5, 0x000000);
@@ -345,7 +347,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
         Component classComponent = Component.translatable("class.dragonminez." + characterClass);
-        drawStringWithBorder2(graphics, classComponent, 80, startY + 33, 0xFFFFFF, 0x000000);
+        drawStringWithBorder2(graphics, classComponent, valueX, startY + 33, 0xFFFFFF, 0x000000);
 
         int statsStartY = centerY - 21;
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 82, statsStartY, 0x68CCFF, 0x000000);
@@ -378,7 +380,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 ? numberFormatter.format((int)modifiedValue) + " x" + String.format(Locale.US, "%.1f", 1.0 + totalMult)
                 : numberFormatter.format(baseValue);
 
-            drawStringWithBorder2(graphics, Component.literal(statText), valueX, yPos, statColor, 0x000000);
+            drawStringWithBorder2(graphics, Component.literal(statText), valueX + 5, yPos, statColor, 0x000000);
 
             if (mouseX >= statLabelX && mouseX <= statLabelX + 25 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
                 List<FormattedCharSequence> tooltip = new ArrayList<>();
@@ -424,14 +426,14 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     }
 
     private void renderStatisticsInfoList(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightX = this.width - 137;
-        int centerY = this.height / 2;
+        int rightX = getUiWidth() - 137;
+        int centerY = getUiHeight() / 2;
         int titleY = centerY - 88;
 
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), this.width - 85, titleY, 0xF91E64, 0x000000);
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), getUiWidth() - 85, titleY, 0xF91E64, 0x000000);
 
         int labelStartY = centerY - 64;
-        int valueX = this.width - 65;
+        int valueX = getUiWidth() - 65;
 
         double meleeDamage = statsData.getMeleeDamage();
         double maxMeleeDamage = statsData.getMaxMeleeDamage();
@@ -625,8 +627,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     }
 
     private void initViewSwitchButton() {
-        int centerY = this.height / 2;
-        int buttonX = this.width - 45;
+        int centerY = getUiHeight() / 2;
+        int buttonX = getUiWidth() - 45;
         int buttonY = centerY + 90;
 		LivingEntity player = Minecraft.getInstance().player;
 
@@ -642,9 +644,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     }
 
     private void renderStatisticsInfoHexagon(GuiGraphics graphics, int mouseX, int mouseY) {
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int titleY = centerY - 88;
-        int centerX = this.width - 85;
+        int centerX = getUiWidth() - 85;
 
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.statistics").withStyle(style -> style.withBold(true)), centerX, titleY, 0xF91E64, 0x000000);
 

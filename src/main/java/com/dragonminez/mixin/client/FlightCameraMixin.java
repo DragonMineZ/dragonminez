@@ -28,17 +28,30 @@ public abstract class FlightCameraMixin implements RollCamera {
         this.dragonminez$lastRoll = this.dragonminez$roll;
     }
 
-    @Inject(method = "setup", at = @At("TAIL"))
-    private void dragonminez$updateRoll(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
+	@Inject(method = "setup", at = @At("TAIL"))
+	private void dragonminez$updateRoll(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
 		if (FlightRollHandler.hasActiveRoll()) {
-			this.dragonminez$roll = FlightRollHandler.getRoll(partialTick);
+			float newRoll = FlightRollHandler.getRoll(partialTick);
+			float delta = Mth.wrapDegrees(newRoll - this.dragonminez$lastRoll);
+			this.dragonminez$roll = this.dragonminez$lastRoll + delta;
+			dragonminez$rebaseRoll();
 		} else {
 			this.dragonminez$roll = Mth.lerp(0.1F, this.dragonminez$roll, 0F);
 		}
 	}
 
     @Override
-    public float dragonminez$getRoll() {
-        return Mth.lerp(dragonminez$tickDelta, dragonminez$lastRoll, dragonminez$roll);
-    }
+	public float dragonminez$getRoll() {
+		return Mth.lerp(dragonminez$tickDelta, dragonminez$lastRoll, dragonminez$roll);
+	}
+
+	@Unique
+	private void dragonminez$rebaseRoll() {
+		float wrapped = Mth.wrapDegrees(this.dragonminez$roll);
+		float offset = this.dragonminez$roll - wrapped;
+		if (offset != 0F) {
+			this.dragonminez$roll = wrapped;
+			this.dragonminez$lastRoll -= offset;
+		}
+	}
 }

@@ -50,9 +50,7 @@ public class FlightRollHandler {
 			if (Math.abs(totalForce) > 0.01F) {
 				rollVelocity += totalForce;
 			} else {
-				float normalizedRoll = currentRoll % 360;
-				if (normalizedRoll > 180) normalizedRoll -= 360;
-				if (normalizedRoll < -180) normalizedRoll += 360;
+				float normalizedRoll = Mth.wrapDegrees(currentRoll);
 
 				if (Math.abs(normalizedRoll) < 90) {
 					float distTo0 = -normalizedRoll;
@@ -67,7 +65,7 @@ public class FlightRollHandler {
 			rollVelocity = Mth.clamp(rollVelocity, -MAX_ROLL_SPEED, MAX_ROLL_SPEED);
 
 			currentRoll += rollVelocity;
-			currentRoll = currentRoll % 360F;
+			rebaseRoll();
 		} else {
 			float target = Math.round(currentRoll / 360f) * 360f;
 			currentRoll = Mth.lerp(0.1F, currentRoll, target);
@@ -75,6 +73,15 @@ public class FlightRollHandler {
 		}
 
 		lastYaw = currentYaw;
+	}
+
+	private static void rebaseRoll() {
+		float wrapped = Mth.wrapDegrees(currentRoll);
+		float offset = currentRoll - wrapped;
+		if (offset != 0F) {
+			currentRoll = wrapped;
+			prevRoll -= offset;
+		}
 	}
 
 	private static boolean isPlayerFlying(LocalPlayer player) {

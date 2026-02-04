@@ -120,6 +120,34 @@ public class Stats {
     public void addKiPower(int amount) { setKiPower(kiPower + amount); }
     public void addEnergy(int amount) { setEnergy(energy + amount); }
 
+	public void setStat(String statName, int value) {
+		switch (statName.toLowerCase()) {
+			case "str" -> setStrength(value);
+			case "skp" -> setStrikePower(value);
+			case "res" -> setResistance(value);
+			case "vit" -> setVitality(value);
+			case "pwr" -> setKiPower(value);
+			case "ene" -> setEnergy(value);
+			default -> throw new IllegalArgumentException("Unknown stat: " + statName);
+		}
+	}
+
+	public void addStat(String statName, int amount) {
+		switch (statName.toLowerCase()) {
+			case "str" -> addStrength(amount);
+			case "skp" -> addStrikePower(amount);
+			case "res" -> addResistance(amount);
+			case "vit" -> addVitality(amount);
+			case "pwr" -> addKiPower(amount);
+			case "ene" -> addEnergy(amount);
+			default -> throw new IllegalArgumentException("Unknown stat: " + statName);
+		}
+	}
+
+	public void removeStat(String statName, int amount) {
+		addStat(statName, -amount);
+	}
+
     public int getTotalStats() {
         return strength + strikePower + resistance + vitality + kiPower + energy;
     }

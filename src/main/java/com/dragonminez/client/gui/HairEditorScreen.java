@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.AxisSlider;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
@@ -39,7 +40,7 @@ import java.util.List;
 import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
-public class HairEditorScreen extends Screen {
+public class HairEditorScreen extends ScaledScreen {
     private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
     private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
@@ -67,7 +68,6 @@ public class HairEditorScreen extends Screen {
     private final Character character;
     private CustomHair editingHair;
     private CustomHair backupHair;
-    private final int oldGuiScale;
     private final boolean usePanorama;
     private boolean isSwitchingMenu = false;
     private final int originalHairId;
@@ -122,18 +122,6 @@ public class HairEditorScreen extends Screen {
 
         this.usePanorama = previousScreen instanceof CharacterCustomizationScreen;
 
-        Minecraft mc = Minecraft.getInstance();
-
-        if (previousScreen instanceof CharacterCustomizationScreen) {
-            this.oldGuiScale = ((CharacterCustomizationScreen) previousScreen).getOldGuiScale();
-        } else {
-            this.oldGuiScale = mc.options.guiScale().get();
-            if (oldGuiScale != 3) {
-                mc.options.guiScale().set(3);
-                mc.resizeDisplay();
-            }
-        }
-
         this.originalHairId = character.getHairId();
 
         if (character.getHairId() > 0) {
@@ -166,7 +154,7 @@ public class HairEditorScreen extends Screen {
 
     private void initLeftPanelButtons() {
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
 
         int buttonY = leftPanelY + 165;
@@ -296,7 +284,7 @@ public class HairEditorScreen extends Screen {
         clearControlButtons();
 
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
         int startY = leftPanelY + 40 + 35 + 15;
 
@@ -503,7 +491,7 @@ public class HairEditorScreen extends Screen {
 
     private void initColorPicker() {
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
 
         int colorBtnX = leftPanelX + 105;
@@ -647,7 +635,7 @@ public class HairEditorScreen extends Screen {
         }
 
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
         int colorBtnX = leftPanelX + 105;
         int colorBtnY = leftPanelY + 140;
@@ -669,8 +657,8 @@ public class HairEditorScreen extends Screen {
     }
 
     private void initBottomButtons() {
-        int bottomY = this.height - 30;
-        int centerX = this.width / 2;
+        int bottomY = getUiHeight() - 30;
+        int centerX = getUiWidth() / 2;
 
         codeField = new EditBox(this.font, centerX - 70, bottomY - 25, 140, 18,
                 Component.translatable("gui.dragonminez.hair_editor.code"));
@@ -751,6 +739,9 @@ public class HairEditorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int uiMouseX = (int) Math.round(toUiX(mouseX));
+        int uiMouseY = (int) Math.round(toUiY(mouseY));
+
         if (usePanorama) {
             renderPanorama(partialTick);
 			this.renderCinematicBars(graphics);
@@ -758,13 +749,16 @@ public class HairEditorScreen extends Screen {
             this.renderBackground(graphics);
 			this.renderBackground(graphics);
         }
+
+        beginUiScale(graphics);
         renderLeftPanel(graphics);
-        renderRightPanel(graphics, mouseX, mouseY);
-        renderPlayerModel(graphics, this.width / 2, this.height / 2 + 220, 150);
+        renderRightPanel(graphics, uiMouseX, uiMouseY);
+        renderPlayerModel(graphics, getUiWidth() / 2, getUiHeight() / 2 + 220, 150);
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 400.0D);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, uiMouseX, uiMouseY, partialTick);
         graphics.pose().popPose();
+        endUiScale(graphics);
     }
 
 	private void renderCinematicBars(GuiGraphics guiGraphics) {
@@ -809,7 +803,7 @@ public class HairEditorScreen extends Screen {
 
     private void renderLeftPanel(GuiGraphics graphics) {
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -824,8 +818,8 @@ public class HairEditorScreen extends Screen {
         graphics.pose().pushPose();
         graphics.pose().scale(0.75f, 0.75f, 0.75f);
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.color"), (int)((leftPanelX + 80) / 0.75f), (int)((leftPanelY + 149) / 0.75f), 0xFFFFFF);
-		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.mode." + editorMode), (int)((leftPanelX + 20) / 0.75f), (int)(((this.height / 2) + 83) / 0.75f), 0xFFFFFF);
-		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.physics"), (int)((leftPanelX + 70) / 0.75f), (int)(((this.height / 2) + 83) / 0.75f), physicsEnabled ? 0x00FF00 : 0xFF5555);
+		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.mode." + editorMode), (int)((leftPanelX + 20) / 0.75f), (int)(((getUiHeight() / 2) + 83) / 0.75f), 0xFFFFFF);
+		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.hair_editor.physics"), (int)((leftPanelX + 70) / 0.75f), (int)(((getUiHeight() / 2) + 83) / 0.75f), physicsEnabled ? 0x00FF00 : 0xFF5555);
         graphics.pose().popPose();
     }
 
@@ -863,8 +857,8 @@ public class HairEditorScreen extends Screen {
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightPanelX = this.width - 158;
-        int centerY = this.height / 2;
+        int rightPanelX = getUiWidth() - 158;
+        int centerY = getUiHeight() / 2;
         int rightPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1018,20 +1012,23 @@ public class HairEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (handleStrandGridClick(mouseX, mouseY)) return true;
-        if (handleFaceSelectorClick(mouseX, mouseY)) return true;
+        double uiMouseX = toUiX(mouseX);
+        double uiMouseY = toUiY(mouseY);
 
-        int centerX = this.width / 2;
-        int centerY = this.height / 2 + 20;
+        if (handleStrandGridClick(uiMouseX, uiMouseY)) return true;
+        if (handleFaceSelectorClick(uiMouseX, uiMouseY)) return true;
+
+        int centerX = getUiWidth() / 2;
+        int centerY = getUiHeight() / 2 + 20;
         int modelRadius = 100;
-        int bottomY = this.height - 30;
+        int bottomY = getUiHeight() - 30;
         int maxDragY = bottomY - 25 - 10;
 
-        if (mouseX >= centerX - modelRadius && mouseX <= centerX + modelRadius &&
-            mouseY >= centerY - 400 && mouseY <= maxDragY) {
+        if (uiMouseX >= centerX - modelRadius && uiMouseX <= centerX + modelRadius &&
+            uiMouseY >= centerY - 400 && uiMouseY <= maxDragY) {
             isDraggingModel = true;
-            lastMouseX = mouseX;
-			lastMouseY = mouseY;
+            lastMouseX = uiMouseX;
+			lastMouseY = uiMouseY;
             return true;
         }
 
@@ -1047,24 +1044,26 @@ public class HairEditorScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (isDraggingModel) {
-            double deltaX = mouseX - lastMouseX;
-			double deltaY = mouseY - this.lastMouseY;
+            double uiMouseX = toUiX(mouseX);
+			double uiMouseY = toUiY(mouseY);
+            double deltaX = uiMouseX - lastMouseX;
+			double deltaY = uiMouseY - this.lastMouseY;
 
 			this.playerRotation -= (float)deltaX;
 			this.playerPitch += (float)deltaY;
 
 			this.playerPitch = Math.max(-90.0f, Math.min(90.0f, this.playerPitch));
             playerRotation += (float)(deltaX * 0.8);
-            lastMouseX = mouseX;
-			lastMouseY = mouseY;
+            lastMouseX = uiMouseX;
+			lastMouseY = uiMouseY;
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     private boolean handleStrandGridClick(double mouseX, double mouseY) {
-        int rightPanelX = this.width - 158;
-        int centerY = this.height / 2;
+        int rightPanelX = getUiWidth() - 158;
+        int centerY = getUiHeight() / 2;
         int rightPanelY = centerY - 105;
         int startY = rightPanelY + 55;
 
@@ -1099,8 +1098,8 @@ public class HairEditorScreen extends Screen {
     }
 
     private boolean handleFaceSelectorClick(double mouseX, double mouseY) {
-        int rightPanelX = this.width - 158;
-        int centerY = this.height / 2;
+        int rightPanelX = getUiWidth() - 158;
+        int centerY = getUiHeight() / 2;
         int rightPanelY = centerY - 105;
         int btnY = rightPanelY + 35;
         int btnX = rightPanelX + 28;
@@ -1235,17 +1234,6 @@ public class HairEditorScreen extends Screen {
             GLOBAL_SWITCHING = true;
         }
         Minecraft.getInstance().setScreen(previousScreen);
-    }
-
-    @Override
-    public void removed() {
-        if (!isSwitchingMenu && this.minecraft != null) {
-            if (this.minecraft.options.guiScale().get() != oldGuiScale) {
-                this.minecraft.options.guiScale().set(oldGuiScale);
-                this.minecraft.resizeDisplay();
-            }
-        }
-        super.removed();
     }
 
     @Override

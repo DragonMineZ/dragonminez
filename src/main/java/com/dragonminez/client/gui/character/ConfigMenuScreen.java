@@ -43,8 +43,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
     private final List<CustomTextureButton> increaseButtons = new ArrayList<>();
     private final List<SwitchButton> switchButtons = new ArrayList<>();
 
-    public ConfigMenuScreen(int oldGuiScale) {
-        super(Component.translatable("gui.dragonminez.config.title"), oldGuiScale);
+    public ConfigMenuScreen() {
+        super(Component.translatable("gui.dragonminez.config.title"));
     }
 
     @Override
@@ -128,8 +128,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
         clearConfigButtons();
 		LivingEntity player = this.minecraft.player;
 
-        int rightPanelX = this.width - 163;
-        int centerY = this.height / 2;
+        int rightPanelX = getUiWidth() - 163;
+        int centerY = getUiHeight() / 2;
         int rightPanelY = centerY - 105;
         int startY = rightPanelY + 35;
         int visibleStart = scrollOffset;
@@ -208,16 +208,21 @@ public class ConfigMenuScreen extends BaseMenuScreen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        renderPlayerModel(graphics, this.width / 2 + 5, this.height / 2 + 70, 75, mouseX, mouseY);
-        renderLeftPanel(graphics, mouseX, mouseY);
-        renderRightPanel(graphics, mouseX, mouseY);
+        int uiMouseX = (int) Math.round(toUiX(mouseX));
+        int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        beginUiScale(graphics);
+        renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
+        renderLeftPanel(graphics, uiMouseX, uiMouseY);
+        renderRightPanel(graphics, uiMouseX, uiMouseY);
+
+        super.render(graphics, uiMouseX, uiMouseY, partialTick);
+        endUiScale(graphics);
     }
 
     private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -235,7 +240,12 @@ public class ConfigMenuScreen extends BaseMenuScreen {
         int visibleStart = scrollOffset;
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
 
-        graphics.enableScissor(panelX + 5, startY, panelX + 144, startY + (MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT));
+        graphics.enableScissor(
+            toScreenCoord(panelX + 5),
+            toScreenCoord(startY),
+            toScreenCoord(panelX + 144),
+            toScreenCoord(startY + (MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT))
+        );
 
         graphics.pose().pushPose();
         graphics.pose().scale(0.75f, 0.75f, 0.75f);
@@ -270,13 +280,13 @@ public class ConfigMenuScreen extends BaseMenuScreen {
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightPanelX = this.width - 158;
-        int centerY = this.height / 2;
+        int rightPanelX = getUiWidth() - 158;
+        int centerY = getUiHeight() / 2;
         int rightPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, this.width - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
                 rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
@@ -331,12 +341,14 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        double uiMouseX = toUiX(mouseX);
+        double uiMouseY = toUiY(mouseY);
         int leftPanelX = 12;
-        int centerY = this.height / 2;
+        int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
 
-        if (mouseX >= leftPanelX && mouseX <= leftPanelX + 148 &&
-                mouseY >= leftPanelY + 40 && mouseY <= leftPanelY + 219) {
+        if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
+                uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
 
             scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
             initConfigButtons();

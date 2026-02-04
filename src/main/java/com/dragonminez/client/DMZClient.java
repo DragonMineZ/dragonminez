@@ -10,8 +10,6 @@ public class DMZClient {
 
     public static void init() {
         LogUtil.info(Env.CLIENT, "Initializing DragonMineZ Client...");
-
-        LogUtil.info(Env.CLIENT, "DragonMineZ Client initialized");
     }
 }
 

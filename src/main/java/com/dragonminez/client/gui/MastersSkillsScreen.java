@@ -9,7 +9,6 @@ import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -58,8 +57,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private final String masterName;
 	private final LivingEntity masterEntity;
 
-	public MastersSkillsScreen(int oldGuiScale, String masterName, LivingEntity masterEntity) {
-		super(Component.literal(masterName), oldGuiScale);
+	public MastersSkillsScreen(String masterName, LivingEntity masterEntity) {
+		super(Component.literal(masterName));
 		this.masterName = masterName;
 		this.masterEntity = masterEntity;
 	}
@@ -102,19 +101,23 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private void initDynamicButtons() {
 		int leftPanelX = 12;
-		int centerY = this.height / 2;
+		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
 		int buttonY = leftPanelY + 6;
 		int hiddenX = leftPanelX + 122;
 		int scissorX = leftPanelX + 141;
+		int scissorXScreen = toScreenCoord(scissorX);
+		int scissorYScreen = toScreenCoord(0);
+		int scissorRight = toScreenCoord(getUiWidth());
+		int scissorBottom = toScreenCoord(getUiHeight());
 
 		skillsButton = new ClippableTextureButton.Builder()
 				.position(hiddenX, buttonY)
 				.size(26, 32)
 				.texture(MENU_BIG)
 				.textureCoords(142, 44, 142, 44)
-				.clipping(true, scissorX, 0, this.width, this.height)
+				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
 				.onPress(btn -> {
 					currentCategory = SkillCategory.SKILLS;
 					selectedSkill = null;
@@ -131,7 +134,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
                 .size(26, 32)
                 .texture(MENU_BIG)
                 .textureCoords(170, 44, 170, 44)
-                .clipping(true, scissorX, 0, this.width, this.height)
+                .clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
                 .onPress(btn -> {
                     currentCategory = SkillCategory.KI;
                     selectedSkill = null;
@@ -212,8 +215,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			skill = new Skill(selectedSkill, 0, false, 10);
 		}
 
-		int rightPanelX = this.width - 158;
-		int centerY = this.height / 2;
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
 		if (!statsData.getSkills().hasSkill(selectedSkill) || skill.getLevel() == 0) {
@@ -258,21 +261,24 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		if (!isAnimating()) this.renderBackground(graphics);
-		PoseStack pose = graphics.pose();
-		pose.pushPose();
+
+		int uiMouseX = (int) Math.round(toUiX(mouseX));
+		int uiMouseY = (int) Math.round(toUiY(mouseY));
+
+		beginUiScale(graphics);
 		applyZoom(graphics);
 
-		updateButtonAnimations(mouseX, mouseY, partialTick);
-		renderMasterEntity(graphics, this.width / 2 + 5, this.height / 2 + 90, mouseX, mouseY);
-		renderLeftPanel(graphics, mouseX, mouseY);
-		renderRightPanel(graphics, mouseX, mouseY);
-		super.render(graphics, mouseX, mouseY, partialTick);
-		pose.popPose();
+		updateButtonAnimations(uiMouseX, uiMouseY, partialTick);
+		renderMasterEntity(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 90, uiMouseX, uiMouseY);
+		renderLeftPanel(graphics, uiMouseX, uiMouseY);
+		renderRightPanel(graphics, uiMouseX, uiMouseY);
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
+		endUiScale(graphics);
 	}
 
 	private void updateButtonAnimations(int mouseX, int mouseY, float partialTick) {
 		int leftPanelX = 12;
-		int centerY = this.height / 2;
+		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
 		int hotZoneX = leftPanelX + 122;
@@ -296,7 +302,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
 		int leftPanelX = 12;
-		int centerY = this.height / 2;
+		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -313,7 +319,12 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int visibleStart = scrollOffset;
 		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_SKILLS, skillNames.size());
 
-		graphics.enableScissor(panelX + 5, startY, panelX + 179, startY + (MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT));
+		graphics.enableScissor(
+			toScreenCoord(panelX + 5),
+			toScreenCoord(startY),
+			toScreenCoord(panelX + 179),
+			toScreenCoord(startY + (MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT))
+		);
 
 		for (int i = visibleStart; i < visibleEnd; i++) {
 			String skillName = skillNames.get(i);
@@ -368,17 +379,17 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		}
 
 		drawStringWithBorder(graphics, Component.translatable(title)
-				.withStyle(style -> style.withBold(true)), 65, this.height/2 - 88, 0xFBC51C);
+				.withStyle(style -> style.withBold(true)), 65, getUiHeight() / 2 - 88, 0xFBC51C);
 	}
 
 	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-		int rightPanelX = this.width - 158;
-		int centerY = this.height / 2;
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
-		graphics.blit(MENU_BIG, this.width - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
 		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
 
@@ -457,12 +468,14 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = 12;
-		int centerY = this.height / 2;
+		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
-		if (mouseX >= leftPanelX && mouseX <= leftPanelX + 184 &&
-				mouseY >= leftPanelY + 40 && mouseY <= leftPanelY + 239) {
+		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
+				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
 
 			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
 			return true;
@@ -472,8 +485,10 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
 		int leftPanelX = 12;
-		int centerY = this.height / 2;
+		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
 		List<String> skillNames = getVisibleSkillNames();
@@ -484,8 +499,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		for (int i = visibleStart; i < visibleEnd; i++) {
 			int itemY = startY + ((i - visibleStart) * SKILL_ITEM_HEIGHT);
 
-			if (mouseX >= leftPanelX + 10 && mouseX <= leftPanelX + 100 &&
-					mouseY >= itemY && mouseY <= itemY + SKILL_ITEM_HEIGHT - 5) {
+			if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 100 &&
+					uiMouseY >= itemY && uiMouseY <= itemY + SKILL_ITEM_HEIGHT - 5) {
 
 				selectedSkill = skillNames.get(i);
 				refreshButtons();

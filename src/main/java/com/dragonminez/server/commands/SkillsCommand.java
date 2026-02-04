@@ -16,6 +16,9 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.Collection;
+import java.util.List;
+
 public class SkillsCommand {
 
 	private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (ctx, builder) ->
@@ -25,83 +28,78 @@ public class SkillsCommand {
 		dispatcher.register(Commands.literal("dmzskill")
 				.requires(source -> DMZPermissions.check(source, DMZPermissions.SKILLS_LIST_SELF, DMZPermissions.SKILLS_LIST_OTHERS))
 
-				// set <skill> <level> [player]
+				// set <skill> <level> [targets]
 				.then(Commands.literal("set")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.SKILLS_SET_SELF, DMZPermissions.SKILLS_SET_OTHERS))
 						.then(Commands.argument("skill", StringArgumentType.string()).suggests(SKILL_SUGGESTIONS)
 								.then(Commands.argument("level", IntegerArgumentType.integer(0))
-										.executes(ctx -> setSkill(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "skill"), IntegerArgumentType.getInteger(ctx, "level")))
-										.then(Commands.argument("player", EntityArgument.player())
+										.executes(ctx -> setSkill(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "skill"), IntegerArgumentType.getInteger(ctx, "level")))
+										.then(Commands.argument("targets", EntityArgument.players())
 												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.SKILLS_SET_OTHERS))
-												.executes(ctx -> setSkill(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "skill"), IntegerArgumentType.getInteger(ctx, "level")))))))
+												.executes(ctx -> setSkill(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "skill"), IntegerArgumentType.getInteger(ctx, "level")))))))
 
-				// add <skill> [player]
+				// add <skill> [targets]
 				.then(Commands.literal("add")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.SKILLS_ADD_SELF, DMZPermissions.SKILLS_ADD_OTHERS))
 						.then(Commands.argument("skill", StringArgumentType.string()).suggests(SKILL_SUGGESTIONS)
-								.executes(ctx -> setSkill(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "skill"), 1))
-								.then(Commands.argument("player", EntityArgument.player())
+								.executes(ctx -> setSkill(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "skill"), 1))
+								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.SKILLS_ADD_OTHERS))
-										.executes(ctx -> setSkill(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "skill"), 1)))))
+										.executes(ctx -> setSkill(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "skill"), 1)))))
 
-				// remove <skill> [player]
+				// remove <skill> [targets]
 				.then(Commands.literal("remove")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.SKILLS_REMOVE_SELF, DMZPermissions.SKILLS_REMOVE_OTHERS))
 						.then(Commands.argument("skill", StringArgumentType.string()).suggests(SKILL_SUGGESTIONS)
-								.executes(ctx -> removeSkill(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "skill")))
-								.then(Commands.argument("player", EntityArgument.player())
+								.executes(ctx -> removeSkill(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "skill")))
+								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.SKILLS_REMOVE_OTHERS))
-										.executes(ctx -> removeSkill(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "skill"))))))
+										.executes(ctx -> removeSkill(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "skill"))))))
 		);
 	}
 
-	private static int setSkill(CommandSourceStack source, ServerPlayer target, String skillName, int level) {
+	private static int setSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName, int level) {
 		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(skillName.toLowerCase())) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
 
-		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
-			data.getSkills().setSkillLevel(skillName, level);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_success", skillName, level, target.getName().getString()), true);
-		});
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				data.getSkills().setSkillLevel(skillName, level);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			});
+		}
 
-		return 1;
+		if (targets.size() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_success", skillName, level, targets.iterator().next().getName().getString()), true);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_multiple", skillName, level, targets.size()), true);
+		}
+		return targets.size();
 	}
 
-	private static int removeSkill(CommandSourceStack source, ServerPlayer target, String skillName) {
+	private static int removeSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName) {
 		String lowerName = skillName.toLowerCase();
-
 		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
 
-		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
-			boolean hadSkill = data.getSkills().hasSkill(lowerName);
-			int currentLevel = data.getSkills().getSkillLevel(lowerName);
+		for (ServerPlayer player : targets) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (data.getSkills().hasSkill(lowerName)) {
+					data.getSkills().removeSkill(lowerName);
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				}
+			});
+		}
 
-			if (!hadSkill || currentLevel == 0) {
-				source.sendFailure(Component.translatable("command.dragonminez.skills.no_skill", target.getName().getString(), skillName));
-				return;
-			}
-
-			data.getSkills().removeSkill(skillName);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
-
-
-			boolean isTransformationSkill = lowerName.equals("superform") ||
-											lowerName.equals("godform") ||
-											lowerName.equals("legendaryforms");
-
-			if (isTransformationSkill) {
-				source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.reset_success", skillName, target.getName().getString()), true);
-			} else {
-				source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_success", skillName, target.getName().getString()), true);
-			}
-		});
-
-		return 1;
+		if (targets.size() == 1) {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_success", skillName, targets.iterator().next().getName().getString()), true);
+		} else {
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_multiple", skillName, targets.size()), true);
+		}
+		return targets.size();
 	}
 }
