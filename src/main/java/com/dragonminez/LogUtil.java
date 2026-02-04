@@ -7,8 +7,7 @@ public final class LogUtil {
 
 	private static final Logger LOGGER = LogManager.getLogger();
 
-	private LogUtil() {
-	}
+	private LogUtil() {}
 
 	public static void info(Env env, String message, Object... args) {
 		LOGGER.info(prefixedMessage(env, message), args);

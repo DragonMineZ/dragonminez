@@ -27,6 +27,7 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
@@ -119,16 +120,12 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     }
 
     private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-        boolean hasYajirobe = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.KATANA_YAJIROBE.get()));
-        boolean holdingYajirobe = animatable.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get()
-                || animatable.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
-
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
 
 		if (!stats.getStatus().hasCreatedCharacter()) return;
 
-        if (hasYajirobe && !holdingYajirobe) {
+        if (stats.getStatus().isRenderKatana()) {
             BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
             if (yajirobeModel != null) {
                 RenderType type = RenderType.entityCutoutNoCull(YAJIROBE_SWORD_TEXTURE);
@@ -143,11 +140,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             }
         }
 
-        boolean hasPowerPole = animatable.getInventory().hasAnyOf(java.util.Set.of(MainItems.POWER_POLE.get()));
-        boolean holdingPowerPole = animatable.getMainHandItem().getItem() == MainItems.POWER_POLE.get()
-                || animatable.getOffhandItem().getItem() == MainItems.POWER_POLE.get();
+		if (stats.getStatus().getBackWeapon() == null || stats.getStatus().getBackWeapon().isEmpty()) return;
 
-        if (hasPowerPole && !holdingPowerPole) {
+        if (stats.getStatus().getBackWeapon().equals(MainItems.POWER_POLE.get().getDescriptionId())) {
             BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
             if (powerpole != null) {
                 RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
@@ -160,24 +155,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                         1.0f, 1.0f, 1.0f, 1.0f);
                 poseStack.popPose();
             }
-        }
-
-        Item backSwordToRender = null;
-        for (int i = 0; i < animatable.getInventory().getContainerSize(); i++) {
-            ItemStack stack = animatable.getInventory().getItem(i);
-            if (stack.isEmpty()) continue;
-            Item item = stack.getItem();
-
-            if (item == MainItems.Z_SWORD.get() || item == MainItems.BRAVE_SWORD.get()) {
-                boolean isHeld = animatable.getMainHandItem().getItem() == item || animatable.getOffhandItem().getItem() == item;
-                if (!isHeld) {
-                    backSwordToRender = item;
-                    break;
-                }
-            }
-        }
-
-        if (backSwordToRender == MainItems.Z_SWORD.get()) {
+        } else if (stats.getStatus().getBackWeapon().equals(MainItems.Z_SWORD.get().getDescriptionId())) {
             BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
             if (zModel != null) {
                 RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
@@ -190,7 +168,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                         1.0f, 1.0f, 1.0f, 1.0f);
                 poseStack.popPose();
             }
-        } else if (backSwordToRender == MainItems.BRAVE_SWORD.get()) {
+		} else if (stats.getStatus().getBackWeapon().equals(MainItems.BRAVE_SWORD.get().getDescriptionId())) {
             BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
             if (braveModel != null) {
                 RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
