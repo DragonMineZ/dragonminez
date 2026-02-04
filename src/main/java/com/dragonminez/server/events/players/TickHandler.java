@@ -26,6 +26,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -148,11 +149,7 @@ public class TickHandler {
 				}
 			}
 
-			if (tickCounter % 20 == 0) {
-				handleActionCharge(serverPlayer, data);
-				handleKaiokenEffects(serverPlayer, data);
-				handleFlightKiDrain(serverPlayer, data);
-
+			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
 				boolean holdingYajirobe = serverPlayer.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get() || serverPlayer.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
 				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe)) data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
@@ -177,6 +174,12 @@ public class TickHandler {
 				} else {
 					data.getStatus().setBackWeapon("");
 				}
+			}
+
+			if (tickCounter % 20 == 0) {
+				handleActionCharge(serverPlayer, data);
+				handleKaiokenEffects(serverPlayer, data);
+				handleFlightKiDrain(serverPlayer, data);
 			}
 
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {

@@ -55,77 +55,64 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
         return ItemDisplayContext.NONE;
     }
 
-    @Override
-    protected void renderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack,
-                                      T animatable, MultiBufferSource bufferSource,
-                                      float partialTick, int packedLight, int packedOverlay) {
-        if (bone.getName().equals("right_hand_item") || bone.getName().equals("left_hand_item")) {
+	@Override
+	protected void renderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack,
+									  T animatable, MultiBufferSource bufferSource,
+									  float partialTick, int packedLight, int packedOverlay) {
 
-            poseStack.pushPose();
+		if (bone.getName().equals("right_hand_item") || bone.getName().equals("left_hand_item")) {
+			poseStack.pushPose();
+			boolean isLeftHand = bone.getName().equals("left_hand_item");
 
-            boolean isMainHand = (bone.getName().equals("right_hand_item"));
-            if (isMainHand) {
-                if (stack.getItem() instanceof ShieldItem) {
-                    if (animatable.isUsingItem() && animatable.getUseItem() == stack) {
-                        poseStack.translate(-0.0, -0.01, -0.14);
-                        poseStack.mulPose(Axis.XP.rotationDegrees(-140));
-                        poseStack.mulPose(Axis.XN.rotationDegrees(-65));
-                        poseStack.mulPose(Axis.YP.rotationDegrees(-25));
-//                        poseStack.mulPose(Axis.ZP.rotationDegrees(35));
+			Item item = stack.getItem();
+			boolean isTool = item instanceof TieredItem || item instanceof TridentItem || item instanceof SwordItem;
 
-                    } else {
-                        poseStack.translate(-0.0, -0.15, -0.14);
-                        poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-                    }
-                } else if (stack.getItem() instanceof CrossbowItem) {
-                    poseStack.translate(-0.075, -0.15, -0.14);
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-                    poseStack.mulPose(Axis.YP.rotationDegrees(15));
+			if (isLeftHand) {
+				if (item instanceof BlockItem) {
+					poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+					poseStack.translate(0, 0.1, -0.1);
+				} else if (item instanceof ShieldItem && !(animatable.getUseItem() == stack)) {
+					poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+					poseStack.mulPose(Axis.YP.rotationDegrees(180));
+					poseStack.translate(-0.03, 0.135, -1.39);
+				} else if (item instanceof ShieldItem && animatable.isUsingItem() && animatable.getUseItem() == stack) {
+					poseStack.mulPose(Axis.XP.rotationDegrees(45));
+					poseStack.mulPose(Axis.YP.rotationDegrees(125));
+					poseStack.mulPose(Axis.ZP.rotationDegrees(-95));
+					poseStack.translate(-0.80, 0.75, -0.45);
+				} else if (item instanceof BowItem) {
+					poseStack.mulPose(Axis.XP.rotationDegrees(-180));
+					poseStack.mulPose(Axis.YP.rotationDegrees(12));
+					poseStack.mulPose(Axis.ZP.rotationDegrees(-12));
+					poseStack.translate(0.1, 0.05, -0.16);
+				} else if (item instanceof CrossbowItem) {
+					poseStack.mulPose(Axis.ZP.rotationDegrees(60));
+					poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+					poseStack.translate(-0.42, 0.135, 0.1);
+				} else if (isTool) {
+					poseStack.mulPose(Axis.XP.rotationDegrees(-25));
+					poseStack.mulPose(Axis.ZP.rotationDegrees(180));
+					poseStack.translate(-0.06, -0.38, -0.4);
+				} else {
+					poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+					poseStack.translate(0.055, 0.13, -0.1);
+				}
+			} else {
+				poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+				if (item instanceof ShieldItem && animatable.isUsingItem() && animatable.getUseItem() == stack) {
+					poseStack.translate(-0.15f, 0.135f, -0.05f);
+				} else if (item instanceof BowItem) {
+					poseStack.translate(0.02f, 0.135f, -0.1f);
+				} else {
+					poseStack.translate(-0.05f, 0.135f, -0.1f);
+				}
+			}
 
-                } else if (stack.getItem() instanceof BowItem) {
-                    poseStack.translate(0.1, -0.26, -0.14);
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(-15));
-                } else {
-                    poseStack.translate(-0.0, -0.15, -0.14);
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-                }
-            } else {
-                if (stack.getItem() instanceof ShieldItem) {
-                    if (animatable.isUsingItem() && animatable.getUseItem() == stack) {
-                        poseStack.translate(-0.70, 1.15, 0.35);
-                        poseStack.mulPose(Axis.XP.rotationDegrees(35));
-                        poseStack.mulPose(Axis.YP.rotationDegrees(90));
-                        poseStack.mulPose(Axis.ZP.rotationDegrees(-65));
-                    } else {
-                        poseStack.translate(-0.0, 1.34, -0.13);
-                        poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-                        poseStack.mulPose(Axis.YP.rotationDegrees(-180));
-                        poseStack.mulPose(Axis.ZP.rotationDegrees(0));
-                    }
-                } else if (stack.getItem() instanceof CrossbowItem) {
-                    poseStack.translate(-0.21, -0.45, -0.15);
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-                    poseStack.mulPose(Axis.YP.rotationDegrees(-75));
-
-                } else if (stack.getItem() instanceof BowItem) {
-                    poseStack.translate(-0.1, -0.20, -0.20);
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-170));
-                    poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                    poseStack.mulPose(Axis.ZP.rotationDegrees(-15));
-                } else {
-                    poseStack.translate(-0.0, 0.10, -0.50);
-                    poseStack.mulPose(Axis.XP.rotationDegrees(-200));
-                    poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                }
-            }
-
-            super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
-            poseStack.popPose();
-        } else {
-            super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
-        }
-    }
-
+			super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
+			poseStack.popPose();
+		} else {
+			super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
+		}
+	}
 }
 

@@ -69,9 +69,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			hairFrom = character.getHairBase();
 			String targetGroup = character.getSelectedFormGroup();
 			var nextForm = TransformationsHelper.getNextAvailableForm(stats);
-			if (nextForm != null) {
-				hairTo = getHairForForm(character, targetGroup, nextForm.getName());
-			}
+			if (nextForm != null) hairTo = getHairForForm(character, targetGroup, nextForm.getName());
 			factor = stats.getResources().getActionCharge() / 100.0f;
 		}
 

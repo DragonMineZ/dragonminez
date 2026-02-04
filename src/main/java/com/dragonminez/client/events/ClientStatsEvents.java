@@ -89,7 +89,7 @@ public class ClientStatsEvents {
 			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
 				String hexColor = data.getCharacter().getAuraColor();
 				int colorMain = ColorUtils.hexToInt(hexColor);
-				int colorBorder = ColorUtils.darkenColor(colorMain, 0.7f);
+				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
 			}

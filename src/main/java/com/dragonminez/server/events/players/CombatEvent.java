@@ -500,20 +500,6 @@ public class CombatEvent {
 							SoundSource.PLAYERS,
 							1.0F,
 							1.2F + player.getRandom().nextFloat() * 0.2F);
-
-					if (player.level() instanceof ServerLevel serverLevel) {
-						Vec3 spawnPos = player.getEyePosition().subtract(0, 0.3, 0);
-						for (int i = 0; i < 20; i++) {
-							serverLevel.sendParticles(
-									MainParticles.KI_TRAIL.get(),
-									spawnPos.x, spawnPos.y, spawnPos.z,
-									0,
-									1.0, 1.0, 1.0,
-									1.0
-							);
-						}
-					}
-
 					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "evasion", 0), player);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					return;
@@ -534,7 +520,7 @@ public class CombatEvent {
 			DMZEvent.PlayerDashEvent.DashType dashType;
 
 			if (canDoubleDash) {
-				distance = distance * 2;
+				distance = distance * 1.5;
 				kiCost = (int) Math.ceil(maxEnergy * 0.25);
 				dashType = DMZEvent.PlayerDashEvent.DashType.DOUBLE;
 			} else {
@@ -549,7 +535,7 @@ public class CombatEvent {
 			kiCost = dashEvent.getKiCost();
 			int currentEnergy = data.getResources().getCurrentEnergy();
 			if (currentEnergy < kiCost) return;
-			if (player.getFoodData().getFoodLevel() < 3) return;
+			if (player.getFoodData().getFoodLevel() <= 3) return;
 			data.getResources().addEnergy(-kiCost);
 
 			Vec3 forward = Vec3.directionFromRotation(0, player.getYRot()).normalize();
@@ -580,19 +566,6 @@ public class CombatEvent {
 			}
 
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5F, 1.5F + player.getRandom().nextFloat() * 0.3F);
-
-			if (player.level() instanceof ServerLevel serverLevel) {
-				Vec3 spawnPos = player.position().add(0, 0.5, 0);
-				for (int i = 0; i < (canDoubleDash ? 15 : 8); i++) {
-					serverLevel.sendParticles(
-							MainParticles.KI_TRAIL.get(),
-							spawnPos.x, spawnPos.y, spawnPos.z,
-							0,
-							direction.x * 0.5, 0.1, direction.z * 0.5,
-							0.3
-					);
-				}
-			}
 
 			int dashDirection = getDashDirectionFromInput(xInput, zInput);
 			if (canDoubleDash) dashDirection += 4;
