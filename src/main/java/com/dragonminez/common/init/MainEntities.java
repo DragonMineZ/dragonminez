@@ -89,6 +89,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(MasterGeroEntity::new, MobCategory.CREATURE)
                             .sized(0.8f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_gero").toString()));
+    public static final RegistryObject<EntityType<MasterPopoEntity>> MASTER_POPO =
+            ENTITY_TYPES.register("master_popo",
+                    () -> EntityType.Builder.of(MasterPopoEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "master_popo").toString()));
 
     public static final RegistryObject<EntityType<Dino1Entity>> DINOSAUR1 =
             ENTITY_TYPES.register("dino1",
