@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainParticles;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -83,6 +84,7 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
                 this.yBodyRot = this.getYRot();
                 this.yHeadRot = this.getYRot();
 
+
                 double speed = this.getAttributeValue(Attributes.FLYING_SPEED) * 0.5D;
                 double verticalSpeed = 0;
 
@@ -128,6 +130,19 @@ public class FlyingNimbusEntity extends Mob implements GeoEntity {
     public double getPassengersRidingOffset() {
         return 0.9D;
     }
+
+	@Override
+	public void positionRider(Entity passenger, MoveFunction callback) {
+		if (this.hasPassenger(passenger)) {
+			double yOffset = this.getPassengersRidingOffset() + passenger.getMyRidingOffset();
+			Vec3 vec3 = (new Vec3(0.0D, 0.0D, 0.0D)).yRot(-this.getYRot() * ((float)Math.PI / 180F) - ((float)Math.PI / 2F));
+			callback.accept(passenger, this.getX() + vec3.x, this.getY() + yOffset, this.getZ() + vec3.z);
+			if (passenger instanceof LivingEntity livingPassenger) {
+				livingPassenger.yBodyRot = this.getYRot();
+				livingPassenger.setYHeadRot(livingPassenger.getYHeadRot());
+			}
+		}
+	}
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {

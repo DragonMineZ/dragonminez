@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.stats.Cooldowns;
@@ -36,7 +37,7 @@ public class RacialSkillLogic {
 				return;
 			}
 
-			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative()) {
+			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative() && !(target instanceof MastersEntity)) {
 				player.displayClientMessage(Component.translatable("message.dragonminez.racial.target_too_strong"), true);
 				return;
 			}
@@ -145,6 +146,7 @@ public class RacialSkillLogic {
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
 		if (!config.isBioAndroidRacialSkill()) return;
+		if (target instanceof MastersEntity) return;
 
 		if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);

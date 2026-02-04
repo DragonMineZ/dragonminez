@@ -596,10 +596,30 @@ public class ConfigManager {
     }
 
     public static List<String> getLoadedRaces() {
+        List<String> races;
         if (SERVER_SYNCED_CHARACTER != null) {
-            return new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet());
+            races = new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet());
+        } else {
+            races = new ArrayList<>(LOADED_RACES);
         }
-        return new ArrayList<>(LOADED_RACES);
+
+        races.sort((r1, r2) -> {
+            int index1 = -1;
+            int index2 = -1;
+
+            for (int i = 0; i < DEFAULT_RACES.length; i++) {
+                if (DEFAULT_RACES[i].equalsIgnoreCase(r1)) index1 = i;
+                if (DEFAULT_RACES[i].equalsIgnoreCase(r2)) index2 = i;
+            }
+
+            if (index1 != -1 && index2 != -1) return Integer.compare(index1, index2);
+            if (index1 != -1) return -1;
+            if (index2 != -1) return 1;
+
+            return r1.compareToIgnoreCase(r2);
+        });
+
+        return races;
     }
 
     public static boolean isRaceLoaded(String raceName) {

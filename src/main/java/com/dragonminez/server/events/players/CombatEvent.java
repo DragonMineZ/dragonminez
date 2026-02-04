@@ -119,26 +119,26 @@ public class CombatEvent {
 							ComboManager.enableTeleportWindow(attacker.getUUID(), victim.getId());
 							attacker.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
 							ComboManager.resetCombo(attacker.getUUID());
-							attackerData.getCooldowns().addCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+							attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 						}
 					} else {
 						ComboManager.resetCombo(attacker.getUUID());
 						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
-						attackerData.getCooldowns().addCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+						attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 					}
 				} else {
 					ComboManager.resetCombo(attacker.getUUID());
-					attackerData.getCooldowns().addCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+					attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
 				}
 
 				double finalDmzDamage;
 				if (currentStamina >= staminaRequired) {
 					finalDmzDamage = dmzDamage;
-					attackerData.getResources().removeStamina(staminaRequired);
+					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
 				} else {
 					double staminaRatio = (double) currentStamina / staminaRequired;
 					finalDmzDamage = dmzDamage * staminaRatio;
-					attackerData.getResources().setCurrentStamina(0);
+					if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
 				}
 
 				if (attackerData.getCharacter().hasActiveForm()) {
@@ -181,8 +181,8 @@ public class CombatEvent {
 							}
 						}
 					}
-					if (isPunchMachine) kiCost = 0;
-					attackerData.getResources().removeEnergy(kiCost);
+
+					if (!attacker.isCreative() || !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 				}
 
 				if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
@@ -193,6 +193,8 @@ public class CombatEvent {
 
 				if (event.getEntity() instanceof PunchMachineEntity punchMachineEntity) {
 					punchMachineEntity.processHit((float) currentDamage[0], attacker);
+					int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
+					attackerData.getResources().addTrainingPoints(baseTps);
 					event.setCanceled(true);
 					event.setAmount(0);
 					return;

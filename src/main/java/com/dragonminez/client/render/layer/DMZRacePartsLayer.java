@@ -123,6 +123,11 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         boolean holdingYajirobe = animatable.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get()
                 || animatable.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
 
+		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+		var stats = statsCap.orElse(new StatsData(animatable));
+
+		if (!stats.getStatus().hasCreatedCharacter()) return;
+
         if (hasYajirobe && !holdingYajirobe) {
             BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
             if (yajirobeModel != null) {

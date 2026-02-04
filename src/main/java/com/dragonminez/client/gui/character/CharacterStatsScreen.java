@@ -121,7 +121,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         int centerY = getUiHeight() / 2;
         int buttonX = 27;
-        int startY = centerY - 3;
+        int startY = centerY - 4;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         int availableTPs = statsData.getResources().getTrainingPoints();
@@ -307,8 +307,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         String characterClass = statsData.getCharacter().getCharacterClass();
         String form = statsData.getCharacter().getActiveForm();
 
-        int labelX = 35;
-        int valueX = 80;
+        int labelX = 30;
+        int valueX = 70;
         int startY = centerY - 72;
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.level").withStyle(style -> style.withBold(true)), labelX, startY, 0xD7FEF5, 0x000000);
@@ -347,7 +347,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
         Component classComponent = Component.translatable("class.dragonminez." + characterClass);
-        drawStringWithBorder2(graphics, classComponent, 80, startY + 33, 0xFFFFFF, 0x000000);
+        drawStringWithBorder2(graphics, classComponent, valueX, startY + 33, 0xFFFFFF, 0x000000);
 
         int statsStartY = centerY - 21;
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 82, statsStartY, 0x68CCFF, 0x000000);
@@ -380,7 +380,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 ? numberFormatter.format((int)modifiedValue) + " x" + String.format(Locale.US, "%.1f", 1.0 + totalMult)
                 : numberFormatter.format(baseValue);
 
-            drawStringWithBorder2(graphics, Component.literal(statText), valueX, yPos, statColor, 0x000000);
+            drawStringWithBorder2(graphics, Component.literal(statText), valueX + 5, yPos, statColor, 0x000000);
 
             if (mouseX >= statLabelX && mouseX <= statLabelX + 25 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
                 List<FormattedCharSequence> tooltip = new ArrayList<>();

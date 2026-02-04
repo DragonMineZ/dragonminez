@@ -354,7 +354,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
             Skill skill = statsData.getSkills().getSkill(skillName);
             String displayName = Component.translatable("skill.dragonminez." + skillName).getString();
 
-            drawCenteredStringWithBorder(graphics, Component.literal(displayName), panelX + 15, itemY + 5, color);
+            drawStringWithBorder(graphics, Component.literal(displayName), panelX + 15, itemY + 5, color);
 
             if (skill != null) {
                 String levelText = String.valueOf(skill.getLevel());
@@ -389,8 +389,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
 		}
 
-		drawStringWithBorder(graphics, Component.translatable(title)
-				.withStyle(style -> style.withBold(true)), 65, getUiHeight() / 2 - 88, 0xFBC51C);
+		drawCenteredStringWithBorder(graphics, Component.translatable(title)
+				.withStyle(style -> style.withBold(true)), 80, getUiHeight() / 2 - 88, 0xFBC51C);
     }
 
     private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
