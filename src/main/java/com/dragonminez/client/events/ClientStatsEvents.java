@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
+import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.config.ConfigManager;
@@ -11,6 +12,7 @@ import com.dragonminez.common.stats.*;
 import com.dragonminez.server.events.players.StatsEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -144,6 +146,22 @@ public class ClientStatsEvents {
 			} else {
 				flightSound = null;
 			}
+
+			boolean hasScouter = player.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
+			if (KeyBinds.KI_SENSE.consumeClick()) {
+				if (!hasScouter) {
+					Skill kiSense = data.getSkills().getSkill("kisense");
+					if (kiSense == null) return;
+					int kiSenseLevel = kiSense.getLevel();
+					if (kiSenseLevel > 0) NetworkHandler.sendToServer(new UpdateSkillC2S("toggle", kiSense.getName(), 0));
+				} else {
+					ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
+				}
+			}
+
+			if (hasScouter) {
+				if (ScouterHUD.getScouterColor() != player.getItemBySlot(EquipmentSlot.HEAD).getItem()) ScouterHUD.setScouterColor(player.getItemBySlot(EquipmentSlot.HEAD).getItem());
+			}
 		});
 	}
 
@@ -176,15 +194,6 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new DashC2S(xInput, zInput, isDoubleDash));
 			}
 			wasDashKeyDown = isDashKeyDown;
-
-			if (KeyBinds.KI_SENSE.consumeClick()) {
-				Skill kiSense = data.getSkills().getSkill("kisense");
-				if (kiSense == null) return;
-				int kiSenseLevel = kiSense.getLevel();
-				if (kiSenseLevel > 0) {
-					NetworkHandler.sendToServer(new UpdateSkillC2S("toggle", kiSense.getName(), 0));
-				}
-			}
 
 			if (KeyBinds.LOCK_ON.consumeClick() && !isStunned) {
 				Skill kiSense = data.getSkills().getSkill("kisense");

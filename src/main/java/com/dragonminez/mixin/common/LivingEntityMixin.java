@@ -19,7 +19,9 @@ public abstract class LivingEntityMixin implements IBattlePower {
 	@Override
 	public int getBattlePower() {
 		if (this.battlePower == 0) {
-			this.battlePower = (int) (this.getMaxHealth() + this.getAttributes().getBaseValue(Attributes.ATTACK_DAMAGE) * 5);
+			double attackDamage = 0;
+			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) attackDamage = this.getAttributes().getValue(Attributes.ATTACK_DAMAGE);
+			this.battlePower = (int) (this.getMaxHealth() + attackDamage * 5);
 		}
 		return this.battlePower;
 	}
