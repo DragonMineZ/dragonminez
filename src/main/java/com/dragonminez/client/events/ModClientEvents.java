@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.crowdin.CrowdinPackResources;
 import com.dragonminez.client.gui.hud.AlternativeHUD;
+import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
@@ -49,6 +50,7 @@ public class ModClientEvents {
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent e) {
 		e.registerAboveAll("xenoversehud", XenoverseHUD.HUD_XENOVERSE);
 		e.registerAboveAll("alternativehud", AlternativeHUD.HUD_ALTERNATIVE);
+		e.registerAboveAll("scouterhud", ScouterHUD.HUD_SCOUTER);
 	}
 
     @SubscribeEvent

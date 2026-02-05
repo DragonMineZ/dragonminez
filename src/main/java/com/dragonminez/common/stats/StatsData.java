@@ -70,6 +70,7 @@ public class StatsData {
     }
 
     public int getBattlePower() {
+		if (status.isAndroidUpgraded()) return Integer.MAX_VALUE;
         int str = stats.getStrength();
 		int skp = stats.getStrikePower();
 		int res = stats.getResistance();
