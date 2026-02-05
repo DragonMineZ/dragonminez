@@ -17,6 +17,8 @@ public class MainParticles {
             PARTICLE_TYPES.register("ki_flash", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> KI_SPLASH =
             PARTICLE_TYPES.register("ki_splash", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> KI_SPLASH_WAVE =
+            PARTICLE_TYPES.register("ki_splash_wave", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> KI_TRAIL =
             PARTICLE_TYPES.register("ki_trail", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> KI_EXPLOSION_FLASH =

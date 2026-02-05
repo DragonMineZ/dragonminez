@@ -49,6 +49,21 @@ public class ModRenderTypes extends RenderType {
                         .setOverlayState(NO_OVERLAY)
                         .createCompositeState(true));
     }
+    public static RenderType getKiLightning(ResourceLocation location) {
+        return RenderType.create("ki_lightning",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                256,
+                false, // No phantom
+                true,  // Sorting (necesario para transparencia)
+                RenderType.CompositeState.builder()
+                        .setTextureState(new RenderStateShard.TextureStateShard(location, false, false))
+                        .setTransparencyState(RenderStateShard.LIGHTNING_TRANSPARENCY)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                        .createCompositeState(false));
+    }
+
 
     public static RenderType glow(ResourceLocation pLocation) {
         return GLOW.apply(pLocation);

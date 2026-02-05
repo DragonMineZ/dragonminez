@@ -9,10 +9,7 @@ import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.FuelGeneratorBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.KikonoStationBlockRenderer;
-import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
-import com.dragonminez.client.init.entities.model.ki.KiLaserExplosion2Model;
-import com.dragonminez.client.init.entities.model.ki.KiLaserExplosionModel;
-import com.dragonminez.client.init.entities.model.ki.KiLaserModel;
+import com.dragonminez.client.init.entities.model.ki.*;
 import com.dragonminez.client.init.entities.renderer.*;
 import com.dragonminez.client.init.entities.renderer.ki.*;
 import com.dragonminez.client.init.entities.renderer.rr.RedRibbonRenderer;
@@ -214,6 +211,7 @@ public class ModClientEvents {
         e.registerLayerDefinition(KiLaserModel.LAYER_LOCATION, KiLaserModel::createBodyLayer);
         e.registerLayerDefinition(KiLaserExplosionModel.LAYER_LOCATION, KiLaserExplosionModel::createBodyLayer);
         e.registerLayerDefinition(KiLaserExplosion2Model.LAYER_LOCATION, KiLaserExplosion2Model::createBodyLayer);
+        e.registerLayerDefinition(KiWaveModel.LAYER_LOCATION, KiWaveModel::createBodyLayer);
 
         e.registerLayerDefinition(KiScytheModel.LAYER_LOCATION, KiScytheModel::createBodyLayer);
         e.registerLayerDefinition(KiBladeModel.LAYER_LOCATION, KiBladeModel::createBodyLayer);
@@ -225,6 +223,7 @@ public class ModClientEvents {
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(MainParticles.KI_FLASH.get(), KiFlashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_SPLASH.get(), KiSplashParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.KI_SPLASH_WAVE.get(), KiSplashWaveParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_TRAIL.get(), KiTrailParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_EXPLOSION_FLASH.get(), KiExplosionFlashParticle.Provider::new);
         event.registerSpriteSet(MainParticles.KI_EXPLOSION_SPLASH.get(), KiExplosionSplashParticle.Provider::new);

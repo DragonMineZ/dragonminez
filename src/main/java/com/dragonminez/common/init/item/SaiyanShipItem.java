@@ -64,20 +64,19 @@ public class SaiyanShipItem extends Item {
 
             wave.setKiDamage(25.0F);
 
-            wave.setKiSpeed(1.2F);
+            wave.setKiSpeed(0.5F);
 
-            wave.setSize(2.5F);
+            wave.setSize(2);
 
-            wave.setColors(0x00AAFF, 0x0000FF);
+            wave.setColors(0x87F9FF, 0x00F3FF);
 
             pLevel.addFreshEntity(wave);
         }
 
-        // Sonido: Un tono (pitch) más bajo (0.5F) hace que suene más grave y poderoso
         pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
                 SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 0.5F);
 
-        pPlayer.getCooldowns().addCooldown(this, 20); // Un poco más de cooldown
+        pPlayer.getCooldowns().addCooldown(this, 20);
 
         return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
     }

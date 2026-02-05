@@ -3,6 +3,7 @@ package com.dragonminez.client.init.entities.renderer.ki;
 import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.init.entities.model.ki.KiLaserModel;
+import com.dragonminez.client.init.entities.model.ki.KiWaveModel;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
@@ -17,19 +18,16 @@ import net.minecraft.resources.ResourceLocation;
 
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
-    // Puedes usar una textura distinta si quieres, o la misma del laser
-    private static final ResourceLocation TEXTURE_WAVE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
-
+    private static final ResourceLocation TEXTURE_WAVE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave.png");
     private static final ResourceLocation TEXTURE_BALL_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1.png");
     private static final ResourceLocation TEXTURE_BALL_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1_border.png");
 
-    private final KiLaserModel laserModel; // Reutilizamos el modelo del tubo
-    private final KiBallPlaneModel ballModel; // Reutilizamos el modelo de la punta
+    private final KiWaveModel waveModel; // <--- CAMBIO AQUÍ
+    private final KiBallPlaneModel ballModel;
 
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
-        // Usamos las mismas capas que el láser porque el modelo geométrico es un cilindro simple
-        this.laserModel = new KiLaserModel(pContext.bakeLayer(KiLaserModel.LAYER_LOCATION));
+        this.waveModel = new KiWaveModel(pContext.bakeLayer(KiWaveModel.LAYER_LOCATION));
         this.ballModel = new KiBallPlaneModel(pContext.bakeLayer(KiBallPlaneModel.LAYER_LOCATION));
     }
 
@@ -39,70 +37,63 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         float SCALE_MULTIPLIER = 16.0F;
         float length = entity.getBeamLength();
-
-        // Obtenemos el tamaño de la entidad (definido como 2.5F en la clase Entity)
-        float width = entity.getSize();
-
         if (length < 0.1F) length = 0.1F;
 
         float visualLength = length * SCALE_MULTIPLIER;
 
+        float baseWidth = entity.getSize();
+        float ageInTicks = entity.tickCount + partialTick;
+
+        float pulse = 1.0F + (float) Math.sin(ageInTicks * 0.2F) * 0.1F;
+
+        float width = baseWidth * pulse;
+
         float yaw = entity.getFixedYaw();
         float pitch = entity.getFixedPitch();
-        float ageInTicks = entity.tickCount + partialTick;
 
         float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
         float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
 
-        // Rotación global
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
-        // Ajuste de altura inicial (Desde donde sale)
         poseStack.translate(0.0D, -0.5D, 0.5D);
 
-        // --- CUERPO DE LA OLA (WAVE BODY) ---
         poseStack.pushPose();
 
-        // Ajustamos la posición vertical relativa al modelo
-        poseStack.translate(0.0D, -45.7D, 0.0D);
+        poseStack.scale(width, width, visualLength);
 
-        // ESCALADO: Aquí está la clave.
-        // width = Ancho y Alto
-        // visualLength = Largo (profundidad)
-        poseStack.scale(12.0f*width, 12.0f*width, visualLength);
+        poseStack.translate(0.0D, -0.05D, 0.0D);
 
-        this.laserModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+        this.waveModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
-        // Render Core
-        VertexConsumer laserCoreBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_WAVE_CORE));
-        this.laserModel.renderToBuffer(poseStack, laserCoreBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 1.0F);
-
-        // Render Borde (Un poco más grande)
         poseStack.pushPose();
-        poseStack.scale(1.1F, 1.1F, 1.0F); // Borde 10% más ancho que el núcleo
-        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_WAVE_CORE));
-        this.laserModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F);
-        poseStack.popPose();
+
+        poseStack.scale(1.05F, 1.05F, 1.0F);
+
+        poseStack.translate(0.0D, -0.5D, -0.001D);
+
+        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_WAVE_CORE));
+        this.waveModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F);
 
         poseStack.popPose();
+        poseStack.popPose();
 
-        // --- PUNTA DE LA OLA (WAVE HEAD/BALL) ---
+
         poseStack.pushPose();
 
-        // Nos movemos al final del recorrido actual
         poseStack.translate(0.0D, 0.0D, length);
 
-        // Billboard Effect (Mirar a cámara)
         poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
         poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
         poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
 
-        // Escala de la bola final. Debe ser proporcional al ancho de la ola.
-        float endBallScale = width * 0.8F; // La bola es casi tan grande como el ancho del rayo
+        float endBallScale = width * 1.5F;
 
         poseStack.scale(endBallScale, endBallScale, endBallScale);
+
+        poseStack.translate(0.0D, -0.2D, 0.1D);
 
         renderBall(entity, poseStack, buffer, ageInTicks, auraColor, borderColor, 1.0F);
 
@@ -110,7 +101,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         poseStack.popPose();
     }
-
 
     private void renderBall(KiWaveEntity entity, PoseStack poseStack, MultiBufferSource buffer, float ageInTicks, float[] auraColor, float[] borderColor, float alpha) {
         this.ballModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);

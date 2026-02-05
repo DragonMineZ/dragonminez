@@ -172,8 +172,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
 
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
-        //Aca son 0.25 segundos
-        int hitInterval = 5;
+        int hitInterval = 10;
 
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
@@ -197,6 +196,26 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
                 if (wasHurt) {
                     target.invulnerableTime = hitInterval;
+
+                    if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+
+                        double colorData = (double) this.getColor();
+                        double sizeData = (double) this.getSize();
+
+                        double pX = target.getX();
+                        double pY = target.getY() + (target.getBbHeight() / 2.0);
+                        double pZ = target.getZ();
+
+                        serverLevel.sendParticles(
+                                MainParticles.KI_SPLASH_WAVE.get(),
+                                pX, pY, pZ,
+                                0,
+                                colorData,
+                                sizeData,
+                                0.0D,
+                                1.0D
+                        );
+                    }
                 }
             }
         }

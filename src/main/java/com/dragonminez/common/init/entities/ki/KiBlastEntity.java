@@ -8,6 +8,7 @@ import com.dragonminez.common.init.MainSounds;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -110,16 +111,39 @@ public class KiBlastEntity extends AbstractKiProjectile {
 	}
 
 
-	@Override
-	protected void onHitEntity(EntityHitResult pResult) {
-		super.onHitEntity(pResult);
-		if (!this.level().isClientSide) {
-			if (this.shouldDamage(pResult.getEntity())) {
-				pResult.getEntity().hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
-			}
-			explodeAndDie();
-		}
-	}
+    @Override
+    protected void onHitEntity(EntityHitResult pResult) {
+        super.onHitEntity(pResult);
+
+        if (!this.level().isClientSide) {
+            Entity targetEntity = pResult.getEntity();
+
+            if (this.shouldDamage(targetEntity)) {
+                boolean wasHurt = targetEntity.hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
+
+                if (wasHurt && this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+
+                    double colorData = (double) this.getColorBorde();
+                    double sizeData = (double) this.getSize();
+
+                    double pX = targetEntity.getX();
+                    double pY = targetEntity.getY() + (targetEntity.getBbHeight() / 2.0);
+                    double pZ = targetEntity.getZ();
+
+                    serverLevel.sendParticles(
+                            MainParticles.KI_SPLASH_WAVE.get(),
+                            pX, pY, pZ,
+                            0,
+                            colorData,
+                            sizeData,
+                            0.0D,
+                            1.0D
+                    );
+                }
+            }
+            explodeAndDie();
+        }
+    }
 
 	@Override
 	protected void onHitBlock(BlockHitResult pResult) {

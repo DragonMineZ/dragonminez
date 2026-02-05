@@ -26,7 +26,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Float> FIXED_YAW = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> FIXED_PITCH = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
 
-    private static final float MAX_RANGE = 200.0F;
+    private static final float MAX_RANGE = 300.0F;
 
     public KiWaveEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -47,18 +47,18 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setXRot(owner.getXRot());
 
         Vec3 look = owner.getLookAngle();
-        Vec3 startPos = owner.getEyePosition().add(look.scale(0.8)); // Sale un poco más adelante
+        Vec3 startPos = owner.getEyePosition().add(look.scale(0.4));
         this.setPos(startPos.x, startPos.y, startPos.z);
 
         this.setKiSpeed(1.2F);
-        this.setSize(2.5F);
+        this.setSize(1.0F);
 
         level.playSound(
                 null,
                 owner.getX(),
                 owner.getY(),
                 owner.getZ(),
-                MainSounds.KI_LASER.get(),
+                MainSounds.KI_KAME_FIRE.get(),
                 SoundSource.PLAYERS,
                 0.5F,
                 0.8F + (this.random.nextFloat() * 0.2F)
@@ -119,15 +119,38 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
             damageEntitiesInBeam(startPos, dir, targetLen);
 
-            if (this.tickCount > 100) { // Duración de la ola
+            if (this.tickCount > 100) {
                 this.discard();
             }
         }
         else {
             spawnWaveParticles();
+            spawnOriginSplash();
         }
 
+
         this.onKiTick();
+    }
+
+
+    private void spawnOriginSplash() {
+        if (this.tickCount % 5 == 0) {
+
+            double colorInt = (double) this.getColorBorde();
+            double mySize = (double) this.getSize();
+
+            double x = this.getX();
+            double y = this.getY();
+            double z = this.getZ();
+
+            this.level().addParticle(
+                    MainParticles.KI_SPLASH_WAVE.get(),
+                    x, y, z,
+                    colorInt,
+                    mySize,
+                    0.0D
+            );
+        }
     }
 
     private void spawnWaveParticles() {
@@ -142,7 +165,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (length > 1.0F) {
             for(int i=0; i<2; i++) {
                 double dist = this.random.nextDouble() * length;
-                double spread = 0.5D; // Más dispersión
+                double spread = 0.5D;
                 Vec3 pos = startPos.add(dir.scale(dist)).add(
                         (this.random.nextDouble() - 0.5) * spread,
                         (this.random.nextDouble() - 0.5) * spread,
@@ -156,19 +179,20 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
     }
 
+
     private void damageEntitiesInBeam(Vec3 start, Vec3 dir, float length) {
         Vec3 end = start.add(dir.scale(length));
-        double searchRadius = this.getSize() * 0.8; // Radio de búsqueda más generoso
+        double searchRadius = this.getSize() * 0.8;
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
 
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
-        int hitInterval = 4; // Golpea un poco más rápido que el láser
+        int hitInterval = 20;
 
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.invulnerableTime > 10) continue;
 
-            float hitPrecision = this.getSize() / 2.0F; // Hitbox más grande
+            float hitPrecision = this.getSize() / 2.0F;
             AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
 
             var hit = targetBox.clip(start, end);
@@ -180,8 +204,30 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 target.invulnerableTime = 0;
                 boolean wasHurt = target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), damagePerHit);
+
                 if (wasHurt) {
                     target.invulnerableTime = hitInterval;
+
+                    if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+
+                        double colorData = (double) this.getColorBorde();
+                        double sizeData = (double) this.getSize();
+
+                        double pX = target.getX();
+                        double pY = target.getY() + (target.getBbHeight() / 2.0);
+                        double pZ = target.getZ();
+
+                        serverLevel.sendParticles(
+                                MainParticles.KI_SPLASH_WAVE.get(),
+                                pX, pY, pZ,
+                                0,
+                                colorData,
+                                sizeData,
+                                0.0D,
+                                1.0D
+                        );
+                    }
+
                 }
             }
         }

@@ -329,6 +329,18 @@
       "dragonminez:absorb2"
     ]
   },
+  "ki_kame_charge": {
+    "subtitle": "sounds.dragonminez.ki_kame_charge",
+    "sounds": [
+      "dragonminez:ki_kame_charge"
+    ]
+  },
+  "ki_kame_fire": {
+    "subtitle": "sounds.dragonminez.ki_kame_fire",
+    "sounds": [
+      "dragonminez:ki_kame_fire"
+    ]
+  },
   "switch_off": {
     "subtitle": "sounds.dragonminez.switch_off",
     "sounds": [

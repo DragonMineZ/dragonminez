@@ -11,11 +11,11 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
-public class KiLaserModel<T extends Entity> extends EntityModel<T> {
-    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "tech"), "ki_laser");
+public class KiWaveModel<T extends Entity> extends EntityModel<T> {
+    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "tech"), "ki_wave");
 	private final ModelPart kiball;
 
-	public KiLaserModel(ModelPart root) {
+	public KiWaveModel(ModelPart root) {
 		this.kiball = root.getChild("kiball");
 	}
 
@@ -23,14 +23,14 @@ public class KiLaserModel<T extends Entity> extends EntityModel<T> {
 		MeshDefinition meshdefinition = new MeshDefinition();
 		PartDefinition partdefinition = meshdefinition.getRoot();
 
-		PartDefinition kiball = partdefinition.addOrReplaceChild("kiball", CubeListBuilder.create().texOffs(15, 15).addBox(-0.5F, -0.5F, -0.5F, 1.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(-0.5F, 23.5F, 0.5F));
+		PartDefinition kiball = partdefinition.addOrReplaceChild("kiball", CubeListBuilder.create().texOffs(0, 0).addBox(-8.0F, -8.0F, -0.5F, 16.0F, 16.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 16.0F, 0.5F));
 
 		return LayerDefinition.create(meshdefinition, 64, 64);
 	}
 
 	@Override
 	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        float speed = 5.5F;
+        float speed = 15.5F;
         this.kiball.zRot = ageInTicks * speed;
 	}
 
