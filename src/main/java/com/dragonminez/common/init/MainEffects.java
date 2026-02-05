@@ -22,6 +22,7 @@ public class MainEffects {
 	// Placeholders, info for the player | Neutral
 	public static final RegistryObject<MobEffect> DASH_CD = EFFECTS.register("dash_cd", DMZEffect::new);
 	public static final RegistryObject<MobEffect> DOUBLEDASH_CD = EFFECTS.register("doubledash_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> FUSED = EFFECTS.register("fused", DMZEffect::new);
 
 	// Status Effects | Beneficial
 	public static final RegistryObject<MobEffect> KICHARGE = EFFECTS.register("kicharge", () -> new DMZEffect(true));

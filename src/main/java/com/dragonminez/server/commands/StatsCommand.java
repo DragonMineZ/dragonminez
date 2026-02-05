@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.util.FusionLogic;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -148,15 +149,19 @@ public class StatsCommand {
 				stats.setVitality(5);
 				stats.setKiPower(5);
 				stats.setEnergy(5);
-				data.getStatus().setCreatedCharacter(false);
+				if (data.getStatus().isFused()) FusionLogic.endFusion(player, data, false);
 				data.getResources().setTrainingPoints(0);
 				data.getResources().setRacialSkillCount(0);
 				data.getResources().setPowerRelease(0);
+				data.getStatus().setActiveKaiokenPhase(0);
+				data.getStatus().setAndroidUpgraded(false);
+				data.getStatus().setInKaioPlanet(false);
 				data.getSkills().removeAllSkills();
 				data.getEffects().removeAllEffects();
 				data.getCooldowns().clearCooldowns();
 				data.getBonusStats().clearAllStats();
 				data.getCharacter().clearActiveForm();
+				data.getStatus().setCreatedCharacter(false);
 
 				player.setHealth(20.0F);
 				player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);

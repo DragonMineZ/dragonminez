@@ -46,7 +46,7 @@ public class GeneralServerConfig {
         private double mightFruitPower = 1.2;
         private double majinPower = 1.3;
 		private double metamoruFusionThreshold = 0.5;
-		private int fusionDurationSeconds = 300;
+		private int fusionDurationSeconds = 900;
 		private int fusionCooldownSeconds = 1800;
 
 		public int getReviveCooldownSeconds() { return Math.max(0, reviveCooldownSeconds); }
