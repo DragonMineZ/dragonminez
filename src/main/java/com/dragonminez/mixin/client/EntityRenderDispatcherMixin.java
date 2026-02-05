@@ -2,16 +2,14 @@ package com.dragonminez.mixin.client;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.client.model.PlayerDMZModel;
-import com.dragonminez.client.render.PlayerDMZRenderer;
-import com.dragonminez.client.render.firstperson.PlayerDMZPOVRenderer;
+import com.dragonminez.client.model.DMZPlayerModel;
+import com.dragonminez.client.render.DMZPlayerRenderer;
+import com.dragonminez.client.render.firstperson.DMZPOVPlayerRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -19,7 +17,6 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -103,13 +100,13 @@ public abstract class EntityRenderDispatcherMixin {
         String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
 
         try {
-            PlayerDMZModel model = new PlayerDMZModel<>(race, customModel);
-            if (pov) return new PlayerDMZPOVRenderer(ctx, model);
-            return new PlayerDMZRenderer(ctx, model);
+            DMZPlayerModel model = new DMZPlayerModel<>(race, customModel);
+            if (pov) return new DMZPOVPlayerRenderer(ctx, model);
+            return new DMZPlayerRenderer(ctx, model);
         } catch (Exception e) {
             LogUtil.error(Env.CLIENT, "Error creando renderizador para: " + race + " (pov=" + pov + ")");
-            PlayerDMZModel fallbackModel = new PlayerDMZModel<>("human", "");
-            return pov ? new PlayerDMZPOVRenderer(ctx, fallbackModel) : new PlayerDMZRenderer(ctx, fallbackModel);
+            DMZPlayerModel fallbackModel = new DMZPlayerModel<>("human", "");
+            return pov ? new DMZPOVPlayerRenderer(ctx, fallbackModel) : new DMZPlayerRenderer(ctx, fallbackModel);
         }
     }
 }

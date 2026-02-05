@@ -1,7 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.render.PlayerDMZRenderer;
+import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
@@ -65,7 +65,7 @@ public class AuraRenderHandler {
             var player = entry.player();
             EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
 
-            if (genericRenderer instanceof PlayerDMZRenderer renderer) {
+            if (genericRenderer instanceof DMZPlayerRenderer renderer) {
                 BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
                 if (weaponModel == null) continue;
 
@@ -165,7 +165,7 @@ public class AuraRenderHandler {
         if (!(player instanceof GeoAnimatable animatable)) return;
 
         EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")PlayerDMZRenderer renderer)) return;
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
 
         BakedGeoModel sparkModel = renderer.getGeoModel().getBakedModel(SPARK_MODEL);
         if (sparkModel == null) return;
@@ -200,7 +200,7 @@ public class AuraRenderHandler {
         if (!(player instanceof GeoAnimatable animatable)) return;
 
         EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")PlayerDMZRenderer renderer)) return;
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
 
         BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
         if (auraModel == null) return;

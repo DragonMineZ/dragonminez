@@ -4,7 +4,6 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.util.RenderUtil;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
@@ -21,7 +20,7 @@ import software.bernie.geckolib.model.data.EntityModelData;
 
 import java.util.Objects;
 
-public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
+public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> extends GeoModel<T> {
 
     private static final ResourceLocation BASE_DEFAULT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human.geo.json");
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
@@ -33,7 +32,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private final String raceName;
     private final String customModel;
 
-    public PlayerDMZModel(String raceName, String customModel) {
+    public DMZPlayerModel(String raceName, String customModel) {
         this.raceName = raceName.toLowerCase();
         this.customModel = customModel;
 
@@ -41,7 +40,7 @@ public class PlayerDMZModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         this.animationLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/base.animation.json");
     }
 
-    public PlayerDMZModel() {
+    public DMZPlayerModel() {
         this("human", "");
     }
 

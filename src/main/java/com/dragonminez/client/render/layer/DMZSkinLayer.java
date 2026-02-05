@@ -33,6 +33,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
     private static final Map<ResourceLocation, Boolean> TEXTURE_CACHE = new HashMap<>();
 
+    private int currentKaiokenPhase = 0;
+
     public DMZSkinLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
@@ -46,13 +48,16 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
         var stats = statsCap.orElse(new StatsData(player));
 
+        this.currentKaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
+
         renderBody(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
 
         renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
 
+        renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
+
         renderTattoos(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
 
-        renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
     }
 
     private void renderBody(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
@@ -299,6 +304,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 
     private void renderTattoos(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+
         if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
             ResourceLocation majinMarkLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/majinm.png");
             if (textureExists(majinMarkLoc)) {
@@ -314,6 +320,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(tattooLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
         }
     }
+
 
     private void renderFace(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
         var character = stats.getCharacter();
@@ -440,11 +447,26 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "_mouth_" + character.getMouthType() + ".png", skinTint, pt, pl, po);
     }
 
-    private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay) {
+    private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {
+
+        if (this.currentKaiokenPhase > 0) {
+            float intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
+
+            r = r * (1.0f - intensity) + (1.0f * intensity);
+            g = g * (1.0f - intensity);
+            b = b * (1.0f - intensity);
+        }
+
         poseStack.pushPose();
         if (scaleInflation > 1.0f) poseStack.scale(scaleInflation, scaleInflation, scaleInflation);
-        getRenderer().reRender(model, poseStack, bufferSource, animatable, renderType, bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay, r, g, b, 1.0f);
+
+        getRenderer().reRender(model, poseStack, bufferSource, animatable, renderType, bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay, r, g, b, alpha);
+
         poseStack.popPose();
+    }
+
+    private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay) {
+        renderLayerWholeModel(model, poseStack, bufferSource, animatable, renderType, r, g, b, scaleInflation, partialTick, packedLight, packedOverlay, 1.0F);
     }
 
     private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay) {

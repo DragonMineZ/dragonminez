@@ -75,10 +75,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             syncModelToPlayer(partsModel, playerModel);
             RenderType partsRenderType = RenderType.entityCutoutNoCull(RACES_PARTS_TEXTURE);
 
+            int phase = stats.getStatus().getActiveKaiokenPhase();
+            float[] tintedColor = applyKaiokenTint(renderColor[0], renderColor[1], renderColor[2], phase);
+
             poseStack.pushPose();
             getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
                     bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-                    renderColor[0], renderColor[1], renderColor[2], 1.0f);
+                    tintedColor[0], tintedColor[1], tintedColor[2], 1.0f);
             poseStack.popPose();
         }
     }
@@ -311,5 +314,17 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         for (GeoBone child : bone.getChildBones()) {
             setHiddenRecursive(child, hidden);
         }
+    }
+
+    private float[] applyKaiokenTint(float r, float g, float b, int phase) {
+        if (phase <= 0) return new float[]{r, g, b};
+
+        float intensity = Math.min(0.6f, phase * 0.1f);
+
+        float newR = r * (1.0f - intensity) + (1.0f * intensity);
+        float newG = g * (1.0f - intensity);
+        float newB = b * (1.0f - intensity);
+
+        return new float[]{newR, newG, newB};
     }
 }

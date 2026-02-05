@@ -1,6 +1,6 @@
 package com.dragonminez.client.render.firstperson;
 
-import com.dragonminez.client.render.PlayerDMZRenderer;
+import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -20,8 +20,8 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
 
-public class PlayerDMZPOVRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends PlayerDMZRenderer<T> {
-    public PlayerDMZPOVRenderer(EntityRendererProvider.Context renderManager, GeoModel model) {
+public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends DMZPlayerRenderer<T> {
+    public DMZPOVPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel model) {
         super(renderManager, model);
     }
 

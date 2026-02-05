@@ -2,7 +2,6 @@ package com.dragonminez.client.render;
 
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
-import com.dragonminez.client.render.firstperson.dto.FirstPersonListener;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -22,9 +21,9 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 import java.util.Objects;
 
-public class PlayerDMZRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
+public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
-    public PlayerDMZRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
+    public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
         super(renderManager, model);
 
         this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
