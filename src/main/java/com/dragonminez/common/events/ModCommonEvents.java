@@ -97,6 +97,7 @@ public class ModCommonEvents {
         event.put(MainEntities.FLYING_NIMUS.get(), FlyingNimbusEntity.createAttributes());
         event.put(MainEntities.ROBOT_XENOVERSE.get(), RobotEntity.createAttributes().build());
         event.put(MainEntities.PUNCH_MACHINE.get(), PunchMachineEntity.createAttributes().build());
+        event.put(MainEntities.MAJIN_SKILL.get(), MajinSkillEntity.createAttributes().build());
 
     }
 

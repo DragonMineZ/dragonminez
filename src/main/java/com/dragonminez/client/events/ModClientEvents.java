@@ -203,6 +203,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPSkillsRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_LASER.get(), KiLaserRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_WAVE.get(), KiWaveRenderer::new);
+        event.registerEntityRenderer(MainEntities.MAJIN_SKILL.get(), MajinSkillRenderer::new);
 
     }
 

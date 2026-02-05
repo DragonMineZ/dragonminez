@@ -2,6 +2,7 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.FlyingNimbusEntity;
+import com.dragonminez.common.init.entities.MajinSkillEntity;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.dragon.PorungaEntity;
 import com.dragonminez.common.init.entities.dragon.ShenronEntity;
@@ -186,6 +187,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(PunchMachineEntity::new, MobCategory.CREATURE)
                             .sized(1.5f, 1.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "punch_machine").toString()));
+    public static final RegistryObject<EntityType<MajinSkillEntity>> MAJIN_SKILL =
+            ENTITY_TYPES.register("majin_skill",
+                    () -> EntityType.Builder.of(MajinSkillEntity::new, MobCategory.CREATURE)
+                            .sized(0.5f, 0.5f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "majin_skill").toString()));
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",
