@@ -496,7 +496,7 @@ public class CombatEvent {
 					data.getStatus().setLastHurtTime(0);
 
 					player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
-							MainSounds.PARRY.get(),
+							MainSounds.EVASION1.get(),
 							SoundSource.PLAYERS,
 							1.0F,
 							1.2F + player.getRandom().nextFloat() * 0.2F);
@@ -547,6 +547,18 @@ public class CombatEvent {
 			Vec3 velocity = direction.scale(distance * 0.3);
 			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
 			player.hurtMarked = true;
+
+            if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                serverLevel.sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.EXPLOSION,
+                        player.getX(), player.getY() + 0.5, player.getZ(),
+                        1,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                );
+            }
 
 			int dashCdSeconds = ConfigManager.getServerConfig().getCombat().getDashCooldownSeconds();
 			int doubleDashCdSeconds = ConfigManager.getServerConfig().getCombat().getDoubleDashCooldownSeconds();
