@@ -353,6 +353,36 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaKingColdEntity::new, MobCategory.MONSTER)
                             .sized(0.9f, 2.4f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_king_cold").toString()));
+    public static final RegistryObject<EntityType<SagaGokuYardratEntity>> SAGA_GOKU_YARDRAT =
+            ENTITY_TYPES.register("saga_goku_yardrat",
+                    () -> EntityType.Builder.of(SagaGokuYardratEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_yardrat").toString()));
+    public static final RegistryObject<EntityType<SagaDrGeroEntity>> SAGA_DRGERO =
+            ENTITY_TYPES.register("saga_drgero",
+                    () -> EntityType.Builder.of(SagaDrGeroEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_drgero").toString()));
+    public static final RegistryObject<EntityType<SagaA19Entity>> SAGA_A19 =
+            ENTITY_TYPES.register("saga_a19",
+                    () -> EntityType.Builder.of(SagaA19Entity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a19").toString()));
+    public static final RegistryObject<EntityType<SagaA18Entity>> SAGA_A18 =
+            ENTITY_TYPES.register("saga_a18",
+                    () -> EntityType.Builder.of(SagaA18Entity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a18").toString()));
+    public static final RegistryObject<EntityType<SagaA17Entity>> SAGA_A17 =
+            ENTITY_TYPES.register("saga_a17",
+                    () -> EntityType.Builder.of(SagaA17Entity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a17").toString()));
+    public static final RegistryObject<EntityType<SagaA16Entity>> SAGA_A16 =
+            ENTITY_TYPES.register("saga_a16",
+                    () -> EntityType.Builder.of(SagaA16Entity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 2.2f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a16").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)

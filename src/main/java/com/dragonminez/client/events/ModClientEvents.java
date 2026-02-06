@@ -174,6 +174,12 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_FREEZER_FP.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_MECHA_FRIEZA.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_KING_COLD.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_GOKU_YARDRAT.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_DRGERO.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_A19.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_A18.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_A17.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_A16.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
