@@ -134,7 +134,7 @@ dependencies {
     implementation("org.apache.commons:commons-compress:1.27.1")
 
     // GeckoLib & Terrablender
-    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.2"))
+    implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
 
