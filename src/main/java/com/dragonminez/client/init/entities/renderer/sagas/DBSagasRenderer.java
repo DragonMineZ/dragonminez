@@ -3,6 +3,7 @@ package com.dragonminez.client.init.entities.renderer.sagas;
 import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.MasterGlobalModel;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.DBSagasAuraLayer;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.sagas.*;
 import com.dragonminez.common.quest.Saga;
@@ -22,6 +23,8 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSagaModel<>());
         this.shadowRadius = 0.4f;
+
+        addRenderLayer(new DBSagasAuraLayer<>(this));
     }
 
     @Override

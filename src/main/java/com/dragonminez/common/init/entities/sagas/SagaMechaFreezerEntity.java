@@ -1,15 +1,10 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.entities.IBattlePower;
-import com.dragonminez.common.init.entities.ki.KiLaserEntity;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
@@ -17,19 +12,20 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class SagaFreezer1stEntity extends DBSagasEntity{
+public class SagaMechaFreezerEntity extends DBSagasEntity {
 
-    private static final int SKILL_LASER = 1;
+    private static final int SKILL_LASER_COMBO = 1;
+    private static final int SKILL_DEATH_BALL = 2;
 
     private int kiLaserCooldown = 0;
+    private int kiBlastCooldown = 0;
 
-    public SagaFreezer1stEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+    public SagaMechaFreezerEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 		if (this instanceof IBattlePower bp) {
-			bp.setBattlePower(530000);
+            bp.setBattlePower(140000000);
 		}
     }
-
     @Override
     public void tick() {
         super.tick();
@@ -40,12 +36,22 @@ public class SagaFreezer1stEntity extends DBSagasEntity{
 
         if (!this.level().isClientSide) {
             if (this.kiLaserCooldown > 0) this.kiLaserCooldown--;
+            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
 
             if (target != null && target.isAlive() && !this.isCasting()) {
+
+                if (this.teleportCooldown <= 0) {
+                    performTeleport(target);
+                    return;
+                }
+
                 double distSqr = this.distanceToSqr(target);
 
-                if (this.kiLaserCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_LASER);
+                if (distSqr > 120.0D && this.kiBlastCooldown <= 0) {
+                    startCasting(SKILL_DEATH_BALL);
+                }
+                else if (distSqr > 100.0D && this.kiLaserCooldown <= 0) {
+                    startCasting(SKILL_LASER_COMBO);
                 }
             }
 
@@ -55,13 +61,29 @@ public class SagaFreezer1stEntity extends DBSagasEntity{
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
 
-                    if (getSkillType() == SKILL_LASER) {
-                        if (this.castTimer >= 20) {
+                    int currentSkill = getSkillType();
+
+                    if (currentSkill == SKILL_LASER_COMBO) {
+                        if (this.castTimer == 20 || this.castTimer == 40 || this.castTimer == 60) {
                             shootGenericKiLaser(
                                     target,
-                                    1.5F,
-                                    0xF157FF,
-                                    0x850491
+                                    2.3F,
+                                    0xBA1616,
+                                    0x850707
+                            );
+                        }
+                        if (this.castTimer >= 60) {
+                            stopCasting();
+                        }
+                    }
+                    else if (currentSkill == SKILL_DEATH_BALL) {
+                        if (this.castTimer >= 20) {
+                            shootGenericKiBlast(
+                                    target,
+                                    2.5F,
+                                    0x8A2FCC,
+                                    0x5D1294,
+                                    1.5F
                             );
                             stopCasting();
                         }
@@ -75,9 +97,14 @@ public class SagaFreezer1stEntity extends DBSagasEntity{
 
     @Override
     public void stopCasting() {
-        if (getSkillType() == SKILL_LASER) {
+        int usedSkill = getSkillType();
+
+        if (usedSkill == SKILL_LASER_COMBO) {
             this.kiLaserCooldown = 10 * 20;
+        } else if (usedSkill == SKILL_DEATH_BALL) {
+            this.kiBlastCooldown = 20 * 20;
         }
+
         super.stopCasting();
     }
 
@@ -89,16 +116,17 @@ public class SagaFreezer1stEntity extends DBSagasEntity{
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-        event.getController().setAnimation(RawAnimation.begin().thenLoop("tail"));
-        return PlayState.CONTINUE;
+        return event.setAndContinue(RawAnimation.begin().thenLoop("tail"));
     }
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isCasting()) {
-            int skill = getSkillType();
+            int currentSkill = getSkillType();
 
-            if (skill == SKILL_LASER) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiattack"));
+            if (currentSkill == SKILL_LASER_COMBO) {
+                return event.setAndContinue(RawAnimation.begin().thenPlay("kilaser"));
+            } else if (currentSkill == SKILL_DEATH_BALL) {
+                return event.setAndContinue(RawAnimation.begin().thenPlay("kiball"));
             }
         }
         event.getController().forceAnimationReset();

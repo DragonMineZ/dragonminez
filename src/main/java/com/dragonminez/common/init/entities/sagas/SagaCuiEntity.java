@@ -21,8 +21,9 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaCuiEntity extends DBSagasEntity {
 
+    private static final int SKILL_VOLLEY = 1;
+
     private int kiVolleyCooldown = 0;
-    private int castTimer = 0;
 
     public SagaCuiEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -30,63 +31,46 @@ public class SagaCuiEntity extends DBSagasEntity {
 			bp.setBattlePower(18000);
 		}
     }
-
     @Override
     public void tick() {
         super.tick();
 
         LivingEntity target = this.getTarget();
 
-        if (target != null && target.isAlive()) {
-            if (this.isFlying() || this.isCasting()) {
-                rotateBodyToTarget(target);
-            }
-        }
+        handleCommonCombatMovement(target, this.isCasting(), true);
 
         if (!this.level().isClientSide) {
             if (this.kiVolleyCooldown > 0) this.kiVolleyCooldown--;
 
-            if (target != null && target.isAlive()) {
-                double yDiff = target.getY() - this.getY();
-                if (yDiff > 2.0D) {
-                    if (!isFlying()) setFlying(true);
-                } else if (yDiff <= 1.0D && this.onGround()) {
-                    if (isFlying()) {
-                        setFlying(false);
-                        this.setNoGravity(false);
-                    }
-                }
-            } else {
-                if (this.onGround() && isFlying()) {
-                    setFlying(false);
-                    this.setNoGravity(false);
-                }
-            }
+            if (target != null && target.isAlive() && !this.isCasting()) {
+                double distSqr = this.distanceToSqr(target);
+                double distancePlayer = 100.0D;
 
-            if (this.isFlying()) {
-                this.setNoGravity(true);
-                if (target != null) {
-                    moveTowardsTargetInAir(target);
-                } else {
-                    this.setDeltaMovement(this.getDeltaMovement().add(0, -0.03D, 0));
+                if (this.kiVolleyCooldown <= 0 && distSqr > distancePlayer) {
+                    startCasting(SKILL_VOLLEY);
                 }
-            } else {
-                this.setNoGravity(false);
-            }
-
-            var distancePlayer = 10.0D;
-            if (target != null && target.isAlive() && this.kiVolleyCooldown <= 0 &&
-                    this.distanceToSqr(target) > distancePlayer && !this.isCasting()) {
-                startCasting();
             }
 
             if (this.isCasting()) {
                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
+
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
-                    if (this.castTimer >= 50) {
-                        performVolleyAttack(target);
-                        stopCasting();
+
+                    if (getSkillType() == SKILL_VOLLEY) {
+                        if (this.castTimer > 15 && this.castTimer < 55 && this.castTimer % 4 == 0) {
+
+                            shootGenericKiVolley(
+                                    target,
+                                    1.0f,
+                                    0xFF8FFF,
+                                    0xC069FF
+                            );
+                        }
+
+                        if (this.castTimer >= 60) {
+                            stopCasting();
+                        }
                     }
                 } else {
                     stopCasting();
@@ -95,70 +79,30 @@ public class SagaCuiEntity extends DBSagasEntity {
         }
     }
 
-    private void performVolleyAttack(LivingEntity target) {
-        KiVolleyEntity.shootVolley(
-                this,
-                target,
-                this.getKiBlastSpeed(),
-                this.getKiBlastDamage(),
-                0xFF8FFF,
-                0xC069FF
-        );
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                MainSounds.KIBLAST_ATTACK.get(), SoundSource.HOSTILE, 1.0F, 1.5F);
-    }
-    private void rotateBodyToTarget(LivingEntity target) {
-        double d0 = target.getX() - this.getX();
-        double d2 = target.getZ() - this.getZ();
-        float targetYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
-        this.setYRot(targetYaw);
-        this.setYBodyRot(targetYaw);
-        this.setYHeadRot(targetYaw);
-        this.yRotO = targetYaw;
-        this.yBodyRotO = targetYaw;
-        this.yHeadRotO = targetYaw;
-    }
+    @Override
+    public void stopCasting() {
+        int usedSkill = getSkillType();
 
-    private void startCasting() {
-        this.setCasting(true);
-        this.castTimer = 0;
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
-        this.getNavigation().stop();
-        this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
+        if (usedSkill == SKILL_VOLLEY) {
+            this.kiVolleyCooldown = 10 * 20;
+        }
+
+        super.stopCasting();
     }
-
-    private void stopCasting() {
-        this.setCasting(false);
-        this.castTimer = 0;
-        this.kiVolleyCooldown = 10 * 20;
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
-    }
-
-    private void moveTowardsTargetInAir(LivingEntity target) {
-        if (this.isCasting()) return;
-        double flyspeed = this.getFlySpeed();
-        double dx = target.getX() - this.getX();
-        double dy = (target.getY() + 1.0D) - this.getY();
-        double dz = target.getZ() - this.getZ();
-        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        if (distance < 1.0) return;
-        Vec3 movement = new Vec3(dx / distance * flyspeed, dy / distance * flyspeed, dz / distance * flyspeed);
-        double gravityDrag = (dy < -0.5) ? -0.05D : -0.03D;
-        this.setDeltaMovement(movement.add(0, gravityDrag, 0));
-    }
-
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
         super.registerControllers(controllers);
+        controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
     }
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isCasting()) {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("kiwave"));
-            return PlayState.CONTINUE;
+            int skill = getSkillType();
+
+            if (skill == SKILL_VOLLEY) {
+                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+            }
         }
         event.getController().forceAnimationReset();
         return PlayState.STOP;

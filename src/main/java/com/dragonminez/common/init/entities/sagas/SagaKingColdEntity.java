@@ -2,12 +2,11 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.IBattlePower;
-import com.dragonminez.common.init.entities.ki.KiVolleyEntity;
-import net.minecraft.sounds.SoundSource;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
@@ -19,39 +18,37 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class SagaVegetaNamekEntity extends DBSagasEntity {
+public class SagaKingColdEntity extends DBSagasEntity {
 
-    private static final int SKILL_VOLLEY = 1;
+    private int kiBlastCooldown = 0;
 
-    private int kiVolleyCooldown = 0;
-
-    public SagaVegetaNamekEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+    public SagaKingColdEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-		if (this instanceof IBattlePower bp) {
-			if (this.getName().toString().contains("ginyu") || this.getName().toString().contains("goku")) {
-				bp.setBattlePower(23000);
-			} else {
-				bp.setBattlePower(24000);
-			}
-		}
+        if (this instanceof IBattlePower bp) {
+            bp.setBattlePower(80000000);
+        }
     }
 
     @Override
     public void tick() {
         super.tick();
-
         LivingEntity target = this.getTarget();
 
         handleCommonCombatMovement(target, this.isCasting(), true);
 
         if (!this.level().isClientSide) {
-            if (this.kiVolleyCooldown > 0) this.kiVolleyCooldown--;
+            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
 
             if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
 
-                if (this.kiVolleyCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_VOLLEY);
+                if (this.teleportCooldown <= 0) {
+                    performTeleport(target);
+                    return;
+                }
+
+                double distSqr = this.distanceToSqr(target);
+                if (distSqr > 120.0D && this.kiBlastCooldown <= 0) {
+                    startCasting(2);
                 }
             }
 
@@ -61,18 +58,9 @@ public class SagaVegetaNamekEntity extends DBSagasEntity {
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
 
-                    if (getSkillType() == SKILL_VOLLEY) {
-                        if (this.castTimer > 15 && this.castTimer < 55 && this.castTimer % 4 == 0) {
-
-                            shootGenericKiVolley(
-                                    target,
-                                    1.2f,
-                                    0x94F4FF,
-                                    0x3FE9FC
-                            );
-                        }
-
-                        if (this.castTimer >= 60) {
+                    if (getSkillType() == 2) {
+                        if (this.castTimer >= 20) {
+                            shootGenericKiBlast(target, 3.5F, 0xAD3BFF, 0x5E1FCC, 1.4F);
                             stopCasting();
                         }
                     }
@@ -85,11 +73,10 @@ public class SagaVegetaNamekEntity extends DBSagasEntity {
 
     @Override
     public void stopCasting() {
-        int usedSkill = getSkillType();
-
-        if (usedSkill == SKILL_VOLLEY) {
-            this.kiVolleyCooldown = 10 * 20;
+        if (getSkillType() == 2) {
+            this.kiBlastCooldown = 5 * 20;
         }
+
         super.stopCasting();
     }
 
@@ -97,16 +84,23 @@ public class SagaVegetaNamekEntity extends DBSagasEntity {
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         super.registerControllers(controllers);
         controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
+        controllers.add(new AnimationController<>(this, "tail", 0, this::tailPredicate));
+    }
+
+    private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
+        event.getController().setAnimation(RawAnimation.begin().thenLoop("tail"));
+        return PlayState.CONTINUE;
     }
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isCasting()) {
-            int skill = getSkillType();
-
-            if (skill == SKILL_VOLLEY) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+            int currentSkill = getSkillType();
+            if (currentSkill == 2) {
+                event.getController().setAnimation(RawAnimation.begin().thenPlay("kiattack"));
             }
+            return PlayState.CONTINUE;
         }
+
         event.getController().forceAnimationReset();
         return PlayState.STOP;
     }

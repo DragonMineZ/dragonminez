@@ -23,8 +23,9 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaZarbonEntity extends DBSagasEntity{
 
+    private static final int SKILL_KIBLAST = 1;
+
     private int kiBlastCooldown = 0;
-    private int castTimer = 0;
     private int transformTick = 0;
 
     public SagaZarbonEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
@@ -39,17 +40,13 @@ public class SagaZarbonEntity extends DBSagasEntity{
         super.tick();
 
         if (this.isTransforming()) {
-            this.getNavigation().stop();
-            this.setDeltaMovement(0, 0, 0);
+            this.transformTick++;
 
-            if (this.isCasting()) this.stopCasting();
+            if (handleTransformationLogic(this.transformTick, 60)) {
 
-            if (!this.level().isClientSide) {
-                this.transformTick++;
+                DBSagasEntity newForm = (DBSagasEntity) MainEntities.SAGA_ZARBON_TRANSF.get().create(this.level());
 
-                if (this.transformTick >= 60) {
-                    finishTransformation();
-                }
+                finishTransformationSpawn(newForm);
             }
             return;
         }
@@ -61,54 +58,36 @@ public class SagaZarbonEntity extends DBSagasEntity{
 
         LivingEntity target = this.getTarget();
 
-        if (target != null && target.isAlive()) {
-            if (this.isFlying() || this.isCasting()) {
-                rotateBodyToTarget(target);
-            }
-        }
+        handleCommonCombatMovement(target, this.isCasting(), true);
+
         if (!this.level().isClientSide) {
             if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-            if (target != null && target.isAlive()) {
-                double yDiff = target.getY() - this.getY();
-                if (yDiff > 2.0D) {
-                    if (!isFlying()) setFlying(true);
-                } else if (yDiff <= 1.0D && this.onGround()) {
-                    if (isFlying()) {
-                        setFlying(false);
-                        this.setNoGravity(false);
-                    }
-                }
-            } else {
-                if (this.onGround() && isFlying()) {
-                    setFlying(false);
-                    this.setNoGravity(false);
-                }
-            }
 
-            if (this.isFlying()) {
-                this.setNoGravity(true);
-                if (target != null) {
-                    moveTowardsTargetInAir(target);
-                } else {
-                    this.setDeltaMovement(this.getDeltaMovement().add(0, -0.03D, 0));
-                }
-            } else {
-                this.setNoGravity(false);
-            }
+            if (target != null && target.isAlive() && !this.isCasting()) {
+                double distSqr = this.distanceToSqr(target);
 
-            var distancePlayer = 13.0D;
-            if (target != null && target.isAlive() && this.kiBlastCooldown <= 0 &&
-                    this.distanceToSqr(target) > distancePlayer && !this.isCasting()) {
-                startCasting();
+                if (this.kiBlastCooldown <= 0 && distSqr > 169.0D) {
+                    startCasting(SKILL_KIBLAST);
+                }
             }
 
             if (this.isCasting()) {
                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
+
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
-                    if (this.castTimer >= 50) {
-                        performKiBlastAttack(target);
-                        stopCasting();
+
+                    if (getSkillType() == SKILL_KIBLAST) {
+                        if (this.castTimer >= 50) {
+                            shootGenericKiBlast(
+                                    target,
+                                    1.2F,
+                                    0xFFB0F5,
+                                    0xFA73E9,
+                                    1.1f
+                            );
+                            stopCasting();
+                        }
                     }
                 } else {
                     stopCasting();
@@ -116,90 +95,18 @@ public class SagaZarbonEntity extends DBSagasEntity{
             }
         }
     }
+
     private void startTransformation() {
         this.setTransforming(true);
         this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);
     }
 
-    private void finishTransformation() {
-        Level level = this.level();
-        if (level instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, this.getX(), this.getY() + 1, this.getZ(), 1, 0, 0, 0, 0);
-
-            Monster newZarbon = MainEntities.SAGA_ZARBON_TRANSF.get().create(level);
-
-            if (newZarbon != null) {
-                newZarbon.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
-                newZarbon.setTarget(this.getTarget());
-                newZarbon.setHealth(newZarbon.getMaxHealth());
-                level.addFreshEntity(newZarbon);
-            }
-            this.discard();
+    @Override
+    public void stopCasting() {
+        if (getSkillType() == SKILL_KIBLAST) {
+            this.kiBlastCooldown = 10 * 20;
         }
-    }
-
-    private void rotateBodyToTarget(LivingEntity target) {
-        double d0 = target.getX() - this.getX();
-        double d2 = target.getZ() - this.getZ();
-        float targetYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
-        this.setYRot(targetYaw);
-        this.setYBodyRot(targetYaw);
-        this.setYHeadRot(targetYaw);
-        this.yRotO = targetYaw;
-        this.yBodyRotO = targetYaw;
-        this.yHeadRotO = targetYaw;
-    }
-    private void startCasting() {
-        this.setCasting(true);
-        this.castTimer = 0;
-
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
-
-        this.getNavigation().stop();
-        this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
-    }
-
-    private void stopCasting() {
-        this.setCasting(false);
-        this.castTimer = 0;
-        this.kiBlastCooldown = 10 * 20;
-
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
-    }
-    private void moveTowardsTargetInAir(LivingEntity target) {
-        if (this.isCasting()) return;
-        double flyspeed = this.getFlySpeed();
-        double dx = target.getX() - this.getX();
-        double dy = (target.getY() + 1.0D) - this.getY();
-        double dz = target.getZ() - this.getZ();
-        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        if (distance < 1.0) return;
-        Vec3 movement = new Vec3(dx / distance * flyspeed, dy / distance * flyspeed, dz / distance * flyspeed);
-        double gravityDrag = (dy < -0.5) ? -0.05D : -0.03D;
-        this.setDeltaMovement(movement.add(0, gravityDrag, 0));
-    }
-
-    private void performKiBlastAttack(LivingEntity target) {
-        KiBlastEntity kiBlast = new KiBlastEntity(this.level(), this);
-
-        double sx = this.getX();
-        double sy = this.getY() + 1.0D;
-        double sz = this.getZ();
-
-        kiBlast.setPos(sx, sy, sz);
-        kiBlast.setColors(0xFFB0F5, 0xFA73E9);
-        kiBlast.setSize(1.2f);
-        kiBlast.setKiDamage(this.getKiBlastDamage());
-        kiBlast.setOwner(this);
-
-        double tx = target.getX() - sx;
-        double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
-        double tz = target.getZ() - sz;
-
-        kiBlast.shoot(tx, ty, tz, this.getKiBlastSpeed(), 1.0F);
-
-        this.level().addFreshEntity(kiBlast);
+        super.stopCasting();
     }
 
     @Override
@@ -210,19 +117,17 @@ public class SagaZarbonEntity extends DBSagasEntity{
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isTransforming()) {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop("transform"));
-            return PlayState.CONTINUE;
+            return event.setAndContinue(RawAnimation.begin().thenLoop("transform"));
         }
 
         if (this.isCasting()) {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("kiwave"));
-            return PlayState.CONTINUE;
+            int skill = getSkillType();
+            if (skill == SKILL_KIBLAST) {
+                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+            }
         }
 
         event.getController().forceAnimationReset();
         return PlayState.STOP;
     }
-
-
-
 }

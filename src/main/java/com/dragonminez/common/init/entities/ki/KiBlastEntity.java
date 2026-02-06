@@ -51,6 +51,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 			return;
 		}
 
+        if (!this.level().isClientSide) {
+            if (this.tickCount % 20 == 0 && this.tickCount > 0) {
+                //Reemplazar por sonido en loop
+                //this.playSound(MainSounds.KIBLAST_ATTACK.get(), 0.5F, 1.0F);
+            }
+        }
+
 		if (this.level().isClientSide) {
 
 			float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());

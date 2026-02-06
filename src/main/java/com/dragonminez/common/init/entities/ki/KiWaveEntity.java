@@ -88,6 +88,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
             Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
             float currentLen = this.getBeamLength();
 
+            if (this.tickCount % 5 == 0) {
+                Vec3 tipPos = startPos.add(dir.scale(currentLen));
+
+                this.level().playSound(null, tipPos.x, tipPos.y, tipPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.5F, 1.0F);
+
+                this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
+            }
+
             float targetLen = currentLen + this.getKiSpeed();
             Vec3 endPosRay = startPos.add(dir.scale(MAX_RANGE));
 
@@ -182,44 +190,42 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private void damageEntitiesInBeam(Vec3 start, Vec3 dir, float length) {
         Vec3 end = start.add(dir.scale(length));
-        double searchRadius = this.getSize() * 0.8;
+        double searchRadius = this.getSize() * 1.0;
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
 
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
+
         int hitInterval = 20;
 
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
-            if (target.invulnerableTime > 10) continue;
+            if (target.is(this.getOwner())) continue;
+
+            if (target.invulnerableTime > 0) continue;
 
             float hitPrecision = this.getSize() / 2.0F;
             AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
 
-            var hit = targetBox.clip(start, end);
+            boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);
 
-            if (hit.isPresent()) {
-                float totalDps = this.getKiDamage();
-                float hitsPerSecond = 20.0F / (float) hitInterval;
-                float damagePerHit = totalDps / hitsPerSecond;
+            if (intersects) {
 
-                target.invulnerableTime = 0;
-                boolean wasHurt = target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), damagePerHit);
+                float damageToDeal = this.getKiDamage();
+
+                boolean wasHurt = target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), damageToDeal);
 
                 if (wasHurt) {
                     target.invulnerableTime = hitInterval;
 
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-
                         double colorData = (double) this.getColorBorde();
                         double sizeData = (double) this.getSize();
 
-                        double pX = target.getX();
-                        double pY = target.getY() + (target.getBbHeight() / 2.0);
-                        double pZ = target.getZ();
-
                         serverLevel.sendParticles(
                                 MainParticles.KI_SPLASH_WAVE.get(),
-                                pX, pY, pZ,
+                                target.getX(),
+                                target.getY() + (target.getBbHeight() / 2.0),
+                                target.getZ(),
                                 0,
                                 colorData,
                                 sizeData,
@@ -227,7 +233,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
                                 1.0D
                         );
                     }
-
                 }
             }
         }

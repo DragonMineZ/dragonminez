@@ -77,7 +77,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
         }
 
         if (!this.level().isClientSide) {
-            if (this.tickCount % 20 == 0) {
+            if (this.tickCount % 10 == 0) {
                 pulseDamage();
             }
         }

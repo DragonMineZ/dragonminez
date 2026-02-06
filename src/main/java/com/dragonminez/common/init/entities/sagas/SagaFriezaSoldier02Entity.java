@@ -18,11 +18,11 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaFriezaSoldier02Entity extends DBSagasEntity{
 
-    private int kiBlastCooldown = 0;
-    private int castTimer = 0;
 
     public SagaFriezaSoldier02Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+
+        this.setFlySpeed(0.35D);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -39,66 +39,7 @@ public class SagaFriezaSoldier02Entity extends DBSagasEntity{
 
         LivingEntity target = this.getTarget();
 
-        if (target != null && target.isAlive()) {
-            if (this.isFlying() || this.isCasting()) {
-                rotateBodyToTarget(target);
-            }
-        }
-
-        if (!this.level().isClientSide) {
-            if (target != null && target.isAlive()) {
-                double yDiff = target.getY() - this.getY();
-                if (yDiff > 2.0D) {
-                    if (!isFlying()) setFlying(true);
-                } else if (yDiff <= 1.0D && this.onGround()) {
-                    if (isFlying()) {
-                        setFlying(false);
-                        this.setNoGravity(false);
-                    }
-                }
-            } else {
-                if (this.onGround() && isFlying()) {
-                    setFlying(false);
-                    this.setNoGravity(false);
-                }
-            }
-            if (this.isFlying()) {
-                this.setNoGravity(true);
-                if (target != null) {
-                    moveTowardsTargetInAir(target);
-                } else {
-                    this.setDeltaMovement(this.getDeltaMovement().add(0, -0.03D, 0));
-                }
-            } else {
-                this.setNoGravity(false);
-            }
-        }
-    }
-
-    private void rotateBodyToTarget(LivingEntity target) {
-        double d0 = target.getX() - this.getX();
-        double d2 = target.getZ() - this.getZ();
-        float targetYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
-        this.setYRot(targetYaw);
-        this.setYBodyRot(targetYaw);
-        this.setYHeadRot(targetYaw);
-        this.yRotO = targetYaw;
-        this.yBodyRotO = targetYaw;
-        this.yHeadRotO = targetYaw;
-    }
-
-    private void moveTowardsTargetInAir(LivingEntity target) {
-        if (this.isCasting()) return;
-        double flyspeed = 0.35;
-        double dx = target.getX() - this.getX();
-        double dy = (target.getY() + 1.0D) - this.getY();
-        double dz = target.getZ() - this.getZ();
-        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        if (distance < 1.0) return;
-        Vec3 movement = new Vec3(dx / distance * flyspeed, dy / distance * flyspeed, dz / distance * flyspeed);
-        double gravityDrag = (dy < -0.5) ? -0.05D : -0.03D;
-        this.setDeltaMovement(movement.add(0, gravityDrag, 0));
+        handleCommonCombatMovement(target, false, true);
     }
 
 

@@ -1,46 +1,35 @@
-package com.dragonminez.client.render.layer;
+package com.dragonminez.client.init.entities.renderer.sagas.layer;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
-import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.sagas.SagaFreezer2ndEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
+public class DBSagasAuraLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
 
     private static final ResourceLocation AURA_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kiaura.geo.json");
     private static final ResourceLocation AURA_TEX_0 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_0.png");
     private static final ResourceLocation AURA_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
     private static final ResourceLocation AURA_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
 
-    private static final ResourceLocation SPARK_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
-    private static final ResourceLocation SPARK_TEX_0 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
-    private static final ResourceLocation SPARK_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_1.png");
-    private static final ResourceLocation SPARK_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_2.png");
-
-
-    public DMZAuraLayer(GeoRenderer<T> entityRendererIn) {
+    public DBSagasAuraLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
 
     @Override
-    public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+    public void render(PoseStack poseStack, T animatable, BakedGeoModel entityModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 
-        if (stats == null || !stats.getStatus().isAuraActive()) return;
+        if (!animatable.isTransforming()) return;
 
         BakedGeoModel auraModel = getGeoModel().getBakedModel(AURA_MODEL);
         if (auraModel == null) return;
@@ -48,16 +37,33 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         for (GeoBone rootBone : auraModel.topLevelBones()) {
             setHiddenRecursive(rootBone, false);
         }
-        syncModelToPlayer(auraModel, playerModel);
+
+        // Animación de textura (loop de 3 frames)
+        long frame = (long) ((animatable.level().getGameTime() / 1.5f) % 3);
+        ResourceLocation currentTexture;
+        if (frame == 0) currentTexture = AURA_TEX_0;
+        else if (frame == 1) currentTexture = AURA_TEX_1;
+        else currentTexture = AURA_TEX_2;
+
+        syncModelToEntity(auraModel, entityModel);
+
+        float[] color = new float[]{1.0f, 1.0f, 1.0f};
+
+        if (animatable instanceof SagaFreezer2ndEntity) {
+            color = ColorUtils.rgbIntToFloat(0x880FFF);
+        }
+
+        RenderType auraRenderType = ModRenderTypes.energy(currentTexture);
 
         poseStack.pushPose();
 
-        float scale = 1.025f;
+        float scale = 1.3f;
         poseStack.scale(scale, scale, scale);
 
-        //getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType, bufferSource.getBuffer(auraRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 1.0f);
-		AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
-        AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
+        getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType,
+                bufferSource.getBuffer(auraRenderType), partialTick, 15728880,
+                net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
+                color[0], color[1], color[2], 0.2f);
 
         poseStack.popPose();
     }
@@ -69,9 +75,9 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
     }
 
-    private void syncModelToPlayer(BakedGeoModel auraModel, BakedGeoModel playerModel) {
+    private void syncModelToEntity(BakedGeoModel auraModel, BakedGeoModel entityModel) {
         for (GeoBone auraBone : auraModel.topLevelBones()) {
-            syncBoneRecursively(auraBone, playerModel);
+            syncBoneRecursively(auraBone, entityModel);
         }
     }
 
@@ -91,15 +97,5 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         for (GeoBone child : destBone.getChildBones()) {
             syncBoneRecursively(child, sourceModel);
         }
-    }
-
-    private float[] getKiColor(StatsData stats) {
-        var character = stats.getCharacter();
-        String kiHex = character.getAuraColor();
-        if (character.hasActiveForm() && character.getActiveFormData() != null) {
-            String formColor = character.getActiveFormData().getAuraColor();
-            if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
-        }
-        return ColorUtils.hexToRgb(kiHex);
     }
 }

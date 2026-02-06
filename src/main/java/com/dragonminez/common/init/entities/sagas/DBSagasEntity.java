@@ -1,15 +1,21 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.entities.ki.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -23,6 +29,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -47,6 +54,8 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private double flySpeed = 0.45D;
     private float kiBlastDamage = 20.0F;
     private float kiBlastSpeed = 0.6F;
+    protected int teleportCooldown = 0;
+    protected int castTimer = 0;
 
     private boolean isAttacking = false;
 
@@ -62,7 +71,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.8D, false));
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 15.0F));
+        this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 45.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
@@ -79,6 +88,14 @@ public class DBSagasEntity extends Monster implements GeoEntity {
                 .add(Attributes.ATTACK_DAMAGE, 15.0D)
                 .add(Attributes.FOLLOW_RANGE, 64.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!this.level().isClientSide) {
+            if (this.teleportCooldown > 0) this.teleportCooldown--;
+        }
     }
 
     @Override
@@ -230,6 +247,253 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         }
 
         return super.doHurtTarget(pEntity);
+    }
+
+    /**
+     * @param target El objetivo.
+     * @param isActionActive Si está casteando/transformando (se detiene).
+     * @param canFly Si esta entidad tiene la capacidad de volar.
+     */
+    protected void handleCommonCombatMovement(LivingEntity target, boolean isActionActive, boolean canFly) {
+        if (this.level().isClientSide) return;
+
+        if (isActionActive) {
+            this.getNavigation().stop();
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
+            if (target != null) rotateBodyToTarget(target);
+            return;
+        }
+
+        if (target != null && target.isAlive()) {
+            double yDiff = target.getY() - this.getY();
+
+            if (canFly && yDiff > 2.0D && !isFlying()) {
+                setFlying(true);
+            }
+            else if (isFlying()) {
+                if (!canFly || (yDiff <= 1.0D && this.onGround())) {
+                    setFlying(false);
+                    this.setNoGravity(false);
+                }
+            }
+        } else {
+            if (this.onGround() && isFlying()) {
+                setFlying(false);
+                this.setNoGravity(false);
+            }
+        }
+
+        if (this.isFlying()) {
+            this.setNoGravity(true);
+            if (target != null) {
+                moveTowardsTargetInAir(target);
+                rotateBodyToTarget(target);
+            } else {
+                this.setDeltaMovement(this.getDeltaMovement().add(0, -0.01D, 0));
+            }
+        } else {
+            this.setNoGravity(false);
+
+        }
+    }
+
+    public void rotateBodyToTarget(LivingEntity target) {
+        double d0 = target.getX() - this.getX();
+        double d2 = target.getZ() - this.getZ();
+        float targetYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
+        this.setYRot(targetYaw);
+        this.setYBodyRot(targetYaw);
+        this.setYHeadRot(targetYaw);
+    }
+
+    public void moveTowardsTargetInAir(LivingEntity target) {
+        if (this.isCasting()) return;
+        double flyspeed = this.getFlySpeed();
+        double dx = target.getX() - this.getX();
+        double dy = (target.getY() + 1.0D) - this.getY();
+        double dz = target.getZ() - this.getZ();
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (distance < 1.0) return;
+        Vec3 movement = new Vec3(dx / distance * flyspeed, dy / distance * flyspeed, dz / distance * flyspeed);
+        double gravityDrag = (dy < -0.5) ? -0.05D : -0.03D;
+        this.setDeltaMovement(movement.add(0, gravityDrag, 0));
+    }
+
+    public void performTeleport(LivingEntity target) {
+        Vec3 targetLook = target.getLookAngle().normalize();
+
+        double distanceBehind = 0.7D;
+        double destX = target.getX() - (targetLook.x * distanceBehind);
+        double destZ = target.getZ() - (targetLook.z * distanceBehind);
+        double destY = target.getY();
+
+        this.teleportTo(destX, destY, destZ);
+
+        this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
+
+        this.teleportCooldown = 8 * 20;
+
+        this.lookAt(target, 360, 360);
+    }
+
+    public void startCasting(int type) {
+        this.setCasting(true);
+        this.setSkillType(type);
+        this.castTimer = 0;
+
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
+        this.getNavigation().stop();
+        this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
+    }
+
+    public void stopCasting() {
+        this.setCasting(false);
+        this.castTimer = 0;
+        this.setSkillType(0);
+
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
+    }
+
+    public void shootGenericKiBlast(LivingEntity target, float size, int colorCore, int colorBorder, float speedMod) {
+        if (target == null) return;
+
+        KiBlastEntity kiBlast = new KiBlastEntity(this.level(), this);
+
+        double sx = this.getX();
+        double sy = this.getY() + 1.0D;
+        double sz = this.getZ();
+
+        kiBlast.setPos(sx, sy, sz);
+        kiBlast.setColors(colorCore, colorBorder);
+        kiBlast.setSize(size);
+        kiBlast.setKiDamage(getKiBlastDamage());
+        kiBlast.setOwner(this);
+
+        double tx = target.getX() - sx;
+        double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
+        double tz = target.getZ() - sz;
+
+        kiBlast.shoot(tx, ty, tz, speedMod, 1.0F);
+
+        this.level().addFreshEntity(kiBlast);
+    }
+
+    public void shootGenericKiLaser(LivingEntity target, float speed, int colorCore, int colorBorder) {
+        if (target == null) return;
+
+        KiLaserEntity laser = new KiLaserEntity(this.level(), this);
+
+        double sx = this.getX();
+        double sy = this.getEyeY() - 0.2D;
+        double sz = this.getZ();
+
+        laser.setPos(sx, sy, sz);
+        laser.setColors(colorCore, colorBorder);
+        laser.setKiDamage(getKiBlastDamage());
+        laser.setKiSpeed(speed);
+
+        //laser.shoot(tx, ty, tz, speed, 0.5F);
+
+        this.level().addFreshEntity(laser);
+    }
+
+    public void shootGenericKiWave(LivingEntity target, float size, int colorCore, int colorBorder, float speedMod) {
+        if (target == null) return;
+
+        KiWaveEntity wave = new KiWaveEntity(this.level(), this);
+
+        double sx = this.getX();
+        double sy = this.getY() + 1.0D;
+        double sz = this.getZ();
+
+        wave.setPos(sx, sy, sz);
+        wave.setColors(colorCore, colorBorder);
+        wave.setSize(size);
+        wave.setKiDamage(getKiBlastDamage());
+        wave.setOwner(this);
+        wave.setKiSpeed(speedMod);
+
+        double tx = target.getX() - sx;
+        double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
+        double tz = target.getZ() - sz;
+
+//        wave.shoot(tx, ty, tz, speedMod, 1.0F);
+
+        this.level().addFreshEntity(wave);
+    }
+
+    public void shootGenericKiVolley(LivingEntity target, float speed, int colorCore, int colorBorder) {
+        if (target == null) return;
+
+        KiVolleyEntity.shootVolley(
+                this,
+                target,
+                speed,
+                this.getKiBlastDamage(),
+                colorCore,
+                colorBorder
+        );
+        this.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.5F);
+    }
+
+    /**
+     * Genera una explosión de Ki alrededor de la entidad.
+     * @param damage Daño de la explosión.
+     * @param colorCore Color central (Hex).
+     * @param colorBorder Color borde (Hex).
+     */
+    public void performKiExplosion(float damage, int colorCore, int colorBorder) {
+        if (this.level().isClientSide) return;
+
+        KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
+
+        // Configuramos la explosión
+        explosion.setupExplosion(
+                this,
+                damage,
+                colorCore,
+                colorBorder
+        );
+
+        this.level().addFreshEntity(explosion);
+    }
+
+
+    /**
+     * Maneja la lógica de "espera" durante la transformación (paralizar entidad, cancelar casteos).
+     * @param transformTick Tick actual de la transformación.
+     * @param duration Duración total en ticks (ej: 60).
+     * @return true si el tiempo se ha cumplido y está listo para cambiar de forma.
+     */
+    protected boolean handleTransformationLogic(int transformTick, int duration) {
+        this.getNavigation().stop();
+        this.setDeltaMovement(0, 0, 0);
+
+        if (this.isCasting()) this.stopCasting();
+
+
+        return transformTick >= duration;
+    }
+
+    /**
+     * Finaliza la transformación spawneando la nueva entidad.
+     * @param newEntity La instancia ya creada de la nueva entidad
+     */
+    protected void finishTransformationSpawn(DBSagasEntity newEntity) {
+        if (this.level().isClientSide || newEntity == null) return;
+
+        Level level = this.level();
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, this.getX(), this.getY() + 1, this.getZ(), 1, 0, 0, 0, 0);
+
+            newEntity.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
+            newEntity.setTarget(this.getTarget());
+            newEntity.setHealth(newEntity.getMaxHealth());
+
+            level.addFreshEntity(newEntity);
+            this.discard();
+        }
     }
 
     @Override

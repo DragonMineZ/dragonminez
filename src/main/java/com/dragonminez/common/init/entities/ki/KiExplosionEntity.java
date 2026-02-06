@@ -116,18 +116,20 @@ public class KiExplosionEntity extends AbstractKiProjectile {
                 );
             }
 
-            if (this.tickCount == GROW_TIME) {
-                this.level().playSound(
-                        null,
-                        this.getX(), this.getY(), this.getZ(),
-                        MainSounds.KI_EXPLOSION_IMPACT.get(),
-                        SoundSource.HOSTILE,
-                        1.0F,
-                        1.2F
-                );
-            }
-
             if (this.tickCount >= GROW_TIME) {
+                int activeTicks = this.tickCount - GROW_TIME;
+
+                if (activeTicks % 70 == 0) {
+                    this.level().playSound(
+                            null,
+                            this.getX(), this.getY(), this.getZ(),
+                            MainSounds.KI_EXPLOSION_IMPACT.get(),
+                            SoundSource.HOSTILE,
+                            1.0F,
+                            1.2F
+                    );
+                }
+
                 if (this.tickCount % 20 == 0) {
                     pulseDamage(currentRadius);
                 }

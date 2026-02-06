@@ -124,6 +124,8 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         var stats = statsCap.orElse(new StatsData(pPlayer));
         var character = stats.getCharacter();
 
+        int kaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
+
         PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
         playermodel.attackTime = 0.0F;
         playermodel.crouching = false;
@@ -148,6 +150,11 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             if (!activeForm.getBodyColor3().isEmpty()) b3 = ColorUtils.hexToRgb(activeForm.getBodyColor3());
             if (!activeForm.getHairColor().isEmpty()) hair = ColorUtils.hexToRgb(activeForm.getHairColor());
         }
+
+        b1 = applyKaiokenTint(b1, kaiokenPhase);
+        b2 = applyKaiokenTint(b2, kaiokenPhase);
+        b3 = applyKaiokenTint(b3, kaiokenPhase);
+        hair = applyKaiokenTint(hair, kaiokenPhase);
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
         boolean isStandard = raceName.equals("human") || raceName.equals("saiyan");
@@ -514,6 +521,18 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
         }
         return ColorUtils.hexToRgb(kiHex);
+    }
+
+    private float[] applyKaiokenTint(float[] rgb, int phase) {
+        if (phase <= 0) return rgb;
+
+        float intensity = Math.min(0.6f, phase * 0.1f);
+
+        float newR = rgb[0] * (1.0f - intensity) + (1.0f * intensity);
+        float newG = rgb[1] * (1.0f - intensity);
+        float newB = rgb[2] * (1.0f - intensity);
+
+        return new float[]{newR, newG, newB};
     }
 
 }

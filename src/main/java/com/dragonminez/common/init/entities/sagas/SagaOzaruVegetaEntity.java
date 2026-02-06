@@ -23,9 +23,11 @@ import java.util.List;
 
 public class SagaOzaruVegetaEntity extends DBSagasEntity{
 
+    private static final int SKILL_KIBLAST = 1;
+    private static final int SKILL_ROAR = 2;
+
     private int kiBlastCooldown = 0;
     private int roarCooldown = 0;
-    private int castTimer = 0;
 
     public SagaOzaruVegetaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -47,62 +49,58 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
     public void tick() {
         super.tick();
 
-        if (!this.level().isClientSide) {
+        LivingEntity target = this.getTarget();
 
+        handleCommonCombatMovement(target, this.isCasting(), false);
+
+        if (!this.level().isClientSide) {
             if (!this.isCasting()) {
                 if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
                 if (this.roarCooldown > 0) this.roarCooldown--;
             }
 
-            LivingEntity target = this.getTarget();
-            double distSqr = (target != null) ? this.distanceToSqr(target) : 0;
-
             if (target != null && target.isAlive() && !this.isCasting()) {
+                double distSqr = this.distanceToSqr(target);
 
-                // Jugador cerca a menos de 15 bloques
-                if (this.roarCooldown <= 0 && distSqr < (15.0 * 15.0)) {
-                    startRoar();
+                if (this.roarCooldown <= 0 && distSqr < 225.0D) {
+                    startCasting(SKILL_ROAR);
                 }
-                // Jugador a mas de 15 bloques y no hay cooldown
-                else if (this.kiBlastCooldown <= 0 && distSqr > (15.0 * 15.0)) {
-                    startKiBlast();
+                else if (this.kiBlastCooldown <= 0 && distSqr > 225.0D) {
+                    startCasting(SKILL_KIBLAST);
                 }
             }
+
             if (this.isCasting()) {
                 this.castTimer++;
                 int skill = getSkillType();
 
-                // KiBlast
-                if (skill == 1) {
-                    this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5)); // Freno suave
+                if (skill == SKILL_KIBLAST) {
+                    this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
+
                     if (target != null && target.isAlive()) {
                         if (this.castTimer >= 50) {
-                            performKiBlastAttack(target);
+                            shootGenericKiBlast(target, 8.5F, 0xEE9EFF, 0xDD3DFF, 0.8f);
                             stopCasting();
                         }
                     } else {
                         stopCasting();
                     }
                 }
-                else if (skill == 2) {
-                    // Se detiene para tirar la skill
+                else if (skill == SKILL_ROAR) {
                     this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
 
-                    // Particulas dentro del personaje
                     if (this.castTimer < 40) {
                         spawnInwardParticles();
                     }
-                    // explosion
                     else if (this.castTimer == 40) {
                         performRoarDamage();
                         spawnExplosionParticles();
                         this.playSound(MainSounds.VEGETA_OOZARU_GROWL.get(), 5.0F, 1.0F);
                     }
-                    // Saca las particulas
                     else if (this.castTimer > 40 && this.castTimer < 80) {
                         spawnOutwardParticles();
                     }
-                    // Termina el cast del rugido
+
                     if (this.castTimer >= 80) {
                         stopCasting();
                     }
@@ -111,61 +109,17 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
         }
     }
 
-    private void startKiBlast() {
-        this.setCasting(true);
-        this.setSkillType(1);
-        this.castTimer = 0;
-
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
-        this.getNavigation().stop();
-        this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
-    }
-
-    private void startRoar() {
-        this.setCasting(true);
-        this.setSkillType(2);
-        this.castTimer = 0;
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
-        this.getNavigation().stop();
-        this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
-    }
-
-    private void stopCasting() {
+    @Override
+    public void stopCasting() {
         int currentSkill = getSkillType();
 
-        this.setCasting(false);
-        this.setSkillType(0);
-        this.castTimer = 0;
-
-        if (currentSkill == 1) {
+        if (currentSkill == SKILL_KIBLAST) {
             this.kiBlastCooldown = 10 * 20;
-        } else if (currentSkill == 2) {
-            this.roarCooldown = 25 * 20; //rugido
+        } else if (currentSkill == SKILL_ROAR) {
+            this.roarCooldown = 25 * 20;
         }
 
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
-    }
-
-    private void performKiBlastAttack(LivingEntity target) {
-        KiBlastEntity kiBlast = new KiBlastEntity(this.level(), this);
-
-        double sx = this.getX();
-        double sy = this.getY() + 1.0D;
-        double sz = this.getZ();
-
-        kiBlast.setPos(sx, sy, sz);
-        kiBlast.setColors(0xEE9EFF, 0xDD3DFF);
-        kiBlast.setSize(8.5f);
-        kiBlast.setKiDamage(this.getKiBlastDamage());
-        kiBlast.setOwner(this);
-
-        double tx = target.getX() - sx;
-        double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
-        double tz = target.getZ() - sz;
-
-        kiBlast.shoot(tx, ty, tz, this.getKiBlastSpeed(), 1.0F);
-
-        this.level().addFreshEntity(kiBlast);
+        super.stopCasting();
     }
 
     private void spawnInwardParticles() {
@@ -197,11 +151,10 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
 
         for (LivingEntity victim : victims) {
             if (victim != this) {
-                victim.hurt(this.damageSources().mobAttack(this), (float) this.getRoarDamage()); //damage rugido
-                // Empujar
+                victim.hurt(this.damageSources().mobAttack(this), (float) this.getRoarDamage());
                 double dx = victim.getX() - this.getX();
                 double dz = victim.getZ() - this.getZ();
-                victim.knockback(1.2F, -dx, -dz);
+                victim.knockback(0.8F, -dx, -dz);
             }
         }
     }
@@ -233,13 +186,12 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isCasting()) {
             int skill = getSkillType();
-            if (skill == 1) {
-                event.getController().setAnimation(RawAnimation.begin().thenPlay("kiwave"));
-                return PlayState.CONTINUE;
+
+            if (skill == SKILL_KIBLAST) {
+                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
             }
-            else if (skill == 2) {
-                event.getController().setAnimation(RawAnimation.begin().thenPlay("roar"));
-                return PlayState.CONTINUE;
+            else if (skill == SKILL_ROAR) {
+                return event.setAndContinue(RawAnimation.begin().thenPlay("roar"));
             }
         }
         event.getController().forceAnimationReset();
@@ -247,10 +199,6 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-
-        event.getController().setAnimation(RawAnimation.begin().thenLoop("tail"));
-
-        return PlayState.CONTINUE;
+        return event.setAndContinue(RawAnimation.begin().thenLoop("tail"));
     }
-
 }
