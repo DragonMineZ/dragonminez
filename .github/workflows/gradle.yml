@@ -6,12 +6,14 @@ on:
       - main
     paths:
       - '**.java'
+      - 'build.gradle.kts'
 
   push:
     branches:
       - main
     paths:
       - '**.java'
+      - 'build.gradle.kts'
 
 permissions:
   pull-requests: read
