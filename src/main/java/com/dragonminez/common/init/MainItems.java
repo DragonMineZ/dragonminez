@@ -143,7 +143,7 @@ public final class MainItems {
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BLACKGOKU_ARMOR = fullArmorNoHelmetSet("blackgoku_armor", "blackgoku", false);
     // ZAMASU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> ZAMASU_ARMOR = fullArmorNoHelmetSet("zamasu_armor", "zamasu_gi", false);
-    // FUSION ZAMASU
+    // FUSED ZAMASU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> FUSION_ZAMASU_ARMOR = fullArmorNoHelmetSet("fusion_zamasu_armor", "fzamasu_gi", false);
     // TROPAS DEL ORGULLO
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> PRIDE_TROOPS_ARMOR = fullArmorNoHelmetSet("pride_troops_armor", "pride_troper", false);

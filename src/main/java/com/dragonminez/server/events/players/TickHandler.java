@@ -271,6 +271,8 @@ public class TickHandler {
 
             if (newEnergy <= maxEnergy * 0.05 && hasActiveForm) {
                 data.getCharacter().clearActiveForm();
+				data.getResources().setPowerRelease(0);
+				data.getResources().setActionCharge(0);
             }
         }
     }
@@ -372,6 +374,14 @@ public class TickHandler {
 				execute = true;
 			}
 			data.getResources().setActionCharge(currentRelease);
+
+			int powerRelease = data.getResources().getPowerRelease();
+			int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
+			int maxRelease = 50 + (potentialUnlockLevel * 5);
+			if (powerRelease < maxRelease) {
+				int newRelease = Math.min(maxRelease, currentRelease + 5);
+				data.getResources().setPowerRelease(newRelease);
+			}
 		}
 
 		if (execute) {

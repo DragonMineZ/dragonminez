@@ -42,17 +42,6 @@ public class EntityStatsHandler {
 				double finalKi = stats.getKiDamage() * dmgMult;
 				sagaEntity.setKiBlastDamage((float) finalKi);
 			}
-		} else if (isHardMode) {
-			if (entity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
-				double currentBase = entity.getAttribute(Attributes.MAX_HEALTH).getBaseValue();
-				double newHealth = currentBase * hpMult;
-				entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(newHealth);
-				entity.setHealth((float) newHealth);
-			}
-			if (entity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
-				double currentBase = entity.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue();
-				entity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(currentBase * dmgMult);
-			}
 		}
 
 		entity.getPersistentData().putBoolean("dmz_stats_configured", true);

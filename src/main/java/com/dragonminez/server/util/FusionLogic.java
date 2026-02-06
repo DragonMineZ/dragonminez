@@ -2,6 +2,7 @@ package com.dragonminez.server.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
@@ -12,6 +13,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
@@ -41,10 +43,19 @@ public class FusionLogic {
 			}
 		}
 
+		int fusionlvl1 = lData.getSkills().getSkillLevel("fusion");
+		int fusionlvl2 = pData.getSkills().getSkillLevel("fusion");
+		int fusionProm = (fusionlvl1 + fusionlvl2) / 2;
+
+		int durationPerLevel = FUSION_DURATION / lData.getSkills().getMaxSkillLevel("fusion");
+		int finalDuration = durationPerLevel * fusionProm;
+
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.METAMORU);
 		if (MinecraftForge.EVENT_BUS.post(event)) return false;
 		applyFusion(leader, partner, lData, pData, "METAMORU", lvl1, lvl2);
-		lData.getStatus().setFusionTimer(FUSION_DURATION);
+		lData.getStatus().setFusionTimer(finalDuration);
+		leader.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), finalDuration, 0, false, false));
+		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), finalDuration, 0, false, false));
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()),true);
 		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
 		return true;
@@ -62,6 +73,8 @@ public class FusionLogic {
 
 		applyFusion(leader, partner, lData, pData, "POTHALA", lvl1, lvl2);
 		lData.getStatus().setFusionTimer(FUSION_DURATION);
+		leader.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
+		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
 		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
 	}
@@ -116,7 +129,7 @@ public class FusionLogic {
 
 			if (leaderData.getStatus().getOriginalAppearance() != null) leaderData.getCharacter().loadAppearance(leaderData.getStatus().getOriginalAppearance());
 			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
-
+			if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
 			PartyManager.leaveParty(leaderRef);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 		}
@@ -132,7 +145,7 @@ public class FusionLogic {
 
 				partner.stopRiding();
 				partner.setGameMode(GameType.SURVIVAL);
-
+				if (partner.hasEffect(MainEffects.FUSED.get())) partner.removeEffect(MainEffects.FUSED.get());
 				PartyManager.leaveParty(partner);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 			});
