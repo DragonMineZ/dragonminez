@@ -10,6 +10,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
+import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
@@ -32,10 +33,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -43,6 +41,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
@@ -285,6 +284,31 @@ public class ForgeCommonEvents {
                 NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
             }
         });
+    }
+
+    @SubscribeEvent
+    public static void onLivingAttack(LivingAttackEvent event) {
+        LivingEntity victim = event.getEntity();
+
+        if (event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return;
+        }
+
+        AABB searchArea = victim.getBoundingBox().inflate(3.0D);
+        List<KiBarrierEntity> barriers = victim.level().getEntitiesOfClass(KiBarrierEntity.class, searchArea);
+
+        for (KiBarrierEntity barrier : barriers) {
+            if (barrier.getOwner() == victim) {
+
+
+                event.setCanceled(true);
+
+                victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+                        MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+
+                return;
+            }
+        }
     }
 
 	public static void endFusionIfNeeded(ServerPlayer player) {

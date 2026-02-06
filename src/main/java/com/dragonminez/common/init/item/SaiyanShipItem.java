@@ -1,11 +1,9 @@
 package com.dragonminez.common.init.item;
 
+import com.dragonminez.client.init.entities.renderer.ki.KiBarrierRenderer;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
-import com.dragonminez.common.init.entities.ki.KiBlastEntity;
-import com.dragonminez.common.init.entities.ki.KiDiscEntity;
-import com.dragonminez.common.init.entities.ki.KiLaserEntity;
-import com.dragonminez.common.init.entities.ki.KiWaveEntity;
+import com.dragonminez.common.init.entities.ki.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -55,34 +53,26 @@ public class SaiyanShipItem extends Item {
 		return super.useOn(pContext);
 	}
 
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
-        ItemStack itemstack = pPlayer.getItemInHand(pHand);
-
-        if (!pLevel.isClientSide) {
-
-            KiDiscEntity disc = new KiDiscEntity(pLevel, pPlayer);
-
-            disc.setKiDamage(25.0F);
-
-            disc.setKiSpeed(1.5F);
-
-            disc.setSize(15);
-
-            disc.setColors(0x87F9FF, 0x00F3FF);
-
-            disc.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, disc.getKiSpeed(), 1.0F);
-
-            pLevel.addFreshEntity(disc);
-        }
-
-        pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
-                SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 0.5F);
-
-        pPlayer.getCooldowns().addCooldown(this, 20);
-
-        return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
-    }
+//    @Override
+//    public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
+//        ItemStack itemstack = pPlayer.getItemInHand(pHand);
+//
+//        if (!pLevel.isClientSide) {
+//
+//            KiBarrierEntity disc = new KiBarrierEntity(pLevel, pPlayer);
+//
+//            disc.setColors(0x36C26E, 0x36C26E);
+//
+//            pLevel.addFreshEntity(disc);
+//        }
+//
+//        pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(),
+//                SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 0.5F);
+//
+//        pPlayer.getCooldowns().addCooldown(this, 20);
+//
+//        return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());
+//    }
 
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {

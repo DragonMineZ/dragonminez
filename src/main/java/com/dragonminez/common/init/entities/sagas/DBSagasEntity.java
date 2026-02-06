@@ -473,6 +473,18 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.playSound(MainSounds.KI_DISK_CHARGE.get(), 1.0F, 1.1F);
     }
 
+    public void shootKiBarrier(int color, int colorborder) {
+        if (this.level().isClientSide) return;
+
+        KiBarrierEntity disc = new KiBarrierEntity(this.level(), this);
+
+        disc.setColors(color, colorborder);
+
+
+        this.level().addFreshEntity(disc);
+        this.playSound(MainSounds.KI_EXPLOSION_IMPACT.get(), 1.0F, 1.1F);
+    }
+
 
     /**
      * Maneja la lógica de "espera" durante la transformación (paralizar entidad, cancelar casteos).

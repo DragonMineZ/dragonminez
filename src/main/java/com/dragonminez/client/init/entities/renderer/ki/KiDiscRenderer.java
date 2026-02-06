@@ -39,9 +39,8 @@ public class KiDiscRenderer extends EntityRenderer<KiDiscEntity> {
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
-        // Escala
         float scale = entity.getSize();
-        poseStack.scale(scale, scale, scale);
+        poseStack.scale(scale, 1.5f, scale);
 
         float ageInTicks = entity.tickCount + partialTick;
 

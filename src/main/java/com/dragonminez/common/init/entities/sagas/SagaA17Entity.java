@@ -15,8 +15,10 @@ import software.bernie.geckolib.core.object.PlayState;
 public class SagaA17Entity extends DBSagasEntity {
 
     private static final int SKILL_KI_DISC = 1;
+    private static final int SKILL_BARRIER = 2;
 
     private int discCooldown = 0;
+    private int barrierCooldown = 0;
 
     public SagaA17Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -35,6 +37,7 @@ public class SagaA17Entity extends DBSagasEntity {
 
         if (!this.level().isClientSide) {
             if (this.discCooldown > 0) this.discCooldown--;
+            if (this.barrierCooldown > 0) this.barrierCooldown--;
 
             if (target != null && target.isAlive() && !this.isCasting()) {
                 double distSqr = this.distanceToSqr(target);
@@ -44,7 +47,10 @@ public class SagaA17Entity extends DBSagasEntity {
                     return;
                 }
 
-                if (this.discCooldown <= 0 && distSqr > 25.0D) {
+                if (this.barrierCooldown <= 0) {
+                    startCasting(SKILL_BARRIER);
+                }
+                else if (this.discCooldown <= 0 && distSqr > 25.0D) {
                     startCasting(SKILL_KI_DISC);
                 }
             }
@@ -58,13 +64,25 @@ public class SagaA17Entity extends DBSagasEntity {
 
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
+                    int skill = getSkillType();
 
-                    if (getSkillType() == SKILL_KI_DISC) {
+                    if (skill == SKILL_KI_DISC) {
                         if (this.castTimer >= 50) {
-                            shootGenericKiDisc(10.5F, 0x98FF5C, 1.8F);
+                            shootGenericKiDisc(10.5F, 0x12C75C, 1.8F);
                             stopCasting();
                         }
                     }
+                    else if (skill == SKILL_BARRIER) {
+
+                        if (this.castTimer == 10) {
+                            shootKiBarrier(0x13ED6C, 0x12C75C);
+                        }
+
+                        if (this.castTimer >= 40) {
+                            stopCasting();
+                        }
+                    }
+
                 } else {
                     stopCasting();
                 }
@@ -74,9 +92,15 @@ public class SagaA17Entity extends DBSagasEntity {
 
     @Override
     public void stopCasting() {
-        if (getSkillType() == SKILL_KI_DISC) {
+        int skill = getSkillType();
+
+        if (skill == SKILL_KI_DISC) {
             this.discCooldown = 8 * 20;
         }
+        else if (skill == SKILL_BARRIER) {
+            this.barrierCooldown = 20 * 20;
+        }
+
         super.stopCasting();
     }
 
@@ -92,6 +116,9 @@ public class SagaA17Entity extends DBSagasEntity {
 
             if (skill == SKILL_KI_DISC) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+            }
+            else if (skill == SKILL_BARRIER) {
+                return event.setAndContinue(RawAnimation.begin().thenPlay("barrier"));
             }
         }
         event.getController().forceAnimationReset();

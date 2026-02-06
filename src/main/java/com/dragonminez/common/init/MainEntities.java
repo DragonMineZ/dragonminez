@@ -436,6 +436,14 @@ public class MainEntities {
                     .fireImmune()
                     .build("ki_disc")
     );
+    public static final RegistryObject<EntityType<KiBarrierEntity>> KI_BARRIER = ENTITY_TYPES.register("ki_barrier",
+            () -> EntityType.Builder.<KiBarrierEntity>of(KiBarrierEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .build("ki_barrier")
+    );
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
