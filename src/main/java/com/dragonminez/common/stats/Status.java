@@ -30,6 +30,7 @@ public class Status {
 	private boolean androidUpgraded;
 	private boolean renderKatana;
 	private String backWeapon;
+	private String scouterItem;
 
     public Status() {
         this.isAlive = true;
@@ -57,6 +58,7 @@ public class Status {
 		this.androidUpgraded = false;
 		this.renderKatana = false;
 		this.backWeapon = "";
+		this.scouterItem = "";
     }
 
     public boolean isAlive() { return isAlive; }
@@ -84,6 +86,7 @@ public class Status {
 	public boolean isAndroidUpgraded() { return androidUpgraded; }
 	public boolean isRenderKatana() { return renderKatana; }
 	public String getBackWeapon() { return backWeapon; }
+	public String getScouterItem() { return scouterItem; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -110,6 +113,7 @@ public class Status {
 	public void setAndroidUpgraded(boolean upgraded) { this.androidUpgraded = upgraded; }
 	public void setRenderKatana(boolean render) { this.renderKatana = render; }
 	public void setBackWeapon(String weapon) { this.backWeapon = weapon; }
+	public void setScouterItem(String item) { this.scouterItem = item; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();

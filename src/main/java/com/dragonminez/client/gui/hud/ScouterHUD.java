@@ -46,7 +46,7 @@ public class ScouterHUD {
 	private static int strongestEntityID = -1;
 	private static int cachedBP = 0;
 	private static final double SCAN_RANGE = 50.0;
-	private static final int BP_LIMIT = 150_000_000;
+	private static final int BP_LIMIT = 150000000;
 	private static final float TEX_SIZE = 128.0f;
 
 	@SubscribeEvent

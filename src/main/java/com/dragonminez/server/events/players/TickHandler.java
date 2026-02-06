@@ -17,6 +17,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.FusionLogic;
+import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.RacialSkillLogic;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,6 +26,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
@@ -171,15 +173,21 @@ public class TickHandler {
 
 				if (backItem != ItemStack.EMPTY) {
 					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId())) data.getStatus().setBackWeapon(backItem.getDescriptionId());
-				} else {
-					data.getStatus().setBackWeapon("");
-				}
+				} else data.getStatus().setBackWeapon("");
+
+				boolean hasScouter = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
+				if (hasScouter) {
+					String scouterItem = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId();
+					if (!data.getStatus().getScouterItem().equals(scouterItem)) data.getStatus().setScouterItem(scouterItem);
+				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
+
 			}
 
 			if (tickCounter % 20 == 0) {
 				handleActionCharge(serverPlayer, data);
 				handleKaiokenEffects(serverPlayer, data);
 				handleFlightKiDrain(serverPlayer, data);
+				GravityLogic.tick(serverPlayer);
 			}
 
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {

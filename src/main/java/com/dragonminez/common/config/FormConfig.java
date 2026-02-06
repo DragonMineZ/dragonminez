@@ -60,6 +60,8 @@ public class FormConfig {
         private String eye1Color = "";
         private String eye2Color = "";
         private String auraColor = "";
+		private boolean hasLightnings = false;
+		private String lightningColor = "";
         private float[] modelScaling = {0.9375f, 0.9375f, 0.9375f};
         private double strMultiplier = 1.0;
         private double skpMultiplier = 1.0;
@@ -73,8 +75,8 @@ public class FormConfig {
         private double staminaDrain = 1.0;
         private double attackSpeed = 1.0;
         private double maxMastery = 100.0;
-        private double masteryPerHit = 0.1;
-        private double masteryPerDamageReceived = 0.1;
+        private double masteryPerHit = 0.01;
+        private double masteryPerDamageReceived = 0.01;
         private double statMultPerMasteryPoint = 0.02;
         private double costDecreasePerMasteryPoint = 0.02;
 		private boolean kaiokenStackable = true;
@@ -93,6 +95,8 @@ public class FormConfig {
         public String getEye1Color() { return eye1Color; }
         public String getEye2Color() { return eye2Color; }
         public String getAuraColor() { return auraColor; }
+		public boolean hasLightnings() { return hasLightnings; }
+		public String getLightningColor() { return lightningColor; }
         public float[] getModelScaling() { return modelScaling; }
         public double getStrMultiplier() { return Math.max(0.01, strMultiplier); }
         public double getSkpMultiplier() { return Math.max(0.01, skpMultiplier); }
@@ -124,6 +128,8 @@ public class FormConfig {
         public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
         public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
         public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
+		public void setHasLightnings(boolean hasLightnings) { this.hasLightnings = hasLightnings; }
+		public void setLightningColor(String lightningColor) { this.lightningColor = lightningColor; }
         public void setModelScaling(float[] modelScaling) { this.modelScaling = modelScaling; }
         public void setStrMultiplier(double strMultiplier) { this.strMultiplier = strMultiplier; }
         public void setSkpMultiplier(double skpMultiplier) { this.skpMultiplier = skpMultiplier; }

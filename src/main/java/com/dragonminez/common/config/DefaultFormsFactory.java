@@ -62,6 +62,8 @@ public class DefaultFormsFactory {
         buffed.setEye1Color("");
         buffed.setEye2Color("");
         buffed.setAuraColor("");
+		buffed.setHasLightnings(false);
+		buffed.setLightningColor("");
         buffed.setBodyColor1("");
         buffed.setBodyColor2("");
         buffed.setBodyColor3("");
@@ -90,6 +92,8 @@ public class DefaultFormsFactory {
         fullPower.setEye1Color("");
         fullPower.setEye2Color("");
         fullPower.setAuraColor("");
+		fullPower.setHasLightnings(false);
+		fullPower.setLightningColor("");
         fullPower.setBodyColor1("");
         fullPower.setBodyColor2("");
         fullPower.setBodyColor3("");
@@ -118,6 +122,8 @@ public class DefaultFormsFactory {
         overdrive.setEye1Color("");
         overdrive.setEye2Color("");
         overdrive.setAuraColor("");
+		overdrive.setHasLightnings(true);
+		overdrive.setLightningColor("#E6F2F5");
         overdrive.setBodyColor1("");
         overdrive.setBodyColor2("");
         overdrive.setBodyColor3("");
@@ -146,6 +152,8 @@ public class DefaultFormsFactory {
         solaris.setEye1Color("");
         solaris.setEye2Color("");
         solaris.setAuraColor("");
+		solaris.setHasLightnings(false);
+		solaris.setLightningColor("");
         solaris.setBodyColor1("");
         solaris.setBodyColor2("");
         solaris.setBodyColor3("");
@@ -158,7 +166,7 @@ public class DefaultFormsFactory {
         humanFormData.put(HumanForms.BUFFED, buffed);
         humanFormData.put(HumanForms.FULLPOWER, fullPower);
         humanFormData.put(HumanForms.OVERDRIVE, overdrive);
-        humanFormData.put(HumanForms.SOLARIS, solaris);
+        //humanFormData.put(HumanForms.SOLARIS, solaris);
         humanForms.setForms(humanFormData);
 
         forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
@@ -193,6 +201,8 @@ public class DefaultFormsFactory {
         oozaru.setEye1Color("");
         oozaru.setEye2Color("");
         oozaru.setAuraColor("");
+		oozaru.setHasLightnings(false);
+		oozaru.setLightningColor("");
         oozaru.setBodyColor1("");
         oozaru.setBodyColor2("");
         oozaru.setBodyColor3("");
@@ -221,6 +231,8 @@ public class DefaultFormsFactory {
         goldenOozaru.setAttackSpeed(1.0);
         goldenOozaru.setEye1Color("");
         goldenOozaru.setEye2Color("");
+		goldenOozaru.setHasLightnings(false);
+		goldenOozaru.setLightningColor("");
         goldenOozaru.setBodyColor1("");
         goldenOozaru.setBodyColor2("");
         goldenOozaru.setBodyColor3("");
@@ -237,6 +249,8 @@ public class DefaultFormsFactory {
         ssj4.setEye1Color("#FFD700");
         ssj4.setEye2Color("#FFD700");
         ssj4.setAuraColor("#FF0000");
+		ssj4.setHasLightnings(false);
+		ssj4.setLightningColor("");
         ssj4.setBodyColor1("");
         ssj4.setBodyColor2("");
         ssj4.setBodyColor3("");
@@ -260,7 +274,7 @@ public class DefaultFormsFactory {
         Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
         oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
         oozaruFormData.put(SaiyanForms.GOLDEN_OOZARU, goldenOozaru);
-        oozaruFormData.put(SaiyanForms.SUPER_SAIYAN_4, ssj4);
+        //oozaruFormData.put(SaiyanForms.SUPER_SAIYAN_4, ssj4);
         oozaruForms.setForms(oozaruFormData);
 
         FormConfig ssGrades = new FormConfig();
@@ -275,6 +289,8 @@ public class DefaultFormsFactory {
         ssj1.setEye1Color("#00FFFF");
         ssj1.setEye2Color("#00FFFF");
         ssj1.setAuraColor("#FFD700");
+		ssj1.setHasLightnings(false);
+		ssj1.setLightningColor("");
         ssj1.setBodyColor1("");
         ssj1.setBodyColor2("");
         ssj1.setBodyColor3("");
@@ -303,6 +319,8 @@ public class DefaultFormsFactory {
         ssg2.setEye1Color("#00FFFF");
         ssg2.setEye2Color("#00FFFF");
         ssg2.setAuraColor("#FFD700");
+		ssg2.setHasLightnings(false);
+		ssg2.setLightningColor("");
         ssg2.setBodyColor1("");
         ssg2.setBodyColor2("");
         ssg2.setBodyColor3("");
@@ -331,6 +349,8 @@ public class DefaultFormsFactory {
         ssg3.setEye1Color("#00FFFF");
         ssg3.setEye2Color("#00FFFF");
         ssg3.setAuraColor("#FFD700");
+		ssg3.setHasLightnings(false);
+		ssg3.setLightningColor("");
         ssg3.setBodyColor1("");
         ssg3.setBodyColor2("");
         ssg3.setBodyColor3("");
@@ -369,6 +389,8 @@ public class DefaultFormsFactory {
         ssj1Mastered.setEye1Color("#00FFFF");
         ssj1Mastered.setEye2Color("#00FFFF");
         ssj1Mastered.setAuraColor("#FFD700");
+		ssj1Mastered.setHasLightnings(false);
+		ssj1Mastered.setLightningColor("");
         ssj1Mastered.setBodyColor1("");
         ssj1Mastered.setBodyColor2("");
         ssj1Mastered.setBodyColor3("");
@@ -397,6 +419,8 @@ public class DefaultFormsFactory {
         ssj2.setEye1Color("#00FFFF");
         ssj2.setEye2Color("#00FFFF");
         ssj2.setAuraColor("#FFD700");
+		ssj2.setHasLightnings(true);
+		ssj2.setLightningColor("#1AA1C7");
         ssj2.setBodyColor1("");
         ssj2.setBodyColor2("");
         ssj2.setBodyColor3("");
@@ -426,6 +450,8 @@ public class DefaultFormsFactory {
         ssj3.setEye1Color("#00FFFF");
         ssj3.setEye2Color("#00FFFF");
         ssj3.setAuraColor("#FFD700");
+		ssj3.setHasLightnings(true);
+		ssj3.setLightningColor("#1AA1C7");
         ssj3.setBodyColor1("");
         ssj3.setBodyColor2("");
         ssj3.setBodyColor3("");
@@ -489,6 +515,8 @@ public class DefaultFormsFactory {
         giantForm.setEye1Color("");
         giantForm.setEye2Color("");
         giantForm.setAuraColor("");
+		giantForm.setHasLightnings(false);
+		giantForm.setLightningColor("");
         giantForm.setBodyColor1("");
         giantForm.setBodyColor2("");
         giantForm.setBodyColor3("");
@@ -517,6 +545,8 @@ public class DefaultFormsFactory {
         fullPower.setEye1Color("");
         fullPower.setEye2Color("");
         fullPower.setAuraColor("");
+		fullPower.setHasLightnings(false);
+		fullPower.setLightningColor("");
         fullPower.setBodyColor1("");
         fullPower.setBodyColor2("");
         fullPower.setBodyColor3("");
@@ -530,13 +560,15 @@ public class DefaultFormsFactory {
         superNamekian.setUnlockOnSkillLevel(3);
         superNamekian.setCustomModel("");
         superNamekian.setAuraColor("#7FFF00");
+		superNamekian.setHasLightnings(true);
+		superNamekian.setLightningColor("#E6F2F5");
         superNamekian.setModelScaling(new float[]{1.05f, 1.05f, 1.05f});
-        superNamekian.setStrMultiplier(4.0);
-        superNamekian.setSkpMultiplier(4.0);
+        superNamekian.setStrMultiplier(3.6);
+        superNamekian.setSkpMultiplier(3.6);
         superNamekian.setStmMultiplier(1.0);
         superNamekian.setDefMultiplier(2.35);
         superNamekian.setVitMultiplier(1.0);
-        superNamekian.setPwrMultiplier(4.0);
+        superNamekian.setPwrMultiplier(3.6);
         superNamekian.setEneMultiplier(1.0);
         superNamekian.setSpeedMultiplier(1.0);
         superNamekian.setEnergyDrain(0.27);
@@ -591,6 +623,8 @@ public class DefaultFormsFactory {
         second.setEye1Color("");
         second.setEye2Color("");
         second.setAuraColor("");
+		second.setHasLightnings(false);
+		second.setLightningColor("");
         second.setBodyColor1("");
         second.setBodyColor2("");
         second.setBodyColor3("");
@@ -619,6 +653,8 @@ public class DefaultFormsFactory {
         third.setEye1Color("");
         third.setEye2Color("");
         third.setAuraColor("");
+		third.setHasLightnings(false);
+		third.setLightningColor("");
         third.setBodyColor1("");
         third.setBodyColor2("");
         third.setBodyColor3("");
@@ -632,12 +668,12 @@ public class DefaultFormsFactory {
         finalForm.setUnlockOnSkillLevel(3);
         finalForm.setCustomModel("");
         finalForm.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
-        finalForm.setStrMultiplier(3.5);
-        finalForm.setSkpMultiplier(3.5);
+        finalForm.setStrMultiplier(3.0);
+        finalForm.setSkpMultiplier(3.0);
         finalForm.setStmMultiplier(1.0);
-        finalForm.setDefMultiplier(2.15);
+        finalForm.setDefMultiplier(1.85);
         finalForm.setVitMultiplier(1.0);
-        finalForm.setPwrMultiplier(3.5);
+        finalForm.setPwrMultiplier(3.0);
         finalForm.setEneMultiplier(1.0);
         finalForm.setSpeedMultiplier(1.0);
         finalForm.setEnergyDrain(0.0);
@@ -647,6 +683,8 @@ public class DefaultFormsFactory {
         finalForm.setEye1Color("");
         finalForm.setEye2Color("");
         finalForm.setAuraColor("");
+		finalForm.setHasLightnings(false);
+		finalForm.setLightningColor("");
         finalForm.setBodyColor1("");
         finalForm.setBodyColor2("");
         finalForm.setBodyColor3("");
@@ -660,12 +698,12 @@ public class DefaultFormsFactory {
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
         fullPower.setModelScaling(new float[]{1.2f, 1.0f, 1.2f});
-        fullPower.setStrMultiplier(4.5);
-        fullPower.setSkpMultiplier(4.5);
+        fullPower.setStrMultiplier(3.4);
+        fullPower.setSkpMultiplier(3.4);
         fullPower.setStmMultiplier(1.0);
-        fullPower.setDefMultiplier(2.5);
+        fullPower.setDefMultiplier(2.15);
         fullPower.setVitMultiplier(1.0);
-        fullPower.setPwrMultiplier(4.5);
+        fullPower.setPwrMultiplier(3.4);
         fullPower.setEneMultiplier(1.0);
         fullPower.setSpeedMultiplier(1.0);
         fullPower.setEnergyDrain(0.22);
@@ -675,6 +713,8 @@ public class DefaultFormsFactory {
         fullPower.setEye1Color("");
         fullPower.setEye2Color("");
         fullPower.setAuraColor("");
+		fullPower.setHasLightnings(true);
+		fullPower.setLightningColor("#F02B16");
         fullPower.setBodyColor1("");
         fullPower.setBodyColor2("");
         fullPower.setBodyColor3("");
@@ -683,11 +723,42 @@ public class DefaultFormsFactory {
         fullPower.setKaiokenStackable(true);
         fullPower.setKaiokenDrainMultiplier(2.0);
 
+		FormConfig.FormData fifthForm = new FormConfig.FormData();
+		fifthForm.setName(FrostDemonForms.FIFTH_FORM);
+		fifthForm.setUnlockOnSkillLevel(5);
+		fifthForm.setCustomModel("");
+		fifthForm.setModelScaling(new float[]{1.2f, 1.0f, 1.2f});
+		fifthForm.setStrMultiplier(3.75);
+		fifthForm.setSkpMultiplier(3.75);
+		fifthForm.setStmMultiplier(1.0);
+		fifthForm.setDefMultiplier(2.35);
+		fifthForm.setVitMultiplier(1.0);
+		fifthForm.setPwrMultiplier(3.75);
+		fifthForm.setEneMultiplier(1.0);
+		fifthForm.setSpeedMultiplier(1.0);
+		fifthForm.setEnergyDrain(0.18);
+		fifthForm.setStaminaDrain(1.0);
+		fifthForm.setAttackSpeed(1.0);
+		fifthForm.setHairColor("");
+		fifthForm.setEye1Color("");
+		fifthForm.setEye2Color("");
+		fifthForm.setAuraColor("");
+		fifthForm.setHasLightnings(true);
+		fifthForm.setLightningColor("#F02B16");
+		fifthForm.setBodyColor1("");
+		fifthForm.setBodyColor2("");
+		fifthForm.setBodyColor3("");
+		fifthForm.setHairCode("");
+		setDefaultMasteryValues(fifthForm);
+		fifthForm.setKaiokenStackable(true);
+		fifthForm.setKaiokenDrainMultiplier(2.0);
+
         Map<String, FormConfig.FormData> frostFormData = new LinkedHashMap<>();
         frostFormData.put(FrostDemonForms.SECOND_FORM, second);
         frostFormData.put(FrostDemonForms.THIRD_FORM, third);
         frostFormData.put(FrostDemonForms.FINAL_FORM, finalForm);
         frostFormData.put(FrostDemonForms.FULLPOWER, fullPower);
+		frostFormData.put(FrostDemonForms.FIFTH_FORM, fifthForm);
         frostForms.setForms(frostFormData);
 
         forms.put(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostForms);
@@ -722,6 +793,8 @@ public class DefaultFormsFactory {
         kid.setEye1Color("");
         kid.setEye2Color("");
         kid.setAuraColor("");
+		kid.setHasLightnings(false);
+		kid.setLightningColor("");
         kid.setBodyColor1("");
         kid.setBodyColor2("");
         kid.setBodyColor3("");
@@ -750,6 +823,8 @@ public class DefaultFormsFactory {
         evil.setEye1Color("#F52746");
         evil.setEye2Color("#F52746");
         evil.setAuraColor("");
+		evil.setHasLightnings(false);
+		evil.setLightningColor("");
         evil.setBodyColor1("#917979");
         evil.setBodyColor2("#917979");
         evil.setBodyColor3("#917979");
@@ -778,6 +853,8 @@ public class DefaultFormsFactory {
         superForm.setEye1Color("");
         superForm.setEye2Color("");
         superForm.setAuraColor("");
+		superForm.setHasLightnings(false);
+		superForm.setLightningColor("");
         superForm.setBodyColor1("");
         superForm.setBodyColor2("");
         superForm.setBodyColor3("");
@@ -806,6 +883,8 @@ public class DefaultFormsFactory {
         ultra.setEye1Color("");
         ultra.setEye2Color("");
         ultra.setAuraColor("");
+		ultra.setHasLightnings(true);
+		ultra.setLightningColor("#F02B16");
         ultra.setBodyColor1("");
         ultra.setBodyColor2("");
         ultra.setBodyColor3("");
@@ -853,6 +932,8 @@ public class DefaultFormsFactory {
         semiPerfect.setEye1Color("");
         semiPerfect.setEye2Color("");
         semiPerfect.setAuraColor("");
+		semiPerfect.setHasLightnings(false);
+		semiPerfect.setLightningColor("");
         semiPerfect.setBodyColor1("");
         semiPerfect.setBodyColor2("");
         semiPerfect.setBodyColor3("");
@@ -881,6 +962,8 @@ public class DefaultFormsFactory {
         perfect.setEye1Color("");
         perfect.setEye2Color("");
         perfect.setAuraColor("");
+		perfect.setHasLightnings(false);
+		perfect.setLightningColor("");
         perfect.setBodyColor1("");
         perfect.setBodyColor2("");
         perfect.setBodyColor3("");
@@ -909,6 +992,8 @@ public class DefaultFormsFactory {
         superPerfect.setEye1Color("");
         superPerfect.setEye2Color("");
         superPerfect.setAuraColor("");
+		superPerfect.setHasLightnings(true);
+		superPerfect.setLightningColor("#1AA1C7");
         superPerfect.setBodyColor1("");
         superPerfect.setBodyColor2("");
         superPerfect.setBodyColor3("");

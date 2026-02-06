@@ -362,14 +362,9 @@ public class StatsData {
     }
 
     public double getAdjustedEnergyDrain() {
-        if (!character.hasActiveForm()) {
-            return 0.0;
-        }
-
+        if (!character.hasActiveForm()) return 0.0;
         var formData = character.getActiveFormData();
-        if (formData == null) {
-            return 0.0;
-        }
+        if (formData == null) return 0.0;
 
         double baseDrain = formData.getEnergyDrain();
         double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());

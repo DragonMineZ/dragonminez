@@ -16,22 +16,24 @@ public class ModRenderTypes extends RenderType {
     }
     private static final Function<ResourceLocation, RenderType> GLOW = Util.memoize((pLocation) ->
             create("glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
-                    .setShaderState(RENDERTYPE_ENERGY_SWIRL_SHADER)
+                    .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeItemEntityTranslucentCullShader))
                     .setTextureState(new TextureStateShard(pLocation, false, false))
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-                    .setCullState(NO_CULL)
-                    .setLightmapState(LIGHTMAP)
-                    .setOverlayState(OVERLAY)
-                    .createCompositeState(false)));
+					.setCullState(NO_CULL)
+					.setLightmapState(LIGHTMAP)
+					.setOverlayState(OVERLAY)
+					.setWriteMaskState(COLOR_WRITE)
+					.createCompositeState(true)));
     private static final Function<ResourceLocation, RenderType> ENERGY = Util.memoize((pLocation) ->
             create("energy", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
-                    .setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
+                    .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeItemEntityTranslucentCullShader))
                     .setTextureState(new TextureStateShard(pLocation, true, true))
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-                    .setCullState(NO_CULL)
-                    .setWriteMaskState(COLOR_WRITE)
-                    .setOverlayState(OVERLAY)
-                    .createCompositeState(false)));
+					.setCullState(NO_CULL)
+					.setLightmapState(LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setWriteMaskState(COLOR_WRITE)
+					.createCompositeState(true)));
 
     public static RenderType kiBlast(ResourceLocation location) {
         return create("ki_blast",
@@ -54,8 +56,8 @@ public class ModRenderTypes extends RenderType {
                 DefaultVertexFormat.NEW_ENTITY,
                 VertexFormat.Mode.QUADS,
                 256,
-                false, // No phantom
-                true,  // Sorting (necesario para transparencia)
+                false,
+                true,
                 RenderType.CompositeState.builder()
                         .setTextureState(new RenderStateShard.TextureStateShard(location, false, false))
                         .setTransparencyState(RenderStateShard.LIGHTNING_TRANSPARENCY)

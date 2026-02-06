@@ -313,7 +313,7 @@ public class ForgeCommonEvents {
 
 	public static void endFusionIfNeeded(ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (data.getStatus().isFused()) {
+			if (data.getStatus().isFused() || data.getStatus().getFusionPartnerUUID() != null) {
 				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 				if (partnerUUID != null) {
 					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);

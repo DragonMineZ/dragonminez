@@ -10,4 +10,5 @@ public class FrostDemonForms {
 	public static final String THIRD_FORM = "third";
 	public static final String FINAL_FORM = "final";
 	public static final String FULLPOWER = "fullpower";
+	public static final String FIFTH_FORM = "fifth";
 }

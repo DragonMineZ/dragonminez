@@ -206,7 +206,7 @@ public class ConfigManager {
         if (Files.exists(statsPath)) {
             statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
         } else {
-            statsConfig = createDefaultStatsConfig(raceName, isDefault);
+            statsConfig = createDefaultStatsConfig();
             LOADER.saveConfig(statsPath, statsConfig);
         }
 
@@ -405,86 +405,19 @@ public class ConfigManager {
 		config.setLegendaryformsTpCost(new int[]{});
     }
 
-    private static RaceStatsConfig createDefaultStatsConfig(String raceName, boolean isVanilla) {
+    private static RaceStatsConfig createDefaultStatsConfig() {
         RaceStatsConfig config = new RaceStatsConfig();
-
-        if (isVanilla) {
-            switch (raceName.toLowerCase()) {
-                case "human" -> setupHumanStats(config);
-                case "saiyan" -> setupSaiyanStats(config);
-                case "namekian" -> setupNamekianStats(config);
-                case "frostdemon" -> setupFrostDemonStats(config);
-                case "bioandroid" -> setupBioAndroidStats(config);
-                case "majin" -> setupMajinStats(config);
-            }
-        } else {
-            setupDefaultStats(config);
-        }
-
+		setupDefaultStats(config);
         return config;
-    }
-
-    private static void setupHumanStats(RaceStatsConfig config) {
-        setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 2.0, 1.5, 0.35, 1.5, 0.6, 1.0, 1.5);
-        setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 1.0, 2.0, 0.25, 1.0, 0.3, 2.0, 2.0);
-        setupInitialStats(config.getMartialArtist(), 5, 5, 15, 15, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 1.25, 1.25, 0.6, 2.0, 1.0, 1.25, 1.5);
-    }
-
-    private static void setupSaiyanStats(RaceStatsConfig config) {
-        setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 2.0, 1.5, 0.35, 1.5, 0.6, 1.0, 1.5);
-        setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 1.0, 2.0, 0.25, 1.0, 0.3, 2.0, 2.0);
-        setupInitialStats(config.getMartialArtist(), 5, 5, 15, 15, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 1.25, 1.25, 0.6, 2.0, 1.0, 1.25, 1.5);
-    }
-
-    private static void setupNamekianStats(RaceStatsConfig config) {
-        setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 2.0, 1.5, 0.35, 1.5, 0.6, 1.0, 1.5);
-        setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 1.0, 2.0, 0.25, 1.0, 0.3, 2.0, 2.0);
-        setupInitialStats(config.getMartialArtist(), 5, 5, 15, 15, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 1.25, 1.25, 0.6, 2.0, 1.0, 1.25, 1.5);
-    }
-
-    private static void setupFrostDemonStats(RaceStatsConfig config) {
-        setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 2.0, 1.5, 0.35, 1.5, 0.6, 1.0, 1.5);
-        setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 1.0, 2.0, 0.25, 1.0, 0.3, 2.0, 2.0);
-        setupInitialStats(config.getMartialArtist(), 5, 5, 15, 15, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 1.25, 1.25, 0.6, 2.0, 1.0, 1.25, 1.5);
-    }
-
-    private static void setupBioAndroidStats(RaceStatsConfig config) {
-        setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 2.0, 1.5, 0.35, 1.5, 0.6, 1.0, 1.5);
-        setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 1.0, 2.0, 0.25, 1.0, 0.3, 2.0, 2.0);
-        setupInitialStats(config.getMartialArtist(), 5, 5, 15, 15, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 1.25, 1.25, 0.6, 2.0, 1.0, 1.25, 1.5);
-    }
-
-    private static void setupMajinStats(RaceStatsConfig config) {
-        setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 2.0, 1.5, 0.35, 1.5, 0.6, 1.0, 1.5);
-        setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 1.0, 2.0, 0.25, 1.0, 0.3, 2.0, 2.0);
-        setupInitialStats(config.getMartialArtist(), 5, 5, 15, 15, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 1.25, 1.25, 0.6, 2.0, 1.0, 1.25, 1.5);
     }
 
     private static void setupDefaultStats(RaceStatsConfig config) {
         setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 2.0, 1.5, 0.35, 1.5, 0.6, 1.0, 1.5);
+		setupScalingStats(config.getWarrior(), 1.0, 0.75, 0.45, 0.75, 0.8, 0.5, 1.0);
         setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 1.0, 2.0, 0.25, 1.0, 0.3, 2.0, 2.0);
-        setupInitialStats(config.getMartialArtist(), 5, 5, 15, 15, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 1.25, 1.25, 0.6, 2.0, 1.0, 1.25, 1.5);
+		setupScalingStats(config.getSpiritualist(), 0.5, 0.5, 0.35, 0.25, 0.6, 1.0, 1.5);
+        setupInitialStats(config.getMartialArtist(), 5, 10, 10, 10, 5, 5, 0.0035, 0.008, 0.009);
+		setupScalingStats(config.getMartialArtist(), 0.75, 1.0, 0.6, 1.0, 1.2, 0.75, 1.25);
     }
 
     private static void setupInitialStats(RaceStatsConfig.ClassStats classStats,
