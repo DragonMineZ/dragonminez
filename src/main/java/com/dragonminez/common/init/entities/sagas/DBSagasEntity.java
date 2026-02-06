@@ -414,12 +414,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         wave.setOwner(this);
         wave.setKiSpeed(speedMod);
 
-        double tx = target.getX() - sx;
-        double ty = (target.getY() + target.getEyeHeight() * 0.5D) - sy;
-        double tz = target.getZ() - sz;
-
-//        wave.shoot(tx, ty, tz, speedMod, 1.0F);
-
         this.level().addFreshEntity(wave);
     }
 
@@ -448,7 +442,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
         KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
 
-        // Configuramos la explosión
         explosion.setupExplosion(
                 this,
                 damage,
@@ -457,6 +450,27 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         );
 
         this.level().addFreshEntity(explosion);
+    }
+
+    /**
+     * Dispara un Ki Disc hacia donde está mirando la entidad.
+     * @param size Tamaño del disco.
+     * @param color Color del disco (Hex).
+     * @param speed Velocidad del proyectil.
+     */
+    public void shootGenericKiDisc(float size, int color, float speed) {
+        if (this.level().isClientSide) return;
+
+        KiDiscEntity disc = new KiDiscEntity(this.level(), this);
+
+        disc.setKiDamage(this.getKiBlastDamage());
+        disc.setSize(size);
+        disc.setColors(color, color);
+
+        disc.shootFromRotation(this, this.getXRot(), this.getYRot(), 0.0F, speed, 1.0F);
+
+        this.level().addFreshEntity(disc);
+        this.playSound(MainSounds.KI_DISK_CHARGE.get(), 1.0F, 1.1F);
     }
 
 

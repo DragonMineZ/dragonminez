@@ -80,6 +80,7 @@ public final class MainSounds {
     public static final RegistryObject<SoundEvent> KI_LASER = registerSoundEvent("laserbeam");
     public static final RegistryObject<SoundEvent> KI_KAME_CHARGE = registerSoundEvent("ki_kame_charge");
     public static final RegistryObject<SoundEvent> KI_KAME_FIRE = registerSoundEvent("ki_kame_fire");
+    public static final RegistryObject<SoundEvent> KI_DISK_CHARGE = registerSoundEvent("ki_disk_charge");
 
 	public static final RegistryObject<SoundEvent> OOZARU_HEARTBEAT = registerSoundEvent("oozaru_heartbeat");
 	public static final RegistryObject<SoundEvent> OOZARU_GROWL_PLAYER = registerSoundEvent("oozaru_growl_player");

@@ -428,6 +428,14 @@ public class MainEntities {
                     .fireImmune()
                     .build(new ResourceLocation(Reference.MOD_ID, "ki_wave").toString())
     );
+    public static final RegistryObject<EntityType<KiDiscEntity>> KI_DISC = ENTITY_TYPES.register("ki_disc",
+            () -> EntityType.Builder.<KiDiscEntity>of(KiDiscEntity::new, MobCategory.MISC)
+                    .sized(1.0F, 0.1F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .fireImmune()
+                    .build("ki_disc")
+    );
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

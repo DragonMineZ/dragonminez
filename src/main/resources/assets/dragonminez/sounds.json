@@ -341,6 +341,12 @@
       "dragonminez:ki_kame_fire"
     ]
   },
+  "ki_disk_charge": {
+    "subtitle": "sounds.dragonminez.ki_disk_charge",
+    "sounds": [
+      "dragonminez:ki_disk_charge"
+    ]
+  },
   "switch_off": {
     "subtitle": "sounds.dragonminez.switch_off",
     "sounds": [

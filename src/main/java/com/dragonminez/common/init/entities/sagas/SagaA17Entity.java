@@ -12,17 +12,17 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class SagaA17Entity extends DBSagasEntity{
+public class SagaA17Entity extends DBSagasEntity {
 
-    private static final int SKILL_MILKY_CANNON = 1;
+    private static final int SKILL_KI_DISC = 1;
 
-    private int kiBlastCooldown = 0;
+    private int discCooldown = 0;
 
     public SagaA17Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-		if (this instanceof IBattlePower bp) {
-			bp.setBattlePower(700000000);
-		}
+        if (this instanceof IBattlePower bp) {
+            bp.setBattlePower(700000000);
+        }
     }
 
     @Override
@@ -34,36 +34,34 @@ public class SagaA17Entity extends DBSagasEntity{
         handleCommonCombatMovement(target, this.isCasting(), true);
 
         if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
+            if (this.discCooldown > 0) this.discCooldown--;
 
             if (target != null && target.isAlive() && !this.isCasting()) {
                 double distSqr = this.distanceToSqr(target);
 
-                if (this.teleportCooldown <= 0 && distSqr > 200.0D) {
+                if (this.teleportCooldown <= 0 && distSqr > 256.0D) {
                     performTeleport(target);
                     return;
                 }
 
-                if (this.kiBlastCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_MILKY_CANNON);
+                if (this.discCooldown <= 0 && distSqr > 25.0D) {
+                    startCasting(SKILL_KI_DISC);
                 }
             }
 
             if (this.isCasting()) {
                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
 
+                if (target != null) {
+                    this.lookAt(target, 30.0F, 30.0F);
+                }
+
                 if (target != null && target.isAlive()) {
                     this.castTimer++;
 
-                    if (getSkillType() == SKILL_MILKY_CANNON) {
+                    if (getSkillType() == SKILL_KI_DISC) {
                         if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    2.1F,
-                                    0xF3A3FF,
-                                    0xEB57FF,
-                                    2.0f
-                            );
+                            shootGenericKiDisc(10.5F, 0x98FF5C, 1.8F);
                             stopCasting();
                         }
                     }
@@ -76,8 +74,8 @@ public class SagaA17Entity extends DBSagasEntity{
 
     @Override
     public void stopCasting() {
-        if (getSkillType() == SKILL_MILKY_CANNON) {
-            this.kiBlastCooldown = 10 * 20;
+        if (getSkillType() == SKILL_KI_DISC) {
+            this.discCooldown = 8 * 20;
         }
         super.stopCasting();
     }
@@ -92,7 +90,7 @@ public class SagaA17Entity extends DBSagasEntity{
         if (this.isCasting()) {
             int skill = getSkillType();
 
-            if (skill == SKILL_MILKY_CANNON) {
+            if (skill == SKILL_KI_DISC) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
             }
         }
