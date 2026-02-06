@@ -140,9 +140,9 @@ dependencies {
 
     // Database Libraries for database storage lol
     jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.0.8,3.1)") { jarJar.ranged(this, "[3.0.8,3.1)") }
-    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[4.0.3,5.0)") { jarJar.ranged(this, "[4.0.3,5.0)") }
+    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,5.0)") { jarJar.ranged(this, "[7.0.2,5.0)") }
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.0.8")
-    compileOnly("com.zaxxer:HikariCP:4.0.3")
+    compileOnly("com.zaxxer:HikariCP:7.0.2")
 
     // Dev utility mods (not included while building)
     // JEI for recipe viewing and testing, also we need the API to test the integration with the Kikono Station
