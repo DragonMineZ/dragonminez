@@ -173,7 +173,10 @@ public class AuraRenderHandler {
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
         if (stats == null) return;
 
-        float[] color = ColorUtils.hexToRgb("#BFECFF");
+		var formData = stats.getCharacter().getActiveFormData();
+		if (!stats.getCharacter().hasActiveForm() || formData == null) return;
+		if (!formData.hasLightnings()) return;
+        float[] color = ColorUtils.hexToRgb(formData.getLightningColor());
 
         syncModelToPlayer(sparkModel, entry.playerModel());
 
