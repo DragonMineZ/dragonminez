@@ -1,6 +1,8 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Cooldowns;
@@ -13,10 +15,12 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.function.Supplier;
 
@@ -138,7 +142,14 @@ public class NPCActionC2S {
 
 	private static void handlePopo(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
-			// Summon shadow entity pasando datos del player
+			ServerLevel level = player.serverLevel();
+			EntityType<?> entityType = MainEntities.SHADOW_DUMMY.get();
+			if (entityType.create(level) instanceof ShadowDummyEntity shadowDummy) {
+				shadowDummy.setPos(player.getX(), player.getY(), player.getZ());
+				shadowDummy.copyStatsFromPlayer(player);
+				level.addFreshEntity(shadowDummy);
+				player.sendSystemMessage(Component.translatable("gui.dragonminez.lines.popo.training_started"));
+			}
 		}
 	}
 }

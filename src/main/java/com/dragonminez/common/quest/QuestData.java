@@ -47,6 +47,17 @@ public class QuestData {
         return getSagaProgress(sagaId).isRewardClaimed(questId, rewardIndex);
     }
 
+	public Map<String, Saga> getActiveSagas() {
+		Map<String, Saga> activeSagas = new HashMap<>();
+		for (String sagaId : sagaProgress.keySet()) {
+			Saga saga = SagaManager.getSaga(sagaId);
+			if (saga != null) {
+				activeSagas.put(sagaId, saga);
+			}
+		}
+		return activeSagas;
+	}
+
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         ListTag sagaList = new ListTag();

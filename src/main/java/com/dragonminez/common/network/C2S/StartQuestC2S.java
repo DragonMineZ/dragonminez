@@ -51,7 +51,6 @@ public class StartQuestC2S {
 
 			for (QuestObjective objective : quest.getObjectives()) {
 				if (objective instanceof KillObjective killObjective) {
-
 					String entityIdStr = killObjective.getEntityId();
 					ResourceLocation resLoc = new ResourceLocation(entityIdStr);
 					EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(resLoc);
@@ -61,17 +60,9 @@ public class StartQuestC2S {
 						Entity entity = entityType.create(player.level());
 						if (entity != null) {
 							entity.setPos(player.getX(), player.getY(), player.getZ());
-
-							if (isHardMode) {
-								entity.getPersistentData().putBoolean("dmz_is_hardmode", true);
-							}
-
-							if (entity instanceof Mob mob) {
-								mob.setTarget(player);
-							}
-
+							if (isHardMode) entity.getPersistentData().putBoolean("dmz_is_hardmode", true);
+							if (entity instanceof Mob mob) mob.setTarget(player);
 							player.serverLevel().addFreshEntity(entity);
-
 							break;
 						}
 					}

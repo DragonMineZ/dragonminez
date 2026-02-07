@@ -121,8 +121,6 @@ public class GravityLogic {
 				attackPenalty = -Math.min(0.9, attackFactor);
 			}
 
-			System.out.println("Applying gravity penalties to player " + player.getName().getString() + " | move penalty: " + movePenalty + " | attack penalty: " + attackPenalty);
-
 			movementSpeed.addTransientModifier(new AttributeModifier(
 					GRAVITY_SPEED_UUID,
 					"Gravity movement penalty",
