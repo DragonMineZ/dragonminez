@@ -42,6 +42,16 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             poseStack.scale(1.2f, 1.2f, 1.2f);
         } else if(entity instanceof SagaFreezer3rdEntity){
             poseStack.scale(1.3f, 1.3f, 1.3f);
+        } else if(entity instanceof SagaCellSemiPerfectEntity){
+            poseStack.scale(1.2f, 1.2f, 1.2f);
+        } else if(entity instanceof SagaVegetaSSJEntity){
+            poseStack.scale(1.1f, 1.0f, 1.1f);
+        } else if(entity instanceof SagaTrunksSSJEntity){
+            poseStack.scale(1.3f, 1.1f, 1.3f);
+        } else if(entity instanceof SagaGohanSSJEntity){
+            poseStack.scale(0.8f, 0.8f, 0.8f);
+        } else if(entity instanceof SagaCellJrEntity){
+            poseStack.scale(0.8f, 0.8f, 0.8f);
         }
 
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
@@ -54,7 +64,6 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         if (animatable instanceof SagaNappaEntity nappa) {
 
-            // 2. Si es Nappa, usamos su lógica de vida
             if (nappa.isBattleDamaged()) {
                 return NAPPA_DAMAGED;
             }

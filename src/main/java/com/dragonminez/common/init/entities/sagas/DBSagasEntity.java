@@ -44,10 +44,15 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);    //0; none, 1; kiblast, 2; rugido
+    private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> AURA_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
     private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> KI_CHARGE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+
+    private static final EntityDataAccessor<Boolean> IS_LIGHTNING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
     private double roarDamage = 50.0D;
     private double roarRange = 15.0D;
@@ -167,7 +172,11 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(IS_FLYING, false);
         this.entityData.define(SKILL_TYPE, 0);
         this.entityData.define(BATTLE_POWER, 20);
+        this.entityData.define(AURA_COLOR, 0xFFFFFF);
         this.entityData.define(TRANSFORMING, false);
+        this.entityData.define(KI_CHARGE, false);
+        this.entityData.define(IS_LIGHTNING, false);
+        this.entityData.define(LIGHTNING_COLOR, 0xFFFFFF);
     }
 
     public void setCasting(boolean casting) { this.entityData.set(IS_CASTING, casting); }
@@ -182,8 +191,20 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     public int getBattlePower() { return this.entityData.get(BATTLE_POWER); }
     public void setBattlePower(int type) { this.entityData.set(BATTLE_POWER, type); }
 
+    public int getAuraColor() { return this.entityData.get(AURA_COLOR); }
+    public void setAuraColor(int color) { this.entityData.set(AURA_COLOR, color); }
+
     public boolean isTransforming() {return this.entityData.get(TRANSFORMING);}
     public void setTransforming(boolean transforming) {this.entityData.set(TRANSFORMING, transforming);}
+
+    public boolean isCharge() {return this.entityData.get(KI_CHARGE);}
+    public void setKiCharge(boolean charge) {this.entityData.set(KI_CHARGE, charge);}
+
+    public boolean isLightning() { return this.entityData.get(IS_LIGHTNING); }
+    public void setLightning(boolean active) { this.entityData.set(IS_LIGHTNING, active); }
+
+    public int getLightningColor() { return this.entityData.get(LIGHTNING_COLOR); }
+    public void setLightningColor(int color) { this.entityData.set(LIGHTNING_COLOR, color); }
 
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {

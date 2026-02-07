@@ -42,6 +42,7 @@ public class SagaFreezer2ndEntity extends DBSagasEntity{
 
     public SagaFreezer2ndEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        setAuraColor(0xA823D9);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(1200000);
 		}

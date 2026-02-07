@@ -22,6 +22,12 @@ public class DBSagasAuraLayer<T extends DBSagasEntity> extends GeoRenderLayer<T>
     private static final ResourceLocation AURA_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
     private static final ResourceLocation AURA_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
 
+    private static final ResourceLocation SPARK_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
+    private static final ResourceLocation SPARK_TEX_0 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
+    private static final ResourceLocation SPARK_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_1.png");
+    private static final ResourceLocation SPARK_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_2.png");
+
+
     public DBSagasAuraLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
     }
@@ -29,41 +35,65 @@ public class DBSagasAuraLayer<T extends DBSagasEntity> extends GeoRenderLayer<T>
     @Override
     public void render(PoseStack poseStack, T animatable, BakedGeoModel entityModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 
-        if (!animatable.isTransforming()) return;
+        boolean showAura = animatable.isTransforming() || animatable.isCharge();
+        boolean showLightning = animatable.isLightning();
 
-        BakedGeoModel auraModel = getGeoModel().getBakedModel(AURA_MODEL);
-        if (auraModel == null) return;
-
-        for (GeoBone rootBone : auraModel.topLevelBones()) {
-            setHiddenRecursive(rootBone, false);
-        }
-
-        // Animación de textura (loop de 3 frames)
-        long frame = (long) ((animatable.level().getGameTime() / 1.5f) % 3);
-        ResourceLocation currentTexture;
-        if (frame == 0) currentTexture = AURA_TEX_0;
-        else if (frame == 1) currentTexture = AURA_TEX_1;
-        else currentTexture = AURA_TEX_2;
-
-        syncModelToEntity(auraModel, entityModel);
-
-        float[] color = new float[]{1.0f, 1.0f, 1.0f};
-
-        if (animatable instanceof SagaFreezer2ndEntity) {
-            color = ColorUtils.rgbIntToFloat(0x880FFF);
-        }
-
-        RenderType auraRenderType = ModRenderTypes.energy(currentTexture);
+        if (!showAura && !showLightning) return;
 
         poseStack.pushPose();
 
         float scale = 1.3f;
         poseStack.scale(scale, scale, scale);
 
-        getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType,
-                bufferSource.getBuffer(auraRenderType), partialTick, 15728880,
-                net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
-                color[0], color[1], color[2], 0.2f);
+        long frame = (long) ((animatable.level().getGameTime() / 1.5f) % 3);
+
+        if (showAura) {
+            BakedGeoModel auraModel = getGeoModel().getBakedModel(AURA_MODEL);
+            if (auraModel != null) {
+                for (GeoBone rootBone : auraModel.topLevelBones()) {
+                    setHiddenRecursive(rootBone, false);
+                }
+
+                ResourceLocation currentTexture;
+                if (frame == 0) currentTexture = AURA_TEX_0;
+                else if (frame == 1) currentTexture = AURA_TEX_1;
+                else currentTexture = AURA_TEX_2;
+
+                syncModelToEntity(auraModel, entityModel);
+
+                float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
+                RenderType auraRenderType = ModRenderTypes.energy(currentTexture);
+
+                getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType,
+                        bufferSource.getBuffer(auraRenderType), partialTick, 15728880,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
+                        color[0], color[1], color[2], 0.2f);
+            }
+        }
+
+        if (showLightning) {
+            BakedGeoModel sparkModel = getGeoModel().getBakedModel(SPARK_MODEL);
+            if (sparkModel != null) {
+                for (GeoBone rootBone : sparkModel.topLevelBones()) {
+                    setHiddenRecursive(rootBone, false);
+                }
+
+                ResourceLocation currentSparkTex;
+                if (frame == 0) currentSparkTex = SPARK_TEX_0;
+                else if (frame == 1) currentSparkTex = SPARK_TEX_1;
+                else currentSparkTex = SPARK_TEX_2;
+
+                syncModelToEntity(sparkModel, entityModel);
+
+                float[] sparkColor = ColorUtils.rgbIntToFloat(animatable.getLightningColor());
+                RenderType sparkRenderType = ModRenderTypes.glow(currentSparkTex);
+
+                getRenderer().reRender(sparkModel, poseStack, bufferSource, animatable, sparkRenderType,
+                        bufferSource.getBuffer(sparkRenderType), partialTick, 15728880,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
+                        sparkColor[0], sparkColor[1], sparkColor[2], 0.5f);
+            }
+        }
 
         poseStack.popPose();
     }

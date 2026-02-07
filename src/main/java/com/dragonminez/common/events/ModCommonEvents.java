@@ -85,6 +85,15 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_A18.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_A17.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_A16.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_CELL_IMPERFECT.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_PICCOLO_KAMI.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_CELL_SEMIPERFECT.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_SUPER_VEGETA.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_TRUNKS_SSJ.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_CELL_PERFECT.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_GOHAN_SSJ.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_CELL_SUPERPERFECT.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_CELL_JR.get(), DBSagasEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());

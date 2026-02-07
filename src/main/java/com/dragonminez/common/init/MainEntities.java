@@ -383,6 +383,51 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaA16Entity::new, MobCategory.MONSTER)
                             .sized(0.9f, 2.2f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_a16").toString()));
+    public static final RegistryObject<EntityType<SagaCellImperfectEntity>> SAGA_CELL_IMPERFECT =
+            ENTITY_TYPES.register("saga_cell_imperfect",
+                    () -> EntityType.Builder.of(SagaCellImperfectEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_imperfect").toString()));
+    public static final RegistryObject<EntityType<SagaPiccoloKamiEntity>> SAGA_PICCOLO_KAMI =
+            ENTITY_TYPES.register("saga_piccolo_kami",
+                    () -> EntityType.Builder.of(SagaPiccoloKamiEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_piccolo_kami").toString()));
+    public static final RegistryObject<EntityType<SagaCellSemiPerfectEntity>> SAGA_CELL_SEMIPERFECT =
+            ENTITY_TYPES.register("saga_cell_semiperfect",
+                    () -> EntityType.Builder.of(SagaCellSemiPerfectEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_semiperfect").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaSSJEntity>> SAGA_SUPER_VEGETA =
+            ENTITY_TYPES.register("saga_super_vegeta",
+                    () -> EntityType.Builder.of(SagaVegetaSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_super_vegeta").toString()));
+    public static final RegistryObject<EntityType<SagaTrunksSSJEntity>> SAGA_TRUNKS_SSJ =
+            ENTITY_TYPES.register("saga_trunks_ssj",
+                    () -> EntityType.Builder.of(SagaTrunksSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_trunks_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaCellPerfectEntity>> SAGA_CELL_PERFECT =
+            ENTITY_TYPES.register("saga_cell_perfect",
+                    () -> EntityType.Builder.of(SagaCellPerfectEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_perfect").toString()));
+    public static final RegistryObject<EntityType<SagaGohanSSJEntity>> SAGA_GOHAN_SSJ =
+            ENTITY_TYPES.register("saga_gohan_ssj",
+                    () -> EntityType.Builder.of(SagaGohanSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 1.5f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaCellSuperPerfectEntity>> SAGA_CELL_SUPERPERFECT =
+            ENTITY_TYPES.register("saga_cell_superperfect",
+                    () -> EntityType.Builder.of(SagaCellSuperPerfectEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_superperfect").toString()));
+    public static final RegistryObject<EntityType<SagaCellJrEntity>> SAGA_CELL_JR =
+            ENTITY_TYPES.register("saga_cell_jr",
+                    () -> EntityType.Builder.of(SagaCellJrEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 1.7f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_jr").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)

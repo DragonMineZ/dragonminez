@@ -180,6 +180,15 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_A18.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_A17.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_A16.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_CELL_IMPERFECT.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_PICCOLO_KAMI.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_CELL_SEMIPERFECT.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_SUPER_VEGETA.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_TRUNKS_SSJ.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_CELL_PERFECT.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_GOHAN_SSJ.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_CELL_SUPERPERFECT.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SAGA_CELL_JR.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
