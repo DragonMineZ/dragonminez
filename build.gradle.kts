@@ -131,7 +131,7 @@ dependencies {
     implementation("com.google.guava:guava:33.5.0-jre")
     implementation("io.netty:netty-codec:4.2.7.Final")
     implementation("io.netty:netty-handler:4.2.7.Final")
-    implementation("org.apache.commons:commons-compress:1.27.1")
+    implementation("org.apache.commons:commons-compress:1.28.0")
 
     // GeckoLib & Terrablender
     implementation(fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:4.8.3"))
