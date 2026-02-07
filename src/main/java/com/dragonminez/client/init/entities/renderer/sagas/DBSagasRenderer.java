@@ -5,6 +5,7 @@ import com.dragonminez.client.init.entities.model.MasterGlobalModel;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
 import com.dragonminez.client.init.entities.renderer.sagas.layer.DBSagasAuraLayer;
 import com.dragonminez.common.init.entities.MastersEntity;
+import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.sagas.*;
 import com.dragonminez.common.quest.Saga;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -13,6 +14,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<T> {
@@ -29,6 +31,9 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
     @Override
     public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
+        if (animatable instanceof ShadowDummyEntity) {
+            return RenderType.entityTranslucent(texture);
+        }
         return RenderType.entityCutoutNoCull(texture);
     }
 
@@ -74,4 +79,13 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     }
 
 
+    @Override
+    public Color getRenderColor(T animatable, float partialTick, int packedLight) {
+
+        if (animatable instanceof ShadowDummyEntity) {
+            return Color.ofRGBA(1.0f, 1.0f, 1.0f, 0.7f);
+        }
+
+        return super.getRenderColor(animatable, partialTick, packedLight);
+    }
 }

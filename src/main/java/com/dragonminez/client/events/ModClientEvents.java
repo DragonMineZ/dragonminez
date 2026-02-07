@@ -189,6 +189,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.SAGA_GOHAN_SSJ.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_CELL_SUPERPERFECT.get(), DBSagasRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_CELL_JR.get(), DBSagasRenderer::new);
+        event.registerEntityRenderer(MainEntities.SHADOW_DUMMY.get(), DBSagasRenderer::new);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);

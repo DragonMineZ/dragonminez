@@ -94,6 +94,7 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_GOHAN_SSJ.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_CELL_SUPERPERFECT.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_CELL_JR.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SHADOW_DUMMY.get(), DBSagasEntity.createAttributes().build());
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());
         event.put(MainEntities.DINOSAUR2.get(), Dino2Entity.createAttributes().build());

@@ -1,12 +1,9 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.init.entities.FlyingNimbusEntity;
-import com.dragonminez.common.init.entities.MajinSkillEntity;
-import com.dragonminez.common.init.entities.PunchMachineEntity;
+import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.dragon.PorungaEntity;
 import com.dragonminez.common.init.entities.dragon.ShenronEntity;
-import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.masters.*;
@@ -428,6 +425,11 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaCellJrEntity::new, MobCategory.MONSTER)
                             .sized(0.8f, 1.7f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_jr").toString()));
+    public static final RegistryObject<EntityType<ShadowDummyEntity>> SHADOW_DUMMY =
+            ENTITY_TYPES.register("shadow_dummy",
+                    () -> EntityType.Builder.of(ShadowDummyEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shadow_dummy").toString()));
 
     public static final RegistryObject<EntityType<KiBlastEntity>> KI_BLAST = ENTITY_TYPES.register("ki_blast",
             () -> EntityType.Builder.<KiBlastEntity>of(KiBlastEntity::new, MobCategory.MISC)
