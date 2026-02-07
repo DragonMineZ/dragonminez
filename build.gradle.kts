@@ -139,9 +139,9 @@ dependencies {
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
 
     // Database Libraries for database storage lol
-    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.0.8,3.1)") { jarJar.ranged(this, "[3.0.8,3.1)") }
+    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.7,3.1)") { jarJar.ranged(this, "[3.5.7,3.1)") }
     jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
-    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.0.8")
+    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.7")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 
     // Dev utility mods (not included while building)
