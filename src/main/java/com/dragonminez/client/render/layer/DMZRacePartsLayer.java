@@ -16,6 +16,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -115,33 +117,44 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         poseStack.popPose();
     }
 
-	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
-		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
-		var stats = statsCap.orElse(new StatsData(animatable));
-		boolean hasScouter = !stats.getStatus().getScouterItem().contains("scouter");
+    private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
 
-		if (!hasScouter) return;
+        ItemStack headStack = animatable.getItemBySlot(EquipmentSlot.HEAD);
+        Item headItem = headStack.getItem();
 
-		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
-		if (accModel == null) return;
+        String color = null;
 
-		resetModelParts(accModel);
-		accModel.getBone("side").ifPresent(this::showBoneChain);
-		accModel.getBone("glass").ifPresent(this::showBoneChain);
-		accModel.getBone("union").ifPresent(this::showBoneChain);
+        if (headItem == MainItems.GREEN_SCOUTER.get()) {
+            color = "green";
+        } else if (headItem == MainItems.RED_SCOUTER.get()) {
+            color = "red";
+        } else if (headItem == MainItems.BLUE_SCOUTER.get()) {
+            color = "blue";
+        } else if (headItem == MainItems.PURPLE_SCOUTER.get()) {
+            color = "purple";
+        }
 
-		syncModelToPlayer(accModel, playerModel);
+        if (color == null) return;
 
-		String scouterItem = stats.getStatus().getScouterItem();
-		String scouterColor = scouterItem.contains("green") ? "green" : scouterItem.contains("blue") ? "blue" : scouterItem.contains("red") ? "red" : "purple";
-		RenderType accRenderType = RenderType.entityCutoutNoCull(new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + scouterColor + "_scouter.png"));
+        BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
+        if (accModel == null) return;
 
-		poseStack.pushPose();
-		getRenderer().reRender(accModel, poseStack, bufferSource, animatable, accRenderType,
-				bufferSource.getBuffer(accRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-				1.0f, 1.0f, 1.0f, 1.0f);
-		poseStack.popPose();
-	}
+        resetModelParts(accModel);
+
+        accModel.getBone("radar").ifPresent(this::showBoneChain);
+
+        syncModelToPlayer(accModel, playerModel);
+
+        RenderType accRenderType = RenderType.entityTranslucent(
+                new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + color + "_scouter.png")
+        );
+
+        poseStack.pushPose();
+        getRenderer().reRender(accModel, poseStack, bufferSource, animatable, accRenderType,
+                bufferSource.getBuffer(accRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+                1.0f, 1.0f, 1.0f, 1.0f);
+        poseStack.popPose();
+    }
 
     private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
