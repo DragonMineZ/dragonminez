@@ -46,7 +46,7 @@ public class DefaultFormsFactory {
         buffed.setName(HumanForms.BUFFED);
         buffed.setUnlockOnSkillLevel(1);
         buffed.setCustomModel("");
-        buffed.setModelScaling(new float[]{1.2f, 1.0f, 1.2f});
+        buffed.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
         buffed.setStrMultiplier(1.75);
         buffed.setSkpMultiplier(1.75);
         buffed.setStmMultiplier(1.0);
@@ -324,7 +324,7 @@ public class DefaultFormsFactory {
         ssg2.setBodyColor1("");
         ssg2.setBodyColor2("");
         ssg2.setBodyColor3("");
-        ssg2.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
+        ssg2.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         ssg2.setStrMultiplier(2.0);
         ssg2.setSkpMultiplier(2.0);
         ssg2.setStmMultiplier(1.0);
@@ -354,7 +354,7 @@ public class DefaultFormsFactory {
         ssg3.setBodyColor1("");
         ssg3.setBodyColor2("");
         ssg3.setBodyColor3("");
-        ssg3.setModelScaling(new float[]{1.3f, 1.15f, 1.3f});
+        ssg3.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
         ssg3.setStrMultiplier(2.8);
         ssg3.setSkpMultiplier(2.8);
         ssg3.setStmMultiplier(1.0);
@@ -420,7 +420,7 @@ public class DefaultFormsFactory {
         ssj2.setEye2Color("#00FFFF");
         ssj2.setAuraColor("#FFD700");
 		ssj2.setHasLightnings(true);
-		ssj2.setLightningColor("#1AA1C7");
+		ssj2.setLightningColor("#A1FFF9");
         ssj2.setBodyColor1("");
         ssj2.setBodyColor2("");
         ssj2.setBodyColor3("");
@@ -451,7 +451,7 @@ public class DefaultFormsFactory {
         ssj3.setEye2Color("#00FFFF");
         ssj3.setAuraColor("#FFD700");
 		ssj3.setHasLightnings(true);
-		ssj3.setLightningColor("#1AA1C7");
+		ssj3.setLightningColor("#A1FFF9");
         ssj3.setBodyColor1("");
         ssj3.setBodyColor2("");
         ssj3.setBodyColor3("");
@@ -474,7 +474,7 @@ public class DefaultFormsFactory {
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
-        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
+//        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
         superSaiyan.setForms(superSaiyanForms);
 
         forms.put(SaiyanForms.OOZARU, oozaruForms);
@@ -561,7 +561,7 @@ public class DefaultFormsFactory {
         superNamekian.setCustomModel("");
         superNamekian.setAuraColor("#7FFF00");
 		superNamekian.setHasLightnings(true);
-		superNamekian.setLightningColor("#E6F2F5");
+		superNamekian.setLightningColor("#FFFFFF");
         superNamekian.setModelScaling(new float[]{1.05f, 1.05f, 1.05f});
         superNamekian.setStrMultiplier(3.6);
         superNamekian.setSkpMultiplier(3.6);
@@ -697,7 +697,7 @@ public class DefaultFormsFactory {
         fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
+        fullPower.setModelScaling(new float[]{1.15f, 1.1f, 1.15f});
         fullPower.setStrMultiplier(3.4);
         fullPower.setSkpMultiplier(3.4);
         fullPower.setStmMultiplier(1.0);
@@ -991,7 +991,7 @@ public class DefaultFormsFactory {
         superPerfect.setHairColor("");
         superPerfect.setEye1Color("");
         superPerfect.setEye2Color("");
-        superPerfect.setAuraColor("");
+        superPerfect.setAuraColor("FFFF69");
 		superPerfect.setHasLightnings(true);
 		superPerfect.setLightningColor("#1AA1C7");
         superPerfect.setBodyColor1("");
