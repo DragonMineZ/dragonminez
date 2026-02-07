@@ -32,6 +32,7 @@ public class MasterTextScreen extends Screen {
 			"textures/gui/menu/textmenu.png");
 	private final String masterName;
 	private Component currentDialogue;
+	private boolean wantsToTrain = false;
 
 	public MasterTextScreen(String masterName) {
 		super(Component.literal(masterName));
@@ -186,34 +187,65 @@ public class MasterTextScreen extends Screen {
 	private void initPopo(int x, int y, StatsData stats) {
 		boolean HTC = Minecraft.getInstance().player.level().dimension().equals(HTCDimension.HTC_KEY);
 
-		if (HTC) {
+		if (wantsToTrain) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
 					.position(x, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.popo.train"))
+					.message(Component.translatable("gui.dragonminez.button.popo.shadow"))
+					.onPress(btn -> {
+						NetworkHandler.sendToServer(new NPCActionC2S("popo", 1));
+						wantsToTrain = false;
+						this.onClose();
+					})
+					.build());
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 150, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable("gui.dragonminez.button.popo.rythm"))
 					.onPress(btn -> {
 						if (Minecraft.getInstance().player.level().isClientSide()) {
-							//Minecraft.getInstance().setScreen(new TrainingMenuScreen());
+							//Minecraft.getInstance().setScreen(new RythmTrainingScreen());
 						}
+						wantsToTrain = false;
+						this.onClose();
 					})
 					.build());
 		} else {
-			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x, y)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.popo.haircut"))
-					.onPress(btn -> {
-						if (Minecraft.getInstance().player.level().isClientSide()) {
-							Minecraft.getInstance().setScreen(new HairEditorScreen(null, stats.getCharacter()));
-						}
-					})
-					.build());
+			if (HTC) {
+				this.addRenderableWidget(new TexturedTextButton.Builder()
+						.position(x, y)
+						.size(74, 20)
+						.texture(BUTTONS_TEXTURE)
+						.textureCoords(0, 28, 0, 48)
+						.textureSize(74, 20)
+						.message(Component.translatable("gui.dragonminez.button.popo.train"))
+						.onPress(btn -> {
+							wantsToTrain = true;
+							this.currentDialogue = Component.translatable("gui.dragonminez.lines.popo.training", Minecraft.getInstance().player.getName());
+							refreshButtons();
+						})
+						.build());
+			} else {
+				this.addRenderableWidget(new TexturedTextButton.Builder()
+						.position(x, y)
+						.size(74, 20)
+						.texture(BUTTONS_TEXTURE)
+						.textureCoords(0, 28, 0, 48)
+						.textureSize(74, 20)
+						.message(Component.translatable("gui.dragonminez.button.popo.haircut"))
+						.onPress(btn -> {
+							if (Minecraft.getInstance().player.level().isClientSide()) {
+								Minecraft.getInstance().setScreen(new HairEditorScreen(null, stats.getCharacter()));
+							}
+						})
+						.build());
+			}
 		}
 	}
 
@@ -251,6 +283,11 @@ public class MasterTextScreen extends Screen {
 			textY += this.font.lineHeight + 2;
 		}
 		super.render(graphics, mouseX, mouseY, partialTick);
+	}
+
+	private void refreshButtons() {
+		this.clearWidgets();
+		this.init();
 	}
 
 	@Override
