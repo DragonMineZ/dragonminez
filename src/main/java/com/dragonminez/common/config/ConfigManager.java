@@ -338,7 +338,7 @@ public class ConfigManager {
         config.setDefaultEye2Color("#FF001D");
         config.setDefaultAuraColor("#5F00FF");
 
-		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
+		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000, 200000});
         config.setGodformTpCost(new int[]{});
         config.setLegendaryformsTpCost(new int[]{});
     }

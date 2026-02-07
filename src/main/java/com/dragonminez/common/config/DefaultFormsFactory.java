@@ -697,7 +697,7 @@ public class DefaultFormsFactory {
         fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(new float[]{1.2f, 1.0f, 1.2f});
+        fullPower.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
         fullPower.setStrMultiplier(3.4);
         fullPower.setSkpMultiplier(3.4);
         fullPower.setStmMultiplier(1.0);
@@ -713,7 +713,7 @@ public class DefaultFormsFactory {
         fullPower.setEye1Color("");
         fullPower.setEye2Color("");
         fullPower.setAuraColor("");
-		fullPower.setHasLightnings(true);
+		fullPower.setHasLightnings(false);
 		fullPower.setLightningColor("#F02B16");
         fullPower.setBodyColor1("");
         fullPower.setBodyColor2("");
@@ -726,8 +726,8 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fifthForm = new FormConfig.FormData();
 		fifthForm.setName(FrostDemonForms.FIFTH_FORM);
 		fifthForm.setUnlockOnSkillLevel(5);
-		fifthForm.setCustomModel("");
-		fifthForm.setModelScaling(new float[]{1.2f, 1.0f, 1.2f});
+		fifthForm.setCustomModel("frostdemon_fifth");
+		fifthForm.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
 		fifthForm.setStrMultiplier(3.75);
 		fifthForm.setSkpMultiplier(3.75);
 		fifthForm.setStmMultiplier(1.0);
@@ -740,8 +740,8 @@ public class DefaultFormsFactory {
 		fifthForm.setStaminaDrain(1.0);
 		fifthForm.setAttackSpeed(1.0);
 		fifthForm.setHairColor("");
-		fifthForm.setEye1Color("");
-		fifthForm.setEye2Color("");
+		fifthForm.setEye1Color("#D91E1E");
+		fifthForm.setEye2Color("#D91E1E");
 		fifthForm.setAuraColor("");
 		fifthForm.setHasLightnings(true);
 		fifthForm.setLightningColor("#F02B16");

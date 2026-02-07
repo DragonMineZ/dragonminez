@@ -292,13 +292,34 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             else {
                 String transformTexture = race;
                 if (isFrost) {
-                    if (Objects.equals(form, FrostDemonForms.THIRD_FORM)) transformTexture = "thirdform_bodytype_" + bodyType;
-                    else if (Objects.equals(form, "golden")) transformTexture = "frostdemon_golden";
+                    if (Objects.equals(form, FrostDemonForms.THIRD_FORM)) {
+                        transformTexture = "thirdform_bodytype_" + bodyType;
+                    }
+                    else if (Objects.equals(form, FrostDemonForms.FIFTH_FORM)) {
+                        transformTexture = "fifth_bodytype_" + bodyType;
+                    }
+                    else if (Objects.equals(form, "golden")) {
+                        transformTexture = "frostdemon_golden";
+                    }
                 }
                 filePrefix = "textures/entity/races/" + race + "/" + transformTexture + "_";
             }
 
-            renderStandardLayers(model, poseStack, animatable, bufferSource, filePrefix, isFrost, isBio, bodyType, b1, b2, b3, h, pt, pl, po);
+            float[] colorForLayer2 = b2;
+            float[] colorForLayer3 = b3;
+
+
+            if (isFrost && Objects.equals(form, FrostDemonForms.FIFTH_FORM)) {
+
+                if (bodyType == 0) {
+                    colorForLayer2 = h;
+                }
+                else if (bodyType == 2) {
+                    colorForLayer3 = h;
+                }
+            }
+
+            renderStandardLayers(model, poseStack, animatable, bufferSource, filePrefix, isFrost, isBio, bodyType, b1, colorForLayer2, colorForLayer3, h, pt, pl, po);
         }
     }
 
@@ -416,7 +437,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         else if (raceName.equals("frostdemon")) {
             String eyeBase = "frostdemon_eye";
 
-            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", white, pt, pl, po);
+            float[] eyeScleraColor = white;
+
+            if (Objects.equals(currentForm, FrostDemonForms.FIFTH_FORM)) {
+                eyeScleraColor = hexToRGB("#D91E1E");
+            }
+
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_0.png", eyeScleraColor, pt, pl, po);
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_1.png", eye1, pt, pl, po);
             renderColoredLayer(model, poseStack, animatable, bufferSource, folder + eyeBase + "_2.png", eye2, pt, pl, po);
 
@@ -444,7 +471,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         String prefix = (raceName.equals("human") || raceName.equals("saiyan")) ? "humansaiyan" : raceName;
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "_nose_" + character.getNoseType() + ".png", skinTint, pt, pl, po);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "_mouth_" + character.getMouthType() + ".png", skinTint, pt, pl, po);
+
+        if (raceName.equals("frostdemon") && Objects.equals(currentForm, FrostDemonForms.FIFTH_FORM)) {
+            renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/frostdemon/faces/frostdemon_fifth_mouth.png", b1, pt, pl, po);
+        } else {
+            renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "_mouth_" + character.getMouthType() + ".png", skinTint, pt, pl, po);
+        }
+
     }
 
     private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {
