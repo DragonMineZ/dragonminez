@@ -191,8 +191,8 @@ public class AuraRenderHandler {
 
         float transparency = 0.8f;
 
-        renderer.reRender(sparkModel, poseStack, buffers, animatable, ModRenderTypes.glow(currentTexture),
-                buffers.getBuffer(ModRenderTypes.glow(currentTexture)), entry.partialTick(), 15728880, // Luz máxima
+        renderer.reRender(sparkModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
+                buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880, // Luz máxima
                 OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
 
         poseStack.popPose();

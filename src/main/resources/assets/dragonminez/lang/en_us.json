@@ -754,6 +754,9 @@
   "item.dragonminez.naruke_armor_chestplate": "Armor Saiyan Chestplate",
   "item.dragonminez.naruke_armor_leggings": "Armor Saiyan Leggings",
   "item.dragonminez.naruke_armor_boots": "Armor Saiyan Boots",
+  "item.dragonminez.strongest_armor_chestplate": "The Strongest Chestplate",
+  "item.dragonminez.strongest_armor_leggings": "The Strongest Leggings",
+  "item.dragonminez.strongest_armor_boots": "The Strongest Boots",
 
   "//": "COMMANDS",
   "command.dragonminez.stats.set.success": "§e[DMZ-Stats]§r Stat %s set to %s for %s",

@@ -26,14 +26,13 @@ public class ModRenderTypes extends RenderType {
 					.createCompositeState(true)));
     private static final Function<ResourceLocation, RenderType> ENERGY = Util.memoize((pLocation) ->
             create("energy", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
-                    .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeItemEntityTranslucentCullShader))
+                    .setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
                     .setTextureState(new TextureStateShard(pLocation, true, true))
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-					.setCullState(NO_CULL)
-					.setLightmapState(LIGHTMAP)
-					.setOverlayState(NO_OVERLAY)
-					.setWriteMaskState(COLOR_WRITE)
-					.createCompositeState(true)));
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(false)));
 
     public static RenderType kiBlast(ResourceLocation location) {
         return create("ki_blast",
