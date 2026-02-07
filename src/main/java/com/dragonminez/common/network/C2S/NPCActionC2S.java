@@ -53,6 +53,7 @@ public class NPCActionC2S {
 					case "dende" -> handleDende(player, data, packet.actionId);
 					case "enma" -> handleEnma(player, data, packet.actionId);
 					case "baba" -> handleBaba(player, data, packet.actionId);
+					case "popo" -> handlePopo(player, data, packet.actionId);
 				}
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
@@ -132,6 +133,12 @@ public class NPCActionC2S {
 				data.getStatus().setAlive(true);
 				player.sendSystemMessage(Component.translatable("gui.dragonminez.lines.baba.revived"));
 			}
+		}
+	}
+
+	private static void handlePopo(ServerPlayer player, StatsData data, int action) {
+		if (action == 1) {
+			// Summon shadow entity pasando datos del player
 		}
 	}
 }

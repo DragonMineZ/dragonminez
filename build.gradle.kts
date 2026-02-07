@@ -140,7 +140,7 @@ dependencies {
 
     // Database Libraries for database storage lol
     jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.0.8,3.1)") { jarJar.ranged(this, "[3.0.8,3.1)") }
-    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,5.0)") { jarJar.ranged(this, "[7.0.2,5.0)") }
+    jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.0.8")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 

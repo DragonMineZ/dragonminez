@@ -10,6 +10,7 @@ import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.server.events.players.StatsEvents;
+import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -208,11 +209,19 @@ public class ClientStatsEvents {
 		if (event.getPlayer() instanceof LocalPlayer player) {
 			AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
 			if (speedAttr != null) {
-				AttributeModifier mod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
-				if (mod != null) {
-					double factor = 1.0 + mod.getAmount();
+				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
+				if (formMod != null) {
+					double factor = 1.0 + formMod.getAmount();
 					if (factor > 1.0) {
 						float newFov = (float) (event.getFovModifier() / factor);
+						event.setNewFovModifier(newFov);
+					}
+				}
+				AttributeModifier gravityMod = speedAttr.getModifier(GravityLogic.GRAVITY_SPEED_UUID);
+				if (gravityMod != null) {
+					double factor = 1.0 + Math.abs(gravityMod.getAmount());
+					if (factor > 1.0) {
+						float newFov = (float) (event.getFovModifier() * factor);
 						event.setNewFovModifier(newFov);
 					}
 				}

@@ -107,8 +107,6 @@ public class FusionLogic {
 	}
 
 	public static void endFusion(ServerPlayer player, StatsData data, boolean forcedByDeath) {
-		if (!data.getStatus().isFused()) return;
-
 		boolean isLeader = data.getStatus().isFusionLeader();
 		UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 
@@ -131,6 +129,7 @@ public class FusionLogic {
 			if ("METAMORU".equals(leaderData.getStatus().getFusionType()) || !forcedByDeath) leaderData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 			if (leaderRef.hasEffect(MainEffects.FUSED.get())) leaderRef.removeEffect(MainEffects.FUSED.get());
 			PartyManager.leaveParty(leaderRef);
+			leaderData.getStatus().setFusionPartnerUUID(null);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 		}
 
@@ -147,6 +146,7 @@ public class FusionLogic {
 				partner.setGameMode(GameType.SURVIVAL);
 				if (partner.hasEffect(MainEffects.FUSED.get())) partner.removeEffect(MainEffects.FUSED.get());
 				PartyManager.leaveParty(partner);
+				pData.getStatus().setFusionPartnerUUID(null);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 			});
 		}

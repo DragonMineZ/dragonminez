@@ -15,6 +15,7 @@ import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.ComboManager;
+import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -84,10 +85,11 @@ public class CombatEvent {
 				}
 
 				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
+				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
+				baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
 				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
 				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
 				int currentStamina = attackerData.getResources().getCurrentStamina();
-				if (isPunchMachine) staminaRequired = 0;
 
 				if (wantsCombo) {
 					if (isCooldownFull) {

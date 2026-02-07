@@ -30,6 +30,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -554,9 +555,10 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 	}
 
 	public static boolean canSpawnHere(EntityType<? extends DBSagasEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
-		if (world.getDifficulty() != Difficulty.PEACEFUL) {
-			return world.getBlockState(pos.below()).isValidSpawn(world, pos.below(), entity);
-		}
-		return false;
+		if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
+		if (random.nextFloat() < 0.75f) return false;
+		boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
+		boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
+		return solidGround && noCollision;
 	}
 }

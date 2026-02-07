@@ -7,6 +7,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -27,7 +28,13 @@ public class TPGainEvents {
         if (event.getPlayer().level().dimension().equals(HTCDimension.HTC_KEY)) {
             double htcMultiplier = ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier() - 1.0;
             modifiedTP[0] = (int) (baseTP + baseTP * htcMultiplier);
-        }
+        } else {
+			double bonusGravity = GravityLogic.getBonusGravity(event.getPlayer());
+			if (bonusGravity > 0) {
+				double gravityBonus = 1.0 + (bonusGravity * 0.05);
+				modifiedTP[0] = (int) (baseTP + baseTP * gravityBonus);
+			}
+		}
 
 		if (event.getPlayer() instanceof ServerPlayer player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {

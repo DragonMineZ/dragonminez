@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -24,6 +25,11 @@ public class HeldItemRendererMixin {
 
     @Unique
     private static DMZRenderHand dmz$handRenderer;
+
+	@Inject(method = "renderHandsWithItems", at = @At("HEAD"), cancellable = true)
+	private void dmz$cancelGlobalHandRendering(float pPartialTicks, PoseStack pPoseStack, MultiBufferSource.BufferSource pBufferSource, LocalPlayer pPlayerEntity, int pCombinedLight, CallbackInfo ci) {
+		if (ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) ci.cancel();
+	}
 
     @Unique
     private void dmz$ensureRenderer() {
@@ -42,7 +48,7 @@ public class HeldItemRendererMixin {
 
         if (player != null) {
             pPoseStack.pushPose();
-            boolean isRight = pSide == HumanoidArm.RIGHT;
+            boolean isRight = pSide == net.minecraft.world.entity.HumanoidArm.RIGHT;
             float f = isRight ? 1.0F : -1.0F;
 
             float f1 = Mth.sqrt(pSwingProgress);
@@ -82,14 +88,14 @@ public class HeldItemRendererMixin {
 
         if (player != null) {
             pPoseStack.pushPose();
-            float f = pSide == HumanoidArm.RIGHT ? 1.0F : -1.0F;
+            float f = pSide == net.minecraft.world.entity.HumanoidArm.RIGHT ? 1.0F : -1.0F;
 
             pPoseStack.mulPose(Axis.YP.rotationDegrees(92.0F));
             pPoseStack.mulPose(Axis.XP.rotationDegrees(45.0F));
             pPoseStack.mulPose(Axis.ZP.rotationDegrees(f * -41.0F));
             pPoseStack.translate(f * 0.3F, -1.1F, 0.45F);
 
-            if (pSide == HumanoidArm.RIGHT) {
+            if (pSide == net.minecraft.world.entity.HumanoidArm.RIGHT) {
                 dmz$handRenderer.renderRightHand(pPoseStack, pBuffer, pCombinedLight, player);
             } else {
                 dmz$handRenderer.renderLeftHand(pPoseStack, pBuffer, pCombinedLight, player);

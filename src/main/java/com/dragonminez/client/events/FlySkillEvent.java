@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
@@ -184,6 +185,15 @@ public class FlySkillEvent {
         }
 
         FlightRollHandler.tick();
+
+		double pGravity = GravityLogic.getPenalizationGravity(player);
+		if (pGravity >= 75.0) {
+			flightVector = Vec3.ZERO;
+			player.setDeltaMovement(0, -1.5, 0);
+		} else if (pGravity > 0) {
+			double penalty = GravityLogic.getGeneralPenaltyFactor(pGravity);
+			flightVector = flightVector.scale(1.0 - Math.min(0.95, penalty));
+		}
 
         if (flightVector.length() > 0.01) {
             player.setDeltaMovement(flightVector);

@@ -2,7 +2,6 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -11,15 +10,12 @@ import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -27,7 +23,6 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.Objects;
-import java.util.Set;
 
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
@@ -35,6 +30,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     private static final ResourceLocation RACES_PARTS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/raceparts.png");
 
     private static final ResourceLocation ACCESORIES_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
+	private static final ResourceLocation SCOUTER_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/scouter.geo.json");
 
     private static final ResourceLocation YAJIROBE_SWORD_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
     private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/yajirobe_katana.png");
@@ -44,8 +40,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     private static final ResourceLocation BRAVE_SWORD_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/brave_sword.png");
     private static final ResourceLocation POWER_POLE_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
     private static final ResourceLocation POWER_POLE_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/item/armas/power_pole.png");
-
-
 
     public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
@@ -58,9 +52,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         if (stats == null) return;
 
         renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight);
-
         renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-
+		renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
         renderSword(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
     }
 
@@ -121,6 +114,34 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                 1.0f, 1.0f, 1.0f, 1.0f);
         poseStack.popPose();
     }
+
+	private void renderScouter(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
+		var stats = statsCap.orElse(new StatsData(animatable));
+		boolean hasScouter = !stats.getStatus().getScouterItem().contains("scouter");
+
+		if (!hasScouter) return;
+
+		BakedGeoModel accModel = getGeoModel().getBakedModel(SCOUTER_MODEL);
+		if (accModel == null) return;
+
+		resetModelParts(accModel);
+		accModel.getBone("side").ifPresent(this::showBoneChain);
+		accModel.getBone("glass").ifPresent(this::showBoneChain);
+		accModel.getBone("union").ifPresent(this::showBoneChain);
+
+		syncModelToPlayer(accModel, playerModel);
+
+		String scouterItem = stats.getStatus().getScouterItem();
+		String scouterColor = scouterItem.contains("green") ? "green" : scouterItem.contains("blue") ? "blue" : scouterItem.contains("red") ? "red" : "purple";
+		RenderType accRenderType = RenderType.entityCutoutNoCull(new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + scouterColor + "_scouter.png"));
+
+		poseStack.pushPose();
+		getRenderer().reRender(accModel, poseStack, bufferSource, animatable, accRenderType,
+				bufferSource.getBuffer(accRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+				1.0f, 1.0f, 1.0f, 1.0f);
+		poseStack.popPose();
+	}
 
     private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);

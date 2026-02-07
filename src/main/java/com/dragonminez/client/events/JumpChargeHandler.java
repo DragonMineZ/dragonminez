@@ -1,17 +1,13 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.stats.Stats;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -56,6 +52,13 @@ public class JumpChargeHandler {
             float targetBlocks = 1.0f + (jumpLevel[0] * 0.1f);
             float blocksToAdd = targetBlocks - 1.25f;
             float baseBoost = blocksToAdd * 0.18f;
+
+			double pGravity = GravityLogic.getPenalizationGravity(player);
+			if (pGravity >= 75.0) baseBoost = 0;
+			else if (pGravity > 0) {
+				double penalty = GravityLogic.getGeneralPenaltyFactor(pGravity);
+				baseBoost *= (float) (1.0 - Math.min(0.95, penalty));
+			}
 
             player.setDeltaMovement(player.getDeltaMovement().add(0, baseBoost, 0));
             hasAppliedBaseBoost = true;
