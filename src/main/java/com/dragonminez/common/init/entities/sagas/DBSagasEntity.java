@@ -62,6 +62,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private float kiBlastSpeed = 0.6F;
     protected int teleportCooldown = 0;
     protected int castTimer = 0;
+    private int chargeSoundTimer = 0;
 
     private boolean isAttacking = false;
 
@@ -99,8 +100,27 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
+
         if (!this.level().isClientSide) {
             if (this.teleportCooldown > 0) this.teleportCooldown--;
+
+            if (this.isCharge()) {
+                if (this.chargeSoundTimer <= 0) {
+                    this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 0.8F, 1.0F);
+
+                    this.chargeSoundTimer = 40;
+                }
+                this.chargeSoundTimer--;
+            } else {
+                this.chargeSoundTimer = 0;
+            }
+
+            if (this.isLightning()) {
+                if (this.random.nextInt(30) == 0) {
+                    float pitch = 0.9F + this.random.nextFloat() * 0.2F; // Variación ligera de tono
+                    this.playSound(MainSounds.KI_SPARKS.get(), 0.3F, pitch);
+                }
+            }
         }
     }
 

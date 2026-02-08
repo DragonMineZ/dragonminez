@@ -247,7 +247,7 @@ public class DefaultFormsFactory {
         fusedAndroid.setName(HumanForms.FUSED_ANDROID);
         fusedAndroid.setUnlockOnSkillLevel(2);
         fusedAndroid.setCustomModel("");
-        fusedAndroid.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+        fusedAndroid.setModelScaling(new float[]{1.4f, 1.3f, 1.4f});
         fusedAndroid.setStrMultiplier(3.5);
         fusedAndroid.setSkpMultiplier(3.5);
         fusedAndroid.setStmMultiplier(1.0);
@@ -259,13 +259,13 @@ public class DefaultFormsFactory {
         fusedAndroid.setEnergyDrain(0.34);
         fusedAndroid.setStaminaDrain(1.0);
         fusedAndroid.setAttackSpeed(1.0);
-        fusedAndroid.setHairColor("");
-        fusedAndroid.setEye1Color("");
-        fusedAndroid.setEye2Color("");
+        fusedAndroid.setHairColor("#E65332");
+        fusedAndroid.setEye1Color("#FFFFFF");
+        fusedAndroid.setEye2Color("#FFFFFF");
         fusedAndroid.setAuraColor("");
         fusedAndroid.setHasLightnings(true);
-        fusedAndroid.setLightningColor("#00FFFF");
-        fusedAndroid.setBodyColor1("");
+        fusedAndroid.setLightningColor("#E63232");
+        fusedAndroid.setBodyColor1("#4D9AE8");
         fusedAndroid.setBodyColor2("");
         fusedAndroid.setBodyColor3("");
         fusedAndroid.setHairCode("");
@@ -807,7 +807,7 @@ public class DefaultFormsFactory {
         fullPower.setName(FrostDemonForms.FULLPOWER);
         fullPower.setUnlockOnSkillLevel(4);
         fullPower.setCustomModel("");
-        fullPower.setModelScaling(new float[]{1.15f, 1.1f, 1.15f});
+        fullPower.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
         fullPower.setStrMultiplier(3.4);
         fullPower.setSkpMultiplier(3.4);
         fullPower.setStmMultiplier(1.0);
@@ -837,7 +837,7 @@ public class DefaultFormsFactory {
 		fifthForm.setName(FrostDemonForms.FIFTH_FORM);
 		fifthForm.setUnlockOnSkillLevel(5);
 		fifthForm.setCustomModel("frostdemon_fifth");
-		fifthForm.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
+		fifthForm.setModelScaling(new float[]{1.4f, 1.3f, 1.4f});
 		fifthForm.setStrMultiplier(3.75);
 		fifthForm.setSkpMultiplier(3.75);
 		fifthForm.setStmMultiplier(1.0);

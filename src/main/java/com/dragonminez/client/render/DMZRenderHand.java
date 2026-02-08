@@ -170,7 +170,13 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean useDefaultSkin = isStandard && bodyType == 0 && !isOozaru;
 
         if (forceVanilla || useDefaultSkin) {
-            renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), new float[]{1, 1, 1});
+            float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, kaiokenPhase);
+
+            ResourceLocation playerSkin = pPlayer.getSkinTextureLocation();
+
+            VertexConsumer vc = pBuffer.getBuffer(RenderType.entityTranslucent(playerSkin));
+            pRendererArm.render(pPoseStack, vc, pCombinedLight, OverlayTexture.NO_OVERLAY, skinTint[0], skinTint[1], skinTint[2], 1.0F);
+
         } else if (customModel == null || customModel.isEmpty()) {
             if (raceName.equals("saiyan") && isOozaru) {
 
@@ -260,7 +266,8 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean isNamek = race.equals("namekian");
         boolean isMajin = race.equals("majin");
 
-        if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER))) {
+        if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER)
+                || Objects.equals(form, FrostDemonForms.FIFTH_FORM))) {
             pathPrefix = "textures/entity/races/frostdemon/finalform_bodytype_" + bodyType + "_";
             renderFrostFinalLayers(stack, buffer, light, arm, pathPrefix, bodyType, b1, b2, b3, h);
         } else {

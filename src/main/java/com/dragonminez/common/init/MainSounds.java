@@ -50,7 +50,8 @@ public final class MainSounds {
 
 	public static final RegistryObject<SoundEvent> AURA_START = registerSoundEvent("aura_start");
 	public static final RegistryObject<SoundEvent> KI_CHARGE_LOOP = registerSoundEvent("ki_charge_loop");
-	public static final RegistryObject<SoundEvent> TURBO_LOOP = registerSoundEvent("turbo_loop");
+    public static final RegistryObject<SoundEvent> KI_SPARKS = registerSoundEvent("ki_sparks");
+    public static final RegistryObject<SoundEvent> TURBO_LOOP = registerSoundEvent("turbo_loop");
     public static final RegistryObject<SoundEvent> TP = registerSoundEvent("tp");
 	public static final RegistryObject<SoundEvent> TP_SHORT = registerSoundEvent("tp_short");
 	public static final RegistryObject<SoundEvent> ABSORB1 = registerSoundEvent("absorb1");

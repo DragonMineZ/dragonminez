@@ -364,5 +364,11 @@
     "sounds": [
       "dragonminez:pip_menu"
     ]
+  },
+  "ki_sparks": {
+    "subtitle": "sounds.dragonminez.ki_sparks",
+    "sounds": [
+      "dragonminez:ki_sparks"
+    ]
   }
 }

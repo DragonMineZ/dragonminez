@@ -161,6 +161,12 @@ public final class MainItems {
     public static final Map<ArmorItem.Type, RegistryObject<Item>> NARUKE_ARMOR = fullArmorNoHelmetSet("naruke_armor", "naruke", false);
     // THE STRONGEST
     public static final Map<ArmorItem.Type, RegistryObject<Item>> STRONGEST_ARMOR = fullArmorNoHelmetSet("strongest_armor", "strongest", false);
+    // A17
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> A17_ARMOR = fullArmorNoHelmetSet("a17_armor", "a17", false);
+    // A18
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> A18_ARMOR = fullArmorNoHelmetSet("a18_armor", "a18", false);
+    // A16
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> A16_ARMOR = fullArmorNoHelmetSet("a16_armor", "a16", false);
 
     //INVENCIBLE
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_ARMOR = fullArmorSet("invencible_armor", "invencible", false);

@@ -140,8 +140,12 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		generateArmorSetModels(MainItems.INVENCIBLE_ARMOR);
         generateArmorSetModels(MainItems.INVENCIBLE_BLUE_ARMOR);
         generateArmorSetModels(MainItems.NARUKE_ARMOR);
+        generateArmorSetModels(MainItems.STRONGEST_ARMOR);
+        generateArmorSetModels(MainItems.A17_ARMOR);
+        generateArmorSetModels(MainItems.A18_ARMOR);
+        generateArmorSetModels(MainItems.A16_ARMOR);
 
-		//Crafting Armaduras
+        //Crafting Armaduras
 		simpleItem(MainItems.KIKONO_STRING);
 		simpleItem(MainItems.KIKONO_CLOTH);
 		simpleItem(MainItems.KIKONO_STICK);
