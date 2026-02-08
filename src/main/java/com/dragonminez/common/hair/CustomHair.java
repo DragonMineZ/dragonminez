@@ -178,10 +178,11 @@ public class CustomHair {
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("Version", VERSION);
-        if (name != null && !name.isEmpty()) tag.putString("Name", name);
-        tag.putString("GlobalColor", globalColor);
-
+        tag.putInt("v", VERSION);
+        if (name != null && !name.isEmpty()) tag.putString("n", name);
+        tag.putString("gc", globalColor);
+        String[] faceKeys = {"F", "B", "L", "R", "T"};
+        int faceIndex = 0;
         for (HairFace face : HairFace.values()) {
             ListTag strandsList = new ListTag();
             for (HairStrand strand : strandsByFace.get(face)) {
@@ -190,31 +191,41 @@ public class CustomHair {
                 }
             }
             if (!strandsList.isEmpty()) {
-                tag.put(face.name(), strandsList);
+                tag.put(faceKeys[faceIndex], strandsList);
             }
+            faceIndex++;
         }
 
         return tag;
     }
 
     public void load(CompoundTag tag) {
-		int loadedVersion = tag.contains("Version") ? tag.getInt("Version") : 1;
+		int loadedVersion = tag.contains("v") ? tag.getInt("v") :
+                           (tag.contains("Version") ? tag.getInt("Version") : 1);
 		this.version = loadedVersion;
-        this.name = tag.getString("Name");
-        this.globalColor = tag.getString("GlobalColor");
+        this.name = tag.contains("n") ? tag.getString("n") : tag.getString("Name");
+        this.globalColor = tag.contains("gc") ? tag.getString("gc") : tag.getString("GlobalColor");
 
         if (globalColor == null || globalColor.isEmpty()) {
             globalColor = "#000000";
         }
 
-		for (HairFace face : HairFace.values()) {
-			if (tag.contains(face.name())) {
-				ListTag strandsList = tag.getList(face.name(), Tag.TAG_COMPOUND);
+        String[] shortKeys = {"F", "B", "L", "R", "T"};
+        HairFace[] faces = HairFace.values();
+
+		for (int f = 0; f < faces.length; f++) {
+            HairFace face = faces[f];
+            String shortKey = shortKeys[f];
+            String longKey = face.name();
+            String keyToUse = tag.contains(shortKey) ? shortKey : (tag.contains(longKey) ? longKey : null);
+
+			if (keyToUse != null) {
+				ListTag strandsList = tag.getList(keyToUse, Tag.TAG_COMPOUND);
 				HairStrand[] strands = strandsByFace.get(face);
 
 				for (int i = 0; i < strandsList.size(); i++) {
 					CompoundTag strandTag = strandsList.getCompound(i);
-					int idInTag = strandTag.getInt("Id");
+					int idInTag = strandTag.contains("i") ? strandTag.getInt("i") : strandTag.getInt("Id");
 
 					int targetIndex = i;
 					if (loadedVersion >= 2) {

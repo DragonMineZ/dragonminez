@@ -114,48 +114,60 @@ public class HairStrand {
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        if (id != 0) tag.putInt("Id", id);
-        if (length != 0) tag.putInt("Length", length);
-		if (lengthScale != 1.0f) tag.putFloat("LengthScale", lengthScale);
+        if (id != 0) tag.putInt("i", id);
+        if (length != 0) tag.putInt("l", length);
+		if (lengthScale != 1.0f) tag.putFloat("ls", lengthScale);
 
-        if (rotationX != 0.0f) tag.putFloat("RotX", rotationX);
-        if (rotationY != 0.0f) tag.putFloat("RotY", rotationY);
-        if (rotationZ != 0.0f) tag.putFloat("RotZ", rotationZ);
+        if (rotationX != 0.0f) tag.putFloat("rx", rotationX);
+        if (rotationY != 0.0f) tag.putFloat("ry", rotationY);
+        if (rotationZ != 0.0f) tag.putFloat("rz", rotationZ);
 
-        if (scaleX != 1.0f) tag.putFloat("ScaleX", scaleX);
-        if (scaleY != 1.0f) tag.putFloat("ScaleY", scaleY);
-        if (scaleZ != 1.0f) tag.putFloat("ScaleZ", scaleZ);
+        if (scaleX != 1.0f) tag.putFloat("sx", scaleX);
+        if (scaleY != 1.0f) tag.putFloat("sy", scaleY);
+        if (scaleZ != 1.0f) tag.putFloat("sz", scaleZ);
 
-        if (cubeWidth != 2.0f) tag.putFloat("CubeW", cubeWidth);
-        if (cubeHeight != 2.0f) tag.putFloat("CubeH", cubeHeight);
-        if (cubeDepth != 2.0f) tag.putFloat("CubeD", cubeDepth);
+        if (cubeWidth != 2.0f) tag.putFloat("cw", cubeWidth);
+        if (cubeHeight != 2.0f) tag.putFloat("ch", cubeHeight);
+        if (cubeDepth != 2.0f) tag.putFloat("cd", cubeDepth);
 
-        if (curveX != 0.0f) tag.putFloat("CurveX", curveX);
-        if (curveY != 0.0f) tag.putFloat("CurveY", curveY);
-        if (curveZ != 0.0f) tag.putFloat("CurveZ", curveZ);
+        if (curveX != 0.0f) tag.putFloat("cx", curveX);
+        if (curveY != 0.0f) tag.putFloat("cy", curveY);
+        if (curveZ != 0.0f) tag.putFloat("cz", curveZ);
 
-        if (color != null) tag.putString("Color", color);
+        if (color != null) tag.putString("c", color);
 
         return tag;
     }
     
     public void load(CompoundTag tag) {
-        this.id = tag.getInt("Id");
-        this.length = tag.getInt("Length");
-		this.lengthScale = tag.contains("LengthScale") ? tag.getFloat("LengthScale") : 1.0f;
-        this.rotationX = tag.getFloat("RotX");
-        this.rotationY = tag.getFloat("RotY");
-        this.rotationZ = tag.getFloat("RotZ");
-        this.scaleX = tag.contains("ScaleX") ? tag.getFloat("ScaleX") : 1.0f;
-        this.scaleY = tag.contains("ScaleY") ? tag.getFloat("ScaleY") : 1.0f;
-        this.scaleZ = tag.contains("ScaleZ") ? tag.getFloat("ScaleZ") : 1.0f;
-        this.cubeWidth = tag.contains("CubeW") ? tag.getFloat("CubeW") : 2.0f;
-        this.cubeHeight = tag.contains("CubeH") ? tag.getFloat("CubeH") : 2.0f;
-        this.cubeDepth = tag.contains("CubeD") ? tag.getFloat("CubeD") : 2.0f;
-        this.curveX = tag.getFloat("CurveX");
-        this.curveY = tag.getFloat("CurveY");
-        this.curveZ = tag.getFloat("CurveZ");
-		this.color = tag.contains("Color") ? tag.getString("Color") : null;
+        this.id = tag.contains("i") ? tag.getInt("i") : tag.getInt("Id");
+        this.length = tag.contains("l") ? tag.getInt("l") : tag.getInt("Length");
+		this.lengthScale = tag.contains("ls") ? tag.getFloat("ls") : (tag.contains("LengthScale") ? tag.getFloat("LengthScale") : 1.0f);
+
+        this.rotationX = tag.contains("rx") ? tag.getFloat("rx") : tag.getFloat("RotX");
+        this.rotationY = tag.contains("ry") ? tag.getFloat("ry") : tag.getFloat("RotY");
+        this.rotationZ = tag.contains("rz") ? tag.getFloat("rz") : tag.getFloat("RotZ");
+
+        this.scaleX = tag.contains("sx") ? tag.getFloat("sx") :
+                     (tag.contains("ScaleX") ? tag.getFloat("ScaleX") : 1.0f);
+        this.scaleY = tag.contains("sy") ? tag.getFloat("sy") :
+                     (tag.contains("ScaleY") ? tag.getFloat("ScaleY") : 1.0f);
+        this.scaleZ = tag.contains("sz") ? tag.getFloat("sz") :
+                     (tag.contains("ScaleZ") ? tag.getFloat("ScaleZ") : 1.0f);
+
+        this.cubeWidth = tag.contains("cw") ? tag.getFloat("cw") :
+                        (tag.contains("CubeW") ? tag.getFloat("CubeW") : 2.0f);
+        this.cubeHeight = tag.contains("ch") ? tag.getFloat("ch") :
+                         (tag.contains("CubeH") ? tag.getFloat("CubeH") : 2.0f);
+        this.cubeDepth = tag.contains("cd") ? tag.getFloat("cd") :
+                        (tag.contains("CubeD") ? tag.getFloat("CubeD") : 2.0f);
+
+        this.curveX = tag.contains("cx") ? tag.getFloat("cx") : tag.getFloat("CurveX");
+        this.curveY = tag.contains("cy") ? tag.getFloat("cy") : tag.getFloat("CurveY");
+        this.curveZ = tag.contains("cz") ? tag.getFloat("cz") : tag.getFloat("CurveZ");
+
+		this.color = tag.contains("c") ? tag.getString("c") :
+                    (tag.contains("Color") ? tag.getString("Color") : null);
     }
     
     public HairStrand copy() {

@@ -135,7 +135,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (lowerForm.contains("ssj3")) {
 			return character.getHairSSJ3();
-		} else if (lowerForm.contains("super") || lowerForm.contains("rose") || lowerForm.contains("blue") || lowerForm.contains("ssj")) {
+		} else if (lowerForm.contains("super") || lowerForm.contains("rose") || lowerForm.contains("blue") || lowerForm.contains("ssj") || lowerForm.contains("ssgrade")) {
 			return character.getHairSSJ();
 		}
 
