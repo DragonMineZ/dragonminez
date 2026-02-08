@@ -86,7 +86,7 @@ public class DBSagasAuraLayer<T extends DBSagasEntity> extends GeoRenderLayer<T>
                 syncModelToEntity(sparkModel, entityModel);
 
                 float[] sparkColor = ColorUtils.rgbIntToFloat(animatable.getLightningColor());
-                RenderType sparkRenderType = ModRenderTypes.glow(currentSparkTex);
+                RenderType sparkRenderType = ModRenderTypes.energy(currentSparkTex);
 
                 getRenderer().reRender(sparkModel, poseStack, bufferSource, animatable, sparkRenderType,
                         bufferSource.getBuffer(sparkRenderType), partialTick, 15728880,

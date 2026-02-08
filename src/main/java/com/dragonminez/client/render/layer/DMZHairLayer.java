@@ -133,7 +133,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		String lowerForm = formName.toLowerCase();
 
-		if (lowerForm.contains("ssj3") || lowerForm.contains("3")) {
+		if (lowerForm.contains("ssj3")) {
 			return character.getHairSSJ3();
 		} else if (lowerForm.contains("super") || lowerForm.contains("rose") || lowerForm.contains("blue") || lowerForm.contains("ssj")) {
 			return character.getHairSSJ();
