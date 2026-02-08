@@ -185,7 +185,7 @@ public class DefaultFormsFactory {
 
         FormConfig.FormData androidBase = new FormConfig.FormData();
         androidBase.setName(HumanForms.ANDROID_BASE);
-        androidBase.setUnlockOnSkillLevel(1);
+        androidBase.setUnlockOnSkillLevel(0);
         androidBase.setCustomModel("");
         androidBase.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
         androidBase.setStrMultiplier(1.75);
@@ -215,7 +215,7 @@ public class DefaultFormsFactory {
 
         FormConfig.FormData superAndroid = new FormConfig.FormData();
         superAndroid.setName(HumanForms.SUPER_ANDROID);
-        superAndroid.setUnlockOnSkillLevel(2);
+        superAndroid.setUnlockOnSkillLevel(1);
         superAndroid.setCustomModel("");
         superAndroid.setModelScaling(new float[]{1.05f, 1.05f, 1.05f});
         superAndroid.setStrMultiplier(2.5);
@@ -245,7 +245,7 @@ public class DefaultFormsFactory {
 
         FormConfig.FormData fusedAndroid = new FormConfig.FormData();
         fusedAndroid.setName(HumanForms.FUSED_ANDROID);
-        fusedAndroid.setUnlockOnSkillLevel(3);
+        fusedAndroid.setUnlockOnSkillLevel(2);
         fusedAndroid.setCustomModel("");
         fusedAndroid.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         fusedAndroid.setStrMultiplier(3.5);

@@ -278,7 +278,7 @@ public class ConfigManager {
         config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
 		config.setGodformTpCost(new int[]{});
 		config.setLegendaryformsTpCost(new int[]{});
-		config.setAndroidformsTpCost(new int[]{20000, 80000, 120000});
+		config.setAndroidformsTpCost(new int[]{80000, 120000});
     }
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
