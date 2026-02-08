@@ -231,8 +231,9 @@ public class StatsData {
             int superformMax = charConfig.getSuperformTpCost() != null ? charConfig.getSuperformTpCost().length : 0;
             int godformMax = charConfig.getGodformTpCost() != null ? charConfig.getGodformTpCost().length : 0;
             int legendaryMax = charConfig.getLegendaryformsTpCost() != null ? charConfig.getLegendaryformsTpCost().length : 0;
+            int androidMax = charConfig.getAndroidformsTpCost() != null ? charConfig.getAndroidformsTpCost().length : 0;
 
-            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax);
+            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax, androidMax);
         }
     }
 

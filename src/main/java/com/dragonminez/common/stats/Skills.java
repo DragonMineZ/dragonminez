@@ -22,7 +22,7 @@ public class Skills {
         skillMap.put("legendaryforms", new Skill("legendaryforms", 0));
     }
 
-    public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax) {
+    public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax, int androidformsMax) {
         Skill superform = skillMap.get("superform");
         if (superform != null) {
             Skill updated = new Skill("superform", superform.getLevel(), superform.isActive(), superformMax);
@@ -39,6 +39,12 @@ public class Skills {
         if (legendaryforms != null) {
             Skill updated = new Skill("legendaryforms", legendaryforms.getLevel(), legendaryforms.isActive(), legendaryformsMax);
             skillMap.put("legendaryforms", updated);
+        }
+
+        Skill androidforms = skillMap.get("androidforms");
+        if (androidforms != null) {
+            Skill updated = new Skill("androidforms", androidforms.getLevel(), androidforms.isActive(), androidformsMax);
+            skillMap.put("androidforms", updated);
         }
     }
 

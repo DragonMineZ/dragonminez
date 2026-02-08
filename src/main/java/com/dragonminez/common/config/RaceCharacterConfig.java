@@ -23,6 +23,7 @@ public class RaceCharacterConfig {
     private int[] superformTpCost = null;
     private int[] godformTpCost = null;
     private int[] legendaryformsTpCost = null;
+    private int[] androidformsTpCost = null;
 
     public RaceCharacterConfig() {}
 
@@ -48,6 +49,7 @@ public class RaceCharacterConfig {
     public int[] getSuperformTpCost() { return superformTpCost; }
     public int[] getGodformTpCost() { return godformTpCost; }
     public int[] getLegendaryformsTpCost() { return legendaryformsTpCost; }
+    public int[] getAndroidformsTpCost() { return androidformsTpCost; }
 
     public void setRaceName(String raceName) { this.raceName = raceName; }
     public void setHasGender(boolean hasGender) { this.hasGender = hasGender; }
@@ -71,4 +73,5 @@ public class RaceCharacterConfig {
     public void setSuperformTpCost(int[] costs) { this.superformTpCost = costs; }
     public void setGodformTpCost(int[] costs) { this.godformTpCost = costs; }
     public void setLegendaryformsTpCost(int[] costs) { this.legendaryformsTpCost = costs; }
+    public void setAndroidformsTpCost(int[] costs) { this.androidformsTpCost = costs; }
 }

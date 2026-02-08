@@ -174,7 +174,117 @@ public class DefaultFormsFactory {
         Path humanPath = formsPath.resolve(HumanForms.GROUP_SUPERFORMS + ".json");
         loader.saveConfig(humanPath, humanForms);
         LogUtil.info(Env.COMMON, "Default Human forms created");
+
+        createAndroidForms(formsPath, forms);
 	}
+
+    private void createAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
+        FormConfig androidForms = new FormConfig();
+        androidForms.setGroupName(HumanForms.GROUP_ANDROIDFORMS);
+        androidForms.setFormType("android");
+
+        FormConfig.FormData androidBase = new FormConfig.FormData();
+        androidBase.setName(HumanForms.ANDROID_BASE);
+        androidBase.setUnlockOnSkillLevel(1);
+        androidBase.setCustomModel("");
+        androidBase.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+        androidBase.setStrMultiplier(1.75);
+        androidBase.setSkpMultiplier(1.75);
+        androidBase.setStmMultiplier(1.0);
+        androidBase.setDefMultiplier(1.25);
+        androidBase.setVitMultiplier(1.0);
+        androidBase.setPwrMultiplier(1.75);
+        androidBase.setEneMultiplier(1.0);
+        androidBase.setSpeedMultiplier(1.0);
+        androidBase.setEnergyDrain(0.08);
+        androidBase.setStaminaDrain(1.0);
+        androidBase.setAttackSpeed(1.0);
+        androidBase.setHairColor("");
+        androidBase.setEye1Color("");
+        androidBase.setEye2Color("");
+        androidBase.setAuraColor("");
+        androidBase.setHasLightnings(false);
+        androidBase.setLightningColor("");
+        androidBase.setBodyColor1("");
+        androidBase.setBodyColor2("");
+        androidBase.setBodyColor3("");
+        androidBase.setHairCode("");
+        setDefaultMasteryValues(androidBase);
+        androidBase.setKaiokenStackable(false);
+        androidBase.setKaiokenDrainMultiplier(2.0);
+
+        FormConfig.FormData superAndroid = new FormConfig.FormData();
+        superAndroid.setName(HumanForms.SUPER_ANDROID);
+        superAndroid.setUnlockOnSkillLevel(2);
+        superAndroid.setCustomModel("");
+        superAndroid.setModelScaling(new float[]{1.05f, 1.05f, 1.05f});
+        superAndroid.setStrMultiplier(2.5);
+        superAndroid.setSkpMultiplier(2.5);
+        superAndroid.setStmMultiplier(1.0);
+        superAndroid.setDefMultiplier(1.65);
+        superAndroid.setVitMultiplier(1.0);
+        superAndroid.setPwrMultiplier(2.5);
+        superAndroid.setEneMultiplier(1.0);
+        superAndroid.setSpeedMultiplier(1.0);
+        superAndroid.setEnergyDrain(0.16);
+        superAndroid.setStaminaDrain(1.0);
+        superAndroid.setAttackSpeed(1.0);
+        superAndroid.setHairColor("");
+        superAndroid.setEye1Color("");
+        superAndroid.setEye2Color("");
+        superAndroid.setAuraColor("");
+        superAndroid.setHasLightnings(false);
+        superAndroid.setLightningColor("");
+        superAndroid.setBodyColor1("");
+        superAndroid.setBodyColor2("");
+        superAndroid.setBodyColor3("");
+        superAndroid.setHairCode("");
+        setDefaultMasteryValues(superAndroid);
+        superAndroid.setKaiokenStackable(false);
+        superAndroid.setKaiokenDrainMultiplier(2.0);
+
+        FormConfig.FormData fusedAndroid = new FormConfig.FormData();
+        fusedAndroid.setName(HumanForms.FUSED_ANDROID);
+        fusedAndroid.setUnlockOnSkillLevel(3);
+        fusedAndroid.setCustomModel("");
+        fusedAndroid.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+        fusedAndroid.setStrMultiplier(3.5);
+        fusedAndroid.setSkpMultiplier(3.5);
+        fusedAndroid.setStmMultiplier(1.0);
+        fusedAndroid.setDefMultiplier(2.15);
+        fusedAndroid.setVitMultiplier(1.0);
+        fusedAndroid.setPwrMultiplier(3.5);
+        fusedAndroid.setEneMultiplier(1.0);
+        fusedAndroid.setSpeedMultiplier(1.0);
+        fusedAndroid.setEnergyDrain(0.34);
+        fusedAndroid.setStaminaDrain(1.0);
+        fusedAndroid.setAttackSpeed(1.0);
+        fusedAndroid.setHairColor("");
+        fusedAndroid.setEye1Color("");
+        fusedAndroid.setEye2Color("");
+        fusedAndroid.setAuraColor("");
+        fusedAndroid.setHasLightnings(true);
+        fusedAndroid.setLightningColor("#00FFFF");
+        fusedAndroid.setBodyColor1("");
+        fusedAndroid.setBodyColor2("");
+        fusedAndroid.setBodyColor3("");
+        fusedAndroid.setHairCode("");
+        setDefaultMasteryValues(fusedAndroid);
+        fusedAndroid.setKaiokenStackable(false);
+        fusedAndroid.setKaiokenDrainMultiplier(2.0);
+
+        Map<String, FormConfig.FormData> androidFormData = new LinkedHashMap<>();
+        androidFormData.put(HumanForms.ANDROID_BASE, androidBase);
+        androidFormData.put(HumanForms.SUPER_ANDROID, superAndroid);
+        androidFormData.put(HumanForms.FUSED_ANDROID, fusedAndroid);
+        androidForms.setForms(androidFormData);
+
+        forms.put(HumanForms.GROUP_ANDROIDFORMS, androidForms);
+
+        Path androidPath = formsPath.resolve(HumanForms.GROUP_ANDROIDFORMS + ".json");
+        loader.saveConfig(androidPath, androidForms);
+        LogUtil.info(Env.COMMON, "Default Android forms created for Humans");
+    }
 
     private void createSaiyanForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         FormConfig oozaruForms = new FormConfig();
@@ -474,7 +584,7 @@ public class DefaultFormsFactory {
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
-//        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
+        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
         superSaiyan.setForms(superSaiyanForms);
 
         forms.put(SaiyanForms.OOZARU, oozaruForms);

@@ -36,13 +36,16 @@ import java.util.Optional;
 
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
+	private static float lastHairProgress = 0.0f;
+	private static long lastUpdateTick = 0;
+
     public DMZHairLayer(GeoRenderer<T> renderer) {
         super(renderer);
     }
 
     @Override
     public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        // No renderizar si tiene un casco que no sea pothala, es invisible o spectator
+        // No renderizar si tiene un casco que no sea pothala/scouter, es invisible o spectator
         if (animatable.isInvisible() || animatable.isSpectator()) return;
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
@@ -65,12 +68,49 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			hairTo = hairFrom;
 			factor = 1.0f;
+			lastHairProgress = 1.0f;
 		} else if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-			hairFrom = character.getHairBase();
 			String targetGroup = character.getSelectedFormGroup();
 			var nextForm = TransformationsHelper.getNextAvailableForm(stats);
-			if (nextForm != null) hairTo = getHairForForm(character, targetGroup, nextForm.getName());
-			factor = stats.getResources().getActionCharge() / 100.0f;
+			if (nextForm != null) {
+				CustomHair targetHair = getHairForForm(character, targetGroup, nextForm.getName());
+				float targetProgress = stats.getResources().getActionCharge() / 100.0f;
+
+				long currentTick = animatable.tickCount;
+				float interpolationSpeed = 0.15f;
+
+				if (currentTick != lastUpdateTick) {
+					lastHairProgress = lastHairProgress + (targetProgress - lastHairProgress) * interpolationSpeed;
+					lastUpdateTick = currentTick;
+				}
+
+				float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastHairProgress, targetProgress);
+				smoothProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
+
+				CustomHair baseHair = character.getHairBase();
+				CustomHair ssjHair = character.getHairSSJ();
+				CustomHair ssj3Hair = character.getHairSSJ3();
+
+				boolean targetIsSSJ3 = targetHair == ssj3Hair || (ssj3Hair != null && targetHair.equals(ssj3Hair));
+
+				if (targetIsSSJ3 && ssjHair != null && !ssjHair.isEmpty()) {
+					if (smoothProgress < 0.5f) {
+						hairFrom = baseHair;
+						hairTo = ssjHair;
+						factor = smoothProgress * 2.0f;
+					} else {
+						hairFrom = ssjHair;
+						hairTo = ssj3Hair;
+						factor = (smoothProgress - 0.5f) * 2.0f;
+					}
+				} else {
+					hairFrom = baseHair;
+					hairTo = targetHair;
+					factor = smoothProgress;
+				}
+			}
+		} else {
+			lastHairProgress = 0.0f;
 		}
 
 		Optional<GeoBone> headBoneOpt = model.getBone("head");
@@ -132,10 +172,13 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		String lowerForm = formName.toLowerCase();
+		boolean isSSJ3 = lowerForm.contains("3") && !lowerForm.contains("ssgrade");
+		boolean isSSJ = (lowerForm.contains("super") || lowerForm.contains("rose") || lowerForm.contains("blue") || lowerForm.contains("ssj")
+				|| lowerForm.contains("ssgrade") || !lowerForm.contains("god")) && !isSSJ3 && !lowerForm.contains("base");
 
-		if (lowerForm.contains("ssj3")) {
+		if (isSSJ3) {
 			return character.getHairSSJ3();
-		} else if (lowerForm.contains("super") || lowerForm.contains("rose") || lowerForm.contains("blue") || lowerForm.contains("ssj") || lowerForm.contains("ssgrade")) {
+		} else if (isSSJ) {
 			return character.getHairSSJ();
 		}
 

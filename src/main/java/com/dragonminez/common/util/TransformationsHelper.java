@@ -13,6 +13,13 @@ public class TransformationsHelper {
 		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
 		if (formConfig == null) return unlockedForms;
 
+		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(groupName);
+		boolean isGodGroup = formConfig.getFormType().equalsIgnoreCase("god");
+		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
+
+		if (isAndroidGroup && !isAndroidUpgraded) return unlockedForms;
+		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup && "human".equalsIgnoreCase(raceName)) return unlockedForms;
+
 		String formType = formConfig.getFormType();
 		int skillLevel = getSkillLevelForType(statsData, formType);
 
@@ -29,6 +36,7 @@ public class TransformationsHelper {
 			case "super" -> statsData.getSkills().getSkillLevel("superform");
 			case "god" -> statsData.getSkills().getSkillLevel("godform");
 			case "legendary" -> statsData.getSkills().getSkillLevel("legendaryforms");
+			case "android" -> statsData.getSkills().getSkillLevel("androidforms");
 			default -> 0;
 		};
 	}
@@ -55,7 +63,6 @@ public class TransformationsHelper {
 	}
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
-		if (statsData.getStatus().isAndroidUpgraded()) return null;
 		String race = statsData.getCharacter().getRaceName();
 		String group = statsData.getCharacter().hasActiveForm() ?
 				statsData.getCharacter().getActiveFormGroup() :
@@ -65,6 +72,13 @@ public class TransformationsHelper {
 
 		FormConfig config = ConfigManager.getFormGroup(race, group);
 		if (config == null) return null;
+
+		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
+		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(group);
+		boolean isGodGroup = config.getFormType().equalsIgnoreCase("god");
+
+		if (!isAndroidUpgraded && isAndroidGroup) return null;
+		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup && "human".equalsIgnoreCase(race)) return null;
 
 		String currentFormName = statsData.getCharacter().getActiveForm();
 		boolean foundCurrent = currentFormName.isEmpty();
@@ -80,9 +94,7 @@ public class TransformationsHelper {
 			int reqLevel = entry.getValue().getUnlockOnSkillLevel();
 			int myLevel = getSkillLevelForType(statsData, config.getFormType());
 
-			if (reqLevel <= myLevel) {
-				return entry.getValue();
-			}
+			if (reqLevel <= myLevel) return entry.getValue();
 		}
 		return null;
 	}
@@ -92,11 +104,11 @@ public class TransformationsHelper {
 
 		String race = statsData.getCharacter().getRaceName();
 		String group = statsData.getCharacter().getActiveFormGroup();
+		String currentForm = statsData.getCharacter().getActiveForm();
 
+		if ("androidforms".equalsIgnoreCase(group) && "androidbase".equalsIgnoreCase(currentForm)) return false;
 		if (isDefaultGroup(race, group)) {
-			if ("frostdemon".equals(race) || "majin".equals(race) || "bioandroid".equals(race)) {
-				return false;
-			}
+			return !"frostdemon".equals(race) && !"majin".equals(race) && !"bioandroid".equals(race);
 		}
 		return true;
 	}
@@ -208,6 +220,7 @@ public class TransformationsHelper {
 	public static String getFirstFormGroup(String groupName, String raceName) {
 		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
 		if (formConfig == null) return null;
+		if ("androidforms".equalsIgnoreCase(groupName)) return "superandroid";
 
 		Optional<String> firstForm = formConfig.getForms().keySet().stream().findFirst();
 		return firstForm.orElse(null);

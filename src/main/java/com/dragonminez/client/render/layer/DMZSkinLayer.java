@@ -51,13 +51,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         this.currentKaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
 
         renderBody(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
-
         renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
-
+		renderAndroid(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
         renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
-
         renderTattoos(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
-
     }
 
     private void renderBody(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
@@ -240,7 +237,25 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         });
     }
 
+	private void renderAndroid(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
+		var character = stats.getCharacter();
+		String raceName = character.getRace().toLowerCase();
+		String currentForm = character.getActiveForm();
+		// Luego podemos hacer q el FusedAndroid (Super A13) no tenga el layer del Android, si no q tenga directamente otra skin idk
 
+		if (!raceName.equals("human")) return;
+		if (!stats.getStatus().isAndroidUpgraded()) return;
+
+		String androidPath = "";
+		if (character.getGender().equals(Character.GENDER_FEMALE)) androidPath = "textures/entity/races/female_android.png";
+		else androidPath = "textures/entity/races/male_android.png";
+
+		ResourceLocation androidLoc = new ResourceLocation(Reference.MOD_ID, androidPath);
+
+		if (textureExists(androidLoc)) {
+			renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(androidLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
+		}
+	}
     private void renderSpecializedRace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String race, String form, int bodyType, boolean hasForm, float[] b1, float[] b2, float[] b3, float[] h, float pt, int pl, int po) {
         String filePrefix;
         boolean isFrost = race.equals("frostdemon");

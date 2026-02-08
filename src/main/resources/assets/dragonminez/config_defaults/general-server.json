@@ -124,7 +124,7 @@
   // Storage configuration
   // Available storage types: "NBT", "JSON", "DATABASE", case sensitive
   "storage": {
-    "storage_type": "NBT",
+    "storageType": "NBT",
     "host": "localhost",
     "port": 3306,
     "database": "dragonminez",

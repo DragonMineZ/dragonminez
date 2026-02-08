@@ -182,9 +182,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         int hairPosX = 108;
         int hairPosY = centerY + 3;
 
-        addRenderableWidget(createArrowButton(hairPosX - 65, hairPosY, true,
+        addRenderableWidget(createArrowButton(hairPosX - 75, hairPosY, true,
                 btn -> changeHair(-1)));
-        addRenderableWidget(createArrowButton(hairPosX, hairPosY, false,
+        addRenderableWidget(createArrowButton(hairPosX + 10, hairPosY, false,
                 btn -> changeHair(1)));
 
         int tattooPosX = 108;

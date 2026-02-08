@@ -58,6 +58,7 @@ public class NPCActionC2S {
 					case "enma" -> handleEnma(player, data, packet.actionId);
 					case "baba" -> handleBaba(player, data, packet.actionId);
 					case "popo" -> handlePopo(player, data, packet.actionId);
+					case "gero" -> handleGero(player, data, packet.actionId);
 				}
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
@@ -148,8 +149,28 @@ public class NPCActionC2S {
 				shadowDummy.setPos(player.getX(), player.getY(), player.getZ());
 				shadowDummy.copyStatsFromPlayer(player);
 				level.addFreshEntity(shadowDummy);
-				player.sendSystemMessage(Component.translatable("gui.dragonminez.lines.popo.training_started"));
 			}
+		}
+	}
+
+	private static void handleGero(ServerPlayer player, StatsData data, int action) {
+		if (action == 1) {
+			if (!"human".equalsIgnoreCase(data.getCharacter().getRaceName())) {
+				player.sendSystemMessage(Component.translatable("message.dragonminez.gero.not_human"));
+				return;
+			}
+
+			if (data.getStatus().isAndroidUpgraded()) {
+				player.sendSystemMessage(Component.translatable("message.dragonminez.gero.already_android"));
+				return;
+			}
+
+			data.getStatus().setAndroidUpgraded(true);
+			data.getSkills().setSkillLevel("androidforms", 1);
+			data.updateTransformationSkillLimits("human");
+			data.getCharacter().setSelectedFormGroup("androidforms");
+			data.getCharacter().setActiveForm("androidforms", "androidbase");
+			player.sendSystemMessage(Component.translatable("message.dragonminez.gero.upgrade_success"));
 		}
 	}
 }

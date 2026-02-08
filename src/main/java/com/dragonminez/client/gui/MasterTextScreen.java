@@ -32,7 +32,8 @@ public class MasterTextScreen extends Screen {
 			"textures/gui/menu/textmenu.png");
 	private final String masterName;
 	private Component currentDialogue;
-	private boolean wantsToTrain = false;
+	private boolean secondFunc = false;
+	private boolean thirdFunc = false;
 
 	public MasterTextScreen(String masterName) {
 		super(Component.literal(masterName));
@@ -54,6 +55,7 @@ public class MasterTextScreen extends Screen {
 				case "enma" -> initEnma(buttonX, buttonY, stats);
 				case "baba" -> initBaba(buttonX, buttonY, stats);
 				case "popo" -> initPopo(buttonX, buttonY, stats);
+				case "gero" -> initGero(buttonX, buttonY, stats);
 			}
 		});
 	}
@@ -187,7 +189,7 @@ public class MasterTextScreen extends Screen {
 	private void initPopo(int x, int y, StatsData stats) {
 		boolean HTC = Minecraft.getInstance().player.level().dimension().equals(HTCDimension.HTC_KEY);
 
-		if (wantsToTrain) {
+		if (secondFunc) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
 					.position(x, y)
 					.size(74, 20)
@@ -197,7 +199,7 @@ public class MasterTextScreen extends Screen {
 					.message(Component.translatable("gui.dragonminez.button.popo.shadow"))
 					.onPress(btn -> {
 						NetworkHandler.sendToServer(new NPCActionC2S("popo", 1));
-						wantsToTrain = false;
+						secondFunc = false;
 						this.onClose();
 					})
 					.build());
@@ -212,7 +214,7 @@ public class MasterTextScreen extends Screen {
 						if (Minecraft.getInstance().player.level().isClientSide()) {
 							//Minecraft.getInstance().setScreen(new RythmTrainingScreen());
 						}
-						wantsToTrain = false;
+						secondFunc = false;
 						this.onClose();
 					})
 					.build());
@@ -226,7 +228,7 @@ public class MasterTextScreen extends Screen {
 						.textureSize(74, 20)
 						.message(Component.translatable("gui.dragonminez.button.popo.train"))
 						.onPress(btn -> {
-							wantsToTrain = true;
+							secondFunc = true;
 							this.currentDialogue = Component.translatable("gui.dragonminez.lines.popo.training", Minecraft.getInstance().player.getName());
 							refreshButtons();
 						})
@@ -247,6 +249,81 @@ public class MasterTextScreen extends Screen {
 						.build());
 			}
 		}
+	}
+
+	private void initGero(int x, int y, StatsData stats) {
+		if (thirdFunc) {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 150, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable("gui.dragonminez.button.gero.cancel"))
+					.onPress(btn -> {
+						thirdFunc = false;
+						secondFunc = false;
+						this.onClose();
+					})
+					.build());
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable("gui.dragonminez.button.gero.confirm"))
+					.onPress(btn -> {
+						NetworkHandler.sendToServer(new NPCActionC2S("gero", 1));
+						thirdFunc = false;
+						secondFunc = false;
+						this.onClose();
+					})
+					.build());
+		} else if (secondFunc) {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 150, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable("gui.dragonminez.button.gero.not_interested"))
+					.onPress(btn -> {
+						thirdFunc = false;
+						secondFunc = false;
+						this.onClose();
+					})
+					.build());
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable("gui.dragonminez.button.gero.interest"))
+					.onPress(btn -> {
+						thirdFunc = true;
+						secondFunc = false;
+						this.currentDialogue = Component.translatable("gui.dragonminez.lines.gero.confirm", Minecraft.getInstance().player.getName());
+						refreshButtons();
+					})
+					.build());
+		} else {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 150, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable("gui.dragonminez.button.gero.accept"))
+					.onPress(btn -> {
+						secondFunc = true;
+						this.currentDialogue = Component.translatable("gui.dragonminez.lines.gero.offer", Minecraft.getInstance().player.getName());
+						refreshButtons();
+					})
+					.build());
+		}
+
 	}
 
 	@Override

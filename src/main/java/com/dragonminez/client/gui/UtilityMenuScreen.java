@@ -113,7 +113,7 @@ public class UtilityMenuScreen extends Screen {
 				}
 			}
 			case 1 -> {
-				if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1) {
+				if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1 || statsData.getSkills().getSkillLevel("androidforms") >= 1) {
 					line1 = Component.translatable("race.dragonminez." + race + ".group." + statsData.getCharacter().getSelectedFormGroup()).withStyle(ChatFormatting.BOLD);
 					line2 = Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + TransformationsHelper.getFirstFormGroup(statsData.getCharacter().getSelectedFormGroup(), race));
 					isSelected = currentMode == ActionMode.FORM;
@@ -200,11 +200,20 @@ public class UtilityMenuScreen extends Screen {
 				}
 			}
 			case 1 -> {
-				if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1) {
+				if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1 || statsData.getSkills().getSkillLevel("androidforms") >= 1) {
 					boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.FORM;
-					if (!wasActive) NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FORM));
-					if (wasActive) NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_form_group"));
-					playToggleSound(mc, !wasActive);
+					if (wasActive && statsData.getCharacter().hasActiveForm()) {
+						if (TransformationsHelper.canDescend(statsData)) {
+							NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
+							playToggleSound(mc, false);
+						}
+					} else if (!wasActive) {
+						NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FORM));
+						playToggleSound(mc, true);
+					} else {
+						NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_form_group"));
+						playToggleSound(mc, true);
+					}
 				}
 			}
 			case 2 -> {

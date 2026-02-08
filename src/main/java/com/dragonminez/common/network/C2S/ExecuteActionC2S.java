@@ -46,8 +46,12 @@ public class ExecuteActionC2S {
 								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
 							} else if (TransformationsHelper.canDescend(data)) {
 								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-								if (previousForm != null) data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-								else data.getCharacter().clearActiveForm();
+								if (previousForm != null) {
+									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+								} else {
+									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+									else data.getCharacter().clearActiveForm();
+								}
 							} else data.getResources().setPowerRelease(0);
 							needsSync = true;
 						}
@@ -57,9 +61,15 @@ public class ExecuteActionC2S {
 								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
 							} else {
 								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-								if (previousForm != null) data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-								else data.getCharacter().clearActiveForm();
-								if (data.getCharacter().getActiveForm().isEmpty()) data.getResources().setPowerRelease(0);
+								if (previousForm != null) {
+									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+								} else {
+									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+									else data.getCharacter().clearActiveForm();
+								}
+								if (data.getCharacter().getActiveForm().isEmpty() || (data.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
+									data.getResources().setPowerRelease(0);
+								}
 							}
 							needsSync = true;
 						}

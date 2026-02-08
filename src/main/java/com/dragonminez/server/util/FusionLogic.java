@@ -26,6 +26,11 @@ public class FusionLogic {
 	public static final int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
 
 	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
+		if (lData.getStatus().isAndroidUpgraded() || pData.getStatus().isAndroidUpgraded()) {
+			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.android_cannot_fuse"), true);
+			return false;
+		}
+
 		if (!lData.getCharacter().getRaceName().equals(pData.getCharacter().getRaceName())) {
 			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.different_race"), true);
 			return false;

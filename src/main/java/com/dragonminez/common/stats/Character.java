@@ -79,12 +79,12 @@ public class Character {
 		return hairBase;
 	}
 	public CustomHair getHairSSJ() {
-		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
+		if (this.hairId > 0) return HairManager.getPresetHairSSJ(this.hairId, this.hairColor);
 		if (hairSSJ == null || hairSSJ.isEmpty()) return hairBase;
 		return hairSSJ;
 	}
 	public CustomHair getHairSSJ3() {
-		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
+		if (this.hairId > 0) return HairManager.getPresetHairSSJ3(this.hairId, this.hairColor);
 		if (hairSSJ3 == null || hairSSJ3.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
 		return hairSSJ3;
 	}

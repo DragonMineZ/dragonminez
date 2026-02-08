@@ -248,6 +248,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				case "superform" -> costs = raceConfig.getSuperformTpCost();
 				case "godform" -> costs = raceConfig.getGodformTpCost();
 				case "legendaryforms" -> costs = raceConfig.getLegendaryformsTpCost();
+				case "androidforms" -> costs = raceConfig.getAndroidformsTpCost();
 			}
 
 			if (costs != null && currentLevel + 1 <= costs.length) {

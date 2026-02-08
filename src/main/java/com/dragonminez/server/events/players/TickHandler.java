@@ -268,16 +268,18 @@ public class TickHandler {
         }
 
         if (hasActiveForm && activeForm != null) {
-            double drainRate = data.getAdjustedEnergyDrain();
-            double drainAmount = maxEnergy * (drainRate / 100.0);
-            energyChange -= drainAmount;
+            if (!data.getStatus().isAndroidUpgraded()) {
+                double drainRate = data.getAdjustedEnergyDrain();
+                double drainAmount = maxEnergy * (drainRate / 100.0);
+                energyChange -= drainAmount;
+            }
         }
 
         if (energyChange != 0) {
             int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
             data.getResources().setCurrentEnergy(newEnergy);
 
-            if (newEnergy <= maxEnergy * 0.05 && hasActiveForm) {
+            if (newEnergy <= maxEnergy * 0.05 && hasActiveForm && !data.getStatus().isAndroidUpgraded()) {
                 data.getCharacter().clearActiveForm();
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
@@ -356,7 +358,6 @@ public class TickHandler {
 				increment = 25;
 			}
 			case FORM -> {
-				if (data.getStatus().isAndroidUpgraded()) return;
 				FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 				if (nextForm != null) {
 					String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
@@ -366,6 +367,7 @@ public class TickHandler {
 						case "super" -> data.getSkills().getSkillLevel("superform");
 						case "god" -> data.getSkills().getSkillLevel("godform");
 						case "legendary" -> data.getSkills().getSkillLevel("legendaryforms");
+						case "android" -> data.getSkills().getSkillLevel("androidforms");
 						default -> 1;
 					};
 					increment = 5 * Math.max(1, skillLvl);
