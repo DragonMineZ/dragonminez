@@ -26,7 +26,7 @@ public class ModRenderTypes extends RenderType {
 					.createCompositeState(true)));
     private static final Function<ResourceLocation, RenderType> ENERGY = Util.memoize((pLocation) ->
             create("energy", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
-                    .setShaderState(RENDERTYPE_BEACON_BEAM_SHADER)
+                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
                     .setTextureState(new TextureStateShard(pLocation, true, true))
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                     .setCullState(NO_CULL)

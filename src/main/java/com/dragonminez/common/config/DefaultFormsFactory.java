@@ -121,7 +121,7 @@ public class DefaultFormsFactory {
         overdrive.setHairColor("");
         overdrive.setEye1Color("");
         overdrive.setEye2Color("");
-        overdrive.setAuraColor("");
+        overdrive.setAuraColor("#FFFD99");
 		overdrive.setHasLightnings(true);
 		overdrive.setLightningColor("#E6F2F5");
         overdrive.setBodyColor1("");
