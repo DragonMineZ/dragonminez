@@ -325,59 +325,59 @@ public final class MainBlocks {
 
 	public static final RegistryObject<Block> DBALL1_BLOCK = registerBlockOnly("dball1",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.ONE_STAR, false));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.ONE_STAR, false));
 
 	public static final RegistryObject<Block> DBALL2_BLOCK = registerBlockOnly("dball2",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.TWO_STAR, false));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.TWO_STAR, false));
 
 	public static final RegistryObject<Block> DBALL3_BLOCK = registerBlockOnly("dball3",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.THREE_STAR, false));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.THREE_STAR, false));
 
 	public static final RegistryObject<Block> DBALL4_BLOCK = registerBlockOnly("dball4",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.FOUR_STAR, false));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.FOUR_STAR, false));
 
 	public static final RegistryObject<Block> DBALL5_BLOCK = registerBlockOnly("dball5",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.FIVE_STAR, false));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.FIVE_STAR, false));
 
 	public static final RegistryObject<Block> DBALL6_BLOCK = registerBlockOnly("dball6",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.SIX_STAR, false));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.SIX_STAR, false));
 
 	public static final RegistryObject<Block> DBALL7_BLOCK = registerBlockOnly("dball7",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.SEVEN_STAR, false));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.SEVEN_STAR, false));
 
 	public static final RegistryObject<Block> DBALL1_NAMEK_BLOCK = registerBlockOnly("dball1_namek",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.ONE_STAR, true));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.ONE_STAR, true));
 
 	public static final RegistryObject<Block> DBALL2_NAMEK_BLOCK = registerBlockOnly("dball2_namek",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.TWO_STAR, true));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.TWO_STAR, true));
 
 	public static final RegistryObject<Block> DBALL3_NAMEK_BLOCK = registerBlockOnly("dball3_namek",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.THREE_STAR, true));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.THREE_STAR, true));
 
 	public static final RegistryObject<Block> DBALL4_NAMEK_BLOCK = registerBlockOnly("dball4_namek",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.FOUR_STAR, true));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.FOUR_STAR, true));
 
 	public static final RegistryObject<Block> DBALL5_NAMEK_BLOCK = registerBlockOnly("dball5_namek",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.FIVE_STAR, true));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.FIVE_STAR, true));
 
 	public static final RegistryObject<Block> DBALL6_NAMEK_BLOCK = registerBlockOnly("dball6_namek",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.SIX_STAR, true));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.SIX_STAR, true));
 
 	public static final RegistryObject<Block> DBALL7_NAMEK_BLOCK = registerBlockOnly("dball7_namek",
 			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.SEVEN_STAR, true));
+					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.SEVEN_STAR, true));
 
 	private static RegistryObject<Block> registerBlock(String name, Supplier<Block> supplier) {
 		RegistryObject<Block> registeredObject = BLOCK_REGISTER.register(name, supplier);
