@@ -26,9 +26,19 @@ public class ModRenderTypes extends RenderType {
 					.createCompositeState(true)));
     private static final Function<ResourceLocation, RenderType> ENERGY = Util.memoize((pLocation) ->
             create("energy", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
-                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                    .setShaderState(RENDERTYPE_EYES_SHADER)
                     .setTextureState(new TextureStateShard(pLocation, true, true))
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(false)));
+    private static final Function<ResourceLocation, RenderType> LIGHTNING = Util.memoize((pLocation) ->
+            create("lightning", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, true, true))
+                    .setTransparencyState(LIGHTNING_TRANSPARENCY)
                     .setCullState(NO_CULL)
                     .setWriteMaskState(COLOR_WRITE)
                     .setOverlayState(OVERLAY)
@@ -71,6 +81,9 @@ public class ModRenderTypes extends RenderType {
     }
     public static RenderType energy(ResourceLocation pLocation) {
         return ENERGY.apply(pLocation);
+    }
+    public static RenderType lightning(ResourceLocation pLocation) {
+        return LIGHTNING.apply(pLocation);
     }
 
 }

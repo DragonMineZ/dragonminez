@@ -172,27 +172,51 @@ public class AuraRenderHandler {
 
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
         if (stats == null) return;
-
-		var formData = stats.getCharacter().getActiveFormData();
+        var character = stats.getCharacter();
+        var formData = character.getActiveFormData();
 		if (!stats.getCharacter().hasActiveForm() || formData == null) return;
 		if (!formData.hasLightnings()) return;
         float[] color = ColorUtils.hexToRgb(formData.getLightningColor());
+
+        float formScaleX = 1.0f;
+        float formScaleY = 1.0f;
+        float formScaleZ = 1.0f;
+        String formName = character.getActiveForm().toLowerCase();
+
+        float[] scales = formData.getModelScaling();
+        if (scales != null && scales.length >= 3) {
+            formScaleX = scales[0];
+            formScaleY = scales[1];
+            formScaleZ = scales[2];
+        }
+
+        float extraSize = 0.0f;
+
+        if (formName.contains("supersaiyan2") ||
+                formName.contains("supersaiyan3") ||
+                formName.contains("overdrive") ||
+                formName.contains("supernamekian") ||
+                formName.contains("fifth") ||
+                formName.contains("ultra") ||
+                formName.contains("superperfect")) {
+
+            extraSize = 0.2f;
+        }
 
         syncModelToPlayer(sparkModel, entry.playerModel());
 
         poseStack.pushPose();
         poseStack.last().pose().set(entry.poseMatrix());
 
-        float scale = 1.0f;
-        poseStack.scale(scale, scale, scale);
+        poseStack.scale(formScaleX + extraSize, formScaleY + extraSize, formScaleZ + extraSize);
 
         long frame = (long) ((player.level().getGameTime() / 1.0f) % 3);
         ResourceLocation currentTexture = (frame == 0) ? SPARK_TEX_0 : (frame == 1) ? SPARK_TEX_1 : SPARK_TEX_2;
 
         float transparency = 0.8f;
 
-        renderer.reRender(sparkModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
-                buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880, // Luz máxima
+        renderer.reRender(sparkModel, poseStack, buffers, animatable, ModRenderTypes.lightning(currentTexture),
+                buffers.getBuffer(ModRenderTypes.lightning(currentTexture)), entry.partialTick(), 15728880, // Luz máxima
                 OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
 
         poseStack.popPose();
@@ -210,6 +234,41 @@ public class AuraRenderHandler {
 
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
         if (stats == null) return;
+
+        float formScaleX = 1.0f;
+        float formScaleY = 1.0f;
+        float formScaleZ = 1.0f;
+        String formName = "";
+
+        var character = stats.getCharacter();
+
+        if (character.hasActiveForm()) {
+            var activeForm = character.getActiveFormData();
+            if (activeForm != null) {
+                formName = character.getActiveForm().toLowerCase();
+
+                float[] scales = activeForm.getModelScaling();
+                if (scales != null && scales.length >= 3) {
+                    formScaleX = scales[0];
+                    formScaleY = scales[1];
+                    formScaleZ = scales[2];
+                }
+            }
+        }
+
+        float extraSize = 0.0f;
+
+        if (formName.contains("supersaiyan2") ||
+                formName.contains("supersaiyan3") ||
+                formName.contains("overdrive") ||
+                formName.contains("supernamekian") ||
+                formName.contains("fifth") ||
+                formName.contains("ultra") ||
+                formName.contains("superperfect")) {
+
+            extraSize = 0.3f;
+        }
+
         float[] color = getKiColor(stats);
 
         syncModelToPlayer(auraModel, entry.playerModel());
@@ -217,8 +276,7 @@ public class AuraRenderHandler {
         poseStack.pushPose();
         poseStack.last().pose().set(entry.poseMatrix());
 
-        float scale = 1.025f;
-        poseStack.scale(scale, scale, scale);
+        poseStack.scale(formScaleX + extraSize, formScaleY + extraSize, formScaleZ + extraSize);
 
         long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
         ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
