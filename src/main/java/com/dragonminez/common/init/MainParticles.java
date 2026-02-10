@@ -28,6 +28,10 @@ public class MainParticles {
 
     public static final RegistryObject<SimpleParticleType> KINTON =
             PARTICLE_TYPES.register("kinton", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> DUST =
+            PARTICLE_TYPES.register("dust_particle", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> ROCK =
+            PARTICLE_TYPES.register("rock_particle", () -> new SimpleParticleType(true));
 
     public static final RegistryObject<SimpleParticleType> PUNCH_PARTICLE =
             PARTICLE_TYPES.register("punch_particle", () -> new SimpleParticleType(true));

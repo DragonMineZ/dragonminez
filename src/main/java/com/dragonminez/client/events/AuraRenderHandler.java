@@ -5,6 +5,7 @@ import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -200,7 +201,7 @@ public class AuraRenderHandler {
                 formName.contains("ultra") ||
                 formName.contains("superperfect")) {
 
-            extraSize = 0.2f;
+            extraSize = 0.3f;
         }
 
         syncModelToPlayer(sparkModel, entry.playerModel());
@@ -208,7 +209,7 @@ public class AuraRenderHandler {
         poseStack.pushPose();
         poseStack.last().pose().set(entry.poseMatrix());
 
-        poseStack.scale(formScaleX + extraSize, formScaleY + extraSize, formScaleZ + extraSize);
+        poseStack.scale(formScaleX + extraSize + 0.2f, formScaleY + extraSize+ 0.2f, formScaleZ + extraSize+ 0.2f);
 
         long frame = (long) ((player.level().getGameTime() / 1.0f) % 3);
         ResourceLocation currentTexture = (frame == 0) ? SPARK_TEX_0 : (frame == 1) ? SPARK_TEX_1 : SPARK_TEX_2;
@@ -271,12 +272,18 @@ public class AuraRenderHandler {
 
         float[] color = getKiColor(stats);
 
+        if (player.onGround()) {
+            spawnGroundDust(player, formScaleX + extraSize);
+        }
+
+        spawnFloatingRubble(player, formScaleX + extraSize);
+
         syncModelToPlayer(auraModel, entry.playerModel());
 
         poseStack.pushPose();
         poseStack.last().pose().set(entry.poseMatrix());
 
-        poseStack.scale(formScaleX + extraSize, formScaleY + extraSize, formScaleZ + extraSize);
+        poseStack.scale(formScaleX + extraSize + 0.2f, formScaleY + extraSize + 0.2f, formScaleZ + extraSize + 0.2f);
 
         long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
         ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
@@ -289,5 +296,56 @@ public class AuraRenderHandler {
                 OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
 
         poseStack.popPose();
+    }
+
+    private static void spawnGroundDust(Player player, float totalScale) {
+        if (player.getRandom().nextFloat() > 0.3f) return;
+
+        var level = player.level();
+        var random = player.getRandom();
+
+        double angle = random.nextDouble() * 2 * Math.PI;
+
+        double radius = (0.6f + random.nextDouble() * 0.4f) * totalScale;
+
+        double offsetX = Math.cos(angle) * radius;
+        double offsetZ = Math.sin(angle) * radius;
+
+        double x = player.getX() + offsetX;
+        double y = player.getY()+ 0.3;
+        double z = player.getZ() + offsetZ;
+
+        double speedBase = 0.15f;
+        double velX = Math.cos(angle) * speedBase;
+        double velY = 0.1f;
+        double velZ = Math.sin(angle) * speedBase;
+
+        level.addParticle(MainParticles.DUST.get(),
+                x, y, z,
+                velX, velY, velZ);
+    }
+
+    private static void spawnFloatingRubble(Player player, float totalScale) {
+        if (player.getRandom().nextFloat() > 0.15f) return;
+
+        var level = player.level();
+        var random = player.getRandom();
+
+        double angle = random.nextDouble() * 2 * Math.PI;
+        double radius = (0.5f + random.nextDouble() * 1.9f) * totalScale;
+
+        double offsetX = Math.cos(angle) * radius;
+        double offsetZ = Math.sin(angle) * radius;
+
+        double x = player.getX() + offsetX;
+        double y = player.getY() + 0.1;
+        double z = player.getZ() + offsetZ;
+
+        double velX = (random.nextDouble() - 0.5) * 0.05;
+        double velZ = (random.nextDouble() - 0.5) * 0.05;
+
+        double velY = 0.05 + (random.nextDouble() * 0.1);
+
+            level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
     }
 }
