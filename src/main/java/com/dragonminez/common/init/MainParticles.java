@@ -43,6 +43,8 @@ public class MainParticles {
             PARTICLE_TYPES.register("sparks_particle", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> AURA =
             PARTICLE_TYPES.register("aura_particle", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> DIVINE =
+            PARTICLE_TYPES.register("divine_particle", () -> new SimpleParticleType(true));
 
 
     public static void register(IEventBus eventBus) {

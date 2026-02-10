@@ -8,11 +8,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class AuraParticle extends TextureSheetParticle {
+public class DivineParticle extends TextureSheetParticle {
 
     private float baseScale;
 
-    protected AuraParticle(ClientLevel level, double x, double y, double z, double r, double g, double b) {
+    protected DivineParticle(ClientLevel level, double x, double y, double z, double r, double g, double b) {
         super(level, x, y, z);
 
         this.rCol = (float) r;
@@ -23,10 +23,15 @@ public class AuraParticle extends TextureSheetParticle {
         this.yd = 0;
         this.zd = 0;
 
-        this.quadSize *= 0.75f + random.nextFloat();
-        this.lifetime = 40 + this.random.nextInt(20);
+        this.quadSize *= 1.2f;
         this.baseScale = this.quadSize;
+
+        this.lifetime = 20 + this.random.nextInt(10);
         this.hasPhysics = false;
+    }
+
+    public void resize(float multiplier) {
+        this.quadSize = this.baseScale * (0.5f + (multiplier * 0.5f));
     }
 
     @Override
@@ -40,18 +45,11 @@ public class AuraParticle extends TextureSheetParticle {
         } else {
             this.move(this.xd, this.yd, this.zd);
 
-            this.xd *= 0.98;
-            this.yd *= 0.98;
-            this.zd *= 0.98;
+            this.yd += 0.001;
 
             this.setAlpha(1.0f - ((float) this.age / this.lifetime));
         }
     }
-
-    public void resize(float multiplier) {
-        this.quadSize = this.baseScale * multiplier;
-    }
-
     @Override
     public ParticleRenderType getRenderType() {
         return ModParticleRenderTypes.ADDITIVE_LIT;
@@ -67,8 +65,7 @@ public class AuraParticle extends TextureSheetParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
-            // Pasamos r, g, b al constructor
-            AuraParticle particle = new AuraParticle(level, x, y, z, r, g, b);
+            DivineParticle particle = new DivineParticle(level, x, y, z, r, g, b);
             particle.pickSprite(this.spriteSet);
             return particle;
         }

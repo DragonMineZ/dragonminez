@@ -6,11 +6,15 @@ import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.MainParticles;
+import com.dragonminez.common.init.particles.AuraParticle;
+import com.dragonminez.common.init.particles.DivineParticle;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.BetaWhitelist;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -272,11 +276,13 @@ public class AuraRenderHandler {
 
         float[] color = getKiColor(stats);
 
+        var totalScale = formScaleX + extraSize;
+
         if (player.onGround()) {
-            spawnGroundDust(player, formScaleX + extraSize);
+            spawnGroundDust(player, totalScale);
         }
 
-        spawnFloatingRubble(player, formScaleX + extraSize);
+        spawnFloatingRubble(player, totalScale);
 
         syncModelToPlayer(auraModel, entry.playerModel());
 
@@ -296,6 +302,118 @@ public class AuraRenderHandler {
                 OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
 
         poseStack.popPose();
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || event.side != net.minecraftforge.fml.LogicalSide.CLIENT) return;
+
+        Player player = event.player;
+
+        if (!BetaWhitelist.isAllowed(player.getGameProfile().getName())) return;
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        if (stats == null) return;
+
+        float scale = 1.0f;
+        int particleColor = 0xFFFFFF;
+
+        var character = stats.getCharacter();
+
+        try {
+            String hex = character.getAuraColor();
+            if (hex != null && !hex.isEmpty()) {
+                particleColor = Integer.decode(hex);
+            }
+        } catch (Exception ignored) {}
+
+        if (character.hasActiveForm()) {
+            var activeForm = character.getActiveFormData();
+            if (activeForm != null) {
+                float[] scales = activeForm.getModelScaling();
+                if (scales != null && scales.length >= 1) {
+                    scale = scales[0];
+                }
+                particleColor = Integer.decode(activeForm.getAuraColor());
+            }
+        }
+
+        for (int i = 0; i < 1; i++) {
+            spawnCalmAuraParticle(player, scale, particleColor);
+        }
+
+        if (player.getRandom().nextInt(20) == 0) {
+            int divineCount = 5 + player.getRandom().nextInt(10);
+            for (int i = 0; i < divineCount; i++) {
+                spawnPassiveDivineParticle(player, scale, 0xFFFFFF);
+            }
+        }
+    }
+
+
+    private static void spawnCalmAuraParticle(Player player, float totalScale, int colorHex) {
+        var mc = Minecraft.getInstance();
+        var level = player.level();
+        var random = player.getRandom();
+
+        double radius = (0.2f + random.nextDouble() * 0.3f) * totalScale;
+        double angle = random.nextDouble() * 2 * Math.PI;
+
+        double offsetX = Math.cos(angle) * radius;
+        double offsetZ = Math.sin(angle) * radius;
+
+        double heightOffset = (random.nextDouble() * 1.8f) * totalScale;
+
+        double x = player.getX() + offsetX;
+        double y = player.getY() + heightOffset;
+        double z = player.getZ() + offsetZ;
+
+        float r = ((colorHex >> 16) & 0xFF) / 255f;
+        float g = ((colorHex >> 8) & 0xFF) / 255f;
+        float b = (colorHex & 0xFF) / 255f;
+
+        Particle p = mc.particleEngine.createParticle(MainParticles.AURA.get(), x, y, z, r, g, b);
+
+        if (p instanceof AuraParticle auraP) {
+            auraP.resize(totalScale);
+
+            double driftSpeed = 0.02f;
+            double velX = (offsetX / radius) * driftSpeed;
+            double velZ = (offsetZ / radius) * driftSpeed;
+
+            double velY = 0.01f + (random.nextDouble() * 0.02f);
+
+            auraP.setParticleSpeed(velX, velY, velZ);
+        }
+    }
+
+    private static void spawnPassiveDivineParticle(Player player, float totalScale, int colorHex) {
+        var mc = Minecraft.getInstance();
+        var level = player.level();
+        var random = player.getRandom();
+
+        double widthSpread = player.getBbWidth() * totalScale * 2.0;
+        double offsetX = (random.nextDouble() - 0.5) * widthSpread;
+        double offsetZ = (random.nextDouble() - 0.5) * widthSpread;
+
+        double x = player.getX() + offsetX;
+        double z = player.getZ() + offsetZ;
+
+        double heightSpread = (random.nextDouble() * 1.2) * totalScale;
+        double y = player.getY() + heightSpread;
+
+        float r = ((colorHex >> 16) & 0xFF) / 255f;
+        float g = ((colorHex >> 8) & 0xFF) / 255f;
+        float b = (colorHex & 0xFF) / 255f;
+
+        Particle p = mc.particleEngine.createParticle(MainParticles.DIVINE.get(), x, y, z, r, g, b);
+
+        if (p instanceof DivineParticle divineP) {
+            divineP.resize(totalScale);
+
+            double velY = 0.02 + (random.nextDouble() * 0.03);
+            divineP.setParticleSpeed(0, velY, 0);
+        }
     }
 
     private static void spawnGroundDust(Player player, float totalScale) {
@@ -348,4 +466,5 @@ public class AuraRenderHandler {
 
             level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
     }
+
 }

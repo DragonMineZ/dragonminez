@@ -259,6 +259,8 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.AURA.get(), AuraParticle.Provider::new);
         event.registerSpriteSet(MainParticles.DUST.get(), DustParticle.Provider::new);
         event.registerSpriteSet(MainParticles.ROCK.get(), RockParticle.Provider::new);
+        event.registerSpriteSet(MainParticles.DIVINE.get(), DivineParticle.Provider::new);
+
     }
 
 	@SubscribeEvent
