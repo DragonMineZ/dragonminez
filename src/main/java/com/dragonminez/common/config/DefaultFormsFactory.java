@@ -584,7 +584,7 @@ public class DefaultFormsFactory {
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
-        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
+//        superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
         superSaiyan.setForms(superSaiyanForms);
 
         forms.put(SaiyanForms.OOZARU, oozaruForms);

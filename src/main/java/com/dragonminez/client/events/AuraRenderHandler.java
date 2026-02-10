@@ -30,21 +30,35 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class AuraRenderHandler {
 	private static final ResourceLocation AURA_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kiaura.geo.json");
 	private static final ResourceLocation AURA_TEX_0 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_0.png");
 	private static final ResourceLocation AURA_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
 	private static final ResourceLocation AURA_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
+    private static final ResourceLocation AURA_SLOW_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kiaura2.geo.json");
 
     private static final ResourceLocation SPARK_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
     private static final ResourceLocation SPARK_TEX_0 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
     private static final ResourceLocation SPARK_TEX_1 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_1.png");
     private static final ResourceLocation SPARK_TEX_2 = new ResourceLocation(Reference.MOD_ID, "textures/entity/ki/rayo_2.png");
 
-
     private static final ResourceLocation KI_WEAPONS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
     private static final ResourceLocation KI_WEAPONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
+
+    private static final Map<Integer, Float> AURA_ALPHA_PROGRESS = new HashMap<>();
+    private static final Map<Integer, Long> LAST_RENDER_TIME = new HashMap<>();
+    private static final float FADE_SPEED = 0.005f;
+
+    private static final Map<Integer, Float> PULSE_PROGRESS = new HashMap<>();
+    private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new HashMap<>();
+
+    private static final float PULSE_SPEED = 0.01f;
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
@@ -55,10 +69,22 @@ public class AuraRenderHandler {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = event.getPoseStack();
 
+        Set<Integer> currentPlayers = new HashSet<>();
+
         var auras = AuraRenderQueue.getAndClearAuras();
         for (var entry : auras) {
+            currentPlayers.add(entry.player().getId());
+
             renderAuraEntry(entry, poseStack, buffers, dispatcher, mc);
+
+            renderPulseAura(entry, poseStack, buffers, dispatcher, mc);
         }
+
+        PULSE_PROGRESS.keySet().removeIf(id -> !currentPlayers.contains(id));
+        PULSE_LAST_RENDER_TIME.keySet().removeIf(id -> !currentPlayers.contains(id));
+        AURA_ALPHA_PROGRESS.keySet().removeIf(id -> !currentPlayers.contains(id));
+        LAST_RENDER_TIME.keySet().removeIf(id -> !currentPlayers.contains(id));
+
 
         var sparks = AuraRenderQueue.getAndClearSparks();
         for (var entry : sparks) {
@@ -275,7 +301,6 @@ public class AuraRenderHandler {
         }
 
         float[] color = getKiColor(stats);
-
         var totalScale = formScaleX + extraSize;
 
         if (player.onGround()) {
@@ -295,11 +320,124 @@ public class AuraRenderHandler {
         ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
 
         boolean isLocalPlayer = player == mc.player;
-        float transparency = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
+        float targetMaxAlpha = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
 
-        renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
-                buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880,
-                OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
+        int playerId = player.getId();
+        long gameTime = player.level().getGameTime();
+
+        if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
+            AURA_ALPHA_PROGRESS.put(playerId, 0.0f);
+        }
+        LAST_RENDER_TIME.put(playerId, gameTime);
+
+        float currentProgress = AURA_ALPHA_PROGRESS.getOrDefault(playerId, 0.0f);
+
+        if (currentProgress < 1.0f) {
+            currentProgress += FADE_SPEED;
+            if (currentProgress > 1.0f) currentProgress = 1.0f;
+            AURA_ALPHA_PROGRESS.put(playerId, currentProgress);
+        }
+
+        float finalAlpha = targetMaxAlpha * currentProgress;
+
+        if (finalAlpha > 0.001f) {
+            renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
+                    buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880,
+                    OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], finalAlpha);
+        }
+
+        poseStack.popPose();
+    }
+
+    private static void renderPulseAura(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
+        var player = entry.player();
+        if (!(player instanceof GeoAnimatable animatable)) return;
+
+        EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+
+        BakedGeoModel slowModel = renderer.getGeoModel().getBakedModel(AURA_SLOW_MODEL);
+        if (slowModel == null) slowModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
+        if (slowModel == null) return;
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        if (stats == null) return;
+
+        int playerId = player.getId();
+        long gameTime = player.level().getGameTime();
+
+        if (gameTime - PULSE_LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
+            PULSE_PROGRESS.put(playerId, 0.0f);
+        }
+        PULSE_LAST_RENDER_TIME.put(playerId, gameTime);
+
+        float currentProgress = PULSE_PROGRESS.getOrDefault(playerId, 0.0f);
+        currentProgress += PULSE_SPEED;
+
+        if (currentProgress > 2.0f) {
+            currentProgress = 0.0f;
+        }
+        PULSE_PROGRESS.put(playerId, currentProgress);
+
+        if (currentProgress >= 1.0f) return;
+
+        float activeProgress = currentProgress;
+        float expansion = 1.0f + (2.5f * activeProgress);
+        float alphaCurve = (float) Math.sin(activeProgress * Math.PI);
+
+        float formScaleX = 1.0f;
+        float formScaleY = 1.0f;
+        float formScaleZ = 1.0f;
+        String formName = "";
+
+        var character = stats.getCharacter();
+        if (character.hasActiveForm()) {
+            var activeForm = character.getActiveFormData();
+            if (activeForm != null) {
+                formName = character.getActiveForm().toLowerCase();
+                float[] scales = activeForm.getModelScaling();
+                if (scales != null && scales.length >= 3) {
+                    formScaleX = scales[0]; formScaleY = scales[1]; formScaleZ = scales[2];
+                }
+            }
+        }
+
+        float extraSize = 0.0f;
+        if (formName.contains("supersaiyan2") || formName.contains("supersaiyan3") || formName.contains("overdrive") ||
+                formName.contains("supernamekian") || formName.contains("fifth") || formName.contains("ultra") || formName.contains("superperfect")) {
+            extraSize = 0.3f;
+        }
+
+        float finalScaleX = (formScaleX + extraSize + 0.2f) * expansion;
+        float finalScaleY = (formScaleY + extraSize + 0.2f);
+        float finalScaleZ = (formScaleZ + extraSize + 0.2f) * expansion;
+
+        float[] color = getKiColor(stats);
+
+        syncModelToPlayer(slowModel, entry.playerModel());
+
+        poseStack.pushPose();
+        poseStack.last().pose().set(entry.poseMatrix());
+
+        float rotationSpeed = 1.5f;
+        float rotationAngle = (gameTime + entry.partialTick()) * rotationSpeed;
+        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotationAngle));
+
+        poseStack.scale(finalScaleX, finalScaleY, finalScaleZ);
+
+        long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
+        ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
+
+        boolean isLocalPlayer = player == mc.player;
+        float maxAlpha = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.05f : 0.18f;
+
+        float finalAlpha = maxAlpha * alphaCurve;
+
+        if (finalAlpha > 0.001f) {
+            renderer.reRender(slowModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
+                    buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880,
+                    OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], finalAlpha);
+        }
 
         poseStack.popPose();
     }
