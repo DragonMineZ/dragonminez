@@ -29,6 +29,7 @@ import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.dimension.OtherworldNPCSpawner;
 import com.dragonminez.server.world.dimension.OtherworldRegionLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -114,18 +115,28 @@ public class ForgeCommonEvents {
 				endFusionIfNeeded(player);
 
 				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
-					data.getStatus().setAlive(false);
+					if (data.getStatus().hasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
 					data.getEffects().removeAllEffects();
 					data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
 					data.getCooldowns().addCooldown(Cooldowns.REVIVE, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
+				} else {
+					data.getEffects().removeAllEffects();
 				}
+
+				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
 			});
 		}
+	}
 
-		if (event.getSource().getEntity() instanceof ServerPlayer player) {
+	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
+				if (!data.getStatus().isAlive()) {
+					ServerLevel otherworld = player.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
+					player.teleportTo(otherworld, 0, 41, 10, 0, 0);
+				}
 			});
 		}
 	}
@@ -210,7 +221,10 @@ public class ForgeCommonEvents {
 		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 
-		if (otherworld != null) OtherworldRegionLoader.loadPreGeneratedRegions(otherworld);
+		if (otherworld != null) {
+			OtherworldRegionLoader.loadPreGeneratedRegions(otherworld);
+			OtherworldNPCSpawner.spawnNPCs(otherworld);
+		}
 
 		if (ConfigManager.getServerConfig().getWorldGen().isGenerateDragonBalls()) {
 			if (overworld != null) {
@@ -285,7 +299,6 @@ public class ForgeCommonEvents {
             }
             if (stats.getCharacter().getArmored() != shouldBeArmored) {
                 stats.getCharacter().setArmored(shouldBeArmored);
-
                 NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
             }
         });

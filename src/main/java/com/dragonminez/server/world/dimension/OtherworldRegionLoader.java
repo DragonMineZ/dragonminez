@@ -35,11 +35,11 @@ public class OtherworldRegionLoader {
                 "r.0.0.mca",
                 "r.0.1.mca",
                 "r.0.2.mca",
-                "r.0.3.mca",
-                "r.1.0.mca",
-                "r.1.1.mca",
-                "r.1.2.mca",
-                "r.1.3.mca"
+				"r.0.-1.mca",
+                "r.-1.0.mca",
+                "r.-1.1.mca",
+                "r.-1.2.mca",
+                "r.-1.-1.mca"
             };
 
             for (String fileName : regionFiles) {

@@ -51,9 +51,9 @@ public class MasterEnmaEntity extends MastersEntity {
 	@Override
 	public void tick() {
 		super.tick();
-		if (this.getYRot() != 270.0F) this.setYRot(270.0F);
-		if (this.getYHeadRot() != 270.0F) this.setYHeadRot(270.0F);
-		if (this.yBodyRot != 270.0F) this.yBodyRot = 270.0F;
-		if (this.yHeadRot != 270.0F) this.yHeadRot = 270.0F;
+		if (this.getYRot() != 180.0F) this.setYRot(180.0F);
+		if (this.getYHeadRot() != 180.0F) this.setYHeadRot(180.0F);
+		if (this.yBodyRot != 180.0F) this.yBodyRot = 180.0F;
+		if (this.yHeadRot != 180.0F) this.yHeadRot = 180.0F;
 	}
 }
