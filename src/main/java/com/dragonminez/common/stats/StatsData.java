@@ -373,7 +373,7 @@ public class StatsData {
 
         int kiControlLevel = skills.getSkillLevel("kicontrol");
         if (kiControlLevel > 0) {
-            double kiControlReduction = (kiControlLevel * 2.0) / 100.0;
+            double kiControlReduction = (Math.min(kiControlLevel, 10) * 1.5) / 100.0;
             reduction += baseDrain * kiControlReduction;
         }
 

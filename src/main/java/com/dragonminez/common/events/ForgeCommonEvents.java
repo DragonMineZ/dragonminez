@@ -28,6 +28,8 @@ import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.NamekDimension;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.server.world.dimension.OtherworldRegionLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -206,6 +208,9 @@ public class ForgeCommonEvents {
 
 		ServerLevel overworld = event.getServer().getLevel(Level.OVERWORLD);
 		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);
+		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
+
+		if (otherworld != null) OtherworldRegionLoader.loadPreGeneratedRegions(otherworld);
 
 		if (ConfigManager.getServerConfig().getWorldGen().isGenerateDragonBalls()) {
 			if (overworld != null) {

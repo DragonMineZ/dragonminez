@@ -54,8 +54,9 @@ public class KiSenseEvent {
 
 			if (skillLevel > 0) {
 				double maxDistance = 5 + 3.0 * skillLevel;
+				if (data.getStatus().isAndroidUpgraded()) maxDistance += 10.0;
 				if (entity.distanceToSqr(player) <= (maxDistance * maxDistance)) {
-					if (player.hasLineOfSight(entity)) {
+					if (player.hasLineOfSight(entity) || data.getStatus().isAndroidUpgraded()) {
 						if (!entity.isInvisible() || !entity.isInvisibleTo(player)) {
 							renderHealthBar(event.getPoseStack(), entity, event.getMultiBufferSource());
 						}

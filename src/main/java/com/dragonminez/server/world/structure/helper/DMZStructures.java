@@ -2,10 +2,7 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
-import com.dragonminez.server.world.biome.HTCBiomes;
-import com.dragonminez.server.world.biome.NamekBiomes;
 import net.minecraft.core.HolderGetter;
-import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
@@ -26,8 +23,7 @@ import java.util.Map;
 public class DMZStructures {
 	public static final ResourceKey<Structure> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout"),
-			ENMA_PALACE = createKey("enma_palace");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -99,20 +95,6 @@ public class DMZStructures {
 				pools.getOrThrow(DMZPools.KAMILOOKOUT),
 				1,
 				ConstantHeight.of(VerticalAnchor.absolute(0)),
-				false,
-				Heightmap.Types.WORLD_SURFACE_WG
-		));
-
-		context.register(ENMA_PALACE, new JigsawStructure(
-				new Structure.StructureSettings(
-						biomes.getOrThrow(MainTags.Biomes.IS_OTHERWORLD),
-						Map.of(),
-						GenerationStep.Decoration.SURFACE_STRUCTURES,
-						TerrainAdjustment.NONE
-				),
-				pools.getOrThrow(DMZPools.ENMA_PALACE),
-				1,
-				ConstantHeight.of(VerticalAnchor.absolute(40)),
 				false,
 				Heightmap.Types.WORLD_SURFACE_WG
 		));

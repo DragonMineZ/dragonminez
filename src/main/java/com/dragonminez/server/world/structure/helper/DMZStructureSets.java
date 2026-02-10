@@ -2,12 +2,10 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
-import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
 import net.minecraft.core.HolderGetter;
-import net.minecraft.core.HolderSet;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -25,8 +23,7 @@ import java.util.Optional;
 public class DMZStructureSets {
 	public static final ResourceKey<StructureSet> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout"),
-			ENMA_PALACE = createKey("enma_palace");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
 
 	private static final TagKey<Biome> VILLAGE_PLAINS_TAG = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("minecraft", "has_structure/village_plains"));
 
@@ -90,18 +87,6 @@ public class DMZStructureSets {
 						25.0f,
 						55667788,
 						Optional.empty()
-				)
-		));
-
-		context.register(ENMA_PALACE, new StructureSet(
-				structures.getOrThrow(DMZStructures.ENMA_PALACE),
-				new FixedStructurePlacement(
-						Vec3i.ZERO,
-						StructurePlacement.FrequencyReductionMethod.DEFAULT,
-						1.0f,
-						88776655,
-						Optional.empty(),
-						0, 0
 				)
 		));
 	}

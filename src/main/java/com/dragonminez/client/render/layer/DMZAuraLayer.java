@@ -23,6 +23,7 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 
         if (stats == null || !stats.getStatus().isAuraActive()) return;
+		if (stats.getStatus().isAndroidUpgraded()) return;
         AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
         AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
     }

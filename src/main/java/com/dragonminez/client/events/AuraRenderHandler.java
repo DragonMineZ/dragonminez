@@ -26,7 +26,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -61,7 +63,7 @@ public class AuraRenderHandler {
     private static final Map<Integer, CachedAuraData> AURA_CACHE = new HashMap<>();
     private static final Map<Integer, Long> LAST_RENDER_TIME = new HashMap<>();
 
-    private static final float FADE_SPEED = 0.02f;
+    private static final float FADE_SPEED = 0.012f;
 
     private static final Map<Integer, Float> PULSE_PROGRESS = new HashMap<>();
     private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new HashMap<>();
@@ -276,9 +278,9 @@ public class AuraRenderHandler {
         data.model = auraModel;
         data.playerModel = entry.playerModel();
 
-        if (isActive) {
-            if (player.onGround()) spawnGroundDust(player, formScaleX + extraSize);
-            spawnFloatingRubble(player, formScaleX + extraSize);
+        if (isActive && player.onGround()) {
+			spawnGroundDust(player, formScaleX + extraSize);
+			spawnFloatingRubble(player, formScaleX + extraSize);
         }
 
         syncModelToPlayer(auraModel, entry.playerModel());
@@ -504,8 +506,8 @@ public class AuraRenderHandler {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
-        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || event.side != net.minecraftforge.fml.LogicalSide.CLIENT) return;
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.side != LogicalSide.CLIENT) return;
 
         Player player = event.player;
 
@@ -544,6 +546,9 @@ public class AuraRenderHandler {
                 }
             }
         }
+
+		if (!stats.getStatus().hasCreatedCharacter()) return;
+		if (!stats.getStatus().isAuraActive()) return;
 
         for (int i = 0; i < 1; i++) {
             spawnCalmAuraParticle(player, scale, particleColor);
@@ -645,9 +650,7 @@ public class AuraRenderHandler {
         double velY = 0.1f;
         double velZ = Math.sin(angle) * speedBase;
 
-        level.addParticle(MainParticles.DUST.get(),
-                x, y, z,
-                velX, velY, velZ);
+		for (int i = 0; i < 3; i++) level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
     }
 
     private static void spawnFloatingRubble(Player player, float totalScale) {
