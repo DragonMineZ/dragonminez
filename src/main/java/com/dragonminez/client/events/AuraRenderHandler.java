@@ -20,8 +20,10 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -30,10 +32,7 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class AuraRenderHandler {
@@ -51,9 +50,18 @@ public class AuraRenderHandler {
     private static final ResourceLocation KI_WEAPONS_MODEL = new ResourceLocation(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
     private static final ResourceLocation KI_WEAPONS_TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 
-    private static final Map<Integer, Float> AURA_ALPHA_PROGRESS = new HashMap<>();
+    private static class CachedAuraData {
+        float scaleX, scaleY, scaleZ;
+        float[] color;
+        float alphaProgress;
+        BakedGeoModel model;
+        BakedGeoModel playerModel;
+    }
+
+    private static final Map<Integer, CachedAuraData> AURA_CACHE = new HashMap<>();
     private static final Map<Integer, Long> LAST_RENDER_TIME = new HashMap<>();
-    private static final float FADE_SPEED = 0.005f;
+
+    private static final float FADE_SPEED = 0.02f;
 
     private static final Map<Integer, Float> PULSE_PROGRESS = new HashMap<>();
     private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new HashMap<>();
@@ -68,23 +76,45 @@ public class AuraRenderHandler {
         EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = event.getPoseStack();
+        float partialTick = event.getPartialTick();
 
-        Set<Integer> currentPlayers = new HashSet<>();
+        Set<Integer> currentFramePlayers = new HashSet<>();
 
         var auras = AuraRenderQueue.getAndClearAuras();
-        for (var entry : auras) {
-            currentPlayers.add(entry.player().getId());
 
-            renderAuraEntry(entry, poseStack, buffers, dispatcher, mc);
+        for (var entry : auras) {
+            Player player = entry.player();
+            currentFramePlayers.add(player.getId());
+
+            renderAuraEntry(entry, poseStack, buffers, dispatcher, mc, true);
 
             renderPulseAura(entry, poseStack, buffers, dispatcher, mc);
         }
 
-        PULSE_PROGRESS.keySet().removeIf(id -> !currentPlayers.contains(id));
-        PULSE_LAST_RENDER_TIME.keySet().removeIf(id -> !currentPlayers.contains(id));
-        AURA_ALPHA_PROGRESS.keySet().removeIf(id -> !currentPlayers.contains(id));
-        LAST_RENDER_TIME.keySet().removeIf(id -> !currentPlayers.contains(id));
+        Iterator<Map.Entry<Integer, CachedAuraData>> it = AURA_CACHE.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, CachedAuraData> entry = it.next();
+            int playerId = entry.getKey();
+            CachedAuraData data = entry.getValue();
 
+            if (!currentFramePlayers.contains(playerId)) {
+                Player player = (Player) mc.level.getEntity(playerId);
+
+                if (player == null || !player.isAlive()) {
+                    it.remove();
+                    continue;
+                }
+
+                boolean stillVisible = renderGhostAura(player, data, poseStack, buffers, dispatcher, mc, partialTick);
+                if (!stillVisible) {
+                    it.remove();
+                }
+            }
+        }
+
+        PULSE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+        PULSE_LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+        LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 
         var sparks = AuraRenderQueue.getAndClearSparks();
         for (var entry : sparks) {
@@ -121,6 +151,7 @@ public class AuraRenderHandler {
                 }
             }
         }
+
         buffers.endBatch();
     }
 
@@ -190,6 +221,132 @@ public class AuraRenderHandler {
 		}
 		return ColorUtils.hexToRgb(kiHex);
 	}
+    private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, boolean isActive) {
+        var player = entry.player();
+        if (!(player instanceof GeoAnimatable animatable)) return;
+
+        EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+
+        BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
+        if (auraModel == null) return;
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        if (stats == null) return;
+
+        int playerId = player.getId();
+        CachedAuraData data = AURA_CACHE.computeIfAbsent(playerId, k -> new CachedAuraData());
+
+        long gameTime = player.level().getGameTime();
+        if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
+            data.alphaProgress = 0.0f;
+        }
+        LAST_RENDER_TIME.put(playerId, gameTime);
+
+        if (data.alphaProgress < 1.0f) {
+            data.alphaProgress += FADE_SPEED;
+            if (data.alphaProgress > 1.0f) data.alphaProgress = 1.0f;
+        }
+
+        float formScaleX = 1.0f; float formScaleY = 1.0f; float formScaleZ = 1.0f;
+        String formName = "";
+        var character = stats.getCharacter();
+        if (character.hasActiveForm()) {
+            var activeForm = character.getActiveFormData();
+            if (activeForm != null) {
+                formName = character.getActiveForm().toLowerCase();
+                float[] scales = activeForm.getModelScaling();
+                if (scales != null && scales.length >= 3) {
+                    formScaleX = scales[0]; formScaleY = scales[1]; formScaleZ = scales[2];
+                }
+            }
+        }
+        float extraSize = 0.0f;
+        if (formName.contains("supersaiyan2") || formName.contains("supersaiyan3") || formName.contains("overdrive") ||
+                formName.contains("supernamekian") || formName.contains("fifth") || formName.contains("ultra") || formName.contains("superperfect")) {
+            extraSize = 0.3f;
+        }
+
+        float[] color = getKiColor(stats);
+
+        data.scaleX = formScaleX + extraSize + 0.2f;
+        data.scaleY = formScaleY + extraSize + 0.2f;
+        data.scaleZ = formScaleZ + extraSize + 0.2f;
+        data.color = color;
+        data.model = auraModel;
+        data.playerModel = entry.playerModel();
+
+        if (isActive) {
+            if (player.onGround()) spawnGroundDust(player, formScaleX + extraSize);
+            spawnFloatingRubble(player, formScaleX + extraSize);
+        }
+
+        syncModelToPlayer(auraModel, entry.playerModel());
+
+        poseStack.pushPose();
+        poseStack.last().pose().set(entry.poseMatrix());
+
+        poseStack.scale(data.scaleX, data.scaleY, data.scaleZ);
+
+        long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
+        ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
+
+        boolean isLocalPlayer = player == mc.player;
+        float targetMaxAlpha = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
+        float finalAlpha = targetMaxAlpha * data.alphaProgress;
+
+        if (finalAlpha > 0.001f) {
+            renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
+                    buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880,
+                    OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], finalAlpha);
+        }
+        poseStack.popPose();
+    }
+
+    private static boolean renderGhostAura(Player player, CachedAuraData data, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, float partialTick) {
+        if (!(player instanceof GeoAnimatable animatable)) return false;
+        EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return false;
+
+        if (data.alphaProgress > 0.0f) {
+            data.alphaProgress -= FADE_SPEED;
+            if (data.alphaProgress < 0.0f) data.alphaProgress = 0.0f;
+        }
+        if (data.alphaProgress <= 0.001f) return false;
+
+        // Render Manual
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
+        double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
+        double lerpY = Mth.lerp(partialTick, player.yo, player.getY());
+        double lerpZ = Mth.lerp(partialTick, player.zo, player.getZ());
+
+        poseStack.pushPose();
+        poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
+        float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
+        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-bodyRot + 180f));
+
+        poseStack.scale(-1.0F, 1.0F, 1.0F);
+
+        poseStack.scale(data.scaleX, data.scaleY, data.scaleZ);
+
+        if (data.playerModel != null) {
+            syncModelToPlayer(data.model, data.playerModel);
+        }
+
+        long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
+        ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
+
+        boolean isLocalPlayer = player == mc.player;
+        float targetMaxAlpha = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
+        float finalAlpha = targetMaxAlpha * data.alphaProgress;
+
+        renderer.reRender(data.model, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
+                buffers.getBuffer(ModRenderTypes.energy(currentTexture)), partialTick, 15728880,
+                OverlayTexture.NO_OVERLAY, data.color[0], data.color[1], data.color[2], finalAlpha);
+
+        poseStack.popPose();
+        return true;
+    }
 
     private static void renderSparkEntry(AuraRenderQueue.SparkRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
         var player = entry.player();
@@ -249,102 +406,6 @@ public class AuraRenderHandler {
         renderer.reRender(sparkModel, poseStack, buffers, animatable, ModRenderTypes.lightning(currentTexture),
                 buffers.getBuffer(ModRenderTypes.lightning(currentTexture)), entry.partialTick(), 15728880, // Luz máxima
                 OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], transparency);
-
-        poseStack.popPose();
-    }
-
-    private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
-        var player = entry.player();
-        if (!(player instanceof GeoAnimatable animatable)) return;
-
-        EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
-
-        BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
-        if (auraModel == null) return;
-
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-        if (stats == null) return;
-
-        float formScaleX = 1.0f;
-        float formScaleY = 1.0f;
-        float formScaleZ = 1.0f;
-        String formName = "";
-
-        var character = stats.getCharacter();
-
-        if (character.hasActiveForm()) {
-            var activeForm = character.getActiveFormData();
-            if (activeForm != null) {
-                formName = character.getActiveForm().toLowerCase();
-
-                float[] scales = activeForm.getModelScaling();
-                if (scales != null && scales.length >= 3) {
-                    formScaleX = scales[0];
-                    formScaleY = scales[1];
-                    formScaleZ = scales[2];
-                }
-            }
-        }
-
-        float extraSize = 0.0f;
-
-        if (formName.contains("supersaiyan2") ||
-                formName.contains("supersaiyan3") ||
-                formName.contains("overdrive") ||
-                formName.contains("supernamekian") ||
-                formName.contains("fifth") ||
-                formName.contains("ultra") ||
-                formName.contains("superperfect")) {
-
-            extraSize = 0.3f;
-        }
-
-        float[] color = getKiColor(stats);
-        var totalScale = formScaleX + extraSize;
-
-        if (player.onGround()) {
-            spawnGroundDust(player, totalScale);
-        }
-
-        spawnFloatingRubble(player, totalScale);
-
-        syncModelToPlayer(auraModel, entry.playerModel());
-
-        poseStack.pushPose();
-        poseStack.last().pose().set(entry.poseMatrix());
-
-        poseStack.scale(formScaleX + extraSize + 0.2f, formScaleY + extraSize + 0.2f, formScaleZ + extraSize + 0.2f);
-
-        long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
-        ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
-
-        boolean isLocalPlayer = player == mc.player;
-        float targetMaxAlpha = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
-
-        int playerId = player.getId();
-        long gameTime = player.level().getGameTime();
-
-        if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
-            AURA_ALPHA_PROGRESS.put(playerId, 0.0f);
-        }
-        LAST_RENDER_TIME.put(playerId, gameTime);
-
-        float currentProgress = AURA_ALPHA_PROGRESS.getOrDefault(playerId, 0.0f);
-
-        if (currentProgress < 1.0f) {
-            currentProgress += FADE_SPEED;
-            if (currentProgress > 1.0f) currentProgress = 1.0f;
-            AURA_ALPHA_PROGRESS.put(playerId, currentProgress);
-        }
-
-        float finalAlpha = targetMaxAlpha * currentProgress;
-
-        if (finalAlpha > 0.001f) {
-            renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
-                    buffers.getBuffer(ModRenderTypes.energy(currentTexture)), entry.partialTick(), 15728880,
-                    OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], finalAlpha);
-        }
 
         poseStack.popPose();
     }
