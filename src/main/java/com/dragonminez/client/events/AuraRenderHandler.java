@@ -334,7 +334,15 @@ public class AuraRenderHandler {
                 if (scales != null && scales.length >= 1) {
                     scale = scales[0];
                 }
-                particleColor = Integer.decode(activeForm.getAuraColor());
+
+                String formHex = activeForm.getAuraColor();
+
+                if (formHex != null && !formHex.isEmpty()) {
+                    try {
+                        particleColor = Integer.decode(formHex);
+                    } catch (Exception ignored) {
+                    }
+                }
             }
         }
 
