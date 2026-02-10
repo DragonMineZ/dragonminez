@@ -115,14 +115,23 @@ public class FusionLogic {
 		boolean isLeader = data.getStatus().isFusionLeader();
 		UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
 
-		ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
-		ServerPlayer leaderRef = isLeader ? player : partner;
+		ServerPlayer otherPlayer = partnerUUID != null ? player.getServer().getPlayerList().getPlayer(partnerUUID) : null;
+		ServerPlayer leaderRef = isLeader ? player : otherPlayer;
+		ServerPlayer partnerRef = isLeader ? otherPlayer : player;
 
 		StatsData leaderData = null;
-		if (isLeader) leaderData = data;
-		else if (leaderRef != null) leaderData = StatsProvider.get(StatsCapability.INSTANCE, leaderRef).orElse(null);
+		if (leaderRef != null) {
+			if (isLeader) leaderData = data;
+			else leaderData = StatsProvider.get(StatsCapability.INSTANCE, leaderRef).orElse(null);
+		}
 
-		if (leaderData != null) {
+		StatsData partnerData = null;
+		if (partnerRef != null) {
+			if (!isLeader) partnerData = data;
+			else partnerData = StatsProvider.get(StatsCapability.INSTANCE, partnerRef).orElse(null);
+		}
+
+		if (leaderRef != null && leaderData != null) {
 			leaderData.getBonusStats().removeAllBonuses("FusionBonus");
 
 			leaderData.getStatus().setFused(false);
@@ -138,22 +147,20 @@ public class FusionLogic {
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(leaderRef), leaderRef);
 		}
 
-		if (partner != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(pData -> {
-				pData.getStatus().setFused(false);
-				pData.getStatus().setFusionLeader(false);
-				pData.getStatus().setFusionPartnerUUID(null);
-				pData.getStatus().setFusionTimer(0);
+		if (partnerRef != null && partnerData != null) {
+			partnerData.getStatus().setFused(false);
+			partnerData.getStatus().setFusionLeader(false);
+			partnerData.getStatus().setFusionPartnerUUID(null);
+			partnerData.getStatus().setFusionTimer(0);
 
-				if ("METAMORU".equals(pData.getStatus().getFusionType())) pData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
+			if ("METAMORU".equals(partnerData.getStatus().getFusionType())) partnerData.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ConfigManager.getServerConfig().getGameplay().getFusionCooldownSeconds() * 20);
 
-				partner.stopRiding();
-				partner.setGameMode(GameType.SURVIVAL);
-				if (partner.hasEffect(MainEffects.FUSED.get())) partner.removeEffect(MainEffects.FUSED.get());
-				PartyManager.leaveParty(partner);
-				pData.getStatus().setFusionPartnerUUID(null);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
-			});
+			partnerRef.stopRiding();
+			partnerRef.setGameMode(GameType.SURVIVAL);
+			if (partnerRef.hasEffect(MainEffects.FUSED.get())) partnerRef.removeEffect(MainEffects.FUSED.get());
+			PartyManager.leaveParty(partnerRef);
+			partnerData.getStatus().setFusionPartnerUUID(null);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partnerRef), partnerRef);
 		}
 	}
 
