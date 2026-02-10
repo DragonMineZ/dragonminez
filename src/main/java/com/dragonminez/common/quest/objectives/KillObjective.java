@@ -27,7 +27,7 @@ public class KillObjective extends QuestObjective {
     @Override
     public boolean checkProgress(Object... params) {
         if (params.length > 0 && params[0] instanceof Entity entity) {
-            EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(entityId));
+            EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityId));
             if (entity.getType().equals(requiredType)) {
                 addProgress(1);
                 return isCompleted();

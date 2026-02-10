@@ -13,7 +13,7 @@ import net.minecraft.world.level.biome.*;
 import net.minecraft.world.level.levelgen.GenerationStep;
 
 public class OverworldBiomes {
-	public static final ResourceKey<Biome> ROCKY = ResourceKey.create(Registries.BIOME, new ResourceLocation(Reference.MOD_ID, "rocky"));
+	public static final ResourceKey<Biome> ROCKY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "rocky"));
 
 	public static void bootstrap(BootstapContext<Biome> context) {
 		context.register(ROCKY, rockyBiome(context));

@@ -119,26 +119,74 @@ public class ConfigManager {
 
 	private static EntitiesConfig createDefaultEntitiesConfig() {
 		EntitiesConfig config = new EntitiesConfig();
-
 		EntitiesConfig.HardModeSettings hardMode = config.getHardModeSettings();
+		Map<String, EntitiesConfig.EntityStats> statsMap = config.getEntityStats();
 		hardMode.setHpMultiplier(3.0);
 		hardMode.setDamageMultiplier(2.0);
 
-		Map<String, EntitiesConfig.EntityStats> statsMap = config.getEntityStats();
+		addDefaultEntityStats(statsMap, MainEntities.DINO_KID, 30.0, 4.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR1, 100.0, 8.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR2, 150.0, 12.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR3, 75.0, 10.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.SABERTOOTH, 30.0, 5.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.BANDIT, 75.0, 10.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_SOLDIER, 40.0, 5.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT1, 120.0, 15.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
+		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
 
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN, 200.0, 10.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN2, 200.0, 10.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN3, 200.0, 10.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN4, 200.0, 10.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN5, 200.0, 10.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN6, 200.0, 10.0, 20.0);
+		// ==================== SAIYAN SAGA ====================
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_RADITZ, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN2, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN3, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN4, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN5, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN6, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_NAPPA, 750.0, 45.0, 100.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_VEGETA, 1200.0, 70.0, 150.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_OZARU_VEGETA, 2500.0, 140.0, 200.0);
 
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_RADITZ, 200.0, 20.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_NAPPA, 400.0, 40.0, 100.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_VEGETA, 500.0, 50.0, 150.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_OZARU_VEGETA, 1000.0, 100.0, 200.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_CUI, 300.0, 30.0, 80.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_DODORIA, 350.0, 35.0, 90.0);
+		// ==================== FRIEZA SAGA ====================
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FRIEZA_SOLDIER, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FRIEZA_SOLDIER2, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FRIEZA_SOLDIER3, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_MORO_SOLDIER, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_CUI, 1200.0, 70.0, 150.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_DODORIA, 1400.0, 80.0, 180.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_ZARBON, 1500.0, 85.0, 200.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_VEGETA_NAMEK, 1600.0, 90.0, 200.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_ZARBON_TRANSF, 1800.0, 100.0, 200.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_GULDO, 800.0, 50.0, 90.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_RECOOME, 2000.0, 110.0, 180.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_BURTER, 2000.0, 110.0, 180.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_JEICE, 2000.0, 110.0, 180.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_GINYU, 3000.0, 160.0, 260.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_GINYU_GOKU, 1500.0, 85.0, 140.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_FIRST, 4000.0, 200.0, 350.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_SECOND, 6000.0, 300.0, 500.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_THIRD, 8000.0, 400.0, 650.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_BASE, 12000.0, 550.0, 900.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_FP, 16000.0, 750.0, 1200.0);
+
+		// ==================== ANDROID/CELL SAGA ====================
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_MECHA_FRIEZA, 17000.0, 800.0, 1300.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_KING_COLD, 8000.0, 400.0, 650.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_GOKU_YARDRAT, 20000.0, 900.0, 1500.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_DRGERO, 18000.0, 850.0, 1350.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_A19, 22000.0, 1000.0, 1600.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_A17, 30000.0, 1400.0, 2200.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_A18, 30000.0, 1400.0, 2200.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_A16, 32000.0, 1500.0, 2400.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_PICCOLO_KAMI, 35000.0, 1600.0, 2600.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_SUPER_VEGETA, 45000.0, 2100.0, 3400.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_TRUNKS_SSJ, 42000.0, 1950.0, 3200.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_GOHAN_SSJ, 55000.0, 2500.0, 4000.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_IMPERFECT, 28000.0, 1300.0, 2000.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_SEMIPERFECT, 40000.0, 1800.0, 3000.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_PERFECT, 60000.0, 2800.0, 4500.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_SUPERPERFECT, 80000.0, 3800.0, 6000.0);
+		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_JR, 42500.0, 1950.0, 3800.0);
 
 		return config;
 	}

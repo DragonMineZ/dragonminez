@@ -8,7 +8,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -281,29 +280,29 @@ public class DMZItemModelProvider extends ItemModelProvider {
 
 	}
 
-	private ItemModelBuilder simpleItem(RegistryObject<Item> item) {
-		return withExistingParent(item.getId().getPath(),
-				new ResourceLocation("item/generated")).texture("layer0",
+	private void simpleItem(RegistryObject<Item> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
-	private ItemModelBuilder armorItem(RegistryObject<Item> item) {
-		return withExistingParent(item.getId().getPath(),
-				new ResourceLocation("item/generated")).texture("layer0",
+	private void armorItem(RegistryObject<Item> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/armors/" + item.getId().getPath()));
 	}
-	private ItemModelBuilder patternItem(RegistryObject<Item> item) {
-		return withExistingParent(item.getId().getPath(),
-				new ResourceLocation("item/generated")).texture("layer0",
+	private void patternItem(RegistryObject<Item> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/patterns/" + item.getId().getPath()));
 	}
-	private ItemModelBuilder blockItem(RegistryObject<Block> item) {
-		return withExistingParent(item.getId().getPath(),
-				new ResourceLocation("item/generated")).texture("layer0",
+	private void blockItem(RegistryObject<Block> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + item.getId().getPath()));
 	}
-	private ItemModelBuilder blockAsItem(RegistryObject<Block> item) {
-		return withExistingParent(item.getId().getPath(),
-				new ResourceLocation("item/generated")).texture("layer0",
+	private void blockAsItem(RegistryObject<Block> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/generated")).texture("layer0",
 				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "item/" + item.getId().getPath()));
 	}
 	public void simpleBlockItem(RegistryObject<Block> block) {
@@ -328,10 +327,10 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/wall_inventory"))
 				.texture("wall",  ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
 	}
-	private ItemModelBuilder saplingItem(RegistryObject<Block> item) {
-		return withExistingParent(item.getId().getPath(),
-				new ResourceLocation("item/generated")).texture("layer0",
-				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,"block/" + item.getId().getPath()));
+	private void saplingItem(RegistryObject<Block> item) {
+		withExistingParent(item.getId().getPath(),
+				ResourceLocation.parse("item/generated")).texture("layer0",
+				ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block/" + item.getId().getPath()));
 	}
 	private void generateArmorSetModels(Map<ArmorItem.Type, RegistryObject<Item>> armorSet) {
 		for (RegistryObject<Item> piece : armorSet.values()) {

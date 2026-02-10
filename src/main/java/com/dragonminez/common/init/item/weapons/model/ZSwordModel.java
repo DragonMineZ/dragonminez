@@ -9,12 +9,12 @@ import software.bernie.geckolib.model.GeoModel;
 public class ZSwordModel extends GeoModel<ZSwordItem> {
     @Override
     public ResourceLocation getModelResource(ZSwordItem animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "geo/weapons/z_sword.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/z_sword.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(ZSwordItem animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "textures/item/armas/z_sword.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/z_sword.png");
     }
 
     @Override

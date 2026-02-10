@@ -27,7 +27,7 @@ public class ItemObjective extends QuestObjective {
     @Override
     public boolean checkProgress(Object... params) {
         if (params.length > 0 && params[0] instanceof ItemStack stack) {
-            Item requiredItem = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+            Item requiredItem = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
             if (stack.is(requiredItem)) {
                 addProgress(stack.getCount());
                 return isCompleted();

@@ -149,11 +149,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (!defaultRace) {
 			String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
 			if (hasForm && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel() && !character.getActiveFormData().getCustomModel().isEmpty()) {
-				ResourceLocation formSkinLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + character.getActiveFormData().getCustomModel() + ".png");
+				ResourceLocation formSkinLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + character.getActiveFormData().getCustomModel() + ".png");
 				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(formSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
 				return;
 			} else if (customModel != null && !customModel.isEmpty()) {
-				ResourceLocation customSkinLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/" + customModel + ".png");
+				ResourceLocation customSkinLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + customModel + ".png");
 				renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(customSkinLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
 				return;
 			}
@@ -250,7 +250,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (character.getGender().equals(Character.GENDER_FEMALE)) androidPath = "textures/entity/races/female_android.png";
 		else androidPath = "textures/entity/races/male_android.png";
 
-		ResourceLocation androidLoc = new ResourceLocation(Reference.MOD_ID, androidPath);
+		ResourceLocation androidLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, androidPath);
 
 		if (textureExists(androidLoc)) {
 			renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(androidLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
@@ -342,7 +342,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     private void renderTattoos(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay) {
 
         if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
-            ResourceLocation majinMarkLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/majinm.png");
+            ResourceLocation majinMarkLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/majinm.png");
             if (textureExists(majinMarkLoc)) {
                 renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(majinMarkLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
             }
@@ -351,7 +351,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         int tattooType = stats.getCharacter().getTattooType();
         if (tattooType == 0) return;
 
-        ResourceLocation tattooLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/tattoos/tattoo_" + tattooType + ".png");
+        ResourceLocation tattooLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/tattoos/tattoo_" + tattooType + ".png");
         if (textureExists(tattooLoc)) {
             renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(tattooLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay);
         }
@@ -518,7 +518,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     }
 
     private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay) {
-        ResourceLocation loc = new ResourceLocation(Reference.MOD_ID, path);
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
         if (textureExists(loc)) {
             renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityCutoutNoCull(loc), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay);
         }

@@ -28,7 +28,7 @@ public class ItemReward extends QuestReward {
     @Override
     public void giveReward(ServerPlayer player) {
         if (!isClaimed()) {
-            Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
             player.addItem(new ItemStack(item, count));
             setClaimed(true);
         }

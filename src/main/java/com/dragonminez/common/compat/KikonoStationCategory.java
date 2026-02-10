@@ -18,8 +18,8 @@ import net.minecraft.world.item.crafting.Ingredient;
 import java.util.List;
 
 public class KikonoStationCategory implements IRecipeCategory<KikonoRecipe> {
-	public static final ResourceLocation UID = new ResourceLocation(Reference.MOD_ID, "kikono_crafting");
-	public static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/screen/kikono_station_gui.png");
+	public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kikono_crafting");
+	public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/screen/kikono_station_gui.png");
 
 	public static final RecipeType<KikonoRecipe> TYPE = new RecipeType<>(UID, KikonoRecipe.class);
 
