@@ -520,6 +520,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		LivingEntity player = Minecraft.getInstance().player;
 		if (player == null) return;
 
+		int adjustedScale = getAdjustedModelScale(scale);
+
 		float xRotation = (float) Math.atan((double)((float)y - mouseY) / 40.0F);
 		float yRotation = (float) Math.atan((double)((float)x - mouseX) / 40.0F);
 
@@ -541,7 +543,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;

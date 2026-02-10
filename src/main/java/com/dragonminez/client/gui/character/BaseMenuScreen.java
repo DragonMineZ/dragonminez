@@ -3,9 +3,11 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -129,5 +131,30 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		pose.translate(uiWidth / 2.0, uiHeight / 2.0, 0);
 		pose.scale(scale, scale, 1.0f);
 		pose.translate(-uiWidth / 2.0, -uiHeight / 2.0, 0);
+	}
+
+	protected int getAdjustedModelScale(int baseScale) {
+		var player = Minecraft.getInstance().player;
+		if (player == null) return baseScale;
+
+		final float[] inverseScale = {1.0f};
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			var character = stats.getCharacter();
+			var activeForm = character.getActiveFormData();
+
+			float currentScale;
+			if (activeForm != null) {
+				float[] formScaling = activeForm.getModelScaling();
+				float[] charScaling = character.getModelScaling();
+				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
+			} else {
+				float[] charScaling = character.getModelScaling();
+				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
+			}
+
+			if (currentScale > 1.0f) inverseScale[0] = 0.9375f / currentScale;
+		});
+
+		return (int)(baseScale * inverseScale[0]);
 	}
 }

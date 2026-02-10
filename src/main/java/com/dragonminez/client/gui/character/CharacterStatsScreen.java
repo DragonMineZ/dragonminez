@@ -126,7 +126,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         int availableTPs = statsData.getResources().getTrainingPoints();
         double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
-        int baseCost = (int) Math.round((statsData.getLevel() * multiplier) * multiplier * 1.5);
+        int baseCost = (int) Math.round((statsData.getLevel() * multiplier) * multiplier * 4.0);
 
         int tpCost = statsData.calculateRecursiveCost(tpMultiplier, baseCost, maxStats, multiplier);
 
@@ -221,7 +221,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
-        int baseCost = (int) Math.round((statsData.getLevel() * multiplier) * multiplier * 1.5);
+        int baseCost = (int) Math.round((statsData.getLevel() * multiplier) * multiplier * 4.0);
 
         int tpCost = statsData.calculateRecursiveCost(tpMultiplier, baseCost, maxStats, multiplier);
 
@@ -551,6 +551,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         LivingEntity player = Minecraft.getInstance().player;
         if (player == null) return;
 
+        int adjustedScale = getAdjustedModelScale(scale);
+
         float xRotation = (float) Math.atan((double)((float)y - mouseY) / 40.0F);
         float yRotation = (float) Math.atan((double)((float)x - mouseX) / 40.0F);
 
@@ -572,7 +574,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 150.0D);
-        InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
+        InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
         graphics.pose().popPose();
 
         player.yBodyRot = yBodyRotO;

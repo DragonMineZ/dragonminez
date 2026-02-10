@@ -275,7 +275,7 @@ public class StatsData {
             int statLevel = (currentTotalStats + i) / 6;
             totalCost += (int) Math.round(baseMultiplier + (multiplier * statLevel));
         }
-        return totalCost;
+        return (int) Math.round(totalCost * 1.25);
     }
 
     public int calculateStatIncrease(int baseMultiplier, int statsToAdd, int availableTPs, int maxStats, double multiplier) {

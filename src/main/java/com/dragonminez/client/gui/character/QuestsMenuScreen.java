@@ -19,7 +19,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -65,6 +64,11 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 	private int objectivesScrollOffset = 0;
 	private int maxObjectivesScroll = 0;
 	private int objAreaX, objAreaY, objAreaWidth, objAreaHeight;
+
+	private int descriptionScrollOffset = 0;
+	private int maxDescriptionScroll = 0;
+	private int descAreaX, descAreaY, descAreaWidth, descAreaHeight;
+	private static final int MAX_DESC_LINES = 5;
 
     public QuestsMenuScreen() {
         super(Component.translatable("gui.dragonminez.quests.title"));
@@ -518,16 +522,47 @@ public class QuestsMenuScreen extends BaseMenuScreen {
                 panelX + 70, startY + 15, statusColor);
 
         int descY = startY + 32;
-        List<String> wrappedDesc = wrapText(description, 130);
+        List<String> wrappedDesc = wrapText(description, 120);
+
+        int descVisibleHeight = MAX_DESC_LINES * 10;
+        int totalDescHeight = wrappedDesc.size() * 10;
+        this.maxDescriptionScroll = Math.max(0, totalDescHeight - descVisibleHeight);
+
+        this.descAreaX = panelX + 5;
+        this.descAreaY = descY;
+        this.descAreaWidth = 140;
+        this.descAreaHeight = descVisibleHeight;
+
+        graphics.enableScissor(
+            toScreenCoord(panelX + 5),
+            toScreenCoord(descY),
+            toScreenCoord(panelX + 144),
+            toScreenCoord(descY + descVisibleHeight)
+        );
+
+        int currentDescY = descY - descriptionScrollOffset;
         for (String line : wrappedDesc) {
-            drawStringWithBorder(graphics, Component.literal(line), panelX + 15, descY, 0xFFCCCCCC);
-            descY += 10;
+            drawStringWithBorder(graphics, Component.literal(line), panelX + 15, currentDescY, 0xFFCCCCCC);
+            currentDescY += 10;
         }
 
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.quests.objectives").withStyle(ChatFormatting.BOLD),
-                panelX + 15, descY + 5, 0xFFFFD700);
+        graphics.disableScissor();
 
-		int objStartY = descY + 20;
+        if (maxDescriptionScroll > 0) {
+            int scrollBarX = panelX + 138;
+            graphics.fill(scrollBarX, descY, scrollBarX + 2, descY + descVisibleHeight, 0xFF333333);
+            float scrollPercent = (float) descriptionScrollOffset / maxDescriptionScroll;
+            int indicatorHeight = Math.max(10, (int)((float)descVisibleHeight / totalDescHeight * descVisibleHeight));
+            int indicatorY = descY + (int)((descVisibleHeight - indicatorHeight) * scrollPercent);
+            graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
+        }
+
+        int objTitleY = descY + descVisibleHeight + 5;
+
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.quests.objectives").withStyle(ChatFormatting.BOLD),
+                panelX + 15, objTitleY, 0xFFFFD700);
+
+		int objStartY = objTitleY + 15;
 		int objVisibleHeight = 65;
 
 		this.objAreaX = panelX + 5;
@@ -541,7 +576,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		for (QuestObjective objective : objectives) {
 			int progress = questData.getQuestObjectiveProgress(currentSaga.getId(), selectedQuest.getId(), objectives.indexOf(objective));
 			String objText = getObjectiveText(objective, progress);
-			List<String> wrappedObj = wrapText(objText, 105);
+			List<String> wrappedObj = wrapText(objText, 100);
 
 			totalContentHeight += (wrappedObj.size() * 10) + 2;
 		}
@@ -644,6 +679,14 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			return true;
 		}
 
+		if (selectedQuest != null && maxDescriptionScroll > 0 &&
+				uiMouseX >= descAreaX && uiMouseX <= descAreaX + descAreaWidth &&
+				uiMouseY >= descAreaY && uiMouseY <= descAreaY + descAreaHeight) {
+			int scrollAmount = (int)(delta * 10);
+			descriptionScrollOffset = Math.max(0, Math.min(maxDescriptionScroll, descriptionScrollOffset - scrollAmount));
+			return true;
+		}
+
 		if (selectedQuest != null && maxObjectivesScroll > 0 &&
 				uiMouseX >= objAreaX && uiMouseX <= objAreaX + objAreaWidth &&
 				uiMouseY >= objAreaY && uiMouseY <= objAreaY + objAreaHeight) {
@@ -673,6 +716,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
                 if (quest != null) {
                     selectedQuest = quest;
 					SAVED_QUEST_ID = quest.getId();
+					descriptionScrollOffset = 0;
+					objectivesScrollOffset = 0;
                     refreshButtons();
                 }
                 return true;
@@ -684,6 +729,9 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
         LivingEntity player = Minecraft.getInstance().player;
         if (player == null) return;
+
+        int adjustedScale = getAdjustedModelScale(scale);
+
         float xRotation = (float) Math.atan((y - mouseY) / 40.0F);
         float yRotation = (float) Math.atan((x - mouseX) / 40.0F);
         Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
@@ -701,7 +749,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         player.yHeadRotO = player.getYRot();
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 150.0D);
-        InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
+        InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
         graphics.pose().popPose();
         player.yBodyRot = yBodyRotO;
         player.setYRot(yRotO);

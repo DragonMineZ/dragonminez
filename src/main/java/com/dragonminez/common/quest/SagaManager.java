@@ -579,7 +579,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     quests.add(createQuest(17, "dmz.quest.android17.name", "dmz.quest.android17.desc",
                             new JsonObject[][]{
                                     {createObjective("BIOME", "dmz.quest.android17.obj1", "minecraft:plains", null, 0)},
-                                    {createObjective("KILL", "dmz.quest.android17.obj2", null, "dragonminez:saga_cell_jr", 1)}
+                                    {createObjective("KILL", "dmz.quest.android17.obj2", null, "dragonminez:saga_cell_jr", 6)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 32000, null, 0, null)}
