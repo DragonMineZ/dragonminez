@@ -2,6 +2,7 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
+import com.dragonminez.server.world.biome.OverworldBiomes;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -23,7 +24,8 @@ import java.util.Map;
 public class DMZStructures {
 	public static final ResourceKey<Structure> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout"),
+			GERO_LAB = createKey("gero_lab");
 
 	public static void bootstrap(BootstapContext<Structure> context) {
 		HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
@@ -76,13 +78,13 @@ public class DMZStructures {
 						biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
-						TerrainAdjustment.NONE
+						TerrainAdjustment.BEARD_THIN
 				),
 				pools.getOrThrow(DMZPools.ELDER_GURU),
 				1,
 				ConstantHeight.of(VerticalAnchor.absolute(0)),
 				false,
-				Heightmap.Types.WORLD_SURFACE_WG
+					Heightmap.Types.WORLD_SURFACE_WG
 		));
 
 		context.register(KAMILOOKOUT, new JigsawStructure(
@@ -94,6 +96,20 @@ public class DMZStructures {
 				),
 				pools.getOrThrow(DMZPools.KAMILOOKOUT),
 				1,
+				ConstantHeight.of(VerticalAnchor.absolute(0)),
+				false,
+				Heightmap.Types.WORLD_SURFACE_WG
+		));
+
+		context.register(GERO_LAB, new JigsawStructure(
+				new Structure.StructureSettings(
+						biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME),
+						Map.of(),
+						GenerationStep.Decoration.SURFACE_STRUCTURES,
+						TerrainAdjustment.NONE
+				),
+				pools.getOrThrow(DMZPools.GERO_LAB),
+				3,
 				ConstantHeight.of(VerticalAnchor.absolute(0)),
 				false,
 				Heightmap.Types.WORLD_SURFACE_WG

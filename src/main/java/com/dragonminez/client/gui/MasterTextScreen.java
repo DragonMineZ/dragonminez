@@ -56,6 +56,7 @@ public class MasterTextScreen extends Screen {
 				case "baba" -> initBaba(buttonX, buttonY, stats);
 				case "popo" -> initPopo(buttonX, buttonY, stats);
 				case "gero" -> initGero(buttonX, buttonY, stats);
+				case "toribot" -> initToribot(buttonX, buttonY, stats);
 			}
 		});
 	}
@@ -321,8 +322,9 @@ public class MasterTextScreen extends Screen {
 					})
 					.build());
 		}
-
 	}
+
+	private void initToribot(int x, int y, StatsData stats) {}
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

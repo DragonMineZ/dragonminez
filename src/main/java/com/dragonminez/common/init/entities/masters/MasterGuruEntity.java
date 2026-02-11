@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,6 +22,10 @@ public class MasterGuruEntity extends MastersEntity {
 	public MasterGuruEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
 		this.setPersistenceRequired();
+		this.lookControl = new LookControl(this) {
+			@Override
+			public void tick() {}
+		};
 		this.masterName = "guru";
 	}
 
@@ -41,5 +46,14 @@ public class MasterGuruEntity extends MastersEntity {
 		}
 
 		return super.mobInteract(pPlayer, pHand);
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (this.getYRot() != 180.0F) this.setYRot(180.0F);
+		if (this.getYHeadRot() != 180.0F) this.setYHeadRot(180.0F);
+		if (this.yBodyRot != 180.0F) this.yBodyRot = 180.0F;
+		if (this.yHeadRot != 180.0F) this.yHeadRot = 180.0F;
 	}
 }

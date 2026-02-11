@@ -114,6 +114,7 @@ public class TrainingScreen extends Screen {
 		this.arrows.clear();
 		this.clearWidgets();
 		for(int i=0; i<4; i++) laneCooldowns[i] = 0;
+		NetworkHandler.sendToServer(new TrainingRewardC2S(selectedStat, 0));
 	}
 
 	@Override
@@ -395,6 +396,7 @@ public class TrainingScreen extends Screen {
 				Component.translatable("gui.dragonminez.training.complete") :
 				Component.translatable("gui.dragonminez.training.failed");
 		Minecraft.getInstance().player.displayClientMessage(msg, true);
+		NetworkHandler.sendToServer(new TrainingRewardC2S(selectedStat, -1));
 	}
 
 	private int getColorForDirection(int dir) {

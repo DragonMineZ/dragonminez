@@ -241,6 +241,8 @@
   "gui.dragonminez.button.gero.not_interested": "No, thanks",
   "gui.dragonminez.button.gero.confirm": "Convert me!",
   "gui.dragonminez.button.gero.cancel": "I'm not sure",
+  "gui.dragonminez.lines.toribot.name": "Toribot",
+  "gui.dragonminez.lines.toribot.main": "Beep boop! I am Toribot, thanks for visiting me! It's kinda lonely here with King Kai...",
   "gui.dragonminez.lines.generic.createcharacter": "You need to create your character first.",
 
   "//": "WISHES",

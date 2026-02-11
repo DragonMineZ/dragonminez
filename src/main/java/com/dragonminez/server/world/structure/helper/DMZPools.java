@@ -15,7 +15,10 @@ import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 public class DMZPools {
 	public static final ResourceKey<StructureTemplatePool> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout"),
+			GERO_LAB = createKey("gero_lab"),
+			GERO_LAB_STAIRS = createKey("gero_lab/stairs"),
+			GERO_LAB_UNDERGROUND = createKey("gero_lab/underground");
 
 	public static void bootstrap(BootstapContext<StructureTemplatePool> context) {
 		Holder<StructureTemplatePool> empty = context.lookup(Registries.TEMPLATE_POOL).getOrThrow(Pools.EMPTY);
@@ -47,6 +50,24 @@ public class DMZPools {
 		context.register(KAMILOOKOUT, new StructureTemplatePool(
 				empty,
 				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:kamilookout"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(GERO_LAB, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:gero_lab_surface"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(GERO_LAB_STAIRS, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:gero_lab_stairs"), 1)),
+				StructureTemplatePool.Projection.RIGID
+		));
+
+		context.register(GERO_LAB_UNDERGROUND, new StructureTemplatePool(
+				empty,
+				ImmutableList.of(Pair.of(StructurePoolElement.single("dragonminez:gero_lab_underground"), 1)),
 				StructureTemplatePool.Projection.RIGID
 		));
 	}

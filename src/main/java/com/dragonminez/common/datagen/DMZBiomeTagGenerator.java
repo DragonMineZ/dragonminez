@@ -65,6 +65,8 @@ public class DMZBiomeTagGenerator extends BiomeTagsProvider {
 				.addTag(BiomeTags.HAS_VILLAGE_PLAINS)
 				.addTag(BiomeTags.HAS_VILLAGE_SNOWY);
 
-
+		this.tag(MainTags.Biomes.IS_ROCKYBIOME)
+				.replace(false)
+				.add(OverworldBiomes.ROCKY);
 	}
 }

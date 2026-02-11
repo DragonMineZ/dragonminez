@@ -35,6 +35,16 @@ public class TrainingRewardC2S {
 			ServerPlayer player = ctx.get().getSender();
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(statsData -> {
+					if (points == -1) {
+						statsData.getTraining().setCurrentTrainingStat("");
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+						return;
+					}
+					if (points == 0) {
+						statsData.getTraining().setCurrentTrainingStat(stat);
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+						return;
+					}
 					if (statsData.getTraining().canTrain(stat)) {
 						statsData.getStats().addStat(stat, points);
 						statsData.getTraining().addTrainingPoints(stat, points);

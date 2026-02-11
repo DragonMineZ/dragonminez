@@ -2,6 +2,7 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
+import com.dragonminez.server.world.biome.OverworldBiomes;
 import com.dragonminez.server.world.structure.placement.BiomeAwareUniquePlacement;
 import com.dragonminez.server.world.structure.placement.FixedStructurePlacement;
 import com.dragonminez.server.world.structure.placement.UniqueNearSpawnPlacement;
@@ -23,7 +24,8 @@ import java.util.Optional;
 public class DMZStructureSets {
 	public static final ResourceKey<StructureSet> GOKU_HOUSE = createKey("goku_house"),
 			ROSHI_HOUSE = createKey("roshi_house"), TIMECHAMBER = createKey("timechamber"),
-			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout");
+			ELDER_GURU = createKey("elder_guru"), KAMILOOKOUT = createKey("kamilookout"),
+			GERO_LAB = createKey("gero_lab");
 
 	private static final TagKey<Biome> VILLAGE_PLAINS_TAG = TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("minecraft", "has_structure/village_plains"));
 
@@ -87,6 +89,18 @@ public class DMZStructureSets {
 						25.0f,
 						55667788,
 						Optional.empty()
+				)
+		));
+
+		context.register(GERO_LAB, new StructureSet(
+				structures.getOrThrow(DMZStructures.GERO_LAB),
+				new BiomeAwareUniquePlacement(
+						Vec3i.ZERO,
+						StructurePlacement.FrequencyReductionMethod.DEFAULT,
+						100.0f,
+						99887766,
+						Optional.empty(),
+						biomes.getOrThrow(MainTags.Biomes.IS_ROCKYBIOME)
 				)
 		));
 	}

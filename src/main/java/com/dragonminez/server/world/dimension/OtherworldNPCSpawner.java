@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.masters.MasterEnmaEntity;
 import com.dragonminez.common.init.entities.masters.MasterKaiosamaEntity;
+import com.dragonminez.common.init.entities.masters.MasterToribotEntity;
 import com.dragonminez.common.init.entities.masters.MasterUranaiEntity;
 import com.dragonminez.server.world.data.OtherworldNPCSavedData;
 import net.minecraft.server.level.ServerLevel;
@@ -39,6 +40,12 @@ public class OtherworldNPCSpawner {
         uranai.setPersistenceRequired();
         otherworld.addFreshEntity(uranai);
         LogUtil.info(Env.COMMON, "Spawned Master Uranai at 6, 41, 53");
+
+		MasterToribotEntity toribot = new MasterToribotEntity(MainEntities.MASTER_TORIBOT.get(), otherworld);
+		toribot.moveTo(50.5, 190, 1079.5, 0.0F, 0.0F);
+		toribot.setPersistenceRequired();
+		otherworld.addFreshEntity(toribot);
+		LogUtil.info(Env.COMMON, "Spawned Master Toribot at 50, 190, 1079");
 
         data.setNPCsSpawned();
         LogUtil.info(Env.COMMON, "All Otherworld NPCs have been spawned successfully.");

@@ -4,7 +4,9 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class Animations {
     public static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.base.idle");
+	public static final RawAnimation IDLE_OOZARU = RawAnimation.begin().thenLoop("animation.base.idle_oozaru");
     public static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.base.walk");
+	public static final RawAnimation WALK_OOZARU = RawAnimation.begin().thenLoop("animation.base.walk_oozaru");
     public static final RawAnimation RUN = RawAnimation.begin().thenLoop("animation.base.run");
     public static final RawAnimation ATTACK = RawAnimation.begin().thenPlay("animation.base.attack1");
     public static final RawAnimation ATTACK2 = RawAnimation.begin().thenPlay("animation.base.attack2");
@@ -40,4 +42,6 @@ public class Animations {
 	public static final RawAnimation COMBO2 = RawAnimation.begin().thenPlay("animation.base.jab_left");
 	public static final RawAnimation COMBO3 = RawAnimation.begin().thenPlay("animation.base.lowkick_right");
 	public static final RawAnimation COMBO4 = RawAnimation.begin().thenPlay("animation.base.gutkick_left");
+	public static final RawAnimation FLEX = RawAnimation.begin().thenPlay("animation.base.flex");
+	public static final RawAnimation MEDITATION = RawAnimation.begin().thenLoop("animation.base.meditation");
 }

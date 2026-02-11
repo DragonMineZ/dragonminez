@@ -46,7 +46,6 @@ public class MainEntities {
 					() -> EntityType.Builder.of(PorungaEntity::new, MobCategory.CREATURE)
 							.sized(4.0f, 20.0f)
 							.build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "porunga").toString()));
-
     public static final RegistryObject<EntityType<MasterKarinEntity>> MASTER_KARIN =
             ENTITY_TYPES.register("master_karin",
                     () -> EntityType.Builder.of(MasterKarinEntity::new, MobCategory.CREATURE)

@@ -7,7 +7,6 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.*;
@@ -24,6 +23,7 @@ import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.dragonminez.client.animation.Animations.*;
 
@@ -115,13 +115,25 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 		boolean isMoving = dragonminez$isActuallyMoving(player);
 
 		AtomicBoolean isDraining = new AtomicBoolean(false), flySkillActive = new AtomicBoolean(false),
-				isChargingKi = new AtomicBoolean(false), isBlocking = new AtomicBoolean(false);
+				isChargingKi = new AtomicBoolean(false), isBlocking = new AtomicBoolean(false), isOozaru = new AtomicBoolean(false);
+		AtomicReference<String> trainingStat = new AtomicReference<>("");
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			isDraining.set(data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE));
 			flySkillActive.set(data.getSkills().isSkillActive("fly"));
 			isChargingKi.set(data.getStatus().isChargingKi() || data.getStatus().isActionCharging());
 			isBlocking.set(data.getStatus().isBlocking());
+			if (data.getCharacter().getRaceName().toLowerCase().equals("saiyan")) {
+				if (data.getCharacter().getActiveForm().contains("oozaru")) isOozaru.set(true);
+			}
+			trainingStat.set(data.getTraining().getCurrentTrainingStat());
 		});
+
+		if (!trainingStat.get().isEmpty()) {
+			return switch (trainingStat.get()) {
+				case "pwr", "ene" -> state.setAndContinue(MEDITATION);
+				default -> state.setAndContinue(FLEX);
+			};
+		}
 
 		if (isDraining.get()) return state.setAndContinue(DRAIN);
 
@@ -154,9 +166,11 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 				return state.setAndContinue(RUN);
 			} else if (isMoving) {
 				// Walking
+				if (isOozaru.get()) return state.setAndContinue(WALK_OOZARU);
 				return state.setAndContinue(WALK);
 			} else {
 				// Idle
+				if (isOozaru.get()) return state.setAndContinue(IDLE_OOZARU);
 				return state.setAndContinue(IDLE);
 			}
 		}

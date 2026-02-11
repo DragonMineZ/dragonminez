@@ -8,6 +8,7 @@ import java.util.Map;
 public class Training {
 	private final Map<String, Long> trainingCooldowns = new HashMap<>();
 	private final Map<String, Integer> trainingPointsObtained = new HashMap<>();
+	private String currentTrainingStat = "";
 
 	private static final long TRAINING_WINDOW = 3 * 60 * 60 * 1000L;
 	private static final int MAX_TRAINING_POINTS = 20;
@@ -25,6 +26,14 @@ public class Training {
 		}
 
 		return trainingPointsObtained.getOrDefault(stat, 0) < MAX_TRAINING_POINTS;
+	}
+
+	public String getCurrentTrainingStat() {
+		return currentTrainingStat;
+	}
+
+	public void setCurrentTrainingStat(String stat) {
+		this.currentTrainingStat = stat;
 	}
 
 	public void addTrainingPoints(String stat, int points) {
@@ -70,6 +79,7 @@ public class Training {
 
 		tag.put("TrainingCooldowns", cooldownsTag);
 		tag.put("TrainingPoints", pointsTag);
+		tag.putString("CurrentTrainingStat", currentTrainingStat);
 		return tag;
 	}
 
@@ -83,6 +93,7 @@ public class Training {
 		for (String key : pointsTag.getAllKeys()) {
 			trainingPointsObtained.put(key, pointsTag.getInt(key));
 		}
+		this.currentTrainingStat = tag.getString("CurrentTrainingStat");
 	}
 
 	public void copyFrom(Training other) {
@@ -90,5 +101,6 @@ public class Training {
 		this.trainingCooldowns.putAll(other.trainingCooldowns);
 		this.trainingPointsObtained.clear();
 		this.trainingPointsObtained.putAll(other.trainingPointsObtained);
+		this.currentTrainingStat = other.currentTrainingStat;
 	}
 }
