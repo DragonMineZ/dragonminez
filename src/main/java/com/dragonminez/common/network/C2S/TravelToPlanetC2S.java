@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.server.world.dimension.NamekDimension;
@@ -72,14 +73,7 @@ public class TravelToPlanetC2S {
 				BlockPos targetPos;
 
 				if (targetKey.equals(OtherworldDimension.OTHERWORLD_KEY)) {
-					ResourceLocation structureId = new ResourceLocation("dragonminez:kingkai_planet");
-					BlockPos foundPos = findStructure(targetLevel, structureId, player.blockPosition());
-
-					if (foundPos != null) {
-						targetPos = foundPos.above(30);
-					} else {
-						targetPos = targetLevel.getSharedSpawnPos().above(50);
-					}
+					targetPos = new BlockPos(54, 210, 1082);
 				} else {
 					double newY = player.getY();
 					if (newY < 0) newY = 180;

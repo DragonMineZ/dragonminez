@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 
 public class OverworldRegion extends Region {
 	public OverworldRegion(int weight) {
-		super(new ResourceLocation(Reference.MOD_ID, "overworld_region"), RegionType.OVERWORLD, weight);
+		super(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "overworld_region"), RegionType.OVERWORLD, weight);
 	}
 
 	@Override

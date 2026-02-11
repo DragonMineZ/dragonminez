@@ -275,7 +275,7 @@ public class StatsData {
             int statLevel = (currentTotalStats + i) / 6;
             totalCost += (int) Math.round(baseMultiplier + (multiplier * statLevel));
         }
-        return totalCost;
+        return (int) Math.round(totalCost * 1.25);
     }
 
     public int calculateStatIncrease(int baseMultiplier, int statsToAdd, int availableTPs, int maxStats, double multiplier) {
@@ -373,7 +373,7 @@ public class StatsData {
 
         int kiControlLevel = skills.getSkillLevel("kicontrol");
         if (kiControlLevel > 0) {
-            double kiControlReduction = (kiControlLevel * 2.0) / 100.0;
+            double kiControlReduction = (Math.min(kiControlLevel, 10) * 1.5) / 100.0;
             reduction += baseDrain * kiControlReduction;
         }
 

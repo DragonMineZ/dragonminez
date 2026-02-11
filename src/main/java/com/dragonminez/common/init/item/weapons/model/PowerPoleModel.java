@@ -9,12 +9,12 @@ import software.bernie.geckolib.model.GeoModel;
 public class PowerPoleModel extends GeoModel<PowerPoleItem> {
     @Override
     public ResourceLocation getModelResource(PowerPoleItem animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(PowerPoleItem animatable) {
-        return new ResourceLocation(Reference.MOD_ID, "textures/item/armas/power_pole.png");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/power_pole.png");
     }
 
     @Override

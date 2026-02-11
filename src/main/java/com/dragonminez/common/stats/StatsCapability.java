@@ -91,7 +91,6 @@ public class StatsCapability {
 			event.getEntity().setHealth(data.getMaxHealth());
             data.getResources().setCurrentEnergy(data.getMaxEnergy());
             data.getResources().setCurrentStamina(data.getMaxStamina());
-            data.getStatus().setAlive(true);
         });
     }
 

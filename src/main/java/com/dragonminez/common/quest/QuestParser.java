@@ -58,7 +58,7 @@ public class QuestParser {
             case "ITEM":
                 String itemId = json.get("item").getAsString();
                 int count = json.get("count").getAsInt();
-                Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
                 if (item != Items.AIR) {
                     return new ItemObjective(description, item, count);
                 }
@@ -67,7 +67,7 @@ public class QuestParser {
             case "KILL":
                 String entityId = json.get("entity").getAsString();
                 int killCount = json.get("count").getAsInt();
-                EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(entityId));
+                EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityId));
                 return new KillObjective(description, entityType, killCount);
 
             case "BIOME":
@@ -85,7 +85,7 @@ public class QuestParser {
                 String interactEntity = json.has("entity") ? json.get("entity").getAsString() : null;
                 String entityName = json.has("entityName") ? json.get("entityName").getAsString() : null;
                 EntityType<?> interactType = interactEntity != null ?
-                    BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(interactEntity)) : null;
+                    BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity)) : null;
                 return new InteractObjective(description, interactType, entityName);
 
             case "STRUCTURE":
@@ -113,7 +113,7 @@ public class QuestParser {
             case "ITEM":
                 String itemId = json.get("item").getAsString();
                 int count = json.has("count") ? json.get("count").getAsInt() : 1;
-                Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
                 if (item != Items.AIR) {
                     reward = new ItemReward(new ItemStack(item, count));
                 }

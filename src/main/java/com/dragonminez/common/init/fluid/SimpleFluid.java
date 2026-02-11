@@ -23,9 +23,9 @@ public class SimpleFluid extends FluidType {
 
 	public SimpleFluid(int color, FluidType.Properties properties) {
 		super(properties);
-		this.stillTexture = new ResourceLocation("block/water_still");
-		this.flowTexture = new ResourceLocation("block/water_flow");
-		this.overlayTexture = new ResourceLocation("block/water_overlay");
+		this.stillTexture = ResourceLocation.parse("block/water_still");
+		this.flowTexture = ResourceLocation.parse("block/water_flow");
+		this.overlayTexture = ResourceLocation.parse("block/water_overlay");
 		this.tintColor = toAlpha(color);
 		this.fogColor = new Vector3f((color >> 16 & 0xFF) / 255F, (color >> 8 & 0xFF) / 255F, (color & 0xFF) / 255F);
 		this.fogStart = -8;

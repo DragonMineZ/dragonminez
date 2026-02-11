@@ -478,7 +478,7 @@ public class MainEntities {
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .fireImmune()
-                    .build(new ResourceLocation(Reference.MOD_ID, "ki_wave").toString())
+                    .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ki_wave").toString())
     );
     public static final RegistryObject<EntityType<KiDiscEntity>> KI_DISC = ENTITY_TYPES.register("ki_disc",
             () -> EntityType.Builder.<KiDiscEntity>of(KiDiscEntity::new, MobCategory.MISC)

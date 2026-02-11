@@ -52,6 +52,7 @@ public class LockOnEvent {
 			if (level <= 0) return;
 
 			double range = 5.0 + 3.0 * level;
+			if (data.getStatus().isAndroidUpgraded()) range += 10.0;
 
 			findTargetInFront(player, range).ifPresent(target -> {
 				lockedTarget = target;
@@ -94,7 +95,7 @@ public class LockOnEvent {
 				shouldUnlock.set(true);
 			}
 
-			if (!player.hasLineOfSight(lockedTarget)) {
+			if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) {
 				shouldUnlock.set(true);
 			}
 		});

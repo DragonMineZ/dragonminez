@@ -30,6 +30,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
 		if (ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled() && ConfigManager.getServerConfig().getGameplay().isCreateDefaultSagas()) {
 			createSaiyanSagaFile(sagaDir);
 			createFriezaSagaFile(sagaDir);
+			createAndroidSagaFile(sagaDir);
 		}
     }
 
@@ -375,6 +376,242 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                 }
             } catch (IOException e) {
                 LogUtil.error(Env.COMMON, "Failed to create default frieza saga file", e);
+            }
+        }
+    }
+
+    private static void createAndroidSagaFile(Path sagaDir) {
+        Path defaultFile = sagaDir.resolve("android_saga.json");
+        if (!Files.exists(defaultFile)) {
+            try {
+                Files.createDirectories(sagaDir);
+                try (Writer writer = Files.newBufferedWriter(defaultFile, StandardCharsets.UTF_8)) {
+                    JsonObject root = new JsonObject();
+
+                    root.addProperty("id", "android_saga");
+                    root.addProperty("name", "dmz.saga.android_saga");
+
+                    JsonObject requirements = new JsonObject();
+                    requirements.addProperty("previousSaga", "frieza_saga");
+                    root.add("requirements", requirements);
+
+                    JsonArray quests = new JsonArray();
+
+                    // Quest 1
+                    quests.add(createQuest(1, "dmz.quest.android1.name", "dmz.quest.android1.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android1.obj1", "dragonminez:rocky", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android1.obj2", null, "dragonminez:saga_friezasoldier01", 15)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 18000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 2
+                    quests.add(createQuest(2, "dmz.quest.android2.name", "dmz.quest.android2.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android2.obj1", "dragonminez:rocky", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android2.obj2", null, "dragonminez:saga_mecha_frieza", 1)},
+                                    {createObjective("KILL", "dmz.quest.android2.obj3", null, "dragonminez:saga_king_cold", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 19000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 3
+                    quests.add(createQuest(3, "dmz.quest.android3.name", "dmz.quest.android3.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android3.obj1", "dragonminez:rocky", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android3.obj2", null, "dragonminez:saga_goku_yardrat", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 20000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 4
+                    quests.add(createQuest(4, "dmz.quest.android4.name", "dmz.quest.android4.desc",
+                            new JsonObject[][]{
+                                    {createObjective("STRUCTURE", "dmz.quest.android4.obj1", "dragonminez:goku_house", null, 0)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 5000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 5
+                    quests.add(createQuest(5, "dmz.quest.android5.name", "dmz.quest.android5.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android5.obj1", "dragonminez:rocky", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android5.obj2", null, "dragonminez:saga_a19", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 21000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 6
+                    quests.add(createQuest(6, "dmz.quest.android6.name", "dmz.quest.android6.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android6.obj1", "dragonminez:rocky", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android6.obj2", null, "dragonminez:saga_drgero", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 22000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 7
+                    quests.add(createQuest(7, "dmz.quest.android7.name", "dmz.quest.android7.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android7.obj1", "#minecraft:is_mountain", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android7.obj2", null, "dragonminez:saga_a17", 1)},
+                                    {createObjective("KILL", "dmz.quest.android7.obj3", null, "dragonminez:saga_a18", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 23000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 8
+                    quests.add(createQuest(8, "dmz.quest.android8.name", "dmz.quest.android8.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android8.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android8.obj2", null, "dragonminez:saga_cell_imperfect", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 24000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 9
+                    quests.add(createQuest(9, "dmz.quest.android9.name", "dmz.quest.android9.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android9.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android9.obj2", null, "dragonminez:saga_piccolo_kami", 1)},
+                                    {createObjective("KILL", "dmz.quest.android9.obj3", null, "dragonminez:saga_a17", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 25000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 10
+                    quests.add(createQuest(10, "dmz.quest.android10.name", "dmz.quest.android10.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android10.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android10.obj2", null, "dragonminez:saga_a16", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 26000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 11
+                    quests.add(createQuest(11, "dmz.quest.android11.name", "dmz.quest.android11.desc",
+                            new JsonObject[][]{
+                                    {createObjective("STRUCTURE", "dmz.quest.android11.obj1", "dragonminez:htc_entrance", null, 0)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 10000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 12
+                    quests.add(createQuest(12, "dmz.quest.android12.name", "dmz.quest.android12.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android12.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android12.obj2", null, "dragonminez:saga_cell_semiperfect", 1)},
+                                    {createObjective("KILL", "dmz.quest.android12.obj3", null, "dragonminez:saga_a18", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 27000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 13
+                    quests.add(createQuest(13, "dmz.quest.android13.name", "dmz.quest.android13.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android13.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android13.obj2", null, "dragonminez:saga_super_vegeta", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 28000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 14
+                    quests.add(createQuest(14, "dmz.quest.android14.name", "dmz.quest.android14.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android14.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android14.obj2", null, "dragonminez:saga_trunks_ssj", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 29000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 15
+                    quests.add(createQuest(15, "dmz.quest.android15.name", "dmz.quest.android15.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android15.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android15.obj2", null, "dragonminez:saga_cell_perfect", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 30000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 16
+                    quests.add(createQuest(16, "dmz.quest.android16.name", "dmz.quest.android16.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android16.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android16.obj2", null, "dragonminez:saga_gohan_ssj", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 31000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 17
+                    quests.add(createQuest(17, "dmz.quest.android17.name", "dmz.quest.android17.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android17.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android17.obj2", null, "dragonminez:saga_cell_jr", 6)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 32000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 18
+                    quests.add(createQuest(18, "dmz.quest.android18.name", "dmz.quest.android18.desc",
+                            new JsonObject[][]{
+                                    {createObjective("BIOME", "dmz.quest.android18.obj1", "minecraft:plains", null, 0)},
+                                    {createObjective("KILL", "dmz.quest.android18.obj2", null, "dragonminez:saga_cell_superperfect", 1)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 35000, null, 0, null)}
+                            }
+                    ));
+
+                    // Quest 19
+                    quests.add(createQuest(19, "dmz.quest.android19.name", "dmz.quest.android19.desc",
+                            new JsonObject[][]{
+                                    {createObjective("STRUCTURE", "dmz.quest.android19.obj1", "dragonminez:kami_lookout", null, 0)}
+                            },
+                            new JsonObject[][]{
+                                    {createReward("TPS", 10000, null, 0, null)}
+                            }
+                    ));
+
+                    root.add("quests", quests);
+                    GSON.toJson(root, writer);
+                }
+            } catch (IOException e) {
+                LogUtil.error(Env.COMMON, "Failed to create default android saga file", e);
             }
         }
     }

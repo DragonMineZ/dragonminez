@@ -47,7 +47,7 @@ public class IncreaseStatC2S {
                 if (availableTPs <= 0) return;
 
                 double multiplier = ConfigManager.getServerConfig().getGameplay().getTpsMultiplier();
-                int baseCost = (int) Math.round((data.getLevel() * multiplier) * multiplier * 1.5);
+                int baseCost = (int) Math.round((data.getLevel() * multiplier) * multiplier * 4.0);
 
                 int statsCanIncrease = Math.min(msg.multiplier, maxStats - currentStat);
 

@@ -362,6 +362,8 @@ public class ConfigMenuScreen extends BaseMenuScreen {
         LivingEntity player = this.minecraft.player;
         if (player == null) return;
 
+        int adjustedScale = getAdjustedModelScale(scale);
+
         float xRotation = (float) Math.atan((y - mouseY) / 40.0F);
         float yRotation = (float) Math.atan((x - mouseX) / 40.0F);
 
@@ -383,7 +385,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 150.0D);
-        InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
+        InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
         graphics.pose().popPose();
 
         player.yBodyRot = yBodyRotO;

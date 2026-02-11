@@ -21,7 +21,7 @@ public class ItemWish extends Wish {
 
     @Override
     public void grant(ServerPlayer player) {
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemId));
+        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(itemId));
         if (item != null) {
             player.getInventory().add(new ItemStack(item, count));
         } else {

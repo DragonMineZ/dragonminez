@@ -29,11 +29,11 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 
 public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
-    private static final ResourceLocation MAJIN_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation MAJIN_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "geo/armor/armormajinfat.geo.json");
-    private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "geo/armor/armormajinslim.geo.json");
-    private static final ResourceLocation OOZARU_ARMOR_MODEL = new ResourceLocation(Reference.MOD_ID,
+    private static final ResourceLocation OOZARU_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "geo/armor/armoroozaru.geo.json");
 
     public DMZCustomArmorLayer(GeoRenderer<T> entityRendererIn) {
@@ -244,7 +244,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             isDamaged = stack.getDamageValue() > stack.getMaxDamage() / 2;
         }
         String suffix = isDamaged ? "_damaged_layer1.png" : "_layer1.png";
-        return new ResourceLocation(Reference.MOD_ID, "textures/armor/" + itemId + suffix);
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/" + itemId + suffix);
     }
 
     private ResourceLocation getVanillaArmorTexture(LivingEntity entity, ItemStack stack, EquipmentSlot slot, String type) {
@@ -261,7 +261,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         }
         String typeSuffix = (type == null || type.isEmpty()) ? "" : "_" + type;
         String textureLocation = String.format("%s:textures/models/armor/%s_layer_1%s.png", domain, materialName, typeSuffix);
-        return new ResourceLocation(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
+        return ResourceLocation.parse(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
     }
 
     private void renderModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float r, float g, float b, float partialTick, int packedLight) {

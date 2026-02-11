@@ -119,7 +119,7 @@ public class ClientStatsEvents {
 			}
 			wasTransformKeyDown = isActionKeyPressed;
 
-			if (isKiChargeKeyPressed != data.getStatus().isChargingKi()) {
+			if (isKiChargeKeyPressed != data.getStatus().isChargingKi() && !data.getStatus().isAndroidUpgraded()) {
 				NetworkHandler.sendToServer(new UpdateStatC2S("isChargingKi", isKiChargeKeyPressed));
 			}
 

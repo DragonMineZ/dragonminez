@@ -35,6 +35,6 @@ public class OverworldPlacedFeatures {
 	}
 
 	private static ResourceKey<PlacedFeature> createKey(String name) {
-		return ResourceKey.create(Registries.PLACED_FEATURE, new ResourceLocation(Reference.MOD_ID, name));
+		return ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, name));
 	}
 }

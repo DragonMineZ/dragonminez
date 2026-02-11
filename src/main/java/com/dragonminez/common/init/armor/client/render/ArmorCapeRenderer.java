@@ -21,12 +21,9 @@ public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
         String itemId = animatable.getItemId();
         boolean isDamageOn = animatable.isDamageOn();
 
-        if (itemId.contains("pothala")) {
-            return new ResourceLocation(Reference.MOD_ID, "textures/armor/blank.png");
-        }
+        if (itemId.contains("pothala") || itemId.contains("scouter")) return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/blank.png");
 
         String basePath = "textures/armor/" + itemId;
-        String layer;
 
         EquipmentSlot slot = this.getCurrentSlot();
         boolean isLegs = slot == EquipmentSlot.LEGS;
@@ -43,6 +40,6 @@ public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
             }
         }
 
-        return new ResourceLocation(Reference.MOD_ID, basePath + suffix);
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + suffix);
     }
 }

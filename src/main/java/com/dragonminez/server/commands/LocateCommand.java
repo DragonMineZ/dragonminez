@@ -29,8 +29,7 @@ public class LocateCommand {
 			"roshi_house", Pair.of(DMZStructures.ROSHI_HOUSE, Level.OVERWORLD),
 			"elder_guru", Pair.of(DMZStructures.ELDER_GURU, NamekDimension.NAMEK_KEY),
 			"timechamber", Pair.of(DMZStructures.TIMECHAMBER, HTCDimension.HTC_KEY),
-			"kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD),
-			"enma_palace", Pair.of(DMZStructures.ENMA_PALACE, OtherworldDimension.OTHERWORLD_KEY)
+			"kamilookout", Pair.of(DMZStructures.KAMILOOKOUT, Level.OVERWORLD)
 	);
 
 	private static final SuggestionProvider<CommandSourceStack> SUGGESTIONS = (context, builder) ->

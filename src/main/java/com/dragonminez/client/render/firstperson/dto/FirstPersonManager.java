@@ -9,6 +9,7 @@ import org.joml.Vector3f;
 public class FirstPersonManager {
 
 	public static boolean shouldRenderFirstPerson(Player player) {
+		if (player != Minecraft.getInstance().player) return false;
 		if (!ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) return false;
 		if (Minecraft.getInstance().screen instanceof ChatScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 		if (Minecraft.getInstance().screen != null) return false;

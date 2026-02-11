@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SoundManager.class)
 public class SoundManagerMixin {
 	@Unique
-	private static final ResourceLocation MENU_MUSIC_RESOURCE = new ResourceLocation("minecraft", "music.menu");
+	private static final ResourceLocation MENU_MUSIC_RESOURCE = ResourceLocation.fromNamespaceAndPath("minecraft", "music.menu");
 
 	@Inject(method = "play", at = @At("HEAD"), cancellable = true)
 	private void onPlay(SoundInstance pSound, CallbackInfo ci) {

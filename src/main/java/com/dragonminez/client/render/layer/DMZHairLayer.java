@@ -6,9 +6,6 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
-import com.dragonminez.common.init.MainItems;
-import com.dragonminez.common.init.entities.FlyingNimbusEntity;
-import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -19,7 +16,6 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -166,20 +162,16 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (config != null) {
 			var formData = config.getForm(formName);
 			if (formData != null && formData.hasHairCodeOverride()) {
-				CustomHair override = HairManager.fromCode(formData.getHairCode());
+				CustomHair override = HairManager.fromCode(formData.getForcedHairCode());
 				if (override != null) return override;
+			} else if (formData != null && formData.hasDefinedHairType()) {
+				switch (formData.getHairType().toLowerCase()) {
+					case "base" -> { return character.getHairBase(); }
+					case "ssj" -> { return character.getHairSSJ(); }
+					case "ssj3" -> { return character.getHairSSJ3(); }
+					default -> {}
+				}
 			}
-		}
-
-		String lowerForm = formName.toLowerCase();
-		boolean isSSJ3 = lowerForm.contains("3") && !lowerForm.contains("grade");
-		boolean isSSJ = (lowerForm.contains("super") || lowerForm.contains("rose") || lowerForm.contains("blue") || lowerForm.contains("ssj")
-				|| lowerForm.contains("grade") || !lowerForm.contains("god")) && !isSSJ3 && !lowerForm.contains("base");
-
-		if (isSSJ3) {
-			return character.getHairSSJ3();
-		} else if (isSSJ) {
-			return character.getHairSSJ();
 		}
 
 		return character.getHairBase();

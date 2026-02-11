@@ -8,12 +8,14 @@ import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
@@ -113,7 +115,7 @@ public class StoryModeEvents {
 							if (currentProgress >= objective.getRequired()) continue;
 
 							if (objective instanceof KillObjective killObjective) {
-								ResourceLocation targetId = new ResourceLocation(killObjective.getEntityId());
+								ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
 								EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
 								if (killedEntity.getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
 							}
@@ -149,7 +151,7 @@ public class StoryModeEvents {
 							if (currentProgress >= objective.getRequired()) continue;
 							if (objective instanceof InteractObjective interactObjective) {
 								String targetStr = interactObjective.getEntityTypeId();
-								EntityType<?> requiredType = targetStr != null ? BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(targetStr)) : null;
+								EntityType<?> requiredType = targetStr != null ? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(targetStr)) : null;
 								if (requiredType == null || event.getTarget().getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
 							}
 						}
@@ -165,11 +167,20 @@ public class StoryModeEvents {
 
 		if (objective instanceof BiomeObjective biomeObj) {
 			try {
-				ResourceKey<Biome> key = level.getBiome(pos).unwrapKey().orElse(null);
-				if (key != null) {
-					String target = biomeObj.getBiomeId();
-					if (!target.contains(":")) target = "minecraft:" + target;
-					return key.location().equals(new ResourceLocation(target));
+				String target = biomeObj.getBiomeId();
+				Holder<Biome> biomeHolder = level.getBiome(pos);
+
+				if (target.startsWith("#")) {
+					String tagName = target.substring(1);
+					if (!tagName.contains(":")) tagName = "minecraft:" + tagName;
+					TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, ResourceLocation.parse(tagName));
+					return biomeHolder.is(tagKey);
+				} else {
+					ResourceKey<Biome> key = biomeHolder.unwrapKey().orElse(null);
+					if (key != null) {
+						if (!target.contains(":")) target = "minecraft:" + target;
+						return key.location().equals(ResourceLocation.parse(target));
+					}
 				}
 			} catch (Exception ignored) { return false; }
 		}
@@ -177,7 +188,7 @@ public class StoryModeEvents {
 			try {
 				String target = structObj.getStructureId();
 				if (!target.contains(":")) target = "minecraft:" + target;
-				ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, new ResourceLocation(target));
+				ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, ResourceLocation.parse(target));
 				return level.structureManager().getStructureWithPieceAt(pos, key).isValid();
 			} catch (Exception ignored) { return false; }
 		}
@@ -191,7 +202,7 @@ public class StoryModeEvents {
 
 	private static int countItems(ServerPlayer player, String itemId) {
 		try {
-			Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+			Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
 			int count = 0;
 			for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
 				ItemStack stack = player.getInventory().getItem(i);

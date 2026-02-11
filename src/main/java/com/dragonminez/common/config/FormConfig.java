@@ -55,7 +55,8 @@ public class FormConfig {
         private String bodyColor1 = "";
         private String bodyColor2 = "";
         private String bodyColor3 = "";
-        private String hairCode = "";
+		private String hairType = "";
+        private String forcedHairCode = "";
         private String hairColor = "";
         private String eye1Color = "";
         private String eye2Color = "";
@@ -90,7 +91,8 @@ public class FormConfig {
         public String getBodyColor1() { return bodyColor1; }
         public String getBodyColor2() { return bodyColor2; }
         public String getBodyColor3() { return bodyColor3; }
-        public String getHairCode() { return hairCode; }
+		public String getHairType() { return hairType; }
+        public String getForcedHairCode() { return forcedHairCode; }
         public String getHairColor() { return hairColor; }
         public String getEye1Color() { return eye1Color; }
         public String getEye2Color() { return eye2Color; }
@@ -123,7 +125,8 @@ public class FormConfig {
         public void setBodyColor1(String bodyColor1) { this.bodyColor1 = bodyColor1; }
         public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
         public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
-        public void setHairCode(String hairCode) { this.hairCode = hairCode; }
+		public void setHairType(String hairType) { this.hairType = hairType; }
+        public void setForcedHairCode(String forcedHairCode) { this.forcedHairCode = forcedHairCode; }
         public void setHairColor(String hairColor) { this.hairColor = hairColor; }
         public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
         public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
@@ -158,8 +161,12 @@ public class FormConfig {
             return !bodyColor1.isEmpty() || !bodyColor2.isEmpty() || !bodyColor3.isEmpty();
         }
 
+		public boolean hasDefinedHairType() {
+			return hairType != null && !hairType.isEmpty();
+		}
+
         public boolean hasHairCodeOverride() {
-            return !hairCode.equals("");
+            return !forcedHairCode.isEmpty();
         }
 
         public boolean hasHairColorOverride() {

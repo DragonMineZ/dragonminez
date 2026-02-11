@@ -120,7 +120,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("kamilookout",
 							PlayerTrigger.TriggerInstance.located(
 									LocationPredicate.inStructure(
-											ResourceKey.create(Registries.STRUCTURE, new ResourceLocation("dragonminez", "kamilookout"))
+											ResourceKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kamilookout"))
 									)
 							)
 					).save(consumer, "dragonminez:kamilookout");
@@ -135,7 +135,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("gokuhouse",
 							PlayerTrigger.TriggerInstance.located(
 									LocationPredicate.inStructure(
-											ResourceKey.create(Registries.STRUCTURE, new ResourceLocation("dragonminez", "goku_house"))
+											ResourceKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "goku_house"))
 									)
 							)
 					).save(consumer, "dragonminez:gokuhouse");
@@ -150,7 +150,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).addCriterion("roshihouse",
 							PlayerTrigger.TriggerInstance.located(
 									LocationPredicate.inStructure(
-											ResourceKey.create(Registries.STRUCTURE, new ResourceLocation("dragonminez", "roshi_house"))
+											ResourceKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "roshi_house"))
 									)
 							)
 					).save(consumer, "dragonminez:roshihouse");

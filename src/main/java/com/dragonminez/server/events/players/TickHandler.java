@@ -19,7 +19,9 @@ import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.util.RacialSkillLogic;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -62,7 +64,7 @@ public class TickHandler {
         int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
 
         StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter() || !data.getStatus().isAlive()) return;
+            if (!data.getStatus().hasCreatedCharacter()) return;
 
 			handleBioDrainTick(serverPlayer, data);
 
@@ -188,6 +190,14 @@ public class TickHandler {
 				handleKaiokenEffects(serverPlayer, data);
 				handleFlightKiDrain(serverPlayer, data);
 				GravityLogic.tick(serverPlayer);
+				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
+					if (!data.getStatus().isAlive() && !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
+						if (!serverPlayer.isSpectator() && !serverPlayer.isCreative()) {
+							ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
+							serverPlayer.teleportTo(otherworld, 0, 41, 10, 0, 0);
+						}
+					}
+				}
 			}
 
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
@@ -263,6 +273,7 @@ public class TickHandler {
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
 				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
+			if (data.getStatus().isAndroidUpgraded()) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
         }

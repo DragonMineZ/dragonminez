@@ -56,7 +56,7 @@ import java.util.Objects;
 public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
 
     private static final Map<ResourceLocation, Boolean> TEXTURE_CACHE = new HashMap<>();
-    public static final ResourceLocation KI_WEAPON_TEX = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
+    public static final ResourceLocation KI_WEAPON_TEX = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 
     public static final KiScytheModel KI_SCYTHE_MODEL = new KiScytheModel(KiScytheModel.createBodyLayer().bakeRoot());
     public static final KiBladeModel KI_BLADE_MODEL = new KiBladeModel(KiBladeModel.createBodyLayer().bakeRoot());
@@ -342,7 +342,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
         if (itemId != null) {
             String texturePath = "textures/armor/" + itemId + "_layer1.png";
-            ResourceLocation armorResource = new ResourceLocation(Reference.MOD_ID, texturePath);
+            ResourceLocation armorResource = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, texturePath);
 
             if (textureExists(armorResource)) {
                 ps.pushPose();
@@ -363,12 +363,12 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
     private void renderTattoos(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, StatsData stats) {
         if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
-            renderPart(stack, buffer, light, arm, new ResourceLocation(Reference.MOD_ID, "textures/entity/races/majinm.png"), new float[]{1,1,1});
+            renderPart(stack, buffer, light, arm, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/majinm.png"), new float[]{1,1,1});
         }
 
         int tattooType = stats.getCharacter().getTattooType();
         if (tattooType != 0) {
-            ResourceLocation tattooLoc = new ResourceLocation(Reference.MOD_ID, "textures/entity/races/tattoos/tattoo_" + tattooType + ".png");
+            ResourceLocation tattooLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/tattoos/tattoo_" + tattooType + ".png");
             renderPart(stack, buffer, light, arm, tattooLoc, new float[]{1,1,1});
         }
     }
@@ -381,7 +381,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
     }
 
     private ResourceLocation loc(String path) {
-        return new ResourceLocation(Reference.MOD_ID, path);
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
     }
 
     private boolean textureExists(ResourceLocation location) {
