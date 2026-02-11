@@ -35,8 +35,6 @@ public class BoneVisibilityHandler {
         ItemStack legsStack = player.getItemBySlot(EquipmentSlot.LEGS);
         boolean hasLeggings = !legsStack.isEmpty();
 
-        // 2. Chequeo de Configuración de Skin (Overlay)
-        // Solo aplica si es Saiyan/Humano y bodyType 0. Si no, asumimos que siempre se muestran (true)
         boolean isSaiyanOrHuman = race.equals("saiyan") || race.equals("human");
         boolean isStandardBody = (isSaiyanOrHuman && bodyType == 0);
 
