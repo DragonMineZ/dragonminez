@@ -26,17 +26,17 @@
 			"bones": {
 				"cape": {
 					"rotation": {
-						"vector": ["10+math.cos(query.anim_time *180) *-5", 0, 0]
+						"vector": ["10+math.cos(query.anim_time *180) *-8", 0, 0]
 					}
 				},
 				"cape2": {
 					"rotation": {
-						"vector": ["math.cos(120-query.anim_time *180) *-7", 0, 0]
+						"vector": ["math.cos(120-query.anim_time *180) *-10", 0, 0]
 					}
 				},
 				"cape3": {
 					"rotation": {
-						"vector": ["math.cos(180-query.anim_time *180) *-9", 0, 0]
+						"vector": ["math.cos(180-query.anim_time *180) *-11", 0, 0]
 					}
 				}
 			}

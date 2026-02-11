@@ -3,9 +3,12 @@ package com.dragonminez.common.init.armor.client.render;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.client.model.ArmorCapeModel;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 
@@ -41,5 +44,10 @@ public class ArmorCapeRenderer extends GeoArmorRenderer<DbzArmorCapeItem> {
         }
 
         return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + suffix);
+    }
+
+    @Override
+    public RenderType getRenderType(DbzArmorCapeItem animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
+        return RenderType.armorCutoutNoCull(texture);
     }
 }
