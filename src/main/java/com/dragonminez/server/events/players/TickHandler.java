@@ -198,6 +198,9 @@ public class TickHandler {
 						}
 					}
 				}
+
+				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm() == null))
+					data.getCharacter().setActiveForm("androidforms", "androidbase");
 			}
 
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
@@ -273,10 +276,20 @@ public class TickHandler {
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
 				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
-			if (data.getStatus().isAndroidUpgraded()) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			if (regenAmount <= 1.0) regenAmount = 0.5;
             energyChange += regenAmount;
         }
+
+		if (data.getStatus().isAndroidUpgraded()) {
+			double baseRegen = classStats.getEnergyRegenRate();
+			double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
+				if (data.getCharacter().getRace().equals("human")) regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			}
+			regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			if (regenAmount <= 1.0) regenAmount = 0.5;
+			energyChange += regenAmount;
+		}
 
         if (hasActiveForm && activeForm != null) {
             if (!data.getStatus().isAndroidUpgraded()) {
@@ -454,6 +467,7 @@ public class TickHandler {
 
 			if (player.getHealth() - drain <= 1.0f) {
 				data.getSkills().setSkillActive("kaioken", false);
+				data.getStatus().setActiveKaiokenPhase(0);
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 			} else {

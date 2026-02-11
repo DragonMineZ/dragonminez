@@ -40,7 +40,7 @@ public class GravityLogic {
 
 	private static double getNpcGravity(Player player) {
 		double gravity = 0.0;
-		double range = 60.0;
+		double range = 100.0;
 		AABB searchBox = player.getBoundingBox().inflate(range);
 		List<MasterKaiosamaEntity> kais = player.level().getEntitiesOfClass(MasterKaiosamaEntity.class, searchBox);
 		if (!kais.isEmpty()) gravity = 10.0;

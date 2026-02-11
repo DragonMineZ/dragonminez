@@ -156,7 +156,7 @@ public class MasterTextScreen extends Screen {
 				.message(Component.translatable("gui.dragonminez.button.enma.earth"))
 				.onPress(b -> {
 					if (hasCd) {
-						this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.revive");
+						this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.revive", Minecraft.getInstance().player.getName());
 					} else {
 						NetworkHandler.sendToServer(new NPCActionC2S("enma", 1));
 						this.onClose();

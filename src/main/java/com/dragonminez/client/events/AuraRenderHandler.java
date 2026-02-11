@@ -93,6 +93,15 @@ public class AuraRenderHandler {
             renderPulseAura(entry, poseStack, buffers, dispatcher, mc);
         }
 
+        var firstPersonAuras = AuraRenderQueue.getAndClearFirstPersonAuras();
+        for (var entry : firstPersonAuras) {
+            Player player = entry.player();
+            if (!currentFramePlayers.contains(player.getId())) {
+                currentFramePlayers.add(player.getId());
+                renderFirstPersonAura(entry, poseStack, buffers, dispatcher, mc);
+            }
+        }
+
         Iterator<Map.Entry<Integer, CachedAuraData>> it = AURA_CACHE.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Integer, CachedAuraData> entry = it.next();
@@ -202,14 +211,8 @@ public class AuraRenderHandler {
 			destBone.setPosX(sourceBone.getPosX());
 			destBone.setPosY(sourceBone.getPosY());
 			destBone.setPosZ(sourceBone.getPosZ());
-			destBone.setScaleX(sourceBone.getScaleX());
-			destBone.setScaleY(sourceBone.getScaleY());
-			destBone.setScaleZ(sourceBone.getScaleZ());
 		});
-
-		for (GeoBone child : destBone.getChildBones()) {
-			syncBoneRecursively(child, sourceModel);
-		}
+		for (GeoBone child : destBone.getChildBones()) syncBoneRecursively(child, sourceModel);
 	}
 
 	private static float[] getKiColor(StatsData stats) {
@@ -252,11 +255,13 @@ public class AuraRenderHandler {
 
         float formScaleX = 1.0f; float formScaleY = 1.0f; float formScaleZ = 1.0f;
         String formName = "";
+        boolean hasCustomModel = false;
         var character = stats.getCharacter();
         if (character.hasActiveForm()) {
             var activeForm = character.getActiveFormData();
             if (activeForm != null) {
                 formName = character.getActiveForm().toLowerCase();
+                hasCustomModel = activeForm.hasCustomModel() && !activeForm.getCustomModel().isEmpty();
                 float[] scales = activeForm.getModelScaling();
                 if (scales != null && scales.length >= 3) {
                     formScaleX = scales[0]; formScaleY = scales[1]; formScaleZ = scales[2];
@@ -271,9 +276,15 @@ public class AuraRenderHandler {
 
         float[] color = getKiColor(stats);
 
-        data.scaleX = formScaleX + extraSize + 0.2f;
-        data.scaleY = formScaleY + extraSize + 0.2f;
-        data.scaleZ = formScaleZ + extraSize + 0.2f;
+        if (hasCustomModel) {
+            data.scaleX = formScaleX + extraSize + 0.2f;
+            data.scaleY = formScaleY + extraSize + 0.2f;
+            data.scaleZ = formScaleZ + extraSize + 0.2f;
+        } else {
+            data.scaleX = 1.0f + extraSize + 0.2f;
+            data.scaleY = 1.0f + extraSize + 0.2f;
+            data.scaleZ = 1.0f + extraSize + 0.2f;
+        }
         data.color = color;
         data.model = auraModel;
         data.playerModel = entry.playerModel();
@@ -294,7 +305,14 @@ public class AuraRenderHandler {
         ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
 
         boolean isLocalPlayer = player == mc.player;
-        float targetMaxAlpha = isLocalPlayer && mc.options.getCameraType().isFirstPerson() ? 0.075f : 0.15f;
+        boolean isFirstPerson = mc.options.getCameraType().isFirstPerson();
+
+        float targetMaxAlpha;
+        if (isLocalPlayer && isFirstPerson) {
+            float maxScale = Math.max(data.scaleX, Math.max(data.scaleY, data.scaleZ));
+            if (maxScale > 2.0f) targetMaxAlpha = 0.12f;
+            else targetMaxAlpha = 0.075f;
+        } else targetMaxAlpha = 0.15f;
         float finalAlpha = targetMaxAlpha * data.alphaProgress;
 
         if (finalAlpha > 0.001f) {
@@ -350,6 +368,127 @@ public class AuraRenderHandler {
         return true;
     }
 
+    private static void renderFirstPersonAura(AuraRenderQueue.FirstPersonAuraEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
+        Player player = entry.player();
+        float partialTick = entry.partialTick();
+
+        if (!(player instanceof GeoAnimatable animatable)) return;
+
+        EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+        if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+
+        BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
+        if (auraModel == null) return;
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        if (stats == null) return;
+
+        int playerId = player.getId();
+        CachedAuraData data = AURA_CACHE.computeIfAbsent(playerId, k -> new CachedAuraData());
+
+        long gameTime = player.level().getGameTime();
+        if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
+            data.alphaProgress = 0.0f;
+        }
+        LAST_RENDER_TIME.put(playerId, gameTime);
+
+        if (data.alphaProgress < 1.0f) {
+            data.alphaProgress += FADE_SPEED;
+            if (data.alphaProgress > 1.0f) data.alphaProgress = 1.0f;
+        }
+
+        float formScaleX = 1.0f; float formScaleY = 1.0f; float formScaleZ = 1.0f;
+        String formName = "";
+        boolean hasCustomModel = false;
+        var character = stats.getCharacter();
+        if (character.hasActiveForm()) {
+            var activeForm = character.getActiveFormData();
+            if (activeForm != null) {
+                formName = character.getActiveForm().toLowerCase();
+                hasCustomModel = activeForm.hasCustomModel() && !activeForm.getCustomModel().isEmpty();
+                float[] scales = activeForm.getModelScaling();
+                if (scales != null && scales.length >= 3) {
+                    formScaleX = scales[0]; formScaleY = scales[1]; formScaleZ = scales[2];
+                }
+            }
+        }
+
+        float extraSize = 0.0f;
+        if (formName.contains("supersaiyan2") || formName.contains("supersaiyan3") || formName.contains("overdrive") ||
+                formName.contains("supernamekian") || formName.contains("fifth") || formName.contains("ultra") || formName.contains("superperfect")) {
+            extraSize = 0.3f;
+        }
+
+        float[] color = getKiColor(stats);
+
+        if (hasCustomModel) {
+            data.scaleX = formScaleX + extraSize + 0.2f;
+            data.scaleY = formScaleY + extraSize + 0.2f;
+            data.scaleZ = formScaleZ + extraSize + 0.2f;
+        } else {
+            data.scaleX = 1.0f + extraSize + 0.2f;
+            data.scaleY = 1.0f + extraSize + 0.2f;
+            data.scaleZ = 1.0f + extraSize + 0.2f;
+        }
+        data.color = color;
+        data.model = auraModel;
+
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
+        double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
+        double lerpY = Mth.lerp(partialTick, player.yo, player.getY());
+        double lerpZ = Mth.lerp(partialTick, player.zo, player.getZ());
+
+        boolean isFirstPerson = mc.options.getCameraType().isFirstPerson();
+        float effectiveScale = Math.max(formScaleX, Math.max(formScaleY, formScaleZ));
+
+        if (isFirstPerson && effectiveScale > 1.5f) {
+            float eyeHeight = player.getEyeHeight();
+            lerpY += eyeHeight * 0.25f;
+        }
+
+        poseStack.pushPose();
+        poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
+        float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
+        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-bodyRot + 180f));
+        poseStack.scale(-1.0F, 1.0F, 1.0F);
+
+        if (!hasCustomModel && (formScaleX != 1.0f || formScaleY != 1.0f || formScaleZ != 1.0f)) {
+            poseStack.scale(formScaleX, formScaleY, formScaleZ);
+        }
+
+        poseStack.scale(data.scaleX, data.scaleY, data.scaleZ);
+
+        long frame = (long) ((player.level().getGameTime() / 1.5f) % 3);
+        ResourceLocation currentTexture = (frame == 0) ? AURA_TEX_0 : (frame == 1) ? AURA_TEX_1 : AURA_TEX_2;
+
+        float targetMaxAlpha;
+        if (isFirstPerson) {
+            float maxScale = Math.max(data.scaleX, Math.max(data.scaleY, data.scaleZ));
+            if (maxScale > 2.0f) {
+                targetMaxAlpha = 0.12f;
+            } else {
+                targetMaxAlpha = 0.075f;
+            }
+        } else {
+            targetMaxAlpha = 0.15f;
+        }
+        float finalAlpha = targetMaxAlpha * data.alphaProgress;
+
+        if (finalAlpha > 0.001f) {
+            renderer.reRender(auraModel, poseStack, buffers, animatable, ModRenderTypes.energy(currentTexture),
+                    buffers.getBuffer(ModRenderTypes.energy(currentTexture)), partialTick, 15728880,
+                    OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], finalAlpha);
+        }
+
+        poseStack.popPose();
+
+        // También generar partículas
+        if (player.onGround()) {
+            spawnGroundDust(player, formScaleX + extraSize);
+            spawnFloatingRubble(player, formScaleX + extraSize);
+        }
+    }
+
     private static void renderSparkEntry(AuraRenderQueue.SparkRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
         var player = entry.player();
         if (!(player instanceof GeoAnimatable animatable)) return;
@@ -372,12 +511,11 @@ public class AuraRenderHandler {
         float formScaleY = 1.0f;
         float formScaleZ = 1.0f;
         String formName = character.getActiveForm().toLowerCase();
+        boolean hasCustomModel = formData.hasCustomModel() && !formData.getCustomModel().isEmpty();
 
         float[] scales = formData.getModelScaling();
         if (scales != null && scales.length >= 3) {
-            formScaleX = scales[0];
-            formScaleY = scales[1];
-            formScaleZ = scales[2];
+			formScaleX = scales[0]; formScaleY = scales[1]; formScaleZ = scales[2];
         }
 
         float extraSize = 0.0f;
@@ -398,7 +536,17 @@ public class AuraRenderHandler {
         poseStack.pushPose();
         poseStack.last().pose().set(entry.poseMatrix());
 
-        poseStack.scale(formScaleX + extraSize + 0.2f, formScaleY + extraSize+ 0.2f, formScaleZ + extraSize+ 0.2f);
+        float finalScaleX, finalScaleY, finalScaleZ;
+        if (hasCustomModel) {
+            finalScaleX = formScaleX + extraSize + 0.2f;
+            finalScaleY = formScaleY + extraSize + 0.2f;
+            finalScaleZ = formScaleZ + extraSize + 0.2f;
+        } else {
+            finalScaleX = 1.0f + extraSize + 0.2f;
+            finalScaleY = 1.0f + extraSize + 0.2f;
+            finalScaleZ = 1.0f + extraSize + 0.2f;
+        }
+        poseStack.scale(finalScaleX, finalScaleY, finalScaleZ);
 
         long frame = (long) ((player.level().getGameTime() / 1.0f) % 3);
         ResourceLocation currentTexture = (frame == 0) ? SPARK_TEX_0 : (frame == 1) ? SPARK_TEX_1 : SPARK_TEX_2;
@@ -452,12 +600,14 @@ public class AuraRenderHandler {
         float formScaleY = 1.0f;
         float formScaleZ = 1.0f;
         String formName = "";
+        boolean hasCustomModel = false;
 
         var character = stats.getCharacter();
         if (character.hasActiveForm()) {
             var activeForm = character.getActiveFormData();
             if (activeForm != null) {
                 formName = character.getActiveForm().toLowerCase();
+                hasCustomModel = activeForm.hasCustomModel() && !activeForm.getCustomModel().isEmpty();
                 float[] scales = activeForm.getModelScaling();
                 if (scales != null && scales.length >= 3) {
                     formScaleX = scales[0]; formScaleY = scales[1]; formScaleZ = scales[2];
@@ -471,9 +621,20 @@ public class AuraRenderHandler {
             extraSize = 0.3f;
         }
 
-        float finalScaleX = (formScaleX + extraSize + 0.2f) * expansion;
-        float finalScaleY = (formScaleY + extraSize + 0.2f);
-        float finalScaleZ = (formScaleZ + extraSize + 0.2f) * expansion;
+        float baseScaleX, baseScaleY, baseScaleZ;
+        if (hasCustomModel) {
+            baseScaleX = formScaleX + extraSize + 0.2f;
+            baseScaleY = formScaleY + extraSize + 0.2f;
+            baseScaleZ = formScaleZ + extraSize + 0.2f;
+        } else {
+            baseScaleX = 1.0f + extraSize + 0.2f;
+            baseScaleY = 1.0f + extraSize + 0.2f;
+            baseScaleZ = 1.0f + extraSize + 0.2f;
+        }
+
+        float finalScaleX = baseScaleX * expansion;
+        float finalScaleY = baseScaleY;
+        float finalScaleZ = baseScaleZ * expansion;
 
         float[] color = getKiColor(stats);
 

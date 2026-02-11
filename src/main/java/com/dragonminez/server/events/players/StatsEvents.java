@@ -6,6 +6,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -170,13 +171,12 @@ public class StatsEvents {
         }
 
         StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) {
-                return;
-            }
+            if (!data.getStatus().hasCreatedCharacter()) return;
 
             if (dropTps(event.getEntity())) {
-                int tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
-
+				int tpsHealth;
+				if (event.getEntity() instanceof ShadowDummyEntity) tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
+				else tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
                 data.getResources().addTrainingPoints(tpsHealth);
             }
 

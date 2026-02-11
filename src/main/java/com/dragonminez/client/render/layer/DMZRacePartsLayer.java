@@ -107,7 +107,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         syncModelToPlayer(accModel, playerModel);
 
-		String pothalaColor = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("green") ? "green" : "yellow";
+		String pothalaColor = stats.getStatus().getPothalaColor().contains("green") ? "green" : "yellow";
         RenderType accRenderType = RenderType.entityCutoutNoCull(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + pothalaColor + "pothala.png"));
 
         poseStack.pushPose();

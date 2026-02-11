@@ -38,7 +38,7 @@ public class OtherworldNPCSpawner {
         uranai.moveTo(14.5, 41, 76.5, 0.0F, 0.0F);
         uranai.setPersistenceRequired();
         otherworld.addFreshEntity(uranai);
-        LogUtil.info(Env.COMMON, "Spawned Master Uranai at 14, 41, 76");
+        LogUtil.info(Env.COMMON, "Spawned Master Uranai at 6, 41, 53");
 
         data.setNPCsSpawned();
         LogUtil.info(Env.COMMON, "All Otherworld NPCs have been spawned successfully.");

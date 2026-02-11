@@ -27,7 +27,6 @@ public class BoneVisibilityHandler {
         String currentForm = character.getActiveForm();
         int bodyType = character.getBodyType();
 
-        // 1. Chequeo de Armaduras
         ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
         boolean hasChestplate = !chestStack.isEmpty();
         boolean isCape = hasChestplate && (chestStack.getItem() instanceof DbzArmorCapeItem);
@@ -35,15 +34,13 @@ public class BoneVisibilityHandler {
         ItemStack legsStack = player.getItemBySlot(EquipmentSlot.LEGS);
         boolean hasLeggings = !legsStack.isEmpty();
 
-        // 2. Chequeo de Configuración de Skin (Overlay)
-        // Solo aplica si es Saiyan/Humano y bodyType 0. Si no, asumimos que siempre se muestran (true)
         boolean isSaiyanOrHuman = race.equals("saiyan") || race.equals("human");
         boolean isStandardBody = (isSaiyanOrHuman && bodyType == 0);
 
         boolean showHat = isStandardBody && player.isModelPartShown(PlayerModelPart.HAT);
         boolean showJacket = isStandardBody && player.isModelPartShown(PlayerModelPart.JACKET);
         boolean showRightSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE);
-        boolean showLeftSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE); // Corregido a LEFT
+        boolean showLeftSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE);
         boolean showRightPants = isStandardBody && player.isModelPartShown(PlayerModelPart.RIGHT_PANTS_LEG);
         boolean showLeftPants = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_PANTS_LEG);
 

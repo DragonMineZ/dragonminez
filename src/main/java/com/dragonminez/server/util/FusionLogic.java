@@ -73,6 +73,10 @@ public class FusionLogic {
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
 
+		boolean isGreenPothala = leader.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("green");
+		lData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
+		pData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
+
 		removeEarring(leader);
 		removeEarring(partner);
 
@@ -212,8 +216,6 @@ public class FusionLogic {
 
 	private static void removeEarring(ServerPlayer player) {
 		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (head.getItem().getDescriptionId().contains("pothala")) {
-			player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
-		}
+		if (head.getItem().getDescriptionId().contains("pothala")) player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
 	}
 }
