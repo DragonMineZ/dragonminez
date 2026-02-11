@@ -156,7 +156,7 @@ public class MasterTextScreen extends Screen {
 				.message(Component.translatable("gui.dragonminez.button.enma.earth"))
 				.onPress(b -> {
 					if (hasCd) {
-						this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.revive");
+						this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.revive", Minecraft.getInstance().player.getName());
 					} else {
 						NetworkHandler.sendToServer(new NPCActionC2S("enma", 1));
 						this.onClose();
@@ -212,10 +212,8 @@ public class MasterTextScreen extends Screen {
 					.message(Component.translatable("gui.dragonminez.button.popo.rythm"))
 					.onPress(btn -> {
 						if (Minecraft.getInstance().player.level().isClientSide()) {
-							//Minecraft.getInstance().setScreen(new RythmTrainingScreen());
+							Minecraft.getInstance().setScreen(new TrainingScreen());
 						}
-						secondFunc = false;
-						this.onClose();
 					})
 					.build());
 		} else {

@@ -31,6 +31,7 @@ public class Status {
 	private boolean renderKatana;
 	private String backWeapon;
 	private String scouterItem;
+	private String pothalaColor;
 
     public Status() {
         this.isAlive = true;
@@ -59,6 +60,7 @@ public class Status {
 		this.renderKatana = false;
 		this.backWeapon = "";
 		this.scouterItem = "";
+		this.pothalaColor = "";
     }
 
     public boolean isAlive() { return isAlive; }
@@ -87,6 +89,7 @@ public class Status {
 	public boolean isRenderKatana() { return renderKatana; }
 	public String getBackWeapon() { return backWeapon; }
 	public String getScouterItem() { return scouterItem; }
+	 public String getPothalaColor() { return pothalaColor; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -114,6 +117,7 @@ public class Status {
 	public void setRenderKatana(boolean render) { this.renderKatana = render; }
 	public void setBackWeapon(String weapon) { this.backWeapon = weapon; }
 	public void setScouterItem(String item) { this.scouterItem = item; }
+	public void setPothalaColor(String color) { this.pothalaColor = color; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();

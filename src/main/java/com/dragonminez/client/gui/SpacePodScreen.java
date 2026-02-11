@@ -127,7 +127,7 @@ public class SpacePodScreen extends Screen {
 
 		drawCenteredStringWithBorder(graphics,
 				Component.translatable("gui.dragonminez.spacepod.title"),
-				this.width / 2, guiTop + 12, 0xFFFFD700);
+				this.width / 2, guiTop + 18, 0xFFFFD700);
 
 		renderPlanetList(graphics, mouseX, mouseY);
 

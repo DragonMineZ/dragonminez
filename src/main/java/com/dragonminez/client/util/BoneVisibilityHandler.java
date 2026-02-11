@@ -27,7 +27,6 @@ public class BoneVisibilityHandler {
         String currentForm = character.getActiveForm();
         int bodyType = character.getBodyType();
 
-        // 1. Chequeo de Armaduras
         ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
         boolean hasChestplate = !chestStack.isEmpty();
         boolean isCape = hasChestplate && (chestStack.getItem() instanceof DbzArmorCapeItem);
@@ -41,7 +40,7 @@ public class BoneVisibilityHandler {
         boolean showHat = isStandardBody && player.isModelPartShown(PlayerModelPart.HAT);
         boolean showJacket = isStandardBody && player.isModelPartShown(PlayerModelPart.JACKET);
         boolean showRightSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE);
-        boolean showLeftSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE); // Corregido a LEFT
+        boolean showLeftSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE);
         boolean showRightPants = isStandardBody && player.isModelPartShown(PlayerModelPart.RIGHT_PANTS_LEG);
         boolean showLeftPants = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_PANTS_LEG);
 
