@@ -142,6 +142,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.MASTER_GERO.get(), MasterEntityRenderer::new);
         event.registerEntityRenderer(MainEntities.MASTER_POPO.get(), MasterEntityRenderer::new);
         event.registerEntityRenderer(MainEntities.MASTER_GURU.get(), MasterEntityRenderer::new);
+        event.registerEntityRenderer(MainEntities.MASTER_TORIBOT.get(), MasterEntityRenderer::new);
 
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanRenderer::new);
