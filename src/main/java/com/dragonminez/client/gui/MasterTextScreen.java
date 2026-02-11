@@ -212,10 +212,8 @@ public class MasterTextScreen extends Screen {
 					.message(Component.translatable("gui.dragonminez.button.popo.rythm"))
 					.onPress(btn -> {
 						if (Minecraft.getInstance().player.level().isClientSide()) {
-							//Minecraft.getInstance().setScreen(new RythmTrainingScreen());
+							Minecraft.getInstance().setScreen(new TrainingScreen());
 						}
-						secondFunc = false;
-						this.onClose();
 					})
 					.build());
 		} else {

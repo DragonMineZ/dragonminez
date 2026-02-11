@@ -140,6 +140,12 @@ public class NetworkHandler {
 				.encoder(NPCActionC2S::toBytes)
 				.consumerMainThread(NPCActionC2S::handle)
 				.add();
+
+		net.messageBuilder(TrainingRewardC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TrainingRewardC2S::new)
+				.encoder(TrainingRewardC2S::toBytes)
+				.consumerMainThread(TrainingRewardC2S::handle)
+				.add();
 		
 		/*
 		  SERVER -> CLIENT

@@ -20,6 +20,7 @@ public class StatsData {
     private final Effects effects;
     private final QuestData questData;
     private final BonusStats bonusStats;
+	private final Training training;
 
     private boolean hasInitializedHealth = false;
 
@@ -36,6 +37,7 @@ public class StatsData {
         this.effects = new Effects();
         this.questData = new QuestData();
         this.bonusStats = new BonusStats();
+		this.training = new Training();
     }
 
     public Stats getStats() { return stats; }
@@ -47,6 +49,7 @@ public class StatsData {
     public Effects getEffects() { return effects; }
     public QuestData getQuestData() { return questData; }
     public BonusStats getBonusStats() { return bonusStats; }
+	public Training getTraining() { return training; }
     public Player getPlayer() { return player; }
 
     public boolean hasInitializedHealth() { return hasInitializedHealth; }
