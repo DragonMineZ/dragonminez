@@ -6,6 +6,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -24,21 +25,39 @@ public class BoneVisibilityHandler {
         String race = character.getRaceName().toLowerCase();
         String gender = character.getGender().toLowerCase();
         String currentForm = character.getActiveForm();
+        int bodyType = character.getBodyType();
 
+        // 1. Chequeo de Armaduras
         ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
         boolean hasChestplate = !chestStack.isEmpty();
         boolean isCape = hasChestplate && (chestStack.getItem() instanceof DbzArmorCapeItem);
 
-        hideBone(model, "right_arm_layer", hasChestplate);
-        hideBone(model, "left_arm_layer", hasChestplate);
-        hideBone(model, "body_layer", hasChestplate);
-        hideBone(model, "boobas", isCape);
-
         ItemStack legsStack = player.getItemBySlot(EquipmentSlot.LEGS);
         boolean hasLeggings = !legsStack.isEmpty();
 
-        hideBone(model, "left_leg_layer", hasLeggings);
-        hideBone(model, "right_leg_layer", hasLeggings);
+        // 2. Chequeo de Configuración de Skin (Overlay)
+        // Solo aplica si es Saiyan/Humano y bodyType 0. Si no, asumimos que siempre se muestran (true)
+        boolean isSaiyanOrHuman = race.equals("saiyan") || race.equals("human");
+        boolean isStandardBody = (isSaiyanOrHuman && bodyType == 0);
+
+        boolean showHat = isStandardBody && player.isModelPartShown(PlayerModelPart.HAT);
+        boolean showJacket = isStandardBody && player.isModelPartShown(PlayerModelPart.JACKET);
+        boolean showRightSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE);
+        boolean showLeftSleeve = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE); // Corregido a LEFT
+        boolean showRightPants = isStandardBody && player.isModelPartShown(PlayerModelPart.RIGHT_PANTS_LEG);
+        boolean showLeftPants = isStandardBody && player.isModelPartShown(PlayerModelPart.LEFT_PANTS_LEG);
+
+        hideBone(model, "body_layer", hasChestplate || !showJacket);
+
+        hideBone(model, "right_arm_layer", hasChestplate || !showRightSleeve);
+        hideBone(model, "left_arm_layer", hasChestplate || !showLeftSleeve);
+
+        hideBone(model, "right_leg_layer", hasLeggings || !showRightPants);
+        hideBone(model, "left_leg_layer", hasLeggings || !showLeftPants);
+
+        hideBone(model, "hat_layer", !showHat);
+
+        hideBone(model, "boobas", isCape);
 
         hideBone(model, "armorHead", true);
         hideBone(model, "armorBody", true);
