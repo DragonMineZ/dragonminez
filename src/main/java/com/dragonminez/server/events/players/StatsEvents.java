@@ -212,12 +212,8 @@ public class StatsEvents {
     public static void onLivingTick(TickEvent.PlayerTickEvent event) {
         Player player = event.player;
         if (player.level().isClientSide || event.phase != TickEvent.Phase.END) return;
-
         FluidState fluidState = player.level().getFluidState(player.blockPosition());
-
-        if (fluidState.isEmpty()) {
-            return;
-        }
+        if (fluidState.isEmpty()) return;
 
         if (fluidState.is(MainFluids.SOURCE_HEALING.get()) || fluidState.is(MainFluids.FLOWING_HEALING.get())) {
             long currentTime = player.level().getGameTime();
@@ -235,7 +231,7 @@ public class StatsEvents {
     private static void funcHealingLiquid(Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
             StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-                float maxHp = data.getMaxHealth();
+                float maxHp = player.getMaxHealth();
                 float healHp = (int) (maxHp * HEAL_PERCENTAGE);
                 int maxKi = data.getMaxEnergy();
                 int healKi = (int) (maxKi * HEAL_PERCENTAGE);
@@ -248,9 +244,9 @@ public class StatsEvents {
                 if (healStamina > maxStamina) healStamina = maxStamina;
 
                 if (hasCreatedChar) {
-                    serverPlayer.heal(healHp);
-                    data.getResources().setCurrentEnergy(healKi);
-                    data.getResources().setCurrentStamina(healStamina);
+                    serverPlayer.setHealth(player.getHealth() + healHp);
+                    data.getResources().addEnergy(healKi);
+                    data.getResources().addStamina(healStamina);
                 }
 
             });

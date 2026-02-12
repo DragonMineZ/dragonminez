@@ -13,13 +13,11 @@ import net.minecraft.server.level.ServerLevel;
 public class OtherworldNPCSpawner {
 
     public static void spawnNPCs(ServerLevel otherworld) {
-        if (otherworld == null || otherworld.dimension() != OtherworldDimension.OTHERWORLD_KEY) {
-            return;
-        }
+        if (otherworld == null || otherworld.dimension() != OtherworldDimension.OTHERWORLD_KEY) return;
 
         OtherworldNPCSavedData data = OtherworldNPCSavedData.get(otherworld);
         if (data.hasNPCsSpawned()) {
-            LogUtil.info(Env.COMMON, "Otherworld NPCs already spawned, skipping.");
+            LogUtil.info(Env.SERVER, "Otherworld NPCs already spawned, skipping.");
             return;
         }
 
@@ -27,28 +25,28 @@ public class OtherworldNPCSpawner {
         kaiosama.moveTo(54.5, 190, 1082.5, 0.0F, 0.0F);
         kaiosama.setPersistenceRequired();
         otherworld.addFreshEntity(kaiosama);
-        LogUtil.info(Env.COMMON, "Spawned Master Kaiosama at 54, 190, 1082");
+        LogUtil.info(Env.SERVER, "Spawned Master Kaiosama at 54, 190, 1082");
 
         MasterEnmaEntity enma = new MasterEnmaEntity(MainEntities.MASTER_ENMA.get(), otherworld);
         enma.moveTo(0.5, 41, 66.5, 0.0F, 0.0F);
         enma.setPersistenceRequired();
         otherworld.addFreshEntity(enma);
-        LogUtil.info(Env.COMMON, "Spawned Master Enma at 0, 41, 69");
+        LogUtil.info(Env.SERVER, "Spawned Master Enma at 0, 41, 69");
 
         MasterUranaiEntity uranai = new MasterUranaiEntity(MainEntities.MASTER_URANAI.get(), otherworld);
-        uranai.moveTo(14.5, 41, 76.5, 0.0F, 0.0F);
+        uranai.moveTo(6.5, 41, 53.5, 0.0F, 0.0F);
         uranai.setPersistenceRequired();
         otherworld.addFreshEntity(uranai);
-        LogUtil.info(Env.COMMON, "Spawned Master Uranai at 6, 41, 53");
+        LogUtil.info(Env.SERVER, "Spawned Master Uranai at 6, 41, 53");
 
 		MasterToribotEntity toribot = new MasterToribotEntity(MainEntities.MASTER_TORIBOT.get(), otherworld);
 		toribot.moveTo(50.5, 190, 1079.5, 0.0F, 0.0F);
 		toribot.setPersistenceRequired();
 		otherworld.addFreshEntity(toribot);
-		LogUtil.info(Env.COMMON, "Spawned Master Toribot at 50, 190, 1079");
+		LogUtil.info(Env.SERVER, "Spawned Master Toribot at 50, 190, 1079");
 
         data.setNPCsSpawned();
-        LogUtil.info(Env.COMMON, "All Otherworld NPCs have been spawned successfully.");
+        LogUtil.info(Env.SERVER, "All Otherworld NPCs have been spawned successfully.");
     }
 }
 

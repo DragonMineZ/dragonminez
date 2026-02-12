@@ -128,37 +128,45 @@ public class AuraRenderHandler {
         LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 
         var sparks = AuraRenderQueue.getAndClearSparks();
-        for (var entry : sparks) {
-            renderSparkEntry(entry, poseStack, buffers, dispatcher, mc);
+        if (sparks != null) {
+            for (var entry : sparks) {
+                if (entry != null) {
+                    renderSparkEntry(entry, poseStack, buffers, dispatcher, mc);
+                }
+            }
         }
 
         var weapons = AuraRenderQueue.getAndClearWeapons();
-        for (var entry : weapons) {
-            var player = entry.player();
-            EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+        if (weapons != null) {
+            for (var entry : weapons) {
+                if (entry == null) continue;
+                var player = entry.player();
+                if (player == null) continue;
+                EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
 
-            if (genericRenderer instanceof DMZPlayerRenderer renderer) {
-                BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
-                if (weaponModel == null) continue;
+                if (genericRenderer instanceof DMZPlayerRenderer renderer) {
+                    BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
+                    if (weaponModel == null) continue;
 
-                resetModelParts(weaponModel);
-                boolean isRight = player.getMainArm() == HumanoidArm.RIGHT;
-                String boneName = getWeaponBoneName(entry.weaponType(), isRight);
+                    resetModelParts(weaponModel);
+                    boolean isRight = player.getMainArm() == HumanoidArm.RIGHT;
+                    String boneName = getWeaponBoneName(entry.weaponType(), isRight);
 
-                if (!boneName.isEmpty()) {
-                    weaponModel.getBone(boneName).ifPresent(AuraRenderHandler::showBoneChain);
-                    syncModelToPlayer(weaponModel, entry.playerModel());
+                    if (!boneName.isEmpty()) {
+                        weaponModel.getBone(boneName).ifPresent(AuraRenderHandler::showBoneChain);
+                        syncModelToPlayer(weaponModel, entry.playerModel());
 
-                    poseStack.pushPose();
-                    poseStack.last().pose().set(entry.poseMatrix());
+                        poseStack.pushPose();
+                        poseStack.last().pose().set(entry.poseMatrix());
 
-                    renderer.reRender(weaponModel, poseStack, buffers, (GeoAnimatable)player,
-                            ModRenderTypes.energy(KI_WEAPONS_TEXTURE),
-                            buffers.getBuffer(ModRenderTypes.energy(KI_WEAPONS_TEXTURE)),
-                            entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
-                            entry.color()[0], entry.color()[1], entry.color()[2], 0.85f);
+                        renderer.reRender(weaponModel, poseStack, buffers, (GeoAnimatable)player,
+                                ModRenderTypes.energy(KI_WEAPONS_TEXTURE),
+                                buffers.getBuffer(ModRenderTypes.energy(KI_WEAPONS_TEXTURE)),
+                                entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
+                                entry.color()[0], entry.color()[1], entry.color()[2], 0.85f);
 
-                    poseStack.popPose();
+                        poseStack.popPose();
+                    }
                 }
             }
         }

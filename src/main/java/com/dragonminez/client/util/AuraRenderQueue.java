@@ -20,44 +20,48 @@ public class AuraRenderQueue {
     private static final List<FirstPersonAuraEntry> FIRST_PERSON_AURA_QUEUE = new ArrayList<>();
 
 
-	public static void addAura(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {
+	public static synchronized void addAura(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {
 		Matrix4f matrixCopy = new Matrix4f(currentStack.last().pose());
 		AURA_QUEUE.add(new AuraRenderEntry(player, playerModel, matrixCopy, partialTick, packedLight));
 	}
 
-    public static void addSpark(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {
+    public static synchronized void addSpark(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, float partialTick, int packedLight) {
         Matrix4f matrixCopy = new Matrix4f(currentStack.last().pose());
         SPARK_QUEUE.add(new SparkRenderEntry(player, playerModel, matrixCopy, partialTick, packedLight));
     }
 
-    public static void addWeapon(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, String weaponType, float[] color, float partialTick, int packedLight) {
+    public static synchronized void addWeapon(AbstractClientPlayer player, BakedGeoModel playerModel, PoseStack currentStack, String weaponType, float[] color, float partialTick, int packedLight) {
         WEAPON_QUEUE.add(new WeaponRenderEntry(player, playerModel, new Matrix4f(currentStack.last().pose()), weaponType, color, partialTick, packedLight));
     }
 
-    public static void addFirstPersonAura(AbstractClientPlayer player, PoseStack currentStack, float partialTick, int packedLight) {
+    public static synchronized void addFirstPersonAura(AbstractClientPlayer player, PoseStack currentStack, float partialTick, int packedLight) {
         Matrix4f matrixCopy = new Matrix4f(currentStack.last().pose());
         FIRST_PERSON_AURA_QUEUE.add(new FirstPersonAuraEntry(player, matrixCopy, partialTick, packedLight));
     }
 
-	public static List<AuraRenderEntry> getAndClearAuras() {
+	public static synchronized List<AuraRenderEntry> getAndClearAuras() {
+		if (AURA_QUEUE.isEmpty()) return new ArrayList<>();
 		List<AuraRenderEntry> copy = new ArrayList<>(AURA_QUEUE);
 		AURA_QUEUE.clear();
 		return copy;
 	}
 
-    public static List<SparkRenderEntry> getAndClearSparks() {
+    public static synchronized List<SparkRenderEntry> getAndClearSparks() {
+		if (SPARK_QUEUE.isEmpty()) return new ArrayList<>();
         List<SparkRenderEntry> copy = new ArrayList<>(SPARK_QUEUE);
         SPARK_QUEUE.clear();
         return copy;
     }
 
-    public static List<WeaponRenderEntry> getAndClearWeapons() {
+    public static synchronized List<WeaponRenderEntry> getAndClearWeapons() {
+		if (WEAPON_QUEUE.isEmpty()) return new ArrayList<>();
         List<WeaponRenderEntry> copy = new ArrayList<>(WEAPON_QUEUE);
         WEAPON_QUEUE.clear();
         return copy;
     }
 
-    public static List<FirstPersonAuraEntry> getAndClearFirstPersonAuras() {
+    public static synchronized List<FirstPersonAuraEntry> getAndClearFirstPersonAuras() {
+		if (FIRST_PERSON_AURA_QUEUE.isEmpty()) return new ArrayList<>();
         List<FirstPersonAuraEntry> copy = new ArrayList<>(FIRST_PERSON_AURA_QUEUE);
         FIRST_PERSON_AURA_QUEUE.clear();
         return copy;
