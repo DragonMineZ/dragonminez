@@ -523,40 +523,49 @@ public class TickHandler {
 	}
 
 	private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {
-		if (data.getResources().getRacialSkillCount() >= ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiAmount()) return;
+		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
+
+		if (data.getResources().getRacialSkillCount() >= config.getSaiyanZenkaiAmount()) return;
 		if (data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) return;
 
 		float maxHealth = player.getMaxHealth();
-		if (player.getHealth() <= maxHealth * 0.15) saiyanZenkaiSeconds = saiyanZenkaiSeconds + 1;
-		else saiyanZenkaiSeconds = 0;
+		if (player.getHealth() <= maxHealth * 0.15) {
+			saiyanZenkaiSeconds = saiyanZenkaiSeconds + 1;
+		} else {
+			saiyanZenkaiSeconds = 0;
+		}
 
 		if (saiyanZenkaiSeconds >= 8) {
-			player.heal((float) (maxHealth * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiHealthRegen()));
-			String[] boosts = ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiBoosts();
-			for (String boost : boosts) {
-				int bonusValue;
-				switch (boost) {
-					case "STR" -> bonusValue = (int) Math.round(data.getStats().getStrength() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
-					case "SKP" -> bonusValue = (int) Math.round(data.getStats().getStrikePower() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
-					case "RES" -> bonusValue = (int) Math.round(data.getStats().getResistance() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
-					case "VIT" -> bonusValue = (int) Math.round(data.getStats().getVitality() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
-					case "ENE" -> bonusValue = (int) Math.round(data.getStats().getEnergy() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
-					case "PWR" -> bonusValue = (int) Math.round(data.getStats().getKiPower() * ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiStatBoost());
-					default -> bonusValue = 0;
-				}
-				if (bonusValue >= 1) {
-					data.getBonusStats().addBonus(boost, "Zenkai_" + data.getResources().getRacialSkillCount() + 1, "+", bonusValue);
-					data.getResources().addRacialSkillCount(1);
-				}
+			player.heal((float) (maxHealth * config.getSaiyanZenkaiHealthRegen()));
+
+			double boostMult = config.getSaiyanZenkaiStatBoost();
+			String[] statsToBoost = config.getSaiyanZenkaiBoosts();
+
+			for (String statKey : statsToBoost) {
+				int currentStat = getStatValue(data, statKey);
+				int bonus = (int) Math.max(1, currentStat * boostMult);
+				data.getBonusStats().addBonus(statKey, "Zenkai_" + (data.getResources().getRacialSkillCount() + 1), "+", bonus);
 			}
 
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);
 
 			data.getResources().addRacialSkillCount(1);
-			data.getCooldowns().addCooldown(Cooldowns.ZENKAI, ConfigManager.getServerConfig().getRacialSkills().getSaiyanZenkaiCooldownSeconds());
+			data.getCooldowns().setCooldown(Cooldowns.ZENKAI, config.getSaiyanZenkaiCooldownSeconds());
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			saiyanZenkaiSeconds = 0;
 		}
+	}
+
+	private static int getStatValue(StatsData data, String statName) {
+		return switch (statName) {
+			case "STR" -> data.getStats().getStrength();
+			case "SKP" -> data.getStats().getStrikePower();
+			case "RES" -> data.getStats().getResistance();
+			case "VIT" -> data.getStats().getVitality();
+			case "PWR" -> data.getStats().getKiPower();
+			case "ENE" -> data.getStats().getEnergy();
+			default -> 0;
+		};
 	}
 
 	private static void handleBioDrainTick(ServerPlayer player, StatsData data) {

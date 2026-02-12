@@ -34,6 +34,7 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StoryModeEvents {
 
+
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
@@ -48,43 +49,52 @@ public class StoryModeEvents {
 				String sagaId = entry.getKey();
 				Saga saga = entry.getValue();
 
+				Quest activeQuest = null;
 				for (Quest quest : saga.getQuests()) {
-					int questId = quest.getId();
-					if (questData.isQuestCompleted(sagaId, questId)) continue;
-					int currentObjIndex = -1;
-					QuestObjective objective = null;
+					if (!questData.isQuestCompleted(sagaId, quest.getId())) {
+						activeQuest = quest;
+						break;
+					}
+				}
 
-					for (int i = 0; i < quest.getObjectives().size(); i++) {
-						QuestObjective tempObj = quest.getObjectives().get(i);
-						int currentProgress = questData.getQuestObjectiveProgress(sagaId, questId, i);
-						if (currentProgress < tempObj.getRequired()) {
-							currentObjIndex = i;
-							objective = tempObj;
+				if (activeQuest == null) continue;
+
+				int questId = activeQuest.getId();
+				int currentObjIndex = -1;
+				QuestObjective objective = null;
+
+				for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
+					QuestObjective tempObj = activeQuest.getObjectives().get(i);
+					int currentProgress = questData.getQuestObjectiveProgress(sagaId, questId, i);
+					if (currentProgress < tempObj.getRequired()) {
+						currentObjIndex = i;
+						objective = tempObj;
+						break;
+					}
+				}
+
+				if (objective == null || currentObjIndex == -1) continue;
+				boolean isLocationObjective = (objective instanceof BiomeObjective) || (objective instanceof StructureObjective) || (objective instanceof CoordsObjective);
+
+				if (isLocationObjective) {
+					List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(player);
+
+					boolean anyMemberInZone = false;
+					for (ServerPlayer member : partyMembers) {
+						boolean memberCheck = checkLocationCondition(member, objective);
+						if (memberCheck) {
+							anyMemberInZone = true;
 							break;
 						}
 					}
-
-					if (objective == null || currentObjIndex == -1) continue;
-					boolean isLocationObjective = (objective instanceof BiomeObjective) || (objective instanceof StructureObjective) || (objective instanceof CoordsObjective);
-
-					if (isLocationObjective) {
-						List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(player);
-						boolean anyMemberInZone = false;
-						for (ServerPlayer member : partyMembers) {
-							if (checkLocationCondition(member, objective)) {
-								anyMemberInZone = true;
-								break;
-							}
-						}
-						int targetProgress = anyMemberInZone ? 1 : 0;
-						updatePartyState(partyMembers, sagaId, questId, currentObjIndex, targetProgress);
-					} else if (objective instanceof ItemObjective itemObjective) {
-						int itemCount = countItems(player, itemObjective.getItemId());
-						int savedProgress = questData.getQuestObjectiveProgress(sagaId, questId, currentObjIndex);
-						if (itemCount != savedProgress) {
-							int progressToSet = Math.min(itemCount, itemObjective.getRequired());
-							updateIndividualProgress(player, sagaId, questId, currentObjIndex, progressToSet);
-						}
+					int targetProgress = anyMemberInZone ? 1 : 0;
+					updatePartyState(partyMembers, sagaId, questId, currentObjIndex, targetProgress);
+				} else if (objective instanceof ItemObjective itemObjective) {
+					int itemCount = countItems(player, itemObjective.getItemId());
+					int savedProgress = questData.getQuestObjectiveProgress(sagaId, questId, currentObjIndex);
+					if (itemCount != savedProgress) {
+						int progressToSet = Math.min(itemCount, itemObjective.getRequired());
+						updateIndividualProgress(player, sagaId, questId, currentObjIndex, progressToSet);
 					}
 				}
 			}
@@ -178,19 +188,24 @@ public class StoryModeEvents {
 				} else {
 					ResourceKey<Biome> key = biomeHolder.unwrapKey().orElse(null);
 					if (key != null) {
-						if (!target.contains(":")) target = "minecraft:" + target;
-						return key.location().equals(ResourceLocation.parse(target));
+						String normalizedTarget = target.contains(":") ? target : "minecraft:" + target;
+						String currentLocation = key.location().toString();
+						return currentLocation.equals(normalizedTarget);
 					}
 				}
-			} catch (Exception ignored) { return false; }
+			} catch (Exception e) {
+				return false;
+			}
 		}
 		else if (objective instanceof StructureObjective structObj) {
 			try {
 				String target = structObj.getStructureId();
-				if (!target.contains(":")) target = "minecraft:" + target;
-				ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, ResourceLocation.parse(target));
+				String normalizedTarget = target.contains(":") ? target : "minecraft:" + target;
+				ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, ResourceLocation.parse(normalizedTarget));
 				return level.structureManager().getStructureWithPieceAt(pos, key).isValid();
-			} catch (Exception ignored) { return false; }
+			} catch (Exception e) {
+				return false;
+			}
 		}
 		else if (objective instanceof CoordsObjective coordsObj) {
 			double distSq = pos.distSqr(coordsObj.getTargetPos());

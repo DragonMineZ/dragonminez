@@ -27,7 +27,7 @@ public class BetaWhitelist {
 				while ((line = in.readLine()) != null) {
 					String name = line.trim();
 					if (!name.isEmpty()) {
-						downloadedList.add(name);
+						downloadedList.add(name.toLowerCase());
 					}
 				}
 				in.close();
@@ -42,6 +42,6 @@ public class BetaWhitelist {
 	}
 
 	public static boolean isAllowed(String username) {
-		return activeList.contains(username);
+		return activeList.contains(username.toLowerCase());
 	}
 }

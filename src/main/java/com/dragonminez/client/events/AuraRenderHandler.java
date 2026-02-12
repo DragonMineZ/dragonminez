@@ -166,7 +166,7 @@ public class AuraRenderHandler {
         LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 
         var sparks = AuraRenderQueue.getAndClearSparks();
-        if (sparks != null) {
+        if (sparks != null && !sparks.isEmpty()) {
             for (var entry : sparks) {
                 if (entry != null) {
                     renderSparkEntry(entry, poseStack, buffers, dispatcher, mc);
@@ -175,7 +175,7 @@ public class AuraRenderHandler {
         }
 
         var weapons = AuraRenderQueue.getAndClearWeapons();
-        if (weapons != null) {
+        if (weapons != null && !weapons.isEmpty()) {
             for (var entry : weapons) {
                 if (entry == null) continue;
                 var player = entry.player();
@@ -748,8 +748,7 @@ public class AuraRenderHandler {
                 if (formHex != null && !formHex.isEmpty()) {
                     try {
                         particleColor = Integer.decode(formHex);
-                    } catch (Exception ignored) {
-                    }
+                    } catch (Exception ignored) {}
                 }
             }
         }
@@ -757,9 +756,7 @@ public class AuraRenderHandler {
 		if (!stats.getStatus().hasCreatedCharacter()) return;
 		if (!stats.getStatus().isAuraActive()) return;
 
-        for (int i = 0; i < 1; i++) {
-            spawnCalmAuraParticle(player, scale, particleColor);
-        }
+        for (int i = 0; i < 1; i++) spawnCalmAuraParticle(player, scale, particleColor);
 
         if (player.getRandom().nextInt(20) == 0) {
             int divineCount = 5 + player.getRandom().nextInt(10);

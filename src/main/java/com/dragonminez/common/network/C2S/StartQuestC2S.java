@@ -5,6 +5,8 @@ import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -49,26 +51,39 @@ public class StartQuestC2S {
 			Quest quest = saga.getQuestById(questId);
 			if (quest == null) return;
 
-			for (QuestObjective objective : quest.getObjectives()) {
-				if (objective instanceof KillObjective killObjective) {
-					String entityIdStr = killObjective.getEntityId();
-					if (entityIdStr.equals("dragonminez:saga_zarbont1")) entityIdStr = "dragonminez:saga_zarbon";
-					if (entityIdStr.equals("dragonminez:saga_frieza_third")) entityIdStr = "dragonminez:saga_frieza_second";
-					ResourceLocation resLoc = ResourceLocation.parse(entityIdStr);
-					EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(resLoc);
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				for (int i = 0; i < quest.getObjectives().size(); i++) {
+					QuestObjective objective = quest.getObjectives().get(i);
 
-					if (entityType != null) {
-						Entity entity = entityType.create(player.level());
-						if (entity != null) {
-							entity.setPos(player.getX(), player.getY(), player.getZ());
-							if (isHardMode) entity.getPersistentData().putBoolean("dmz_is_hardmode", true);
-							if (entity instanceof Mob mob) mob.setTarget(player);
-							player.serverLevel().addFreshEntity(entity);
-							break;
+					if (objective instanceof KillObjective killObjective) {
+						int currentProgress = data.getQuestData().getQuestObjectiveProgress(sagaId, questId, i);
+						int required = killObjective.getRequired();
+						int remaining = Math.max(0, required - currentProgress);
+
+						if (remaining <= 0) continue;
+
+						String entityIdStr = killObjective.getEntityId();
+						if (entityIdStr.equals("dragonminez:saga_zarbont1")) entityIdStr = "dragonminez:saga_zarbon";
+						if (entityIdStr.equals("dragonminez:saga_frieza_third")) entityIdStr = "dragonminez:saga_frieza_second";
+						ResourceLocation resLoc = ResourceLocation.parse(entityIdStr);
+						EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(resLoc);
+
+						if (entityType != null) {
+							for (int j = 0; j < remaining; j++) {
+								Entity entity = entityType.create(player.level());
+								if (entity != null) {
+									double offsetX = (Math.random() - 0.5) * 2.0;
+									double offsetZ = (Math.random() - 0.5) * 2.0;
+									entity.setPos(player.getX() + offsetX, player.getY(), player.getZ() + offsetZ);
+									if (isHardMode) entity.getPersistentData().putBoolean("dmz_is_hardmode", true);
+									if (entity instanceof Mob mob) mob.setTarget(player);
+									player.serverLevel().addFreshEntity(entity);
+								}
+							}
 						}
 					}
 				}
-			}
+			});
 		});
 		context.setPacketHandled(true);
 	}

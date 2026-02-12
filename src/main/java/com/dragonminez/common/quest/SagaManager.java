@@ -97,7 +97,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     // Quest 5
                     quests.add(createQuest(5, "dmz.quest.saiyan5.name", "dmz.quest.saiyan5.desc",
                             new JsonObject[][]{
-                                    {createObjective("BIOME", "dmz.quest.saiyan5.obj1", "dragonminez:plains", null, 0)},
+                                    {createObjective("BIOME", "dmz.quest.saiyan5.obj1", "minecraft:plains", null, 0)},
                                     {createObjective("KILL", "dmz.quest.saiyan5.obj2", null, "dragonminez:saga_saibaman1", 6)}
                             },
                             new JsonObject[][]{
@@ -108,7 +108,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     // Quest 6
                     quests.add(createQuest(6, "dmz.quest.saiyan6.name", "dmz.quest.saiyan6.desc",
                             new JsonObject[][]{
-                                    {createObjective("BIOME", "dmz.quest.saiyan6.obj1", "dragonminez:plains", null, 0)},
+                                    {createObjective("BIOME", "dmz.quest.saiyan6.obj1", "minecraft:plains", null, 0)},
                                     {createObjective("KILL", "dmz.quest.saiyan6.obj2", null, "dragonminez:saga_nappa", 1)}
                             },
                             new JsonObject[][]{
@@ -492,7 +492,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     // Quest 11
                     quests.add(createQuest(11, "dmz.quest.android11.name", "dmz.quest.android11.desc",
                             new JsonObject[][]{
-                                    {createObjective("STRUCTURE", "dmz.quest.android11.obj1", "dragonminez:htc_entrance", null, 0)}
+                                    {createObjective("STRUCTURE", "dmz.quest.android11.obj1", "dragonminez:timechamber", null, 0)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 10000, null, 0, null)}
