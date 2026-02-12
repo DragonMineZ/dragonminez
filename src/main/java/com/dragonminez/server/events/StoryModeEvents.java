@@ -223,8 +223,35 @@ public class StoryModeEvents {
 			int current = data.getQuestData().getQuestObjectiveProgress(sagaId, questId, objIndex);
 			if (current != newProgress) {
 				data.getQuestData().setQuestObjectiveProgress(sagaId, questId, objIndex, newProgress);
+				checkAndCompleteQuest(data.getQuestData(), sagaId, questId);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			}
 		});
+	}
+
+	private static void checkAndCompleteQuest(QuestData questData, String sagaId, int questId) {
+		Saga saga = SagaManager.getSaga(sagaId);
+		if (saga == null) return;
+
+		Quest quest = null;
+		for (Quest q : saga.getQuests()) {
+			if (q.getId() == questId) {
+				quest = q;
+				break;
+			}
+		}
+		if (quest == null) return;
+
+		boolean allObjectivesComplete = true;
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			QuestObjective objective = quest.getObjectives().get(i);
+			int progress = questData.getQuestObjectiveProgress(sagaId, questId, i);
+			if (progress < objective.getRequired()) {
+				allObjectivesComplete = false;
+				break;
+			}
+		}
+
+		if (allObjectivesComplete && !questData.isQuestCompleted(sagaId, questId)) questData.completeQuest(sagaId, questId);
 	}
 }

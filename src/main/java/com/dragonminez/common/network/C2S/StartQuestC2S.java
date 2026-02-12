@@ -52,9 +52,10 @@ public class StartQuestC2S {
 			for (QuestObjective objective : quest.getObjectives()) {
 				if (objective instanceof KillObjective killObjective) {
 					String entityIdStr = killObjective.getEntityId();
+					if (entityIdStr.equals("dragonminez:saga_zarbont1")) entityIdStr = "dragonminez:saga_zarbon";
+					if (entityIdStr.equals("dragonminez:saga_frieza_third")) entityIdStr = "dragonminez:saga_frieza_second";
 					ResourceLocation resLoc = ResourceLocation.parse(entityIdStr);
 					EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(resLoc);
-					System.out.println("Spawning entity for Kill Objective: " + entityIdStr);
 
 					if (entityType != null) {
 						Entity entity = entityType.create(player.level());

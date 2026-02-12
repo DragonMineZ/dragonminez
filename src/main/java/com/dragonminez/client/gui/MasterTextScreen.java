@@ -106,9 +106,9 @@ public class MasterTextScreen extends Screen {
 				.onPress(b -> {
 					if (stats.getResources().getAlignment() <= 50) {
 						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.evil");
-					} else if (stats.getSkills().getSkillLevel("potentialunlock") == 10) {
+					} else if (stats.getSkills().getSkillLevel("potentialunlock") < 10) {
 						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.level");
-					} else {
+					} else if (stats.getSkills().getSkillLevel("potentialunlock") == 10){
 						NetworkHandler.sendToServer(new NPCActionC2S("guru", 1));
 						this.onClose();
 					}
@@ -146,7 +146,7 @@ public class MasterTextScreen extends Screen {
 
 	private void initEnma(int x, int y, StatsData stats) {
 		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE);
-		this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.main");
+		this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.main", Minecraft.getInstance().player.getName());
 
 		this.addRenderableWidget(new TexturedTextButton.Builder()
 				.position(x, y)
