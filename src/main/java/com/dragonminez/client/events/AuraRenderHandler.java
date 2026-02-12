@@ -13,14 +13,18 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -30,6 +34,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -51,6 +56,10 @@ public class AuraRenderHandler {
 
     private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
     private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
+
+    private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
+    private static final Map<Integer, Long> FUSION_START_TIME = new HashMap<>();
+    private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new HashMap<>();
 
     private static class CachedAuraData {
         float scaleX, scaleY, scaleZ;
@@ -79,17 +88,46 @@ public class AuraRenderHandler {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = event.getPoseStack();
         float partialTick = event.getPartialTick();
+        long gameTime = mc.level.getGameTime();
 
         Set<Integer> currentFramePlayers = new HashSet<>();
 
-        var auras = AuraRenderQueue.getAndClearAuras();
+        for (Player player : mc.level.players()) {
+            int playerId = player.getId();
 
+            var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+            if (stats != null) {
+                boolean isFused = stats.getStatus().isFused();
+                boolean wasFused = WAS_FUSED_CACHE.getOrDefault(playerId, false);
+
+                if (isFused && !wasFused) {
+                    FUSION_START_TIME.put(playerId, gameTime);
+                }
+                WAS_FUSED_CACHE.put(playerId, isFused);
+
+                if (FUSION_START_TIME.containsKey(playerId)) {
+                    long timeSinceStart = gameTime - FUSION_START_TIME.get(playerId);
+
+                    if (timeSinceStart < 60) {
+                        float[] color = getKiColor(stats);
+                        int r = (int)(color[0] * 255);
+                        int g = (int)(color[1] * 255);
+                        int b = (int)(color[2] * 255);
+
+                        renderFusionFlash(player, timeSinceStart + partialTick, poseStack, buffers, r, g, b);
+                    } else {
+                        if (timeSinceStart > 80) FUSION_START_TIME.remove(playerId);
+                    }
+                }
+            }
+        }
+
+        var auras = AuraRenderQueue.getAndClearAuras();
         for (var entry : auras) {
             Player player = entry.player();
             currentFramePlayers.add(player.getId());
 
             renderAuraEntry(entry, poseStack, buffers, dispatcher, mc, true);
-
             renderPulseAura(entry, poseStack, buffers, dispatcher, mc);
         }
 
@@ -721,6 +759,72 @@ public class AuraRenderHandler {
                 spawnPassiveDivineParticle(player, scale, 0xFFFFFF);
             }
         }
+    }
+
+    private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
+        float rotationTime = time * 0.01F;
+        float rawSin = Mth.sin(time * 0.1F);
+        float normalizedFade = (rawSin + 1.0F) / 2.0F;
+        float fade = 0.4F + (normalizedFade * 0.6F);
+        float intensity = 0.6F;
+
+        RandomSource randomsource = RandomSource.create(432L);
+        VertexConsumer vertexconsumer = buffer.getBuffer(RenderType.lightning());
+
+        poseStack.pushPose();
+
+        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        double lerpX = Mth.lerp(0, player.xo, player.getX());
+        double lerpY = Mth.lerp(0, player.yo, player.getY());
+        double lerpZ = Mth.lerp(0, player.zo, player.getZ());
+
+        poseStack.translate(player.getX() - cameraPos.x, (player.getY() + 1.0) - cameraPos.y, player.getZ() - cameraPos.z);
+
+        poseStack.scale(1.0F, 1.0F, 1.0F);
+
+        for(int i = 0; (float)i < (intensity + intensity * intensity) / 2.0F * 60.0F; ++i) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(randomsource.nextFloat() * 360.0F));
+            poseStack.mulPose(Axis.YP.rotationDegrees(randomsource.nextFloat() * 360.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(randomsource.nextFloat() * 360.0F));
+            poseStack.mulPose(Axis.XP.rotationDegrees(randomsource.nextFloat() * 360.0F));
+            poseStack.mulPose(Axis.YP.rotationDegrees(randomsource.nextFloat() * 360.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(randomsource.nextFloat() * 360.0F + rotationTime * 90.0F));
+
+            float width = randomsource.nextFloat() * 5.0F + 4.0F;
+            float length = randomsource.nextFloat() * 1.0F + 0.5F;
+
+            Matrix4f matrix4f = poseStack.last().pose();
+
+            int alpha = (int)(255.0F * fade);
+
+            vertex01(vertexconsumer, matrix4f, alpha, r, g, b);
+            vertex2(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
+            vertex3(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
+            vertex01(vertexconsumer, matrix4f, alpha, r, g, b);
+            vertex3(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
+            vertex4(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
+            vertex01(vertexconsumer, matrix4f, alpha, r, g, b);
+            vertex4(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
+            vertex2(vertexconsumer, matrix4f, width, length, r, g, b, alpha);
+        }
+
+        poseStack.popPose();
+    }
+
+    private static void vertex01(VertexConsumer pConsumer, Matrix4f pMatrix, int pAlpha, int r, int g, int b) {
+        pConsumer.vertex(pMatrix, 0.0F, 0.0F, 0.0F).color(r, g, b, pAlpha).endVertex();
+    }
+
+    private static void vertex2(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
+        pConsumer.vertex(pMatrix, -HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).color(r, g, b, alpha).endVertex();
+    }
+
+    private static void vertex3(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
+        pConsumer.vertex(pMatrix, HALF_SQRT_3 * pLength, pWidth, -0.5F * pLength).color(r, g, b, alpha).endVertex();
+    }
+
+    private static void vertex4(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
+        pConsumer.vertex(pMatrix, 0.0F, pWidth, 1.0F * pLength).color(r, g, b, alpha).endVertex();
     }
 
 

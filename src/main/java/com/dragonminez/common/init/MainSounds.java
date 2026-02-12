@@ -56,6 +56,8 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> TP_SHORT = registerSoundEvent("tp_short");
 	public static final RegistryObject<SoundEvent> ABSORB1 = registerSoundEvent("absorb1");
 	public static final RegistryObject<SoundEvent> ABSORB2 = registerSoundEvent("absorb2");
+    public static final RegistryObject<SoundEvent> TRANSFORM = registerSoundEvent("transform");
+    public static final RegistryObject<SoundEvent> FUSION = registerSoundEvent("fusion");
 
 	public static final RegistryObject<SoundEvent> UI_MENU_SWITCH = registerSoundEvent("ui_menu_switch");
 	public static final RegistryObject<SoundEvent> CONFIRM_MENU = registerSoundEvent("confirm_menu");

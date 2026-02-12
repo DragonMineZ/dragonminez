@@ -370,5 +370,17 @@
     "sounds": [
       "dragonminez:ki_sparks"
     ]
+  },
+  "transform": {
+    "subtitle": "sounds.dragonminez.transform",
+    "sounds": [
+      "dragonminez:transform"
+    ]
+  },
+  "fusion": {
+    "subtitle": "sounds.dragonminez.fusion",
+    "sounds": [
+      "dragonminez:fusion"
+    ]
   }
 }

@@ -493,6 +493,8 @@ public class TickHandler {
 					data.getCharacter().getSelectedFormGroup();
 
 			data.getCharacter().setActiveForm(group, nextForm.getName());
+
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		} else {
 			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki", cost), true);
 		}
@@ -509,6 +511,8 @@ public class TickHandler {
 						if (FusionLogic.executeMetamoru(player, target, data, targetData)) {
 							data.getResources().setActionCharge(0);
 							targetData.getResources().setActionCharge(0);
+
+                            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.FUSION.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 						}
 					}
 				}
