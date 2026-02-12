@@ -178,11 +178,16 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SpacePodEntity::new, MobCategory.CREATURE)
                             .sized(2.0f, 2.0f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "spacepod").toString()));
-    public static final RegistryObject<EntityType<FlyingNimbusEntity>> FLYING_NIMUS =
+    public static final RegistryObject<EntityType<FlyingNimbusEntity>> FLYING_NIMBUS =
             ENTITY_TYPES.register("flying_nimbus",
                     () -> EntityType.Builder.of(FlyingNimbusEntity::new, MobCategory.CREATURE)
                             .sized(2.0f, 1.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "flying_nimbus").toString()));
+    public static final RegistryObject<EntityType<BlackNimbusEntity>> BLACK_NIMBUS =
+            ENTITY_TYPES.register("black_nimbus",
+                    () -> EntityType.Builder.of(BlackNimbusEntity::new, MobCategory.CREATURE)
+                            .sized(2.0f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "black_nimbus").toString()));
     public static final RegistryObject<EntityType<RobotEntity>> ROBOT_XENOVERSE =
             ENTITY_TYPES.register("robotxv",
                     () -> EntityType.Builder.of(RobotEntity::new, MobCategory.CREATURE)

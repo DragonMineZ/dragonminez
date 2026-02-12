@@ -33,7 +33,7 @@ public class FlyingNimbusItem extends Item {
 		BlockPos spawnPos = pos.above();
 
 		if (player != null && level != null) {
-			FlyingNimbusEntity nube = new FlyingNimbusEntity(MainEntities.FLYING_NIMUS.get(), level);
+			FlyingNimbusEntity nube = new FlyingNimbusEntity(MainEntities.FLYING_NIMBUS.get(), level);
 			nube.setPos(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
 
 			level.addFreshEntity(nube);

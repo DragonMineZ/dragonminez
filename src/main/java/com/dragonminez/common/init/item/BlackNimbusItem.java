@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.item;
 
+import com.dragonminez.common.init.MainEntities;
+import com.dragonminez.common.init.entities.BlackNimbusEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,14 +33,14 @@ public class BlackNimbusItem extends Item {
 		BlockPos spawnPos = pos.above();
 
 		if (player != null && level != null) {
-//			NubeNegraEntity nube = new NubeNegraEntity(MainEntity.NUBE_NEGRA.get(), level);
-//			nube.setPos(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
-//
-//			level.addFreshEntity(nube);
-//
-//			pContext.getItemInHand().shrink(1);
-//
-//			return InteractionResult.sidedSuccess(level.isClientSide);
+			BlackNimbusEntity nube = new BlackNimbusEntity(MainEntities.BLACK_NIMBUS.get(), level);
+			nube.setPos(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+
+			level.addFreshEntity(nube);
+
+			pContext.getItemInHand().shrink(1);
+
+			return InteractionResult.sidedSuccess(level.isClientSide);
 		}
 
 		return super.useOn(pContext);
