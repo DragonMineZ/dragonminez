@@ -3,6 +3,7 @@ package com.dragonminez.common.datagen;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.server.world.biome.OverworldBiomes;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
@@ -52,19 +53,19 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					.rewards(AdvancementRewards.Builder.experience(0)) // Recompensa de experiencia (Se pueden poner más tipos xd)
 					.save(consumer, "dragonminez:root"); // Logro "raíz" o "inicial"; el primero de todos.
 
-//			Advancement rockybiome = Advancement.Builder.advancement()
-//					.parent(root)
-//					.display(
-//							MainBlocks.ROCKY_STONE.get(),
-//							Component.translatable("advancements.dragonminez.rockybiome.title"),
-//							Component.translatable("advancements.dragonminez.rockybiome.description"),
-//							null, FrameType.GOAL, true, true, false
-//					).addCriterion("found_rockybiome",
-//							PlayerTrigger.TriggerInstance.located(
-//									LocationPredicate.Builder.location()
-//											.setBiome(ModBiomes.ROCKY).build()
-//							)
-//					).save(consumer, "dragonminez:rockybiome");
+			Advancement rockybiome = Advancement.Builder.advancement()
+					.parent(root)
+					.display(
+							MainBlocks.ROCKY_STONE.get(),
+							Component.translatable("advancements.dragonminez.rockybiome.title"),
+							Component.translatable("advancements.dragonminez.rockybiome.description"),
+							null, FrameType.GOAL, true, true, false
+					).addCriterion("found_rockybiome",
+							PlayerTrigger.TriggerInstance.located(
+									LocationPredicate.Builder.location()
+											.setBiome(OverworldBiomes.ROCKY).build()
+							)
+					).save(consumer, "dragonminez:rockybiome");
 
 			Advancement otherworld = Advancement.Builder.advancement()
 					.parent(root)
@@ -77,24 +78,6 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 							ChangeDimensionTrigger.TriggerInstance.changedDimensionTo(OtherworldDimension.OTHERWORLD_KEY)
 					).save(consumer, "dragonminez:otherworld");
 
-//			Advancement kaiosama = Advancement.Builder.advancement()
-//					.parent(otherworld)
-//					.display(
-//							MainItems.RED_CAPSULE.get(),
-//							Component.translatable("advancements.dragonminez.kaiosama.title"),
-//							Component.translatable("advancements.dragonminez.kaiosama.description"),
-//							null, FrameType.GOAL, true, true, false
-//					).addCriterion("kaiosama",
-//							PlayerTrigger.TriggerInstance.located(
-//									EntityPredicate.Builder.entity()
-//											.of(EntityType.PLAYER)
-//											.located(LocationPredicate.Builder.location()
-//													.setX(MinMaxBounds.Doubles.between(2147482, 2147483))
-//													.setY(MinMaxBounds.Doubles.between(2147482, 2147483))
-//													.setZ(MinMaxBounds.Doubles.between(2147482, 2147483))
-//													.build()
-//											).build())
-//					).save(consumer, "dragonminez:kaiosama");
 
 			Advancement invincible = Advancement.Builder.advancement()
 					.parent(root)
@@ -111,7 +94,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 					).save(consumer, "dragonminez:invincible");
 
 			Advancement kamilookout = Advancement.Builder.advancement()
-					.parent(root) // Este depende de X logro (Solo es orden, no requisito)
+					.parent(root)
 					.display(
 							Items.CLOCK,
 							Component.translatable("advancements.dragonminez.kamilookout.title"),
@@ -346,20 +329,6 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.GOTEN_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:gotenarmor");
 
-//			Advancement greatsaiyamanarmor = Advancement.Builder.advancement()
-//					.parent(patternz)
-//					.display(
-//							MainItems.GREAT_SAIYAMAN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-//							Component.translatable("advancements.dragonminez.greatsaiyamanarmor.title"),
-//							Component.translatable("advancements.dragonminez.greatsaiyamanarmor.description"),
-//							null, FrameType.TASK, true, true, false
-//					).addCriterion("greatsaiyamanarmor",
-//							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.GREAT_SAIYAMAN_ARMOR.get(ArmorItem.Type.HELMET).get(),
-//									MainItems.GREAT_SAIYAMAN_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-//									MainItems.GREAT_SAIYAMAN_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-//									MainItems.GREAT_SAIYAMAN_ARMOR.get(ArmorItem.Type.BOOTS).get())
-//					).save(consumer, "dragonminez:greatsaiyamanarmor");
-
 			Advancement futuregohanarmor = Advancement.Builder.advancement()
 					.parent(patternz)
 					.display(
@@ -411,20 +380,6 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.GOGETA_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
 									MainItems.GOGETA_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:gogetaarmor");
-
-//			Advancement piccoloarmor = Advancement.Builder.advancement()
-//					.parent(patternz)
-//					.display(
-//							MainItems.PICCOLO_ARMOR_CHESTPLATE_CAPE.get(),
-//							Component.translatable("advancements.dragonminez.piccoloarmor.title"),
-//							Component.translatable("advancements.dragonminez.piccoloarmor.description"),
-//							null, FrameType.TASK, true, true, false
-//					).addCriterion("piccoloarmor",
-//							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.PICCOLO_ARMOR.get(ArmorItem.Type.HELMET).get(),
-//									MainItems.PICCOLO_ARMOR_CHESTPLATE_CAPE.get(),
-//									MainItems.PICCOLO_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-//									MainItems.PICCOLO_ARMOR.get(ArmorItem.Type.BOOTS).get())
-//					).save(consumer, "dragonminez:piccoloarmor");
 
 			Advancement demonbluegiarmor = Advancement.Builder.advancement()
 					.parent(patternz)
@@ -594,22 +549,6 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 									MainItems.GAS_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
 									MainItems.GAS_ARMOR.get(ArmorItem.Type.BOOTS).get())
 					).save(consumer, "dragonminez:gasarmor");
-
-//			Advancement gammasarmor = Advancement.Builder.advancement()
-//					.parent(patternsuper)
-//					.display(
-//							MainItems.GAMMA1_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-//							Component.translatable("advancements.dragonminez.gammasarmor.title"),
-//							Component.translatable("advancements.dragonminez.gammasarmor.description"),
-//							null, FrameType.TASK, true, true, false
-//					).addCriterion("gammasarmor",
-//							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.GAMMA1_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-//									MainItems.GAMMA1_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-//									MainItems.GAMMA1_ARMOR.get(ArmorItem.Type.BOOTS).get(),
-//									MainItems.GAMMA2_ARMOR.get(ArmorItem.Type.CHESTPLATE).get(),
-//									MainItems.GAMMA2_ARMOR.get(ArmorItem.Type.LEGGINGS).get(),
-//									MainItems.GAMMA2_ARMOR.get(ArmorItem.Type.BOOTS).get())
-//					).save(consumer, "dragonminez:gammasarmor");
 		}
 	}
 }

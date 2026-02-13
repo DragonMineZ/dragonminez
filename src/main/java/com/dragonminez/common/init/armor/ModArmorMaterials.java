@@ -20,7 +20,7 @@ public enum ModArmorMaterials implements ArmorMaterial {
         p_266655_.put(ArmorItem.Type.BOOTS, 16);
         p_266655_.put(ArmorItem.Type.LEGGINGS, 26);
         p_266655_.put(ArmorItem.Type.CHESTPLATE, 35);
-        p_266655_.put(ArmorItem.Type.HELMET, 8);
+        p_266655_.put(ArmorItem.Type.HELMET, 2);
     }), 15, SoundEvents.ARMOR_EQUIP_NETHERITE, 5F, 0.1F, () -> {
         return Ingredient.of(new ItemLike[]{MainItems.KIKONO_SHARD.get()});
     });

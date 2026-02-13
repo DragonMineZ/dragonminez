@@ -126,8 +126,6 @@ public class StoryCommand {
                         int required = objective.getRequired();
 
                         questData.setQuestObjectiveProgress(saga.getId(), quest.getId(), i, required);
-
-                        player.sendSystemMessage(Component.translatable("command.dragonminez.story.objective_completed", i, required, required));
                     }
 
                     questData.completeQuest(saga.getId(), quest.getId());
@@ -135,9 +133,6 @@ public class StoryCommand {
                     QuestData.SagaProgress sagaProgress = questData.getSagaProgress(saga.getId());
                     QuestData.QuestProgress questProgress = sagaProgress.getQuestProgress(quest.getId());
                     questProgress.setCompleted(true);
-
-                    boolean isCompleted = questData.isQuestCompleted(saga.getId(), quest.getId());
-                    player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed_nbt", isCompleted));
 
                     NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 

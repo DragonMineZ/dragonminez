@@ -15,17 +15,17 @@ public class WeaponItem extends SwordItem {
 	private final String tag;
 
 	public WeaponItem(int damageBase, float attackSpeed, int durability, String tag) {
-		super(ToolTiers.BLANK_WEAPON_TIER, damageBase, attackSpeed, new Properties().durability(durability));
+		super(ToolTiers.BLANK_WEAPON_TIER, damageBase, attackSpeed, new Properties().durability(durability).fireResistant());
 		this.tag = tag;
 	}
 
 	@Override
 	public @NotNull Component getName(@NotNull ItemStack pStack) {
-		return Component.translatable("dmz.weapons." + this.tag);
+		return Component.translatable("item.dragonminez." + this.tag);
 	}
 
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-		pTooltipComponents.add(Component.translatable("dmz.weapons." + this.tag + ".tooltip").withStyle(ChatFormatting.GRAY));
+		pTooltipComponents.add(Component.translatable("item.dragonminez." + this.tag + ".tooltip").withStyle(ChatFormatting.GRAY));
 	}
 }

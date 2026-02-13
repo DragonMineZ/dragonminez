@@ -240,6 +240,91 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.T2_RADAR_CHIP.get()), has(MainItems.T2_RADAR_CHIP.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
+		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.KATANA_YAJIROBE.get(), 1)
+				.pattern("  I")
+				.pattern("GI ")
+				.pattern("SG ")
+				.define('I', Items.IRON_INGOT)
+				.define('G', Items.GOLD_INGOT)
+				.define('S', Items.STICK)
+				.unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.RED_SCOUTER.get(), 1)
+				.pattern("  R")
+				.pattern("PPT")
+				.pattern(" B ")
+				.define('R', MainItems.RADAR_PIECE.get())
+				.define('P', Items.RED_STAINED_GLASS_PANE)
+				.define('T', MainItems.T1_RADAR_CPU.get())
+				.define('B', Items.STONE_BUTTON)
+				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.BLUE_SCOUTER.get(), 1)
+				.pattern("  R")
+				.pattern("PPT")
+				.pattern(" B ")
+				.define('R', MainItems.RADAR_PIECE.get())
+				.define('P', Items.BLUE_STAINED_GLASS_PANE)
+				.define('T', MainItems.T1_RADAR_CPU.get())
+				.define('B', Items.STONE_BUTTON)
+				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.GREEN_SCOUTER.get(), 1)
+				.pattern("  R")
+				.pattern("PPT")
+				.pattern(" B ")
+				.define('R', MainItems.RADAR_PIECE.get())
+				.define('P', Items.GREEN_STAINED_GLASS_PANE)
+				.define('T', MainItems.T1_RADAR_CPU.get())
+				.define('B', Items.STONE_BUTTON)
+				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.PURPLE_SCOUTER.get(), 1)
+				.pattern("  R")
+				.pattern("PPT")
+				.pattern(" B ")
+				.define('R', MainItems.RADAR_PIECE.get())
+				.define('P', Items.PURPLE_STAINED_GLASS_PANE)
+				.define('T', MainItems.T1_RADAR_CPU.get())
+				.define('B', Items.STONE_BUTTON)
+				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, MainBlocks.KIKONO_STATION.get(), 1)
+				.pattern("ACA")
+				.pattern("KTK")
+				.pattern("PSP")
+				.define('A', Items.ANVIL)
+				.define('C', Items.DIAMOND_CHESTPLATE)
+				.define('K', MainBlocks.KIKONO_BLOCK.get())
+				.define('T', MainItems.T2_RADAR_CPU.get())
+				.define('P', Items.HEAVY_WEIGHTED_PRESSURE_PLATE)
+				.define('S', Items.SMITHING_TABLE)
+				.unlockedBy(getHasName(MainItems.T2_RADAR_CPU.get()), has(MainItems.T2_RADAR_CPU.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, MainBlocks.FUEL_GENERATOR.get(), 1)
+				.pattern("OOO")
+				.pattern("OTO")
+				.pattern("OOO")
+				.define('O', Items.CRYING_OBSIDIAN)
+				.define('T', MainItems.T2_RADAR_CPU.get())
+				.unlockedBy(getHasName(Items.CRYING_OBSIDIAN), has(Items.CRYING_OBSIDIAN))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainBlocks.ENERGY_CABLE.get(), 4)
+				.pattern(" W ")
+				.pattern("WCW")
+				.pattern(" W ")
+				.define('W', Items.BLACK_WOOL)
+				.define('C', MainItems.T1_RADAR_CHIP.get())
+				.unlockedBy(getHasName(MainItems.T1_RADAR_CHIP.get()), has(MainItems.T1_RADAR_CHIP.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
 		ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, MainItems.KIKONO_SHARD.get(), 9)
 				.requires(MainBlocks.KIKONO_BLOCK.get())
 				.unlockedBy(getHasName(MainBlocks.KIKONO_BLOCK.get()), has(MainBlocks.KIKONO_BLOCK.get()))

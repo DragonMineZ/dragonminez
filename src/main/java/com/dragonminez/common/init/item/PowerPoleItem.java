@@ -13,19 +13,16 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-public class PowerPoleItem extends SwordItem implements GeoItem {
+public class PowerPoleItem extends WeaponItem implements GeoItem {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public PowerPoleItem(Properties pProperties) {
-        super(Tiers.NETHERITE, 20, 0.5f, pProperties);
+    public PowerPoleItem() {
+        super(48, -3f, 0, "power_pole");
     }
-
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-
-    }
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {}
 
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {

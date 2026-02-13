@@ -29,7 +29,7 @@ public class DMZKikonoRecipeProvider {
 		buildArmorNoHelmetSet("goten", MainItems.GOTEN_ARMOR, MainItems.PATTERN_GOTEN.get());
 		buildArmorNoHelmetSet("goten_super", MainItems.GOTEN_SUPER_ARMOR, MainItems.PATTERN_GOTEN_SUPER.get());
 		buildArmorNoHelmetSet("gohan_super", MainItems.GOHAN_SUPER_ARMOR, MainItems.PATTERN_GOHAN_SUPER.get());
-		//buildFullArmorSet("great_saiyaman", MainItems.GREAT_SAIYAMAN_ARMOR, MainItems.PATTERN_GREAT_SAIYAMAN.get());
+		buildFullArmorSet("great_saiyaman", MainItems.GREAT_SAIYAMAN_ARMOR, MainItems.PATTERN_GREAT_SAIYAMAN.get());
 		buildArmorNoHelmetSet("future_gohan", MainItems.FUTURE_GOHAN_ARMOR, MainItems.PATTERN_FUTURE_GOHAN.get());
 		buildArmorNoHelmetSet("vegeta_saiyan", MainItems.VEGETA_SAIYAN_ARMOR, MainItems.PATTERN_VEGETA1.get());
 		buildArmorNoHelmetSet("vegeta_namek", MainItems.VEGETA_NAMEK_ARMOR, MainItems.PATTERN_VEGETA2.get());
@@ -55,9 +55,9 @@ public class DMZKikonoRecipeProvider {
 		buildArmorNoHelmetSet("fusion_zamasu", MainItems.FUSION_ZAMASU_ARMOR, MainItems.PATTERN_FUSION_ZAMASU.get());
 		buildArmorNoHelmetSet("hit", MainItems.HIT_ARMOR, MainItems.PATTERN_HIT.get());
 		buildArmorNoHelmetSet("gas", MainItems.GAS_ARMOR, MainItems.PATTERN_GAS.get());
-		//buildArmorNoHelmetSet("majin_buu", MainItems.MAJIN_BUU_ARMOR, MainItems.PATTERN_MAJIN_BUU.get());
-		//buildArmorNoHelmetSet("gamma1", MainItems.GAMMA1_ARMOR, MainItems.PATTERN_GAMMA1.get());
-		//buildArmorNoHelmetSet("gamma2", MainItems.GAMMA2_ARMOR, MainItems.PATTERN_GAMMA2.get());
+		buildArmorNoHelmetSet("majin_buu", MainItems.MAJIN_BUU_ARMOR, MainItems.PATTERN_MAJIN_BUU.get());
+		buildArmorNoHelmetSet("gamma1", MainItems.GAMMA1_ARMOR, MainItems.PATTERN_GAMMA1.get());
+		buildArmorNoHelmetSet("gamma2", MainItems.GAMMA2_ARMOR, MainItems.PATTERN_GAMMA2.get());
 	}
 
 	protected void buildFullArmorSet(String name, Map<ArmorItem.Type, RegistryObject<Item>> armorSet, Item pattern) {

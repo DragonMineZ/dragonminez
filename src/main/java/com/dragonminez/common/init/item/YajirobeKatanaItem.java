@@ -13,19 +13,16 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-public class YajirobeKatanaItem extends SwordItem implements GeoItem {
+public class YajirobeKatanaItem extends WeaponItem implements GeoItem {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public YajirobeKatanaItem(Properties pProperties) {
-        super(Tiers.NETHERITE, 10, 0.5f, pProperties);
+    public YajirobeKatanaItem() {
+        super(7, -2.4f, 500, "yajirobe_katana");
     }
-
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-
-    }
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {}
 
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {

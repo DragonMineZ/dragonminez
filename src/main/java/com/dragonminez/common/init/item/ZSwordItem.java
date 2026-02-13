@@ -13,19 +13,17 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-public class ZSwordItem extends SwordItem implements GeoItem {
+public class ZSwordItem extends WeaponItem implements GeoItem {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public ZSwordItem(Properties pProperties) {
-        super(Tiers.NETHERITE, 20, 0.5f, pProperties);
+    public ZSwordItem() {
+        super(240, -2.4f, 0, "z_sword");
     }
 
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-
-    }
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {}
 
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {

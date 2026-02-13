@@ -134,8 +134,9 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                                     {createObjective("KILL", "dmz.quest.saiyan8.obj2", null, "dragonminez:saga_ozaruvegeta", 1)}
                             },
                             new JsonObject[][]{
-                                    {createReward("TPS", 4000, null, 0, null)}
-                            }
+									{createReward("TPS", 4000, null, 1, null)},
+									{createReward("ITEM", 0, "dragonminez:saiyan_ship", 1, null)}
+							}
                     ));
 
                     // Quest 9

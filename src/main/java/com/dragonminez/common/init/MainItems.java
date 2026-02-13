@@ -71,14 +71,15 @@ public final class MainItems {
     public static final RegistryObject<Item> BLASTER_CANNON =
             ITEM_REGISTER.register("blaster_cannon", () -> new BlasterCannonItem());
     //ARMAS
+	// 0 + X = Daño | 4 +/- X = Velocidad de ataque | 0 + X = Durabilidad (0 = Irrompible)
 	public static final RegistryObject<SwordItem> KATANA_YAJIROBE =
-			ITEM_REGISTER.register("yajirobe_katana", () -> new YajirobeKatanaItem(new Item.Properties().fireResistant()));
+			ITEM_REGISTER.register("yajirobe_katana", () -> new YajirobeKatanaItem());
     public static final RegistryObject<SwordItem> Z_SWORD =
-            ITEM_REGISTER.register("z_sword", () -> new ZSwordItem(new Item.Properties().fireResistant()));
+            ITEM_REGISTER.register("z_sword", () -> new ZSwordItem());
     public static final RegistryObject<SwordItem> BRAVE_SWORD =
-            ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem(new Item.Properties().fireResistant()));
+            ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem());
     public static final RegistryObject<SwordItem> POWER_POLE =
-            ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem(new Item.Properties().fireResistant()));
+            ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
 
 	//ARMADURAS
     // GOKU NIÑO

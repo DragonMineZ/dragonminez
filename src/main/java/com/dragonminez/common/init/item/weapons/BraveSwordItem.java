@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.item.weapons;
 
+import com.dragonminez.common.init.item.WeaponItem;
 import com.dragonminez.common.init.item.weapons.render.BraveSwordRenderer;
 import com.dragonminez.common.init.item.weapons.render.ZSwordRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -13,19 +14,16 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.Consumer;
 
-public class BraveSwordItem extends SwordItem implements GeoItem {
+public class BraveSwordItem extends WeaponItem implements GeoItem {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public BraveSwordItem(Properties pProperties) {
-        super(Tiers.NETHERITE, 20, 0.5f, pProperties);
+    public BraveSwordItem() {
+        super(100, -2.4f, 2600, "brave_sword");
     }
-
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-
-    }
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {}
 
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
