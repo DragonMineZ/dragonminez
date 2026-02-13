@@ -427,6 +427,14 @@
 					]
 				},
 				{
+					"name": "right_hand_item",
+					"parent": "right_arm",
+					"pivot": [-29, 44, 4],
+					"locators": {
+						"locator": [-29, 44, 4]
+					}
+				},
+				{
 					"name": "left_arm",
 					"parent": "waist",
 					"pivot": [21, 74, 0],
@@ -490,6 +498,14 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "left_hand_item",
+					"parent": "left_arm",
+					"pivot": [29, 44, 4],
+					"locators": {
+						"locator2": [29, 44, 4]
+					}
 				},
 				{
 					"name": "right_leg",
