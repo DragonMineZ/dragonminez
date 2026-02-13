@@ -94,8 +94,8 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 		for (int attempt = 0; attempt < 100; attempt++) {
 			WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + this.salt() + attempt));
 
-			int targetChunkX = random.nextInt(400) - 200;
-			int targetChunkZ = random.nextInt(400) - 200;
+			int targetChunkX = random.nextInt(600) - 400;
+			int targetChunkZ = random.nextInt(600) - 400;
 
 			int quartX = QuartPos.fromBlock(targetChunkX * 16 + 8);
 

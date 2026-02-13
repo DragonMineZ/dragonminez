@@ -5,6 +5,7 @@ import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -115,16 +116,21 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 		boolean isMoving = dragonminez$isActuallyMoving(player);
 
 		AtomicBoolean isDraining = new AtomicBoolean(false), flySkillActive = new AtomicBoolean(false),
-				isChargingKi = new AtomicBoolean(false), isBlocking = new AtomicBoolean(false), isOozaru = new AtomicBoolean(false);
-		AtomicReference<String> trainingStat = new AtomicReference<>("");
+				isChargingKi = new AtomicBoolean(false), isBlocking = new AtomicBoolean(false), isOozaru = new AtomicBoolean(false),
+				isTransforming = new AtomicBoolean(false);
+		AtomicReference<String> trainingStat = new AtomicReference<>(""), nextForm = new AtomicReference<>("");
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			isDraining.set(data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE));
 			flySkillActive.set(data.getSkills().isSkillActive("fly"));
-			isChargingKi.set(data.getStatus().isChargingKi() || data.getStatus().isActionCharging());
+			isChargingKi.set(data.getStatus().isChargingKi());
 			isBlocking.set(data.getStatus().isBlocking());
 			if (data.getCharacter().getRaceName().toLowerCase().equals("saiyan")) {
 				if (data.getCharacter().getActiveForm().contains("oozaru")) isOozaru.set(true);
 			}
+			if (TransformationsHelper.getNextAvailableForm(data) != null) {
+				nextForm.set(TransformationsHelper.getNextAvailableForm(data).getName().toLowerCase());
+			}
+			isTransforming.set(data.getStatus().isActionCharging());
 			trainingStat.set(data.getTraining().getCurrentTrainingStat());
 		});
 
@@ -140,6 +146,9 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 		if (player.isPassenger()) return state.setAndContinue(SIT);
 
 		if (isChargingKi.get() && !isMoving && !isBlocking.get()) return state.setAndContinue(KI_CHARGE);
+
+		if (isTransforming.get() && !isMoving && !isBlocking.get() && nextForm.get().contains("ozaru")) return state.setAndContinue(OOZARU_TRANSFORMATION);
+		else if (isTransforming.get() && !isMoving && !isBlocking.get()) return state.setAndContinue(TRANSFORMATION);
 
 
 		// Swimming

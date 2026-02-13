@@ -869,7 +869,7 @@ public class DefaultFormsFactory {
 		fifthForm.setPwrMultiplier(3.0);
 		fifthForm.setEneMultiplier(1.0);
 		fifthForm.setSpeedMultiplier(1.0);
-		fifthForm.setEnergyDrain(0.18);
+		fifthForm.setEnergyDrain(0.28);
 		fifthForm.setStaminaDrain(1.0);
 		fifthForm.setAttackSpeed(1.0);
 		fifthForm.setHairColor("");

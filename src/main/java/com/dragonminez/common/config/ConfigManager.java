@@ -284,7 +284,6 @@ public class ConfigManager {
         config.setRaceName(raceName);
         config.setUseVanillaSkin(false);
         config.setCustomModel("");
-		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
 
         if (isDefault) {
             boolean hasGender = RACES_WITH_GENDER.contains(raceName.toLowerCase());
@@ -308,6 +307,7 @@ public class ConfigManager {
     }
 
     private static void setupHumanCharacter(RaceCharacterConfig config) {
+		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(1);
 		config.setCanUseHair(true);
@@ -330,6 +330,7 @@ public class ConfigManager {
     }
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
+		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(1);
 		config.setCanUseHair(true);
@@ -351,6 +352,7 @@ public class ConfigManager {
     }
 
     private static void setupNamekianCharacter(RaceCharacterConfig config) {
+		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
 		config.setCanUseHair(false);
@@ -372,6 +374,7 @@ public class ConfigManager {
     }
 
     private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
+		config.setDefaultModelScaling(new float[]{0.7375f, 0.7375f, 0.7375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
 		config.setCanUseHair(false);
@@ -393,6 +396,7 @@ public class ConfigManager {
     }
 
     private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
+		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
 		config.setCanUseHair(false);
@@ -414,6 +418,7 @@ public class ConfigManager {
     }
 
     private static void setupMajinCharacter(RaceCharacterConfig config) {
+		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
 		config.setCanUseHair(true);
@@ -435,6 +440,7 @@ public class ConfigManager {
     }
 
     private static void setupDefaultCharacter(RaceCharacterConfig config) {
+		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);
 		config.setDefaultEyesType(0);
@@ -462,11 +468,11 @@ public class ConfigManager {
 
     private static void setupDefaultStats(RaceStatsConfig config) {
         setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 1.0, 0.75, 0.45, 0.75, 0.8, 0.5, 1.0);
+		setupScalingStats(config.getWarrior(), 1.0, 0.75, 1.25, 0.75, 1.5, 0.5, 1.0);
         setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 0.5, 0.5, 0.35, 0.25, 0.6, 1.0, 1.5);
+		setupScalingStats(config.getSpiritualist(), 0.5, 0.5, 1.0, 0.25, 1.0, 1.0, 1.5);
         setupInitialStats(config.getMartialArtist(), 5, 10, 10, 10, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 0.75, 1.0, 0.6, 1.0, 1.2, 0.75, 1.25);
+		setupScalingStats(config.getMartialArtist(), 0.75, 1.0, 1.5, 1.0, 1.75, 0.75, 1.25);
     }
 
     private static void setupInitialStats(RaceStatsConfig.ClassStats classStats,

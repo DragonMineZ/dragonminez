@@ -559,7 +559,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
             newEntity.setTarget(this.getTarget());
             newEntity.setHealth(newEntity.getMaxHealth());
 
-            // Copiar el dato dmz_is_hardmode si existe en la entidad original
             if (this.getPersistentData().contains("dmz_is_hardmode")) {
                 boolean isHardMode = this.getPersistentData().getBoolean("dmz_is_hardmode");
                 newEntity.getPersistentData().putBoolean("dmz_is_hardmode", isHardMode);
@@ -582,7 +581,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
 	public static boolean canSpawnHere(EntityType<? extends DBSagasEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
 		if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
-		if (random.nextFloat() < 0.90f) return false;
+		if (random.nextFloat() < 0.95f) return false;
 		boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
 		boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
 		return solidGround && noCollision;
