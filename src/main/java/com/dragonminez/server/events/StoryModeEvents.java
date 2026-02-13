@@ -115,20 +115,26 @@ public class StoryModeEvents {
 					String sagaId = entry.getKey();
 					Saga saga = entry.getValue();
 
+					Quest activeQuest = null;
 					for (Quest quest : saga.getQuests()) {
-						int questId = quest.getId();
-						if (qd.isQuestCompleted(sagaId, questId)) continue;
+						if (!qd.isQuestCompleted(sagaId, quest.getId())) {
+							activeQuest = quest;
+							break;
+						}
+					}
 
-						for (int i = 0; i < quest.getObjectives().size(); i++) {
-							QuestObjective objective = quest.getObjectives().get(i);
-							int currentProgress = qd.getQuestObjectiveProgress(sagaId, questId, i);
-							if (currentProgress >= objective.getRequired()) continue;
+					if (activeQuest == null) continue;
+					int questId = activeQuest.getId();
 
-							if (objective instanceof KillObjective killObjective) {
-								ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
-								EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
-								if (killedEntity.getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
-							}
+					for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
+						QuestObjective objective = activeQuest.getObjectives().get(i);
+						int currentProgress = qd.getQuestObjectiveProgress(sagaId, questId, i);
+						if (currentProgress >= objective.getRequired()) continue;
+
+						if (objective instanceof KillObjective killObjective) {
+							ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
+							EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
+							if (killedEntity.getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
 						}
 					}
 				}
@@ -151,19 +157,26 @@ public class StoryModeEvents {
 					String sagaId = entry.getKey();
 					Saga saga = entry.getValue();
 
+					Quest activeQuest = null;
 					for (Quest quest : saga.getQuests()) {
-						int questId = quest.getId();
-						if (qd.isQuestCompleted(sagaId, questId)) continue;
+						if (!qd.isQuestCompleted(sagaId, quest.getId())) {
+							activeQuest = quest;
+							break;
+						}
+					}
 
-						for (int i = 0; i < quest.getObjectives().size(); i++) {
-							QuestObjective objective = quest.getObjectives().get(i);
-							int currentProgress = qd.getQuestObjectiveProgress(sagaId, questId, i);
-							if (currentProgress >= objective.getRequired()) continue;
-							if (objective instanceof InteractObjective interactObjective) {
-								String targetStr = interactObjective.getEntityTypeId();
-								EntityType<?> requiredType = targetStr != null ? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(targetStr)) : null;
-								if (requiredType == null || event.getTarget().getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
-							}
+					if (activeQuest == null) continue;
+
+					int questId = activeQuest.getId();
+
+					for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
+						QuestObjective objective = activeQuest.getObjectives().get(i);
+						int currentProgress = qd.getQuestObjectiveProgress(sagaId, questId, i);
+						if (currentProgress >= objective.getRequired()) continue;
+						if (objective instanceof InteractObjective interactObjective) {
+							String targetStr = interactObjective.getEntityTypeId();
+							EntityType<?> requiredType = targetStr != null ? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(targetStr)) : null;
+							if (requiredType == null || event.getTarget().getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
 						}
 					}
 				}

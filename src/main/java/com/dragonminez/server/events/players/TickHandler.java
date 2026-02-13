@@ -199,8 +199,10 @@ public class TickHandler {
 					}
 				}
 
-				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm() == null))
+				if (data.getStatus().isAndroidUpgraded() && (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm() == null)) {
 					data.getCharacter().setActiveForm("androidforms", "androidbase");
+					serverPlayer.refreshDimensions();
+				}
 			}
 
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
@@ -270,7 +272,7 @@ public class TickHandler {
             if (MinecraftForge.EVENT_BUS.post(kiEvent)) {
                 energyChange = 0;
             }
-        } else if (!hasActiveForm && currentEnergy < maxEnergy) {
+        } else if (currentEnergy < maxEnergy && (!hasActiveForm || (activeForm != null && activeForm.getEnergyDrain() == 0))) {
             double baseRegen = classStats.getEnergyRegenRate();
             double regenAmount = maxEnergy * baseRegen * meditationBonus;
 			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()) {
@@ -291,7 +293,7 @@ public class TickHandler {
 			energyChange += regenAmount;
 		}
 
-        if (hasActiveForm && activeForm != null) {
+        if (hasActiveForm && activeForm != null && activeForm.getEnergyDrain() > 0) {
             if (!data.getStatus().isAndroidUpgraded()) {
                 double drainRate = data.getAdjustedEnergyDrain();
                 double drainAmount = maxEnergy * (drainRate / 100.0);
@@ -307,6 +309,7 @@ public class TickHandler {
                 data.getCharacter().clearActiveForm();
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
+				player.refreshDimensions();
             }
         }
     }
@@ -493,6 +496,7 @@ public class TickHandler {
 					data.getCharacter().getSelectedFormGroup();
 
 			data.getCharacter().setActiveForm(group, nextForm.getName());
+			player.refreshDimensions();
 
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		} else {

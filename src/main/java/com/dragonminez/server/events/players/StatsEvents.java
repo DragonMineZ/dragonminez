@@ -37,6 +37,7 @@ import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -50,6 +51,7 @@ public class StatsEvents {
 
     public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
     public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
+    public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -377,6 +379,7 @@ public class StatsEvents {
 
         if (entity instanceof ServerPlayer serverPlayer) {
             StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+				if (!data.getStatus().hasCreatedCharacter()) return;
 
                 AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
                 if (speedAttr != null) {
@@ -392,6 +395,48 @@ public class StatsEvents {
                         }
                     }
                 }
+
+				AttributeInstance reachAttr = serverPlayer.getAttribute(ForgeMod.BLOCK_REACH.get());
+				AttributeInstance entityReachAttr = serverPlayer.getAttribute(ForgeMod.ENTITY_REACH.get());
+
+				if (reachAttr != null) {
+					if (reachAttr.getModifier(FORM_REACH_UUID) != null) reachAttr.removeModifier(FORM_REACH_UUID);
+				}
+				if (entityReachAttr != null) {
+					if (entityReachAttr.getModifier(FORM_REACH_UUID) != null) entityReachAttr.removeModifier(FORM_REACH_UUID);
+				}
+
+				float[] scaling = data.getCharacter().getModelScaling();
+				if (scaling == null || scaling.length < 2) scaling = new float[]{0.9375f, 0.9375f, 0.9375f};
+
+				float currentScaleY = scaling[1];
+
+				if (data.getCharacter().hasActiveForm()) {
+					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+					if (activeForm != null) {
+						float[] formMultiplier = activeForm.getModelScaling();
+						currentScaleY *= formMultiplier[1];
+					}
+				}
+
+				final float BASE_SCALE = 0.9375f;
+				final float BASE_HEIGHT = 1.8F;
+				final float BASE_REACH = 4.5F;
+
+				float ratioY = currentScaleY / BASE_SCALE;
+				float currentHeight = BASE_HEIGHT * ratioY;
+
+				if (ratioY > 1.01f) {
+					float heightDifference = currentHeight - BASE_HEIGHT;
+					float reachBonus = heightDifference * (BASE_REACH / BASE_HEIGHT);
+
+					if (reachAttr != null) {
+						reachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", reachBonus, AttributeModifier.Operation.ADDITION));
+					}
+					if (entityReachAttr != null) {
+						entityReachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", reachBonus, AttributeModifier.Operation.ADDITION));
+					}
+				}
             });
         }
     }
@@ -496,12 +541,24 @@ public class StatsEvents {
 			float ratioY = currentScaleY / BASE_SCALE;
 
 			if (Math.abs(ratioX - 1.0f) > 0.001F || Math.abs(ratioY - 1.0f) > 0.001F) {
+				float newWidth = 0.6F * ratioX;
+				float newHeight = 1.8F * ratioY;
 
-				EntityDimensions newDims = EntityDimensions.scalable(0.6F * ratioX, 1.8F * ratioY);
+				Pose pose = event.getPose();
+				float poseMultiplier = 1.0F;
+				float eyePoseMultiplier = 1.0F;
+
+				if (pose == Pose.CROUCHING) {
+					poseMultiplier = 1.5F / 1.8F;
+					eyePoseMultiplier = 1.27F / 1.62F;
+				} else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+					poseMultiplier = 0.6F / 1.8F;
+					eyePoseMultiplier = 0.4F / 1.62F;
+				}
+
+				EntityDimensions newDims = EntityDimensions.fixed(newWidth, newHeight * poseMultiplier);
 				event.setNewSize(newDims);
-				float defaultEyeHeight = player.getEyeHeight(Pose.STANDING);
-				float baseEye = event.getNewEyeHeight() > 0 ? event.getNewEyeHeight() : defaultEyeHeight;
-				event.setNewEyeHeight(baseEye * ratioY);
+				event.setNewEyeHeight(1.62F * ratioY * eyePoseMultiplier);
 			}
 		});
 	}

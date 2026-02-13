@@ -139,6 +139,7 @@ public class CreateCharacterC2S {
                             msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
                             msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
                             msg.eye1Color, msg.eye2Color, msg.auraColor);
+					player.refreshDimensions();
                     NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
                 }
             });

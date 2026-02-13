@@ -130,9 +130,8 @@ public class ExecuteActionC2S {
 						}
 					}
 
-					if (needsSync) {
-						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-					}
+					player.refreshDimensions();
+					if (needsSync) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				});
 			}
 		});

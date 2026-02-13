@@ -580,7 +580,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
                     // Quest 19
                     quests.add(createQuest(19, "dmz.quest.android19.name", "dmz.quest.android19.desc",
                             new JsonObject[][]{
-                                    {createObjective("STRUCTURE", "dmz.quest.android19.obj1", "dragonminez:kami_lookout", null, 0)}
+                                    {createObjective("STRUCTURE", "dmz.quest.android19.obj1", "dragonminez:kamilookout", null, 0)}
                             },
                             new JsonObject[][]{
                                     {createReward("TPS", 10000, null, 0, null)}

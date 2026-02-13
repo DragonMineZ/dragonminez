@@ -1,6 +1,8 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -152,8 +154,8 @@ public class StatsCommand {
 		if (keepPercentageStr != null && !keepPercentageStr.isEmpty()) {
 			try {
 				keepPercentage = Integer.parseInt(keepPercentageStr);
-				if (keepPercentage <= 0 || keepPercentage >= 100) {
-					source.sendFailure(Component.literal("Keep percentage must be between 1 and 99"));
+				if (keepPercentage <= -1 || keepPercentage >= 101) {
+					source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_number", keepPercentageStr));
 					return 0;
 				}
 			} catch (NumberFormatException e) {
@@ -210,6 +212,7 @@ public class StatsCommand {
 				data.getCharacter().clearActiveForm();
 				data.getStatus().setCreatedCharacter(false);
 
+				player.refreshDimensions();
 				player.setHealth(20.0F);
 				player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 				player.setHealth(20.0F);

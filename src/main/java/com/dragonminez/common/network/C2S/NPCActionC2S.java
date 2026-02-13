@@ -117,6 +117,7 @@ public class NPCActionC2S {
 			data.getCharacter().clearActiveForm();
 			data.getStatus().setCreatedCharacter(false);
 
+			player.refreshDimensions();
 			player.setHealth(20.0F);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 			player.setHealth(20.0F);
@@ -170,6 +171,7 @@ public class NPCActionC2S {
 			data.updateTransformationSkillLimits("human");
 			data.getCharacter().setSelectedFormGroup("androidforms");
 			data.getCharacter().setActiveForm("androidforms", "androidbase");
+			player.refreshDimensions();
 			player.sendSystemMessage(Component.translatable("message.dragonminez.gero.upgrade_success"));
 		}
 	}
