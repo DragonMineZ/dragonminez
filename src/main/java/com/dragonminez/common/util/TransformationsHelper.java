@@ -216,7 +216,25 @@ public class TransformationsHelper {
 			finalDrain = (float) (data.getMaxHealth() * ConfigManager.getSkillsConfig().getDrainRateForLevel("kaioken", phase));
 		}
 
+		float vitReduction = getKaiokenVitReduction(data);
+		finalDrain *= (1.0f - vitReduction);
+
 		return finalDrain;
+	}
+
+	private static float getKaiokenVitReduction(StatsData data) {
+		int maxStatValue = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+		int currentVit = data.getStats().getVitality();
+
+		float vitRatio = Math.min(1.0f, (float) currentVit / maxStatValue);
+
+		float minThreshold = 0.1f;
+		if (vitRatio <= minThreshold) return 0.0f;
+
+		float scaledRatio = (vitRatio - minThreshold) / (1.0f - minThreshold);
+		float maxReduction = 0.40f;
+
+		return maxReduction * scaledRatio * scaledRatio;
 	}
 
 	public static String getFirstFormGroup(String groupName, String raceName) {

@@ -190,9 +190,7 @@ public class StatsData {
         character.setGender(gender);
         character.setCharacterClass(characterClass);
         character.setHairId(hairId);
-        if (customHair != null) {
-            character.setHairBase(customHair);
-        }
+        if (customHair != null) character.setHairBase(customHair);
         character.setBodyType(bodyType);
         character.setEyesType(eyesType);
         character.setNoseType(noseType);
@@ -211,12 +209,18 @@ public class StatsData {
         RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
         RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
-        stats.setStrength(baseStats.getStrength());
-        stats.setStrikePower(baseStats.getStrikePower());
-        stats.setResistance(baseStats.getResistance());
-        stats.setVitality(baseStats.getVitality());
-        stats.setKiPower(baseStats.getKiPower());
-        stats.setEnergy(baseStats.getEnergy());
+        boolean hasDefaultStats = stats.getStrength() <= 5 && stats.getStrikePower() <= 5 &&
+                                  stats.getResistance() <= 5 && stats.getVitality() <= 5 &&
+                                  stats.getKiPower() <= 5 && stats.getEnergy() <= 5;
+
+        if (hasDefaultStats) {
+            stats.setStrength(baseStats.getStrength());
+            stats.setStrikePower(baseStats.getStrikePower());
+            stats.setResistance(baseStats.getResistance());
+            stats.setVitality(baseStats.getVitality());
+            stats.setKiPower(baseStats.getKiPower());
+            stats.setEnergy(baseStats.getEnergy());
+        }
 
         resources.setCurrentEnergy(getMaxEnergy());
         resources.setCurrentStamina(getMaxStamina());

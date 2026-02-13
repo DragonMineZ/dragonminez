@@ -103,7 +103,6 @@ public class CreateCharacterC2S {
         String className = buf.readUtf();
         String gender = buf.readUtf();
         int hairId = buf.readInt();
-        // Deserializar CustomHair
         CustomHair customHair = null;
         if (buf.readBoolean()) {
             customHair = CustomHair.readFromBuffer(buf);
