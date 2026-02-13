@@ -252,6 +252,7 @@ public class TickHandler {
         
         boolean hasActiveForm = data.getCharacter().hasActiveForm();
         FormConfig.FormData activeForm = hasActiveForm ? data.getCharacter().getActiveFormData() : null;
+		boolean creative = player.isCreative() || player.isSpectator();
 
         double energyChange = 0;
 
@@ -289,7 +290,7 @@ public class TickHandler {
 			energyChange += regenAmount;
 		}
 
-        if (hasActiveForm && activeForm != null && activeForm.getEnergyDrain() > 0) {
+        if (hasActiveForm && activeForm != null && activeForm.getEnergyDrain() > 0 && !creative) {
             if (!data.getStatus().isAndroidUpgraded()) {
                 double drainRate = data.getAdjustedEnergyDrain();
 				double drainAmount = Math.max(5, (maxEnergy * (drainRate / 100.0)));

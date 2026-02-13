@@ -21,31 +21,45 @@ public class FirstPersonManager {
 
 	public static Vector3f offsetFirstPersonView(Player player) {
 		final float BASE_OFFSET_Y = 0.1F;
-		final float BASE_OFFSET_Z = 0.5F;
+		final float[] BASE_OFFSET_Z = {0.5F};
 		final float BASE_SCALE = 0.9375f;
 
-		float[] scaling = {BASE_SCALE, BASE_SCALE, BASE_SCALE};
+		final float[][] scaling = {{BASE_SCALE, BASE_SCALE, BASE_SCALE}};
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			float[] modelScaling = data.getCharacter().getModelScaling();
 			if (modelScaling != null && modelScaling.length >= 2) {
-				scaling[0] = modelScaling[0];
-				scaling[1] = modelScaling[1];
+				scaling[0][0] = modelScaling[0];
+				scaling[0][1] = modelScaling[1];
 			}
 
 			if (data.getCharacter().hasActiveForm()) {
 				FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
 				if (activeForm != null) {
-					float[] formMultiplier = activeForm.getModelScaling();
-					scaling[0] *= formMultiplier[0];
-					scaling[1] *= formMultiplier[1];
+					String formName = activeForm.getName().toLowerCase();
+					if (!formName.contains("ozaru")) {
+						float[] formScaling = activeForm.getModelScaling();
+						scaling[0][0] = formScaling[0];
+						scaling[0][1] = formScaling[1];
+					}
 				}
+
+				if (activeForm.getName().contains("ozaru")) BASE_OFFSET_Z[0] = 1.5F;
 			}
 		});
 
-		float ratioY = scaling[1] / BASE_SCALE;
-		float adjustedOffsetY = BASE_OFFSET_Y + (1.0f - ratioY) * -2.0f;
+		float ratioY = scaling[0][1] / BASE_SCALE;
+		float adjustedOffsetY;
+		if (ratioY <= 1.0f) {
+			adjustedOffsetY = BASE_OFFSET_Y + (1.0f - ratioY) * -2.0f;
+		} else {
+			float modelHeightInBlocks = scaling[0][1] * 1.8f;
+			float eyeHeightInBlocks = modelHeightInBlocks * 0.85f;
+			float defaultEyeHeight = 1.42f;
+			adjustedOffsetY = BASE_OFFSET_Y + (eyeHeightInBlocks - defaultEyeHeight);
 
-		return new Vector3f(0, adjustedOffsetY, BASE_OFFSET_Z);
+		}
+
+		return new Vector3f(0, adjustedOffsetY, BASE_OFFSET_Z[0]);
 	}
 }

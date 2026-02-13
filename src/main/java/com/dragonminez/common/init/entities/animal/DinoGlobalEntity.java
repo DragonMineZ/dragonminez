@@ -115,7 +115,7 @@ public class DinoGlobalEntity extends Monster implements GeoEntity {
 
 	public static boolean canSpawnHere(EntityType<? extends DinoGlobalEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
 		if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
-		if (random.nextFloat() < 0.75f) return false;
+		if (random.nextFloat() < 0.85f) return false;
 		boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
 		boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
 		return solidGround && noCollision;

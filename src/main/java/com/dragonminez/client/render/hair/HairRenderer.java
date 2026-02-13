@@ -2,12 +2,9 @@ package com.dragonminez.client.render.hair;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairStrand;
-import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsData;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -32,7 +29,7 @@ public class HairRenderer {
 	public static void render(PoseStack poseStack, MultiBufferSource bufferSource,
 							  CustomHair hairFrom, CustomHair hairTo, float transitionFactor,
 							  Character character, StatsData stats, AbstractClientPlayer player,
-							  String defaultColor, float partialTick, int packedLight, int packedOverlay) {
+							  String colorFrom, String colorTo, float partialTick, int packedLight, int packedOverlay) {
 
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
@@ -68,7 +65,7 @@ public class HairRenderer {
 				if (!v1) s1 = createZeroScaleStrand(s2);
 				if (!v2) s2 = createZeroScaleStrand(s1);
 
-				String color = getColor(character, s1, s2, transitionFactor, defaultColor);
+				String color = getColor(character, s1, s2, transitionFactor, colorFrom, colorTo);
 
 				float lerpRotX = Mth.lerp(transitionFactor, s1.getRotationX(), s2.getRotationX());
 				float lerpRotY = Mth.lerp(transitionFactor, s1.getRotationY(), s2.getRotationY());
@@ -109,28 +106,27 @@ public class HairRenderer {
 		return empty;
 	}
 
-	private static String getColor(Character character, HairStrand s1, HairStrand s2, float factor, String defaultColor) {
+	private static String getColor(Character character, HairStrand s1, HairStrand s2, float factor, String colorFrom, String colorTo) {
 		HairStrand targetStrand = (factor > 0.5f) ? s2 : s1;
+		if (targetStrand != null && targetStrand.hasCustomColor()) return targetStrand.getColor();
+		if (colorFrom != null && colorFrom.equals(colorTo)) return colorFrom;
+		if (colorFrom != null && colorTo != null && factor > 0.0f && factor < 1.0f) return interpolateColor(colorFrom, colorTo, factor);
+		return factor >= 1.0f ? colorTo : colorFrom;
+	}
 
-		if (character != null) {
-			FormConfig.FormData activeForm = character.getActiveFormData();
-			if (activeForm != null && activeForm.hasHairColorOverride()) {
-				return activeForm.getHairColor();
-			}
-		}
+	private static String interpolateColor(String hexFrom, String hexTo, float factor) {
+		float[] rgbFrom = ColorUtils.hexToRgb(hexFrom);
+		float[] rgbTo = ColorUtils.hexToRgb(hexTo);
 
-		if (targetStrand != null && targetStrand.hasCustomColor()) {
-			return targetStrand.getColor();
-		}
+		float r = Mth.lerp(factor, rgbFrom[0], rgbTo[0]);
+		float g = Mth.lerp(factor, rgbFrom[1], rgbTo[1]);
+		float b = Mth.lerp(factor, rgbFrom[2], rgbTo[2]);
 
-		if (character != null) {
-			String charColor = character.getHairColor();
-			if (charColor != null && !charColor.isEmpty()) {
-				return charColor;
-			}
-		}
+		int ri = (int) (r * 255);
+		int gi = (int) (g * 255);
+		int bi = (int) (b * 255);
 
-		return defaultColor;
+		return String.format("#%02X%02X%02X", ri, gi, bi);
 	}
 
 	private static void renderStrandInterpolated(PoseStack poseStack, MultiBufferSource bufferSource, Vector3f pos, String colorHex, int packedLight, int packedOverlay,

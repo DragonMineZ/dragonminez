@@ -58,11 +58,15 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		CustomHair hairFrom = character.getHairBase();
 		CustomHair hairTo = character.getHairBase();
+		String colorFrom = character.getHairColor();
+		String colorTo = character.getHairColor();
 		float factor = 0.0f;
 
 		if (character.hasActiveForm()) {
 			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			hairTo = hairFrom;
+			colorFrom = getColorForForm(character, character.getActiveFormGroup(), character.getActiveForm());
+			colorTo = colorFrom;
 			factor = 1.0f;
 			lastHairProgress = 1.0f;
 			if (character.getActiveForm().contains("oozaru")) return;
@@ -71,6 +75,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			var nextForm = TransformationsHelper.getNextAvailableForm(stats);
 			if (nextForm != null) {
 				CustomHair targetHair = getHairForForm(character, targetGroup, nextForm.getName());
+				String targetColor = getColorForForm(character, targetGroup, nextForm.getName());
 				float targetProgress = stats.getResources().getActionCharge() / 100.0f;
 
 				long currentTick = animatable.tickCount;
@@ -87,22 +92,30 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				CustomHair baseHair = character.getHairBase();
 				CustomHair ssjHair = character.getHairSSJ();
 				CustomHair ssj3Hair = character.getHairSSJ3();
+				String baseColor = character.getHairColor();
 
 				boolean targetIsSSJ3 = targetHair == ssj3Hair || (ssj3Hair != null && targetHair.equals(ssj3Hair));
 
 				if (targetIsSSJ3 && ssjHair != null && !ssjHair.isEmpty()) {
+					String ssjColor = getColorForForm(character, targetGroup, "ssj");
 					if (smoothProgress < 0.5f) {
 						hairFrom = baseHair;
 						hairTo = ssjHair;
+						colorFrom = baseColor;
+						colorTo = ssjColor;
 						factor = smoothProgress * 2.0f;
 					} else {
 						hairFrom = ssjHair;
 						hairTo = ssj3Hair;
+						colorFrom = ssjColor;
+						colorTo = targetColor;
 						factor = (smoothProgress - 0.5f) * 2.0f;
 					}
 				} else {
 					hairFrom = baseHair;
 					hairTo = targetHair;
+					colorFrom = baseColor;
+					colorTo = targetColor;
 					factor = smoothProgress;
 				}
 			}
@@ -154,7 +167,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 		}
 		poseStack.translate(0, 0, 0);
-		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, character.getHairColor(), partialTick, packedLight, packedOverlay);
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, colorFrom, colorTo, partialTick, packedLight, packedOverlay);
 		poseStack.popPose();
 	}
 
@@ -176,5 +189,16 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		return character.getHairBase();
+	}
+
+	private String getColorForForm(Character character, String group, String formName) {
+		FormConfig config = ConfigManager.getFormGroup(character.getRaceName(), group);
+		if (config != null) {
+			var formData = config.getForm(formName);
+			if (formData != null && formData.hasHairColorOverride()) {
+				return formData.getHairColor();
+			}
+		}
+		return character.getHairColor();
 	}
 }

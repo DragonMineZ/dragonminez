@@ -161,6 +161,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		var stats = statsCap.orElse(new StatsData(animatable));
 
 		if (!stats.getStatus().hasCreatedCharacter()) return;
+		if (stats.getCharacter().getActiveFormData() != null && stats.getCharacter().getActiveForm().contains("ozaru")) return;
 
         if (stats.getStatus().isRenderKatana()) {
             BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);

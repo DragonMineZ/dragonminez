@@ -178,8 +178,6 @@ public class StatsCommand {
 					int newVit = (stats.getVitality() * finalKeepPercentage) / 100;
 					int newPwr = (stats.getKiPower() * finalKeepPercentage) / 100;
 					int newEne = (stats.getEnergy() * finalKeepPercentage) / 100;
-					System.out.println("New values: STR=" + newStr + ", SKP=" + newSkp + ", RES=" + newRes + ", VIT=" + newVit + ", PWR=" + newPwr + ", ENE=" + newEne);
-
 					int currentTPs = data.getResources().getTrainingPoints();
 					int newTPs = (currentTPs * finalKeepPercentage) / 100;
 
@@ -189,8 +187,6 @@ public class StatsCommand {
 					stats.setVitality(Math.max(5, newVit));
 					stats.setKiPower(Math.max(5, newPwr));
 					stats.setEnergy(Math.max(5, newEne));
-
-					System.out.println("Applied new values: STR=" + stats.getStrength() + ", SKP=" + stats.getStrikePower() + ", RES=" + stats.getResistance() + ", VIT=" + stats.getVitality() + ", PWR=" + stats.getKiPower() + ", ENE=" + stats.getEnergy());
 
 					data.getResources().setTrainingPoints(newTPs);
 				} else {
