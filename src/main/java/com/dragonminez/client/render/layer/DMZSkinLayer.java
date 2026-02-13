@@ -403,6 +403,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         float[] hair = hexToRGB(character.getHairColor());
         float[] b1 = hexToRGB(character.getBodyColor());
         float[] b2 = hexToRGB(character.getBodyColor2());
+		float[] eyebrow = hexToRGB(character.getBodyColor());
 
         if (character.hasActiveForm() && character.getActiveFormData() != null) {
             var f = character.getActiveFormData();
@@ -411,6 +412,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!f.getHairColor().isEmpty()) hair = hexToRGB(f.getHairColor());
             if (!f.getBodyColor1().isEmpty()) b1 = hexToRGB(f.getBodyColor1());
             if (!f.getBodyColor2().isEmpty()) b2 = hexToRGB(f.getBodyColor2());
+			if (!f.getBodyColor1().isEmpty()) eyebrow = hexToRGB(f.getBodyColor1());
         }
 
         float[] skinTint = (raceName.equals("namekian") || raceName.equals("majin") ||
@@ -486,6 +488,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         String prefix = (raceName.equals("human") || raceName.equals("saiyan")) ? "humansaiyan" : raceName;
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "_nose_" + character.getNoseType() + ".png", skinTint, pt, pl, po);
+
+		if ((raceName.equals("human") || raceName.equals("saiyan")) && character.getActiveFormData() != null && character.getActiveFormData().getHairType().equalsIgnoreCase("ssj3")) {
+			renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "ssj3eyebrows_eye_" + character.getEyesType() + ".png", eyebrow, pt, pl, po);
+		}
 
         if (raceName.equals("frostdemon") && Objects.equals(currentForm, FrostDemonForms.FIFTH_FORM)) {
             renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/frostdemon/faces/frostdemon_fifth_mouth.png", b1, pt, pl, po);

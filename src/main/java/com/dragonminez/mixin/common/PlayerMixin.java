@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Player.class)
 public class PlayerMixin {
+
+
 	@Inject(method = "attack", at = @At("HEAD"), cancellable = true)
 	public void onAttack(Entity pTarget, CallbackInfo ci) {
 		if (pTarget.isAttackable() && !pTarget.skipAttackInteraction((Player) (Object) this)) {

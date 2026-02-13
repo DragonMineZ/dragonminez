@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -209,10 +210,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
             boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);
 
             if (intersects) {
-
-                float damageToDeal = this.getKiDamage();
-
-                boolean wasHurt = target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), damageToDeal);
+				boolean wasHurt = target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 
                 if (wasHurt) {
                     target.invulnerableTime = hitInterval;
@@ -249,7 +247,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (this.shouldDamage(target)) {
                 double dist = target.distanceToSqr(pos);
                 if (dist <= radius * radius) {
-                    target.hurt(this.damageSources().explosion(this, this.getOwner()), this.getKiDamage());
+					target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
                 }
             }
         }

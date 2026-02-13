@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -149,11 +150,11 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-                target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), this.getKiDamage());
+				target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 
                 double dx = target.getX() - this.getX();
                 double dz = target.getZ() - this.getZ();
-                target.knockback(0.2D, -dx, -dz); //empuje
+                target.knockback(0.2D, -dx, -dz);
             }
         }
     }

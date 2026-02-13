@@ -890,6 +890,10 @@
   "command.dragonminez.effects.remove_multiple": "§e[DMZ-Effects]§r Removed effect '%s' from %d players.",
   "command.dragonminez.effects.clear_success": "§e[DMZ-Effects]§r Cleared all effects from %s",
   "command.dragonminez.effects.clear_multiple": "§e[DMZ-Effects]§r Cleared all effects from %d players.",
+  "command.dragonminez.mastery.add.success": "§e[DMZ-Mastery]§r Added %d mastery for the form '%s - %s' to %s.",
+  "command.dragonminez.mastery.set.success": "§e[DMZ-Mastery]§r Set mastery to %d for the form '%s - %s' for %s.",
+  "command.dragonminez.mastery.add.multiple": "§e[DMZ-Mastery]§r Added %d mastery for the form '%s - %s' to %d players.",
+  "command.dragonminez.mastery.set.multiple": "§e[DMZ-Mastery]§r Set mastery to %d for the form '%s - %s' for %d players.",
 
   "//": "QUESTS § STORY",
   "dmz.saga.saiyan_saga": "Saiyan Saga",

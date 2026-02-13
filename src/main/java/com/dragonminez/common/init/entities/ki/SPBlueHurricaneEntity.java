@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import net.minecraft.world.entity.Entity;
@@ -90,7 +91,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
 
         for (LivingEntity target : targets) {
             if (shouldDamage(target)) {
-                target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), this.getKiDamage());
+				target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 
                 double dx = target.getX() - this.getX();
                 double dz = target.getZ() - this.getZ();

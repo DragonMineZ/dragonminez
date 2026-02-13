@@ -125,6 +125,8 @@ public class ForgeCommonEvents {
 					data.getEffects().removeAllEffects();
 				}
 
+				data.getStatus().setActiveKaiokenPhase(0);
+				if (data.getSkills().hasSkill("kaioken")) data.getSkills().setSkillActive("kaioken", false);
 				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
 			});
 		}

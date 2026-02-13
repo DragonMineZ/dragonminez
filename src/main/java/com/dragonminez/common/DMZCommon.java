@@ -44,6 +44,7 @@ public class DMZCommon {
 		OverworldFeatures.register(modEventBus);
 
 		MainGameRules.register();
+		MainDamageTypes.register();
 
 		WorldGuardCompat.init();
     }

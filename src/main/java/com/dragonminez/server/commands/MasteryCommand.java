@@ -67,10 +67,10 @@ public class MasteryCommand {
 
 		String modeKey = add ? "add" : "set";
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".success", group, form, value, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".success", value,  group, form, targets.iterator().next().getName().getString()), true);
 		} else {
 			int finalCount = count;
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".multiple", group, form, value, finalCount), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".multiple", value, group, form, finalCount), true);
 		}
 		return count;
 	}

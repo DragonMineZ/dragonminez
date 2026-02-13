@@ -372,15 +372,9 @@ public class StatsData {
 
         double baseDrain = formData.getEnergyDrain();
         double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-        double reduction = mastery * formData.getCostDecreasePerMasteryPoint();
+        double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
 
-        int kiControlLevel = skills.getSkillLevel("kicontrol");
-        if (kiControlLevel > 0) {
-            double kiControlReduction = (Math.min(kiControlLevel, 10) * 1.5) / 100.0;
-            reduction += baseDrain * kiControlReduction;
-        }
-
-        return Math.max(0.001, baseDrain - reduction);
+        return Math.max(0.001, baseDrain / divisor);
     }
 
     public double getAdjustedStaminaDrain() {

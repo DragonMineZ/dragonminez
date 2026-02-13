@@ -1,10 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.MainGameRules;
-import com.dragonminez.common.init.MainParticles;
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.*;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.sounds.SoundEvents;
@@ -116,8 +113,8 @@ public class KiDiscEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : nearby) {
             if (this.shouldDamage(target)) {
-                target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), this.getKiDamage() * 0.1F);
-            }
+				target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage() * 0.1F);
+			}
         }
     }
 
@@ -129,7 +126,7 @@ public class KiDiscEntity extends AbstractKiProjectile {
             Entity targetEntity = pResult.getEntity();
 
             if (this.shouldDamage(targetEntity)) {
-                boolean wasHurt = targetEntity.hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
+				boolean wasHurt = targetEntity.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 
                 if (wasHurt) {
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
@@ -144,10 +141,6 @@ public class KiDiscEntity extends AbstractKiProjectile {
                     }
                 }
             }
-
-            // --- CAMBIO CLAVE ---
-            // Eliminamos explodeAndDie().
-            // Ahora el disco seguirá su camino atravesando a la entidad.
         }
     }
 }

@@ -210,8 +210,10 @@ public class TransformationsHelper {
 		if (data.getCharacter().hasActiveForm()) {
 			FormConfig.FormData form = data.getCharacter().getActiveFormData();
 			if (form != null) {
-				finalDrain = (float) (data.getMaxHealth() * ConfigManager.getSkillsConfig().getDrainRateForLevel("kaioken", phase) + form.getKaiokenDrainMultiplier());
+				finalDrain = (float) (data.getMaxHealth() * ConfigManager.getSkillsConfig().getDrainRateForLevel("kaioken", phase) * form.getKaiokenDrainMultiplier());
 			}
+		} else {
+			finalDrain = (float) (data.getMaxHealth() * ConfigManager.getSkillsConfig().getDrainRateForLevel("kaioken", phase));
 		}
 
 		return finalDrain;

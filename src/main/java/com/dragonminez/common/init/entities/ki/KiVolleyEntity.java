@@ -1,10 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.MainGameRules;
-import com.dragonminez.common.init.MainParticles;
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.*;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvents;
@@ -176,7 +173,7 @@ public class KiVolleyEntity extends AbstractKiProjectile {
             Entity targetEntity = pResult.getEntity();
 
             if (this.shouldDamage(targetEntity)) {
-                boolean wasHurt = targetEntity.hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
+				boolean wasHurt = targetEntity.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 
                 if (wasHurt && this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
 
@@ -221,7 +218,7 @@ public class KiVolleyEntity extends AbstractKiProjectile {
 		for (LivingEntity target : entities) {
 			if (this.shouldDamage(target)) {
 				if (this.distanceToSqr(target) <= radius * radius) {
-					target.hurt(this.damageSources().explosion(this, this.getOwner()), this.getKiDamage());
+					target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 				}
 			}
 		}

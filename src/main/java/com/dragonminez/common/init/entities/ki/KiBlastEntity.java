@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
@@ -112,7 +113,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
 		for (LivingEntity target : nearby) {
 			if (this.shouldDamage(target)) {
-				target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), this.getKiDamage() * 0.2F);
+				target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage() * 0.2F);
 			}
 		}
 	}
@@ -126,7 +127,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             Entity targetEntity = pResult.getEntity();
 
             if (this.shouldDamage(targetEntity)) {
-                boolean wasHurt = targetEntity.hurt(this.damageSources().thrown(this, this.getOwner()), this.getKiDamage());
+                boolean wasHurt = targetEntity.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 
                 if (wasHurt && this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
 
@@ -171,7 +172,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 			if (this.shouldDamage(target)) {
 				double dist = this.distanceToSqr(target);
 				if (dist <= radius * radius) {
-					target.hurt(this.damageSources().explosion(this, this.getOwner()), this.getKiDamage());
+					target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 				}
 			}
 		}

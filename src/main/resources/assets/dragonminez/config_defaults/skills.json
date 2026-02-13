@@ -82,11 +82,11 @@
       // Kaioken also increases its drain rate every 2 levels
       // 0.01 = 1% drain per second, not per tick
       "drainRate": [
-        0.01,
-        0.02,
-        0.04,
-        0.075,
-        0.1
+        0.03,
+        0.06,
+        0.095,
+        0.11,
+        0.15
       ]
     },
     "meditation": {

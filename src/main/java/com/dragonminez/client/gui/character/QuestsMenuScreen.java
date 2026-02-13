@@ -46,9 +46,9 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     private static final int QUEST_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_QUESTS = 8;
 
-	private static int SAVED_SAGA_INDEX = 0;
-	private static int SAVED_QUEST_ID = -1;
-	private static int SAVED_SCROLL_OFFSET = 0;
+	public static int SAVED_SAGA_INDEX = 0;
+	public static int SAVED_QUEST_ID = -1;
+	public static int SAVED_SCROLL_OFFSET = 0;
 
     private StatsData statsData;
     private int tickCount = 0;

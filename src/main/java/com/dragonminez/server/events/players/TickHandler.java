@@ -1,9 +1,6 @@
 package com.dragonminez.server.events.players;
 
-import com.dragonminez.Env;
-import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
-import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -45,7 +42,6 @@ import java.util.*;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TickHandler {
 
-	private static final UUID STUN_SLOW_UUID = UUID.fromString("7107DE5E-7CE8-4030-940E-514C1F160890");
     private static final int REGEN_INTERVAL = 20;
     private static final int SYNC_INTERVAL = 10;
     private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
@@ -296,7 +292,7 @@ public class TickHandler {
         if (hasActiveForm && activeForm != null && activeForm.getEnergyDrain() > 0) {
             if (!data.getStatus().isAndroidUpgraded()) {
                 double drainRate = data.getAdjustedEnergyDrain();
-                double drainAmount = maxEnergy * (drainRate / 100.0);
+				double drainAmount = Math.max(5, (maxEnergy * (drainRate / 100.0)));
                 energyChange -= drainAmount;
             }
         }
@@ -465,20 +461,15 @@ public class TickHandler {
 		if (!data.getSkills().isSkillActive("kaioken")) return;
 		if (player.isCreative() || player.isSpectator()) return;
 
-		if (player.tickCount % 20 == 0) {
-			float drain = TransformationsHelper.getKaiokenHealthDrain(data);
+		float drain = Math.max(2, TransformationsHelper.getKaiokenHealthDrain(data));
 
-			if (player.getHealth() - drain <= 1.0f) {
-				data.getSkills().setSkillActive("kaioken", false);
-				data.getStatus().setActiveKaiokenPhase(0);
-				data.getResources().setPowerRelease(0);
-				data.getResources().setActionCharge(0);
-			} else {
-				player.setHealth(player.getHealth() - drain);
-				player.hurtTime = 0;
-				player.hurtDuration = 0;
-				player.invulnerableTime = 0;
-			}
+		if (player.getHealth() - drain <= 1.0f) {
+			data.getSkills().setSkillActive("kaioken", false);
+			data.getStatus().setActiveKaiokenPhase(0);
+			data.getResources().setPowerRelease(0);
+			data.getResources().setActionCharge(0);
+		} else {
+			player.setHealth(player.getHealth() - drain);
 		}
 	}
 

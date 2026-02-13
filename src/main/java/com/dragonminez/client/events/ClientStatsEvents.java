@@ -81,14 +81,6 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new UpdateStatC2S("isBlocking", shouldBlock));
 			}
 
-			if (data.getSkills().isSkillActive("kaioken")) {
-				if (player.hurtTime > 0 && player.invulnerableTime == 0) {
-					player.hurtTime = 0;
-					player.hurtDuration = 0;
-					player.attackAnim = 0;
-				}
-			}
-
 			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
 				String hexColor = data.getCharacter().getAuraColor();
 				int colorMain = ColorUtils.hexToInt(hexColor);
