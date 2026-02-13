@@ -67,6 +67,10 @@ public class ColorSlider extends AbstractSliderButton {
 
     @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        var poseStack = graphics.pose();
+        poseStack.pushPose();
+        poseStack.translate(0.0D, 0.0D, 200.0D);
+
         graphics.fill(this.getX() - 1, this.getY() - 1, this.getX() + this.width + 1, this.getY() + this.height + 1, 0xFF000000);
 
         drawGradientBackground(graphics);
@@ -74,17 +78,19 @@ public class ColorSlider extends AbstractSliderButton {
         int sliderX = this.getX() + (int)(this.value * (double)(this.width - 6));
         graphics.fill(sliderX, this.getY() - 1, sliderX + 6, this.getY() + this.height + 1, 0xFFFFFFFF);
         graphics.fill(sliderX + 1, this.getY(), sliderX + 5, this.getY() + this.height, 0xFF808080);
+
+        poseStack.popPose();
     }
 
     private void drawGradientBackground(GuiGraphics graphics) {
         Component msg = this.getMessage();
         String messageText = msg.getString();
 
-        if (messageText.equals("Hue") || messageText.equals("H")) {
+        if (messageText.equalsIgnoreCase("Hue") || messageText.equalsIgnoreCase("H")) {
             drawHueGradient(graphics);
-        } else if (messageText.equals("Saturation") || messageText.equals("S")) {
+        } else if (messageText.equalsIgnoreCase("Saturation") || messageText.equalsIgnoreCase("S")) {
             drawSaturationGradient(graphics);
-        } else if (messageText.equals("Value") || messageText.equals("V")) {
+        } else if (messageText.equalsIgnoreCase("Value") || messageText.equalsIgnoreCase("V")) {
             drawValueGradient(graphics);
         } else {
             graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0xFF808080);

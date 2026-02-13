@@ -353,7 +353,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 .size(sliderWidth, 10)
                 .range(0, 360)
                 .value(0)
-                .message(Component.translatable("gui.dragonminez.customization.hue"))
+                .message(Component.literal("Hue"))
                 .onValueChange(val -> updateColorFromSliders())
                 .build();
 
@@ -362,7 +362,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 .size(sliderWidth, 10)
                 .range(100, 0)
                 .value(100)
-                .message(Component.translatable("gui.dragonminez.customization.saturation"))
+                .message(Component.literal("Saturation"))
                 .onValueChange(val -> updateColorFromSliders())
                 .build();
 
@@ -371,7 +371,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 .size(sliderWidth, 10)
                 .range(100, 0)
                 .value(100)
-                .message(Component.translatable("gui.dragonminez.customization.value"))
+                .message(Component.literal("Value"))
                 .onValueChange(val -> updateColorFromSliders())
                 .build();
 
@@ -834,7 +834,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         player.yHeadRotO = playerRotation;
 
         graphics.pose().pushPose();
-        graphics.pose().translate(0.0D, 0.0D, 150.0D);
+        graphics.pose().translate(0.0D, 0.0D, 0.0D);
         InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
         graphics.pose().popPose();
 
@@ -846,6 +846,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
     }
 
     private void renderColorPickerBackground(GuiGraphics graphics) {
+        var poseStack = graphics.pose();
+        poseStack.pushPose();
+        poseStack.translate(0.0D, 0.0D, 200.0D);
+
         int sliderX = 180;
         int sliderY = getUiHeight() / 2 - 50;
         int sliderWidth = 80;
@@ -855,10 +859,16 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         int totalWidth = sliderWidth + previewSize + 10;
         int totalHeight = sliderHeight + 10;
         graphics.fill(sliderX - 5, sliderY - 5, sliderX + totalWidth, sliderY + totalHeight, 0x66000000);
+
+        poseStack.popPose();
     }
 
     private void renderColorPreviewSquare(GuiGraphics graphics) {
         if (hueSlider == null) return;
+
+        var poseStack = graphics.pose();
+        poseStack.pushPose();
+        poseStack.translate(0.0D, 0.0D, 200.0D);
 
         int sliderX = 180;
         int sliderY = getUiHeight() / 2 - 50;
@@ -875,6 +885,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
         graphics.fill(previewX - 1, sliderY - 1, previewX + previewSize + 1, sliderY + previewSize + 1, 0xFFFFFFFF);
         graphics.fill(previewX, sliderY, previewX + previewSize, sliderY + previewSize, 0xFF000000 | color);
+
+        poseStack.popPose();
     }
 
     private void drawStringWithBorder(GuiGraphics graphics, String text, int x, int y, int color) {
