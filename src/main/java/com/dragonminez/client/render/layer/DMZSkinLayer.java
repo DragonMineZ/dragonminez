@@ -6,6 +6,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -182,7 +183,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         String currentForm = character.getActiveForm();
         int hairId = character.getHairId();
 
-        if (!raceName.equals("human") && !raceName.equals("saiyan")) return;
+        if (!HairManager.canUseHair(character)) return;
         if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
         if (hairId == 5) return;
 		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;

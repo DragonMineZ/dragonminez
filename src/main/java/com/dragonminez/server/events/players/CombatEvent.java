@@ -61,6 +61,7 @@ public class CombatEvent {
 
 				double mcBaseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
+				double dmgNoMult = attackerData.getMeleeDamageWithoutMults();
 				boolean wantsCombo = ComboManager.isNextHitCombo(attacker.getUUID());
 				ComboManager.setNextHitAsCombo(attacker.getUUID(), false);
 				boolean isCooldownFull = false;
@@ -80,11 +81,12 @@ public class CombatEvent {
 
 					float damageScale = 0.2F + adjustedStrength * adjustedStrength * 0.8F;
 					dmzDamage *= damageScale;
+					dmgNoMult *= damageScale;
 				} else {
 					isCooldownFull = true;
 				}
 
-				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
+				int baseStaminaRequired = (int) Math.ceil(dmgNoMult * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
 				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();

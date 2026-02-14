@@ -482,6 +482,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 		}
 
+		if (!ConfigManager.isDefaultRace(character.getRace().toLowerCase()) && HairManager.canUseHair(character)) maxHair = HairManager.getPresetCount();
+
         int newHair = character.getHairId() + delta;
 
         if (newHair < 0) {

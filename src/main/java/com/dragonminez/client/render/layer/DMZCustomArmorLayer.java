@@ -91,9 +91,6 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
             poseStack.pushPose();
 
-            // === AJUSTES DINÁMICOS POR RAZA/FORMA ===
-            // Si es Oozaru, bajamos más el modelo (-0.095f) y usamos menos inflación (1.0f o 1.01f)
-            // Si es Majin/Slim, mantenemos tus valores originales.
             float translateY = isOozaruTarget ? -0.087f : -0.025f;
             float inflation = isOozaruTarget ? 1.021f : 1.02f;
 
@@ -123,7 +120,10 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
                     syncBoneRecursively(bone, playerModel);
                 }
 
+				poseStack.pushPose();
+				poseStack.translate(0, -0.05f, 0);
                 renderModel(vanillaArmorModel, poseStack, bufferSource, animatable, texture, 1.0F, 1.0F, 1.0F, partialTick, packedLight);
+				poseStack.popPose();
 
                 if (armorItem instanceof DyeableArmorItem) {
                     ResourceLocation overlayTex = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, "overlay");
