@@ -6,18 +6,18 @@
   ],
   "spawners": [{
     "type": "dragonminez:saga_friezasoldier01",
-    "weight": 10,
+    "weight": 1,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 1
   },{
     "type": "dragonminez:saga_friezasoldier02",
-    "weight": 10,
+    "weight": 1,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 1
   },{
     "type": "dragonminez:saga_friezasoldier03",
-    "weight": 10,
+    "weight": 1,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 1
   }]
 }
