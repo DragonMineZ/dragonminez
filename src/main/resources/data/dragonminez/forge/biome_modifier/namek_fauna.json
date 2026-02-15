@@ -6,13 +6,13 @@
   ],
   "spawners": [{
     "type": "dragonminez:namek_frog",
-    "weight": 30,
+    "weight": 2,
     "minCount": 1,
-    "maxCount": 5
+    "maxCount": 3
   },{
     "type": "dragonminez:namek_frog_ginyu",
     "weight": 5,
     "minCount": 1,
-    "maxCount": 2
+    "maxCount": 1
   }]
 }
