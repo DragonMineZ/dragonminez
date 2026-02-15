@@ -31,7 +31,6 @@ public class ModRenderTypes extends RenderType {
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                     .setCullState(NO_CULL)
                     .setWriteMaskState(COLOR_WRITE)
-                    .setLightmapState(LIGHTMAP)
                     .setOverlayState(OVERLAY)
                     .createCompositeState(false)));
     private static final Function<ResourceLocation, RenderType> LIGHTNING = Util.memoize((pLocation) ->
