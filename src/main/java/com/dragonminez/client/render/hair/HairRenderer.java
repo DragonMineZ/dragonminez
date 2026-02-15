@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
+import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsData;
@@ -34,7 +35,7 @@ public class HairRenderer {
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
 
-		if (character != null && !character.getRace().equals("human") && !character.getRace().equals("saiyan") && !(character.getRace().equals("majin") && character.getGender().equals(Character.GENDER_FEMALE))) return;
+		if (character != null && !HairManager.canUseHair(character)) return;
 
 		float movementIntensity = 0.0f;
 		boolean isCharging = false;

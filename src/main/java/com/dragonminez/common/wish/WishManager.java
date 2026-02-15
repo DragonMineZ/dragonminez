@@ -109,13 +109,14 @@ public class WishManager {
         JsonArray wishesArray = new JsonArray();
 
         if (dragonName.equals("shenron")) {
-            wishesArray.add(new ItemWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc", "dragonminez:senzu_bean", 6).toJson());
+            wishesArray.add(new ItemWish("wish.shenron.senzu.name", "wish.shenron.senzu.desc", "dragonminez:senzu_bean", 16).toJson());
             wishesArray.add(new TPSWish("wish.shenron.tps.name", "wish.shenron.tps.desc", 5000).toJson());
             wishesArray.add(new CommandWish("wish.shenron.materials.name", "wish.shenron.materials.desc", "give %player% dragonminez:kikono_shard 32", "give %player% minecraft:iron_ingot 64").toJson());
 			wishesArray.add(new ItemWish("wish.shenron.powerpole.name", "wish.shenron.powerpole.desc", "dragonminez:power_pole", 1).toJson());
 			wishesArray.add(new CommandWish("wish.shenron.strongest.name", "wish.shenron.strongest.desc", "give %player% dragonminez:strongest_armor_chestplate 1", "give %player% dragonminez:strongest_armor_leggings 1", "give %player% dragonminez:strongest_armor_boots 1").toJson());
+			wishesArray.add(new ItemWish("wish.shenron.mightfruit.name", "wish.shenron.mightfruit.desc", "dragonminez:might_tree_fruit", 16).toJson());
         } else if (dragonName.equals("porunga")) {
-            wishesArray.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 16).toJson());
+            wishesArray.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 32).toJson());
             wishesArray.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000).toJson());
             wishesArray.add(new CommandWish("wish.porunga.materials.name", "wish.porunga.materials.desc", "give %player% dragonminez:kikono_shard 64", "give %player% minecraft:iron_ingot 128").toJson());
 			wishesArray.add(new CommandWish("wish.porunga.invincible.name", "wish.porunga.invincible.desc", "give %player% dragonminez:invencible_armor_helmet 1", "give %player% dragonminez:invencible_armor_chestplate 1", "give %player% dragonminez:invencible_armor_leggings 1", "give %player% dragonminez:invencible_armor_boots 1").toJson());

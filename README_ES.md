@@ -58,12 +58,13 @@ de [Freesound](https://freesound.org/):
 
 - [Yuseix](https://github.com/yuseix300) | *Fundador y Programador*.
 - [ezShokkoh](https://github.com/Shokkoh) | *Fundador y Programador*.
-- [KyoSleep](https://github.com/KyoSleep1) | *Programador & Tech Lead*.
-- [Bruno](https://github.com/Bruneitor123) | *Programador & Community Admin*.
+- [Bruno](https://github.com/Bruneitor123) | *Community Admin*.
 
 ### Contribuidores
 
 - [Bati2ra](https://github.com/Bati2ra) | *Programador*
+- [KyoSleep](https://github.com/KyoSleep1) | *Programador*
+- JotaJoestar | Modelador y Animador
 - Toji71_ | *Constructor*
 
 ## Licencia

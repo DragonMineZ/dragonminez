@@ -54,24 +54,15 @@ Copyright © 2025 GeckoThePecko. See the `THIRD_PARTY_LICENSES` file for details
 
 - [Yuseix](https://github.com/yuseix300) | *Founder & Programmer*.
 - [ezShokkoh](https://github.com/Shokkoh) | *Founder & Programmer*.
-- [KyoSleep](https://github.com/KyoSleep1) | *Programmer & Tech Lead*.
-- [Bruno](https://github.com/Bruneitor123) | *Programmer & Community Admin*.
+- [Bruno](https://github.com/Bruneitor123) | *Community Admin*.
 
 ### Contributors
 
 - [Bati2ra](https://github.com/Bati2ra) | *Programmer*
+- [KyoSleep](https://github.com/KyoSleep1) | *Programmer*
+- JotaJoestar | Modeler and Animator
 - Toji71_ | Builder
 
-### Patreons
-
-- CyaneaCapillata
-- Robberto10
-- SpaceCarp
-- iLalox
-- Athrizel
-- Dssccat
-- Eren Jeager
-- Slut4GhostFace
 
 ## License
 

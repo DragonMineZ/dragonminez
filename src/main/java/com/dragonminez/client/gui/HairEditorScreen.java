@@ -1,7 +1,6 @@
 package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.AxisSlider;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
@@ -19,10 +18,12 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
@@ -686,7 +687,7 @@ public class HairEditorScreen extends ScaledScreen {
                 .build());
 
         addRenderableWidget(new TexturedTextButton.Builder()
-                .position(centerX - 70 - 45, bottomY)
+                .position(centerX - 163, bottomY)
 				.size(74, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(0, 28, 0, 48)
@@ -696,7 +697,7 @@ public class HairEditorScreen extends ScaledScreen {
                 .build());
 
         addRenderableWidget(new TexturedTextButton.Builder()
-                .position(centerX - 35, bottomY)
+                .position(centerX - 79, bottomY)
 				.size(74, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(0, 28, 0, 48)
@@ -706,13 +707,23 @@ public class HairEditorScreen extends ScaledScreen {
                 .build());
 
         addRenderableWidget(new TexturedTextButton.Builder()
-                .position(centerX + 35 + 10, bottomY)
+                .position(centerX + 5, bottomY)
 				.size(74, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
                 .message(Component.translatable("gui.dragonminez.hair_editor.cancel"))
                 .onPress(btn -> cancelAndClose())
+                .build());
+
+        addRenderableWidget(new TexturedTextButton.Builder()
+                .position(centerX + 89, bottomY)
+				.size(74, 20)
+				.texture(STAT_BUTTONS)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+                .message(Component.translatable("gui.dragonminez.hair_editor.hair_salon"))
+                .onPress(btn -> openHairSalon())
                 .build());
     }
 
@@ -1234,6 +1245,21 @@ public class HairEditorScreen extends ScaledScreen {
             GLOBAL_SWITCHING = true;
         }
         Minecraft.getInstance().setScreen(previousScreen);
+    }
+
+    private void openHairSalon() {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new ConfirmLinkScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        Util.getPlatform().openUri("https://dragonminez.com/hairsalon");
+                    }
+                    this.minecraft.setScreen(this);
+                },
+                "https://dragonminez.com/hairsalon",
+                true
+            ));
+        }
     }
 
     @Override

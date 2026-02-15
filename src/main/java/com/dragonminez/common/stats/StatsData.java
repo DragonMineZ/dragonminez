@@ -117,6 +117,13 @@ public class StatsData {
 		return (1 + (stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling));
 	}
 
+	public double getMeleeDamageWithoutMults() {
+		double strScaling = getStatScaling("STR");
+		double bonusStr = bonusStats.calculateBonus("STR", 0);
+		double releaseMultiplier = resources.getPowerRelease() / 100.0;
+		return (1 + (stats.getStrength() * strScaling) + (bonusStr * strScaling) * releaseMultiplier);
+	}
+
     public double getMeleeDamage() {
         double strScaling = getStatScaling("STR");
         double strMult = 1.0 + getTotalMultiplier("STR");

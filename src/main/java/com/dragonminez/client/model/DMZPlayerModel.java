@@ -78,7 +78,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             var activeFormData = character.getActiveFormData();
             if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
                 ResourceLocation formLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + activeFormData.getCustomModel() + ".geo.json");
-                if (modelExists(formLoc)) return formLoc;
+                if (fileExists(formLoc)) return formLoc;
             }
 
             if (race.equals("majin") && hasForm) {
@@ -108,7 +108,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
             if (this.customModel != null && !this.customModel.isEmpty()) {
                 ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.customModel + ".geo.json");
-                if (modelExists(customLoc)) return customLoc;
+                if (fileExists(customLoc)) return customLoc;
             }
 
             return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
@@ -122,13 +122,13 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 		var activeFormData = data.getCharacter().getActiveFormData();
 		if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
 			ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + activeFormData.getCustomModel() + ".png");
-			if (Minecraft.getInstance().getResourceManager().getResource(customTex).isPresent()) return customTex;
+			if (fileExists(customTex)) return customTex;
 		} else if (this.customModel != null && !this.customModel.isEmpty()) {
 			ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + this.customModel + ".png");
-			if (Minecraft.getInstance().getResourceManager().getResource(customTex).isPresent()) return customTex;
+			if (fileExists(customTex)) return customTex;
 		}
-        return textureLocation;
-		}).orElse(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
+		return t.getSkinTextureLocation();
+		}).orElse(t.getSkinTextureLocation());
     }
 
     @Override
@@ -185,7 +185,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     }
 
-    private boolean modelExists(ResourceLocation location) {
+    private boolean fileExists(ResourceLocation location) {
         return Minecraft.getInstance().getResourceManager().getResource(location).isPresent();
     }
 
