@@ -140,7 +140,7 @@ public class ModCommonEvents {
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_AJISSA_SAPLING.getId(), MainBlocks.POTTED_AJISSA_SAPLING);
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_SACRED_SAPLING.getId(), MainBlocks.POTTED_SACRED_SAPLING);
 
-			Regions.register(new OverworldRegion(5));
+			Regions.register(new OverworldRegion(14)); //activa cam
 			SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, Reference.MOD_ID, OverworldSurfaceRules.makeRules());
 		});
 	}

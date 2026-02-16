@@ -33,8 +33,11 @@ public class OverworldBiomes {
 		BiomeDefaultFeatures.addDesertVegetation(biomeBuilder);
 		BiomeDefaultFeatures.addDesertExtraVegetation(biomeBuilder);
 
-		biomeBuilder.addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION,
+		biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION,
 				context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.STONE_SPIKE_PLACED_KEY));
+
+        biomeBuilder.addFeature(GenerationStep.Decoration.RAW_GENERATION,
+                context.lookup(Registries.PLACED_FEATURE).getOrThrow(OverworldPlacedFeatures.ROCKY_PEAK_PLACED_KEY));
 
 		BiomeSpecialEffects.Builder effectsBuilder = new BiomeSpecialEffects.Builder()
 				.waterColor(0x3F76E4)
