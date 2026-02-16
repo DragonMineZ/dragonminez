@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.zip.GZIPInputStream;
 
 public class CrowdinManager {
-	private static final String DISTRIBUTION_HASH = "b1c2021adfbeed64af36778ssuc";
+	private static final String DISTRIBUTION_HASH = "d73150d692be7df04ba8738ssuc";
 	private static final String BASE_URL = "https://distributions.crowdin.net/" + DISTRIBUTION_HASH;
 	private static JsonObject cachedLangData = null;
 	private static String cachedLangCode = "";
@@ -88,15 +88,17 @@ public class CrowdinManager {
 	}
 
 	private static String formatPath(String mcCode) {
+		String basePath = "/content/src/main/resources/assets/dragonminez/lang/";
+
 		String[] parts = mcCode.split("_");
 		String lang = parts[0];
 		String region = (parts.length > 1) ? parts[1].toUpperCase() : "";
 
-		if (region.isEmpty()) {
-			return "/content/" + lang + ".json";
-		}
+		String fileName;
+		if (region.isEmpty()) fileName = lang + ".json";
+		else fileName = lang + "_" + region + ".json";
 
-		return "/content/" + lang + "_" + region + ".json";
+		return basePath + fileName;
 	}
 
 	public static InputStream getStream() {
