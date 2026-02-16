@@ -184,49 +184,50 @@ public class StoryModeEvents {
 		}
 	}
 
-	private static boolean checkLocationCondition(ServerPlayer player, QuestObjective objective) {
-		BlockPos pos = player.blockPosition();
-		ServerLevel level = player.serverLevel();
+    private static boolean checkLocationCondition(ServerPlayer player, QuestObjective objective) {
+        BlockPos pos = player.blockPosition();
+        ServerLevel level = player.serverLevel();
 
-		if (objective instanceof BiomeObjective biomeObj) {
-			try {
-				String target = biomeObj.getBiomeId();
-				Holder<Biome> biomeHolder = level.getBiome(pos);
+        if (objective instanceof BiomeObjective biomeObj) {
+            try {
+                String target = biomeObj.getBiomeId();
+                Holder<Biome> biomeHolder = level.getBiome(pos);
 
-				if (target.startsWith("#")) {
-					String tagName = target.substring(1);
-					if (!tagName.contains(":")) tagName = "minecraft:" + tagName;
-					TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, ResourceLocation.parse(tagName));
-					return biomeHolder.is(tagKey);
-				} else {
-					ResourceKey<Biome> key = biomeHolder.unwrapKey().orElse(null);
-					if (key != null) {
-						String normalizedTarget = target.contains(":") ? target : "minecraft:" + target;
-						String currentLocation = key.location().toString();
-						return currentLocation.equals(normalizedTarget);
-					}
-				}
-			} catch (Exception e) {
-				return false;
-			}
-		}
-		else if (objective instanceof StructureObjective structObj) {
-			try {
-				String target = structObj.getStructureId();
-				String normalizedTarget = target.contains(":") ? target : "minecraft:" + target;
-				ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, ResourceLocation.parse(normalizedTarget));
-				return level.structureManager().getStructureWithPieceAt(pos, key).isValid();
-			} catch (Exception e) {
-				return false;
-			}
-		}
-		else if (objective instanceof CoordsObjective coordsObj) {
-			double distSq = pos.distSqr(coordsObj.getTargetPos());
-			double radiusSq = coordsObj.getRadius() * coordsObj.getRadius();
-			return distSq <= radiusSq;
-		}
-		return false;
-	}
+                if (target.startsWith("#")) {
+                    ResourceLocation tagRL = ResourceLocation.parse(target.substring(1));
+                    TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, tagRL);
+                    return biomeHolder.is(tagKey);
+                }
+                else {
+                    ResourceLocation biomeRL = ResourceLocation.parse(target.contains(":") ? target : "minecraft:" + target);
+                    return biomeHolder.is(biomeRL);
+                }
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        else if (objective instanceof StructureObjective structObj) {
+            try {
+                String target = structObj.getStructureId();
+                ResourceLocation structRL = ResourceLocation.parse(target.contains(":") ? target : "minecraft:" + target);
+
+                ResourceKey<Structure> structKey = ResourceKey.create(Registries.STRUCTURE, structRL);
+
+                return level.structureManager().getStructureWithPieceAt(pos, structKey).isValid();
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        else if (objective instanceof CoordsObjective coordsObj) {
+            double distSq = pos.distSqr(coordsObj.getTargetPos());
+            double radiusSq = (double) coordsObj.getRadius() * coordsObj.getRadius();
+            return distSq <= radiusSq;
+        }
+
+        return false;
+    }
 
 	private static int countItems(ServerPlayer player, String itemId) {
 		try {
