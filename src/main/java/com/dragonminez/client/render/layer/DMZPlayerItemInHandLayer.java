@@ -59,6 +59,7 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	protected void renderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack,
 									  T animatable, MultiBufferSource bufferSource,
 									  float partialTick, int packedLight, int packedOverlay) {
+		if (animatable.isInvisible()) return;
 
 		if (bone.getName().equals("right_hand_item") || bone.getName().equals("left_hand_item")) {
 			poseStack.pushPose();

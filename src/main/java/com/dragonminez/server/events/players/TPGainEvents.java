@@ -64,6 +64,10 @@ public class TPGainEvents {
 			});
 		}
 
+		// Final multiplier
+		double configMultiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
+		modifiedTP[0] *= (int) configMultiplier;
+
         event.setTpGain(modifiedTP[0]);
     }
 }

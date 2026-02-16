@@ -30,7 +30,7 @@ public class HairRenderer {
 	public static void render(PoseStack poseStack, MultiBufferSource bufferSource,
 							  CustomHair hairFrom, CustomHair hairTo, float transitionFactor,
 							  Character character, StatsData stats, AbstractClientPlayer player,
-							  String colorFrom, String colorTo, float partialTick, int packedLight, int packedOverlay) {
+							  String colorFrom, String colorTo, float partialTick, int packedLight, int packedOverlay, float alpha) {
 
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
@@ -96,7 +96,7 @@ public class HairRenderer {
 						lerpRotX, lerpRotY, lerpRotZ,
 						lerpScaleX, lerpScaleY, lerpScaleZ, lerpStretch,
 						lerpCurveX, lerpCurveY, lerpCurveZ,
-						lerpW, lerpH, lerpD, length, s1.getId(), face);
+						lerpW, lerpH, lerpD, length, s1.getId(), face, alpha);
 			}
 		}
 	}
@@ -108,10 +108,30 @@ public class HairRenderer {
 	}
 
 	private static String getColor(Character character, HairStrand s1, HairStrand s2, float factor, String colorFrom, String colorTo) {
+		final boolean shouldInterpolate = colorFrom != null && colorTo != null && !colorFrom.equals(colorTo) && factor > 0.0f && factor < 1.0f;
+		if (character != null && character.hasActiveForm()) {
+			if (shouldInterpolate) {
+				return interpolateColor(colorFrom, colorTo, factor);
+			}
+			return factor >= 1.0f ? colorTo : colorFrom;
+		}
+
 		HairStrand targetStrand = (factor > 0.5f) ? s2 : s1;
-		if (targetStrand != null && targetStrand.hasCustomColor()) return targetStrand.getColor();
-		if (colorFrom != null && colorFrom.equals(colorTo)) return colorFrom;
-		if (colorFrom != null && colorTo != null && factor > 0.0f && factor < 1.0f) return interpolateColor(colorFrom, colorTo, factor);
+
+		if (s1 != null && s1.hasCustomColor() && s2 != null && s2.hasCustomColor()) {
+			String c1 = s1.getColor();
+			String c2 = s2.getColor();
+			if (!c1.equals(c2) && factor > 0.0f && factor < 1.0f) {
+				return interpolateColor(c1, c2, factor);
+			}
+			return (factor > 0.5f) ? c2 : c1;
+		} else if (targetStrand != null && targetStrand.hasCustomColor()) {
+			return targetStrand.getColor();
+		}
+
+		if (shouldInterpolate) {
+			return interpolateColor(colorFrom, colorTo, factor);
+		}
 		return factor >= 1.0f ? colorTo : colorFrom;
 	}
 
@@ -135,7 +155,7 @@ public class HairRenderer {
 												 float rotX, float rotY, float rotZ,
 												 float scaleX, float scaleY, float scaleZ, float stretchFactor,
 												 float curveX, float curveY, float curveZ,
-												 float width, float height, float depth, int length, int id, HairFace face) {
+												 float width, float height, float depth, int length, int id, HairFace face, float alpha) {
 
 		float[] rgb = ColorUtils.hexToRgb(colorHex);
 		poseStack.pushPose();
@@ -191,7 +211,7 @@ public class HairRenderer {
 				applyRotation(poseStack, curveX, curveY, curveZ);
 			}
 
-			renderCube(poseStack, bufferSource, cubeW, cubeH, cubeD, rgb[0], rgb[1], rgb[2], packedLight, packedOverlay);
+			renderCube(poseStack, bufferSource, cubeW, cubeH, cubeD, rgb[0], rgb[1], rgb[2], packedLight, packedOverlay, alpha);
 			accumulatedHeight = cubeH;
 		}
 
@@ -204,8 +224,12 @@ public class HairRenderer {
 		if (rotZ != 0) poseStack.mulPose(Axis.ZP.rotationDegrees(rotZ));
 	}
 
-    private static void renderCube(PoseStack poseStack, MultiBufferSource bufferSource, float width, float height, float depth, float r, float g, float b, int packedLight, int packedOverlay) {
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(HAIR_TEXTURE));
+    private static void renderCube(PoseStack poseStack, MultiBufferSource bufferSource, float width, float height, float depth, float r, float g, float b, int packedLight, int packedOverlay, float alpha) {
+		RenderType type = (alpha < 1.0f)
+				? RenderType.itemEntityTranslucentCull(HAIR_TEXTURE)
+				: RenderType.entityCutoutNoCull(HAIR_TEXTURE);
+
+		VertexConsumer buffer = bufferSource.getBuffer(type);
         Matrix4f pose = poseStack.last().pose();
         Matrix3f normal = poseStack.last().normal();
 
@@ -219,18 +243,18 @@ public class HairRenderer {
         float v1 = 1.0f;
 
 		// Bottom, Top, North, South, East, West
-		addQuad(buffer, pose, normal, -hw, 0, -hd, hw, 0, -hd, hw, 0, hd, -hw, 0, hd, 0, -1, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay);
-		addQuad(buffer, pose, normal, -hw, h, hd, hw, h, hd, hw, h, -hd, -hw, h, -hd, 0, 1, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay);
-		addQuad(buffer, pose, normal, -hw, 0, -hd, -hw, h, -hd, hw, h, -hd, hw, 0, -hd, 0, 0, -1, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay);
-		addQuad(buffer, pose, normal, hw, 0, hd, hw, h, hd, -hw, h, hd, -hw, 0, hd, 0, 0, 1, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay);
-		addQuad(buffer, pose, normal, hw, 0, -hd, hw, h, -hd, hw, h, hd, hw, 0, hd, 1, 0, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay);
-		addQuad(buffer, pose, normal, -hw, 0, hd, -hw, h, hd, -hw, h, -hd, -hw, 0, -hd, -1, 0, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay);
+		addQuad(buffer, pose, normal, -hw, 0, -hd, hw, 0, -hd, hw, 0, hd, -hw, 0, hd, 0, -1, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, h, hd, hw, h, hd, hw, h, -hd, -hw, h, -hd, 0, 1, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, 0, -hd, -hw, h, -hd, hw, h, -hd, hw, 0, -hd, 0, 0, -1, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, hw, 0, hd, hw, h, hd, -hw, h, hd, -hw, 0, hd, 0, 0, 1, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, hw, 0, -hd, hw, h, -hd, hw, h, hd, hw, 0, hd, 1, 0, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, 0, hd, -hw, h, hd, -hw, h, -hd, -hw, 0, -hd, -1, 0, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
 	}
 
-    private static void addQuad(VertexConsumer buffer, Matrix4f pose, Matrix3f normal, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float nx, float ny, float nz, float r, float g, float b, float u0, float v0, float u1, float v1, int packedLight, int packedOverlay) {
-        buffer.vertex(pose, x1, y1, z1).color(r, g, b, 1.0f).uv(u0, v0).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
-        buffer.vertex(pose, x2, y2, z2).color(r, g, b, 1.0f).uv(u0, v1).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
-        buffer.vertex(pose, x3, y3, z3).color(r, g, b, 1.0f).uv(u1, v1).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
-        buffer.vertex(pose, x4, y4, z4).color(r, g, b, 1.0f).uv(u1, v0).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
+    private static void addQuad(VertexConsumer buffer, Matrix4f pose, Matrix3f normal, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float nx, float ny, float nz, float r, float g, float b, float u0, float v0, float u1, float v1, int packedLight, int packedOverlay, float alpha) {
+        buffer.vertex(pose, x1, y1, z1).color(r, g, b, alpha).uv(u0, v0).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
+        buffer.vertex(pose, x2, y2, z2).color(r, g, b, alpha).uv(u0, v1).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
+        buffer.vertex(pose, x3, y3, z3).color(r, g, b, alpha).uv(u1, v1).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
+        buffer.vertex(pose, x4, y4, z4).color(r, g, b, alpha).uv(u1, v0).overlayCoords(packedOverlay).uv2(packedLight).normal(normal, nx, ny, nz).endVertex();
     }
 }

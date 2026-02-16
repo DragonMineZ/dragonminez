@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.util.AuraRenderQueue;
+import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -20,11 +21,12 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
     @Override
     public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+        if (animatable.isSpectator()) return;
         var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 
         if (stats == null || !stats.getStatus().isAuraActive()) return;
-		if (stats.getStatus().isAndroidUpgraded()) return;
-        AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
+		if (stats.getStatus().isAndroidUpgraded() && (!stats.getStatus().isActionCharging() || !stats.getStatus().getSelectedAction().equals(ActionMode.FORM))) return;
+		AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
         AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
     }
 }
