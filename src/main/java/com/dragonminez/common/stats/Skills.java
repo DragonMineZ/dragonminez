@@ -81,18 +81,9 @@ public class Skills {
         skillMap.get(lowerName).setLevel(level);
     }
 
-    public void removeSkill(String name) {
-        String lowerName = name.toLowerCase();
-        if (lowerName.equals("superform") || lowerName.equals("godform") || lowerName.equals("legendaryforms")) {
-            Skill skill = skillMap.get(lowerName);
-            if (skill != null) {
-                skill.setLevel(0);
-                skill.setActive(false);
-            }
-        } else {
-            skillMap.remove(lowerName);
-        }
-    }
+	public void removeSkill(String name) {
+		skillMap.remove(name.toLowerCase());
+	}
 
 	public void removeAllSkills() {
 		skillMap.clear();

@@ -60,7 +60,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     private TexturedTextButton upgradeButton;
 
     public SkillsMenuScreen() {
-        super(Component.translatable("gui.dragonminez.skills.title"));
+        super(Component.literal("Skills"));
     }
 
     @Override
@@ -175,7 +175,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         switch (currentCategory) {
             case SKILLS:
                 skills.getAllSkills().forEach((name, skill) -> {
-                    if (!name.equals("superform") && !name.equals("godform") && !name.equals("legendaryforms")) {
+                    if (!name.equals("superform") && !name.equals("godform") && !name.equals("legendaryforms") && !name.equals("androidforms")) {
                         skillNames.add(name);
                     }
                 });
@@ -187,9 +187,11 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                 if (skills.hasSkill("superform")) skillNames.add("superform");
                 if (skills.hasSkill("godform")) skillNames.add("godform");
                 if (skills.hasSkill("legendaryforms")) skillNames.add("legendaryforms");
+				if (skills.hasSkill("androidforms")) skillNames.add("androidforms");
                 break;
         }
 
+		skillNames.sort(String::compareToIgnoreCase);
         return skillNames;
     }
 
