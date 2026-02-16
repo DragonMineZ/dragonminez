@@ -50,7 +50,7 @@ public class GeneralServerConfig {
 		private int fusionCooldownSeconds = 1800;
 
 		public int getReviveCooldownSeconds() { return Math.max(0, reviveCooldownSeconds); }
-        public double getTpsMultiplier() { return Math.max(0, tpGainMultiplier); }
+        public double getTpsGainMultiplier() { return Math.max(0, tpGainMultiplier); }
 		public double getTpCostMultiplier() { return Math.max(0.01, tpCostMultiplier); }
 		public double getTpHealthRatio() { return Math.max(0, tpHealthRatio); }
 		public int getTpPerHit() { return Math.max(0, tpPerHit); }
