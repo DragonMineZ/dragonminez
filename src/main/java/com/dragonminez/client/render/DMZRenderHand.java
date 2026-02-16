@@ -518,7 +518,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
     }
 
     private void renderKiPart(PoseStack ps, MultiBufferSource buffer, int light, ModelPart part, float[] color) {
-        VertexConsumer vc = buffer.getBuffer(ModRenderTypes.energy(KI_WEAPON_TEX));
+        VertexConsumer vc = buffer.getBuffer(ModRenderTypes.kiblast(KI_WEAPON_TEX));
         part.render(ps, vc, light, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], 0.85F);
     }
 

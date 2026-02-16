@@ -47,7 +47,7 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
         float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
         float[] auraColor2 = ColorUtils.rgbIntToFloat(entity.getColorBorde());
 
-        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE));
+        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE));
 
         poseStack.translate(0.0D, -0.2D, 0.2D);
 
@@ -59,7 +59,7 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
                 auraColor[0], auraColor[1], auraColor[2],
                 0.7F
         );
-        VertexConsumer auraBuffer2 = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_2));
+        VertexConsumer auraBuffer2 = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_2));
         this.model.renderToBuffer(
                 poseStack,
                 auraBuffer2,

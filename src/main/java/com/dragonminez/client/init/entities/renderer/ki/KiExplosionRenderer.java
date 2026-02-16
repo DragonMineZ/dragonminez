@@ -52,20 +52,20 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
         // RENDER CORE
         float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_CORE));
+        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
         this.model.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
                 auraColor[0], auraColor[1], auraColor[2], 1.0F);
 
         poseStack.pushPose();
-        poseStack.translate(0, 0, -0.01F);
+        poseStack.translate(0, 0, -0.05F);
         float[] coreColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
-        VertexConsumer coreBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_BORDER));
+        VertexConsumer coreBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
         this.model.renderToBuffer(poseStack, coreBuffer, 15728880, OverlayTexture.NO_OVERLAY,
                 coreColor[0], coreColor[1], coreColor[2], 1.0F);
         poseStack.popPose();
 
         poseStack.popPose();
-        super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
+        //super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
     @Override

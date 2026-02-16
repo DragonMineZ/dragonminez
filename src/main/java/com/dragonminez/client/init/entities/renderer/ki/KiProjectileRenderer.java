@@ -44,7 +44,7 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
         float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
 
-        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_CORE));
+        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.kiblast(TEXTURE_CORE));
 
         this.model.renderToBuffer(
                 poseStack,
@@ -62,7 +62,7 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
         float[] coreColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
 
-        VertexConsumer coreBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_BORDER));
+        VertexConsumer coreBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
 
         this.model.renderToBuffer(
                 poseStack,

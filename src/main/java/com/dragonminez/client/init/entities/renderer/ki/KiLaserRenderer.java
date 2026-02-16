@@ -72,7 +72,7 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         this.expModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
         this.exp2Model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
-        VertexConsumer expBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_EXP_COLOR));
+        VertexConsumer expBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_EXP_COLOR));
 
 
         poseStack.pushPose();
@@ -115,7 +115,7 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         poseStack.pushPose();
         poseStack.translate(0.0D, -0.3D, 0.0D);
         poseStack.scale(1.2F, 1.2F, 1.0F);
-        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_LASER_CORE));
+        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_LASER_CORE));
         this.laserModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F);
         poseStack.popPose();
 
@@ -151,7 +151,7 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         this.ballModel.renderToBuffer(poseStack, ballCoreBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 1.0F);
         poseStack.pushPose();
         poseStack.translate(0, 0, -0.01F);
-        VertexConsumer ballBorderBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_BALL_BORDER));
+        VertexConsumer ballBorderBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_BALL_BORDER));
         this.ballModel.renderToBuffer(poseStack, ballBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F);
         poseStack.popPose();
     }

@@ -110,7 +110,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         poseStack.pushPose();
         poseStack.translate(0, 0, -0.01F);
-        VertexConsumer ballBorderBuffer = buffer.getBuffer(ModRenderTypes.glow(TEXTURE_BALL_BORDER));
+        VertexConsumer ballBorderBuffer = buffer.getBuffer(ModRenderTypes.kiblast(TEXTURE_BALL_BORDER));
         this.ballModel.renderToBuffer(poseStack, ballBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F);
         poseStack.popPose();
     }
