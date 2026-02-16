@@ -53,7 +53,7 @@ public class UpdateSkillC2S {
 
 						case "upgrade":
 							if (skill != null && !skill.isMaxLevel()) {
-								if (data.getResources().getTrainingPoints() >= cost) {
+								if (data.getResources().getTrainingPoints() >= cost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 									data.getResources().removeTrainingPoints(cost);
 									skill.addLevel(1);
 								}
