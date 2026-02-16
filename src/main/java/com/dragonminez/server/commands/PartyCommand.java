@@ -18,6 +18,7 @@ public class PartyCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("dmzparty")
+				.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.PARTY_USE))
                 .then(Commands.literal("invite")
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(PartyCommand::invitePlayer)))

@@ -9,69 +9,110 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
 
 public class MasteryCommand {
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzmastery")
-				.requires(source -> source.hasPermission(2))
-
-				// set <group> <form> <value> [targets]
+				// set <target> <group> <form> <value>
 				.then(Commands.literal("set")
-						.then(Commands.argument("group", StringArgumentType.word())
-								.then(Commands.argument("form", StringArgumentType.word())
-										.then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
-												.executes(ctx -> setMastery(ctx.getSource(), StringArgumentType.getString(ctx, "group"), StringArgumentType.getString(ctx, "form"), DoubleArgumentType.getDouble(ctx, "value"), List.of(ctx.getSource().getPlayerOrException()), false))
-												.then(Commands.argument("targets", EntityArgument.players())
-														.executes(ctx -> setMastery(ctx.getSource(), StringArgumentType.getString(ctx, "group"), StringArgumentType.getString(ctx, "form"), DoubleArgumentType.getDouble(ctx, "value"), EntityArgument.getPlayers(ctx, "targets"), false)))))))
+						.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.MASTERY_SET))
+						.then(Commands.argument("target", EntityArgument.player())
+								.then(Commands.argument("group", StringArgumentType.word())
+										.suggests(SUGGEST_GROUPS)
+										.then(Commands.argument("form", StringArgumentType.word())
+												.suggests(SUGGEST_FORMS)
+												.then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+														.executes(ctx -> setMastery(ctx, false)))))))
 
-				// add <group> <form> <value> [targets]
+				// add <target> <group> <form> <value>
 				.then(Commands.literal("add")
-						.then(Commands.argument("group", StringArgumentType.word())
-								.then(Commands.argument("form", StringArgumentType.word())
-										.then(Commands.argument("value", DoubleArgumentType.doubleArg())
-												.executes(ctx -> setMastery(ctx.getSource(), StringArgumentType.getString(ctx, "group"), StringArgumentType.getString(ctx, "form"), DoubleArgumentType.getDouble(ctx, "value"), List.of(ctx.getSource().getPlayerOrException()), true))
-												.then(Commands.argument("targets", EntityArgument.players())
-														.executes(ctx -> setMastery(ctx.getSource(), StringArgumentType.getString(ctx, "group"), StringArgumentType.getString(ctx, "form"), DoubleArgumentType.getDouble(ctx, "value"), EntityArgument.getPlayers(ctx, "targets"), true)))))))
+						.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.MASTERY_ADD))
+						.then(Commands.argument("target", EntityArgument.player())
+								.then(Commands.argument("group", StringArgumentType.word())
+										.suggests(SUGGEST_GROUPS)
+										.then(Commands.argument("form", StringArgumentType.word())
+												.suggests(SUGGEST_FORMS)
+												.then(Commands.argument("value", DoubleArgumentType.doubleArg())
+														.executes(ctx -> setMastery(ctx, true)))))))
 		);
 	}
 
-	private static int setMastery(CommandSourceStack source, String group, String form, double value, Collection<ServerPlayer> targets, boolean add) {
-		int count = 0;
-		AtomicReference<Double> MAX_MASTERY = new AtomicReference<>(100.0);
+	private static final SuggestionProvider<CommandSourceStack> SUGGEST_GROUPS = (context, builder) -> {
+		try {
+			ServerPlayer player = getTarget(context);
+			if (player != null) {
+				String race = StatsProvider.get(StatsCapability.INSTANCE, player)
+						.map(data -> data.getCharacter().getRaceName())
+						.orElse("human");
 
-		for (ServerPlayer player : targets) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				var masteries = data.getCharacter().getFormMasteries();
-				FormConfig.FormData formData = ConfigManager.getForm(data.getCharacter().getRaceName(), group, form);
-				if (formData != null) MAX_MASTERY.set(formData.getMaxMastery());
+				return SharedSuggestionProvider.suggest(ConfigManager.getAllFormsForRace(race).keySet(), builder);
+			}
+		} catch (Exception ignored) {}
+		return SharedSuggestionProvider.suggest(new ArrayList<>(), builder);
+	};
 
-				if (add) {
-					masteries.addMastery(group, form, value, MAX_MASTERY.get());
-				} else {
-					masteries.setMastery(group, form, value);
+	private static final SuggestionProvider<CommandSourceStack> SUGGEST_FORMS = (context, builder) -> {
+		try {
+			ServerPlayer player = getTarget(context);
+			String groupName = StringArgumentType.getString(context, "group");
+
+			if (player != null && groupName != null) {
+				String race = StatsProvider.get(StatsCapability.INSTANCE, player)
+						.map(data -> data.getCharacter().getRaceName())
+						.orElse("human");
+
+				FormConfig groupConfig = ConfigManager.getFormGroup(race, groupName);
+				if (groupConfig != null) {
+					return SharedSuggestionProvider.suggest(groupConfig.getForms().keySet(), builder);
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-			});
-			count++;
-		}
+			}
+		} catch (Exception ignored) {}
+		return SharedSuggestionProvider.suggest(new ArrayList<>(), builder);
+	};
+
+	private static ServerPlayer getTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		EntitySelector selector = context.getArgument("target", EntitySelector.class);
+		return selector.findSinglePlayer(context.getSource());
+	}
+
+	private static int setMastery(CommandContext<CommandSourceStack> ctx, boolean add) throws CommandSyntaxException {
+		ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+		String group = StringArgumentType.getString(ctx, "group");
+		String form = StringArgumentType.getString(ctx, "form");
+		double value = DoubleArgumentType.getDouble(ctx, "value");
+		CommandSourceStack source = ctx.getSource();
+
+		StatsProvider.get(StatsCapability.INSTANCE, target).ifPresent(data -> {
+			var masteries = data.getCharacter().getFormMasteries();
+
+			double maxMastery = 100.0;
+			FormConfig.FormData formData = ConfigManager.getForm(data.getCharacter().getRaceName(), group, form);
+			if (formData != null) maxMastery = formData.getMaxMastery();
+
+			if (add) {
+				masteries.addMastery(group, form, value, maxMastery);
+			} else {
+				masteries.setMastery(group, form, value);
+			}
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
+		});
 
 		String modeKey = add ? "add" : "set";
-		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".success", value,  group, form, targets.iterator().next().getName().getString()), true);
-		} else {
-			int finalCount = count;
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".multiple", value, group, form, finalCount), true);
-		}
-		return count;
+		source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".success", value, group, form, target.getName().getString()), true);
+
+		return 1;
 	}
 }

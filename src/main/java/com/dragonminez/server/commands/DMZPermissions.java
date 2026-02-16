@@ -85,8 +85,14 @@ public class DMZPermissions {
     public static final PermissionNode<Boolean> REVIVE_SELF = register("dmzrevive.self", "Allows reviving yourself.", (player, uuid, context) -> false);
     public static final PermissionNode<Boolean> REVIVE_OTHERS = register("dmzrevive.others", "Allows reviving other players.", (player, uuid, context) -> false);
 
-    public static void init() {
-    }
+	// Party
+	public static final PermissionNode<Boolean> PARTY_USE = register("dmzparty.use", "Allows using party commands.", (player, uuid, context) -> true);
+
+	// Mastery
+	public static final PermissionNode<Boolean> MASTERY_SET = register("dmzmastery.set", "Allows setting transformation mastery.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> MASTERY_ADD = register("dmzmastery.add", "Allows adding transformation mastery.", (player, uuid, context) -> false);
+
+	public static void init() {}
 
     private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {
         PermissionNode<Boolean> permissionNode = new PermissionNode<>(Reference.MOD_ID, node, PermissionTypes.BOOLEAN, defaultResolver);
