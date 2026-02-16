@@ -2,21 +2,26 @@ package com.dragonminez.common.init.entities.namek;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.goals.NamekDefendVillageGoal;
 import com.dragonminez.common.init.entities.goals.VillageAlertSystem;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.DefendVillageTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -25,8 +30,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -71,20 +78,25 @@ public class NamekWarriorEntity extends PathfinderMob implements GeoEntity {
                 .add(Attributes.MAX_HEALTH, 200.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.20D)
                 .add(Attributes.ATTACK_DAMAGE, 15.0D)
+                .add(Attributes.FOLLOW_RANGE, 64.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
+
     }
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.6D, false));
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.9D, false));
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 15.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(2, new MoveBackToVillageGoal(this, 1.0D, false));
+
 
         //FALTA EL GOAL DE DETECTAR EL ALINEAMIENTO
-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
+        this.targetSelector.addGoal(1, new NamekDefendVillageGoal(this));
+        this.targetSelector.addGoal(2, (new HurtByTargetGoal(this)));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
                 (entity) -> {
                     return !(entity instanceof NamekWarriorEntity);
                 }
@@ -202,7 +214,7 @@ public class NamekWarriorEntity extends PathfinderMob implements GeoEntity {
         this.yHeadRotO = targetYaw;
     }
     private void moveTowardsTargetInAir(LivingEntity target) {
-        double flyspeed = 0.35;
+        double flyspeed = 0.65;
         double dx = target.getX() - this.getX();
         double dy = (target.getY() + 1.0D) - this.getY();
         double dz = target.getZ() - this.getZ();
@@ -263,5 +275,18 @@ public class NamekWarriorEntity extends PathfinderMob implements GeoEntity {
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return geoCache;
+    }
+
+    @Override
+    public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
+        return true;
+    }
+
+    public static boolean canSpawnHere(EntityType<? extends DBSagasEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
+        if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
+        if (random.nextFloat() < 0.95f) return false;
+        boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
+        boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
+        return solidGround && noCollision;
     }
 }

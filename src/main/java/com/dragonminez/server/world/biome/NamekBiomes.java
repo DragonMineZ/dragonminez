@@ -1,6 +1,7 @@
 package com.dragonminez.server.world.biome;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.server.world.feature.NamekPlacedFeatures;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -22,14 +23,19 @@ public class NamekBiomes {
 		context.register(NAMEKIAN_RIVERS, namekRiver(context));
 	}
 
-	private static void addWaterMobs(MobSpawnSettings.Builder builder) {
-		builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.SQUID, 10, 1, 4));
-		builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.SALMON, 15, 1, 5));
-		builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.COD, 10, 1, 5));
-		builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.PUFFERFISH, 5, 1, 3));
-		builder.addSpawn(MobCategory.AXOLOTLS, new MobSpawnSettings.SpawnerData(EntityType.AXOLOTL, 5, 1, 2));
-		builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.TROPICAL_FISH, 8, 1, 4));
-	}
+    private static void addWaterMobs(MobSpawnSettings.Builder builder) {
+        builder.addSpawn(MobCategory.WATER_CREATURE, new MobSpawnSettings.SpawnerData(EntityType.SQUID, 10, 1, 4));
+
+        builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.SALMON, 15, 1, 5));
+        builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.COD, 10, 1, 5));
+        builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.PUFFERFISH, 5, 1, 3));
+        builder.addSpawn(MobCategory.WATER_AMBIENT, new MobSpawnSettings.SpawnerData(EntityType.TROPICAL_FISH, 8, 1, 4));
+
+        builder.addSpawn(MobCategory.AXOLOTLS, new MobSpawnSettings.SpawnerData(EntityType.AXOLOTL, 5, 1, 2));
+
+        builder.addMobCharge(EntityType.SQUID, 0.7D, 0.15D);
+        builder.addMobCharge(EntityType.AXOLOTL, 1.0D, 0.12D);
+    }
 
 	private static Biome ajissaPlains(BootstapContext<Biome> context) {
 		var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
@@ -38,9 +44,12 @@ public class NamekBiomes {
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 
-		addWaterMobs(spawnBuilder);
+		//addWaterMobs(spawnBuilder);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 0.9, 0.1D);
 
-		biomeBuilder.addFeature(GenerationStep.Decoration.LAKES, NamekPlacedFeatures.NAMEK_LAKE_LAVA_PLACED);
+        biomeBuilder.addFeature(GenerationStep.Decoration.LAKES, NamekPlacedFeatures.NAMEK_LAKE_LAVA_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.FLUID_SPRINGS, NamekPlacedFeatures.NAMEK_SPRING_LAVA_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.FLUID_SPRINGS, NamekPlacedFeatures.NAMEK_SPRING_WATER_PLACED);
 
@@ -69,7 +78,10 @@ public class NamekBiomes {
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 
-		addWaterMobs(spawnBuilder);
+		//addWaterMobs(spawnBuilder);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 0.9, 0.1D);
+        spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 0.9, 0.1D);
 
 		biomeBuilder.addFeature(GenerationStep.Decoration.LAKES, NamekPlacedFeatures.NAMEK_LAKE_LAVA_PLACED);
 		biomeBuilder.addFeature(GenerationStep.Decoration.FLUID_SPRINGS, NamekPlacedFeatures.NAMEK_SPRING_LAVA_PLACED);
