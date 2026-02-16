@@ -1,6 +1,5 @@
 package com.dragonminez.common.hair;
 
-import com.dragonminez.common.stats.Character;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -137,28 +136,6 @@ public class CustomHair {
 
     public void setGlobalColor(String color) {
         this.globalColor = color;
-    }
-
-    public String getEffectiveColor(HairStrand strand, Character character) {
-        if (character != null && character.hasActiveForm()) return character.getHairColor();
-        if (strand.hasCustomColor()) return strand.getColor();
-
-        if (character != null) {
-            String hairColor = character.getHairColor();
-            if (hairColor != null && !hairColor.isEmpty()) {
-                return hairColor;
-            }
-        }
-
-        return globalColor;
-    }
-
-    @Deprecated
-    public String getEffectiveColor(HairStrand strand) {
-        if (strand.hasCustomColor()) {
-            return strand.getColor();
-        }
-        return globalColor;
     }
 
     public String getName() { return name; }

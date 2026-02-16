@@ -108,10 +108,30 @@ public class HairRenderer {
 	}
 
 	private static String getColor(Character character, HairStrand s1, HairStrand s2, float factor, String colorFrom, String colorTo) {
+		final boolean shouldInterpolate = colorFrom != null && colorTo != null && !colorFrom.equals(colorTo) && factor > 0.0f && factor < 1.0f;
+		if (character != null && character.hasActiveForm()) {
+			if (shouldInterpolate) {
+				return interpolateColor(colorFrom, colorTo, factor);
+			}
+			return factor >= 1.0f ? colorTo : colorFrom;
+		}
+
 		HairStrand targetStrand = (factor > 0.5f) ? s2 : s1;
-		if (targetStrand != null && targetStrand.hasCustomColor()) return targetStrand.getColor();
-		if (colorFrom != null && colorFrom.equals(colorTo)) return colorFrom;
-		if (colorFrom != null && colorTo != null && factor > 0.0f && factor < 1.0f) return interpolateColor(colorFrom, colorTo, factor);
+
+		if (s1 != null && s1.hasCustomColor() && s2 != null && s2.hasCustomColor()) {
+			String c1 = s1.getColor();
+			String c2 = s2.getColor();
+			if (!c1.equals(c2) && factor > 0.0f && factor < 1.0f) {
+				return interpolateColor(c1, c2, factor);
+			}
+			return (factor > 0.5f) ? c2 : c1;
+		} else if (targetStrand != null && targetStrand.hasCustomColor()) {
+			return targetStrand.getColor();
+		}
+
+		if (shouldInterpolate) {
+			return interpolateColor(colorFrom, colorTo, factor);
+		}
 		return factor >= 1.0f ? colorTo : colorFrom;
 	}
 

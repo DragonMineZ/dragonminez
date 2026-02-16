@@ -46,7 +46,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
         var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
-        if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala") && !headItem.getItem().getDescriptionId().contains("scouter") && !headItem.getItem().getDescriptionId().contains("invincible")) return;
+        if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala") && !headItem.getItem().getDescriptionId().contains("scouter") && !headItem.getItem().getDescriptionId().contains("invencible")) return;
 
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
         var stats = statsCap.orElse(new StatsData(animatable));
