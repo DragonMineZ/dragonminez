@@ -71,7 +71,7 @@ public class BoneVisibilityHandler {
                 setHiddenRecursive(bone, !(isMajin && isFemale && isSuperOrUltra))
         );
 
-        if (race.equals("human") || race.equals("namekian")) {
+        if (race.equals("human") || race.equals("namekian") || race.equals("majin")) {
             model.getBone("tail1").ifPresent(bone -> setHiddenRecursive(bone, true));
         }
 
