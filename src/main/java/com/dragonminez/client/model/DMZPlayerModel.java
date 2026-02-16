@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.util.RenderUtil;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
@@ -126,9 +127,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 		} else if (this.customModel != null && !this.customModel.isEmpty()) {
 			ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + this.customModel + ".png");
 			if (fileExists(customTex)) return customTex;
-		}
-		return t.getSkinTextureLocation();
-		}).orElse(t.getSkinTextureLocation());
+			else return t.getSkinTextureLocation();
+		} else if (!ConfigManager.isDefaultRace(data.getCharacter().getRace()) && ConfigManager.getRaceCharacter(data.getCharacter().getRace()).useVanillaSkin()) return t.getSkinTextureLocation();
+		else if ((data.getCharacter().getRace().equals("saiyan") || data.getCharacter().getRace().equals("human")) && data.getCharacter().getBodyType() == 0 && !data.getCharacter().getActiveForm().contains("ozaru")) return t.getSkinTextureLocation();
+
+		return textureLocation;
+		}).orElse(textureLocation);
     }
 
     @Override
