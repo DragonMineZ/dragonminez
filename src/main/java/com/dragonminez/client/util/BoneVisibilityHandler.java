@@ -32,7 +32,9 @@ public class BoneVisibilityHandler {
                 }
             });
             return;
-        }
+        } else {
+			for (GeoBone bone : model.topLevelBones()) setHiddenRecursive(bone, false);
+		}
 
         var character = stats.getCharacter();
         String race = character.getRaceName().toLowerCase();
