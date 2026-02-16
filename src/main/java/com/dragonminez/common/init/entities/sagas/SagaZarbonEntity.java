@@ -96,9 +96,9 @@ public class SagaZarbonEntity extends DBSagasEntity{
         }
     }
 
-    private void startTransformation() {
-        this.setTransforming(true);
-        this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);
+    @Override
+    protected boolean shouldTriggerTransformationOnDeath() {
+        return true;
     }
 
     @Override

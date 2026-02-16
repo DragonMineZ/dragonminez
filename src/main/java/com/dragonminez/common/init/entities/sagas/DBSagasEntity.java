@@ -117,7 +117,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
             if (this.isLightning()) {
                 if (this.random.nextInt(30) == 0) {
-                    float pitch = 0.9F + this.random.nextFloat() * 0.2F; // Variación ligera de tono
+                    float pitch = 0.9F + this.random.nextFloat() * 0.2F;
                     this.playSound(MainSounds.KI_SPARKS.get(), 0.3F, pitch);
                 }
             }
@@ -273,6 +273,15 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     public boolean hurt(DamageSource pSource, float pAmount) {
         if (this.isTransforming()) {
             return false;
+        }
+
+        if (!this.level().isClientSide && pAmount >= this.getHealth()) {
+
+            if (shouldTriggerTransformationOnDeath()) {
+                this.setHealth(1.0F);
+                this.startTransformation();
+                return false;
+            }
         }
 
         return super.hurt(pSource, pAmount);
@@ -586,4 +595,13 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
 		return solidGround && noCollision;
 	}
+
+    protected boolean shouldTriggerTransformationOnDeath() {
+        return false;
+    }
+
+    protected void startTransformation() {
+        this.setTransforming(true);
+        this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);
+    }
 }

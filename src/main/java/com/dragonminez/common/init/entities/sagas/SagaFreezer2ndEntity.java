@@ -150,12 +150,6 @@ public class SagaFreezer2ndEntity extends DBSagasEntity{
         super.stopCasting();
     }
 
-
-    private void startTransformation() {
-        this.setTransforming(true);
-        this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);
-    }
-
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (this.isCasting() && getSkillType() == SKILL_GRAB && this.heldTarget != null) {
@@ -191,5 +185,10 @@ public class SagaFreezer2ndEntity extends DBSagasEntity{
 
         event.getController().forceAnimationReset();
         return PlayState.STOP;
+    }
+
+    @Override
+    protected boolean shouldTriggerTransformationOnDeath() {
+        return true;
     }
 }
