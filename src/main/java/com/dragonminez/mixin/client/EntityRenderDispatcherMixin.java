@@ -75,16 +75,6 @@ public abstract class EntityRenderDispatcherMixin {
         });
     }
 
-	@Unique
-	private boolean isCalledFromInventory() {
-		for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
-			if (element.getClassName().contains("InventoryScreen") && (element.getMethodName().equals("renderEntityInInventory") || element.getMethodName().equals("m_280047_"))) {
-				return true;
-			}
-		}
-		return false;
-	}
-
     @Inject(method = "onResourceManagerReload(Lnet/minecraft/server/packs/resources/ResourceManager;)V", at = @At("TAIL"), locals = LocalCapture.CAPTURE_FAILHARD)
     public void dmz$onResourceManagerReload(ResourceManager resourceManager, CallbackInfo ci, EntityRendererProvider.Context context) {
         this.dragonminez$dmzContext = context;

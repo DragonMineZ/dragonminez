@@ -51,6 +51,11 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         this.currentKaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
 
+        if (player.isSpectator()) {
+            renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
+            return;
+        }
+
         renderBody(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
         renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);
 		renderAndroid(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay);

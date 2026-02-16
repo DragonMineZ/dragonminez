@@ -41,8 +41,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
     @Override
     public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        // No renderizar si tiene un casco que no sea pothala/scouter, es invisible o spectator
-        if (animatable.isInvisible() || animatable.isSpectator()) return;
+		if (animatable.isInvisible() && !animatable.isSpectator()) return;
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
         var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
@@ -166,8 +165,12 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				parentPivotZ = geoBone.getPivotZ();
 			}
 		}
+
+		float alpha = 1.0f;
+		if (animatable.isSpectator()) alpha = 0.15f;
+
 		poseStack.translate(0, 0, 0);
-		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, colorFrom, colorTo, partialTick, packedLight, packedOverlay);
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, colorFrom, colorTo, partialTick, packedLight, packedOverlay, alpha);
 		poseStack.popPose();
 	}
 

@@ -21,6 +21,19 @@ public class BoneVisibilityHandler {
         var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
         if (stats == null) return;
 
+        if (player.isSpectator()) {
+            for (GeoBone bone : model.topLevelBones()) setHiddenRecursive(bone, true);
+            model.getBone("head").ifPresent(head -> {
+                setHiddenRecursive(head, false);
+                GeoBone parent = head.getParent();
+                while (parent != null) {
+                    parent.setHidden(false);
+                    parent = parent.getParent();
+                }
+            });
+            return;
+        }
+
         var character = stats.getCharacter();
         String race = character.getRaceName().toLowerCase();
         String gender = character.getGender().toLowerCase();
