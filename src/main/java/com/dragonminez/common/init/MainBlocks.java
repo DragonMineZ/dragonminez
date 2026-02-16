@@ -318,7 +318,7 @@ public final class MainBlocks {
 
 	//LIQUIDOS
 	public static final RegistryObject<LiquidBlock> HEALING_LIQUID = BLOCK_REGISTER.register("healing_liquid_block",
-			() -> new LiquidBlock(MainFluids.SOURCE_HEALING, BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable().liquid()));
+			() -> new LiquidBlock(MainFluids.SOURCE_HEALING, BlockBehaviour.Properties.copy(Blocks.WATER).noLootTable().liquid().replaceable()));
 
     public static final RegistryObject<LiquidBlock> NAMEK_WATER_LIQUID = BLOCK_REGISTER.register("namek_water_liquid_block",
             () -> new LiquidBlock(MainFluids.SOURCE_NAMEK, BlockBehaviour.Properties.of()
@@ -326,6 +326,7 @@ public final class MainBlocks {
                     .noCollission()
                     .noLootTable()
                     .liquid()
+                    .replaceable()
             ));
 
 	public static final RegistryObject<Block> DBALL1_BLOCK = registerBlockOnly("dball1",
