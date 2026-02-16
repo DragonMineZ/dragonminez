@@ -22,21 +22,27 @@ public class TimeChamberPortalBlockEntity extends BlockEntity {
 		return cachedTargetPos;
 	}
 
-	public void setCachedTarget(BlockPos target) {
-		this.cachedTargetPos = target;
-		this.setChanged();
-	}
+    public void setCachedTarget(BlockPos target) {
+        this.cachedTargetPos = target;
+        this.setChanged();
+        if (this.level != null) {
+            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        }
+    }
 
-	@Override
-	public void load(CompoundTag pTag) {
-		super.load(pTag);
-		if (pTag.contains("TargetPos")) this.cachedTargetPos = NbtUtils.readBlockPos(pTag.getCompound("TargetPos"));
+    @Override
+    public void load(CompoundTag pTag) {
+        super.load(pTag);
+        if (pTag.contains("TargetPos")) {
+            this.cachedTargetPos = NbtUtils.readBlockPos(pTag.getCompound("TargetPos"));
+        }
+    }
 
-	}
-
-	@Override
-	protected void saveAdditional(CompoundTag pTag) {
-		super.saveAdditional(pTag);
-		if (this.cachedTargetPos != null) pTag.put("TargetPos", NbtUtils.writeBlockPos(this.cachedTargetPos));
-	}
+    @Override
+    protected void saveAdditional(CompoundTag pTag) {
+        super.saveAdditional(pTag);
+        if (this.cachedTargetPos != null) {
+            pTag.put("TargetPos", NbtUtils.writeBlockPos(this.cachedTargetPos));
+        }
+    }
 }

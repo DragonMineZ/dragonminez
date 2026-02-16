@@ -36,55 +36,75 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
 		super(BlockBehaviour.Properties.copy(Blocks.QUARTZ_BLOCK).noLootTable().noParticlesOnBreak().strength(-1.0F, 3600000.0F));
 	}
 
-	@Override
-	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-		if (pHand == InteractionHand.MAIN_HAND) {
-			if (!pLevel.isClientSide) {
-				BlockEntity be = pLevel.getBlockEntity(pPos);
-				if (!(be instanceof TimeChamberPortalBlockEntity tile)) return InteractionResult.FAIL;
+    @Override
+    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        if (pHand == InteractionHand.MAIN_HAND && !pLevel.isClientSide) {
+            BlockEntity be = pLevel.getBlockEntity(pPos);
+            if (!(be instanceof TimeChamberPortalBlockEntity tile)) return InteractionResult.FAIL;
 
-				boolean onHTC = pLevel.dimension().equals(HTCDimension.HTC_KEY);
-				ResourceKey<Level> targetDimKey = onHTC ? Level.OVERWORLD : HTCDimension.HTC_KEY;
-				ServerLevel targetLevel = pPlayer.getServer().getLevel(targetDimKey);
+            boolean onHTC = pLevel.dimension().equals(HTCDimension.HTC_KEY);
+            ResourceKey<Level> targetDimKey = onHTC ? Level.OVERWORLD : HTCDimension.HTC_KEY;
+            ServerLevel targetLevel = pPlayer.getServer().getLevel(targetDimKey);
 
-				if (targetLevel != null && !pPlayer.isPassenger()) {
-					BlockPos targetPos;
-					float rotX = onHTC ? 180 : 90;
+            if (targetLevel != null && !pPlayer.isPassenger()) {
+                BlockPos targetPos = null;
 
-					if (tile.hasCachedTarget()) {
-						targetPos = tile.getCachedTarget();
-						if (!targetLevel.getBlockState(targetPos.below()).is(this)) {
-							tile.setCachedTarget(null);
-							targetPos = findTargetAndCache(targetLevel, onHTC, pPlayer, tile, this);
-						}
-					} else targetPos = findTargetAndCache(targetLevel, onHTC, pPlayer, tile, this);
+                if (onHTC) {
+                    if (tile.hasCachedTarget()) {
+                        targetPos = tile.getCachedTarget();
+                    } else {
+                        targetPos = findTargetAndCache(targetLevel, true, pPlayer, tile, this);
+                    }
+                }
+                else {
+                    targetPos = findTargetAndCache(targetLevel, false, pPlayer, tile, this);
 
-					if (targetPos != null) {
-						teleportPlayer(pPlayer, targetLevel, targetPos, rotX);
-					}
-				}
-			}
-			return InteractionResult.SUCCESS;
-		}
-		return InteractionResult.CONSUME;
-	}
+                    if (targetPos != null) {
+                        BlockEntity targetBE = targetLevel.getBlockEntity(targetPos.below());
+                        if (targetBE instanceof TimeChamberPortalBlockEntity targetTile) {
+                            targetTile.setCachedTarget(pPos.above());
+                        }
+                    }
+                }
 
-	private BlockPos findTargetAndCache(ServerLevel targetLevel, boolean onHTC, Player player, TimeChamberPortalBlockEntity tile, Block targetBlock) {
-		ResourceKey<Structure> targetStructureKey = onHTC ? DMZStructures.KAMILOOKOUT : DMZStructures.TIMECHAMBER;
-		BlockPos searchCenter = onHTC ? BlockPos.ZERO : player.blockPosition();
+                if (targetPos != null) {
+                    teleportPlayer(pPlayer, targetLevel, targetPos, onHTC ? 180 : 90);
+                } else {
+                    BlockPos backup = onHTC ? targetLevel.getSharedSpawnPos() : new BlockPos(0, 130, 0);
+                    teleportPlayer(pPlayer, targetLevel, backup, 90);
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
+        return InteractionResult.CONSUME;
+    }
 
-		BlockPos structurePos = StructureLocator.locateStructure(targetLevel, targetStructureKey, searchCenter);
-		BlockPos finalPos = null;
 
-		if (structurePos != null) {
-			finalPos = findPortalInStructureMeta(targetLevel, structurePos, targetStructureKey, targetBlock);
-			if (finalPos == null) finalPos = findPortalByAreaScan(targetLevel, structurePos, onHTC, targetBlock);
-		}
+    private BlockPos findTargetAndCache(ServerLevel targetLevel, boolean onHTC, Player player, TimeChamberPortalBlockEntity tile, Block targetBlock) {
+        ResourceKey<Structure> targetStructureKey = onHTC ? DMZStructures.KAMILOOKOUT : DMZStructures.TIMECHAMBER;
 
-		if (finalPos != null) tile.setCachedTarget(finalPos);
+        BlockPos searchCenter = onHTC ? BlockPos.ZERO : player.blockPosition();
 
-		return finalPos;
-	}
+        BlockPos structurePos = StructureLocator.locateStructure(targetLevel, targetStructureKey, searchCenter);
+        BlockPos finalPos = null;
+
+        if (structurePos != null) {
+            targetLevel.getChunk(structurePos.getX() >> 4, structurePos.getZ() >> 4, ChunkStatus.FULL, true);
+
+            finalPos = findPortalInStructureMeta(targetLevel, structurePos, targetStructureKey, targetBlock);
+
+            if (finalPos == null) {
+                finalPos = findPortalByAreaScan(targetLevel, structurePos, onHTC, targetBlock);
+            }
+        }
+
+        if (finalPos != null) {
+            tile.setCachedTarget(finalPos);
+        }
+
+        return finalPos;
+    }
+
 
 	private BlockPos findPortalInStructureMeta(ServerLevel level, BlockPos structureCenter, ResourceKey<Structure> structureKey, Block targetBlock) {
 		var structureRegistry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
@@ -103,34 +123,39 @@ public class TimeChamberPortalBlock extends BaseEntityBlock {
 		return null;
 	}
 
-	private BlockPos findPortalByAreaScan(ServerLevel level, BlockPos center, boolean onHTC, Block targetBlock) {
-		int offX, offY, offZ;
+    private BlockPos findPortalByAreaScan(ServerLevel level, BlockPos center, boolean onHTC, Block targetBlock) {
+        int offX, offY, offZ;
 
-		if (onHTC) {
-			offX = 45; offY = 125; offZ = 75;
-		} else {
-			offX = 62; offY = 4; offZ = 66;
-		}
+        if (onHTC) {
+            offX = 45; offY = 125; offZ = 75;
+        } else {
+            offX = 62; offY = 4; offZ = 66;
+        }
 
-		BlockPos[] candidates = new BlockPos[4];
-		candidates[0] = center.offset(offX, offY, offZ);
-		candidates[1] = center.offset(-offZ, offY, offX);
-		candidates[2] = center.offset(-offX, offY, -offZ);
-		candidates[3] = center.offset(offZ, offY, -offX);
+        BlockPos[] candidates = new BlockPos[4];
+        candidates[0] = center.offset(offX, offY, offZ);
+        candidates[1] = center.offset(-offZ, offY, offX);
+        candidates[2] = center.offset(-offX, offY, -offZ);
+        candidates[3] = center.offset(offZ, offY, -offX);
 
-		int searchRadius = 24;
-		int verticalRadius = onHTC ? 15 : 5;
+        int searchRadius = 24;
+        int verticalRadius = 30;
 
-		for (BlockPos p : candidates) {
-			level.getChunk(p);
+        for (BlockPos p : candidates) {
+            level.getChunk(p.getX() >> 4, p.getZ() >> 4, ChunkStatus.FULL, true);
 
-			for (BlockPos checkPos : BlockPos.betweenClosed(p.getX() - searchRadius, p.getY() - verticalRadius, p.getZ() - searchRadius, p.getX() + searchRadius, p.getY() + verticalRadius, p.getZ() + searchRadius)) {
-				if (level.getBlockState(checkPos).is(targetBlock)) return checkPos.above();
-			}
-		}
+            for (BlockPos checkPos : BlockPos.betweenClosed(
+                    p.getX() - searchRadius, p.getY() - verticalRadius, p.getZ() - searchRadius,
+                    p.getX() + searchRadius, p.getY() + verticalRadius, p.getZ() + searchRadius)) {
 
-		return null;
-	}
+                if (level.getBlockState(checkPos).is(targetBlock)) {
+                    return checkPos.above();
+                }
+            }
+        }
+
+        return null;
+    }
 
 	private void teleportPlayer(Player player, ServerLevel targetLevel, BlockPos targetPos, float rotX) {
 		player.changeDimension(targetLevel, new ITeleporter() {
