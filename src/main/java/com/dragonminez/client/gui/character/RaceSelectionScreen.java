@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -148,6 +149,7 @@ public class RaceSelectionScreen extends ScaledScreen {
         super.render(graphics, uiMouseX, uiMouseY, partialTick);
 
         renderRaceInfo(graphics);
+		renderRacialInfo(graphics);
 
         endUiScale(graphics);
     }
@@ -212,6 +214,68 @@ public class RaceSelectionScreen extends ScaledScreen {
             descStartY += 10;
         }
     }
+
+	private void renderRacialInfo(GuiGraphics graphics) {
+		String currentRace = availableRaces[selectedRaceIndex];
+		if (!ConfigManager.isDefaultRace(currentRace)) return;
+		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
+
+		String titleKey = "skill.dragonminez.racial_" + currentRace;
+		String descKey = "skill.dragonminez.racial_" + currentRace + ".desc";
+
+		Component titleComp = Component.translatable(titleKey);
+		String description = "";
+
+		switch (currentRace) {
+			case "human" -> {
+				int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
+				description = Component.translatable(descKey, regen).getString();
+			}
+			case "saiyan" -> {
+				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
+				int zenkaiStat = (int) Math.round(config.getSaiyanZenkaiStatBoost() * 100);
+				int cooldown = config.getSaiyanZenkaiCooldownSeconds();
+				description = Component.translatable(descKey, zenkaiHealth, zenkaiStat, cooldown).getString();
+			}
+			case "namekian" -> {
+				int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
+				int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
+				description = Component.translatable(descKey, assimHealth, assimStat).getString();
+			}
+			case "frostdemon" -> {
+				int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
+				description = Component.translatable(descKey, tpBoost).getString();
+			}
+			case "bioandroid" -> {
+				int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
+				int cooldown = config.getBioAndroidCooldownSeconds();
+				description = Component.translatable(descKey, drainRatio, cooldown).getString();
+			}
+			case "majin" -> {
+				int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
+				int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
+				description = Component.translatable(descKey, absHealth, absStat).getString();
+			}
+			default -> description = Component.translatable(descKey).getString();
+		}
+
+		int uiWidth = getUiWidth();
+		int uiHeight = getUiHeight();
+
+		int panelWidth = 130;
+		int marginFromEdge = 68;
+		int boxStartX = uiWidth - marginFromEdge - panelWidth;
+		int centerX = boxStartX + (panelWidth / 2);
+		int startY = (uiHeight / 2) - 50;
+		drawCenteredStringWithBorder(graphics, titleComp.copy().withStyle(ChatFormatting.BOLD), centerX + 60, startY - 12, 0xFF55FF55);
+		List<String> wrappedDesc = wrapText(description, panelWidth);
+		int textY = startY;
+
+		for (String line : wrappedDesc) {
+			drawCenteredStringWithBorder(graphics, Component.literal(line), centerX + 60, textY, 0xFFCCCCCC);
+			textY += 12;
+		}
+	}
 
 	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
 		int textWidth = this.font.width(text);

@@ -3,8 +3,8 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.stats.Skill;
@@ -16,7 +16,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -52,6 +51,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     private String selectedSkill = null;
     private int scrollOffset = 0;
     private int maxScroll = 0;
+	private int descScrollOffset = 0;
+	private int maxDescScroll = 0;
 
     private ClippableTextureButton skillsButton, kiButton, formsButton;
     private int animTick = 0;
@@ -121,6 +122,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                     currentCategory = SkillCategory.SKILLS;
                     selectedSkill = null;
                     scrollOffset = 0;
+					descScrollOffset = 0;
                     updateSkillsList();
                     refreshButtons();
                 })
@@ -136,6 +138,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                     currentCategory = SkillCategory.KI;
                     selectedSkill = null;
                     scrollOffset = 0;
+					descScrollOffset = 0;
                     updateSkillsList();
                     refreshButtons();
                 })
@@ -151,6 +154,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                     currentCategory = SkillCategory.FORMS;
                     selectedSkill = null;
                     scrollOffset = 0;
+					descScrollOffset = 0;
                     updateSkillsList();
                     refreshButtons();
                 })
@@ -192,6 +196,12 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         }
 
 		skillNames.sort(String::compareToIgnoreCase);
+		if (currentCategory == SkillCategory.SKILLS) {
+			String race = statsData.getCharacter().getRaceName().toLowerCase();
+			if (!race.isEmpty() && ConfigManager.isDefaultRace(race)) {
+				skillNames.add(0, "racial_" + race);
+			}
+		}
         return skillNames;
     }
 
@@ -410,7 +420,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info")
 						.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
-
 		if (selectedSkill != null && statsData != null) {
             renderSkillDetails(graphics, rightPanelX, rightPanelY);
         }
@@ -418,59 +427,107 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
     private void renderSkillDetails(GuiGraphics graphics, int panelX, int panelY) {
         Skill skill = statsData.getSkills().getSkill(selectedSkill);
-        if (skill == null) return;
-
+        if (skill == null && !selectedSkill.startsWith("racial_")) return;
+		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
         String displayName = Component.translatable("skill.dragonminez." + selectedSkill).getString();
-        String description = Component.translatable("skill.dragonminez." + selectedSkill + ".desc").getString();
+
+		String description = "";
+		if (selectedSkill.startsWith("racial_")) {
+			switch (selectedSkill) {
+				case "racial_human" -> {
+					int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
+					description = Component.translatable("skill.dragonminez.racial_human.desc", regen).getString();
+				}
+				case "racial_saiyan" -> {
+					int zenkaiHealth = (int) Math.round((config.getSaiyanZenkaiHealthRegen() * 100));
+					int zenkaiStat = (int) Math.round((config.getSaiyanZenkaiStatBoost() * 100));
+					int cooldown = config.getSaiyanZenkaiCooldownSeconds();
+					description = Component.translatable("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown).getString();
+				}
+				case "racial_namekian" -> {
+					int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
+					int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
+					description = Component.translatable("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat).getString();
+				}
+				case "racial_frostdemon" -> {
+					int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
+					description = Component.translatable("skill.dragonminez.racial_frostdemon.desc", tpBoost).getString();
+				}
+				case "racial_bioandroid" -> {
+					int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
+					int cooldown = config.getBioAndroidCooldownSeconds();
+					description = Component.translatable("skill.dragonminez.racial_bioandroid.desc", drainRatio, cooldown).getString();
+				}
+				case "racial_majin" -> {
+					int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
+					int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
+					description = Component.translatable("skill.dragonminez.racial_majin.desc", absHealth, absStat).getString();
+				}
+			}
+		} else description = Component.translatable("skill.dragonminez." + selectedSkill + ".desc").getString();
 
         int startY = panelY + 40;
 
-        drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
-            panelX + 72, startY, 0xFFFFFFFF);
+        drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD), panelX + 72, startY, 0xFFFFFFFF);
 
-        drawCenteredStringWithBorder(graphics,
-            Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()),
-            panelX + 72, startY + 12, 0xFFAAAAAA);
-		if (getUpgradeCost(selectedSkill, skill.getLevel()) != Integer.MAX_VALUE) {
-			drawCenteredStringWithBorder(graphics,
-					Component.literal("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))),
-					panelX + 72, startY + 24, 0xFFAAAAAA);
+		if (skill != null) {
+			drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()), panelX + 72, startY + 12, 0xFFAAAAAA);
+			if (getUpgradeCost(selectedSkill, skill.getLevel()) != Integer.MAX_VALUE) {
+				drawCenteredStringWithBorder(graphics, Component.literal("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))), panelX + 72, startY + 24, 0xFFAAAAAA);
+			}
+		} else {
+			drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.skills.racial"), panelX + 72, startY + 12, 0xFF55FF55);
 		}
 
-        List<String> wrappedDesc = wrapText(description, 130);
-        int descY = startY + 70;
-        for (String line : wrappedDesc) {
-            drawStringWithBorder(graphics, Component.literal(line), panelX + 13, descY, 0xFFCCCCCC);
-            descY += 12;
-        }
-    }
+		List<String> wrappedDesc = wrapText(description, 120);
 
-    private List<String> wrapText(String text, int maxWidth) {
-        List<String> lines = new ArrayList<>();
-        String[] words = text.split(" ");
-        StringBuilder currentLine = new StringBuilder();
+		int descY = startY + 70;
+		int maxLines = 6;
+		maxDescScroll = Math.max(0, wrappedDesc.size() - maxLines);
 
-        for (String word : words) {
-            String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
-            if (font.width(testLine) <= maxWidth) {
-                if (currentLine.length() > 0) currentLine.append(" ");
-                currentLine.append(word);
-            } else {
-                if (currentLine.length() > 0) {
-                    lines.add(currentLine.toString());
-                    currentLine = new StringBuilder(word);
-                } else {
-                    lines.add(word);
-                }
-            }
-        }
+		int boxX = panelX + 13;
+		int boxY = descY;
+		int boxW = 130;
+		int boxH = maxLines * 12;
 
-        if (currentLine.length() > 0) {
-            lines.add(currentLine.toString());
-        }
+		graphics.enableScissor(toScreenCoord(boxX), toScreenCoord(boxY), toScreenCoord(boxX + boxW), toScreenCoord(boxY + boxH));
 
-        return lines;
-    }
+		int visibleEnd = Math.min(descScrollOffset + maxLines, wrappedDesc.size());
+		for (int i = descScrollOffset; i < visibleEnd; i++) {
+			String line = wrappedDesc.get(i);
+			int lineY = descY + ((i - descScrollOffset) * 12);
+			drawStringWithBorder(graphics, Component.literal(line), panelX + 13, lineY, 0xFFCCCCCC);
+		}
+
+		graphics.disableScissor();
+	}
+
+	private List<String> wrapText(String text, int maxWidth) {
+		List<String> lines = new ArrayList<>();
+		String[] words = text.split(" ");
+		StringBuilder currentLine = new StringBuilder();
+
+		for (String word : words) {
+			String testLine = currentLine.length() == 0 ? word : currentLine + " " + word;
+			if (font.width(testLine) <= maxWidth) {
+				if (currentLine.length() > 0) currentLine.append(" ");
+				currentLine.append(word);
+			} else {
+				if (currentLine.length() > 0) {
+					lines.add(currentLine.toString());
+					currentLine = new StringBuilder(word);
+				} else {
+					lines.add(word);
+				}
+			}
+		}
+
+		if (currentLine.length() > 0) {
+			lines.add(currentLine.toString());
+		}
+
+		return lines;
+	}
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
@@ -479,13 +536,26 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int leftPanelX = 12;
         int centerY = getUiHeight() / 2;
         int leftPanelY = centerY - 105;
+		int rightPanelX = getUiWidth() - 158;
 
-        if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
-            uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
+		int descBoxX = rightPanelX + 10;
+		int descBoxY = (centerY - 105) + 110;
+		int descBoxW = 136;
+		int descBoxH = 6 * 12;
 
-            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
-            return true;
-        }
+		if (uiMouseX >= descBoxX && uiMouseX <= descBoxX + descBoxW &&
+				uiMouseY >= descBoxY && uiMouseY <= descBoxY + descBoxH) {
+
+			descScrollOffset = Math.max(0, Math.min(maxDescScroll, descScrollOffset - (int)delta));
+			return true;
+		}
+
+		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
+				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
+
+			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
+			return true;
+		}
 
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
@@ -510,6 +580,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                 uiMouseY >= itemY && uiMouseY <= itemY + SKILL_ITEM_HEIGHT - 5) {
 
                 selectedSkill = skillNames.get(i);
+				descScrollOffset = 0;
                 refreshButtons();
                 return true;
             }

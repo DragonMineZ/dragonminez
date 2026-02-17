@@ -670,7 +670,7 @@ public class TickHandler {
 		int maxEnergy = data.getMaxEnergy();
 
 		double basePercent = player.isSprinting() ? 0.08 : 0.03;
-		double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.001));
+		double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.005));
 		int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
 		int currentEnergy = data.getResources().getCurrentEnergy();

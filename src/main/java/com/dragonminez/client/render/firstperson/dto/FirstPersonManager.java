@@ -7,6 +7,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.MapItem;
 import org.joml.Vector3f;
 
 public class FirstPersonManager {
@@ -14,6 +15,7 @@ public class FirstPersonManager {
 	public static boolean shouldRenderFirstPerson(Player player) {
 		if (player != Minecraft.getInstance().player) return false;
 		if (!ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) return false;
+		if (player.getMainHandItem().getItem() instanceof MapItem || player.getOffhandItem().getItem() instanceof MapItem) return false;
 		if (Minecraft.getInstance().screen instanceof ChatScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 		if (Minecraft.getInstance().screen != null) return false;
 		return Minecraft.getInstance().options.getCameraType().isFirstPerson();

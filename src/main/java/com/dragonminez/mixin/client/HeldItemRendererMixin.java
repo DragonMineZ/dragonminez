@@ -1,6 +1,7 @@
 package com.dragonminez.mixin.client;
 
 import com.dragonminez.client.render.DMZRenderHand;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -28,12 +29,12 @@ public class HeldItemRendererMixin {
 
 	@Inject(method = "renderHandsWithItems", at = @At("HEAD"), cancellable = true)
 	private void dmz$cancelGlobalHandRendering(float pPartialTicks, PoseStack pPoseStack, MultiBufferSource.BufferSource pBufferSource, LocalPlayer pPlayerEntity, int pCombinedLight, CallbackInfo ci) {
-		if (ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) ci.cancel();
+		if (FirstPersonManager.shouldRenderFirstPerson(pPlayerEntity)) ci.cancel();
 	}
 
     @Unique
     private void dmz$ensureRenderer() {
-		if (ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) return;
+		if (FirstPersonManager.shouldRenderFirstPerson(Minecraft.getInstance().player)) return;
         if (dmz$handRenderer == null) {
             Minecraft mc = Minecraft.getInstance();
             EntityRendererProvider.Context context = new EntityRendererProvider.Context(mc.getEntityRenderDispatcher(), mc.getItemRenderer(), mc.getBlockRenderer(), mc.getEntityRenderDispatcher().getItemInHandRenderer(), mc.getResourceManager(), mc.getEntityModels(), mc.font);
