@@ -80,6 +80,7 @@ public class FormConfig {
         private double masteryPerDamageReceived = 0.01;
         private double statMultPerMasteryPoint = 0.02;
         private double costDecreasePerMasteryPoint = 0.02;
+		private double passiveMasteryGainEveryFiveSeconds = 0.001;
 		private boolean kaiokenStackable = true;
 		private double kaiokenDrainMultiplier = 2.0;
 
@@ -116,6 +117,7 @@ public class FormConfig {
         public double getMasteryPerDamageReceived() { return Math.max(0, masteryPerDamageReceived); }
         public double getStatMultPerMasteryPoint() { return Math.max(0, statMultPerMasteryPoint); }
         public double getCostDecreasePerMasteryPoint() { return Math.max(0, costDecreasePerMasteryPoint); }
+		public double getPassiveMastery() { return Math.max(0, passiveMasteryGainEveryFiveSeconds); }
 		public boolean isKaiokenStackable() { return kaiokenStackable; }
 		public double getKaiokenDrainMultiplier() { return Math.max(0.01, kaiokenDrainMultiplier); }
 
@@ -150,6 +152,7 @@ public class FormConfig {
         public void setMasteryPerDamageReceived(double masteryPerDamageReceived) { this.masteryPerDamageReceived = masteryPerDamageReceived; }
         public void setStatMultPerMasteryPoint(double statMultPerMasteryPoint) { this.statMultPerMasteryPoint = statMultPerMasteryPoint; }
         public void setCostDecreasePerMasteryPoint(double costDecreasePerMasteryPoint) { this.costDecreasePerMasteryPoint = costDecreasePerMasteryPoint; }
+		public void setPassiveMastery(double passiveMastery) { this.passiveMasteryGainEveryFiveSeconds = passiveMastery; }
 		public void setKaiokenStackable(boolean kaiokenStackable) { this.kaiokenStackable = kaiokenStackable; }
 		public void setKaiokenDrainMultiplier(double kaiokenDrainMultiplier) { this.kaiokenDrainMultiplier = kaiokenDrainMultiplier; }
 

@@ -24,6 +24,7 @@ public class DefaultFormsFactory {
         form.setMasteryPerDamageReceived(0.05);
         form.setStatMultPerMasteryPoint(0.02);
         form.setCostDecreasePerMasteryPoint(0.02);
+		form.setPassiveMastery(0.001);
     }
 
     public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {

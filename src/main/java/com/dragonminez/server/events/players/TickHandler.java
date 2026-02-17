@@ -46,7 +46,7 @@ public class TickHandler {
     private static final int SYNC_INTERVAL = 10;
     private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
     private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
-	private static int saiyanZenkaiSeconds = 0;
+	private static int saiyanZenkaiSeconds = 0, masterySeconds = 0;
 
     private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 
@@ -297,6 +297,26 @@ public class TickHandler {
                 energyChange -= drainAmount;
             }
         }
+
+		if (hasActiveForm && activeForm != null) {
+			if (masterySeconds < 5) {
+				masterySeconds++;
+			} else {
+				masterySeconds = 0;
+				String activeFormName = activeForm.getName().toLowerCase();
+				String activeFormGroup = data.getCharacter().getActiveFormGroup();
+
+				double maxMastery = 100.0;
+				FormConfig.FormData formData = ConfigManager.getForm(data.getCharacter().getRaceName(), activeFormGroup, activeFormName);
+				if (formData != null) maxMastery = formData.getMaxMastery();
+
+				if (!data.getCharacter().getFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
+					double masteryGain = formData != null ? formData.getPassiveMastery() : 0.001;
+					data.getCharacter().getFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
+				}
+			}
+
+		}
 
         if (energyChange != 0) {
             int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
