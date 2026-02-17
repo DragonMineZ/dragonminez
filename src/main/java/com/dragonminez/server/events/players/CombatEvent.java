@@ -213,8 +213,9 @@ public class CombatEvent {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getStatus().hasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
-						victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+					boolean isPvP = source.getEntity() instanceof Player;
+					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout() && isPvP)
+						victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 120);
 					double defense = victimData.getDefense();
 					boolean blocked = false;
 

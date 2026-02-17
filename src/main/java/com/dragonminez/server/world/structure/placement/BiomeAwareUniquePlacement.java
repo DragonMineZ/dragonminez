@@ -91,16 +91,15 @@ public class BiomeAwareUniquePlacement extends StructurePlacement {
 	public ChunkPos getStructureChunk(long worldSeed, BiomeSource biomeSource, RandomState randomState) {
 		if (biomeSource == null || randomState == null) return null;
 
-		for (int attempt = 0; attempt < 100; attempt++) {
+		for (int attempt = 0; attempt < 200; attempt++) {
 			WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + this.salt() + attempt));
+			int searchRadius = 10 + (attempt * 3);
 
-			int targetChunkX = random.nextInt(600) - 400;
-			int targetChunkZ = random.nextInt(600) - 400;
+			int targetChunkX = random.nextInt(searchRadius * 2) - searchRadius;
+			int targetChunkZ = random.nextInt(searchRadius * 2) - searchRadius;
 
 			int quartX = QuartPos.fromBlock(targetChunkX * 16 + 8);
-
 			int quartY = QuartPos.fromBlock(64);
-
 			int quartZ = QuartPos.fromBlock(targetChunkZ * 16 + 8);
 
 			Holder<Biome> biome = biomeSource.getNoiseBiome(quartX, quartY, quartZ, randomState.sampler());

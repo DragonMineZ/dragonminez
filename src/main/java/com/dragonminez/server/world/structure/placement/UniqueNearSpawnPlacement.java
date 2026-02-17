@@ -53,8 +53,8 @@ public class UniqueNearSpawnPlacement extends StructurePlacement {
 	public ChunkPos getStructureChunk(long worldSeed) {
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(worldSeed + this.salt()));
 
-		int targetChunkX = random.nextInt(400) - 200;
-		int targetChunkZ = random.nextInt(400) - 200;
+		int targetChunkX = random.nextInt(50) - 25;
+		int targetChunkZ = random.nextInt(50) - 25;
 
 		return new ChunkPos(targetChunkX, targetChunkZ);
 	}

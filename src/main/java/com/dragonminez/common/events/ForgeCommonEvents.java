@@ -51,6 +51,7 @@ import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -225,8 +226,8 @@ public class ForgeCommonEvents {
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 
 		if (otherworld != null) {
+			LogUtil.info(Env.SERVER, "ServerStartingEvent: Attempting to load Otherworld regions.");
 			OtherworldRegionLoader.loadPreGeneratedRegions(otherworld);
-			OtherworldNPCSpawner.spawnNPCs(otherworld);
 		}
 
 		if (ConfigManager.getServerConfig().getWorldGen().isGenerateDragonBalls()) {
@@ -257,9 +258,18 @@ public class ForgeCommonEvents {
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 
 		if (otherworld != null) {
-			LogUtil.info(Env.SERVER, "ServerStartedEvent: Attempting to load Otherworld regions (Arclight compatibility)");
+			LogUtil.info(Env.SERVER, "ServerStartedEvent: Attempting to load Otherworld regions, double-checking dimension presence.");
 			OtherworldRegionLoader.loadPreGeneratedRegions(otherworld);
-			OtherworldNPCSpawner.spawnNPCs(otherworld);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onLevelLoad(LevelEvent.Load event) {
+		if (event.getLevel() instanceof ServerLevel serverLevel) {
+			if (serverLevel.dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
+				LogUtil.info(Env.SERVER, "LevelEvent.Load: Asegurando regiones del Otherworld...");
+				OtherworldRegionLoader.loadPreGeneratedRegions(serverLevel);
+			}
 		}
 	}
 
