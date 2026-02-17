@@ -34,7 +34,7 @@ public class SyncSagasS2C {
         this.sagas = new HashMap<>();
         int size = buf.readInt();
         for (int i = 0; i < size; i++) {
-            String sagaJson = buf.readUtf(32767);
+            String sagaJson = buf.readUtf(1048576);
             Saga saga = GSON.fromJson(sagaJson, Saga.class);
             if (saga != null && saga.getId() != null) {
                 this.sagas.put(saga.getId(), saga);

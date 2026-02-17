@@ -14,6 +14,7 @@ import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
+import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.Stats;
 import com.dragonminez.common.stats.StatsCapability;
@@ -220,6 +221,7 @@ public class ForgeCommonEvents {
 		BetaWhitelist.reload();
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
+		SagaManager.loadSagas(event.getServer());
 
 		ServerLevel overworld = event.getServer().getLevel(Level.OVERWORLD);
 		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);

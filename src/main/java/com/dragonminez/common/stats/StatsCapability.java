@@ -53,37 +53,27 @@ public class StatsCapability {
         original.invalidateCaps();
     }
 
-    @SubscribeEvent
-    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getServerConfig(), ConfigManager.getSkillsConfig(), ConfigManager.getAllForms(), ConfigManager.getAllRaceStats(), ConfigManager.getAllRaceCharacters()), serverPlayer);
+	@SubscribeEvent
+	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+			NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getServerConfig(), ConfigManager.getSkillsConfig(), ConfigManager.getAllForms(), ConfigManager.getAllRaceStats(), ConfigManager.getAllRaceCharacters()), serverPlayer);
+			NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), serverPlayer);
 
-            SagaManager.loadSagas(serverPlayer.getServer());
-            NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), serverPlayer);
-        }
-        event.getEntity().refreshDimensions();
-    }
+			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
+				QuestData questData = data.getQuestData();
+				if (!questData.isSagaUnlocked("saiyan_saga")) questData.unlockSaga("saiyan_saga");
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			});
+		}
+		event.getEntity().refreshDimensions();
+	}
 
-    private static boolean hasInitializedPlayer = false;
-
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
-            if (event.player instanceof ServerPlayer serverPlayer && !hasInitializedPlayer) {
-                hasInitializedPlayer = true;
-
-                StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-                    QuestData questData = data.getQuestData();
-                    if (!questData.isSagaUnlocked("saiyan_saga")) {
-                        questData.unlockSaga("saiyan_saga");
-                    }
-                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-                });
-            }
-
-            StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
-        }
-    }
+	@SubscribeEvent
+	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		if (event.phase == TickEvent.Phase.END && !event.player.level().isClientSide) {
+			StatsProvider.get(INSTANCE, event.player).ifPresent(StatsData::tick);
+		}
+	}
 
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {

@@ -51,9 +51,9 @@ public class MasterGuruEntity extends MastersEntity {
 	@Override
 	public void tick() {
 		super.tick();
-		if (this.getYRot() != 180.0F) this.setYRot(180.0F);
-		if (this.getYHeadRot() != 180.0F) this.setYHeadRot(180.0F);
-		if (this.yBodyRot != 180.0F) this.yBodyRot = 180.0F;
-		if (this.yHeadRot != 180.0F) this.yHeadRot = 180.0F;
+		if (this.getYRot() != 0.0F) this.setYRot(0.0F);
+		if (this.getYHeadRot() != 0.0F) this.setYHeadRot(0.0F);
+		if (this.yBodyRot != 0.0F) this.yBodyRot = 0.0F;
+		if (this.yHeadRot != 0.0F) this.yHeadRot = 0.0F;
 	}
 }
