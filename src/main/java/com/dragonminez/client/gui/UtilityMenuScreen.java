@@ -51,9 +51,12 @@ public class UtilityMenuScreen extends Screen {
 			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> this.statsData = data);
 		}
 
+		IUtilityMenuSlot emptySlot = new EmptyMenuSlot();
 		menuSlots.add(0, new KaiokenMenuSlot());
 		menuSlots.add(1, new SuperformMenuSlot());
 		menuSlots.add(2, new FusionMenuSlot());
+		menuSlots.add(3, emptySlot);
+		menuSlots.add(4, emptySlot);
 		menuSlots.add(5, new KiManipulationMenuSlot());
 		menuSlots.add(6, new RacialActionMenuSlot());
 		menuSlots.add(7, new DescendFormMenuSlot());
