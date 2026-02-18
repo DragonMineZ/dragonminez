@@ -156,6 +156,7 @@
   "gui.dragonminez.config.advancedDescriptionPercentage": "Adv. Desc. (Percentage)",
   "gui.dragonminez.config.alternativeHud": "Alternative HUD",
   "gui.dragonminez.config.hexagonStatsDisplay": "Hexagon Stats Display",
+  "gui.dragonminez.config.menuScaleMultiplier": "Menu Panel Scale",
   "gui.dragonminez.config.healthBarPosX": "Health Bar - Position X",
   "gui.dragonminez.config.healthBarPosY": "Health Bar - Position Y",
   "gui.dragonminez.config.energyBarPosX": "Energy Bar - Position X",
