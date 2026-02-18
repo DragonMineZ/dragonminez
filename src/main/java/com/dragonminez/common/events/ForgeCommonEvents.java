@@ -28,6 +28,7 @@ import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
+import com.dragonminez.server.world.dimension.*;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.dragonminez.server.world.dimension.OtherworldRegionLoader;
@@ -294,7 +295,7 @@ public class ForgeCommonEvents {
 			List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class,
 					new AABB(mob.blockPosition()).inflate(80));
 
-			if (!masters.isEmpty()) {
+			if (!masters.isEmpty() && !mob.level().dimension().equals(HTCDimension.HTC_KEY)) {
 				event.setSpawnCancelled(true);
 				event.setResult(Event.Result.DENY);
 			}

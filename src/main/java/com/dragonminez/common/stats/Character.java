@@ -29,6 +29,7 @@ public class Character {
     private int hairId;
     private CustomHair hairBase = new CustomHair();
 	private CustomHair hairSSJ = new CustomHair();
+	private CustomHair hairSSJ2 = new CustomHair();
 	private CustomHair hairSSJ3 = new CustomHair();
     private int bodyType;
     private int eyesType;
@@ -83,6 +84,11 @@ public class Character {
 		if (hairSSJ == null || hairSSJ.isEmpty()) return hairBase;
 		return hairSSJ;
 	}
+	public CustomHair getHairSSJ2() {
+		if (this.hairId > 0) return HairManager.getPresetHairSSJ2(this.hairId, this.hairColor);
+		if (hairSSJ2 == null || hairSSJ2.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
+		return hairSSJ2;
+	}
 	public CustomHair getHairSSJ3() {
 		if (this.hairId > 0) return HairManager.getPresetHairSSJ3(this.hairId, this.hairColor);
 		if (hairSSJ3 == null || hairSSJ3.isEmpty()) return (hairSSJ != null && !hairSSJ.isEmpty()) ? hairSSJ : hairBase;
@@ -104,20 +110,16 @@ public class Character {
     public Boolean getArmored() {return armored;}
 
     public void setRace(String race) {
-        if (race != null && ConfigManager.isRaceLoaded(race)) {
-            this.race = race.toLowerCase();
-        } else {
-            this.race = "human";
-        }
-        if (!canHaveGender() && !gender.equals(GENDER_MALE)) {
-            this.gender = GENDER_MALE;
-        }
+        if (race != null && ConfigManager.isRaceLoaded(race)) this.race = race.toLowerCase();
+        else this.race = "human";
+        if (!canHaveGender() && !gender.equals(GENDER_MALE)) this.gender = GENDER_MALE;
     }
     public void setGender(String gender) { this.gender = gender; }
     public void setCharacterClass(String characterClass) { this.characterClass = characterClass; }
     public void setHairId(int hairId) { this.hairId = hairId; }
     public void setHairBase(CustomHair hairBase) { this.hairBase = hairBase; }
 	public void setHairSSJ(CustomHair hairSSJ) { this.hairSSJ = hairSSJ; }
+	public void setHairSSJ2(CustomHair hairSSJ2) { this.hairSSJ2 = hairSSJ2; }
 	public void setHairSSJ3(CustomHair hairSSJ3) { this.hairSSJ3 = hairSSJ3; }
     public void setBodyType(int bodyType) { this.bodyType = bodyType; }
     public void setEyesType(int eyesType) { this.eyesType = eyesType; }
@@ -156,7 +158,8 @@ public class Character {
 	public CustomHair getHairByType(int type) {
 		return switch (type) {
 			case 1 -> hairSSJ;
-			case 2 -> hairSSJ3;
+			case 2 -> hairSSJ2;
+			case 3 -> hairSSJ3;
 			default -> hairBase;
 		};
 	}
@@ -169,6 +172,7 @@ public class Character {
         tag.putInt("HairId", hairId);
 		tag.put("HairBase", hairBase.save());
 		tag.put("HairSSJ", hairSSJ.save());
+		tag.put("HairSSJ2", hairSSJ2.save());
 		tag.put("HairSSJ3", hairSSJ3.save());
         tag.putInt("BodyType", bodyType);
         tag.putInt("EyesType", eyesType);
@@ -191,21 +195,18 @@ public class Character {
     }
 
     public void load(CompoundTag tag) {
-        if (tag.contains("Race", 8)) {
-            this.race = tag.getString("Race");
-        } else if (tag.contains("Race", 3)) {
+        if (tag.contains("Race", 8)) this.race = tag.getString("Race");
+		else if (tag.contains("Race", 3)) {
             int oldRaceId = tag.getInt("Race");
             List<String> races = ConfigManager.getLoadedRaces();
             this.race = (oldRaceId >= 0 && oldRaceId < races.size()) ? races.get(oldRaceId) : "human";
-        } else {
-            this.race = "human";
-        }
-
+        } else this.race = "human";
         this.gender = tag.getString("Gender");
         this.characterClass = tag.getString("Class");
         this.hairId = tag.getInt("HairId");
 		if (tag.contains("HairBase")) this.hairBase.load(tag.getCompound("HairBase"));
 		if (tag.contains("HairSSJ")) this.hairSSJ.load(tag.getCompound("HairSSJ"));
+		if (tag.contains("HairSSJ2")) this.hairSSJ2.load(tag.getCompound("HairSSJ2"));
 		if (tag.contains("HairSSJ3")) this.hairSSJ3.load(tag.getCompound("HairSSJ3"));
         this.bodyType = tag.getInt("BodyType");
         this.eyesType = tag.getInt("EyesType");
@@ -274,6 +275,7 @@ public class Character {
         this.hairId = other.hairId;
 		this.hairBase = other.hairBase.copy();
 		this.hairSSJ = other.hairSSJ.copy();
+		this.hairSSJ2 = other.hairSSJ2.copy();
 		this.hairSSJ3 = other.hairSSJ3.copy();
         this.bodyType = other.bodyType;
         this.eyesType = other.eyesType;

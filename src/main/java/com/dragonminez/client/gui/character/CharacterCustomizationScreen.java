@@ -13,6 +13,7 @@ import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
@@ -203,9 +204,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 addRenderableWidget(createArrowButton(genderPosX, genderPosY, false,
                         btn -> {
                             character.setGender(Character.GENDER_FEMALE);
-                            if (character.getRace().equals("majin")) {
-                                character.setHairId(0);
-                            }
+                            if (character.getRace().equals("majin")) character.setHairId(0);
                             NetworkHandler.sendToServer(new StatsSyncC2S(character));
                             refreshButtons();
                         }));
@@ -213,9 +212,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 addRenderableWidget(createArrowButton(genderPosX - 65, genderPosY, true,
                         btn -> {
                             character.setGender(Character.GENDER_MALE);
-                            if (character.getRace().equals("majin")) {
-                                character.setHairId(0);
-                            }
+                            if (character.getRace().equals("majin")) character.setHairId(0);
                             NetworkHandler.sendToServer(new StatsSyncC2S(character));
                             refreshButtons();
                         }));
@@ -483,16 +480,18 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		}
 
 		if (!ConfigManager.isDefaultRace(character.getRace().toLowerCase()) && HairManager.canUseHair(character)) maxHair = HairManager.getPresetCount();
-
         int newHair = character.getHairId() + delta;
-
-        if (newHair < 0) {
-            newHair = maxHair;
-        } else if (newHair > maxHair) {
-            newHair = 0;
-        }
+        if (newHair < 0) newHair = maxHair;
+        else if (newHair > maxHair) newHair = 0;
 
         character.setHairId(newHair);
+
+		if (newHair == 0) {
+			character.setHairBase(new CustomHair());
+			character.setHairSSJ(new CustomHair());
+			character.setHairSSJ2(new CustomHair());
+			character.setHairSSJ3(new CustomHair());
+		}
         NetworkHandler.sendToServer(new StatsSyncC2S(character));
         refreshButtons();
     }

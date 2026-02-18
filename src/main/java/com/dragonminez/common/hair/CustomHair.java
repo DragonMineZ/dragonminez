@@ -10,7 +10,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 public class CustomHair {
-	private static final int VERSION = 2;
+	private static final int VERSION = 5;
     public static final int FRONT_STRANDS = 4;
     public static final int SIDE_STRANDS = 16;
 
@@ -177,15 +177,11 @@ public class CustomHair {
     }
 
     public void load(CompoundTag tag) {
-		int loadedVersion = tag.contains("v") ? tag.getInt("v") :
-                           (tag.contains("Version") ? tag.getInt("Version") : 1);
+		int loadedVersion = tag.contains("v") ? tag.getInt("v") : (tag.contains("Version") ? tag.getInt("Version") : 1);
 		this.version = loadedVersion;
         this.name = tag.contains("n") ? tag.getString("n") : tag.getString("Name");
         this.globalColor = tag.contains("gc") ? tag.getString("gc") : tag.getString("GlobalColor");
-
-        if (globalColor == null || globalColor.isEmpty()) {
-            globalColor = "#000000";
-        }
+        if (globalColor == null || globalColor.isEmpty()) globalColor = "#000000";
 
         String[] shortKeys = {"F", "B", "L", "R", "T"};
         HairFace[] faces = HairFace.values();
