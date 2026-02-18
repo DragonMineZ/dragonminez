@@ -73,7 +73,9 @@ public class Skills {
             int finalMaxLevel;
             if (lowerName.equalsIgnoreCase("potentialunlock")) {
                 finalMaxLevel = Math.min(costBasedMaxLevel, 30);
-            } else {
+            } else if (lowerName.equalsIgnoreCase("kaioken")) {
+                finalMaxLevel = Math.min(costBasedMaxLevel, 20);
+            }else {
                 finalMaxLevel = Math.min(costBasedMaxLevel, 50);
             }
             skillMap.put(lowerName, new Skill(name, 0, false, finalMaxLevel));
