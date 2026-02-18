@@ -25,15 +25,11 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.util.RenderUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
-
-	private static float lastHairProgress = 0.0f;
-	private static long lastUpdateTick = 0;
+	private final Map<Integer, Float> progressMap = new HashMap<>();
+	private final Map<Integer, Long> tickMap = new HashMap<>();
 
     public DMZHairLayer(GeoRenderer<T> renderer) {
         super(renderer);
@@ -61,13 +57,17 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		String colorTo = character.getHairColor();
 		float factor = 0.0f;
 
+		int entityId = animatable.getId();
+		float lastHairProgress = progressMap.getOrDefault(entityId, 0.0f);
+		long lastUpdateTick = tickMap.getOrDefault(entityId, 0L);
+
 		if (character.hasActiveForm()) {
 			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			hairTo = hairFrom;
 			colorFrom = getColorForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			colorTo = colorFrom;
 			factor = 1.0f;
-			lastHairProgress = 1.0f;
+			progressMap.put(entityId, 1.0f);
 			if (character.getActiveForm().contains("oozaru")) return;
 		} else if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
 			String targetGroup = character.getSelectedFormGroup();
@@ -82,7 +82,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 				if (currentTick != lastUpdateTick) {
 					lastHairProgress = lastHairProgress + (targetProgress - lastHairProgress) * interpolationSpeed;
-					lastUpdateTick = currentTick;
+					tickMap.put(entityId, currentTick);
+					progressMap.put(entityId, lastHairProgress);
 				}
 
 				float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastHairProgress, targetProgress);
@@ -90,23 +91,49 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 				CustomHair baseHair = character.getHairBase();
 				CustomHair ssjHair = character.getHairSSJ();
+				CustomHair ssj2Hair = character.getHairSSJ2();
 				CustomHair ssj3Hair = character.getHairSSJ3();
 				String baseColor = character.getHairColor();
+				String actualFormColor = getColorForForm(character, targetGroup, character.getActiveForm());
 
 				boolean targetIsSSJ3 = targetHair == ssj3Hair || (ssj3Hair != null && targetHair.equals(ssj3Hair));
+				boolean targetIsSSJ2 = targetHair == ssj2Hair || (ssj2Hair != null && targetHair.equals(ssj2Hair));
+				String targetForm = nextForm.getName().toLowerCase();
 
-				if (targetIsSSJ3 && ssjHair != null && !ssjHair.isEmpty()) {
-					String ssjColor = getColorForForm(character, targetGroup, "ssj");
+				if (ssjHair == null || ssjHair.isEmpty()) ssjHair = baseHair;
+				if (ssj2Hair == null || ssj2Hair.isEmpty()) ssj2Hair = ssjHair;
+
+				if (targetIsSSJ3) {
+					if (smoothProgress < 0.33f) {
+						hairFrom = baseHair;
+						hairTo = ssjHair;
+						colorFrom = baseColor;
+						colorTo = targetColor;
+						factor = smoothProgress * 3.0f;
+					} else if (smoothProgress < 0.66f) {
+						hairFrom = ssjHair;
+						hairTo = ssj2Hair;
+						colorFrom = actualFormColor;
+						colorTo = targetColor;
+						factor = (smoothProgress - 0.33f) * 3.0f;
+					} else {
+						hairFrom = ssj2Hair;
+						hairTo = ssj3Hair;
+						colorFrom = actualFormColor;
+						colorTo = targetColor;
+						factor = (smoothProgress - 0.66f) * 3.0f;
+					}
+				} else if (targetIsSSJ2) {
 					if (smoothProgress < 0.5f) {
 						hairFrom = baseHair;
 						hairTo = ssjHair;
 						colorFrom = baseColor;
-						colorTo = ssjColor;
+						colorTo = targetColor;
 						factor = smoothProgress * 2.0f;
 					} else {
 						hairFrom = ssjHair;
-						hairTo = ssj3Hair;
-						colorFrom = ssjColor;
+						hairTo = ssj2Hair;
+						colorFrom = actualFormColor;
 						colorTo = targetColor;
 						factor = (smoothProgress - 0.5f) * 2.0f;
 					}
@@ -119,7 +146,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				}
 			}
 		} else {
-			lastHairProgress = 0.0f;
+			progressMap.put(entityId, 0.0f);
 		}
 
 		Optional<GeoBone> headBoneOpt = model.getBone("head");
@@ -185,6 +212,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				switch (formData.getHairType().toLowerCase()) {
 					case "base" -> { return character.getHairBase(); }
 					case "ssj" -> { return character.getHairSSJ(); }
+					case "ssj2" -> { return character.getHairSSJ2(); }
 					case "ssj3" -> { return character.getHairSSJ3(); }
 					default -> {}
 				}

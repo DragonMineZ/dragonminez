@@ -45,7 +45,8 @@ public class UpdateCustomHairC2S {
                 if (msg.customHair != null) {
 					switch (msg.hairIndex) {
 						case 1 -> data.getCharacter().setHairSSJ(msg.customHair);
-						case 2 -> data.getCharacter().setHairSSJ3(msg.customHair);
+						case 2 -> data.getCharacter().setHairSSJ2(msg.customHair);
+						case 3 -> data.getCharacter().setHairSSJ3(msg.customHair);
 						default -> data.getCharacter().setHairBase(msg.customHair);
 					}
                     data.getCharacter().setHairId(0);

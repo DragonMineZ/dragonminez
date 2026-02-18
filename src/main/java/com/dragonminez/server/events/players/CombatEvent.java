@@ -147,7 +147,7 @@ public class CombatEvent {
 
 				if (attackerData.getCharacter().hasActiveForm()) {
 					FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-					if (activeForm != null) {
+					if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 						String formGroup = attackerData.getCharacter().getActiveFormGroup();
 						String formName = attackerData.getCharacter().getActiveForm();
 						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
@@ -220,9 +220,10 @@ public class CombatEvent {
 					boolean blocked = false;
 
 					if (ConfigManager.getServerConfig().getCombat().isEnableBlocking()) {
-						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && source.getEntity() != null) {
+						Entity sourceEntity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
+						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && sourceEntity != null) {
 							Vec3 targetLook = victim.getLookAngle();
-							Vec3 sourceLoc = source.getEntity().position();
+							Vec3 sourceLoc = sourceEntity.position();
 							Vec3 targetLoc = victim.position();
 							Vec3 directionToSource = sourceLoc.subtract(targetLoc).normalize();
 
@@ -233,12 +234,11 @@ public class CombatEvent {
 								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
 
 								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
-								if (!(source.getEntity() instanceof Player)) poiseMultiplier *= 5.0;
+								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 5.0;
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.75f;
 								int currentPoise = victimData.getResources().getCurrentPoise();
-								//System.out.println("Poise actual: " + currentPoise + ", Daño de poise: " + poiseDamage);
 
 								if (currentPoise - poiseDamage <= 0) {
 									victimData.getResources().setCurrentPoise(0);
@@ -254,24 +254,12 @@ public class CombatEvent {
 
 									currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 
-									// Acá pondríamos sonido de Rotura de Guardia
-									victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-											MainSounds.UNBLOCK.get(),
-											net.minecraft.sounds.SoundSource.PLAYERS,
-											1.0F,
-											0.9F + victim.getRandom().nextFloat() * 0.1F);
+									victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.UNBLOCK.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
 									if (victim.level() instanceof ServerLevel serverLevel) {
 										Vec3 look = victim.getLookAngle();
 										Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
-
-										serverLevel.sendParticles(
-												MainParticles.GUARD_BLOCK.get(),
-												spawnPos.x, spawnPos.y, spawnPos.z,
-												0,
-												1.0, 0.1, 0.1,
-												1.0
-										);
+										serverLevel.sendParticles(MainParticles.GUARD_BLOCK.get(), spawnPos.x, spawnPos.y, spawnPos.z, 0, 1.0, 0.1, 0.1, 1.0);
 									}
 								} else {
 									victimData.getResources().removePoise((int) poiseDamage);
@@ -285,47 +273,21 @@ public class CombatEvent {
 
 									if (isParry) {
 										finalDmg = 0;
-										if (source.getEntity() instanceof LivingEntity attackerLiving) {
+										if (sourceEntity instanceof LivingEntity attackerLiving) {
 											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
-
-											// Efecto de Parry (temblor de pantalla pequeño) al atacante
 											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
 										}
-										//System.out.println("Parry!");
-										//SONIDO PARRY
-										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-												MainSounds.PARRY.get(),
-												net.minecraft.sounds.SoundSource.PLAYERS,
-												1.0F,
-												0.9F + victim.getRandom().nextFloat() * 0.1F);
+										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
 										if (victim.level() instanceof ServerLevel serverLevel) {
 											Vec3 look = victim.getLookAngle();
 											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
-											serverLevel.sendParticles(
-													MainParticles.GUARD_BLOCK.get(),
-													spawnPos.x, spawnPos.y, spawnPos.z,
-													0,
-													1.0, 1.0, 1.0,
-													1.0
-											);
+											serverLevel.sendParticles(MainParticles.GUARD_BLOCK.get(), spawnPos.x, spawnPos.y, spawnPos.z, 0, 1.0, 1.0, 1.0, 1.0);
 											for (int i = 0; i < 15; i++) {
-												serverLevel.sendParticles(
-														MainParticles.KI_TRAIL.get(),
-														spawnPos.x, spawnPos.y, spawnPos.z,
-														0,
-														1.0, 1.0, 1.0,
-														1.0
-												);
-												serverLevel.sendParticles(
-														MainParticles.SPARKS.get(),
-														spawnPos.x, spawnPos.y, spawnPos.z,
-														0,
-														1.0, 1.0, 1.0,
-														1.0
-												);
+												serverLevel.sendParticles(MainParticles.KI_TRAIL.get(), spawnPos.x, spawnPos.y, spawnPos.z, 0, 1.0, 1.0, 1.0, 1.0);
+												serverLevel.sendParticles(MainParticles.SPARKS.get(), spawnPos.x, spawnPos.y, spawnPos.z, 0, 1.0, 1.0, 1.0, 1.0);
 											}
 										}
 
@@ -339,21 +301,11 @@ public class CombatEvent {
 										int randomSound = victim.getRandom().nextInt(3);
 										SoundEvent soundToPlay;
 
-										if (randomSound == 0) {
-											soundToPlay = MainSounds.BLOCK1.get();
-										} else if (randomSound == 1) {
-											soundToPlay = MainSounds.BLOCK2.get();
-										} else {
-											soundToPlay = MainSounds.BLOCK3.get();
-										}
+										if (randomSound == 0) soundToPlay = MainSounds.BLOCK1.get();
+										else if (randomSound == 1) soundToPlay = MainSounds.BLOCK2.get();
+										else soundToPlay = MainSounds.BLOCK3.get();
 
-//                                        System.out.println("Bloqueo! Daño antes: " + originalDmg + ", después: " + finalDmg);
-
-										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-												soundToPlay,
-												SoundSource.PLAYERS,
-												1.0F,
-												0.9F + victim.getRandom().nextFloat() * 0.1F);
+										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), soundToPlay, SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
 										//EFECTOS
 										if (victim.level() instanceof ServerLevel serverLevel) {
@@ -362,54 +314,28 @@ public class CombatEvent {
 											double percentage = (currentPoiseVal / maxPoise) * 100.0;
 											double r, g, b;
 
-											if (percentage > 66) {
-												r = 0.2;
-												g = 0.9;
-												b = 1.0;
-											} else if (percentage > 33) {
-												r = 1.0;
-												g = 0.5;
-												b = 0.0;
-											} else {
-												r = 1.0;
-												g = 0.1;
-												b = 0.1;
-											}
+											if (percentage > 66) {r = 0.2;g = 0.9;b = 1.0;}
+											else if (percentage > 33) {r = 1.0;g = 0.5;b = 0.0;}
+											else {r = 1.0;g = 0.1;b = 0.1;}
 
 											Vec3 look = victim.getLookAngle();
 											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
 
-											serverLevel.sendParticles(
-													MainParticles.BLOCK_PARTICLE.get(),
-													spawnPos.x, spawnPos.y, spawnPos.z,
-													0,
-													r, g, b,
-													1.0
-											);
+											serverLevel.sendParticles(MainParticles.BLOCK_PARTICLE.get(), spawnPos.x, spawnPos.y, spawnPos.z, 0, r, g, b, 1.0);
 										}
 
 									}
 
 									if (victim instanceof ServerPlayer sPlayer) {
-										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(
-												sPlayer,
-												source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null,
-												originalDmg,
-												finalDmg,
-												isParry,
-												poiseDamage
-										);
+										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(sPlayer, source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null, originalDmg, finalDmg, isParry, poiseDamage);
 										MinecraftForge.EVENT_BUS.post(blockEvent);
 
-										if (!blockEvent.isCanceled()) {
-											currentDamage[0] = blockEvent.getFinalDamage();
-										} else {
+										if (!blockEvent.isCanceled()) currentDamage[0] = blockEvent.getFinalDamage();
+										else {
 											blocked = false;
 											currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 										}
-									} else {
-										currentDamage[0] = finalDmg;
-									}
+									} else currentDamage[0] = finalDmg;
 								}
 							}
 						}
@@ -417,27 +343,18 @@ public class CombatEvent {
 
 					if (!blocked) {
 						if (!victimData.getStatus().isStunned() || victimData.getResources().getCurrentPoise() > 0) {
-							if (!victimData.getStatus().isBlocking()) {
-								currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
-							}
+							currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 						}
 					}
 
 					if (victimData.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
-						if (activeForm != null) {
+						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
 							String formGroup = victimData.getCharacter().getActiveFormGroup();
 							String formName = victimData.getCharacter().getActiveForm();
-							victimData.getCharacter().getFormMasteries().addMastery(
-									formGroup,
-									formName,
-									activeForm.getMasteryPerDamageReceived(),
-									activeForm.getMaxMastery()
-							);
+							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived(), activeForm.getMaxMastery());
 
-							if (victim instanceof ServerPlayer serverPlayer) {
-								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-							}
+							if (victim instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 						}
 					}
 				}
