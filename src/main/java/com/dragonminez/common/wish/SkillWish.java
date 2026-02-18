@@ -22,7 +22,7 @@ public class SkillWish extends Wish {
     public void grant(ServerPlayer player) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             if (!data.getStatus().hasCreatedCharacter()) return;
-            data.getSkills().addSkillLevel(skill, level);
+            data.getSkills().setSkillLevel(skill, level);
             NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
         });
     }
