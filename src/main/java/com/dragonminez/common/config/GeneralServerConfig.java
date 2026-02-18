@@ -46,6 +46,7 @@ public class GeneralServerConfig {
         private double mightFruitPower = 1.2;
         private double majinPower = 1.3;
 		private double metamoruFusionThreshold = 0.5;
+		private String[] fusionBoosts = {"STR", "SKP", "PWR"};
 		private int fusionDurationSeconds = 900;
 		private int fusionCooldownSeconds = 1800;
 
@@ -68,6 +69,7 @@ public class GeneralServerConfig {
         public double getMightFruitPower() { return Math.max(0, Math.min(mightFruitPower, Double.MAX_VALUE)); }
         public double getMajinPower() { return Math.max(0, Math.min(majinPower, Double.MAX_VALUE)); }
 		public double getMetamoruFusionThreshold() { return Math.max(0, Math.min(metamoruFusionThreshold, Double.MAX_VALUE)); }
+		public String[] getFusionBoosts() { return fusionBoosts; }
 		public int getFusionDurationSeconds() { return Math.max(0, Math.min(fusionDurationSeconds, Integer.MAX_VALUE)); }
 		public int getFusionCooldownSeconds() { return Math.max(0, Math.min(fusionCooldownSeconds, Integer.MAX_VALUE)); }
 

@@ -307,6 +307,7 @@ public class ConfigManager {
     }
 
     private static void setupHumanCharacter(RaceCharacterConfig config) {
+		config.setRacialSkill("human");
 		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(1);
@@ -330,6 +331,7 @@ public class ConfigManager {
     }
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
+		config.setRacialSkill("saiyan");
 		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(1);
@@ -352,6 +354,7 @@ public class ConfigManager {
     }
 
     private static void setupNamekianCharacter(RaceCharacterConfig config) {
+		config.setRacialSkill("namekian");
 		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
@@ -374,6 +377,7 @@ public class ConfigManager {
     }
 
     private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
+		config.setRacialSkill("frostdemon");
 		config.setDefaultModelScaling(new float[]{0.7375f, 0.7375f, 0.7375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
@@ -396,6 +400,7 @@ public class ConfigManager {
     }
 
     private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
+		config.setRacialSkill("bioandroid");
 		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
@@ -418,6 +423,7 @@ public class ConfigManager {
     }
 
     private static void setupMajinCharacter(RaceCharacterConfig config) {
+		config.setRacialSkill("majin");
 		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
         config.setDefaultBodyType(0);
         config.setDefaultHairType(0);
@@ -440,6 +446,7 @@ public class ConfigManager {
     }
 
     private static void setupDefaultCharacter(RaceCharacterConfig config) {
+		config.setRacialSkill("human");
 		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);
