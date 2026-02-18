@@ -25,26 +25,22 @@ public class Skills {
     public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax, int androidformsMax) {
         Skill superform = skillMap.get("superform");
         if (superform != null) {
-            Skill updated = new Skill("superform", superform.getLevel(), superform.isActive(), superformMax);
-            skillMap.put("superform", updated);
+            superform.setMaxLevel(superformMax);
         }
 
         Skill godform = skillMap.get("godform");
         if (godform != null) {
-            Skill updated = new Skill("godform", godform.getLevel(), godform.isActive(), godformMax);
-            skillMap.put("godform", updated);
+            godform.setMaxLevel(godformMax);
         }
 
         Skill legendaryforms = skillMap.get("legendaryforms");
         if (legendaryforms != null) {
-            Skill updated = new Skill("legendaryforms", legendaryforms.getLevel(), legendaryforms.isActive(), legendaryformsMax);
-            skillMap.put("legendaryforms", updated);
+            legendaryforms.setMaxLevel(legendaryformsMax);
         }
 
         Skill androidforms = skillMap.get("androidforms");
         if (androidforms != null) {
-            Skill updated = new Skill("androidforms", androidforms.getLevel(), androidforms.isActive(), androidformsMax);
-            skillMap.put("androidforms", updated);
+            androidforms.setMaxLevel(androidformsMax);
         }
     }
 
@@ -66,18 +62,21 @@ public class Skills {
 		return skill != null ? skill.getMaxLevel() : 0;
 	}
 
+    private int calculateMaxLevel(String skillName) {
+        int costBasedMaxLevel = ConfigManager.getSkillsConfig().getSkillCosts(skillName).getCosts().size();
+        if (skillName.equalsIgnoreCase("potentialunlock")) {
+            return Math.min(costBasedMaxLevel, 30);
+        } else if (skillName.equalsIgnoreCase("kaioken")) {
+            return Math.min(costBasedMaxLevel, 20);
+        } else {
+            return Math.min(costBasedMaxLevel, 50);
+        }
+    }
+
     public void setSkillLevel(String name, int level) {
         String lowerName = name.toLowerCase();
         if (!skillMap.containsKey(lowerName)) {
-            int costBasedMaxLevel = ConfigManager.getSkillsConfig().getSkillCosts(lowerName).getCosts().size();
-            int finalMaxLevel;
-            if (lowerName.equalsIgnoreCase("potentialunlock")) {
-                finalMaxLevel = Math.min(costBasedMaxLevel, 30);
-            } else if (lowerName.equalsIgnoreCase("kaioken")) {
-                finalMaxLevel = Math.min(costBasedMaxLevel, 20);
-            }else {
-                finalMaxLevel = Math.min(costBasedMaxLevel, 50);
-            }
+            int finalMaxLevel = calculateMaxLevel(lowerName);
             skillMap.put(lowerName, new Skill(name, 0, false, finalMaxLevel));
         }
         skillMap.get(lowerName).setLevel(level);
@@ -141,7 +140,13 @@ public class Skills {
             for (int i = 0; i < skillsList.size(); i++) {
                 CompoundTag skillTag = skillsList.getCompound(i);
                 Skill skill = Skill.load(skillTag);
-                skillMap.put(skill.getName().toLowerCase(), skill);
+
+                String skillName = skill.getName().toLowerCase();
+                if (!skillName.equals("superform") && !skillName.equals("godform") && !skillName.equals("legendaryforms") && !skillName.equals("androidforms")) {
+                    skill.setMaxLevel(calculateMaxLevel(skillName));
+                }
+
+                skillMap.put(skillName, skill);
             }
         }
     }

@@ -7,7 +7,7 @@ public class Skill {
     private final String name;
     private int level;
     private boolean isActive;
-    private final int maxLevel;
+    private int maxLevel;
 
     public Skill(String name, int maxLevel) {
         this.name = name;
@@ -51,6 +51,13 @@ public class Skill {
         return maxLevel;
     }
 
+    public void setMaxLevel(int maxLevel) {
+        this.maxLevel = maxLevel;
+        if (this.level > maxLevel) {
+            this.level = maxLevel;
+        }
+    }
+
     public boolean isMaxLevel() {
         return level >= maxLevel;
     }
@@ -90,5 +97,6 @@ public class Skill {
     public void copyFrom(Skill other) {
         this.level = other.level;
         this.isActive = other.isActive;
+        this.maxLevel = other.maxLevel;
     }
 }

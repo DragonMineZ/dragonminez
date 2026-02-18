@@ -42,9 +42,7 @@ public class GeneralUserConfig {
 		public void setHexagonStatsDisplay(boolean hexagonStatsDisplay) { this.hexagonStatsDisplay = hexagonStatsDisplay; }
 
 		public float getMenuScaleMultiplier() {
-			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
-				menuScaleMultiplier = 1.0f;
-			}
+			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
 			return menuScaleMultiplier;
 		}
 
