@@ -3,7 +3,6 @@ package com.dragonminez.server;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.server.commands.*;
-import com.dragonminez.server.events.players.TickHandler;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 
@@ -11,10 +10,6 @@ public class DMZServer {
 
     public static void init() {
         LogUtil.info(Env.SERVER, "Initializing DragonMineZ Server...");
-
-		// FIXME: Should be moved to one of the mod's initialization events, like Init.
-		TickHandler.registerActionModeHandlers();
-		TickHandler.registerStatusEffectHandlers();
     }
 
 	public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
