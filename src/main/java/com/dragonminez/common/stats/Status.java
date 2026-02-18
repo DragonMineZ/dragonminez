@@ -89,7 +89,7 @@ public class Status {
 	public boolean isRenderKatana() { return renderKatana; }
 	public String getBackWeapon() { return backWeapon; }
 	public String getScouterItem() { return scouterItem; }
-	 public String getPothalaColor() { return pothalaColor; }
+	public String getPothalaColor() { return pothalaColor; }
 
     public void setAlive(boolean alive) { this.isAlive = alive; }
     public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
@@ -99,7 +99,7 @@ public class Status {
     public void setDescending(boolean descending) { this.isDescending = descending; }
     public void setInKaioPlanet(boolean inKaio) { this.isInKaioPlanet = inKaio; }
 	public void setChargingKi(boolean charging) { this.isChargingKi = charging; }
-	public void setActiveKaiokenPhase(int phase) { this.activeKaiokenPhase = Math.max(0, Math.min(phase, 5)); }
+	public void setActiveKaiokenPhase(int phase) { this.activeKaiokenPhase = Math.max(0, phase); }
 	public void setBlocking(boolean blocking) { this.isBlocking = blocking; }
 	public void setLastBlockTime(long time) { this.lastBlockTime = time; }
 	public void setLastHurtTime(long time) { this.lastHurtTime = time; }

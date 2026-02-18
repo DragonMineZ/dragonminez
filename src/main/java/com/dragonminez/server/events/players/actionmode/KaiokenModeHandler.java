@@ -32,8 +32,7 @@ public class KaiokenModeHandler implements IActionModeHandler {
 
         if (currentPhase < maxPhase) {
             data.getStatus().setActiveKaiokenPhase(currentPhase + 1);
-            String name = TransformationsHelper.getKaiokenName(currentPhase + 1);
-            player.displayClientMessage(Component.translatable("message.dragonminez.kaioken.activate", name), true);
+            player.displayClientMessage(Component.translatable("message.dragonminez.kaioken.phase" + (currentPhase + 1)), true);
         }
 
         if (!data.getSkills().isSkillActive("kaioken")) data.getSkills().setSkillActive("kaioken", true);
