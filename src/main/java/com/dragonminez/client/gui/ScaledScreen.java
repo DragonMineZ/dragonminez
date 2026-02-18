@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -9,9 +10,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class ScaledScreen extends Screen {
-	protected static final int TARGET_GUI_SCALE = 3;
 	private static final int MIN_GUI_WIDTH = 320;
 	private static final int MIN_GUI_HEIGHT = 240;
+	private static final float MIN_MENU_SCALE_MULTIPLIER = 0.25f;
+	private static final float MAX_MENU_SCALE_MULTIPLIER = 3.0f;
 
 	private float uiScale = 1.0f;
 	private int uiWidth;
@@ -30,13 +32,7 @@ public abstract class ScaledScreen extends Screen {
 		}
 
 		Window window = this.minecraft.getWindow();
-		double currentScale = window.getGuiScale();
-		if (currentScale <= 0.0D) {
-			currentScale = 1.0D;
-		}
-
-		int targetScale = calculateTargetScale(window);
-		float newScale = (float) (targetScale / currentScale);
+		float newScale = calculateUiScale(window);
 		if (newScale <= 0.0f || Float.isNaN(newScale) || Float.isInfinite(newScale)) {
 			newScale = 1.0f;
 		}
@@ -48,20 +44,40 @@ public abstract class ScaledScreen extends Screen {
 		uiHeight = Math.max(1, Math.round(currentHeight / uiScale));
 	}
 
-	private int calculateTargetScale(Window window) {
-		int targetScale = Math.max(1, TARGET_GUI_SCALE);
-		int scale = 1;
-		while (scale < targetScale
-				&& window.getWidth() / (scale + 1) >= MIN_GUI_WIDTH
-				&& window.getHeight() / (scale + 1) >= MIN_GUI_HEIGHT) {
-			scale++;
+	private float calculateUiScale(Window window) {
+		float availableScale = getAvailableScale(window);
+		float dynamicScale = (float) Math.sqrt(availableScale);
+		float desiredScale = dynamicScale * getMenuScaleMultiplier();
+		return clamp(desiredScale, 1.0f, availableScale);
+	}
+
+	private float getAvailableScale(Window window) {
+		int guiWidth = Math.max(1, window.getGuiScaledWidth());
+		int guiHeight = Math.max(1, window.getGuiScaledHeight());
+		float widthScale = guiWidth / (float) MIN_GUI_WIDTH;
+		float heightScale = guiHeight / (float) MIN_GUI_HEIGHT;
+		float availableScale = Math.min(widthScale, heightScale);
+
+		if (!Float.isFinite(availableScale) || availableScale <= 0.0f) {
+			return 1.0f;
 		}
 
-		if (this.minecraft != null && this.minecraft.isEnforceUnicode() && (scale % 2 != 0)) {
-			scale++;
-		}
+		return Math.max(1.0f, availableScale);
+	}
 
-		return scale;
+	private float getMenuScaleMultiplier() {
+		float multiplier = ConfigManager.getUserConfig().getHud().getMenuScaleMultiplier();
+		if (!Float.isFinite(multiplier)) {
+			return 1.0f;
+		}
+		return clamp(multiplier, MIN_MENU_SCALE_MULTIPLIER, MAX_MENU_SCALE_MULTIPLIER);
+	}
+
+	private float clamp(float value, float min, float max) {
+		if (max < min) {
+			return min;
+		}
+		return Math.max(min, Math.min(max, value));
 	}
 
 	protected float getUiScale() {

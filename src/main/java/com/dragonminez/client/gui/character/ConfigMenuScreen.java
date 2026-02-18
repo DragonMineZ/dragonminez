@@ -91,6 +91,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
             ConfigType.BOOLEAN, hudConfig.isHexagonStatsDisplay() ? 1 : 0, 0, 1,
             v -> hudConfig.setHexagonStatsDisplay(v > 0)));
 
+		configOptions.add(new ConfigOption("config.menuScaleMultiplier",
+			ConfigType.FLOAT, hudConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
+			v -> hudConfig.setMenuScaleMultiplier(v)));
+
         configOptions.add(new ConfigOption("config.healthBarPosX",
             ConfigType.INT, hudConfig.getHealthBarPosX(), -1000, 2000,
             v -> hudConfig.setHealthBarPosX(v.intValue())));
@@ -332,11 +336,21 @@ public class ConfigMenuScreen extends BaseMenuScreen {
             int step = isShiftDown ? 5 : 1;
             option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
         } else if (option.type == ConfigType.FLOAT) {
-            float step = isShiftDown ? 1.0f : 0.1f;
-            option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
+			float step;
+			if ("config.menuScaleMultiplier".equals(option.key)) {
+				step = isShiftDown ? 0.25f : 0.05f;
+			} else {
+				step = isShiftDown ? 1.0f : 0.1f;
+			}
+			option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
+			option.value = Math.round(option.value * 100.0f) / 100.0f;
         }
 
         option.setter.accept(option.value);
+
+		if ("config.menuScaleMultiplier".equals(option.key)) {
+			rebuildWidgets();
+		}
     }
 
     @Override

@@ -6,7 +6,7 @@ public class GeneralUserConfig {
 
     public HudConfig getHud() { return hud; }
 
-    public static class HudConfig {
+	public static class HudConfig {
 		private boolean firstPersonAnimated = true;
 		private int xenoverseHudPosX = 5;
 		private int xenoverseHudPosY = 5;
@@ -14,6 +14,7 @@ public class GeneralUserConfig {
 		private boolean advancedDescriptionPercentage = true;
 		private boolean alternativeHud = false;
 		private boolean hexagonStatsDisplay = false;
+		private float menuScaleMultiplier = 1.0f;
         private int healthBarPosX = 10;
         private int healthBarPosY = 20;
         private int energyBarPosX = 10;
@@ -39,6 +40,21 @@ public class GeneralUserConfig {
 
 		public boolean isHexagonStatsDisplay() { return hexagonStatsDisplay; }
 		public void setHexagonStatsDisplay(boolean hexagonStatsDisplay) { this.hexagonStatsDisplay = hexagonStatsDisplay; }
+
+		public float getMenuScaleMultiplier() {
+			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
+				menuScaleMultiplier = 1.0f;
+			}
+			return menuScaleMultiplier;
+		}
+
+		public void setMenuScaleMultiplier(float menuScaleMultiplier) {
+			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
+				this.menuScaleMultiplier = 1.0f;
+				return;
+			}
+			this.menuScaleMultiplier = menuScaleMultiplier;
+		}
 
         public int getHealthBarPosX() { return healthBarPosX; }
         public void setHealthBarPosX(int healthBarPosX) { this.healthBarPosX = healthBarPosX; }
