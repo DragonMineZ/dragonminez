@@ -1,14 +1,13 @@
 package com.dragonminez.common.wish;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 
 public class CommandWish extends Wish {
     private final String[] commands;
 
     public CommandWish(String name, String description, String... commands) {
-        super(name, description);
+        super(name, description, "command");
         this.commands = commands;
     }
 
@@ -21,16 +20,7 @@ public class CommandWish extends Wish {
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.addProperty("type", "command");
-        json.addProperty("name", getName());
-        json.addProperty("description", getDescription());
-        JsonArray commandsArray = new JsonArray();
-        for (String command : commands) {
-            commandsArray.add(command);
-        }
-        json.add("commands", commandsArray);
-        return json;
+    public String toJson() {
+        return new GsonBuilder().setPrettyPrinting().create().toJson(this, CommandWish.class);
     }
 }
