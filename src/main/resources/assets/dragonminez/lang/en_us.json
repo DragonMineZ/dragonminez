@@ -300,7 +300,11 @@
   "forms.dragonminez.base": "Base",
 
   "//": "TRANSFORMATIONS",
-  "message.dragonminez.kaioken.activate": "§cKaioken %s§c!",
+  "message.dragonminez.kaioken.phase1": "§cKaioken x2!",
+  "message.dragonminez.kaioken.phase2": "§cKaioken x3!",
+  "message.dragonminez.kaioken.phase3": "§cKaioken x4!",
+  "message.dragonminez.kaioken.phase4": "§cKaioken x10!",
+  "message.dragonminez.kaioken.phase5": "§cKaioken x20!",
   "message.dragonminez.form.no_ki_instant": "§cYou need at least %s §cKi to transform instantly.",
   "message.dragonminez.form.no_ki": "§cYou need at least %s §cKi to transform.",
   "race.dragonminez.base": "Base",

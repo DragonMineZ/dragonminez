@@ -64,8 +64,10 @@ public class Skills {
 
     private int calculateMaxLevel(String skillName) {
         int costBasedMaxLevel = ConfigManager.getSkillsConfig().getSkillCosts(skillName).getCosts().size();
-        if (skillName.equalsIgnoreCase("potentialunlock") || skillName.equalsIgnoreCase("kaioken")) {
+        if (skillName.equalsIgnoreCase("potentialunlock")) {
             return Math.min(costBasedMaxLevel, 30);
+        } else if (skillName.equalsIgnoreCase("kaioken")) {
+            return Math.min(costBasedMaxLevel, 20);
         } else {
             return Math.min(costBasedMaxLevel, 50);
         }
@@ -138,12 +140,12 @@ public class Skills {
             for (int i = 0; i < skillsList.size(); i++) {
                 CompoundTag skillTag = skillsList.getCompound(i);
                 Skill skill = Skill.load(skillTag);
-                
+
                 String skillName = skill.getName().toLowerCase();
                 if (!skillName.equals("superform") && !skillName.equals("godform") && !skillName.equals("legendaryforms") && !skillName.equals("androidforms")) {
                     skill.setMaxLevel(calculateMaxLevel(skillName));
                 }
-                
+
                 skillMap.put(skillName, skill);
             }
         }
