@@ -262,6 +262,10 @@
   "wish.shenron.strongest.desc": "Receive 'The Strongest' armor set.",
   "wish.shenron.mightfruit.name": "Might Tree Fruit",
   "wish.shenron.mightfruit.desc": "Receive some Might Tree Fruits.",
+  "wish.shenron.namekcpu.name": "Namekian Radar CPU",
+  "wish.shenron.namekcpu.desc": "Receive a Namekian Radar CPU.",
+  "wish.shenron.saiyanship.name": "Saiyan Spaceship",
+  "wish.shenron.saiyanship.desc": "Receive a Saiyan Spaceship.",
   "wish.porunga.senzu.name": "Senzu Beans",
   "wish.porunga.senzu.desc": "Receive some Senzu Beans.",
   "wish.porunga.tps.name": "Training Points",
@@ -885,7 +889,6 @@
   "command.dragonminez.story.quest_removed": "§e[DMZ-Story]§r §aQuest removed: §e%s - Quest %s",
   "command.dragonminez.story.saga_reset": "§e[DMZ-Story]§r §aSaga reset: §e%s",
   "command.dragonminez.story.complete_all": "§e[DMZ-Story]§r §aAll quests completed in saga: §e%s",
-
   "command.dragonminez.skills.unknown_skill": "§e[DMZ-Skills]§r §cUnknown skill: %s",
   "command.dragonminez.skills.set_success": "§e[DMZ-Skills]§r Set skill '%s' to level %s for %s",
   "command.dragonminez.skills.set_multiple": "§e[DMZ-Skills]§r Set skill '%s' to level %s for %d players.",
