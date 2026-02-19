@@ -103,8 +103,6 @@ public class WishManager {
             strongest.add(new Tuple<>("dragonminez:strongest_armor_leggings", 1));
             strongest.add(new Tuple<>("dragonminez:strongest_armor_boots", 1));
             wishes.add(new MultiItemWish("wish.shenron.strongest.name", "wish.shenron.strongest.desc", strongest));
-
-            wishes.add(new SkillWish("wish.shenron.kaioken.name", "wish.shenron.kaioken.desc", "kaioken", 10));
         } else if (dragonName.equals("porunga")) {
             wishes.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 32));
             wishes.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000));
