@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.crowdin.CrowdinPackResources;
+import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.hud.AlternativeHUD;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
@@ -128,6 +129,8 @@ public class ModClientEvents {
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.POTTED_AJISSA_SAPLING.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(MainBlocks.POTTED_SACRED_SAPLING.get(), RenderType.cutout());
         });
+
+        UtilityMenuScreen.initMenuSlots();
 	}
 
     @SubscribeEvent

@@ -23,7 +23,12 @@ import java.util.List;
 public class UtilityMenuScreen extends Screen {
 	private static final List<IUtilityMenuSlot> MENU_SLOTS = new ArrayList<>();
 	private static final List<IUtilityMenuSlot> ADDON_SLOTS = new ArrayList<>();
-	private static final int[][] POSITIONS = {
+	private static final int[][] POSITIONS_3X3 = {
+			{-1, -1}, {0, -1}, {1, -1},
+			{-1,  0},          {1,  0},
+			{-1,  1}, {0,  1}, {1,  1}
+	};
+	private static final int[][] POSITIONS_3X5 = {
 			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1},
 			{-2,  0}, {-1,  0},          {1,  0}, {2,  0},
 			{-2,  1}, {-1,  1}, {0,  1}, {1,  1}, {2,  1}
@@ -35,7 +40,9 @@ public class UtilityMenuScreen extends Screen {
 	private static final int BUTTON_HEIGHT = 70;
 	private static final int GAP = 5;
 
-	private long openTime;
+	private static int[][] POSITIONS = POSITIONS_3X3;
+
+	private final long openTime;
 	private StatsData statsData;
 
 
@@ -51,9 +58,6 @@ public class UtilityMenuScreen extends Screen {
 		if (mc.player != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> this.statsData = data);
 		}
-
-		// FIXME: This should be moved to a mod loading event, perhaps post init
-		initMenuSlots();
 	}
 
 	@Override
@@ -182,11 +186,17 @@ public class UtilityMenuScreen extends Screen {
 			MENU_SLOTS.add(5, new KiManipulationMenuSlot());
 			MENU_SLOTS.add(6, new RacialActionMenuSlot());
 			MENU_SLOTS.add(7, new DescendFormMenuSlot());
+
 			if (!ADDON_SLOTS.isEmpty()) {
-				for (int i = MENU_SLOTS.size(), e = 0; i < POSITIONS.length && e <= ADDON_SLOTS.size(); i++, e++) {
+				for (int i = MENU_SLOTS.size(), e = 0; i < POSITIONS_3X5.length && e <= ADDON_SLOTS.size(); i++, e++) {
 					MENU_SLOTS.add(i, ADDON_SLOTS.get(e));
 				}
 			}
+
+			if (MENU_SLOTS.size() >= POSITIONS_3X3.length) {
+				POSITIONS = POSITIONS_3X5;
+			}
+
 			for (int i = MENU_SLOTS.size(); i < POSITIONS.length; i++) {
 				MENU_SLOTS.add(i, new EmptyMenuSlot());
 			}
