@@ -189,39 +189,22 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 	}
 
 	@Unique
-	private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
-		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+    private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
+        AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-			var character = data.getCharacter();
-			String race = character.getRaceName().toLowerCase();
-			String gender = character.getGender().toLowerCase();
-			String currentForm = character.getActiveForm();
+        return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+            var character = data.getCharacter();
+            String race = character.getRaceName().toLowerCase();
 
-			boolean isOozaru = race.equals("saiyan") && (
-					Objects.equals(currentForm, SaiyanForms.OOZARU) ||
-							Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)
-			);
+            if ((race.equals("bioandroid") && data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))) {
+                return PlayState.STOP;
+            }
 
-			boolean isMajinWithTail = race.equals("majin") &&
-					(gender.equals("female") || gender.equals("mujer")) &&
-					(Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA));
+            state.getController().setAnimation(TAIL);
+            return PlayState.CONTINUE;
 
-			boolean hasTail = isOozaru
-					|| (race.equals("saiyan") && data.getStatus().isTailVisible())
-					|| race.equals("frostdemon")
-					|| (race.equals("bioandroid") && !data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))
-					|| isMajinWithTail;
-
-			if (!hasTail) {
-				return PlayState.STOP;
-			}
-
-			state.getController().setAnimation(TAIL);
-			return PlayState.CONTINUE;
-
-		}).orElse(PlayState.STOP);
-	}
+        }).orElse(PlayState.STOP);
+    }
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState comboPredicate(AnimationState<T> state) {

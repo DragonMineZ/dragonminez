@@ -6,7 +6,7 @@ public class FrostDemonForms {
 
 	// Evolution Forms group
 	public static final String GROUP_EVOLUTIONFORMS = "evolutionforms";
-        public static final String SECOND_FORM = "second";
+    public static final String SECOND_FORM = "second";
 	public static final String THIRD_FORM = "third";
 	public static final String FINAL_FORM = "final";
 	public static final String FULLPOWER = "fullpower";

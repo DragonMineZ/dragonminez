@@ -95,7 +95,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             return;
         }
 
-        if (raceName.equals("saiyan") && stats.getStatus().isTailVisible()) {
+        if (logicKey.equals("saiyan") && stats.getStatus().isTailVisible()) {
             float[] tailColor = character.hasActiveForm() ? hair : hexToRGB("#572117");
             renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", tailColor, partialTick, packedLight, packedOverlay, alpha);
         }
@@ -120,7 +120,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 renderBodyFrostDemon(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, hair, alpha, partialTick, packedLight, packedOverlay, key);
                 break;
 
-            case "namekian":
+            case "namekian", "namekian_orange":
                 renderBodyNamekian(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, alpha, partialTick, packedLight, packedOverlay);
                 break;
 
@@ -169,7 +169,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     private void renderBodyNamekian(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float[] c1, float[] c2, float[] c3, float alpha, float partialTick, int packedLight, int packedOverlay) {
         int bodyType = stats.getCharacter().getBodyType();
 
-        String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
+        //String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
+        String basePath = "textures/entity/races/namekian/bodytype_0_";
 
         renderColoredLayer(model, poseStack, animatable, bufferSource, basePath + "layer1.png", c1, partialTick, packedLight, packedOverlay, alpha);
         renderColoredLayer(model, poseStack, animatable, bufferSource, basePath + "layer2.png", c2, partialTick, packedLight, packedOverlay, alpha);
