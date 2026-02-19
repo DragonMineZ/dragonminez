@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Set;
 
 public class StatsCommand {
-	private static final int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
-
 	private static final SuggestionProvider<CommandSourceStack> STAT_SUGGESTIONS = (ctx, builder) ->
 			SharedSuggestionProvider.suggest(Set.of("STR", "SKP", "RES", "VIT", "PWR", "ENE", "ALL"), builder);
 
@@ -94,6 +92,7 @@ public class StatsCommand {
 		}
 
 		int value;
+		int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
 		try {
 			if (amountStr.equalsIgnoreCase("max")) value = MAX_STAT_VALUE;
 			else if (amountStr.equalsIgnoreCase("min")) value = 5;
@@ -142,6 +141,7 @@ public class StatsCommand {
 	}
 
 	private static void applyModification(StatsData data, String stat, int value, String mode) {
+		int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
 		switch (mode) {
 			case "set" -> data.getStats().setStat(stat, Math.min(value, MAX_STAT_VALUE));
 			case "add" -> data.getStats().addStat(stat, value);

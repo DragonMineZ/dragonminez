@@ -95,10 +95,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
             if (race.equals("human") || race.equals("saiyan")) {
                 if (!isMale) return MAJIN_SLIM;
-
-                if (bodyType == 0) {
-                    return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
-                }
+                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
                 return BASE_DEFAULT;
             }
 

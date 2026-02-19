@@ -5,7 +5,6 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
@@ -68,6 +67,23 @@ public class ConfigManager {
             LogUtil.error(Env.COMMON, "Error initializing configuration system: {}", e.getMessage());
         }
     }
+
+	public static void reload() {
+		LogUtil.info(Env.COMMON, "Reloading DragonMineZ configuration system...");
+
+		try {
+			RACE_STATS.clear();
+			RACE_CHARACTER.clear();
+			RACE_FORMS.clear();
+			LOADED_RACES.clear();
+
+			loadGeneralConfigs();
+			loadAllRaces();
+			LogUtil.info(Env.COMMON, "Configuration system reloaded successfully");
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Error reloading configuration system: {}", e.getMessage());
+		}
+	}
 
 	private static void backupOldConfig(Path configPath) {
 		if (Files.exists(configPath)) {
@@ -685,6 +701,10 @@ public class ConfigManager {
 
         return races;
     }
+
+	public static List<String> getDefaultRaces() {
+		return Arrays.asList(DEFAULT_RACES);
+	}
 
     public static boolean isRaceLoaded(String raceName) {
         if (SERVER_SYNCED_CHARACTER != null) return SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());

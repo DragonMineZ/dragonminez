@@ -15,7 +15,7 @@ public class CommandWish extends Wish {
     public void grant(ServerPlayer player) {
         for (String command : commands) {
             String parsedCommand = command.replace("%player%", player.getName().getString());
-            player.getServer().getCommands().performPrefixedCommand(player.getServer().createCommandSourceStack(), parsedCommand);
+            player.getServer().getCommands().performPrefixedCommand(player.getServer().createCommandSourceStack().withPermission(4), parsedCommand);
         }
     }
 

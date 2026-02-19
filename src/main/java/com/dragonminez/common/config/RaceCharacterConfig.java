@@ -82,4 +82,8 @@ public class RaceCharacterConfig {
     public void setGodformTpCost(int[] costs) { this.godformTpCost = costs; }
     public void setLegendaryformsTpCost(int[] costs) { this.legendaryformsTpCost = costs; }
     public void setAndroidformsTpCost(int[] costs) { this.androidformsTpCost = costs; }
+
+    public boolean hasCustomModel() {
+        return this.customModel != null && !this.customModel.isEmpty();
+    }
 }

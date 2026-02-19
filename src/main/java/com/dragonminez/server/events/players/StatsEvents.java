@@ -6,6 +6,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
@@ -55,10 +57,7 @@ public class StatsEvents {
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) {
-            return;
-        }
-
+        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
         Player player = event.player;
         if (!(player instanceof ServerPlayer serverPlayer)) return;
 
@@ -131,46 +130,38 @@ public class StatsEvents {
         return listaEnemigos.stream().anyMatch(clase -> clase.isInstance(entity));
     }
 
-    private static boolean removeAlignment = false;
-    private static boolean addAlignment = false;
+	private static boolean addsAlignment(Entity entity) {
+		return entity instanceof RedRibbonSoldierEntity || entity instanceof SagaFriezaSoldier01Entity || entity instanceof SagaFriezaSoldier02Entity
+				|| entity instanceof RobotEntity || entity instanceof BanditEntity;
+	}
+
+	private static boolean removesAlignment(Entity entity) {
+		return entity instanceof NamekWarriorEntity || entity instanceof Villager || entity instanceof NamekTraderEntity;
+	}
+
 
     @SubscribeEvent
     public static void onEntityDeath(LivingDeathEvent event) {
-        if (event.getEntity().level().isClientSide) {
-            return;
-        }
-
-        if (!(event.getSource().getEntity() instanceof Player attacker)) {
-            return;
-        }
+        if (event.getEntity().level().isClientSide) return;
+        if (!(event.getSource().getEntity() instanceof Player attacker)) return;
+		AtomicBoolean addAlignment = new AtomicBoolean(false);
+		AtomicBoolean removeAlignment = new AtomicBoolean(false);
 
         if (event.getEntity() instanceof Player victim) {
-            StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-                StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
-                    if (victimData.getResources().getAlignment() < 50 || !victimData.getStatus().hasCreatedCharacter()) {
-                        addAlignment = true;
-                    } else {
-                        removeAlignment = true;
-                    }
-
-                    if (victimData.getStatus().hasCreatedCharacter()) {
-                        victimData.getEffects().removeAllEffects();
-                        victimData.getStatus().setChargingKi(false);
-                        victimData.getStatus().setActionCharging(false);
-                        victimData.getCharacter().setActiveForm(null, null);
-                    }
-                });
-            });
+			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+				if (victimData.getResources().getAlignment() < 50 || !victimData.getStatus().hasCreatedCharacter()) addAlignment.set(true);
+				else removeAlignment.set(true);
+				if (victimData.getStatus().hasCreatedCharacter()) {
+					victimData.getEffects().removeAllEffects();
+					victimData.getStatus().setChargingKi(false);
+					victimData.getStatus().setActionCharging(false);
+					victimData.getCharacter().setActiveForm(null, null);
+				}
+			});
         }
 
-        if (event.getEntity() instanceof NamekTraderEntity || event.getEntity() instanceof NamekWarriorEntity || event.getEntity() instanceof Villager) {
-            removeAlignment = true;
-        }
-
-        if (event.getEntity() instanceof RedRibbonSoldierEntity || event.getEntity() instanceof SagaFriezaSoldier01Entity || event.getEntity() instanceof SagaFriezaSoldier02Entity
-                || event.getEntity() instanceof RobotEntity || event.getEntity() instanceof BanditEntity) {
-            addAlignment = true;
-        }
+        if (removesAlignment(event.getEntity())) removeAlignment.set(true);
+        if (addsAlignment(event.getEntity())) addAlignment.set(true);
 
         StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
             if (!data.getStatus().hasCreatedCharacter()) return;
@@ -182,14 +173,14 @@ public class StatsEvents {
                 data.getResources().addTrainingPoints(tpsHealth);
             }
 
-            if (removeAlignment) {
+            if (removeAlignment.get()) {
                 data.getResources().removeAlignment(5);
-                removeAlignment = false;
+                removeAlignment.set(false);
             }
 
-            if (addAlignment) {
+            if (addAlignment.get()) {
                 data.getResources().addAlignment(2);
-                addAlignment = false;
+                addAlignment.set(false);
             }
         });
     }
@@ -338,7 +329,6 @@ public class StatsEvents {
     @SubscribeEvent
     public static void onPlayerAttack(AttackEntityEvent event) {
         if (event.getEntity().level().isClientSide) return;
-
         if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
     }
 
@@ -346,7 +336,6 @@ public class StatsEvents {
     public static void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getLevel().isClientSide) return;
         if (event.getEntity() == null) return;
-
         if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
     }
 
@@ -472,9 +461,7 @@ public class StatsEvents {
 	public static void onPlayerInteractEntity(PlayerInteractEvent.EntityInteract event) {
 		if (event.getLevel().isClientSide) return;
 		if (!(event.getTarget() instanceof ServerPlayer target)) return;
-
 		ServerPlayer source = (ServerPlayer) event.getEntity();
-
 		if (!source.getMainHandItem().isEmpty()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, source).ifPresent(sData -> {
@@ -497,9 +484,8 @@ public class StatsEvents {
 
 	private static boolean hasPothala(ServerPlayer player, String side) {
 		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (side.equals("left") && (head.getItem() == MainItems.POTHALA_LEFT.get() || head.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) {
-			return true;
-		} else return side.equals("right") && (head.getItem() == MainItems.POTHALA_RIGHT.get() || head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
+		if (side.equals("left") && (head.getItem() == MainItems.POTHALA_LEFT.get() || head.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) return true;
+		else return side.equals("right") && (head.getItem() == MainItems.POTHALA_RIGHT.get() || head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
 	}
 
 	private static boolean checkPothalaColorMatch(ServerPlayer p1, ServerPlayer p2) {

@@ -53,7 +53,6 @@ public class RaceSelectionScreen extends ScaledScreen {
     protected static boolean GLOBAL_SWITCHING = false;
 
     private final Character character;
-    private final String[] availableRaces;
     private int selectedRaceIndex = 0;
 	private boolean isSwitchingMenu = false;
 
@@ -68,15 +67,18 @@ public class RaceSelectionScreen extends ScaledScreen {
     public RaceSelectionScreen(Character character) {
         super(Component.translatable("gui.dragonminez.character_creation.title"));
         this.character = character;
-        this.availableRaces = Character.getRaceNames();
-
-        for (int i = 0; i < availableRaces.length; i++) {
-            if (availableRaces[i].equals(character.getRace())) {
-                selectedRaceIndex = i;
-                break;
-            }
-        }
+		List<String> races = getAvailableRaces();
+		for (int i = 0; i < races.size(); i++) {
+			if (races.get(i).equals(character.getRace())) {
+				selectedRaceIndex = i;
+				break;
+			}
+		}
     }
+
+	private List<String> getAvailableRaces() {
+		return ConfigManager.getLoadedRaces();
+	}
 
     @Override
     protected void init() {
@@ -180,7 +182,10 @@ public class RaceSelectionScreen extends ScaledScreen {
     }
 
     private void renderPanorama(GuiGraphics graphics, float partialTick) {
-        String currentRace = availableRaces[selectedRaceIndex];
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
+		String currentRace = races.get(selectedRaceIndex);
 
         PanoramaRenderer panorama = switch (currentRace) {
             case "saiyan" -> panoramaSaiyan;
@@ -195,7 +200,10 @@ public class RaceSelectionScreen extends ScaledScreen {
     }
 
     private void renderRaceInfo(GuiGraphics graphics) {
-        String currentRace = availableRaces[selectedRaceIndex];
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
+		String currentRace = races.get(selectedRaceIndex);
         int centerX = getUiWidth() / 2;
         int centerY = getUiHeight() / 2;
 
@@ -216,7 +224,11 @@ public class RaceSelectionScreen extends ScaledScreen {
     }
 
 	private void renderRacialInfo(GuiGraphics graphics) {
-		String currentRace = availableRaces[selectedRaceIndex];
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
+		String currentRace = races.get(selectedRaceIndex);
+
 		if (!ConfigManager.isDefaultRace(currentRace)) return;
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
@@ -367,18 +379,24 @@ public class RaceSelectionScreen extends ScaledScreen {
         return lines;
     }
 
-    private void previousRace() {
-        selectedRaceIndex = (selectedRaceIndex - 1 + availableRaces.length) % availableRaces.length;
-        updateCharacterRace();
-    }
+	private void previousRace() {
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		selectedRaceIndex = (selectedRaceIndex - 1 + races.size()) % races.size();
+		updateCharacterRace();
+	}
 
-    private void nextRace() {
-        selectedRaceIndex = (selectedRaceIndex + 1) % availableRaces.length;
-        updateCharacterRace();
-    }
+	private void nextRace() {
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		selectedRaceIndex = (selectedRaceIndex + 1) % races.size();
+		updateCharacterRace();
+	}
 
-    private void updateCharacterRace() {
-        String selectedRace = availableRaces[selectedRaceIndex];
+	private void updateCharacterRace() {
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		String selectedRace = races.get(selectedRaceIndex);
         character.setRace(selectedRace);
 
         RaceCharacterConfig config = ConfigManager.getRaceCharacter(selectedRace);
@@ -402,7 +420,9 @@ public class RaceSelectionScreen extends ScaledScreen {
     }
 
     private void selectRace() {
-        String selectedRace = availableRaces[selectedRaceIndex];
+		List<String> races = getAvailableRaces();
+		if (races.isEmpty()) return;
+		String selectedRace = races.get(selectedRaceIndex);
         character.setRace(selectedRace);
 
         if (this.minecraft != null) {

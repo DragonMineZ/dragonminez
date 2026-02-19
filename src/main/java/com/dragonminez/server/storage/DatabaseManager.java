@@ -16,15 +16,13 @@ import java.util.UUID;
 public class DatabaseManager implements IDataStorage {
 	private HikariDataSource dataSource;
 	private boolean isConnected = false;
-	private final GeneralServerConfig.StorageConfig config;
 
-	public DatabaseManager() {
-		this.config = ConfigManager.getServerConfig().getStorage();
-	}
+	public DatabaseManager() {}
 
 	@Override
 	public void init() {
-		if (!hasValidCredentials()) {
+		GeneralServerConfig.StorageConfig config = ConfigManager.getServerConfig().getStorage();
+		if (!hasValidCredentials(config)) {
 			LogUtil.error(Env.SERVER, "DATABASE ERROR: Missing credentials (Host, DB Name, User or Password).");
 			LogUtil.error(Env.SERVER, "FALLBACK: System will use Default Local NBT Storage.");
 			isConnected = false;
@@ -59,7 +57,7 @@ public class DatabaseManager implements IDataStorage {
 		}
 	}
 
-	private boolean hasValidCredentials() {
+	private boolean hasValidCredentials(GeneralServerConfig.StorageConfig config) {
 		return !config.getHost().isEmpty() &&
 				!config.getDatabase().isEmpty() &&
 				!config.getUsername().isEmpty() &&
@@ -87,7 +85,7 @@ public class DatabaseManager implements IDataStorage {
 	public boolean saveData(UUID uuid, String name, CompoundTag tag) {
 		if (!isConnected || dataSource == null) return false;
 
-		String tableName = config.getTable();
+		String tableName = ConfigManager.getServerConfig().getStorage().getTable();
 
 		String sql = "INSERT INTO " + tableName + " (uuid, name, data) VALUES (?, ?, ?) " +
 				"ON DUPLICATE KEY UPDATE name = ?, data = ?, last_updated = CURRENT_TIMESTAMP";
@@ -115,7 +113,7 @@ public class DatabaseManager implements IDataStorage {
 	public CompoundTag loadData(UUID uuid) {
 		if (!isConnected || dataSource == null) return null;
 
-		String tableName = config.getTable();
+		String tableName = ConfigManager.getServerConfig().getStorage().getTable();
 		String sql = "SELECT data FROM " + tableName + " WHERE uuid = ?";
 
 		try (Connection conn = dataSource.getConnection();

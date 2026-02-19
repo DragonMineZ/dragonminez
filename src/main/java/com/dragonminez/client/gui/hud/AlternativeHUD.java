@@ -155,14 +155,15 @@ public class AlternativeHUD {
 
 	private static void drawRacialIcon(GuiGraphics guiGraphics, String raceName, int powerRelease, int x, int y) {
 		RenderSystem.setShaderTexture(0, racialIcons);
-		List<String> loadedRaces = ConfigManager.getLoadedRaces();
+		List<String> loadedRaces = ConfigManager.getDefaultRaces();
 		int raceIndex = Math.max(0, loadedRaces.indexOf(raceName.toLowerCase()));
 		int iconU = 1 + (raceIndex * 17);
-		guiGraphics.blit(racialIcons, raceName.equalsIgnoreCase("majin") ? x + 6 : x + 7, y + 4, iconU, 1, 16, 16);
+		boolean isCustomRace = !loadedRaces.contains(raceName.toLowerCase());
+		guiGraphics.blit(racialIcons, raceName.equalsIgnoreCase("majin") ? x + 6 : x + 7, y + 4, isCustomRace ? 103 : iconU, 1, 16, 16);
 		float fillRatio = powerRelease / 100.0f;
 		int fillHeight = (int) (16 * fillRatio);
 		if (fillHeight > 0) {
-			guiGraphics.blit(racialIcons, x+7, y +4+ (16 - fillHeight), iconU, 18 + (16 - fillHeight), 16, fillHeight);
+			guiGraphics.blit(racialIcons, x+7, y +4+ (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight);
 		}
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderTexture(0, xvhud);

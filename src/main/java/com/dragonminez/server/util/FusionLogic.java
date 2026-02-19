@@ -23,8 +23,6 @@ import java.awt.*;
 import java.util.UUID;
 
 public class FusionLogic {
-	public static final int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
-
 	public static boolean executeMetamoru(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
 		if (lData.getStatus().isAndroidUpgraded() || pData.getStatus().isAndroidUpgraded()) {
 			leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.android_cannot_fuse"), true);
@@ -51,6 +49,7 @@ public class FusionLogic {
 		int fusionlvl1 = lData.getSkills().getSkillLevel("fusion");
 		int fusionlvl2 = pData.getSkills().getSkillLevel("fusion");
 		int fusionProm = (fusionlvl1 + fusionlvl2) / 2;
+		int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
 
 		int durationPerLevel = FUSION_DURATION / lData.getSkills().getMaxSkillLevel("fusion");
 		int finalDuration = durationPerLevel * fusionProm;
@@ -79,6 +78,7 @@ public class FusionLogic {
 
 		removeEarring(leader);
 		removeEarring(partner);
+		int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
 
 		applyFusion(leader, partner, lData, pData, "POTHALA", lvl1, lvl2);
 		lData.getStatus().setFusionTimer(FUSION_DURATION);

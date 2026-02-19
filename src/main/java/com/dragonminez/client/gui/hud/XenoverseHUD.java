@@ -121,19 +121,17 @@ public class XenoverseHUD {
 
 				// Racial Icon / Power Release
 				RenderSystem.setShaderTexture(0, racialIcons);
-				List<String> loadedRaces = ConfigManager.getLoadedRaces();
+				List<String> loadedRaces = ConfigManager.getDefaultRaces();
 				int raceIndex = loadedRaces.indexOf(raceName.toLowerCase());
-
-				if (raceIndex < 0) {
-					raceIndex = 0;
-				}
+				if (raceIndex < 0) raceIndex = 0;
 
 				int iconU = 1 + (raceIndex * 17);
 				int baseIconV = 1;
 
 				boolean isMajin = raceName.equalsIgnoreCase("majin");
+				boolean isCustomRace = !loadedRaces.contains(raceName.toLowerCase());
 
-				guiGraphics.blit(racialIcons, initialX + 15, isMajin ? (initialY + 12) : (initialY + 13), iconU, baseIconV, 16, 16);
+				guiGraphics.blit(racialIcons, initialX + 15, isMajin ? (initialY + 12) : (initialY + 13), isCustomRace ? 103 : iconU, baseIconV, 16, 16);
 
 				float fillRatio = powerRelease / 100.0f;
 				int fillHeight = (int) (16 * fillRatio);
@@ -142,7 +140,7 @@ public class XenoverseHUD {
 					int fillIconV = 18;
 					int screenY = (isMajin ? (initialY + 12) : (initialY + 13)) + (16 - fillHeight);
 					int textureV = fillIconV + (16 - fillHeight);
-					guiGraphics.blit(racialIcons, initialX + 15, screenY, iconU, textureV, 16, fillHeight);
+					guiGraphics.blit(racialIcons, initialX + 15, screenY, isCustomRace ? 103 : iconU, textureV, 16, fillHeight);
 				}
 
 				// Radar & Form Release

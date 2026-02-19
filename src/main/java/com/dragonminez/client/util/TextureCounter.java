@@ -1,6 +1,8 @@
 package com.dragonminez.client.util;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -8,6 +10,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
@@ -25,53 +28,55 @@ public class TextureCounter {
         return CACHE.computeIfAbsent(namespace + ":" + path, ResourceLocation::new);
     }
 
-    public static int getMaxBodyTypes(String race, String gender) {
-        String key = race + "_" + gender;
-        if (BODY_TYPE_CACHE.containsKey(key)) {
-            return BODY_TYPE_CACHE.get(key);
-        }
+    private static String normalizeRace(String race) {
+        String lower = race.toLowerCase();
+        if (lower.startsWith("frostdemon")) return "frostdemon";
+        if (lower.startsWith("bioandroid")) return "bioandroid";
+        if (lower.startsWith("majin")) return "majin";
+        if (lower.startsWith("namekian")) return "namekian";
+        if (lower.equals("saiyan_ssj4")) return "saiyan";
+        return lower;
+    }
 
-        int count = countBodyTextures(race, gender);
+    public static int getMaxBodyTypes(String race, String gender) {
+        String normalizedRace = normalizeRace(race);
+        String genderNormalized = (gender.equals("female") || gender.equals("mujer")) ? "female" : "male";
+        String key = normalizedRace + "_" + genderNormalized;
+        if (BODY_TYPE_CACHE.containsKey(key)) return BODY_TYPE_CACHE.get(key);
+        int count = countBodyTextures(normalizedRace, genderNormalized);
         BODY_TYPE_CACHE.put(key, count);
         return count;
     }
 
     public static int getMaxEyesTypes(String race) {
-        if (EYES_TYPE_CACHE.containsKey(race)) {
-            return EYES_TYPE_CACHE.get(race);
-        }
-
-        int count = countFaceTextures(race, "eye");
-        EYES_TYPE_CACHE.put(race, count);
+        String normalizedRace = normalizeRace(race);
+        if (EYES_TYPE_CACHE.containsKey(normalizedRace)) return EYES_TYPE_CACHE.get(normalizedRace);
+        int count = countFaceTextures(normalizedRace, "eye");
+        EYES_TYPE_CACHE.put(normalizedRace, count);
         return count;
     }
 
     public static int getMaxNoseTypes(String race) {
-        if (NOSE_TYPE_CACHE.containsKey(race)) {
-            return NOSE_TYPE_CACHE.get(race);
-        }
-
-        int count = countFaceTextures(race, "nose");
-        NOSE_TYPE_CACHE.put(race, count);
+        String normalizedRace = normalizeRace(race);
+        if (NOSE_TYPE_CACHE.containsKey(normalizedRace)) return NOSE_TYPE_CACHE.get(normalizedRace);
+        int count = countFaceTextures(normalizedRace, "nose");
+        NOSE_TYPE_CACHE.put(normalizedRace, count);
         return count;
     }
 
     public static int getMaxMouthTypes(String race) {
-        if (MOUTH_TYPE_CACHE.containsKey(race)) {
-            return MOUTH_TYPE_CACHE.get(race);
-        }
-
-        int count = countFaceTextures(race, "mouth");
-        MOUTH_TYPE_CACHE.put(race, count);
+        String normalizedRace = normalizeRace(race);
+        if (MOUTH_TYPE_CACHE.containsKey(normalizedRace)) return MOUTH_TYPE_CACHE.get(normalizedRace);
+        int count = countFaceTextures(normalizedRace, "mouth");
+        MOUTH_TYPE_CACHE.put(normalizedRace, count);
         return count;
     }
 
     public static int getMaxTattooTypes(String race) {
-        if (TATTOO_TYPE_CACHE.containsKey(race)) {
-            return TATTOO_TYPE_CACHE.get(race);
-        }
+        String normalizedRace = normalizeRace(race);
+        if (TATTOO_TYPE_CACHE.containsKey(normalizedRace)) return TATTOO_TYPE_CACHE.get(normalizedRace);
         int count = countTattooTextures();
-        TATTOO_TYPE_CACHE.put(race, count);
+        TATTOO_TYPE_CACHE.put(normalizedRace, count);
         return count;
     }
 
@@ -85,12 +90,8 @@ public class TextureCounter {
             for (int i = 0; i <= 100; i++) {
                 String basePath = "textures/entity/races/" + race + "/bodytype_" + i + "_layer1.png";
                 ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath);
-
-                if (resourceManager.getResource(location).isPresent()) {
-                    count++;
-                } else {
-                    break;
-                }
+                if (resourceManager.getResource(location).isPresent()) count++;
+                else break;
             }
             return count > 0 ? count - 1 : -1;
         } else {
@@ -100,17 +101,10 @@ public class TextureCounter {
             String basePath = getBasePathForBodyType(race, gender);
             for (int i = startIndex; i <= 100; i++) {
                 ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + ".png");
-
-                if (resourceManager.getResource(location).isPresent()) {
-                    count++;
-                } else {
-                    break;
-                }
+                if (resourceManager.getResource(location).isPresent()) count++;
+                else break;
             }
-
-            if (count > 0) {
-                return usesVanillaSkin ? count : count - 1;
-            }
+            if (count > 0) return usesVanillaSkin ? count : count - 1;
             return -1;
         }
     }
@@ -128,11 +122,8 @@ public class TextureCounter {
         for (int i = 0; i <= 100; i++) {
             ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + suffix);
 
-            if (resourceManager.getResource(location).isPresent()) {
-                count++;
-            } else {
-                break;
-            }
+            if (resourceManager.getResource(location).isPresent()) count++;
+            else break;
         }
 
         return count > 0 ? count - 1 : 0;
@@ -146,12 +137,8 @@ public class TextureCounter {
 
         for (int i = 0; i <= 100; i++) {
             ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + i + ".png");
-
-            if (resourceManager.getResource(location).isPresent()) {
-                count++;
-            } else {
-                break;
-            }
+            if (resourceManager.getResource(location).isPresent()) count++;
+            else break;
         }
 
         return count > 0 ? count - 1 : 0;
@@ -169,14 +156,6 @@ public class TextureCounter {
         return "textures/entity/races/" + race + "/bodytype_";
     }
 
-    private static String getBasePathForRace(String race, String type) {
-        if (race.equals("human") || race.equals("saiyan")) {
-            return "textures/entity/races/humansaiyan/" + type + "_";
-        }
-
-        return "textures/entity/races/" + race + "/" + type + "_";
-    }
-
     public static void clearCache() {
         CACHE.clear();
         BODY_TYPE_CACHE.clear();
@@ -187,4 +166,3 @@ public class TextureCounter {
         TATTOO_TYPE_CACHE.clear();
     }
 }
-

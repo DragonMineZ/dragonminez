@@ -31,8 +31,6 @@ public class DMZPermissions {
     public static final PermissionNode<Boolean> STATS_INFO_OTHERS = register("dmzstats.info.others", "Allows viewing other players' stats.", (player, uuid, context) -> false);
     public static final PermissionNode<Boolean> STATS_RESET_SELF = register("dmzstats.reset.self", "Allows resetting your own stats.", (player, uuid, context) -> false);
     public static final PermissionNode<Boolean> STATS_RESET_OTHERS = register("dmzstats.reset.others", "Allows resetting other players' stats.", (player, uuid, context) -> false);
-    public static final PermissionNode<Boolean> STATS_TRANSFORM_SELF = register("dmzstats.transform.self", "Allows transforming yourself via command.", (player, uuid, context) -> false);
-    public static final PermissionNode<Boolean> STATS_TRANSFORM_OTHERS = register("dmzstats.transform.others", "Allows transforming other players via command.", (player, uuid, context) -> false);
 
     // Skills
     public static final PermissionNode<Boolean> SKILLS_SET_SELF = register("dmzskill.set.self", "Allows setting your own skills.", (player, uuid, context) -> false);
@@ -77,6 +75,8 @@ public class DMZPermissions {
     public static final PermissionNode<Boolean> STORY_REMOVE_OTHERS = register("dmzstory.remove.others", "Allows removing quests for other players.", (player, uuid, context) -> false);
     public static final PermissionNode<Boolean> STORY_LIST_SELF = register("dmzstory.list.self", "Allows listing your own quest progress.", (player, uuid, context) -> true);
     public static final PermissionNode<Boolean> STORY_LIST_OTHERS = register("dmzstory.list.others", "Allows listing other players' quest progress.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> STORY_RESET_SELF = register("dmzstory.reset.self", "Allows resetting your own quest progress.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> STORY_RESET_OTHERS = register("dmzstory.reset.others", "Allows resetting other players' quest progress.", (player, uuid, context) -> false);
 
     // Locate
     public static final PermissionNode<Boolean> LOCATE = register("dmzlocate", "Allows locating special structures.", (player, uuid, context) -> false);
@@ -91,6 +91,9 @@ public class DMZPermissions {
 	// Mastery
 	public static final PermissionNode<Boolean> MASTERY_SET = register("dmzmastery.set", "Allows setting transformation mastery.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> MASTERY_ADD = register("dmzmastery.add", "Allows adding transformation mastery.", (player, uuid, context) -> false);
+
+    // Reload
+    public static final PermissionNode<Boolean> RELOAD = register("dmz.reload", "Allows reloading server configurations.", (player, uuid, context) -> false);
 
 	public static void init() {}
 
