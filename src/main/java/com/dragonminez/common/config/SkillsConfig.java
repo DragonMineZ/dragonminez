@@ -1,19 +1,19 @@
 package com.dragonminez.common.config;
 
-import com.google.gson.annotations.SerializedName;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class SkillsConfig {
-    @SerializedName("skills")
+	public static final int CURRENT_VERSION = 1;
+	private int configVersion = CURRENT_VERSION;
+	public int getConfigVersion() { return configVersion; }
+	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
+
     private Map<String, SkillCosts> skills = new HashMap<>();
 
-    public SkillsConfig() {
-        createDefaults();
-    }
+    public SkillsConfig() { createDefaults(); }
 
     private void createDefaults() {
         List<Integer> jumpCosts = new ArrayList<>();

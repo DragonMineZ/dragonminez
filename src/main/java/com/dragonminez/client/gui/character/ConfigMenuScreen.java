@@ -123,9 +123,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
                 ConfigType.BOOLEAN, hudConfig.isStoryHardDifficulty() ? 1 : 0, 0, 1,
                 v -> hudConfig.setStoryHardDifficulty(v > 0)));
 
-		configOptions.add(new ConfigOption("config.cameraMovementDurintFlight",
-				ConfigType.BOOLEAN, hudConfig.isCameraMovementDurintFlight() ? 1 : 0, 0, 1,
-				v -> hudConfig.setCameraMovementDurintFlight(v > 0)));
+		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
+				ConfigType.BOOLEAN, hudConfig.isCameraMovementDuringFlight() ? 1 : 0, 0, 1,
+				v -> hudConfig.setCameraMovementDuringFlight(v > 0)));
     }
 
     private void initConfigButtons() {

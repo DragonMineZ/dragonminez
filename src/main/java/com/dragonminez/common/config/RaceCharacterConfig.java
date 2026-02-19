@@ -1,6 +1,11 @@
 package com.dragonminez.common.config;
 
 public class RaceCharacterConfig {
+    public static final int CURRENT_VERSION = 1;
+    private int configVersion = CURRENT_VERSION;
+    public int getConfigVersion() { return configVersion; }
+    public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
+
     private String raceName;
     private boolean hasGender = true;
     private boolean useVanillaSkin = false;

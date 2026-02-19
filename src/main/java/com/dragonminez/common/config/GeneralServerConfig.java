@@ -4,12 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GeneralServerConfig {
+	public static final int CURRENT_VERSION = 1;
+	private int configVersion = CURRENT_VERSION;
+	public int getConfigVersion() { return configVersion; }
+	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
     private WorldGenConfig worldGen = new WorldGenConfig();
     private GameplayConfig gameplay = new GameplayConfig();
 	private CombatConfig combat = new CombatConfig();
 	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
 	private StorageConfig storage = new StorageConfig();
+
 
     public WorldGenConfig getWorldGen() { return worldGen; }
     public GameplayConfig getGameplay() { return gameplay; }

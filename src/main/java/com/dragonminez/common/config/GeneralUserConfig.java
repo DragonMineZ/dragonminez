@@ -1,6 +1,10 @@
 package com.dragonminez.common.config;
 
 public class GeneralUserConfig {
+	public static final int CURRENT_VERSION = 1;
+	private int configVersion = CURRENT_VERSION;
+	public int getConfigVersion() { return configVersion; }
+	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
     private HudConfig hud = new HudConfig();
 
@@ -22,7 +26,7 @@ public class GeneralUserConfig {
         private int staminaBarPosX = 10;
         private int staminaBarPosY = 10;
         private boolean storyHardDifficulty = false;
-		private boolean cameraMovementDurintFlight = true;
+		private boolean cameraMovementDuringFlight = true;
 
 		public boolean isFirstPersonAnimated() { return firstPersonAnimated; }
 		public void setFirstPersonAnimated(boolean firstPersonAnimated) { this.firstPersonAnimated = firstPersonAnimated; }
@@ -75,8 +79,8 @@ public class GeneralUserConfig {
         public boolean isStoryHardDifficulty() { return storyHardDifficulty; }
         public void setStoryHardDifficulty(boolean storyHardDifficulty) { this.storyHardDifficulty = storyHardDifficulty; }
 
-		public boolean isCameraMovementDurintFlight() { return cameraMovementDurintFlight; }
-		public void setCameraMovementDurintFlight(boolean cameraMovementDurintFlight) { this.cameraMovementDurintFlight = cameraMovementDurintFlight; }
+		public boolean isCameraMovementDuringFlight() { return cameraMovementDuringFlight; }
+		public void setCameraMovementDuringFlight(boolean cameraMovementDuringFlight) { this.cameraMovementDuringFlight = cameraMovementDuringFlight; }
 	}
 }
 

@@ -149,6 +149,7 @@ public class NPCActionC2S {
 			if (entityType.create(level) instanceof ShadowDummyEntity shadowDummy) {
 				shadowDummy.setPos(player.getX(), player.getY(), player.getZ());
 				shadowDummy.copyStatsFromPlayer(player);
+				shadowDummy.getPersistentData().putString("dmz_quest_owner", player.getStringUUID());
 				level.addFreshEntity(shadowDummy);
 			}
 		}

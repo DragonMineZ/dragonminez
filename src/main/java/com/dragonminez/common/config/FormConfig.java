@@ -4,6 +4,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FormConfig {
+    public static final int CURRENT_VERSION = 1;
+    private int configVersion = CURRENT_VERSION;
+    public int getConfigVersion() { return configVersion; }
+    public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
+
     private String groupName;
     private String formType = "super";
     private Map<String, FormData> forms = new LinkedHashMap<>();

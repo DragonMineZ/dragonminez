@@ -4,11 +4,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EntitiesConfig {
-	private HardModeSettings hardModeSettings = new HardModeSettings();
-	private Map<String, EntityStats> entityStats = new HashMap<>();
+	public static final int CURRENT_VERSION = 1;
+	private int configVersion = CURRENT_VERSION;
+	public int getConfigVersion() { return configVersion; }
+	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
-	public Map<String, EntityStats> getEntityStats() {
-		return entityStats;
+	private HardModeSettings hardModeSettings = new HardModeSettings();
+	private Map<String, Map<String, EntityStats>> sagaEntityStats = new HashMap<>();
+
+	public Map<String, Map<String, EntityStats>> getSagaEntityStats() {
+		return sagaEntityStats;
 	}
 
 	public HardModeSettings getHardModeSettings() {
