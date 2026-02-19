@@ -116,26 +116,17 @@ public class SkillsConfig {
 		kaiokenCosts.add(7000);
 		kaiokenCosts.add(9000);
 		kaiokenCosts.add(11000);
-		kaiokenCosts.add(13000);
-		kaiokenCosts.add(15000);
-		kaiokenCosts.add(17000);
-		kaiokenCosts.add(19000);
-		kaiokenCosts.add(21000);
+		skills.put("kaioken", new SkillCosts(kaiokenCosts));
 
-		List<Double> kaiokenMultipliers = new ArrayList<>();
-		kaiokenMultipliers.add(1.1);
-		kaiokenMultipliers.add(1.2);
-		kaiokenMultipliers.add(1.35);
-		kaiokenMultipliers.add(1.5);
-		kaiokenMultipliers.add(1.65);
+//		List<Integer> ultraInstinctCosts = new ArrayList<>();
+//		ultraInstinctCosts.add(-1);
+//		ultraInstinctCosts.add(5000);
+//		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
 
-		List<Double> kaiokenDrainRates = new ArrayList<>();
-		kaiokenDrainRates.add(0.03);
-		kaiokenDrainRates.add(0.06);
-		kaiokenDrainRates.add(0.095);
-		kaiokenDrainRates.add(0.11);
-		kaiokenDrainRates.add(0.15);
-		skills.put("kaioken", new SkillCosts(kaiokenCosts, kaiokenMultipliers, kaiokenDrainRates));
+//		List<Integer> ultraEgoCosts = new ArrayList<>();
+//		ultraEgoCosts.add(-1);
+//		ultraEgoCosts.add(5000);
+//		skills.put("ultraego", new SkillCosts(ultraEgoCosts));
 
 		List<Integer> fusionCosts = new ArrayList<>();
 		fusionCosts.add(-1);

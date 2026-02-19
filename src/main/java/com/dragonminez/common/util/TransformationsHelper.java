@@ -31,6 +31,22 @@ public class TransformationsHelper {
 		return unlockedForms;
 	}
 
+	public static List<FormConfig.FormData> getUnlockedStackForms(StatsData statsData, String groupName) {
+		List<FormConfig.FormData> unlockedForms = new ArrayList<>();
+		FormConfig formConfig = ConfigManager.getStackFormGroup(groupName);
+		if (formConfig == null) return unlockedForms;
+
+		String formType = formConfig.getFormType();
+		int skillLevel = getSkillLevelForStackType(statsData, formType);
+
+		for (FormConfig.FormData formData : formConfig.getForms().values()) {
+			if (formData.getUnlockOnSkillLevel() <= skillLevel) {
+				unlockedForms.add(formData);
+			}
+		}
+		return unlockedForms;
+	}
+
 	private static int getSkillLevelForType(StatsData statsData, String formType) {
 		return switch (formType.toLowerCase()) {
 			case "super" -> statsData.getSkills().getSkillLevel("superform");
@@ -39,6 +55,10 @@ public class TransformationsHelper {
 			case "android" -> statsData.getSkills().getSkillLevel("androidforms");
 			default -> 0;
 		};
+	}
+
+	private static int getSkillLevelForStackType(StatsData statsData, String formType) {
+		return statsData.getSkills().getSkillLevel(formType);
 	}
 
 	public static String getGroupWithFirstAvailableForm(StatsData statsData) {
@@ -99,6 +119,35 @@ public class TransformationsHelper {
 		return null;
 	}
 
+	public static FormConfig.FormData getNextAvailableStackForm(StatsData statsData) {
+		String group = statsData.getCharacter().hasActiveStackForm() ?
+				statsData.getCharacter().getActiveStackFormGroup() :
+				statsData.getCharacter().getSelectedStackFormGroup();
+
+		if (group == null || group.isEmpty()) return null;
+
+		FormConfig config = ConfigManager.getStackFormGroup(group);
+		if (config == null) return null;
+
+		String currentFormName = statsData.getCharacter().getActiveStackForm();
+		boolean foundCurrent = currentFormName.isEmpty();
+
+		for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
+			if (!foundCurrent) {
+				if (entry.getKey().equalsIgnoreCase(currentFormName)) {
+					foundCurrent = true;
+				}
+				continue;
+			}
+
+			int reqLevel = entry.getValue().getUnlockOnSkillLevel();
+			int myLevel = getSkillLevelForStackType(statsData, config.getFormType());
+
+			if (reqLevel <= myLevel) return entry.getValue();
+		}
+		return null;
+	}
+
 	public static boolean canDescend(StatsData statsData) {
 		if (!statsData.getCharacter().hasActiveForm()) return false;
 
@@ -111,6 +160,15 @@ public class TransformationsHelper {
 			return !"frostdemon".equals(race) && !"majin".equals(race) && !"bioandroid".equals(race);
 		}
 		return true;
+	}
+
+	public static boolean canStackDescend(StatsData statsData) {
+		if (!statsData.getCharacter().hasActiveStackForm()) return false;
+
+		String group = statsData.getCharacter().getActiveStackFormGroup();
+		String currentForm = statsData.getCharacter().getActiveStackForm();
+
+		return !group.equalsIgnoreCase("") && !currentForm.equalsIgnoreCase("");
 	}
 
 	public static void cycleSelectedFormGroup(StatsData statsData) {
@@ -141,6 +199,33 @@ public class TransformationsHelper {
 
     }
 
+	public static void cycleSelectedStackFormGroup(StatsData statsData) {
+		Map<String, FormConfig> allGroups = ConfigManager.getAllStackForms();
+		if (allGroups.isEmpty()) return;
+
+		List<String> unlockedGroups = new ArrayList<>();
+		for (String groupKey : allGroups.keySet()) {
+			if (!getUnlockedStackForms(statsData, groupKey).isEmpty()) {
+				unlockedGroups.add(groupKey);
+			}
+		}
+
+		if (unlockedGroups.isEmpty()) return;
+
+		String current = statsData.getCharacter().getSelectedStackFormGroup();
+		int index = unlockedGroups.indexOf(current);
+
+		String nextGroup;
+		if (index == -1 || index >= unlockedGroups.size() - 1) {
+			nextGroup = unlockedGroups.get(0);
+		} else {
+			nextGroup = unlockedGroups.get(index + 1);
+		}
+
+		if(nextGroup != null ) statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
+
+	}
+
 	private static boolean isDefaultGroup(String race, String group) {
 		return switch (race) {
 			case "frostdemon" -> "evolutionforms".equals(group);
@@ -170,77 +255,37 @@ public class TransformationsHelper {
 		return null;
 	}
 
-	public static boolean canStackKaioken(StatsData data) {
-		if (!data.getSkills().hasSkill("kaioken") || data.getSkills().getSkillLevel("kaioken") <= 0) return false;
-		if (!data.getCharacter().hasActiveForm()) return true;
+	public static FormConfig.FormData getPreviousStackForm(StatsData statsData) {
+		if (!statsData.getCharacter().hasActiveStackForm()) return null;
 
-		boolean globalEnabled = ConfigManager.getServerConfig().getGameplay().isKaiokenStackable();
-		if (!globalEnabled) return false;
+		String group = statsData.getCharacter().getActiveStackFormGroup();
+		String current = statsData.getCharacter().getActiveStackForm();
 
-		FormConfig.FormData currentForm = data.getCharacter().getActiveFormData();
-		if (currentForm != null) {
-			return currentForm.isKaiokenStackable();
-		}
+		FormConfig config = ConfigManager.getStackFormGroup(group);
+		if (config == null) return null;
 
-		return false;
-	}
-
-	public static int getMaxKaiokenPhase(int skillLevel) {
-		if (skillLevel <= 0) return 0;
-		return (skillLevel + 1) / 2;
-	}
-
-	public static String getKaiokenName(int phase) {
-		return switch (phase) {
-			case 1 -> "x2";
-			case 2 -> "x3";
-			case 3 -> "x4";
-			case 4 -> "x10";
-			case 5 -> "x20";
-			default -> "";
-		};
-	}
-
-	public static float getKaiokenHealthDrain(StatsData data) {
-		if (!data.getSkills().isSkillActive("kaioken")) return 0;
-
-		int phase = data.getStatus().getActiveKaiokenPhase();
-		
-		float finalDrain = 1;
-		if (data.getCharacter().hasActiveForm()) {
-			FormConfig.FormData form = data.getCharacter().getActiveFormData();
-			if (form != null) {
-				finalDrain = (float) (data.getMaxHealth() * ConfigManager.getSkillsConfig().getDrainRateForLevel("kaioken", phase) * form.getKaiokenDrainMultiplier());
+		FormConfig.FormData prev = null;
+		for (FormConfig.FormData f : config.getForms().values()) {
+			if (f.getName().equalsIgnoreCase(current)) {
+				return prev;
 			}
-		} else {
-			finalDrain = (float) (data.getMaxHealth() * ConfigManager.getSkillsConfig().getDrainRateForLevel("kaioken", phase));
+			prev = f;
 		}
-
-		float vitReduction = getKaiokenVitReduction(data);
-		finalDrain *= (1.0f - vitReduction);
-
-		return finalDrain;
-	}
-
-	private static float getKaiokenVitReduction(StatsData data) {
-		int maxStatValue = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
-		int currentVit = data.getStats().getVitality();
-
-		float vitRatio = Math.min(1.0f, (float) currentVit / maxStatValue);
-
-		float minThreshold = 0.1f;
-		if (vitRatio <= minThreshold) return 0.0f;
-
-		float scaledRatio = (vitRatio - minThreshold) / (1.0f - minThreshold);
-		float maxReduction = 0.40f;
-
-		return maxReduction * scaledRatio * scaledRatio;
+		return null;
 	}
 
 	public static String getFirstFormGroup(String groupName, String raceName) {
 		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
 		if (formConfig == null) return null;
 		if ("androidforms".equalsIgnoreCase(groupName)) return "superandroid";
+
+		Optional<String> firstForm = formConfig.getForms().keySet().stream().findFirst();
+		return firstForm.orElse(null);
+	}
+
+	public static String getFirstStackFormGroup(String groupName) {
+		FormConfig formConfig = ConfigManager.getStackFormGroup(groupName);
+		if (formConfig == null) return null;
 
 		Optional<String> firstForm = formConfig.getForms().keySet().stream().findFirst();
 		return firstForm.orElse(null);

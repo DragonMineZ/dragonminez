@@ -77,7 +77,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             syncModelToPlayer(partsModel, playerModel);
             RenderType partsRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
 
-            int phase = stats.getStatus().getActiveKaiokenPhase();
+            // FIXME: Figure out how to get Kaioken phase from the StackForm and StackFormGroup
+            int phase = /*stats.getStatus().getActiveKaiokenPhase()*/ 0;
             float[] tintedColor = applyKaiokenTint(renderColor[0], renderColor[1], renderColor[2], phase);
 
             poseStack.pushPose();

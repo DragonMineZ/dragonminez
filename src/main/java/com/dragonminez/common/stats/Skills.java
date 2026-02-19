@@ -66,8 +66,6 @@ public class Skills {
         int costBasedMaxLevel = ConfigManager.getSkillsConfig().getSkillCosts(skillName).getCosts().size();
         if (skillName.equalsIgnoreCase("potentialunlock")) {
             return Math.min(costBasedMaxLevel, 30);
-        } else if (skillName.equalsIgnoreCase("kaioken")) {
-            return Math.min(costBasedMaxLevel, 20);
         } else {
             return Math.min(costBasedMaxLevel, 50);
         }

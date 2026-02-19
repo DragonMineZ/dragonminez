@@ -44,7 +44,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
         var stats = statsCap.orElse(new StatsData(player));
 
-        this.currentKaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
+        // FIXME: Figure out how to get Kaioken phase from the StackForm and StackFormGroup
+        this.currentKaiokenPhase = /*stats.getStatus().getActiveKaiokenPhase()*/ 0;
 
         float alpha = player.isSpectator() ? 0.15f : 1.0f;
 

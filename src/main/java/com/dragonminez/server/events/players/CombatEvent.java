@@ -89,7 +89,7 @@ public class CombatEvent {
 				int baseStaminaRequired = (int) Math.ceil(dmgNoMult * ConfigManager.getServerConfig().getCombat().getStaminaConsumptionRatio());
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
-				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrain();
+				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrainMultiplier();
 				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
 				int currentStamina = attackerData.getResources().getCurrentStamina();
 

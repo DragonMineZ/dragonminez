@@ -126,8 +126,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         var stats = statsCap.orElse(new StatsData(pPlayer));
         var character = stats.getCharacter();
 
-        int kaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
-
         PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
         playermodel.attackTime = 0.0F;
         playermodel.crouching = false;
@@ -153,10 +151,11 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             if (!activeForm.getHairColor().isEmpty()) hair = ColorUtils.hexToRgb(activeForm.getHairColor());
         }
 
-        b1 = applyKaiokenTint(b1, kaiokenPhase);
-        b2 = applyKaiokenTint(b2, kaiokenPhase);
-        b3 = applyKaiokenTint(b3, kaiokenPhase);
-        hair = applyKaiokenTint(hair, kaiokenPhase);
+        // FIXME: Figure out how to get Kaioken phase from the StackForm and StackFormGroup
+        //b1 = applyKaiokenTint(b1, kaiokenPhase);
+        //b2 = applyKaiokenTint(b2, kaiokenPhase);
+        //b3 = applyKaiokenTint(b3, kaiokenPhase);
+        //hair = applyKaiokenTint(hair, kaiokenPhase);
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
         boolean isStandard = raceName.equals("human") || raceName.equals("saiyan");
@@ -172,7 +171,8 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean useDefaultSkin = isStandard && bodyType == 0 && !isOozaru;
 
         if (forceVanilla || useDefaultSkin) {
-            float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, kaiokenPhase);
+            // FIXME: Figure out how to get Kaioken phase from the StackForm and StackFormGroup
+            float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, /*kaiokenPhase*/ 0);
 
             ResourceLocation playerSkin = pPlayer.getSkinTextureLocation();
 

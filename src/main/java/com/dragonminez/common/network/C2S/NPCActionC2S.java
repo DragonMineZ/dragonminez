@@ -107,7 +107,6 @@ public class NPCActionC2S {
 			data.getResources().setTrainingPoints(0);
 			data.getResources().setRacialSkillCount(0);
 			data.getResources().setPowerRelease(0);
-			data.getStatus().setActiveKaiokenPhase(0);
 			data.getStatus().setAndroidUpgraded(false);
 			data.getStatus().setInKaioPlanet(false);
 			data.getSkills().removeAllSkills();

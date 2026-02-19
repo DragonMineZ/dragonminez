@@ -10,19 +10,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 
-public class FormModeHandler implements IActionModeHandler {
+public class StackFormModeHandler implements IActionModeHandler {
     @Override
     public int handleActionCharge(ServerPlayer player, StatsData data) {
-        FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+        FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
         if (nextForm != null) {
-            String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
+            String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
-            String type = ConfigManager.getFormGroup(data.getCharacter().getRaceName(), group).getFormType();
+            String type = ConfigManager.getStackFormGroup(group).getFormType();
             int skillLvl = switch (type) {
-                case "super" -> data.getSkills().getSkillLevel("superform");
-                case "god" -> data.getSkills().getSkillLevel("godform");
-                case "legendary" -> data.getSkills().getSkillLevel("legendaryforms");
-                case "android" -> data.getSkills().getSkillLevel("androidforms");
+                case "kaioken" -> data.getSkills().getSkillLevel("kaioken");
+                case "ultrainstinct" -> data.getSkills().getSkillLevel("ultrainstinct");
+                case "ultraego" -> data.getSkills().getSkillLevel("ultraego");
                 default -> 1;
             };
             return (5 * Math.max(1, skillLvl));
@@ -37,7 +36,7 @@ public class FormModeHandler implements IActionModeHandler {
     }
 
     private static void attemptTransform(ServerPlayer player, StatsData data) {
-        FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
+        FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
         if (nextForm == null) return;
 
         int energyCost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
@@ -61,11 +60,11 @@ public class FormModeHandler implements IActionModeHandler {
         }
 
         if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
-            String group = data.getCharacter().hasActiveForm() ?
-                    data.getCharacter().getActiveFormGroup() :
-                    data.getCharacter().getSelectedFormGroup();
+            String group = data.getCharacter().hasActiveStackForm() ?
+                    data.getCharacter().getActiveStackFormGroup() :
+                    data.getCharacter().getSelectedStackFormGroup();
 
-            data.getCharacter().setActiveForm(group, nextForm.getName());
+            data.getCharacter().setActiveStackForm(group, nextForm.getName());
             player.refreshDimensions();
 
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
