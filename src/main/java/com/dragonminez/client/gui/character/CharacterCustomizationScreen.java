@@ -25,6 +25,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
@@ -73,6 +74,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
     private ColorSlider valueSlider;
     private boolean colorPickerVisible = false;
     private String currentColorField = "";
+
+    private EditBox hexColorField;
+    private boolean isUpdatingFromCode = false;
 
     private float playerRotation = 180.0f;
     private boolean isDraggingModel = false;
@@ -376,7 +380,38 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         addRenderableWidget(saturationSlider);
         addRenderableWidget(valueSlider);
 
+        hexColorField = new EditBox(this.font, sliderX, sliderY + 36, sliderWidth, 12, Component.literal("Hex"));
+        hexColorField.setMaxLength(7);
+        hexColorField.setResponder(this::onHexFieldChange);
+        addRenderableWidget(hexColorField);
+
         setSlidersVisible();
+    }
+
+    private void onHexFieldChange(String hex) {
+        if (isUpdatingFromCode) return;
+        if (hex.startsWith("#")) hex = hex.substring(1);
+
+        if (hex.length() == 6) {
+            isUpdatingFromCode = true;
+            try {
+                float[] hsv = ColorUtils.hexToHsv("#" + hex);
+                if (hueSlider != null) hueSlider.setValue((int) hsv[0]);
+                if (saturationSlider != null) {
+                    int satValue = (int) hsv[1];
+                    saturationSlider.setValue(satValue == 0 ? 100 : satValue);
+                    saturationSlider.setCurrentHue(hsv[0]);
+                }
+                if (valueSlider != null) {
+                    int valValue = (int) hsv[2];
+                    valueSlider.setValue(valValue == 0 ? 100 : valValue);
+                    valueSlider.setCurrentHue(hsv[0]);
+                    valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
+                }
+                applyColor("#" + hex);
+            } catch (Exception ignored) {}
+            isUpdatingFromCode = false;
+        }
     }
 
     private void showColorPicker(String fieldName) {
@@ -404,6 +439,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
             valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
         }
 
+        isUpdatingFromCode = true;
+        if (hexColorField != null) hexColorField.setValue(getColorFromField(fieldName));
+        isUpdatingFromCode = false;
+
         setSlidersVisible();
     }
 
@@ -418,6 +457,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         if (hueSlider != null) hueSlider.visible = colorPickerVisible;
         if (saturationSlider != null) saturationSlider.visible = colorPickerVisible;
         if (valueSlider != null) valueSlider.visible = colorPickerVisible;
+        if (hexColorField != null) hexColorField.visible = colorPickerVisible;
     }
 
     private void updateColorFromSliders() {
@@ -432,6 +472,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         valueSlider.setCurrentSaturation(s);
 
         String newColor = ColorUtils.hsvToHex(h, s, v);
+
+        isUpdatingFromCode = true;
+        if (hexColorField != null && !hexColorField.isFocused()) hexColorField.setValue(newColor);
+        isUpdatingFromCode = false;
         applyColor(newColor);
     }
 
@@ -690,7 +734,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
             renderColorPickerBackground(graphics);
         }
 
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0D, 0.0D, 400.0D);
         super.render(graphics, uiMouseX, uiMouseY, partialTick);
+        graphics.pose().popPose();
 
         renderPageContent(graphics, centerY);
 
@@ -861,7 +908,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         int previewSize = 34;
 
         int totalWidth = sliderWidth + previewSize + 10;
-        int totalHeight = sliderHeight + 10;
+        int totalHeight = sliderHeight + 20;
         graphics.fill(sliderX - 5, sliderY - 5, sliderX + totalWidth, sliderY + totalHeight, 0x66000000);
 
         poseStack.popPose();
@@ -1077,7 +1124,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
             int sliderWidth = 80;
             int previewSize = 34;
             int totalWidth = sliderWidth + previewSize + 10;
-            int totalHeight = 44;
+            int totalHeight = 55;
 
             if (uiMouseX < sliderX - 5 || uiMouseX > sliderX + totalWidth ||
                 uiMouseY < sliderY - 5 || uiMouseY > sliderY + totalHeight) {

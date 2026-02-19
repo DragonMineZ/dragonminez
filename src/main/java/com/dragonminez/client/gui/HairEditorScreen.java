@@ -103,6 +103,9 @@ public class HairEditorScreen extends ScaledScreen {
 	private CustomTextureButton modeButton;
 	private CustomTextureButton physicsButton;
 
+	private EditBox hexColorField;
+	private boolean isUpdatingFromCode = false;
+
     public enum EditMode {
         LENGTH("gui.dragonminez.hair_editor.mode.length"),
         ROTATION("gui.dragonminez.hair_editor.mode.rotation"),
@@ -249,7 +252,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 		String username = this.minecraft.getUser().getName();
 		boolean isDev = DEV_NAMES.contains(username);
-		boolean isSSJ3 = (this.editorMode == 2);
+		boolean isSSJ3 = (this.editorMode == 3);
 
 		int maxCubes = 4;
 		if (isDev) maxCubes = 12;
@@ -570,8 +573,50 @@ public class HairEditorScreen extends ScaledScreen {
         addRenderableWidget(saturationSlider);
         addRenderableWidget(valueSlider);
 
+		hexColorField = new EditBox(this.font, sliderX, sliderY + 36, sliderWidth, 12, Component.literal("Hex"));
+		hexColorField.setMaxLength(7);
+		hexColorField.setResponder(this::onHexFieldChange);
+		addRenderableWidget(hexColorField);
+
         setSlidersVisible(false);
     }
+
+	private void onHexFieldChange(String hex) {
+		if (isUpdatingFromCode) return;
+		if (hex.startsWith("#")) hex = hex.substring(1);
+
+		if (hex.length() == 6) {
+			isUpdatingFromCode = true;
+			try {
+				float[] hsv = ColorUtils.hexToHsv("#" + hex);
+				if (hueSlider != null) hueSlider.setValue((int) hsv[0]);
+				if (saturationSlider != null) {
+					int satValue = (int) hsv[1];
+					saturationSlider.setValue(satValue == 0 ? 100 : satValue);
+					saturationSlider.setCurrentHue(hsv[0]);
+				}
+				if (valueSlider != null) {
+					int valValue = (int) hsv[2];
+					valueSlider.setValue(valValue == 0 ? 100 : valValue);
+					valueSlider.setCurrentHue(hsv[0]);
+					valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
+				}
+
+				applyColorToStrand("#" + hex);
+
+				character.setHairId(0);
+				switch (editorMode) {
+					case 1 -> character.setHairSSJ(editingHair);
+					case 2 -> character.setHairSSJ2(editingHair);
+					case 3 -> character.setHairSSJ3(editingHair);
+					default -> character.setHairBase(editingHair);
+				}
+				NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
+
+			} catch (Exception ignored) {}
+			isUpdatingFromCode = false;
+		}
+	}
 
     private String getCurrentStrandColor() {
         HairStrand strand = getSelectedStrand();
@@ -611,6 +656,10 @@ public class HairEditorScreen extends ScaledScreen {
                 valueSlider.setCurrentHue(hsv[0]);
                 valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
             }
+
+			isUpdatingFromCode = true;
+			if (hexColorField != null) hexColorField.setValue(getCurrentStrandColor());
+			isUpdatingFromCode = false;
         }
 
         setSlidersVisible(colorPickerVisible);
@@ -620,6 +669,7 @@ public class HairEditorScreen extends ScaledScreen {
         if (hueSlider != null) hueSlider.visible = visible;
         if (saturationSlider != null) saturationSlider.visible = visible;
         if (valueSlider != null) valueSlider.visible = visible;
+		if (hexColorField != null) hexColorField.visible = visible;
     }
 
     private void updateColorFromSliders() {
@@ -634,11 +684,17 @@ public class HairEditorScreen extends ScaledScreen {
         valueSlider.setCurrentSaturation(s);
 
         String newColor = ColorUtils.hsvToHex(h, s, v);
+
+		isUpdatingFromCode = true;
+		if (hexColorField != null && !hexColorField.isFocused()) hexColorField.setValue(newColor);
+		isUpdatingFromCode = false;
+
         applyColorToStrand(newColor);
 		character.setHairId(0);
 		switch (editorMode) {
 			case 1 -> character.setHairSSJ(editingHair);
-			case 2 -> character.setHairSSJ3(editingHair);
+			case 2 -> character.setHairSSJ2(editingHair);
+			case 3 -> character.setHairSSJ3(editingHair);
 			default -> character.setHairBase(editingHair);
 		}
 		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
