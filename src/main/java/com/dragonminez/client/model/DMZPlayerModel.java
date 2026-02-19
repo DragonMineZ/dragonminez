@@ -27,6 +27,13 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
     private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
+    private static final ResourceLocation FROST_DEMON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
+    private static final ResourceLocation FROST_DEMON_THIRD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_third.geo.json");
+    private static final ResourceLocation FROST_DEMON_FIFTH = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fifth.geo.json");
+    private static final ResourceLocation BIO_ANDROID = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
+    private static final ResourceLocation BIO_ANDROID_SEMI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_semi.geo.json");
+    private static final ResourceLocation BIO_ANDROID_PERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
+    private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
 
     private final ResourceLocation textureLocation;
     private final ResourceLocation animationLocation;
@@ -54,85 +61,97 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             String currentForm = character.getActiveForm();
             int bodyType = character.getBodyType();
 
-            boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
-
             boolean isMale = gender.equals("male") || gender.equals("hombre");
             boolean isSlimSkin = player.getModelName().equals("slim");
+            boolean isBaseForm = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
 
             if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
-                return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
+                return OOZARU;
             }
 
-            if (race.equals("majin")) {
-                boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
-                boolean isEvil = Objects.equals(currentForm, MajinForms.EVIL);
-
-                if (isSuperOrUltra) {
-                    return isMale ? BASE_DEFAULT : MAJIN_SLIM;
-                }
-
-                if (isEvil) {
-                    return isMale ? BASE_SLIM : MAJIN_SLIM;
-                }
-            }
-
+            String modelKey = "";
             var activeFormData = character.getActiveFormData();
             if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
-                ResourceLocation formLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + activeFormData.getCustomModel() + ".geo.json");
-                if (fileExists(formLoc)) return formLoc;
+                modelKey = activeFormData.getCustomModel();
+            } else if (this.customModel != null && !this.customModel.isEmpty()) {
+                modelKey = this.customModel;
             }
 
-            if (race.equals("majin") && hasForm) {
+            if (!modelKey.isEmpty()) {
+                return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType);
+            }
+
+            if (race.equals("bioandroid")) {
+                return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
+            }
+
+            if (race.equals("frostdemon")) return FROST_DEMON;
+
+            if (race.equals("namekian")) return BASE_DEFAULT;
+
+            if (race.equals("majin")) {
+                if (isBaseForm) {
+                    return isMale ? MAJIN_FAT : MAJIN_SLIM;
+                }
                 return isMale ? BASE_DEFAULT : MAJIN_SLIM;
             }
 
-            if (race.equals("bioandroid") && hasForm) {
-                return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
-            }
-
             if (race.equals("human") || race.equals("saiyan")) {
-                if (!isMale) {
-                    return MAJIN_SLIM;
-                }
+                if (!isMale) return MAJIN_SLIM;
+
                 if (bodyType == 0) {
                     return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
                 }
                 return BASE_DEFAULT;
             }
 
-            switch (race) {
-                case "namekian" -> { return BASE_DEFAULT; }
-                case "bioandroid" -> { return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json"); }
-                case "frostdemon" -> { return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json"); }
-                case "majin" -> { return isMale ? MAJIN_FAT : MAJIN_SLIM; }
-            }
-
-            if (this.customModel != null && !this.customModel.isEmpty()) {
-                ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + this.customModel + ".geo.json");
-                if (fileExists(customLoc)) return customLoc;
-            }
-
+            if (!isMale) return MAJIN_SLIM;
             return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
 
         }).orElse(BASE_DEFAULT);
     }
 
+    private ResourceLocation resolveCustomModel(String modelName, boolean isSlimSkin, boolean isMale, int bodyType) {
+        String key = modelName.toLowerCase();
+
+        switch (key) {
+            case "human", "saiyan", "saiyan_ssj4":
+                if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+                if (!isMale) return MAJIN_SLIM;
+                return BASE_DEFAULT;
+            case "namekian", "namekian_orange":
+                return BASE_DEFAULT;
+            case "majin":
+                return isMale ? MAJIN_FAT : MAJIN_SLIM;
+            case "majin_super","majin_ultra":
+                return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+            case "majin_evil","majin_kid":
+                return isMale ? BASE_SLIM : MAJIN_SLIM;
+            case "frostdemon","frostdemon_final":
+                return FROST_DEMON;
+            case "frostdemon_fifth":
+                return FROST_DEMON_FIFTH;
+            case "frostdemon_third":
+                return FROST_DEMON_THIRD;
+            case "bioandroid":
+                return BIO_ANDROID;
+            case "bioandroid_semi":
+                return BIO_ANDROID_SEMI;
+            case "bioandroid_perfect":
+                return BIO_ANDROID_PERFECT;
+            case "oozaru":
+                return OOZARU;
+        }
+
+        ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + ".geo.json");
+        if (fileExists(customLoc)) return customLoc;
+
+        return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
+    }
+
     @Override
     public ResourceLocation getTextureResource(T t) {
-		return StatsProvider.get(StatsCapability.INSTANCE, t).map(data -> {
-		var activeFormData = data.getCharacter().getActiveFormData();
-		if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
-			ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + activeFormData.getCustomModel() + ".png");
-			if (fileExists(customTex)) return customTex;
-		} else if (this.customModel != null && !this.customModel.isEmpty()) {
-			ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + this.customModel + ".png");
-			if (fileExists(customTex)) return customTex;
-			else return t.getSkinTextureLocation();
-		} else if (!ConfigManager.isDefaultRace(data.getCharacter().getRace()) && ConfigManager.getRaceCharacter(data.getCharacter().getRace()).useVanillaSkin()) return t.getSkinTextureLocation();
-		else if ((data.getCharacter().getRace().equals("saiyan") || data.getCharacter().getRace().equals("human")) && data.getCharacter().getBodyType() == 0 && !data.getCharacter().getActiveForm().contains("ozaru")) return t.getSkinTextureLocation();
-
-		return textureLocation;
-		}).orElse(textureLocation);
+        return textureLocation;
     }
 
     @Override
@@ -143,50 +162,38 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
-
         var head = this.getAnimationProcessor().getBone("head");
         EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
-		if (head != null) {
+        if (head != null) {
             float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
             float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
 
-			if (FlySkillEvent.isFlyingFast()) {
-				head.setRotX(45);
-				head.setRotY(0);
-			} else {
-				head.setRotX(headPitch);
-				head.setRotY(headYaw);
-			}
-		}
+            if (FlySkillEvent.isFlyingFast()) {
+                head.setRotX(45); head.setRotY(0);
+            } else {
+                head.setRotX(headPitch); head.setRotY(headYaw);
+            }
+        }
 
-		if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
-			var rightArm = this.getAnimationProcessor().getBone("right_arm");
-
-			if (rightArm != null) {
-				float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
-				float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
-
-				rightArm.setRotX(headPitch + (float)(Math.PI / 2));
-				rightArm.setRotY(headYaw);
-			}
-		}
+        if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
+            var rightArm = this.getAnimationProcessor().getBone("right_arm");
+            if (rightArm != null) {
+                float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
+                float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
+                rightArm.setRotX(headPitch + (float)(Math.PI / 2));
+                rightArm.setRotY(headYaw);
+            }
+        }
 
         try {
             float partialTick = animationState.getPartialTick();
             float ageInTicks = (float) animatable.getTick(animatable);
-
             var rightArm = this.getAnimationProcessor().getBone("right_arm");
             var leftArm = this.getAnimationProcessor().getBone("left_arm");
-
-            if (rightArm != null) {
-                RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
-            }
-            if (leftArm != null) {
-                RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
-            }
+            if (rightArm != null) RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
+            if (leftArm != null) RenderUtil.animateHand(animatable, leftArm, partialTick, ageInTicks);
         } catch (Exception ignore) {}
-
     }
 
     private boolean fileExists(ResourceLocation location) {

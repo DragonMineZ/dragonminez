@@ -22,6 +22,7 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.Objects;
 
@@ -30,19 +31,19 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
     public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
         super(renderManager, model);
 
-        this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
-        this.addRenderLayer(new DMZPlayerArmorLayer<>(this));
-        this.addRenderLayer(new DMZCustomArmorLayer(this));
-        this.addRenderLayer(new DMZSkinLayer<>(this));
-        this.addRenderLayer(new DMZHairLayer<>(this));
-        this.addRenderLayer(new DMZRacePartsLayer(this));
-        this.addRenderLayer(new DMZWeaponsLayer<>(this));
-        this.addRenderLayer(new DMZAuraLayer<>(this));
+            this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
+            this.addRenderLayer(new DMZPlayerArmorLayer<>(this));
+            this.addRenderLayer(new DMZCustomArmorLayer(this));
+            this.addRenderLayer(new DMZSkinLayer<>(this));
+            this.addRenderLayer(new DMZHairLayer<>(this));
+            this.addRenderLayer(new DMZRacePartsLayer(this));
+            this.addRenderLayer(new DMZWeaponsLayer<>(this));
+            this.addRenderLayer(new DMZAuraLayer<>(this));
     }
 
     @Override
     public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        if (animatable.isSpectator()) alpha = 0.15f;
+        float finalAlpha = animatable.isSpectator() ? 0.15f : alpha;
         super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
         BoneVisibilityHandler.updateVisibility(model, animatable);
     }
@@ -101,8 +102,14 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
     }
 
     @Override
+    public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+        for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+                renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+        }
+    }
+
+    @Override
     public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-        if (animatable.isSpectator()) return RenderType.entityTranslucent(texture);
         return super.getRenderType(animatable, texture, bufferSource, partialTick);
     }
 }

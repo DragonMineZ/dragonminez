@@ -49,18 +49,23 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
     @Override
     public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        if (animatable.isSpectator()) return;
 
         var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
         if (stats == null) return;
 
-        renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight);
-        renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-		renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-        renderSword(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+        float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
+
+        renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight, alpha);
+
+        if(!animatable.isSpectator()){
+            renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+            renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+            renderSword(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+        }
+
     }
 
-    private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight) {
+    private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight, float alpha) {
         BakedGeoModel partsModel = getGeoModel().getBakedModel(RACES_PARTS_MODEL);
         if (partsModel == null) return;
 
@@ -69,7 +74,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         if (renderColor != null) {
             syncModelToPlayer(partsModel, playerModel);
-            RenderType partsRenderType = RenderType.entityCutoutNoCull(RACES_PARTS_TEXTURE);
+            RenderType partsRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
 
             int phase = stats.getStatus().getActiveKaiokenPhase();
             float[] tintedColor = applyKaiokenTint(renderColor[0], renderColor[1], renderColor[2], phase);
@@ -77,7 +82,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             poseStack.pushPose();
             getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
                     bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-                    tintedColor[0], tintedColor[1], tintedColor[2], 1.0f);
+                    tintedColor[0], tintedColor[1], tintedColor[2], alpha);
             poseStack.popPose();
         }
     }
