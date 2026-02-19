@@ -48,16 +48,13 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         this.animationLocation = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/races/base.animation.json");
     }
 
-    public DMZPlayerModel() {
-        this("human", "");
-    }
-
     @Override
     public ResourceLocation getModelResource(T player) {
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
             var character = data.getCharacter();
             String race = character.getRaceName().toLowerCase();
             String gender = character.getGender().toLowerCase();
+            String customRaceGender = ConfigManager.getRaceCharacter(race).hasGender() ? gender : "";
             String currentForm = character.getActiveForm();
             int bodyType = character.getBodyType();
 
@@ -78,7 +75,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             }
 
             if (!modelKey.isEmpty()) {
-                return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType);
+                return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType, customRaceGender);
             }
 
             if (race.equals("bioandroid")) {
@@ -111,7 +108,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         }).orElse(BASE_DEFAULT);
     }
 
-    private ResourceLocation resolveCustomModel(String modelName, boolean isSlimSkin, boolean isMale, int bodyType) {
+    private ResourceLocation resolveCustomModel(String modelName, boolean isSlimSkin, boolean isMale, int bodyType, String customRaceGender) {
         String key = modelName.toLowerCase();
 
         switch (key) {
@@ -143,7 +140,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 return OOZARU;
         }
 
-        ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + ".geo.json");
+        if (customRaceGender != null && !customRaceGender.isEmpty()) customRaceGender = "_" + customRaceGender;
+        ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + customRaceGender + ".geo.json");
         if (fileExists(customLoc)) return customLoc;
 
         return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;

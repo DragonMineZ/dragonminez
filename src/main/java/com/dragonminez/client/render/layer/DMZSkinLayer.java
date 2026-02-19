@@ -129,7 +129,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 break;
 
             default:
-                ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + key + ".png");
+                String gender = (raceConfig != null && raceConfig.hasGender()) ? "_" + character.getGender().toLowerCase() : "";
+                ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + key + gender + ".png");
                 renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(customTex), b1[0], b1[1], b1[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
                 break;
         }
