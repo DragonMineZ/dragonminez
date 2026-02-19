@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
@@ -157,6 +158,12 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			progressMap.put(entityId, 0.0f);
 		}
 
+        int phase = stats.getStatus().getActiveKaiokenPhase();
+        if (phase > 0) {
+            colorFrom = applyKaiokenToHex(colorFrom, phase);
+            colorTo = applyKaiokenToHex(colorTo, phase);
+        }
+
 		float alpha = 1.0f;
 		if (animatable.isSpectator()) alpha = 0.15f;
 		poseStack.pushPose();
@@ -195,4 +202,22 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 		return character.getHairColor();
 	}
+
+    private String applyKaiokenToHex(String hexColor, int phase) {
+        try {
+            float[] rgb = ColorUtils.hexToRgb(hexColor);
+            float intensity = Math.min(0.6f, phase * 0.1f);
+
+            float r = rgb[0] * (1.0f - intensity) + (1.0f * intensity);
+            float g = rgb[1] * (1.0f - intensity);
+            float b = rgb[2] * (1.0f - intensity);
+
+            return String.format("#%02x%02x%02x",
+                    (int)(Mth.clamp(r, 0, 1) * 255),
+                    (int)(Mth.clamp(g, 0, 1) * 255),
+                    (int)(Mth.clamp(b, 0, 1) * 255));
+        } catch (Exception e) {
+            return hexColor;
+        }
+    }
 }
