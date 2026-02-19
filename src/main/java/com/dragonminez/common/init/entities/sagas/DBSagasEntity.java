@@ -75,7 +75,17 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new FloatGoal(this) {
+            @Override
+            public boolean canUse() {
+                return super.canUse() && getTarget() == null;
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return super.canContinueToUse() && getTarget() == null;
+            }
+        });
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.8D, false));
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 45.0F));
@@ -198,6 +208,24 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(KI_CHARGE, false);
         this.entityData.define(IS_LIGHTNING, false);
         this.entityData.define(LIGHTNING_COLOR, 0xFFFFFF);
+    }
+
+    @Override
+    public void travel(Vec3 pTravelVector) {
+        if (this.isEffectiveAi() && this.isInWater()) {
+            float waterSpeed = 0.15F;
+
+            this.moveRelative(waterSpeed, pTravelVector);
+            this.move(net.minecraft.world.entity.MoverType.SELF, this.getDeltaMovement());
+
+            this.setDeltaMovement(this.getDeltaMovement().scale(0.9D));
+
+            if (this.getTarget() != null && this.getTarget().getY() > this.getY()) {
+                this.setDeltaMovement(this.getDeltaMovement().add(0.0D, 0.02D, 0.0D));
+            }
+        } else {
+            super.travel(pTravelVector);
+        }
     }
 
     public void setCasting(boolean casting) { this.entityData.set(IS_CASTING, casting); }
