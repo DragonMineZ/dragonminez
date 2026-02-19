@@ -23,6 +23,7 @@ public class DMZServer {
 		PartyCommand.register(dispatcher);
 		StoryCommand.register(dispatcher);
 		ReviveCommand.register(dispatcher);
+		ReloadCommand.register(dispatcher);
 
 		LogUtil.info(Env.SERVER, "DragonMineZ Commands Registered");
 	}

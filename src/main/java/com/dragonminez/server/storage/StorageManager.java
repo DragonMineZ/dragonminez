@@ -43,6 +43,21 @@ public class StorageManager {
 		}
 	}
 
+	public static void reload() {
+		LogUtil.info(Env.SERVER, "Reloading Storage Subsystem...");
+
+		if (ServerLifecycleHooks.getCurrentServer() != null) {
+			LogUtil.info(Env.SERVER, "Saving online players before storage switch...");
+			for (ServerPlayer player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+				savePlayer(player);
+			}
+		}
+
+		shutdown();
+		init();
+		LogUtil.info(Env.SERVER, "Storage Subsystem reloaded. Active: " + (activeStorage == null ? "NBT (Vanilla)" : activeStorage.getName()));
+	}
+
 	public static void shutdown() {
 		if (autoSaveScheduler != null && !autoSaveScheduler.isShutdown()) {
 			autoSaveScheduler.shutdown();

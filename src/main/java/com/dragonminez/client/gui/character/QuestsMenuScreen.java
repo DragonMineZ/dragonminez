@@ -102,7 +102,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
         Map<String, Saga> allSagas = SagaManager.getClientSagas();
 
-        if (allSagas.isEmpty()) {
+        if (allSagas == null || allSagas.isEmpty()) {
             LogUtil.warn(Env.CLIENT, "No sagas loaded from SagaManager");
             return;
         }
@@ -212,10 +212,23 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     private void updateStatsData() {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                this.statsData = data;
-                updateQuestsList();
-            });
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				this.statsData = data;
+
+				Map<String, Saga> clientSagas = SagaManager.getClientSagas();
+				int newSize = (clientSagas != null) ? clientSagas.size() : 0;
+
+				if (newSize != availableSagas.size()) {
+					loadAvailableSagas();
+					if (selectedQuest != null && !availableSagas.isEmpty() && currentSagaIndex < availableSagas.size()) {
+						Saga currentSaga = availableSagas.get(currentSagaIndex);
+						this.selectedQuest = currentSaga.getQuestById(selectedQuest.getId());
+					} else this.selectedQuest = null;
+					refreshButtons();
+				}
+
+				updateQuestsList();
+			});
         }
     }
 

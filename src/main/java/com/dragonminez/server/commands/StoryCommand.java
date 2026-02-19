@@ -28,19 +28,27 @@ public class StoryCommand {
         return SharedSuggestionProvider.suggest(sagaIds, builder);
     };
 
+    private static final SuggestionProvider<CommandSourceStack> RESET_SUGGESTIONS = (context, builder) -> {
+        List<String> sagaIds = new ArrayList<>(SagaManager.getAllSagas().keySet());
+        sagaIds.add("all");
+        return SharedSuggestionProvider.suggest(sagaIds, builder);
+    };
+
     private static final SuggestionProvider<CommandSourceStack> QUEST_SUGGESTIONS = (context, builder) -> {
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
             Saga saga = SagaManager.getSaga(sagaId);
             if (saga != null) {
-                List<String> questIds = saga.getQuests().stream()
+                List<String> suggestions = new ArrayList<>();
+                suggestions.add("all");
+                suggestions.addAll(saga.getQuests().stream()
                         .map(quest -> String.valueOf(quest.getId()))
-                        .toList();
-                return SharedSuggestionProvider.suggest(questIds, builder);
+                        .toList());
+                return SharedSuggestionProvider.suggest(suggestions, builder);
             }
         } catch (Exception e) {
         }
-        return SharedSuggestionProvider.suggest(new String[]{"1", "2", "3"}, builder);
+        return SharedSuggestionProvider.suggest(new String[]{"all", "1", "2", "3"}, builder);
     };
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -52,7 +60,7 @@ public class StoryCommand {
                         .requires(source -> DMZPermissions.check(source, DMZPermissions.STORY_FINISH_SELF, DMZPermissions.STORY_FINISH_OTHERS))
                         .then(Commands.argument("saga", StringArgumentType.word())
                                 .suggests(SAGA_SUGGESTIONS)
-                                .then(Commands.argument("quest", IntegerArgumentType.integer(1))
+                                .then(Commands.argument("quest", StringArgumentType.word())
                                         .suggests(QUEST_SUGGESTIONS)
                                         .executes(context -> finishQuest(context, null))
                                         .then(Commands.argument("player", EntityArgument.player())
@@ -84,27 +92,33 @@ public class StoryCommand {
                                 )
                         )
                 )
+
+                // reset <saga> [player]
+                .then(Commands.literal("reset")
+                        .requires(source -> DMZPermissions.check(source, DMZPermissions.STORY_RESET_SELF, DMZPermissions.STORY_RESET_OTHERS))
+                        .then(Commands.argument("saga", StringArgumentType.word())
+                                .suggests(RESET_SUGGESTIONS)
+                                .executes(context -> resetSaga(context, null))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STORY_RESET_OTHERS))
+                                        .executes(context -> resetSaga(
+                                                context,
+                                                EntityArgument.getPlayer(context, "player")
+                                        ))
+                                )
+                        )
+                )
         );
     }
 
     private static int finishQuest(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
-            int questId = IntegerArgumentType.getInteger(context, "quest");
+            String questArg = StringArgumentType.getString(context, "quest"); // Leemos como String
 
             Saga saga = SagaManager.getSaga(sagaId);
             if (saga == null) {
                 context.getSource().sendFailure(Component.translatable("command.dragonminez.story.saga_not_found", sagaId));
-                return 0;
-            }
-
-            Quest quest = saga.getQuests().stream()
-                    .filter(q -> q.getId() == questId)
-                    .findFirst()
-                    .orElse(null);
-
-            if (quest == null) {
-                context.getSource().sendFailure(Component.translatable("command.dragonminez.story.quest_not_found", questId, sagaId));
                 return 0;
             }
 
@@ -116,36 +130,55 @@ public class StoryCommand {
             }
 
             int successCount = 0;
-            for (ServerPlayer player : targetPlayers) {
-                StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                    QuestData questData = stats.getQuestData();
 
-                    List<QuestObjective> objectives = quest.getObjectives();
-                    for (int i = 0; i < objectives.size(); i++) {
-                        QuestObjective objective = objectives.get(i);
-                        int required = objective.getRequired();
+            if (questArg.equalsIgnoreCase("all")) {
+                for (ServerPlayer player : targetPlayers) {
+                    StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+                        boolean changed = false;
+                        for (Quest quest : saga.getQuests()) {
+                            performQuestCompletion(stats.getQuestData(), saga, quest, player);
+                            changed = true;
+                        }
+                        if (changed) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                    });
+                    successCount++;
+                }
 
-                        questData.setQuestObjectiveProgress(saga.getId(), quest.getId(), i, required);
+                context.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.story.complete_all" + saga.getName()), true);
+
+            } else {
+                try {
+                    int questId = Integer.parseInt(questArg);
+                    Quest quest = saga.getQuests().stream()
+                            .filter(q -> q.getId() == questId)
+                            .findFirst()
+                            .orElse(null);
+
+                    if (quest == null) {
+                        context.getSource().sendFailure(Component.translatable("command.dragonminez.story.quest_not_found", questId, sagaId));
+                        return 0;
                     }
 
-                    questData.completeQuest(saga.getId(), quest.getId());
-
-                    QuestData.SagaProgress sagaProgress = questData.getSagaProgress(saga.getId());
-                    QuestData.QuestProgress questProgress = sagaProgress.getQuestProgress(quest.getId());
-                    questProgress.setCompleted(true);
-
-                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-
-                    player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed", quest.getTitle()));
-                    player.sendSystemMessage(Component.translatable("command.dragonminez.story.objectives_completed", objectives.size()));
-                });
-                successCount++;
+                    for (ServerPlayer player : targetPlayers) {
+                        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+                            performQuestCompletion(stats.getQuestData(), saga, quest, player);
+                            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                        });
+                        successCount++;
+                    }
+                } catch (NumberFormatException e) {
+                    context.getSource().sendFailure(Component.literal("Invalid Quest ID. Use a number or 'all'."));
+                    return 0;
+                }
             }
 
             final int finalCount = successCount;
             final int totalPlayers = targetPlayers.size();
-            context.getSource().sendSuccess(() ->
-                    Component.translatable("command.dragonminez.story.saga_info", saga.getName()), false);
+
+            if (!questArg.equalsIgnoreCase("all")) {
+                context.getSource().sendSuccess(() ->
+                        Component.translatable("command.dragonminez.story.saga_info", saga.getName()), false);
+            }
             context.getSource().sendSuccess(() ->
                     Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
 
@@ -155,6 +188,23 @@ public class StoryCommand {
             context.getSource().sendFailure(Component.translatable("command.dragonminez.story.error", e.getMessage()));
             return 0;
         }
+    }
+
+    private static void performQuestCompletion(QuestData questData, Saga saga, Quest quest, ServerPlayer player) {
+        List<QuestObjective> objectives = quest.getObjectives();
+        for (int i = 0; i < objectives.size(); i++) {
+            QuestObjective objective = objectives.get(i);
+            int required = objective.getRequired();
+            questData.setQuestObjectiveProgress(saga.getId(), quest.getId(), i, required);
+        }
+
+        questData.completeQuest(saga.getId(), quest.getId());
+
+        QuestData.SagaProgress sagaProgress = questData.getSagaProgress(saga.getId());
+        QuestData.QuestProgress questProgress = sagaProgress.getQuestProgress(quest.getId());
+        questProgress.setCompleted(true);
+
+        player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed", quest.getTitle()));
     }
 
     private static int removeQuest(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
@@ -204,6 +254,44 @@ public class StoryCommand {
             final int totalPlayers = targetPlayers.size();
             context.getSource().sendSuccess(() ->
                     Component.translatable("command.dragonminez.story.quest_removed", sagaId, questId), false);
+            context.getSource().sendSuccess(() ->
+                    Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
+
+            return successCount;
+
+        } catch (Exception e) {
+            context.getSource().sendFailure(Component.translatable("command.dragonminez.story.error", e.getMessage()));
+            return 0;
+        }
+    }
+
+    private static int resetSaga(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
+        try {
+            String sagaId = StringArgumentType.getString(context, "saga");
+
+            List<ServerPlayer> targetPlayers = getTargetPlayers(context, targetPlayer);
+
+            if (targetPlayers.isEmpty()) {
+                context.getSource().sendFailure(Component.translatable("command.dragonminez.story.no_valid_players"));
+                return 0;
+            }
+
+            int successCount = 0;
+            for (ServerPlayer player : targetPlayers) {
+                StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+                    QuestData questData = stats.getQuestData();
+
+                    if (sagaId.equalsIgnoreCase("all")) questData.resetAllSagas();
+                    else questData.resetSaga(sagaId);
+                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                });
+                successCount++;
+            }
+
+            final int finalCount = successCount;
+            final int totalPlayers = targetPlayers.size();
+            context.getSource().sendSuccess(() ->
+                    Component.translatable("command.dragonminez.story.saga_reset", sagaId), false);
             context.getSource().sendSuccess(() ->
                     Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
 

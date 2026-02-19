@@ -58,6 +58,14 @@ public class QuestData {
 		return activeSagas;
 	}
 
+    public void resetSaga(String sagaId) {
+        sagaProgress.remove(sagaId);
+    }
+
+    public void resetAllSagas() {
+        sagaProgress.clear();
+    }
+
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         ListTag sagaList = new ListTag();

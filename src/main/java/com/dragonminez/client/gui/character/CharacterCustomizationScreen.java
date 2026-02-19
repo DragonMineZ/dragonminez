@@ -208,7 +208,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 addRenderableWidget(createArrowButton(genderPosX, genderPosY, false,
                         btn -> {
                             character.setGender(Character.GENDER_FEMALE);
-                            if (character.getRace().equals("majin")) character.setHairId(0);
+                            if (getEffectiveModelBase().equals("majin")) character.setHairId(0);
                             NetworkHandler.sendToServer(new StatsSyncC2S(character));
                             refreshButtons();
                         }));
@@ -216,7 +216,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 addRenderableWidget(createArrowButton(genderPosX - 65, genderPosY, true,
                         btn -> {
                             character.setGender(Character.GENDER_MALE);
-                            if (character.getRace().equals("majin")) character.setHairId(0);
+                            if (getEffectiveModelBase().equals("majin")) character.setHairId(0);
                             NetworkHandler.sendToServer(new StatsSyncC2S(character));
                             refreshButtons();
                         }));
@@ -510,41 +510,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
                 .build();
     }
 
-    private void changeHair(int delta) {
-        int maxHair = 0;
-		switch (character.getRace().toLowerCase(Locale.ROOT)) {
-			case "human", "saiyan" -> maxHair = HairManager.getPresetCount();
-			case "namekian" -> maxHair = 3;
-			case "frostdemon" -> maxHair = 1;
-			case "bioandroid" -> maxHair = 1;
-			case "majin" -> {
-				if (character.getGender().equals(Character.GENDER_FEMALE)) maxHair = HairManager.getPresetCount();
-				else maxHair = 2;
-			}
-		}
-
-		if (!ConfigManager.isDefaultRace(character.getRace().toLowerCase()) && HairManager.canUseHair(character)) maxHair = HairManager.getPresetCount();
-        int newHair = character.getHairId() + delta;
-        if (newHair < 0) newHair = maxHair;
-        else if (newHair > maxHair) newHair = 0;
-
-        character.setHairId(newHair);
-
-		if (newHair == 0) {
-			character.setHairBase(new CustomHair());
-			character.setHairSSJ(new CustomHair());
-			character.setHairSSJ2(new CustomHair());
-			character.setHairSSJ3(new CustomHair());
-		}
-        NetworkHandler.sendToServer(new StatsSyncC2S(character));
-        refreshButtons();
-    }
-
-
     private void changeBodyType(int delta) {
-        int maxType = TextureCounter.getMaxBodyTypes(character.getRace(), character.getGender());
+        String baseModel = getEffectiveModelBase();
+        int maxType = TextureCounter.getMaxBodyTypes(baseModel, character.getGender());
+
         if (maxType < 0) {
-            if (character.getRace().equals("human") || character.getRace().equals("saiyan")) {
+            if (baseModel.equals("human") || baseModel.equals("saiyan")) {
                 maxType = 1;
             } else {
                 maxType = 0;
@@ -552,7 +523,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         }
 
         int currentType = character.getBodyType();
-
         int newType = currentType + delta;
 
         if (newType < 0) {
@@ -562,6 +532,40 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         }
 
         character.setBodyType(newType);
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
+        refreshButtons();
+    }
+
+    private void changeHair(int delta) {
+        int maxHair = 0;
+        String baseModel = getEffectiveModelBase();
+
+        switch (baseModel) {
+            case "human", "saiyan" -> maxHair = HairManager.getPresetCount();
+            case "namekian" -> maxHair = 3;
+            case "frostdemon", "bioandroid" -> maxHair = 1;
+            case "majin" -> {
+                if (character.getGender().equals(Character.GENDER_FEMALE)) maxHair = HairManager.getPresetCount();
+                else maxHair = 2;
+            }
+        }
+
+        if (!ConfigManager.isDefaultRace(character.getRace().toLowerCase()) && HairManager.canUseHair(character)) {
+            maxHair = HairManager.getPresetCount();
+        }
+
+        int newHair = character.getHairId() + delta;
+        if (newHair < 0) newHair = maxHair;
+        else if (newHair > maxHair) newHair = 0;
+
+        character.setHairId(newHair);
+
+        if (newHair == 0) {
+            character.setHairBase(new CustomHair());
+            character.setHairSSJ(new CustomHair());
+            character.setHairSSJ2(new CustomHair());
+            character.setHairSSJ3(new CustomHair());
+        }
         NetworkHandler.sendToServer(new StatsSyncC2S(character));
         refreshButtons();
     }
@@ -581,7 +585,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
     }
 
     private void changeEyes(int delta) {
-        int maxEyes = TextureCounter.getMaxEyesTypes(character.getRace());
+        int maxEyes = TextureCounter.getMaxEyesTypes(getEffectiveModelBase());
         if (maxEyes == 0) maxEyes = 1;
 
         int newEyes = character.getEyesType() + delta;
@@ -593,7 +597,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
     }
 
     private void changeNose(int delta) {
-        int maxNose = TextureCounter.getMaxNoseTypes(character.getRace());
+        int maxNose = TextureCounter.getMaxNoseTypes(getEffectiveModelBase());
         if (maxNose == 0) maxNose = 1;
 
         int newNose = character.getNoseType() + delta;
@@ -605,7 +609,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
     }
 
     private void changeMouth(int delta) {
-        int maxMouth = TextureCounter.getMaxMouthTypes(character.getRace());
+        int maxMouth = TextureCounter.getMaxMouthTypes(getEffectiveModelBase());
         if (maxMouth == 0) maxMouth = 1;
 
         int newMouth = character.getMouthType() + delta;
@@ -616,17 +620,17 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         refreshButtons();
     }
 
-	private void changeTattoo(int delta) {
-		int maxTattoo = TextureCounter.getMaxTattooTypes(character.getRace());
-		if (maxTattoo == 0) maxTattoo = 1;
+    private void changeTattoo(int delta) {
+        int maxTattoo = TextureCounter.getMaxTattooTypes(getEffectiveModelBase());
+        if (maxTattoo == 0) maxTattoo = 1;
 
-		int newTattoo = character.getTattooType() + delta;
-		if (newTattoo < 0) newTattoo = maxTattoo;
-		if (newTattoo > maxTattoo) newTattoo = 0;
-	character.setTattooType(newTattoo);
-	NetworkHandler.sendToServer(new StatsSyncC2S(character));
-	refreshButtons();
-}
+        int newTattoo = character.getTattooType() + delta;
+        if (newTattoo < 0) newTattoo = maxTattoo;
+        if (newTattoo > maxTattoo) newTattoo = 0;
+        character.setTattooType(newTattoo);
+        NetworkHandler.sendToServer(new StatsSyncC2S(character));
+        refreshButtons();
+    }
 
     private void refreshButtons() {
         String savedColorField = currentColorField;
@@ -808,14 +812,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
             if (canChangeBodyType()) {
                 drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.customization.body_type").getString(), textX, centerY - 80, 0xFF9B9B);
-
+                String baseModel = getEffectiveModelBase();
                 String race = character.getRace();
                 int bodyType = character.getBodyType();
                 String bodyTypeText;
 
-                if (race.equals("human") || race.equals("saiyan")) {
-                    bodyTypeText = bodyType == 0 ? Component.translatable("gui.dragonminez.customization.body_type.default").getString()
-                                                 : Component.translatable("gui.dragonminez.customization.body_type.custom").getString();
+                if (baseModel.equals("human") || baseModel.equals("saiyan")) {
+                    bodyTypeText = bodyType == 0 ? Component.translatable("gui.dragonminez.customization.body_type.default").getString() : Component.translatable("gui.dragonminez.customization.body_type.custom").getString();
                 } else {
                     bodyTypeText = Component.translatable("gui.dragonminez.customization.type", bodyType + 1).getString();
                 }
@@ -1184,4 +1187,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         return false;
     }
 
+    private String getEffectiveModelBase() {
+        String race = character.getRace().toLowerCase(Locale.ROOT);
+        RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+
+        if (config != null && config.hasCustomModel()) return config.getCustomModel().toLowerCase(Locale.ROOT);
+        return race;
+    }
 }
