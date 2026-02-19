@@ -15,6 +15,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -162,7 +163,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		poseStack.pushPose();
 
-		float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
+		float bodyYaw = Mth.rotLerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
 		poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - bodyYaw));
 		if (animatable.deathTime > 0) {
 			float deathProgress = ((float)animatable.deathTime + partialTick - 1.0F) / 20.0F * 1.6F;

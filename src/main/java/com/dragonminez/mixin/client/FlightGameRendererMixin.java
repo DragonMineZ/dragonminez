@@ -20,7 +20,7 @@ public abstract class FlightGameRendererMixin {
 
     @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setup(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/world/entity/Entity;ZZF)V", shift = At.Shift.AFTER))
     private void dragonminez$applyFlightRoll(float partialTicks, long finishNanoTime, PoseStack poseStack, CallbackInfo ci) {
-		if (FlightRollHandler.hasActiveRoll() && ConfigManager.getUserConfig().getHud().isCameraMovementDurintFlight()) {
+		if (FlightRollHandler.hasActiveRoll() && ConfigManager.getUserConfig().getHud().isCameraMovementDuringFlight()) {
 			float roll = ((RollCamera) mainCamera).dragonminez$getRoll();
 			if (Math.abs(roll) > 0.01F) poseStack.mulPose(Axis.ZP.rotationDegrees(roll));
 		}

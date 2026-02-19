@@ -4,6 +4,11 @@ import com.google.gson.annotations.SerializedName;
 
 
 public class RaceStatsConfig {
+    public static final int CURRENT_VERSION = 1;
+    private int configVersion = CURRENT_VERSION;
+    public int getConfigVersion() { return configVersion; }
+    public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
+
     private ClassStats warrior = new ClassStats();
     private ClassStats spiritualist = new ClassStats();
     private ClassStats martialArtist = new ClassStats();

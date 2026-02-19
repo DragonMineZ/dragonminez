@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
@@ -12,6 +13,7 @@ import net.minecraftforge.registries.RegistryObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,18 +23,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class ConfigManager {
-
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .setLenient()
-            .create();
-
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
     private static final ConfigLoader LOADER = new ConfigLoader(GSON);
     private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory(GSON, LOADER);
 
     private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
     private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
-
     private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin"};
     private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
 
@@ -47,12 +43,10 @@ public class ConfigManager {
     private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
     private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
 
-
     private static GeneralUserConfig userConfig;
     private static GeneralServerConfig serverConfig;
     private static SkillsConfig skillsConfig;
     private static EntitiesConfig entitiesConfig;
-
 
     public static void initialize() {
         LogUtil.info(Env.COMMON, "Initializing DragonMineZ configuration system...");
@@ -71,132 +65,295 @@ public class ConfigManager {
         }
     }
 
-    private static void loadGeneralConfigs() throws IOException {
-        Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
-        if (Files.exists(userConfigPath)) {
-            userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
-        } else {
-            userConfig = new GeneralUserConfig();
-            LOADER.saveConfig(userConfigPath, userConfig);
-        }
+	private static void backupOldConfig(Path configPath) {
+		if (Files.exists(configPath)) {
+			try {
+				String fileName = configPath.getFileName().toString();
+				if (fileName.startsWith("old_")) return;
+				Path backupPath = configPath.getParent().resolve("old_" + fileName);
+				Files.move(configPath, backupPath, StandardCopyOption.REPLACE_EXISTING);
+				LogUtil.info(Env.COMMON, "Obsolete config backed up: {}", backupPath.getFileName());
+			} catch (IOException e) {
+				LogUtil.error(Env.COMMON, "Failed to backup old config '{}': {}", configPath.getFileName(), e);
+			}
+		}
+	}
 
-        Path serverConfigPath = CONFIG_DIR.resolve("general-server.json");
-        if (Files.exists(serverConfigPath)) {
-            serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-        } else {
+	private static void loadGeneralConfigs() throws IOException {
+		// General User
+		Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
+		boolean overwriteUser = false;
+		if (Files.exists(userConfigPath)) {
+			try {
+				userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
+				if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION) {
+					backupOldConfig(userConfigPath);
+					userConfig = new GeneralUserConfig();
+					overwriteUser = true;
+				}
+			} catch (Exception e) {
+				backupOldConfig(userConfigPath);
+				userConfig = new GeneralUserConfig();
+				overwriteUser = true;
+			}
+		} else {
+			userConfig = new GeneralUserConfig();
+			overwriteUser = true;
+		}
+		if (overwriteUser) LOADER.saveConfig(userConfigPath, userConfig);
+
+		// General Server
+		Path serverConfigPath = CONFIG_DIR.resolve("general-server.json");
+		boolean overwriteServer = false;
+		if (Files.exists(serverConfigPath)) {
+			try {
+				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
+				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
+					backupOldConfig(serverConfigPath);
+					serverConfig = new GeneralServerConfig();
+					overwriteServer = true;
+				} else overwriteServer = true;
+			} catch (Exception e) {
+				backupOldConfig(serverConfigPath);
+				serverConfig = new GeneralServerConfig();
+				overwriteServer = true;
+			}
+		} else {
 			try {
 				LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
 				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
+				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
+					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
+					overwriteServer = true;
+				}
 			} catch (Exception e) {
 				serverConfig = new GeneralServerConfig();
-				LOADER.saveConfig(serverConfigPath, serverConfig);
-				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
+				overwriteServer = true;
 			}
-        }
+		}
+		if (overwriteServer) LOADER.saveConfig(serverConfigPath, serverConfig);
 
-        Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
-        if (Files.exists(skillsConfigPath)) {
-            skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-        } else {
+		// Skills
+		Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
+		boolean overwriteSkills = false;
+		if (Files.exists(skillsConfigPath)) {
+			try {
+				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
+					backupOldConfig(skillsConfigPath);
+					skillsConfig = new SkillsConfig();
+					overwriteSkills = true;
+				} else overwriteSkills = true;
+			} catch (Exception e) {
+				backupOldConfig(skillsConfigPath);
+				skillsConfig = new SkillsConfig();
+				overwriteSkills = true;
+			}
+		} else {
 			try {
 				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
 				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
+				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
+					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
+					overwriteSkills = true;
+				}
 			} catch (Exception e) {
 				skillsConfig = new SkillsConfig();
-				LOADER.saveConfig(skillsConfigPath, skillsConfig);
-				LogUtil.error(Env.COMMON, "Error creating skills configuration from template, created default instead: {}");
+				overwriteSkills = true;
 			}
-        }
+		}
+		if (overwriteSkills) LOADER.saveConfig(skillsConfigPath, skillsConfig);
 
-        Path entitiesConfigPath = CONFIG_DIR.resolve("entities.json");
-        if (Files.exists(entitiesConfigPath)) {
-            entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
-        } else {
-            entitiesConfig = createDefaultEntitiesConfig();
-            LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
-        }
-    }
+		// Entities
+		Path entitiesConfigPath = CONFIG_DIR.resolve("entities.json");
+		boolean overwriteEntities = false;
+		if (Files.exists(entitiesConfigPath)) {
+			try {
+				entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
+				if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION) {
+					backupOldConfig(entitiesConfigPath);
+					entitiesConfig = createDefaultEntitiesConfig();
+					overwriteEntities = true;
+				}
+			} catch (Exception e) {
+				backupOldConfig(entitiesConfigPath);
+				entitiesConfig = createDefaultEntitiesConfig();
+				overwriteEntities = true;
+			}
+		} else {
+			entitiesConfig = createDefaultEntitiesConfig();
+			overwriteEntities = true;
+		}
+		if (overwriteEntities) LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
+	}
+
+	private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
+		Path racePath = RACES_DIR.resolve(raceName);
+		Files.createDirectories(racePath);
+
+		Path characterPath = racePath.resolve("character.json");
+		Path statsPath = racePath.resolve("stats.json");
+		Path formsPath = racePath.resolve("forms");
+		Files.createDirectories(formsPath);
+
+		// Character Config
+		RaceCharacterConfig characterConfig;
+		boolean overwriteCharacter = false;
+		if (Files.exists(characterPath)) {
+			try {
+				characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
+				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION) {
+					backupOldConfig(characterPath);
+					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+					overwriteCharacter = true;
+				} else overwriteCharacter = true;
+			} catch (Exception e) {
+				backupOldConfig(characterPath);
+				characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+				overwriteCharacter = true;
+			}
+		} else {
+			characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+			overwriteCharacter = true;
+		}
+		if (overwriteCharacter) LOADER.saveConfig(characterPath, characterConfig);
+
+		// Stats Config
+		RaceStatsConfig statsConfig;
+		boolean overwriteStats = false;
+		if (Files.exists(statsPath)) {
+			try {
+				statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
+				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION) {
+					backupOldConfig(statsPath);
+					statsConfig = createDefaultStatsConfig();
+					overwriteStats = true;
+				}
+			} catch (Exception e) {
+				backupOldConfig(statsPath);
+				statsConfig = createDefaultStatsConfig();
+				overwriteStats = true;
+			}
+		} else {
+			statsConfig = createDefaultStatsConfig();
+			overwriteStats = true;
+		}
+		if (overwriteStats) LOADER.saveConfig(statsPath, statsConfig);
+
+		// Forms Config
+		Map<String, FormConfig> raceForms = LOADER.loadRaceForms(raceName, formsPath);
+		boolean recreateForms = false;
+
+		if (isDefault && !LOADER.hasExistingFiles(formsPath)) {
+			recreateForms = true;
+		} else if (!raceForms.isEmpty()) {
+			for (FormConfig formGroup : raceForms.values()) {
+				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+					recreateForms = true;
+					break;
+				}
+			}
+		}
+
+		if (recreateForms && isDefault) {
+			try (var stream = Files.list(formsPath)) {
+				stream.filter(path -> path.toString().endsWith(".json")).forEach(ConfigManager::backupOldConfig);
+			}
+			raceForms.clear();
+			FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
+		} else {
+			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
+				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
+				LOADER.saveConfig(formFilePath, entry.getValue());
+			}
+		}
+
+		RACE_FORMS.put(raceName.toLowerCase(), raceForms);
+		RACE_CHARACTER.put(raceName.toLowerCase(), characterConfig);
+		RACE_STATS.put(raceName.toLowerCase(), statsConfig);
+		LOADED_RACES.add(raceName);
+	}
 
 	private static EntitiesConfig createDefaultEntitiesConfig() {
 		EntitiesConfig config = new EntitiesConfig();
 		EntitiesConfig.HardModeSettings hardMode = config.getHardModeSettings();
-		Map<String, EntitiesConfig.EntityStats> statsMap = config.getEntityStats();
-		hardMode.setHpMultiplier(3.0);
+		Map<String, Map<String, EntitiesConfig.EntityStats>> statsMap = config.getSagaEntityStats();hardMode.setHpMultiplier(3.0);
 		hardMode.setDamageMultiplier(2.0);
 
-		addDefaultEntityStats(statsMap, MainEntities.DINO_KID, 30.0, 4.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR1, 100.0, 8.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR2, 150.0, 12.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR3, 75.0, 10.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.SABERTOOTH, 30.0, 5.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.BANDIT, 75.0, 10.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_SOLDIER, 40.0, 5.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT1, 120.0, 15.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
-		addDefaultEntityStats(statsMap, MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
+		//OPEN WORLD
+		addDefaultEntityStats(statsMap, "default", MainEntities.DINO_KID, 30.0, 4.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.DINOSAUR1, 100.0, 8.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.DINOSAUR2, 150.0, 12.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.DINOSAUR3, 75.0, 10.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.SABERTOOTH, 30.0, 5.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.BANDIT, 75.0, 10.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.RED_RIBBON_SOLDIER, 40.0, 5.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.RED_RIBBON_ROBOT1, 120.0, 15.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
 
-		// ==================== SAIYAN SAGA ====================
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_RADITZ, 400.0, 25.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN, 400.0, 25.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN2, 400.0, 25.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN3, 400.0, 25.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN4, 400.0, 25.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN5, 400.0, 25.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SAIBAMAN6, 400.0, 25.0, 50.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_NAPPA, 750.0, 45.0, 100.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_VEGETA, 1200.0, 70.0, 150.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_OZARU_VEGETA, 2500.0, 140.0, 200.0);
+		//SAIYAN SAGA
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_RADITZ, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_SAIBAMAN, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_SAIBAMAN2, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_SAIBAMAN3, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_SAIBAMAN4, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_SAIBAMAN5, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_SAIBAMAN6, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_NAPPA, 750.0, 45.0, 100.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_VEGETA, 1200.0, 70.0, 150.0);
+		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_OZARU_VEGETA, 2500.0, 140.0, 200.0);
 
-		// ==================== FRIEZA SAGA ====================
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FRIEZA_SOLDIER, 200.0, 15.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FRIEZA_SOLDIER2, 200.0, 15.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FRIEZA_SOLDIER3, 200.0, 15.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_MORO_SOLDIER, 200.0, 15.0, 20.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_CUI, 1200.0, 70.0, 150.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_DODORIA, 1400.0, 80.0, 180.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_ZARBON, 1500.0, 85.0, 200.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_VEGETA_NAMEK, 1600.0, 90.0, 200.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_ZARBON_TRANSF, 1800.0, 100.0, 200.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_GULDO, 800.0, 50.0, 90.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_RECOOME, 2000.0, 110.0, 180.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_BURTER, 2000.0, 110.0, 180.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_JEICE, 2000.0, 110.0, 180.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_GINYU, 3000.0, 160.0, 260.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_GINYU_GOKU, 1500.0, 85.0, 140.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_FIRST, 4000.0, 200.0, 350.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_SECOND, 6000.0, 300.0, 500.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_THIRD, 8000.0, 400.0, 650.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_BASE, 12000.0, 550.0, 900.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_FREEZER_FP, 16000.0, 750.0, 1200.0);
+		//FRIEZA SAGA
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FRIEZA_SOLDIER, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FRIEZA_SOLDIER2, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FRIEZA_SOLDIER3, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_MORO_SOLDIER, 200.0, 15.0, 20.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_CUI, 1200.0, 70.0, 150.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_DODORIA, 1400.0, 80.0, 180.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_ZARBON, 1500.0, 85.0, 200.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_VEGETA_NAMEK, 1600.0, 90.0, 200.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_ZARBON_TRANSF, 1800.0, 100.0, 200.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_GULDO, 800.0, 50.0, 90.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_RECOOME, 2000.0, 110.0, 180.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_BURTER, 2000.0, 110.0, 180.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_JEICE, 2000.0, 110.0, 180.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_GINYU, 3000.0, 160.0, 260.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_GINYU_GOKU, 1500.0, 85.0, 140.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FREEZER_FIRST, 4000.0, 200.0, 350.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FREEZER_SECOND, 6000.0, 300.0, 500.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FREEZER_THIRD, 8000.0, 400.0, 650.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FREEZER_BASE, 12000.0, 550.0, 900.0);
+		addDefaultEntityStats(statsMap, "frieza_saga", MainEntities.SAGA_FREEZER_FP, 16000.0, 750.0, 1200.0);
 
-		// ==================== ANDROID/CELL SAGA ====================
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_MECHA_FRIEZA, 17000.0, 800.0, 1300.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_KING_COLD, 8000.0, 400.0, 650.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_GOKU_YARDRAT, 20000.0, 900.0, 1500.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_DRGERO, 18000.0, 850.0, 1350.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_A19, 22000.0, 1000.0, 1600.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_A17, 30000.0, 1400.0, 2200.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_A18, 30000.0, 1400.0, 2200.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_A16, 32000.0, 1500.0, 2400.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_PICCOLO_KAMI, 35000.0, 1600.0, 2600.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_SUPER_VEGETA, 45000.0, 2100.0, 3400.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_TRUNKS_SSJ, 42000.0, 1950.0, 3200.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_GOHAN_SSJ, 55000.0, 2500.0, 4000.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_IMPERFECT, 28000.0, 1300.0, 2000.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_SEMIPERFECT, 40000.0, 1800.0, 3000.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_PERFECT, 60000.0, 2800.0, 4500.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_SUPERPERFECT, 80000.0, 3800.0, 6000.0);
-		addDefaultEntityStats(statsMap, MainEntities.SAGA_CELL_JR, 42500.0, 1950.0, 3800.0);
+		//ANDROID SAGA
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_MECHA_FRIEZA, 17000.0, 800.0, 1300.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_KING_COLD, 8000.0, 400.0, 650.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_GOKU_YARDRAT, 20000.0, 900.0, 1500.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_DRGERO, 18000.0, 850.0, 1350.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_A19, 22000.0, 1000.0, 1600.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_A17, 30000.0, 1400.0, 2200.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_A18, 30000.0, 1400.0, 2200.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_A16, 32000.0, 1500.0, 2400.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_PICCOLO_KAMI, 35000.0, 1600.0, 2600.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_SUPER_VEGETA, 45000.0, 2100.0, 3400.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_TRUNKS_SSJ, 42000.0, 1950.0, 3200.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_GOHAN_SSJ, 55000.0, 2500.0, 4000.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_CELL_IMPERFECT, 28000.0, 1300.0, 2000.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_CELL_SEMIPERFECT, 40000.0, 1800.0, 3000.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_CELL_PERFECT, 60000.0, 2800.0, 4500.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_CELL_SUPERPERFECT, 80000.0, 3800.0, 6000.0);
+		addDefaultEntityStats(statsMap, "android_saga", MainEntities.SAGA_CELL_JR, 42500.0, 1950.0, 3800.0);
 
 		return config;
 	}
 
-	private static void addDefaultEntityStats(Map<String, EntitiesConfig.EntityStats> map, RegistryObject<? extends EntityType<?>> entityType, double health, double meleeDamage, double kiDamage) {
+	private static void addDefaultEntityStats(Map<String, Map<String, EntitiesConfig.EntityStats>> map, String saga, RegistryObject<? extends EntityType<?>> entityType, double health, double meleeDamage, double kiDamage) {
 		EntitiesConfig.EntityStats stats = new EntitiesConfig.EntityStats();
 		stats.setHealth(health);
 		stats.setMeleeDamage(meleeDamage);
 		stats.setKiDamage(kiDamage);
-		map.put(entityType.getKey().location().toString(), stats);
+		map.computeIfAbsent(saga, k -> new HashMap<>()).put(entityType.getKey().location().toString(), stats);
 	}
 
     private static void loadAllRaces() throws IOException {
@@ -205,9 +362,7 @@ public class ConfigManager {
         RACE_FORMS.clear();
         LOADED_RACES.clear();
 
-        for (String raceName : DEFAULT_RACES) {
-            createOrLoadRace(raceName, true);
-        }
+        for (String raceName : DEFAULT_RACES) createOrLoadRace(raceName, true);
 
         try (var stream = Files.list(RACES_DIR)) {
             stream.forEach(racePath -> {
@@ -226,56 +381,8 @@ public class ConfigManager {
         }
     }
 
-    private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
-        Path racePath = RACES_DIR.resolve(raceName);
-        Files.createDirectories(racePath);
-
-        Path characterPath = racePath.resolve("character.json");
-        Path statsPath = racePath.resolve("stats.json");
-        Path formsPath = racePath.resolve("forms");
-        Files.createDirectories(formsPath);
-
-        RaceCharacterConfig characterConfig;
-        if (Files.exists(characterPath)) {
-            characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
-
-            RaceCharacterConfig defaultConfig = createDefaultCharacterConfig(raceName, isDefault);
-            boolean needsUpdate = mergeCharacterConfig(characterConfig, defaultConfig);
-
-            if (needsUpdate) {
-                LOADER.saveConfig(characterPath, characterConfig);
-            }
-        } else {
-            characterConfig = createDefaultCharacterConfig(raceName, isDefault);
-            LOADER.saveConfig(characterPath, characterConfig);
-        }
-
-        RaceStatsConfig statsConfig;
-        if (Files.exists(statsPath)) {
-            statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
-        } else {
-            statsConfig = createDefaultStatsConfig();
-            LOADER.saveConfig(statsPath, statsConfig);
-        }
-
-        Map<String, FormConfig> raceForms = LOADER.loadRaceForms(raceName, formsPath);
-
-        if (isDefault && !LOADER.hasExistingFiles(formsPath)) {
-            FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
-        }
-
-        RACE_FORMS.put(raceName.toLowerCase(), raceForms);
-        RACE_CHARACTER.put(raceName.toLowerCase(), characterConfig);
-        RACE_STATS.put(raceName.toLowerCase(), statsConfig);
-        LOADED_RACES.add(raceName);
-    }
-
     public static boolean isDefaultRace(String raceName) {
-        for (String vanilla : DEFAULT_RACES) {
-            if (vanilla.equalsIgnoreCase(raceName)) {
-                return true;
-            }
-        }
+        for (String vanilla : DEFAULT_RACES) if (vanilla.equalsIgnoreCase(raceName)) return true;
         return false;
     }
 
@@ -482,9 +589,7 @@ public class ConfigManager {
 		setupScalingStats(config.getMartialArtist(), 0.75, 1.0, 1.5, 1.0, 1.75, 0.75, 1.25);
     }
 
-    private static void setupInitialStats(RaceStatsConfig.ClassStats classStats,
-										  int str, int skp, int res, int vit, int pwr, int ene,
-										  double healthRegen, double energyRegen, double staminaRegen) {
+    private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene, double healthRegen, double energyRegen, double staminaRegen) {
         RaceStatsConfig.BaseStats base = classStats.getBaseStats();
         base.setStrength(str);
         base.setStrikePower(skp);
@@ -498,8 +603,7 @@ public class ConfigManager {
         classStats.setStaminaRegenRate(staminaRegen);
     }
 	
-	private static void setupScalingStats(RaceStatsConfig.ClassStats classStats,
-										  double strScale, double skpScale, double defScale, double stmScale, double vitScale, double pwrScale, double eneScale) {
+	private static void setupScalingStats(RaceStatsConfig.ClassStats classStats, double strScale, double skpScale, double defScale, double stmScale, double vitScale, double pwrScale, double eneScale) {
 		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 		scaling.setStrengthScaling(strScale);
 		scaling.setStrikePowerScaling(skpScale);
@@ -510,98 +614,20 @@ public class ConfigManager {
 		scaling.setEnergyScaling(eneScale);
 	}
 
-    private static boolean mergeCharacterConfig(RaceCharacterConfig existing, RaceCharacterConfig defaults) {
-        boolean updated = false;
-
-        if (existing.getDefaultBodyColor() == null && defaults.getDefaultBodyColor() != null) {
-            existing.setDefaultBodyColor(defaults.getDefaultBodyColor());
-            updated = true;
-        }
-
-        if (existing.getDefaultBodyColor2() == null && defaults.getDefaultBodyColor2() != null) {
-            existing.setDefaultBodyColor2(defaults.getDefaultBodyColor2());
-            updated = true;
-        }
-
-        if (existing.getDefaultBodyColor3() == null && defaults.getDefaultBodyColor3() != null) {
-            existing.setDefaultBodyColor3(defaults.getDefaultBodyColor3());
-            updated = true;
-        }
-
-        if (existing.getDefaultHairColor() == null && defaults.getDefaultHairColor() != null) {
-            existing.setDefaultHairColor(defaults.getDefaultHairColor());
-            updated = true;
-        }
-
-        if (existing.getDefaultEye1Color() == null && defaults.getDefaultEye1Color() != null) {
-            existing.setDefaultEye1Color(defaults.getDefaultEye1Color());
-            updated = true;
-        }
-
-        if (existing.getDefaultEye2Color() == null && defaults.getDefaultEye2Color() != null) {
-            existing.setDefaultEye2Color(defaults.getDefaultEye2Color());
-            updated = true;
-        }
-
-        if (existing.getDefaultAuraColor() == null && defaults.getDefaultAuraColor() != null) {
-            existing.setDefaultAuraColor(defaults.getDefaultAuraColor());
-            updated = true;
-        }
-
-        if (existing.getSuperformTpCost() == null && defaults.getSuperformTpCost() != null) {
-            existing.setSuperformTpCost(defaults.getSuperformTpCost());
-            updated = true;
-        }
-
-        if (existing.getGodformTpCost() == null && defaults.getGodformTpCost() != null) {
-            existing.setGodformTpCost(defaults.getGodformTpCost());
-            updated = true;
-        }
-
-        if (existing.getLegendaryformsTpCost() == null && defaults.getLegendaryformsTpCost() != null) {
-            existing.setLegendaryformsTpCost(defaults.getLegendaryformsTpCost());
-            updated = true;
-        }
-
-        if (existing.getAndroidformsTpCost() == null && defaults.getAndroidformsTpCost() != null) {
-            existing.setAndroidformsTpCost(defaults.getAndroidformsTpCost());
-            updated = true;
-        }
-
-		if (existing.getDefaultModelScaling() == null && defaults.getDefaultModelScaling() != null) {
-			existing.setDefaultModelScaling(defaults.getDefaultModelScaling());
-			updated = true;
-		}
-
-        if (existing.getDefaultModelScaling() == null && defaults.getDefaultModelScaling() != null) {
-            existing.setDefaultModelScaling(defaults.getDefaultModelScaling());
-            updated = true;
-        }
-
-        return updated;
-    }
-
     public static RaceStatsConfig getRaceStats(String raceName) {
-        if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(raceName.toLowerCase())) {
-            return SERVER_SYNCED_STATS.get(raceName.toLowerCase());
-        }
+        if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(raceName.toLowerCase())) return SERVER_SYNCED_STATS.get(raceName.toLowerCase());
         return RACE_STATS.getOrDefault(raceName.toLowerCase(), RACE_STATS.get("human"));
     }
 
     public static RaceCharacterConfig getRaceCharacter(String raceName) {
-        if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase())) {
-            return SERVER_SYNCED_CHARACTER.get(raceName.toLowerCase());
-        }
+        if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase())) return SERVER_SYNCED_CHARACTER.get(raceName.toLowerCase());
         return RACE_CHARACTER.getOrDefault(raceName.toLowerCase(), RACE_CHARACTER.get("human"));
     }
 
     public static List<String> getLoadedRaces() {
         List<String> races;
-        if (SERVER_SYNCED_CHARACTER != null) {
-            races = new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet());
-        } else {
-            races = new ArrayList<>(LOADED_RACES);
-        }
+        if (SERVER_SYNCED_CHARACTER != null) races = new ArrayList<>(SERVER_SYNCED_CHARACTER.keySet());
+        else races = new ArrayList<>(LOADED_RACES);
 
         races.sort((r1, r2) -> {
             int index1 = -1;
@@ -623,9 +649,7 @@ public class ConfigManager {
     }
 
     public static boolean isRaceLoaded(String raceName) {
-        if (SERVER_SYNCED_CHARACTER != null) {
-            return SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
-        }
+        if (SERVER_SYNCED_CHARACTER != null) return SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
         return LOADED_RACES.stream().anyMatch(r -> r.equalsIgnoreCase(raceName));
     }
 
@@ -634,9 +658,7 @@ public class ConfigManager {
     }
 
     public static GeneralServerConfig getServerConfig() {
-        if (SERVER_SYNCED_GENERAL_SERVER != null) {
-            return SERVER_SYNCED_GENERAL_SERVER;
-        }
+        if (SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
         return serverConfig != null ? serverConfig : new GeneralServerConfig();
     }
 
@@ -646,39 +668,6 @@ public class ConfigManager {
             LOADER.saveConfig(path, userConfig);
         } catch (IOException e) {
             LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage());
-        }
-    }
-
-    public static void saveGeneralServerConfig() {
-        try {
-            Path path = CONFIG_DIR.resolve("general-server.json");
-            LOADER.saveConfig(path, serverConfig);
-        } catch (IOException e) {
-            LogUtil.error(Env.COMMON, "Error saving server configuration: {}", e.getMessage());
-        }
-    }
-
-    public static void saveRaceStats(String raceName) {
-        try {
-            Path path = RACES_DIR.resolve(raceName).resolve("stats.json");
-            RaceStatsConfig config = RACE_STATS.get(raceName);
-            if (config != null) {
-                LOADER.saveConfig(path, config);
-            }
-        } catch (IOException e) {
-            LogUtil.error(Env.COMMON, "Error saving stats for '{}': {}", raceName, e.getMessage());
-        }
-    }
-
-    public static void saveRaceCharacter(String raceName) {
-        try {
-            Path path = RACES_DIR.resolve(raceName).resolve("character.json");
-            RaceCharacterConfig config = RACE_CHARACTER.get(raceName);
-            if (config != null) {
-                LOADER.saveConfig(path, config);
-            }
-        } catch (IOException e) {
-            LogUtil.error(Env.COMMON, "Error saving character for '{}': {}", raceName, e.getMessage());
         }
     }
 
@@ -698,44 +687,30 @@ public class ConfigManager {
         SERVER_SYNCED_CHARACTER = null;
     }
 
-    public static boolean isUsingServerConfig() {
-        return SERVER_SYNCED_GENERAL_SERVER != null || SERVER_SYNCED_SKILLS != null || SERVER_SYNCED_FORMS != null || SERVER_SYNCED_STATS != null || SERVER_SYNCED_CHARACTER != null;
-    }
-
     public static Map<String, RaceStatsConfig> getAllRaceStats() {
-        if (SERVER_SYNCED_STATS != null) {
-            return SERVER_SYNCED_STATS;
-        }
+        if (SERVER_SYNCED_STATS != null) return SERVER_SYNCED_STATS;
         return new HashMap<>(RACE_STATS);
     }
 
     public static Map<String, RaceCharacterConfig> getAllRaceCharacters() {
-        if (SERVER_SYNCED_CHARACTER != null) {
-            return SERVER_SYNCED_CHARACTER;
-        }
+        if (SERVER_SYNCED_CHARACTER != null) return SERVER_SYNCED_CHARACTER;
         return new HashMap<>(RACE_CHARACTER);
     }
 
     public static FormConfig getFormGroup(String raceName, String groupName) {
         Map<String, FormConfig> raceForms = getAllFormsForRace(raceName);
-        if (raceForms != null) {
-            return raceForms.get(groupName.toLowerCase());
-        }
+        if (raceForms != null) return raceForms.get(groupName.toLowerCase());
         return null;
     }
 
     public static FormConfig.FormData getForm(String raceName, String groupName, String formName) {
         FormConfig group = getFormGroup(raceName, groupName);
-        if (group != null) {
-            return group.getForm(formName);
-        }
+        if (group != null) return group.getForm(formName);
         return null;
     }
 
     public static Map<String, Map<String, FormConfig>> getAllForms() {
-        if (SERVER_SYNCED_FORMS != null) {
-            return SERVER_SYNCED_FORMS;
-        }
+        if (SERVER_SYNCED_FORMS != null) return SERVER_SYNCED_FORMS;
         return RACE_FORMS;
     }
 
@@ -744,35 +719,26 @@ public class ConfigManager {
         return forms.getOrDefault(raceName.toLowerCase(), new HashMap<>());
     }
 
-    public static boolean hasFormGroup(String raceName, String groupName) {
-        return getFormGroup(raceName, groupName) != null;
-    }
-
-    public static boolean hasForm(String raceName, String groupName, String formName) {
-        return getForm(raceName, groupName, formName) != null;
-    }
-
     public static SkillsConfig getSkillsConfig() {
-        if (SERVER_SYNCED_SKILLS != null) {
-            return SERVER_SYNCED_SKILLS;
-        }
+        if (SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
         return skillsConfig != null ? skillsConfig : new SkillsConfig();
     }
 
-    public static void setServerSyncedSkills(SkillsConfig config) {
-        SERVER_SYNCED_SKILLS = config;
-    }
-
-    public static void clearServerSyncedSkills() {
-        SERVER_SYNCED_SKILLS = null;
-    }
-
-    public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
-        if (entitiesConfig != null && entitiesConfig.getEntityStats() != null) {
-            return entitiesConfig.getEntityStats().get(registryName);
-        }
-        return null;
-    }
+	public static EntitiesConfig.EntityStats getEntityStats(String sagaId, String registryName) {
+		if (entitiesConfig != null && entitiesConfig.getSagaEntityStats() != null) {
+			if (sagaId != null && !sagaId.isEmpty()) {
+				Map<String, EntitiesConfig.EntityStats> sagaMap = entitiesConfig.getSagaEntityStats().get(sagaId);
+				if (sagaMap != null && sagaMap.containsKey(registryName)) {
+					return sagaMap.get(registryName);
+				}
+			}
+			Map<String, EntitiesConfig.EntityStats> defaultMap = entitiesConfig.getSagaEntityStats().get("default");
+			if (defaultMap != null && defaultMap.containsKey(registryName)) {
+				return defaultMap.get(registryName);
+			}
+		}
+		return null;
+	}
 
 	public static EntitiesConfig getEntitiesConfig() {
 		return entitiesConfig;

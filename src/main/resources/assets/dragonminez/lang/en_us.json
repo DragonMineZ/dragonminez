@@ -165,7 +165,7 @@
   "gui.dragonminez.config.staminaBarPosX": "Stamina Bar - Position X",
   "gui.dragonminez.config.staminaBarPosY": "Stamina Bar - Position Y",
   "gui.dragonminez.config.isStoryHardDifficulty": "Story - Hard Difficulty",
-  "gui.dragonminez.config.cameraMovementDurintFlight": "Camera Movement while Flying",
+  "gui.dragonminez.config.cameraMovementDuringFlight": "Camera Movement while Flying",
   "gui.dragonminez.config.on": "ON",
   "gui.dragonminez.config.off": "OFF",
   "gui.dragonminez.skills.tab.skills": "Skills",

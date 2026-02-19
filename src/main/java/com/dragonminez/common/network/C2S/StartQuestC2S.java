@@ -75,7 +75,12 @@ public class StartQuestC2S {
 									double offsetX = (Math.random() - 0.5) * 2.0;
 									double offsetZ = (Math.random() - 0.5) * 2.0;
 									entity.setPos(player.getX() + offsetX, player.getY(), player.getZ() + offsetZ);
+
 									if (isHardMode) entity.getPersistentData().putBoolean("dmz_is_hardmode", true);
+
+									entity.getPersistentData().putString("dmz_saga_id", sagaId);
+									entity.getPersistentData().putString("dmz_quest_owner", player.getStringUUID());
+
 									if (entity instanceof Mob mob) mob.setTarget(player);
 									player.serverLevel().addFreshEntity(entity);
 								}
