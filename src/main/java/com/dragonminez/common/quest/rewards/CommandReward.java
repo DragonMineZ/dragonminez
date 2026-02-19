@@ -19,10 +19,7 @@ public class CommandReward extends QuestReward {
     public void giveReward(ServerPlayer player) {
         if (!isClaimed()) {
             String commandToExecute = command.replace("%player%", player.getName().getString());
-            player.getServer().getCommands().performPrefixedCommand(
-                player.getServer().createCommandSourceStack(),
-                commandToExecute
-            );
+            player.getServer().getCommands().performPrefixedCommand(player.getServer().createCommandSourceStack().withPermission(4), commandToExecute);
             setClaimed(true);
         }
     }

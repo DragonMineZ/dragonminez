@@ -68,11 +68,7 @@ public class WishManager {
     private static void loadWishesForDragon(Path wishDir, String dragonName) {
         File wishFile = wishDir.resolve(dragonName + ".json").toFile();
         List<Wish> dragonWishes = new ArrayList<>();
-
-        if (!wishFile.exists()) {
-            createDefaultWishes(wishDir, dragonName);
-        }
-
+        if (!wishFile.exists()) createDefaultWishes(wishDir, dragonName);
         try (FileReader reader = new FileReader(wishFile)) {
             Type listType = new TypeToken<ArrayList<Wish>>(){}.getType();
             dragonWishes = GSON.fromJson(reader, listType);
@@ -92,6 +88,8 @@ public class WishManager {
             wishes.add(new TPSWish("wish.shenron.tps.name", "wish.shenron.tps.desc", 5000));
             wishes.add(new ItemWish("wish.shenron.powerpole.name", "wish.shenron.powerpole.desc", "dragonminez:power_pole", 1));
             wishes.add(new ItemWish("wish.shenron.mightfruit.name", "wish.shenron.mightfruit.desc", "dragonminez:might_tree_fruit", 16));
+            wishes.add(new ItemWish("wish.shenron.namekcpu.name", "wish.shenron.namekcpu.desc", "dragonminez:t2_radar_cpu", 1));
+            wishes.add(new ItemWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", "dragonminez:saiyan_ship", 1));
 
             List<Tuple<String, Integer>> materials = new ArrayList<>();
             materials.add(new Tuple<>("dragonminez:kikono_shard", 32));
