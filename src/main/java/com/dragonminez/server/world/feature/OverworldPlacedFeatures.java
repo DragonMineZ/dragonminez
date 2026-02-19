@@ -23,25 +23,26 @@ public class OverworldPlacedFeatures {
 		HolderGetter<ConfiguredFeature<?, ?>> configuredFeatures = context.lookup(Registries.CONFIGURED_FEATURE);
 
 		Holder<ConfiguredFeature<?, ?>> stoneSpikeHolder = configuredFeatures.getOrThrow(OverworldConfiguredFeatures.STONE_SPIKE_KEY);
+		Holder<ConfiguredFeature<?, ?>> rockyPeakHolder = configuredFeatures.getOrThrow(OverworldConfiguredFeatures.ROCKY_PEAK_KEY);
 
         context.register(STONE_SPIKE_PLACED_KEY, new PlacedFeature(stoneSpikeHolder,
                 ImmutableList.<PlacementModifier>builder()
                         .add(NoiseThresholdCountPlacement.of(-0.8f, 15, 5))
-                        .add(RarityFilter.onAverageOnceEvery(2))
+                        .add(RarityFilter.onAverageOnceEvery(24))
                         .add(InSquarePlacement.spread())
                         .add(HeightmapPlacement.onHeightmap(Heightmap.Types.WORLD_SURFACE_WG))
                         .add(BiomeFilter.biome())
                         .build()
         ));
 
-        context.register(ROCKY_PEAK_PLACED_KEY, new PlacedFeature(
-                configuredFeatures.getOrThrow(OverworldConfiguredFeatures.ROCKY_PEAK_KEY),
-                List.of(
-                        NoiseThresholdCountPlacement.of(-0.8f, 10, 4), // Para que aparezcan en grupos
-                        InSquarePlacement.spread(),
-                        HeightmapPlacement.onHeightmap(Heightmap.Types.WORLD_SURFACE_WG),
-                        BiomeFilter.biome()
-                )
+        context.register(ROCKY_PEAK_PLACED_KEY, new PlacedFeature(rockyPeakHolder,
+				ImmutableList.<PlacementModifier>builder()
+						.add(NoiseThresholdCountPlacement.of(-0.8f, 15, 5))
+						.add(RarityFilter.onAverageOnceEvery(24))
+						.add(InSquarePlacement.spread())
+						.add(HeightmapPlacement.onHeightmap(Heightmap.Types.WORLD_SURFACE_WG))
+						.add(BiomeFilter.biome())
+						.build()
         ));
 	}
 

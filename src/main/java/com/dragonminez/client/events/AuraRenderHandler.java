@@ -86,13 +86,8 @@ public class AuraRenderHandler {
         var character = stats.getCharacter();
         String currentForm = "";
 
-        if (character.hasActiveForm()) {
-            currentForm = character.getActiveForm().toLowerCase();
-        }
-
-        if (currentForm.contains("oozaru") || currentForm.contains("golden_oozaru")) {
-            return new float[]{1.0f, 1.0f, 1.0f};
-        }
+        if (character.hasActiveForm()) currentForm = character.getActiveForm().toLowerCase();
+        if (currentForm.contains("ozaru")) return new float[]{1.0f, 1.0f, 1.0f};
 
         if (character.hasActiveForm()) {
             var activeForm = character.getActiveFormData();
