@@ -65,7 +65,7 @@ public class TPGainEvents {
 		}
 
 		// Final multiplier
-		double configMultiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
+		double configMultiplier = ConfigManager.getServerConfig().getGameplay().getTpsGainMultiplier();
 		modifiedTP[0] *= (int) configMultiplier;
 
         event.setTpGain(modifiedTP[0]);

@@ -43,10 +43,10 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             "textures/gui/menu/menusmall.png");
     private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
+    private static int tpMultiplier = 1;
 
     private StatsData statsData;
     private int tickCount = 0;
-    private int tpMultiplier = 1;
     private final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.US);
     private boolean useHexagonView = false;
 

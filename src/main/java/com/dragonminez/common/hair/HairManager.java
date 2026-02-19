@@ -27,13 +27,10 @@ public class HairManager {
 	private static final Map<Integer, CustomHair> PRESET_CACHE = new HashMap<>();
 	private static final Map<Integer, CustomHair[]> PRESET_FULL_CACHE = new HashMap<>();
 
-	private static final String CODE_PREFIX_V1 = "DMZ_HAIR:";
-	private static final String CODE_PREFIX_V2 = "DMZHair_v2:";
-	private static final String CODE_PREFIX_V3 = "DMZHair_v3:";
 	private static final String CODE_PREFIX_V4 = "DMZ4:";
-
-	private static final String CODE_PREFIX_FULL = "DMZHairFull_v3:";
 	private static final String CODE_PREFIX_FULL_V4 = "DMZF4:";
+	private static final String CODE_PREFIX_V5 = "DMZ5:";
+	private static final String CODE_PREFIX_FULL_V5 = "DMZF5:";
 	private static final String FULL_SET_SEPARATOR = "\\|";
 	private static final String FULL_SET_JOINER = "|";
     static { initializeDefaultPresets(); }
@@ -78,9 +75,7 @@ public class HairManager {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
         int len;
-        while ((len = infIn.read(buffer)) != -1) {
-            byteOut.write(buffer, 0, len);
-        }
+        while ((len = infIn.read(buffer)) != -1) byteOut.write(buffer, 0, len);
         infIn.close();
         inflater.end();
         return byteOut.toByteArray();
@@ -88,12 +83,8 @@ public class HairManager {
 
     private static String encodeToNumbers(byte[] bytes) {
         if (bytes == null || bytes.length == 0) return "";
-
         BigInteger value = new BigInteger(1, bytes);
-
-        if (value.equals(BigInteger.ZERO)) {
-            return String.valueOf(BASE64_URL_ALPHABET.charAt(0));
-        }
+        if (value.equals(BigInteger.ZERO)) return String.valueOf(BASE64_URL_ALPHABET.charAt(0));
 
         StringBuilder result = new StringBuilder();
         BigInteger base = BigInteger.valueOf(64);
@@ -113,16 +104,13 @@ public class HairManager {
 
     private static byte[] decodeBase64Url(String encoded) {
         if (encoded == null || encoded.isEmpty()) return new byte[0];
-
         BigInteger value = BigInteger.ZERO;
         BigInteger base = BigInteger.valueOf(64);
 
         for (int i = 0; i < encoded.length(); i++) {
             char c = encoded.charAt(i);
             int digit = BASE64_URL_ALPHABET.indexOf(c);
-            if (digit < 0) {
-                throw new IllegalArgumentException("Invalid character in Base64URL string: " + c);
-            }
+            if (digit < 0) throw new IllegalArgumentException("Invalid character in Base64URL string: " + c);
             value = value.multiply(base).add(BigInteger.valueOf(digit));
         }
 
@@ -139,16 +127,13 @@ public class HairManager {
 
     private static byte[] decodeBase62(String encoded) {
         if (encoded == null || encoded.isEmpty()) return new byte[0];
-
         BigInteger value = BigInteger.ZERO;
         BigInteger base = BigInteger.valueOf(62);
 
         for (int i = 0; i < encoded.length(); i++) {
             char c = encoded.charAt(i);
             int digit = BASE62_ALPHABET.indexOf(c);
-            if (digit < 0) {
-                throw new IllegalArgumentException("Invalid character in Base62 string: " + c);
-            }
+            if (digit < 0) throw new IllegalArgumentException("Invalid character in Base62 string: " + c);
             value = value.multiply(base).add(BigInteger.valueOf(digit));
         }
 
@@ -174,7 +159,7 @@ public class HairManager {
 
 			byte[] compressed = compressOptimized(nbtBytes);
 
-			return CODE_PREFIX_V4 + encodeToNumbers(compressed);
+			return CODE_PREFIX_V5 + encodeToNumbers(compressed);
 		} catch (Exception e) {
 			LogUtil.error(Env.CLIENT, "Failed to serialize CustomHair to code", e);
 			return "";
@@ -191,23 +176,13 @@ public class HairManager {
 
 		try {
 			String cleanCode = code;
+			boolean isV5 = code.startsWith(CODE_PREFIX_V5);
 			boolean isV4 = code.startsWith(CODE_PREFIX_V4);
-			boolean isLegacy = false;
 
-			if (isV4) {
-				cleanCode = code.substring(CODE_PREFIX_V4.length());
-			} else if (code.startsWith(CODE_PREFIX_V3)) {
-				cleanCode = code.substring(CODE_PREFIX_V3.length());
-				isLegacy = true;
-			} else if (code.startsWith(CODE_PREFIX_V2)) {
-				cleanCode = code.substring(CODE_PREFIX_V2.length());
-				isLegacy = true;
-			} else if (code.startsWith(CODE_PREFIX_V1)) {
-				cleanCode = code.substring(CODE_PREFIX_V1.length());
-				isLegacy = true;
-			}
+			if (isV5) cleanCode = code.substring(CODE_PREFIX_V5.length());
+			else if (isV4) cleanCode = code.substring(CODE_PREFIX_V4.length());
 
-			byte[] bytes = isLegacy ? decodeBase62(cleanCode) : decodeFromNumbers(cleanCode);
+			byte[] bytes = decodeFromNumbers(cleanCode);
 			CompoundTag tag;
 
 			if (isV4) {
@@ -237,15 +212,17 @@ public class HairManager {
 		}
 	}
 
-	public static String toFullSetCode(CustomHair base, CustomHair ssj, CustomHair ssj3) {
+	public static String toFullSetCode(CustomHair base, CustomHair ssj, CustomHair ssj2, CustomHair ssj3) {
 		if (base == null) base = new CustomHair();
 		if (ssj == null) ssj = base.copy();
+		if (ssj2 == null) ssj2 = ssj.copy();
 		if (ssj3 == null) ssj3 = base.copy();
 
 		try {
 			CompoundTag fullSetTag = new CompoundTag();
 			fullSetTag.put("B", base.save());
 			fullSetTag.put("S", ssj.save());
+			fullSetTag.put("S2", ssj2.save());
 			fullSetTag.put("T", ssj3.save());
 
 			ByteArrayOutputStream nbtOut = new ByteArrayOutputStream();
@@ -266,32 +243,26 @@ public class HairManager {
 	public static CustomHair[] fromFullSetCode(String code) {
 		if (code == null) return null;
 
+		boolean isV5 = code.startsWith(CODE_PREFIX_FULL_V5);
 		boolean isV4 = code.startsWith(CODE_PREFIX_FULL_V4);
-		boolean isV3 = code.startsWith(CODE_PREFIX_FULL);
 
-		if (!isV4 && !isV3) return null;
+		if (!isV5 && !isV4) return null;
 
 		try {
-			String cleanCode = isV4 ?
-				code.substring(CODE_PREFIX_FULL_V4.length()) :
-				code.substring(CODE_PREFIX_FULL.length());
+			String cleanCode = isV5 ?
+				code.substring(CODE_PREFIX_FULL_V5.length()) :
+				code.substring(CODE_PREFIX_FULL_V4.length());
 
-			byte[] bytes = isV4 ? decodeFromNumbers(cleanCode) : decodeBase62(cleanCode);
+			byte[] bytes = decodeFromNumbers(cleanCode);
 			CompoundTag fullSetTag;
 
-			if (isV4) {
-				byte[] decompressed = decompressOptimized(bytes);
-				ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
-				DataInputStream dataIn = new DataInputStream(byteIn);
-				fullSetTag = NbtIo.read(dataIn);
-			} else {
-				ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
-				GZIPInputStream gzipIn = new GZIPInputStream(byteIn);
-				DataInputStream dataIn = new DataInputStream(gzipIn);
-				fullSetTag = NbtIo.read(dataIn);
-			}
+			byte[] decompressed = decompressOptimized(bytes);
+			ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
+			DataInputStream dataIn = new DataInputStream(byteIn);
+			fullSetTag = NbtIo.read(dataIn);
 
-			CustomHair base = null, ssj = null, ssj3 = null;
+
+			CustomHair base = null, ssj = null, ssj2 = null, ssj3 = null;
 
 			if (fullSetTag.contains("B") || fullSetTag.contains("Base")) {
 				base = new CustomHair();
@@ -301,14 +272,23 @@ public class HairManager {
 				ssj = new CustomHair();
 				ssj.load(fullSetTag.contains("S") ? fullSetTag.getCompound("S") : fullSetTag.getCompound("SSJ"));
 			}
+			if (fullSetTag.contains("S2") || fullSetTag.contains("SSJ2")) {
+				ssj2 = new CustomHair();
+				ssj2.load(fullSetTag.contains("S2") ? fullSetTag.getCompound("S2") : fullSetTag.getCompound("SSJ2"));
+			}
 			if (fullSetTag.contains("T") || fullSetTag.contains("SSJ3")) {
 				ssj3 = new CustomHair();
 				ssj3.load(fullSetTag.contains("T") ? fullSetTag.getCompound("T") : fullSetTag.getCompound("SSJ3"));
 			}
 
-			if (base == null || ssj == null || ssj3 == null) return null;
+			if (ssj2 == null && ssj != null) ssj2 = ssj.copy();
 
-			return new CustomHair[]{base, ssj, ssj3};
+			if (base == null) base = new CustomHair();
+			if (ssj == null) ssj = base.copy();
+			if (ssj2 == null) ssj2 = base.copy();
+			if (ssj3 == null) ssj3 = base.copy();
+
+			return new CustomHair[]{base, ssj, ssj2, ssj3};
 
 		} catch (Exception e) {
 			LogUtil.error(Env.CLIENT, "Failed to deserialize full set code, trying fallback format", e);
@@ -317,9 +297,9 @@ public class HairManager {
 	}
 
 	private static CustomHair[] fromFullSetCodeFallback(String code) {
-		if (code == null || !code.startsWith(CODE_PREFIX_FULL)) return null;
+		if (code == null || !code.startsWith(CODE_PREFIX_FULL_V4)) return null;
 
-		String rawData = code.substring(CODE_PREFIX_FULL.length());
+		String rawData = code.substring(CODE_PREFIX_FULL_V4.length());
 		String[] parts = rawData.split(FULL_SET_SEPARATOR);
 
 		if (parts.length < 3) return null;
@@ -328,13 +308,15 @@ public class HairManager {
 		CustomHair ssj = fromCode(parts[1]);
 		CustomHair ssj3 = fromCode(parts[2]);
 
+		CustomHair ssj2 = ssj != null ? ssj.copy() : new CustomHair();
+
 		if (base == null || ssj == null || ssj3 == null) return null;
 
-		return new CustomHair[]{base, ssj, ssj3};
+		return new CustomHair[]{base, ssj, ssj2, ssj3};
 	}
 
 	public static boolean isFullSetCode(String code) {
-		return code != null && (code.startsWith(CODE_PREFIX_FULL) || code.startsWith(CODE_PREFIX_FULL_V4));
+		return code != null && (code.startsWith(CODE_PREFIX_FULL_V5) || code.startsWith(CODE_PREFIX_FULL_V4));
 	}
 
     public static boolean canUseHair(Character character) {
@@ -374,8 +356,12 @@ public class HairManager {
 		return getPresetHairByType(presetId, hairColor, 1);
 	}
 
-	public static CustomHair getPresetHairSSJ3(int presetId, String hairColor) {
+	public static CustomHair getPresetHairSSJ2(int presetId, String hairColor) {
 		return getPresetHairByType(presetId, hairColor, 2);
+	}
+
+	public static CustomHair getPresetHairSSJ3(int presetId, String hairColor) {
+		return getPresetHairByType(presetId, hairColor, 3);
 	}
 
 	public static boolean isPresetFullSet(int presetId) {
@@ -390,19 +376,14 @@ public class HairManager {
 		if (isFullSetCode(code)) {
 			if (!PRESET_FULL_CACHE.containsKey(presetId)) {
 				CustomHair[] fullSet = fromFullSetCode(code);
-				if (fullSet != null && fullSet.length == 3) {
-					PRESET_FULL_CACHE.put(presetId, fullSet);
-				} else {
-					return new CustomHair();
-				}
+				if (fullSet != null && fullSet.length >= 3) PRESET_FULL_CACHE.put(presetId, fullSet);
+				else return new CustomHair();
 			}
 
 			CustomHair[] cached = PRESET_FULL_CACHE.get(presetId);
 			if (cached != null && type >= 0 && type < cached.length && cached[type] != null) {
 				CustomHair hair = cached[type].copy();
-				if (hairColor != null && !hairColor.isEmpty()) {
-					hair.setGlobalColor(hairColor);
-				}
+				if (hairColor != null && !hairColor.isEmpty()) hair.setGlobalColor(hairColor);
 				return hair;
 			}
 			return new CustomHair();
@@ -410,32 +391,23 @@ public class HairManager {
 
 		if (!PRESET_CACHE.containsKey(presetId)) {
 			CustomHair baseHair = fromCode(code);
-			if (baseHair != null) {
-				PRESET_CACHE.put(presetId, baseHair);
-			} else {
-				return new CustomHair();
-			}
+			if (baseHair != null) PRESET_CACHE.put(presetId, baseHair);
+			else return new CustomHair();
 		}
 
 		CustomHair hair = PRESET_CACHE.get(presetId).copy();
 		if (hair != null) {
-			if (hairColor != null && !hairColor.isEmpty()) {
-				hair.setGlobalColor(hairColor);
-			}
+			if (hairColor != null && !hairColor.isEmpty()) hair.setGlobalColor(hairColor);
 			return hair;
 		}
 
 		CustomHair basic = new CustomHair();
-		if (hairColor != null && !hairColor.isEmpty()) {
-			basic.setGlobalColor(hairColor);
-		}
+		if (hairColor != null && !hairColor.isEmpty()) basic.setGlobalColor(hairColor);
 		return basic;
 	}
 
     public static void registerPreset(int presetId, String code) {
-        if (presetId > 0 && code != null && !code.isEmpty()) {
-            PRESET_CODES.put(presetId, code);
-        }
+        if (presetId > 0 && code != null && !code.isEmpty()) PRESET_CODES.put(presetId, code);
     }
 
     public static int getPresetCount() {

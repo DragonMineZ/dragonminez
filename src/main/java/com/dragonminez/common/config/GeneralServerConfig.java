@@ -21,12 +21,12 @@ public class GeneralServerConfig {
         private boolean generateCustomStructures = true;
         private boolean generateDragonBalls = true;
 		private boolean otherworldActive = true;
-		private int dbSpawnRange = 3000;
+		private int dbSpawnRange = 1000;
 
         public boolean isGenerateCustomStructures() { return generateCustomStructures; }
         public boolean isGenerateDragonBalls() { return generateDragonBalls; }
 		public boolean isOtherworldActive() { return otherworldActive; }
-		public int getDBSpawnRange() { return Math.max(500, dbSpawnRange); }
+		public int getDBSpawnRange() { return Math.max(100, Math.min(dbSpawnRange, 6000)); }
 
     }
 
@@ -46,30 +46,32 @@ public class GeneralServerConfig {
         private double mightFruitPower = 1.2;
         private double majinPower = 1.3;
 		private double metamoruFusionThreshold = 0.5;
+		private String[] fusionBoosts = {"STR", "SKP", "PWR"};
 		private int fusionDurationSeconds = 900;
 		private int fusionCooldownSeconds = 1800;
 
-		public int getReviveCooldownSeconds() { return Math.max(0, reviveCooldownSeconds); }
-        public double getTpsGainMultiplier() { return Math.max(0, tpGainMultiplier); }
-		public double getTpCostMultiplier() { return Math.max(0.01, tpCostMultiplier); }
-		public double getTpHealthRatio() { return Math.max(0, tpHealthRatio); }
-		public int getTpPerHit() { return Math.max(0, tpPerHit); }
-		public double getHTCTpMultiplier() { return Math.max(1.0, HTCTpMultiplier); }
-        public int getMaxStatValue() { return Math.max(1000, maxStatValue); }
+		public int getReviveCooldownSeconds() { return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE)); }
+        public double getTpsGainMultiplier() { return Math.max(0, Math.min(tpGainMultiplier, Double.MAX_VALUE)); }
+		public double getTpCostMultiplier() { return Math.max(0.01, Math.min(tpCostMultiplier, Double.MAX_VALUE)); }
+		public double getTpHealthRatio() { return Math.max(0, Math.min(tpHealthRatio, Double.MAX_VALUE)); }
+		public int getTpPerHit() { return Math.max(0, Math.min(tpPerHit, Integer.MAX_VALUE)); }
+		public double getHTCTpMultiplier() { return Math.max(1.0, Math.min(HTCTpMultiplier, Double.MAX_VALUE)); }
+        public int getMaxStatValue() { return Math.max(1000, Math.min(maxStatValue, Integer.MAX_VALUE)); }
 		public boolean isStoryModeEnabled() { return storyModeEnabled; }
 		public boolean isCreateDefaultSagas() { return createDefaultSagas; }
 		public boolean isKaiokenStackable() { return kaiokenStackable; }
-        public int getSenzuCooldownTicks() { return Math.max(0, senzuCooldownTicks); }
+        public int getSenzuCooldownTicks() { return Math.max(0, Math.min(senzuCooldownTicks, Integer.MAX_VALUE)); }
 
         public float[] getFoodRegeneration(String itemId) {
             return foodRegenerations.getOrDefault(itemId, new float[]{0.0f, 0.0f, 0.0f});
         }
 
-        public double getMightFruitPower() { return Math.max(0, mightFruitPower); }
-        public double getMajinPower() { return Math.max(0, majinPower); }
-		public double getMetamoruFusionThreshold() { return Math.max(0, metamoruFusionThreshold); }
-		public int getFusionDurationSeconds() { return Math.max(0, fusionDurationSeconds); }
-		public int getFusionCooldownSeconds() { return Math.max(0, fusionCooldownSeconds); }
+        public double getMightFruitPower() { return Math.max(0, Math.min(mightFruitPower, Double.MAX_VALUE)); }
+        public double getMajinPower() { return Math.max(0, Math.min(majinPower, Double.MAX_VALUE)); }
+		public double getMetamoruFusionThreshold() { return Math.max(0, Math.min(metamoruFusionThreshold, Double.MAX_VALUE)); }
+		public String[] getFusionBoosts() { return fusionBoosts; }
+		public int getFusionDurationSeconds() { return Math.max(0, Math.min(fusionDurationSeconds, Integer.MAX_VALUE)); }
+		public int getFusionCooldownSeconds() { return Math.max(0, Math.min(fusionCooldownSeconds, Integer.MAX_VALUE)); }
 
         private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();
@@ -109,25 +111,25 @@ public class GeneralServerConfig {
 		private double[] kiClawLanceConfig = {2.0, 0.125};
 
 		public boolean isKillPlayersOnCombatLogout() { return killPlayersOnCombatLogout; }
-		public double getStaminaConsumptionRatio() { return Math.max(0, staminaConsumptionRatio); }
+		public double getStaminaConsumptionRatio() { return Math.max(0, Math.min(staminaConsumptionRatio, Double.MAX_VALUE)); }
 		public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
 		public boolean isEnableBlocking() { return enableBlocking; }
 		public boolean isEnableParrying() { return enableParrying; }
 		public boolean isEnableComboAttacks() { return enableComboAttacks; }
 		public boolean isEnablePerfectEvasion() { return enablePerfectEvasion; }
-		public int getComboAttacksCooldownSeconds() { return Math.max(0, comboAttacksCooldownSeconds); }
-		public int getParryWindowMs() { return Math.max(0, parryWindowMs); }
-		public double getBlockDamageReductionCap() { return Math.max(0, blockDamageReductionCap); }
-		public double getBlockDamageReductionMin() { return Math.max(0, blockDamageReductionMin); }
-		public double getPoiseDamageMultiplier() { return Math.max(0, poiseDamageMultiplier); }
-		public int getPoiseRegenCooldown() { return Math.max(0, poiseRegenCooldown); }
-		public int getBlockBreakStunDurationTicks() { return Math.max(0, blockBreakStunDurationTicks); }
-		public int getPerfectEvasionWindowMs() { return Math.max(0, perfectEvasionWindowMs); }
-		public int getDashCooldownSeconds() { return Math.max(0, dashCooldownSeconds); }
-		public int getDoubleDashCooldownSeconds() { return Math.max(0, doubleDashCooldownSeconds); }
-		public double[] getKiBladeConfig() {return new double[] {Math.max(0, kiBladeConfig[0]), Math.max(0, kiBladeConfig[1])};}
-		public double[] getKiScytheConfig() {return new double[] {Math.max(0, kiScytheConfig[0]), Math.max(0, kiScytheConfig[1])};}
-		public double[] getKiClawLanceConfig() {return new double[] {Math.max(0, kiClawLanceConfig[0]), Math.max(0, kiClawLanceConfig[1])};}
+		public int getComboAttacksCooldownSeconds() { return Math.max(0, Math.min(comboAttacksCooldownSeconds, Integer.MAX_VALUE)); }
+		public int getParryWindowMs() { return Math.max(0, Math.min(parryWindowMs, Integer.MAX_VALUE)); }
+		public double getBlockDamageReductionCap() { return Math.max(0, Math.min(blockDamageReductionCap, Double.MAX_VALUE)); }
+		public double getBlockDamageReductionMin() { return Math.max(0, Math.min(blockDamageReductionMin, Double.MAX_VALUE)); }
+		public double getPoiseDamageMultiplier() { return Math.max(0, Math.min(poiseDamageMultiplier, Double.MAX_VALUE)); }
+		public int getPoiseRegenCooldown() { return Math.max(0, Math.min(poiseRegenCooldown, Integer.MAX_VALUE)); }
+		public int getBlockBreakStunDurationTicks() { return Math.max(0, Math.min(blockBreakStunDurationTicks, Integer.MAX_VALUE)); }
+		public int getPerfectEvasionWindowMs() { return Math.max(0, Math.min(perfectEvasionWindowMs, Integer.MAX_VALUE)); }
+		public int getDashCooldownSeconds() { return Math.max(0, Math.min(dashCooldownSeconds, Integer.MAX_VALUE)); }
+		public int getDoubleDashCooldownSeconds() { return Math.max(0, Math.min(doubleDashCooldownSeconds, Integer.MAX_VALUE)); }
+		public double[] getKiBladeConfig() {return new double[] {Math.max(0, Math.min(kiBladeConfig[0], Double.MAX_VALUE)), Math.max(0, Math.min(kiBladeConfig[1], Double.MAX_VALUE))};}
+		public double[] getKiScytheConfig() {return new double[] {Math.max(0, Math.min(kiScytheConfig[0], Double.MAX_VALUE)), Math.max(0, Math.min(kiScytheConfig[1], Double.MAX_VALUE))};}
+		public double[] getKiClawLanceConfig() {return new double[] {Math.max(0, Math.min(kiClawLanceConfig[0], Double.MAX_VALUE)), Math.max(0, Math.min(kiClawLanceConfig[1], Double.MAX_VALUE))};}
 	}
 
 	public static class RacialSkillsConfig {
@@ -163,33 +165,33 @@ public class GeneralServerConfig {
 
 		public boolean isEnableRacialSkills() { return enableRacialSkills; }
 		public boolean isHumanRacialSkill() { return humanRacialSkill; }
-		public double getHumanKiRegenBoost() { return Math.max(0, humanKiRegenBoost); }
+		public double getHumanKiRegenBoost() { return Math.max(0, Math.min(humanKiRegenBoost, Double.MAX_VALUE)); }
 		public boolean isSaiyanRacialSkill() { return saiyanRacialSkill; }
-		public int getSaiyanZenkaiAmount() { return Math.max(0, saiyanZenkaiAmount); }
-		public double getSaiyanZenkaiHealthRegen() { return Math.max(0, saiyanZenkaiHealthRegen); }
-		public double getSaiyanZenkaiStatBoost() { return Math.max(0, saiyanZenkaiStatBoost); }
+		public int getSaiyanZenkaiAmount() { return Math.max(0, Math.min(saiyanZenkaiAmount, Integer.MAX_VALUE)); }
+		public double getSaiyanZenkaiHealthRegen() { return Math.max(0, Math.min(saiyanZenkaiHealthRegen, Double.MAX_VALUE)); }
+		public double getSaiyanZenkaiStatBoost() { return Math.max(0, Math.min(saiyanZenkaiStatBoost, Double.MAX_VALUE)); }
 		public String[] getSaiyanZenkaiBoosts() { return saiyanZenkaiBoosts; }
-		public int getSaiyanZenkaiCooldownSeconds() { return Math.max(0, saiyanZenkaiCooldownSeconds); }
+		public int getSaiyanZenkaiCooldownSeconds() { return Math.max(0, Math.min(saiyanZenkaiCooldownSeconds, Integer.MAX_VALUE)); }
 		public boolean isNamekianRacialSkill() { return namekianRacialSkill; }
-		public int getNamekianAssimilationAmount() { return Math.max(0, namekianAssimilationAmount); }
-		public double getNamekianAssimilationHealthRegen() { return Math.max(0, namekianAssimilationHealthRegen); }
-		public double getNamekianAssimilationStatBoost() { return Math.max(0, namekianAssimilationStatBoost); }
+		public int getNamekianAssimilationAmount() { return Math.max(0, Math.min(namekianAssimilationAmount, Integer.MAX_VALUE)); }
+		public double getNamekianAssimilationHealthRegen() { return Math.max(0, Math.min(namekianAssimilationHealthRegen, Double.MAX_VALUE)); }
+		public double getNamekianAssimilationStatBoost() { return Math.max(0, Math.min(namekianAssimilationStatBoost, Double.MAX_VALUE)); }
 		public String[] getNamekianAssimilationBoosts() { return namekianAssimilationBoosts; }
 		public boolean isNamekianAssimilationOnNamekNpcs() { return namekianAssimilationOnNamekNpcs; }
 		public boolean isFrostDemonRacialSkill() { return frostDemonRacialSkill; }
-		public double getFrostDemonTPBoost() { return Math.max(1, frostDemonTPBoost); }
+		public double getFrostDemonTPBoost() { return Math.max(1, Math.min(frostDemonTPBoost, Double.MAX_VALUE)); }
 		public boolean isBioAndroidRacialSkill() { return bioAndroidRacialSkill; }
-		public int getBioAndroidCooldownSeconds() { return Math.max(0, bioAndroidCooldownSeconds); }
-		public double getBioAndroidDrainRatio() { return Math.max(0, bioAndroidDrainRatio); }
+		public int getBioAndroidCooldownSeconds() { return Math.max(0, Math.min(bioAndroidCooldownSeconds, Integer.MAX_VALUE)); }
+		public double getBioAndroidDrainRatio() { return Math.max(0, Math.min(bioAndroidDrainRatio, Double.MAX_VALUE)); }
 		public boolean isMajinAbsoprtionSkill() { return majinAbsoprtionSkill; }
 		public boolean isMajinReviveSkill() { return majinReviveSkill; }
-		public int getMajinAbsorptionAmount() { return Math.max(0, majinAbsorptionAmount); }
-		public double getMajinAbsorptionHealthRegen() { return Math.max(0, majinAbsorptionHealthRegen); }
-		public double getMajinAbsorptionStatCopy() { return Math.max(0, majinAbsorptionStatsCopy); }
+		public int getMajinAbsorptionAmount() { return Math.max(0, Math.min(majinAbsorptionAmount, Integer.MAX_VALUE)); }
+		public double getMajinAbsorptionHealthRegen() { return Math.max(0, Math.min(majinAbsorptionHealthRegen, Double.MAX_VALUE)); }
+		public double getMajinAbsorptionStatCopy() { return Math.max(0, Math.min(majinAbsorptionStatsCopy, Double.MAX_VALUE)); }
 		public String[] getMajinAbsorptionBoosts() { return majinAbsorptionBoosts; }
 		public boolean isMajinAbsorptionOnMobs() { return majinAbsorptionOnMobs; }
-		public int getMajinReviveCooldownSeconds() { return Math.max(0, majinReviveCooldownSeconds); }
-		public double getMajinReviveHealthRatioPerBlop() { return Math.max(0, majinReviveHealthRatioPerBlop); }
+		public int getMajinReviveCooldownSeconds() { return Math.max(0, Math.min(majinReviveCooldownSeconds, Integer.MAX_VALUE)); }
+		public double getMajinReviveHealthRatioPerBlop() { return Math.max(0, Math.min(majinReviveHealthRatioPerBlop, Double.MAX_VALUE)); }
 	}
 
 	public static class StorageConfig {

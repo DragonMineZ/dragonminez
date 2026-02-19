@@ -16,7 +16,6 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.stats.Cooldowns;
-import com.dragonminez.common.stats.Stats;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
@@ -25,12 +24,13 @@ import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.DMZServer;
 import com.dragonminez.server.commands.*;
 import com.dragonminez.server.events.DragonBallsHandler;
+import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
+import com.dragonminez.server.world.dimension.*;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
-import com.dragonminez.server.world.dimension.OtherworldNPCSpawner;
 import com.dragonminez.server.world.dimension.OtherworldRegionLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -223,6 +223,9 @@ public class ForgeCommonEvents {
 		DMZPermissions.init();
 		SagaManager.loadSagas(event.getServer());
 
+		TickHandler.registerActionModeHandlers();
+		TickHandler.registerStatusEffectHandlers();
+
 		ServerLevel overworld = event.getServer().getLevel(Level.OVERWORLD);
 		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
@@ -292,7 +295,7 @@ public class ForgeCommonEvents {
 			List<MastersEntity> masters = mob.level().getEntitiesOfClass(MastersEntity.class,
 					new AABB(mob.blockPosition()).inflate(80));
 
-			if (!masters.isEmpty()) {
+			if (!masters.isEmpty() && !mob.level().dimension().equals(HTCDimension.HTC_KEY)) {
 				event.setSpawnCancelled(true);
 				event.setResult(Event.Result.DENY);
 			}

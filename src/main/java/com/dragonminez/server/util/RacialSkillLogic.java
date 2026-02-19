@@ -2,6 +2,7 @@ package com.dragonminez.server.util;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.MastersEntity;
@@ -33,6 +34,7 @@ public class RacialSkillLogic {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			String race = data.getCharacter().getRaceName();
 			LivingEntity target = getTargetEntity(player, 3.0);
+			RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 
 			if (target == null) {
 				return;
@@ -43,7 +45,7 @@ public class RacialSkillLogic {
 				return;
 			}
 
-			switch (race.toLowerCase()) {
+			switch (config.getRacialSkill()) {
 				case "namekian" -> handleNamekianAssimilation(player, data, target);
 				case "majin" -> handleMajinAbsorption(player, data, target);
 				case "bioandroid" -> handleBioAndroidDrain(player, data, target);

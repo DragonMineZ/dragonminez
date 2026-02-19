@@ -13,6 +13,7 @@ import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.C2S.UpdateCustomHairC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
@@ -68,10 +69,13 @@ public class HairEditorScreen extends ScaledScreen {
     private final Screen previousScreen;
     private final Character character;
     private CustomHair editingHair;
-    private CustomHair backupHair;
+	private final CustomHair backupBase;
+	private final CustomHair backupSSJ;
+	private final CustomHair backupSSJ2;
+	private final CustomHair backupSSJ3;
+	private final int originalHairId;
     private final boolean usePanorama;
     private boolean isSwitchingMenu = false;
-    private final int originalHairId;
 
     private HairFace currentFace = HairFace.FRONT;
     private int selectedStrandIndex = 0;
@@ -125,20 +129,35 @@ public class HairEditorScreen extends ScaledScreen {
 
         this.originalHairId = character.getHairId();
 
-        if (character.getHairId() > 0) {
-            CustomHair presetHair = HairManager.getPresetHair(character.getHairId(), character.getHairColor());
-            if (presetHair != null) {
-                character.setHairBase(presetHair.copy());
-                character.setHairId(0);
-                NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, character.getHairBase()));
-            }
-        }
+		if (character.getHairId() > 0) {
+			int id = character.getHairId();
+			String color = character.getHairColor();
 
-        if (character.getHairBase() == null) character.setHairBase(new CustomHair());
+			character.setHairBase(HairManager.getPresetHair(id, color).copy());
+			character.setHairSSJ(HairManager.getPresetHairSSJ(id, color).copy());
+			character.setHairSSJ2(HairManager.getPresetHairSSJ2(id, color).copy());
+			character.setHairSSJ3(HairManager.getPresetHairSSJ3(id, color).copy());
+
+			character.setHairId(0);
+
+			NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, character.getHairBase()));
+			NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, character.getHairSSJ()));
+			NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, character.getHairSSJ2()));
+			NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, character.getHairSSJ3()));
+		}
+
+		if (character.getHairBase() == null) character.setHairBase(new CustomHair());
+		if (character.getHairSSJ() == null) character.setHairSSJ(character.getHairBase().copy());
+		if (character.getHairSSJ2() == null) character.setHairSSJ2(character.getHairBase().copy());
+		if (character.getHairSSJ3() == null) character.setHairSSJ3(character.getHairBase().copy());
 
 		this.editorMode = 0;
-        this.editingHair = character.getHairBase();
-        this.backupHair = editingHair.copy();
+		this.editingHair = character.getHairBase();
+
+		this.backupBase = character.getHairBase().copy();
+		this.backupSSJ = character.getHairSSJ().copy();
+		this.backupSSJ2 = character.getHairSSJ2().copy();
+		this.backupSSJ3 = character.getHairSSJ3().copy();
     }
 
     @Override
@@ -198,7 +217,7 @@ public class HairEditorScreen extends ScaledScreen {
 
 	private void cycleEditorMode() {
 		editorMode++;
-		if (editorMode > 2) editorMode = 0;
+		if (editorMode > 3) editorMode = 0;
 
 		updateEditingHairReference();
 		selectedStrandIndex = 0;
@@ -213,11 +232,14 @@ public class HairEditorScreen extends ScaledScreen {
 				this.editingHair = character.getHairSSJ();
 			}
 			case 2 -> {
+				if (character.getHairSSJ2() == null || character.getHairSSJ2().isEmpty()) character.setHairSSJ2(character.getHairBase().copy());
+				this.editingHair = character.getHairSSJ2();
+			}
+			case 3 -> {
 				if (character.getHairSSJ3() == null || character.getHairSSJ3().isEmpty()) character.setHairSSJ3(character.getHairBase().copy());
 				this.editingHair = character.getHairSSJ3();
 			}
 		}
-		this.backupHair = this.editingHair.copy();
 	}
 
 	private void modifyLength(int direction) {
@@ -740,9 +762,10 @@ public class HairEditorScreen extends ScaledScreen {
 	private void syncHairToServer() {
 		character.setHairId(0);
 		switch (editorMode) {
+			case 0 -> character.setHairBase(editingHair);
 			case 1 -> character.setHairSSJ(editingHair);
-			case 2 -> character.setHairSSJ3(editingHair);
-			default -> character.setHairBase(editingHair);
+			case 2 -> character.setHairSSJ2(editingHair);
+			case 3 -> character.setHairSSJ3(editingHair);
 		}
 
 		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
@@ -978,9 +1001,11 @@ public class HairEditorScreen extends ScaledScreen {
 		HairRenderer.PHYSICS_ENABLED = this.physicsEnabled;
 		int originalHairId = character.getHairId();
 		CustomHair originalBaseHair = character.getHairBase();
+
 		character.setHairId(0);
 		if (editorMode == 1) character.setHairBase(character.getHairSSJ());
-		else if (editorMode == 2) character.setHairBase(character.getHairSSJ3());
+		else if (editorMode == 2) character.setHairBase(character.getHairSSJ2());
+		else if (editorMode == 3) character.setHairBase(character.getHairSSJ3());
 		else character.setHairBase(this.editingHair);
 
         Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
@@ -1147,7 +1172,7 @@ public class HairEditorScreen extends ScaledScreen {
 	private void exportCode() {
 		String code;
 
-		if (hasShiftDown()) code = HairManager.toFullSetCode(character.getHairBase(), character.getHairSSJ(), character.getHairSSJ3());
+		if (hasShiftDown()) code = HairManager.toFullSetCode(character.getHairBase(), character.getHairSSJ(), character.getHairSSJ2(), character.getHairSSJ3());
 		else code = HairManager.toCode(editingHair);
 
 		if (code != null && !code.isEmpty()) {
@@ -1167,14 +1192,15 @@ public class HairEditorScreen extends ScaledScreen {
 			if (fullSet != null) {
 				character.setHairBase(fullSet[0]);
 				character.setHairSSJ(fullSet[1]);
-				character.setHairSSJ3(fullSet[2]);
+				character.setHairSSJ2(fullSet[2]);
+				character.setHairSSJ3(fullSet[3]);
 
 				updateEditingHairReference();
-				this.backupHair = this.editingHair.copy();
 
 				NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, fullSet[0]));
 				NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, fullSet[1]));
 				NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, fullSet[2]));
+				NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, fullSet[3]));
 
 				rebuildWidgets();
 			}
@@ -1195,10 +1221,10 @@ public class HairEditorScreen extends ScaledScreen {
 			this.editingHair = imported;
 
 			if (this.editorMode == 1) character.setHairSSJ(imported);
-			else if (this.editorMode == 2) character.setHairSSJ3(imported);
+			else if (this.editorMode == 2) character.setHairSSJ2(imported);
+			else if (this.editorMode == 3) character.setHairSSJ3(imported);
 			else character.setHairBase(imported);
 
-			this.backupHair = imported.copy();
 			NetworkHandler.sendToServer(new UpdateCustomHairC2S(this.editorMode, this.editingHair));
 			rebuildWidgets();
 		}
@@ -1237,15 +1263,30 @@ public class HairEditorScreen extends ScaledScreen {
         Minecraft.getInstance().setScreen(previousScreen);
     }
 
-    private void cancelAndClose() {
-        copyHairData(backupHair, editingHair);
-        character.setHairId(originalHairId);
-        if (previousScreen != null) {
-            isSwitchingMenu = true;
-            GLOBAL_SWITCHING = true;
-        }
-        Minecraft.getInstance().setScreen(previousScreen);
-    }
+	private void cancelAndClose() {
+		character.setHairBase(backupBase.copy());
+		character.setHairSSJ(backupSSJ.copy());
+		character.setHairSSJ2(backupSSJ2.copy());
+		character.setHairSSJ3(backupSSJ3.copy());
+
+		character.setHairId(originalHairId);
+
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, backupBase));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, backupSSJ));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, backupSSJ2));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, backupSSJ3));
+
+		if (originalHairId != 0) {
+			character.setHairId(originalHairId);
+			NetworkHandler.sendToServer(new StatsSyncC2S(character));
+		}
+
+		if (previousScreen != null) {
+			isSwitchingMenu = true;
+			GLOBAL_SWITCHING = true;
+		}
+		Minecraft.getInstance().setScreen(previousScreen);
+	}
 
     private void openHairSalon() {
         if (this.minecraft != null) {
@@ -1276,12 +1317,7 @@ public class HairEditorScreen extends ScaledScreen {
         cancelAndClose();
     }
 
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
-
-    private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
+	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
         int borderColor = 0xFF000000;
         graphics.drawString(this.font, text, x + 1, y, borderColor, false);
         graphics.drawString(this.font, text, x - 1, y, borderColor, false);
