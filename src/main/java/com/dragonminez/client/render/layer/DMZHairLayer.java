@@ -11,17 +11,13 @@ import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.util.RenderUtils;
@@ -34,10 +30,21 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
     public DMZHairLayer(GeoRenderer<T> renderer) {
         super(renderer);
+
     }
 
-    @Override
-    public void render(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+	@Override
+	public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if(!bone.getName().contentEquals("head")) return;
+
+		poseStack.pushPose();
+		RenderUtils.translateToPivotPoint(poseStack, bone);
+		renderHair(poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
+		bufferSource.getBuffer(renderType);
+		poseStack.popPose();
+	}
+
+    public void renderHair(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isInvisible() && !animatable.isSpectator()) return;
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
@@ -150,54 +157,9 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			progressMap.put(entityId, 0.0f);
 		}
 
-		Optional<GeoBone> headBoneOpt = model.getBone("head");
-		if (headBoneOpt.isEmpty()) return;
-		GeoBone headBone = headBoneOpt.get();
-		List<GeoBone> boneChain = new ArrayList<>();
-		CoreGeoBone currentBone = headBone;
-		while (currentBone != null) {
-			boneChain.add((GeoBone) currentBone);
-			currentBone = currentBone.getParent();
-		}
-		Collections.reverse(boneChain);
-
-		poseStack.pushPose();
-
-		float bodyYaw = Mth.rotLerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
-		poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - bodyYaw));
-		if (animatable.deathTime > 0) {
-			float deathProgress = ((float)animatable.deathTime + partialTick - 1.0F) / 20.0F * 1.6F;
-			deathProgress = Mth.sqrt(deathProgress);
-			if (deathProgress > 1.0F) deathProgress = 1.0F;
-			poseStack.mulPose(Axis.ZP.rotationDegrees(deathProgress * 90.0F));
-		}
-		float modelScale = 0.0625f;
-
-		double parentPivotX = 0;
-		double parentPivotY = 0;
-		double parentPivotZ = 0;
-
-		for (CoreGeoBone bone : boneChain) {
-			if (bone instanceof GeoBone geoBone) {
-				float dx = (float) ((geoBone.getPivotX() - parentPivotX) * modelScale);
-				float dy = (float) ((geoBone.getPivotY() - parentPivotY) * modelScale);
-				float dz = (float) ((geoBone.getPivotZ() - parentPivotZ) * modelScale);
-				poseStack.translate(dx, dy, dz);
-				poseStack.translate(geoBone.getPosX() * modelScale, geoBone.getPosY() * modelScale, geoBone.getPosZ() * modelScale);
-				poseStack.mulPose(Axis.ZP.rotation(geoBone.getRotZ()));
-				poseStack.mulPose(Axis.YP.rotation(geoBone.getRotY()));
-				poseStack.mulPose(Axis.XP.rotation(geoBone.getRotX()));
-				RenderUtils.scaleMatrixForBone(poseStack, geoBone);
-				parentPivotX = geoBone.getPivotX();
-				parentPivotY = geoBone.getPivotY();
-				parentPivotZ = geoBone.getPivotZ();
-			}
-		}
-
 		float alpha = 1.0f;
 		if (animatable.isSpectator()) alpha = 0.15f;
-
-		poseStack.translate(0, 0, 0);
+		poseStack.pushPose();
 		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, colorFrom, colorTo, partialTick, packedLight, packedOverlay, alpha);
 		poseStack.popPose();
 	}
