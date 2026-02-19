@@ -7,6 +7,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -77,8 +78,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             syncModelToPlayer(partsModel, playerModel);
             RenderType partsRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
 
-            // FIXME: Figure out how to get Kaioken phase from the StackForm and StackFormGroup
-            int phase = /*stats.getStatus().getActiveKaiokenPhase()*/ 0;
+            int phase = TransformationsHelper.getKaiokenPhase(stats);
             float[] tintedColor = applyKaiokenTint(renderColor[0], renderColor[1], renderColor[2], phase);
 
             poseStack.pushPose();

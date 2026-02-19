@@ -41,22 +41,38 @@ public class ExecuteActionC2S {
 					boolean needsSync = false;
 					switch (action) {
 						case "descend" -> {
-							if (TransformationsHelper.canStackDescend(data)) {
-								FormConfig.FormData previousForm = TransformationsHelper.getPreviousStackForm(data);
-								if (previousForm != null) {
-									data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
-								} else {
-									data.getCharacter().clearActiveStackForm();
+							switch (data.getStatus().getSelectedAction()) {
+								case STACK: {
+									if (TransformationsHelper.canStackDescend(data)) {
+										FormConfig.FormData previousForm = TransformationsHelper.getPreviousStackForm(data);
+										if (previousForm != null) {
+											data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
+										} else {
+											data.getCharacter().clearActiveStackForm();
+										}
+									} else {
+										data.getResources().setPowerRelease(0);
+									}
+									break;
 								}
-							} else if (TransformationsHelper.canDescend(data)) {
-								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-								if (previousForm != null) {
-									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-								} else {
-									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-									else data.getCharacter().clearActiveForm();
+								case FORM: {
+									if (TransformationsHelper.canDescend(data)) {
+										FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+										if (previousForm != null) {
+											data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+										} else {
+											if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+											else data.getCharacter().clearActiveForm();
+										}
+									} else {
+										data.getResources().setPowerRelease(0);
+									}
+									break;
 								}
-							} else data.getResources().setPowerRelease(0);
+								default: {
+									data.getResources().setPowerRelease(0);
+								}
+							}
 							needsSync = true;
 						}
 						case "force_descend" -> {

@@ -290,4 +290,19 @@ public class TransformationsHelper {
 		Optional<String> firstForm = formConfig.getForms().keySet().stream().findFirst();
 		return firstForm.orElse(null);
 	}
+
+	public static int getKaiokenPhase(StatsData stats) {
+		if ("kaioken".equalsIgnoreCase(stats.getCharacter().getActiveStackFormGroup())) {
+			return switch (stats.getCharacter().getActiveStackForm()) {
+				case "x2" -> 1;
+				case "x3" -> 2;
+				case "x4" -> 3;
+				case "x10" -> 4;
+				case "x20" -> 5;
+				default -> 6;
+			};
+		} else {
+			return 0;
+		}
+	}
 }

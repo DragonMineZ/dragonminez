@@ -63,7 +63,6 @@ public class DefaultFormsFactory {
         x2.setHasLightnings(false);
         x2.setHairType("base");
         setDefaultMasteryValues(x2);
-        x2.setFormStackable(false);
         x2.setStackDrainMultiplier(1.0);
 
         FormConfig.FormData x3 = new FormConfig.FormData();
@@ -79,7 +78,6 @@ public class DefaultFormsFactory {
         x3.setAuraColor("#DB182C");
         x3.setHairType("base");
         setDefaultMasteryValues(x3);
-        x3.setFormStackable(false);
         x3.setStackDrainMultiplier(1.0);
 
         FormConfig.FormData x4 = new FormConfig.FormData();
@@ -95,7 +93,6 @@ public class DefaultFormsFactory {
         x4.setAuraColor("#DB182C");
         x4.setHairType("base");
         setDefaultMasteryValues(x4);
-        x4.setFormStackable(false);
         x4.setStackDrainMultiplier(1.0);
 
         FormConfig.FormData x10 = new FormConfig.FormData();
@@ -111,7 +108,6 @@ public class DefaultFormsFactory {
         x10.setAuraColor("#DB182C");
         x10.setHairType("base");
         setDefaultMasteryValues(x10);
-        x10.setFormStackable(false);
         x10.setStackDrainMultiplier(1.0);
 
         FormConfig.FormData x20 = new FormConfig.FormData();
@@ -127,7 +123,6 @@ public class DefaultFormsFactory {
         x20.setAuraColor("#DB182C");
         x20.setHairType("base");
         setDefaultMasteryValues(x20);
-        x20.setFormStackable(false);
         x20.setStackDrainMultiplier(1.0);
 
         FormConfig.FormData x100 = new FormConfig.FormData();
@@ -143,7 +138,6 @@ public class DefaultFormsFactory {
         x100.setAuraColor("#DB182C");
         x100.setHairType("base");
         setDefaultMasteryValues(x100);
-        x100.setFormStackable(false);
         x100.setStackDrainMultiplier(1.0);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
@@ -179,7 +173,6 @@ public class DefaultFormsFactory {
         sign.setHasLightnings(false);
         sign.setHairType("base");
         setDefaultMasteryValues(sign);
-        sign.setFormStackable(false);
         sign.setStackDrainMultiplier(1.0);
 
         FormConfig.FormData mastered = new FormConfig.FormData();
@@ -194,7 +187,6 @@ public class DefaultFormsFactory {
         mastered.setHairColor("#E0E0E0");
         mastered.setHairType("base");
         setDefaultMasteryValues(mastered);
-        mastered.setFormStackable(false);
         mastered.setStackDrainMultiplier(1.0);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
@@ -226,7 +218,6 @@ public class DefaultFormsFactory {
         sign.setHasLightnings(false);
         sign.setHairType("base");
         setDefaultMasteryValues(sign);
-        sign.setFormStackable(false);
         sign.setStackDrainMultiplier(1.0);
 
         FormConfig.FormData mastered = new FormConfig.FormData();
@@ -241,7 +232,6 @@ public class DefaultFormsFactory {
         mastered.setHairColor("#66023C");
         mastered.setHairType("ssj3");
         setDefaultMasteryValues(mastered);
-        mastered.setFormStackable(false);
         mastered.setStackDrainMultiplier(1.0);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
@@ -272,7 +262,6 @@ public class DefaultFormsFactory {
         buffed.setEnergyDrain(0.08);
 		buffed.setHairType("base");
         setDefaultMasteryValues(buffed);
-        buffed.setFormStackable(true);
         buffed.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
@@ -286,7 +275,6 @@ public class DefaultFormsFactory {
         fullPower.setEnergyDrain(0.16);
 		fullPower.setHairType("ssj");
         setDefaultMasteryValues(fullPower);
-        fullPower.setFormStackable(true);
         fullPower.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData overdrive = new FormConfig.FormData();
@@ -303,7 +291,6 @@ public class DefaultFormsFactory {
 		overdrive.setLightningColor("#E6F2F5");
 		overdrive.setHairType("ssj");
         setDefaultMasteryValues(overdrive);
-        overdrive.setFormStackable(true);
         overdrive.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData solaris = new FormConfig.FormData();
@@ -317,7 +304,6 @@ public class DefaultFormsFactory {
         solaris.setEnergyDrain(0.22);
 		solaris.setHairType("ssj");
         setDefaultMasteryValues(solaris);
-        solaris.setFormStackable(true);
         solaris.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> humanFormData = new LinkedHashMap<>();
@@ -351,7 +337,6 @@ public class DefaultFormsFactory {
         androidBase.setPwrMultiplier(1.75);
 		androidBase.setHairType("base");
         setDefaultMasteryValues(androidBase);
-        androidBase.setFormStackable(false);
         androidBase.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData superAndroid = new FormConfig.FormData();
@@ -365,7 +350,6 @@ public class DefaultFormsFactory {
         superAndroid.setPwrMultiplier(2.65);
 		superAndroid.setHairType("ssj");
         setDefaultMasteryValues(superAndroid);
-        superAndroid.setFormStackable(false);
         superAndroid.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData fusedAndroid = new FormConfig.FormData();
@@ -387,7 +371,6 @@ public class DefaultFormsFactory {
 		fusedAndroid.setHairType("ssj");
         fusedAndroid.setForcedHairCode("");
         setDefaultMasteryValues(fusedAndroid);
-        fusedAndroid.setFormStackable(false);
         fusedAndroid.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> androidFormData = new LinkedHashMap<>();
@@ -423,7 +406,6 @@ public class DefaultFormsFactory {
         oozaru.setAttackSpeed(0.9);
 		oozaru.setHairType("base");
         setDefaultMasteryValues(oozaru);
-		oozaru.setFormStackable(true);
 		oozaru.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData goldenOozaru = new FormConfig.FormData();
@@ -442,7 +424,6 @@ public class DefaultFormsFactory {
         goldenOozaru.setStaminaDrainMultiplier(1.3);
 		goldenOozaru.setHairType("base");
         setDefaultMasteryValues(goldenOozaru);
-		goldenOozaru.setFormStackable(false);
 		goldenOozaru.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData ssj4 = new FormConfig.FormData();
@@ -460,7 +441,6 @@ public class DefaultFormsFactory {
         ssj4.setEnergyDrain(0.22);
 		ssj4.setHairType("base");
         setDefaultMasteryValues(ssj4);
-		ssj4.setFormStackable(false);
 		ssj4.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
@@ -488,7 +468,6 @@ public class DefaultFormsFactory {
         ssj1.setEnergyDrain(0.08);
 		ssj1.setHairType("ssj");
         setDefaultMasteryValues(ssj1);
-        ssj1.setFormStackable(true);
         ssj1.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData ssg2 = new FormConfig.FormData();
@@ -509,7 +488,6 @@ public class DefaultFormsFactory {
         ssg2.setStaminaDrainMultiplier(1.3);
 		ssg2.setHairType("ssj");
         setDefaultMasteryValues(ssg2);
-        ssg2.setFormStackable(true);
         ssg2.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData ssg3 = new FormConfig.FormData();
@@ -530,7 +508,6 @@ public class DefaultFormsFactory {
         ssg3.setAttackSpeed(0.75);
 		ssg3.setHairType("ssj");
         setDefaultMasteryValues(ssg3);
-        ssg3.setFormStackable(true);
         ssg3.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> ssGradeForms = new LinkedHashMap<>();
@@ -558,7 +535,6 @@ public class DefaultFormsFactory {
         ssj1Mastered.setEnergyDrain(0.03);
 		ssj1Mastered.setHairType("ssj");
         setDefaultMasteryValues(ssj1Mastered);
-        ssj1Mastered.setFormStackable(true);
         ssj1Mastered.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData ssj2 = new FormConfig.FormData();
@@ -578,7 +554,6 @@ public class DefaultFormsFactory {
         ssj2.setEnergyDrain(0.16);
 		ssj2.setHairType("ssj");
         setDefaultMasteryValues(ssj2);
-        ssj2.setFormStackable(true);
         ssj2.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData ssj3 = new FormConfig.FormData();
@@ -598,7 +573,6 @@ public class DefaultFormsFactory {
         ssj3.setEnergyDrain(0.34);
 		ssj3.setHairType("ssj3");
         setDefaultMasteryValues(ssj3);
-        ssj3.setFormStackable(true);
         ssj3.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
@@ -636,7 +610,6 @@ public class DefaultFormsFactory {
         giantForm.setEnergyDrain(0.09);
 		giantForm.setHairType("base");
         setDefaultMasteryValues(giantForm);
-        giantForm.setFormStackable(true);
         giantForm.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
@@ -650,7 +623,6 @@ public class DefaultFormsFactory {
         fullPower.setEnergyDrain(0.18);
 		fullPower.setHairType("base");
         setDefaultMasteryValues(fullPower);
-        fullPower.setFormStackable(true);
         fullPower.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData superNamekian = new FormConfig.FormData();
@@ -667,7 +639,6 @@ public class DefaultFormsFactory {
         superNamekian.setEnergyDrain(0.27);
 		superNamekian.setHairType("base");
         setDefaultMasteryValues(superNamekian);
-        superNamekian.setFormStackable(true);
         superNamekian.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> namekianFormData = new LinkedHashMap<>();
@@ -699,7 +670,6 @@ public class DefaultFormsFactory {
         second.setPwrMultiplier(1.5);
 		second.setHairType("base");
         setDefaultMasteryValues(second);
-        second.setFormStackable(true);
         second.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData third = new FormConfig.FormData();
@@ -713,7 +683,6 @@ public class DefaultFormsFactory {
         third.setPwrMultiplier(1.75);
 		third.setHairType("base");
         setDefaultMasteryValues(third);
-        third.setFormStackable(true);
         third.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData finalForm = new FormConfig.FormData();
@@ -726,7 +695,6 @@ public class DefaultFormsFactory {
         finalForm.setPwrMultiplier(2.25);
 		finalForm.setHairType("base");
         setDefaultMasteryValues(finalForm);
-        finalForm.setFormStackable(true);
         finalForm.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
@@ -743,7 +711,6 @@ public class DefaultFormsFactory {
 		fullPower.setLightningColor("#F02B16");
 		fullPower.setHairType("base");
         setDefaultMasteryValues(fullPower);
-        fullPower.setFormStackable(true);
         fullPower.setStackDrainMultiplier(2.0);
 
 		FormConfig.FormData fifthForm = new FormConfig.FormData();
@@ -762,7 +729,6 @@ public class DefaultFormsFactory {
 		fifthForm.setLightningColor("#F02B16");
 		fifthForm.setHairType("base");
 		setDefaultMasteryValues(fifthForm);
-		fifthForm.setFormStackable(true);
 		fifthForm.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> frostFormData = new LinkedHashMap<>();
@@ -796,7 +762,6 @@ public class DefaultFormsFactory {
         kid.setPwrMultiplier(1.5);
 		kid.setHairType("base");
         setDefaultMasteryValues(kid);
-        kid.setFormStackable(true);
         kid.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData evil = new FormConfig.FormData();
@@ -816,7 +781,6 @@ public class DefaultFormsFactory {
         evil.setBodyColor3("#917979");
 		evil.setHairType("base");
         setDefaultMasteryValues(evil);
-        evil.setFormStackable(true);
         evil.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData superForm = new FormConfig.FormData();
@@ -829,7 +793,6 @@ public class DefaultFormsFactory {
         superForm.setPwrMultiplier(2.25);
 		superForm.setHairType("base");
         setDefaultMasteryValues(superForm);
-        superForm.setFormStackable(true);
         superForm.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData ultra = new FormConfig.FormData();
@@ -846,7 +809,6 @@ public class DefaultFormsFactory {
 		ultra.setLightningColor("#F02B16");
 		ultra.setHairType("base");
         setDefaultMasteryValues(ultra);
-        ultra.setFormStackable(true);
         ultra.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> majinFormData = new LinkedHashMap<>();
@@ -879,7 +841,6 @@ public class DefaultFormsFactory {
         semiPerfect.setPwrMultiplier(1.5);
 		semiPerfect.setHairType("base");
         setDefaultMasteryValues(semiPerfect);
-        semiPerfect.setFormStackable(true);
         semiPerfect.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData perfect = new FormConfig.FormData();
@@ -893,7 +854,6 @@ public class DefaultFormsFactory {
         perfect.setPwrMultiplier(2.25);
 		perfect.setHairType("base");
         setDefaultMasteryValues(perfect);
-        perfect.setFormStackable(true);
         perfect.setStackDrainMultiplier(2.0);
 
         FormConfig.FormData superPerfect = new FormConfig.FormData();
@@ -911,7 +871,6 @@ public class DefaultFormsFactory {
 		superPerfect.setLightningColor("#1AA1C7");
 		superPerfect.setHairType("base");
         setDefaultMasteryValues(superPerfect);
-        superPerfect.setFormStackable(true);
         superPerfect.setStackDrainMultiplier(2.0);
 
         Map<String, FormConfig.FormData> bioFormData = new LinkedHashMap<>();
