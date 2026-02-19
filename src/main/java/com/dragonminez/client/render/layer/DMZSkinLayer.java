@@ -86,6 +86,30 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!f.getHairColor().isEmpty()) hair = hexToRGB(f.getHairColor());
         }
 
+        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == com.dragonminez.common.stats.ActionMode.FORM) {
+            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+            if (nextForm != null) {
+                float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+
+                if (!nextForm.getBodyColor1().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getBodyColor1());
+                    b1 = new float[]{Mth.lerp(factor, b1[0], target[0]), Mth.lerp(factor, b1[1], target[1]), Mth.lerp(factor, b1[2], target[2])};
+                }
+                if (!nextForm.getBodyColor2().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getBodyColor2());
+                    b2 = new float[]{Mth.lerp(factor, b2[0], target[0]), Mth.lerp(factor, b2[1], target[1]), Mth.lerp(factor, b2[2], target[2])};
+                }
+                if (!nextForm.getBodyColor3().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getBodyColor3());
+                    b3 = new float[]{Mth.lerp(factor, b3[0], target[0]), Mth.lerp(factor, b3[1], target[1]), Mth.lerp(factor, b3[2], target[2])};
+                }
+                if (!nextForm.getHairColor().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getHairColor());
+                    hair = new float[]{Mth.lerp(factor, hair[0], target[0]), Mth.lerp(factor, hair[1], target[1]), Mth.lerp(factor, hair[2], target[2])};
+                }
+            }
+        }
+
         boolean isOozaruForm = raceName.equals("saiyan") &&
                 (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
 
