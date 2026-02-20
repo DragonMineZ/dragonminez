@@ -6,6 +6,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.IActionModeHandler;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -69,6 +70,15 @@ public class FormModeHandler implements IActionModeHandler {
             player.refreshDimensions();
 
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+
+            String race = data.getCharacter().getRaceName();
+            String translatedFormName = I18n.get("race.dragonminez." + race + ".form." + data.getCharacter().getSelectedFormGroup() + "." + nextForm.getName());
+            if (data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty()) {
+                String translatedStackFormGroup = I18n.get("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
+                String translatedStackFormName = I18n.get("race.dragonminez.stack.form." + data.getCharacter().getActiveStackFormGroup() + "." + data.getCharacter().getActiveStackForm());
+                translatedFormName += " " + translatedStackFormGroup + " " +translatedStackFormName;
+            }
+            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", translatedFormName), true);
         }
     }
 }

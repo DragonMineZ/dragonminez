@@ -230,7 +230,7 @@ public class DefaultFormsFactory {
         mastered.setStaminaDrain(0.06);
         mastered.setAuraColor("#66023C");
         mastered.setHairColor("#66023C");
-        mastered.setHairType("ssj3");
+        mastered.setHairType("ssj2");
         setDefaultMasteryValues(mastered);
         mastered.setStackDrainMultiplier(1.0);
 

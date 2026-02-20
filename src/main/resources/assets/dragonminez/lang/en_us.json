@@ -381,6 +381,7 @@
   "message.dragonminez.gero.not_human": "§cDr. Gero§r: Only humans can undergo android conversion.",
   "message.dragonminez.gero.already_android": "§cDr. Gero§r: You have already been converted to an android.",
   "message.dragonminez.gero.upgrade_success": "§cDr. Gero: §rAndroid conversion complete! Now let your power run wild!",
+  "message.dragonminez.transformation": "§cThis is %s§c!",
 
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
