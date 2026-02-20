@@ -13,35 +13,10 @@ public class Skills {
     private final Map<String, Skill> skillMap = new HashMap<>();
 
     public Skills() {
-        registerDefaultSkills();
     }
 
-    private void registerDefaultSkills() {
-        skillMap.put("superform", new Skill("superform", 0));
-        skillMap.put("godform", new Skill("godform", 0));
-        skillMap.put("legendaryforms", new Skill("legendaryforms", 0));
-    }
-
-    public void updateTransformationMaxLevels(int superformMax, int godformMax, int legendaryformsMax, int androidformsMax) {
-        Skill superform = skillMap.get("superform");
-        if (superform != null) {
-            superform.setMaxLevel(superformMax);
-        }
-
-        Skill godform = skillMap.get("godform");
-        if (godform != null) {
-            godform.setMaxLevel(godformMax);
-        }
-
-        Skill legendaryforms = skillMap.get("legendaryforms");
-        if (legendaryforms != null) {
-            legendaryforms.setMaxLevel(legendaryformsMax);
-        }
-
-        Skill androidforms = skillMap.get("androidforms");
-        if (androidforms != null) {
-            androidforms.setMaxLevel(androidformsMax);
-        }
+    public void registerDefaultSkill(String skillName, int maxLevel) {
+        skillMap.put(skillName, new Skill(skillName, maxLevel));
     }
 
     public Skill getSkill(String name) {
@@ -93,7 +68,6 @@ public class Skills {
 
 	public void removeAllSkills() {
 		skillMap.clear();
-		registerDefaultSkills();
 	}
 
     public void addSkillLevel(String name, int amount) {
@@ -147,10 +121,9 @@ public class Skills {
                 Skill skill = Skill.load(skillTag);
 
                 String skillName = skill.getName().toLowerCase();
-                if (!skillName.equals("superform") && !skillName.equals("godform") && !skillName.equals("legendaryforms") && !skillName.equals("androidforms")) {
+                if (!ConfigManager.getSkillsConfig().getFormSkills().contains(skillName)) {
                     skill.setMaxLevel(calculateMaxLevel(skillName));
                 }
-
                 skillMap.put(skillName, skill);
             }
         }

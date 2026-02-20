@@ -259,13 +259,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
         int cost = getUpgradeCost(selectedSkill, skill.getLevel());
         int currentTPS = statsData.getResources().getTrainingPoints();
-        boolean canUpgrade = skill.getLevel() < skill.getMaxLevel() && currentTPS >= cost;
+        boolean canUpgrade = !skill.isMaxLevel() && currentTPS >= cost;
 		if (cost == -1 || cost == Integer.MAX_VALUE) return;
 
-        var skillsConfig = ConfigManager.getSkillsConfig();
-		boolean isSuperForm = skillsConfig.getFormSkills().contains(selectedSkill);
-
-        if (skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel() || isSuperForm) {
+        if (!skill.isMaxLevel()) {
 			upgradeButton = new TexturedTextButton.Builder()
 					.position(rightPanelX + 35, rightPanelY + 196)
 					.size(74, 20)
@@ -287,19 +284,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     }
 
     private int getUpgradeCost(String skillName, int currentLevel) {
-		if (skillName.equalsIgnoreCase("superform")
-                || skillName.equalsIgnoreCase("godform")
-                || skillName.equalsIgnoreCase("legendaryforms")
-                || skillName.equalsIgnoreCase("androidforms")) {
+        if (ConfigManager.getSkillsConfig().getFormSkills().contains(skillName)) {
 			var raceConfig = ConfigManager.getRaceCharacter(statsData.getCharacter().getRaceName());
-			int[] costs = null;
-			switch (skillName) {
-				case "superform" -> costs = raceConfig.getSuperformTpCost();
-				case "godform" -> costs = raceConfig.getGodformTpCost();
-				case "legendaryforms" -> costs = raceConfig.getLegendaryformsTpCost();
-				case "androidforms" -> costs = raceConfig.getAndroidformsTpCost();
-			}
-
+			Integer[] costs = raceConfig.getFormSkillTpCosts(skillName);
 			if (costs != null && currentLevel + 1 <= costs.length) {
 				return costs[currentLevel];
 			} else {
@@ -315,7 +302,6 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					return costs.get(currentLevel);
 				}
 			}
-
 			return Integer.MAX_VALUE;
 		}
     }
