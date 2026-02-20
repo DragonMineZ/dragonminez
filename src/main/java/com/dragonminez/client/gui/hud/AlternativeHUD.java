@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.hud;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -49,6 +50,14 @@ public class AlternativeHUD {
 				else formRelease = resources.getActionCharge();
 				String raceName = character.getRaceName();
 				String auraColor = character.getAuraColor();
+
+				if (character.getActiveForm() != null) {
+					FormConfig.FormData formData = character.getActiveFormData();
+					if (formData != null) auraColor = formData.getAuraColor();
+				} else if (character.getActiveStackForm() != null) {
+					FormConfig.FormData formData = character.getActiveStackFormData();
+					if (formData != null) auraColor = formData.getAuraColor();
+				}
 
 				float currentHP = Minecraft.getInstance().player.getHealth();
 				int currentKi = resources.getCurrentEnergy();
