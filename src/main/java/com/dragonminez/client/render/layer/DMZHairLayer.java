@@ -94,15 +94,19 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
                 targetGroup = character.getSelectedFormGroup();
                 nextForm = TransformationsHelper.getNextAvailableForm(stats);
-                targetHair = getHairForForm(character, targetGroup, nextForm.getName());
-				targetColor = getColorForForm(character, targetGroup, nextForm.getName());
-				actualFormColor = getColorForForm(character, targetGroup, character.getActiveForm());
+                if (nextForm != null) {
+					targetHair = getHairForForm(character, targetGroup, nextForm.getName());
+					targetColor = getColorForForm(character, targetGroup, nextForm.getName());
+					actualFormColor = getColorForForm(character, targetGroup, character.getActiveForm());
+				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 				targetGroup = character.getSelectedStackFormGroup();
 				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-				targetHair = getHairForStackForm(character, targetGroup, nextForm.getName());
-				targetColor = getColorForStackForm(character, targetGroup, nextForm.getName());
-				actualFormColor = getColorForStackForm(character, targetGroup, character.getActiveForm());
+				if (nextForm != null) {
+					targetHair = getHairForStackForm(character, targetGroup, nextForm.getName());
+					targetColor = getColorForStackForm(character, targetGroup, nextForm.getName());
+					actualFormColor = getColorForStackForm(character, targetGroup, character.getActiveStackForm());
+				}
 			}
 
 			if (nextForm != null) {

@@ -198,8 +198,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		skillNames.sort(String::compareToIgnoreCase);
 		if (currentCategory == SkillCategory.SKILLS) {
 			String race = statsData.getCharacter().getRaceName().toLowerCase();
-			if (!race.isEmpty() && ConfigManager.isDefaultRace(race)) {
-				skillNames.add(0, "racial_" + race);
+			if (!race.isEmpty() && !ConfigManager.getRaceCharacter(race).getRacialSkill().isEmpty()) {
+				skillNames.add(0, "racial_" + ConfigManager.getRaceCharacter(race).getRacialSkill());
 			}
 		}
         return skillNames;

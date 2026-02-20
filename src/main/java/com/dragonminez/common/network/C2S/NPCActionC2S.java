@@ -114,6 +114,7 @@ public class NPCActionC2S {
 			data.getCooldowns().clearCooldowns();
 			data.getBonusStats().clearAllStats();
 			data.getCharacter().clearActiveForm();
+			data.getCharacter().clearActiveStackForm();
 			data.getStatus().setCreatedCharacter(false);
 
 			player.refreshDimensions();

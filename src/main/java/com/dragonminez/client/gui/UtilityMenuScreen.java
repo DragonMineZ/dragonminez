@@ -23,24 +23,16 @@ import java.util.List;
 public class UtilityMenuScreen extends Screen {
 	private static final List<IUtilityMenuSlot> MENU_SLOTS = new ArrayList<>();
 	private static final List<IUtilityMenuSlot> ADDON_SLOTS = new ArrayList<>();
-	private static final int[][] POSITIONS_3X3 = {
-			{-1, -1}, {0, -1}, {1, -1},
-			{-1,  0},          {1,  0},
-			{-1,  1}, {0,  1}, {1,  1}
+	private static final int[][] POSITIONS = {
+			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1}, // Top Row (Index 0-4)
+			{-2,  0}, {-1,  0},          {1,  0}, {2,  0}, // Middle Row (Index 5-9)
+			{-2,  1}, {-1,  1}, {0,  1}, {1,  1}, {2,  1}  // Bottom Row (Index 10-14)
 	};
-	private static final int[][] POSITIONS_3X5 = {
-			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1},
-			{-2,  0}, {-1,  0},          {1,  0}, {2,  0},
-			{-2,  1}, {-1,  1}, {0,  1}, {1,  1}, {2,  1}
-	};
+
 	private static final long ANIMATION_DURATION = 100;
-	// Default button width is 105, but proves too large for GUI Scale AUTO
-	// and GUI Scale 4 when using 14 slot positions
 	private static final int BUTTON_WIDTH = 90;
 	private static final int BUTTON_HEIGHT = 70;
 	private static final int GAP = 5;
-
-	private static int[][] POSITIONS = POSITIONS_3X3;
 
 	private final long openTime;
 	private StatsData statsData;
@@ -55,9 +47,7 @@ public class UtilityMenuScreen extends Screen {
 	protected void init() {
 		super.init();
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> this.statsData = data);
-		}
+		if (mc.player != null) StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> this.statsData = data);
 	}
 
 	@Override
@@ -87,11 +77,18 @@ public class UtilityMenuScreen extends Screen {
 		pose.popPose();
 	}
 
+	private boolean isSlotVisible(int index) {
+		IUtilityMenuSlot slot = MENU_SLOTS.get(index);
+		if (slot == null) return false;
+		if (index == 6 || index == 7) return true;
+		return !(slot instanceof EmptyMenuSlot);
+	}
+
 	private void renderGrid(GuiGraphics graphics, int centerX, int centerY, int mouseX, int mouseY) {
 		for (int i = 0; i < POSITIONS.length; i++) {
+			if (!isSlotVisible(i)) continue;
 			int col = POSITIONS[i][0];
 			int row = POSITIONS[i][1];
-
 			int x = centerX + (col * (BUTTON_WIDTH + GAP)) - (BUTTON_WIDTH / 2);
 			int y = centerY + (row * (BUTTON_HEIGHT + GAP)) - (BUTTON_HEIGHT / 2);
 
@@ -99,7 +96,6 @@ public class UtilityMenuScreen extends Screen {
 			int color = isHovered ? 0x80FFFFFF : 0x60000000;
 
 			graphics.fill(x, y, x + BUTTON_WIDTH, y + BUTTON_HEIGHT, color);
-
 			renderButtonContent(graphics, i, x, y);
 		}
 	}
@@ -109,18 +105,12 @@ public class UtilityMenuScreen extends Screen {
 		if (menuSlot != null) {
 			ButtonInfo buttonInfo = menuSlot.render(statsData);
 			if (buttonInfo != null) {
-				if (buttonInfo.isSelected()) {
-					buttonInfo.setColor(0x2BFF00);
-				}
+				if (buttonInfo.isSelected()) buttonInfo.setColor(0x2BFF00);
 
 				if (!buttonInfo.getLine1().getString().isEmpty()) {
 					this.drawCenteredStringWithBorder(graphics, buttonInfo.getLine1(), x + BUTTON_WIDTH / 2, y + 12, 0xFFFFFF, 0x000000);
-					if (index == 5) {
-						graphics.drawCenteredString(font, buttonInfo.getLine2(), x + BUTTON_WIDTH / 2, y + 30, statsData.getSkills().isSkillActive("kimanipulation") ? 0x2BFF00 : 0xFF1B00);
-					}
-					else {
-						graphics.drawCenteredString(font, buttonInfo.getLine2(), x + BUTTON_WIDTH / 2, y + 30, buttonInfo.isSelected() ? buttonInfo.getColor() : 0xFF1B00);
-					}
+					if (menuSlot instanceof KiManipulationMenuSlot) graphics.drawCenteredString(font, buttonInfo.getLine2(), x + BUTTON_WIDTH / 2, y + 30, statsData.getSkills().isSkillActive("kimanipulation") ? 0x2BFF00 : 0xFF1B00);
+					else graphics.drawCenteredString(font, buttonInfo.getLine2(), x + BUTTON_WIDTH / 2, y + 30, buttonInfo.isSelected() ? buttonInfo.getColor() : 0xFF1B00);
 				}
 			}
 		}
@@ -132,6 +122,8 @@ public class UtilityMenuScreen extends Screen {
 		int centerY = this.height / 2;
 
 		for (int i = 0; i < POSITIONS.length; i++) {
+			if (!isSlotVisible(i)) continue;
+
 			int col = POSITIONS[i][0];
 			int row = POSITIONS[i][1];
 
@@ -157,15 +149,8 @@ public class UtilityMenuScreen extends Screen {
 	public void tick() {
 		super.tick();
 		Minecraft mc = Minecraft.getInstance();
-
-		boolean isMenuKeyDown = InputConstants.isKeyDown(
-				mc.getWindow().getWindow(),
-				KeyBinds.UTILITY_MENU.getKey().getValue()
-		);
-
-		if (!isMenuKeyDown) {
-			this.onClose();
-		}
+		boolean isMenuKeyDown = InputConstants.isKeyDown(mc.getWindow().getWindow(), KeyBinds.UTILITY_MENU.getKey().getValue());
+		if (!isMenuKeyDown) this.onClose();
 	}
 
 	public void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int color, int borderColor) {
@@ -178,27 +163,30 @@ public class UtilityMenuScreen extends Screen {
 
 	public static void initMenuSlots() {
 		if (MENU_SLOTS.isEmpty()) {
-			MENU_SLOTS.add(0, new StackFormMenuSlot());
-			MENU_SLOTS.add(1, new SuperformMenuSlot());
-			MENU_SLOTS.add(2, new FusionMenuSlot());
-			MENU_SLOTS.add(3, new EmptyMenuSlot());
-			MENU_SLOTS.add(4, new EmptyMenuSlot());
-			MENU_SLOTS.add(5, new KiManipulationMenuSlot());
-			MENU_SLOTS.add(6, new RacialActionMenuSlot());
-			MENU_SLOTS.add(7, new DescendFormMenuSlot());
+			for (int i = 0; i < POSITIONS.length; i++) MENU_SLOTS.add(null);
 
-			if (!ADDON_SLOTS.isEmpty()) {
-				for (int i = MENU_SLOTS.size(), e = 0; i < POSITIONS_3X5.length && e <= ADDON_SLOTS.size(); i++, e++) {
-					MENU_SLOTS.add(i, ADDON_SLOTS.get(e));
-				}
-			}
+			// Top Row
+			MENU_SLOTS.set(1, new StackFormMenuSlot());
+			MENU_SLOTS.set(2, new SuperformMenuSlot());
+			MENU_SLOTS.set(3, new FusionMenuSlot());
 
-			if (MENU_SLOTS.size() >= POSITIONS_3X3.length) {
-				POSITIONS = POSITIONS_3X5;
-			}
+			// Middle Row
+			MENU_SLOTS.set(6, new EmptyMenuSlot());
+			MENU_SLOTS.set(7, new EmptyMenuSlot());
 
-			for (int i = MENU_SLOTS.size(); i < POSITIONS.length; i++) {
-				MENU_SLOTS.add(i, new EmptyMenuSlot());
+			// Bottom Row
+			MENU_SLOTS.set(10, new KiManipulationMenuSlot());
+			MENU_SLOTS.set(11, new RacialActionMenuSlot());
+			MENU_SLOTS.set(12, new DescendFormMenuSlot());
+
+			int[] addonIndices = {0, 4, 5, 8, 9, 13};
+			int currentAddon = 0;
+
+			for (int index : addonIndices) {
+				if (currentAddon < ADDON_SLOTS.size()) {
+					MENU_SLOTS.set(index, ADDON_SLOTS.get(currentAddon));
+					currentAddon++;
+				} else MENU_SLOTS.set(index, new EmptyMenuSlot());
 			}
 		}
 	}
