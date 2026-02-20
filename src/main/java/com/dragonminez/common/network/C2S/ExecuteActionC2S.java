@@ -41,41 +41,69 @@ public class ExecuteActionC2S {
 					boolean needsSync = false;
 					switch (action) {
 						case "descend" -> {
-							if (data.getSkills().isSkillActive("kaioken") && data.getStatus().getActiveKaiokenPhase() != 0) {
-								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) data.getSkills().setSkillActive("kaioken", false);
-								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
-							} else if (TransformationsHelper.canDescend(data)) {
-								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-								if (previousForm != null) {
-									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-								} else {
-									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-									else data.getCharacter().clearActiveForm();
+							switch (data.getStatus().getSelectedAction()) {
+								case STACK: {
+									if (TransformationsHelper.canStackDescend(data)) {
+										FormConfig.FormData previousForm = TransformationsHelper.getPreviousStackForm(data);
+										if (previousForm != null) {
+											data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
+										} else {
+											data.getCharacter().clearActiveStackForm();
+										}
+									} else {
+										data.getResources().setPowerRelease(0);
+									}
+									break;
 								}
-							} else data.getResources().setPowerRelease(0);
+								case FORM: {
+									if (TransformationsHelper.canDescend(data)) {
+										FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+										if (previousForm != null) {
+											data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+										} else {
+											if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+											else data.getCharacter().clearActiveForm();
+										}
+									} else {
+										data.getResources().setPowerRelease(0);
+									}
+									break;
+								}
+								default: {
+									data.getResources().setPowerRelease(0);
+								}
+							}
 							needsSync = true;
 						}
 						case "force_descend" -> {
-							if (data.getSkills().isSkillActive("kaioken") && data.getStatus().getActiveKaiokenPhase() != 0) {
-								if (data.getStatus().getActiveKaiokenPhase() <= 0 || data.getStatus().getActiveKaiokenPhase() - 1 <= 0) data.getSkills().setSkillActive("kaioken", false);
-								data.getStatus().setActiveKaiokenPhase(data.getStatus().getActiveKaiokenPhase() - 1);
+							FormConfig.FormData previousStackForm = TransformationsHelper.getPreviousStackForm(data);
+							if (previousStackForm != null) {
+								data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousStackForm.getName());
 							} else {
-								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-								if (previousForm != null) {
-									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-								} else {
-									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-									else data.getCharacter().clearActiveForm();
-								}
-								if (data.getCharacter().getActiveForm().isEmpty() || (data.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
-									data.getResources().setPowerRelease(0);
-								}
+								data.getCharacter().clearActiveStackForm();
+							}
+
+							FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+							if (previousForm != null) {
+								data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+							} else {
+								if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+								else data.getCharacter().clearActiveForm();
+							}
+							if (data.getCharacter().getActiveForm().isEmpty() || (data.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
+								data.getResources().setPowerRelease(0);
+
 							}
 							needsSync = true;
 						}
 						case "cycle_form_group" -> {
 							data.getStatus().setSelectedAction(ActionMode.FORM);
 							TransformationsHelper.cycleSelectedFormGroup(data);
+							needsSync = true;
+						}
+						case "cycle_stack_form_group" -> {
+							data.getStatus().setSelectedAction(ActionMode.STACK);
+							TransformationsHelper.cycleSelectedStackFormGroup(data);
 							needsSync = true;
 						}
 						case "instant_transform" -> {

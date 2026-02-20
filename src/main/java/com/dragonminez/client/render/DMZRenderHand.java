@@ -16,6 +16,7 @@ import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.BioAndroidForms;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
@@ -126,8 +127,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         var stats = statsCap.orElse(new StatsData(pPlayer));
         var character = stats.getCharacter();
 
-        int kaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
-
         PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
         playermodel.attackTime = 0.0F;
         playermodel.crouching = false;
@@ -153,10 +152,11 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             if (!activeForm.getHairColor().isEmpty()) hair = ColorUtils.hexToRgb(activeForm.getHairColor());
         }
 
-        b1 = applyKaiokenTint(b1, kaiokenPhase);
-        b2 = applyKaiokenTint(b2, kaiokenPhase);
-        b3 = applyKaiokenTint(b3, kaiokenPhase);
-        hair = applyKaiokenTint(hair, kaiokenPhase);
+        int phase = TransformationsHelper.getKaiokenPhase(stats);
+        b1 = applyKaiokenTint(b1, phase);
+        b2 = applyKaiokenTint(b2, phase);
+        b3 = applyKaiokenTint(b3, phase);
+        hair = applyKaiokenTint(hair, phase);
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
         boolean isStandard = raceName.equals("human") || raceName.equals("saiyan");
@@ -172,7 +172,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         boolean useDefaultSkin = isStandard && bodyType == 0 && !isOozaru;
 
         if (forceVanilla || useDefaultSkin) {
-            float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, kaiokenPhase);
+            float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, phase);
 
             ResourceLocation playerSkin = pPlayer.getSkinTextureLocation();
 

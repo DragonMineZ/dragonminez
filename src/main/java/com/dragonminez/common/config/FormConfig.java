@@ -77,8 +77,10 @@ public class FormConfig {
         private double pwrMultiplier = 1.0;
         private double eneMultiplier = 1.0;
         private double speedMultiplier = 1.0;
-        private double energyDrain = 1.0;
-        private double staminaDrain = 1.0;
+        private double staminaDrainMultiplier = 1.0;
+        private double energyDrain = 0.0;
+        private double staminaDrain = 0.0;
+        private double healthDrain = 0.0;
         private double attackSpeed = 1.0;
         private double maxMastery = 100.0;
         private double masteryPerHit = 0.01;
@@ -86,8 +88,8 @@ public class FormConfig {
         private double statMultPerMasteryPoint = 0.02;
         private double costDecreasePerMasteryPoint = 0.02;
 		private double passiveMasteryGainEveryFiveSeconds = 0.001;
-		private boolean kaiokenStackable = true;
-		private double kaiokenDrainMultiplier = 2.0;
+		private boolean formStackable = true;
+        private double stackDrainMultiplier = 2.0;
 
         public FormData() {}
 
@@ -114,8 +116,10 @@ public class FormConfig {
         public double getPwrMultiplier() { return Math.max(0.01, pwrMultiplier); }
         public double getEneMultiplier() { return Math.max(0.01, eneMultiplier); }
         public double getSpeedMultiplier() { return Math.max(0.01, speedMultiplier); }
+        public double getStaminaDrainMultiplier() { return Math.max(0, staminaDrainMultiplier); }
         public double getEnergyDrain() { return Math.max(0, energyDrain); }
         public double getStaminaDrain() { return Math.max(0, staminaDrain); }
+        public double getHealthDrain() { return Math.max(0, healthDrain); }
         public double getAttackSpeed() { return Math.max(0.1, attackSpeed); }
         public double getMaxMastery() { return maxMastery; }
         public double getMasteryPerHit() { return Math.max(0,  masteryPerHit); }
@@ -123,8 +127,8 @@ public class FormConfig {
         public double getStatMultPerMasteryPoint() { return Math.max(0, statMultPerMasteryPoint); }
         public double getCostDecreasePerMasteryPoint() { return Math.max(0, costDecreasePerMasteryPoint); }
 		public double getPassiveMastery() { return Math.max(0, passiveMasteryGainEveryFiveSeconds); }
-		public boolean isKaiokenStackable() { return kaiokenStackable; }
-		public double getKaiokenDrainMultiplier() { return Math.max(0.01, kaiokenDrainMultiplier); }
+		public boolean isFormStackable() { return formStackable; }
+        public double getStackDrainMultiplier() { return Math.max(0.01, stackDrainMultiplier); }
 
         public void setName(String name) { this.name = name; }
         public void setUnlockOnSkillLevel(int level) { this.unlockOnSkillLevel = level; }
@@ -149,8 +153,10 @@ public class FormConfig {
         public void setPwrMultiplier(double pwrMultiplier) { this.pwrMultiplier = pwrMultiplier; }
         public void setEneMultiplier(double eneMultiplier) { this.eneMultiplier = eneMultiplier; }
         public void setSpeedMultiplier(double speedMultiplier) { this.speedMultiplier = speedMultiplier; }
+        public void setStaminaDrainMultiplier(double staminaDrainMultiplier) { this.staminaDrainMultiplier = staminaDrainMultiplier; }
         public void setEnergyDrain(double energyDrain) { this.energyDrain = energyDrain; }
         public void setStaminaDrain(double staminaDrain) { this.staminaDrain = staminaDrain; }
+        public void setHealthDrain(double healthDrain) { this.healthDrain = healthDrain; }
         public void setAttackSpeed(double attackSpeed) { this.attackSpeed = attackSpeed; }
         public void setMaxMastery(double maxMastery) { this.maxMastery = maxMastery; }
         public void setMasteryPerHit(double masteryPerHit) { this.masteryPerHit = masteryPerHit; }
@@ -158,8 +164,8 @@ public class FormConfig {
         public void setStatMultPerMasteryPoint(double statMultPerMasteryPoint) { this.statMultPerMasteryPoint = statMultPerMasteryPoint; }
         public void setCostDecreasePerMasteryPoint(double costDecreasePerMasteryPoint) { this.costDecreasePerMasteryPoint = costDecreasePerMasteryPoint; }
 		public void setPassiveMastery(double passiveMastery) { this.passiveMasteryGainEveryFiveSeconds = passiveMastery; }
-		public void setKaiokenStackable(boolean kaiokenStackable) { this.kaiokenStackable = kaiokenStackable; }
-		public void setKaiokenDrainMultiplier(double kaiokenDrainMultiplier) { this.kaiokenDrainMultiplier = kaiokenDrainMultiplier; }
+		public void setFormStackable(boolean formStackable) { this.formStackable = formStackable; }
+        public void setStackDrainMultiplier(double stackDrainMultiplier) { this.stackDrainMultiplier = stackDrainMultiplier; }
 
         public boolean hasCustomModel() {
             return customModel != null && !customModel.isEmpty();

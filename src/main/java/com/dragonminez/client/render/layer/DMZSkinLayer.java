@@ -7,6 +7,10 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.common.util.lists.BioAndroidForms;
 import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.dragonminez.common.util.lists.MajinForms;
@@ -43,7 +47,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
         var stats = statsCap.orElse(new StatsData(player));
 
-        this.currentKaiokenPhase = stats.getStatus().getActiveKaiokenPhase();
+        this.currentKaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
 
         float alpha = player.isSpectator() ? 0.15f : 1.0f;
 

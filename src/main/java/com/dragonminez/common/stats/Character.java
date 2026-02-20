@@ -19,6 +19,11 @@ public class Character {
     private String activeForm = "";
     private final FormMasteries formMasteries = new FormMasteries();
 
+    private String selectedStackFormGroup = "";
+    private String activeStackFormGroup = "";
+    private String activeStackForm = "";
+    private final FormMasteries stackFormMasteries = new FormMasteries();
+
     public static final String GENDER_MALE = "male";
     public static final String GENDER_FEMALE = "female";
 
@@ -74,6 +79,9 @@ public class Character {
     public String getSelectedFormGroup() { return selectedFormGroup; }
     public String getActiveFormGroup() { return activeFormGroup; }
     public String getActiveForm() { return activeForm; }
+    public String getSelectedStackFormGroup() { return selectedStackFormGroup; }
+    public String getActiveStackFormGroup() { return activeStackFormGroup; }
+    public String getActiveStackForm() { return activeStackForm; }
     public int getHairId() { return hairId; }
 	public CustomHair getHairBase() {
 		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
@@ -107,6 +115,7 @@ public class Character {
     public String getEye2Color() { return eye2Color; }
     public String getAuraColor() { return auraColor; }
     public FormMasteries getFormMasteries() { return formMasteries; }
+    public FormMasteries getStackFormMasteries() { return stackFormMasteries; }
     public Boolean getArmored() {return armored;}
 
     public void setRace(String race) {
@@ -134,6 +143,7 @@ public class Character {
     public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
     public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
     public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
+    public void setSelectedStackFormGroup(String selectedStackFormGroup) { this.selectedStackFormGroup = selectedStackFormGroup; }
     public void setArmored(Boolean armored) {this.armored = armored;}
 
     public String getRaceName() {
@@ -189,7 +199,11 @@ public class Character {
         tag.putString("SelectedFormGroup", selectedFormGroup);
         tag.putString("CurrentFormGroup", activeFormGroup);
         tag.putString("CurrentForm", activeForm);
+        tag.putString("SelectedStackFormGroup", selectedStackFormGroup);
+        tag.putString("CurrentStackFormGroup", activeStackFormGroup);
+        tag.putString("CurrentStackForm", activeStackForm);
         tag.put("FormMasteries", formMasteries.save());
+        tag.put("StackFormMasteries", stackFormMasteries.save());
         tag.putBoolean("isArmored", armored);
         return tag;
     }
@@ -224,6 +238,10 @@ public class Character {
         this.activeFormGroup = tag.getString("CurrentFormGroup");
         this.activeForm = tag.getString("CurrentForm");
         if (tag.contains("FormMasteries")) formMasteries.load(tag.getCompound("FormMasteries"));
+        this.selectedStackFormGroup = tag.getString("SelectedStackFormGroup");
+        this.activeStackFormGroup = tag.getString("CurrentStackFormGroup");
+        this.activeStackForm = tag.getString("CurrentStackForm");
+        if (tag.contains("StackFormMasteries")) stackFormMasteries.load(tag.getCompound("StackFormMasteries"));
         this.armored = tag.getBoolean("isArmored");
     }
 
@@ -246,6 +264,27 @@ public class Character {
             return null;
         }
         return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
+    }
+
+    public boolean hasActiveStackForm() {
+        return !activeStackFormGroup.isEmpty() && !activeStackForm.isEmpty();
+    }
+
+    public void setActiveStackForm(String groupName, String formName) {
+        this.activeStackFormGroup = groupName != null ? groupName : "";
+        this.activeStackForm = formName != null ? formName : "";
+    }
+
+    public void clearActiveStackForm() {
+        this.activeStackFormGroup = "";
+        this.activeStackForm = "";
+    }
+
+    public FormConfig.FormData getActiveStackFormData() {
+        if (!hasActiveStackForm()) {
+            return null;
+        }
+        return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
     }
 
 	public void saveAppearance(CompoundTag tag) {
@@ -293,6 +332,10 @@ public class Character {
         this.activeFormGroup = other.activeFormGroup;
         this.activeForm = other.activeForm;
         this.formMasteries.copyFrom(other.formMasteries);
+        this.selectedStackFormGroup = other.selectedStackFormGroup;
+        this.activeStackFormGroup = other.activeStackFormGroup;
+        this.activeStackForm = other.activeStackForm;
+        this.stackFormMasteries.copyFrom(other.stackFormMasteries);
         this.armored = other.armored;
     }
 }

@@ -178,7 +178,7 @@ public class UtilityMenuScreen extends Screen {
 
 	public static void initMenuSlots() {
 		if (MENU_SLOTS.isEmpty()) {
-			MENU_SLOTS.add(0, new KaiokenMenuSlot());
+			MENU_SLOTS.add(0, new StackFormMenuSlot());
 			MENU_SLOTS.add(1, new SuperformMenuSlot());
 			MENU_SLOTS.add(2, new FusionMenuSlot());
 			MENU_SLOTS.add(3, new EmptyMenuSlot());

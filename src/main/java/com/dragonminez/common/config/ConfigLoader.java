@@ -56,6 +56,34 @@ public class ConfigLoader {
         return forms;
     }
 
+    public Map<String, FormConfig> loadStackForms(Path formsPath) throws IOException {
+        Map<String, FormConfig> forms = new HashMap<>();
+
+        if (!Files.exists(formsPath)) {
+            return forms;
+        }
+
+        try (var stream = Files.list(formsPath)) {
+            stream.filter(path -> path.toString().endsWith(".json"))
+                    .forEach(formFile -> {
+                        try {
+                            FormConfig formConfig = loadConfig(formFile, FormConfig.class);
+
+                            String groupName = formConfig.getGroupName();
+                            if (groupName != null && !groupName.isEmpty()) {
+                                forms.put(groupName.toLowerCase(), formConfig);
+                                LogUtil.info(Env.COMMON, "Form group '{}' loaded for stack forms", groupName);
+                            }
+                        } catch (IOException e) {
+                            LogUtil.error(Env.COMMON, "Error loading form file '{}': {}",
+                                    formFile.getFileName(), e.getMessage());
+                        }
+                    });
+        }
+
+        return forms;
+    }
+
 	public void saveDefaultFromTemplate(Path target, String templateName) {
 		try (var inputStream = getClass().getResourceAsStream("/assets/dragonminez/config_defaults/" + templateName)) {
 			if (inputStream != null) {

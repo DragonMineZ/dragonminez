@@ -23,8 +23,7 @@
     "client.TitleScreenMixin",
     "client.FlightCameraMixin",
     "client.FlightGameRendererMixin",
-    "client.MouseHandlerMixin",
-    "client.LocalPlayerMixin"
+    "client.MouseHandlerMixin"
   ],
   "server": [],
   "injectors": {

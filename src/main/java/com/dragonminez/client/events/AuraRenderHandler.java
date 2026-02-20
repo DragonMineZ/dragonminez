@@ -84,22 +84,35 @@ public class AuraRenderHandler {
     private static float[] getBodyScale(StatsData stats) {
         float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
         var character = stats.getCharacter();
+
         String currentForm = "";
-
-        if (character.hasActiveForm()) currentForm = character.getActiveForm().toLowerCase();
-        if (currentForm.contains("ozaru")) return new float[]{1.0f, 1.0f, 1.0f};
-
         if (character.hasActiveForm()) {
-            var activeForm = character.getActiveFormData();
-            if (activeForm != null) {
-                float[] scales = activeForm.getModelScaling();
-                if (scales != null && scales.length >= 3) { sX = scales[0]; sY = scales[1]; sZ = scales[2]; }
-            }
-        } else {
-            // Escala base
-            float[] scales = character.getModelScaling();
-            if (scales != null && scales.length >= 3) { sX = scales[0]; sY = scales[1]; sZ = scales[2]; }
+            currentForm = character.getActiveForm().toLowerCase();
         }
+
+        if (currentForm.contains("oozaru")) {
+            return new float[]{1.0f, 1.0f, 1.0f};
+        }
+
+        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            sX *= character.getActiveFormData().getModelScaling()[0];
+            sY *= character.getActiveFormData().getModelScaling()[1];
+            sZ *= character.getActiveFormData().getModelScaling()[2];
+        }
+
+        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+            sX *= character.getActiveStackFormData().getModelScaling()[0];
+            sY *= character.getActiveStackFormData().getModelScaling()[1];
+            sZ *= character.getActiveStackFormData().getModelScaling()[2];
+        }
+
+        if ((!character.hasActiveForm() || character.getActiveFormData() == null)
+                && (!character.hasActiveStackForm() || character.getActiveStackFormData() == null)) {
+            sX *= character.getModelScaling()[0];
+            sY *= character.getModelScaling()[1];
+            sZ *= character.getModelScaling()[2];
+        }
+
         return new float[]{sX, sY, sZ};
     }
 
@@ -309,11 +322,16 @@ public class AuraRenderHandler {
 	private static float[] getKiColor(StatsData stats) {
 		var character = stats.getCharacter();
 		String kiHex = character.getAuraColor();
-		if (stats.getStatus().getActiveKaiokenPhase() >= 1) {
-			kiHex = "#DB182C";
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			String formColor = character.getActiveFormData().getAuraColor();
-			if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
+        if (character.hasActiveStackForm()
+                && character.getActiveStackFormData() != null
+                && character.getActiveStackFormData().getAuraColor() != null
+                && !character.getActiveStackFormData().getAuraColor().isEmpty()) {
+            kiHex = character.getActiveStackFormData().getAuraColor();
+        } else if (character.hasActiveForm()
+                && character.getActiveFormData() != null
+                && character.getActiveFormData().getAuraColor() != null
+                && !character.getActiveFormData().getAuraColor().isEmpty()) {
+            kiHex = character.getActiveFormData().getAuraColor();
 		}
 		return ColorUtils.hexToRgb(kiHex);
 	}

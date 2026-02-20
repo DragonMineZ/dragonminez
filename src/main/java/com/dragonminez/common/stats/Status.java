@@ -13,7 +13,6 @@ public class Status {
     private boolean isDescending;
     private boolean isInKaioPlanet;
 	private boolean isChargingKi;
-	private int activeKaiokenPhase;
 	private boolean isBlocking;
 	private long lastBlockTime;
 	private long lastHurtTime;
@@ -42,7 +41,6 @@ public class Status {
         this.isDescending = false;
         this.isInKaioPlanet = false;
 		this.isChargingKi = false;
-		this.activeKaiokenPhase = 0;
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
 		this.lastHurtTime = 0;
@@ -71,7 +69,6 @@ public class Status {
     public boolean isDescending() { return isDescending; }
     public boolean isInKaioPlanet() { return isInKaioPlanet; }
 	public boolean isChargingKi() { return isChargingKi; }
-	public int getActiveKaiokenPhase() { return activeKaiokenPhase; }
 	public boolean isBlocking() { return isBlocking; }
 	public long getLastBlockTime() { return lastBlockTime; }
 	public long getLastHurtTime() { return lastHurtTime; }
@@ -99,7 +96,6 @@ public class Status {
     public void setDescending(boolean descending) { this.isDescending = descending; }
     public void setInKaioPlanet(boolean inKaio) { this.isInKaioPlanet = inKaio; }
 	public void setChargingKi(boolean charging) { this.isChargingKi = charging; }
-	public void setActiveKaiokenPhase(int phase) { this.activeKaiokenPhase = Math.max(0, phase); }
 	public void setBlocking(boolean blocking) { this.isBlocking = blocking; }
 	public void setLastBlockTime(long time) { this.lastBlockTime = time; }
 	public void setLastHurtTime(long time) { this.lastHurtTime = time; }
@@ -129,7 +125,6 @@ public class Status {
         tag.putBoolean("Descending", isDescending);
         tag.putBoolean("InKaioPlanet", isInKaioPlanet);
 		tag.putBoolean("IsChargingKi", isChargingKi);
-		tag.putInt("ActiveKaiokenPhase", activeKaiokenPhase);
 		tag.putBoolean("IsBlocking", isBlocking);
 		tag.putLong("LastBlockTime", lastBlockTime);
 		tag.putLong("LastHurtTime", lastHurtTime);
@@ -158,7 +153,6 @@ public class Status {
         this.isDescending = tag.getBoolean("Descending");
         this.isInKaioPlanet = tag.getBoolean("InKaioPlanet");
 		this.isChargingKi = tag.getBoolean("IsChargingKi");
-		this.activeKaiokenPhase = tag.getInt("ActiveKaiokenPhase");
 		this.isBlocking = tag.getBoolean("IsBlocking");
 		this.lastBlockTime = tag.getLong("LastBlockTime");
 		this.lastHurtTime = tag.getLong("LastHurtTime");
@@ -189,7 +183,6 @@ public class Status {
         this.isDescending = other.isDescending;
         this.isInKaioPlanet = other.isInKaioPlanet;
 		this.isChargingKi = other.isChargingKi;
-		this.activeKaiokenPhase = other.activeKaiokenPhase;
 		this.isBlocking = other.isBlocking;
 		this.lastBlockTime = other.lastBlockTime;
 		this.lastHurtTime = other.lastHurtTime;

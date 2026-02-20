@@ -27,7 +27,8 @@ public class ConfigManager {
     private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory(GSON, LOADER);
 
     private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
-    private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
+	private static final Path STACK_FORMS_DIR = CONFIG_DIR.resolve("forms");
+	private static final Path RACES_DIR = CONFIG_DIR.resolve("races");
     private static final String[] DEFAULT_RACES = {"human", "saiyan", "namekian", "frostdemon", "bioandroid", "majin"};
     private static final Set<String> RACES_WITH_GENDER = new HashSet<>(Arrays.asList("human", "saiyan", "majin"));
 
@@ -35,6 +36,8 @@ public class ConfigManager {
     private static final Map<String, RaceCharacterConfig> RACE_CHARACTER = new HashMap<>();
     private static final Map<String, Map<String, FormConfig>> RACE_FORMS = new HashMap<>();
     private static final List<String> LOADED_RACES = new ArrayList<>();
+
+	private static Map<String, FormConfig> STACK_FORMS = new HashMap<>();
 
     private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
     private static SkillsConfig SERVER_SYNCED_SKILLS;
@@ -56,6 +59,7 @@ public class ConfigManager {
 
             loadGeneralConfigs();
             loadAllRaces();
+			createOrLoadStackForms(true);
 
             LogUtil.info(Env.COMMON, "Configuration system initialized successfully");
             LogUtil.info(Env.COMMON, "Loaded races: {}", LOADED_RACES);
@@ -308,6 +312,40 @@ public class ConfigManager {
 		RACE_CHARACTER.put(raceName.toLowerCase(), characterConfig);
 		RACE_STATS.put(raceName.toLowerCase(), statsConfig);
 		LOADED_RACES.add(raceName);
+	}
+
+	private static void createOrLoadStackForms(boolean isDefault) throws IOException {
+		Files.createDirectories(STACK_FORMS_DIR);
+
+		// Forms Config
+		Map<String, FormConfig> stackForms = LOADER.loadStackForms(STACK_FORMS_DIR);
+		boolean recreateForms = false;
+
+		if (isDefault && !LOADER.hasExistingFiles(STACK_FORMS_DIR)) {
+			recreateForms = true;
+		} else if (!stackForms.isEmpty()) {
+			for (FormConfig formGroup : stackForms.values()) {
+				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+					recreateForms = true;
+					break;
+				}
+			}
+		}
+
+		if (recreateForms && isDefault) {
+			try (var stream = Files.list(STACK_FORMS_DIR)) {
+				stream.filter(path -> path.toString().endsWith(".json")).forEach(ConfigManager::backupOldConfig);
+			}
+			stackForms.clear();
+			FORMS_FACTORY.createDefaultStackForms(STACK_FORMS_DIR, stackForms);
+		} else {
+			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
+				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
+				LOADER.saveConfig(formFilePath, entry.getValue());
+			}
+		}
+
+		STACK_FORMS = stackForms;
 	}
 
 	private static EntitiesConfig createDefaultEntitiesConfig() {
@@ -749,6 +787,18 @@ public class ConfigManager {
         return null;
     }
 
+	public static FormConfig getStackFormGroup(String groupName) {
+		Map<String, FormConfig> stackForms = getAllStackForms();
+		if (stackForms != null) return stackForms.get(groupName.toLowerCase());
+		return null;
+	}
+
+	public static FormConfig.FormData getStackForm(String groupName, String formName) {
+		FormConfig group = getStackFormGroup(groupName);
+		if (group != null) return group.getForm(formName);
+		return null;
+	}
+
     public static Map<String, Map<String, FormConfig>> getAllForms() {
         if (SERVER_SYNCED_FORMS != null) return SERVER_SYNCED_FORMS;
         return RACE_FORMS;
@@ -758,6 +808,10 @@ public class ConfigManager {
         Map<String, Map<String, FormConfig>> forms = getAllForms();
         return forms.getOrDefault(raceName.toLowerCase(), new HashMap<>());
     }
+
+	public static Map<String, FormConfig> getAllStackForms() {
+		return STACK_FORMS;
+	}
 
     public static SkillsConfig getSkillsConfig() {
         if (SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;

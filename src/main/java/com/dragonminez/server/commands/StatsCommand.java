@@ -204,7 +204,6 @@ public class StatsCommand {
 				if (data.getStatus().isFused()) FusionLogic.endFusion(player, data, false);
 				data.getResources().setRacialSkillCount(0);
 				data.getResources().setPowerRelease(0);
-				data.getStatus().setActiveKaiokenPhase(0);
 				data.getStatus().setAndroidUpgraded(false);
 				data.getStatus().setInKaioPlanet(false);
 				data.getSkills().removeAllSkills();

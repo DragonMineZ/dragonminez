@@ -97,13 +97,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (!isAnimating()) this.renderBackground(graphics);
+        if (!isAnimating()) this.renderBackground(graphics);
 
-		int uiMouseX = (int) Math.round(toUiX(mouseX));
-		int uiMouseY = (int) Math.round(toUiY(mouseY));
+        int uiMouseX = (int) Math.round(toUiX(mouseX));
+        int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-		beginUiScale(graphics);
-		applyZoom(graphics);
+        beginUiScale(graphics);
+        applyZoom(graphics);
 
         renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
         renderMenuPanels(graphics);
@@ -112,8 +112,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         renderStatisticsInfo(graphics, uiMouseX, uiMouseY);
         renderTPCost(graphics);
 
-		super.render(graphics, uiMouseX, uiMouseY, partialTick);
-		endUiScale(graphics);
+        super.render(graphics, uiMouseX, uiMouseY, partialTick);
+        endUiScale(graphics);
     }
 
     private void initStatButtons() {
@@ -131,7 +131,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int tpCost = statsData.calculateRecursiveCost(tpMultiplier, baseCost, maxStats, multiplier);
 
         multiplierButton = new CustomTextureButton.Builder()
-                .position(buttonX, startY + 75)
+                .position(buttonX, startY + 86)
                 .size(14, 11)
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(0, 0, 0, 10)
@@ -150,32 +150,32 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         this.addRenderableWidget(multiplierButton);
 
         if (availableTPs >= tpCost && statsData.getStats().getStrength() < maxStats) {
-            strButton = createStatButton(buttonX, startY, "STR");
+            strButton = createStatButton(buttonX, startY + 11, "STR");
             this.addRenderableWidget(strButton);
         }
 
         if (availableTPs >= tpCost && statsData.getStats().getStrikePower() < maxStats) {
-            skpButton = createStatButton(buttonX, startY + 12, "SKP");
+            skpButton = createStatButton(buttonX, startY + 23, "SKP");
             this.addRenderableWidget(skpButton);
         }
 
         if (availableTPs >= tpCost && statsData.getStats().getResistance() < maxStats) {
-            resButton = createStatButton(buttonX, startY + 24, "RES");
+            resButton = createStatButton(buttonX, startY + 35, "RES");
             this.addRenderableWidget(resButton);
         }
 
         if (availableTPs >= tpCost && statsData.getStats().getVitality() < maxStats) {
-            vitButton = createStatButton(buttonX, startY + 36, "VIT");
+            vitButton = createStatButton(buttonX, startY + 47, "VIT");
             this.addRenderableWidget(vitButton);
         }
 
         if (availableTPs >= tpCost && statsData.getStats().getKiPower() < maxStats) {
-            pwrButton = createStatButton(buttonX, startY + 48, "PWR");
+            pwrButton = createStatButton(buttonX, startY + 59, "PWR");
             this.addRenderableWidget(pwrButton);
         }
 
         if (availableTPs >= tpCost && statsData.getStats().getEnergy() < maxStats) {
-            eneButton = createStatButton(buttonX, startY + 60, "ENE");
+            eneButton = createStatButton(buttonX, startY + 71, "ENE");
             this.addRenderableWidget(eneButton);
         }
     }
@@ -185,8 +185,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 .position(x, y)
                 .size(14, 11)
                 .texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 0, 0, 10)
-				.textureSize(10, 10)
+                .textureCoords(0, 0, 0, 10)
+                .textureSize(10, 10)
                 .onPress(button -> {
                     NetworkHandler.sendToServer(new IncreaseStatC2S(statName, tpMultiplier));
                 })
@@ -217,7 +217,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         if (statsData == null) return;
 
         int centerY = getUiHeight() / 2;
-        int tpcY = centerY + 73;
+        int tpcY = centerY + 84;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
@@ -227,8 +227,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         Component tpcValue = Component.literal(numberFormatter.format(tpCost));
 
-        drawStringWithBorder2(graphics, tpcValue, 80, tpcY, 0xFFCE41, 0x000000);
-        drawStringWithBorder2(graphics, Component.literal("x" + tpMultiplier), 80, tpcY + 10, 0x2BFFE2, 0x000000);
+        drawStringWithBorder2(graphics, tpcValue, 75, tpcY, 0xFFCE41, 0x000000);
+        drawStringWithBorder2(graphics, Component.literal("x" + tpMultiplier), 75, tpcY + 10, 0x2BFFE2, 0x000000);
     }
 
     private void renderMenuPanels(GuiGraphics graphics) {
@@ -239,15 +239,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
         graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
-		graphics.blit(MENU_BIG, 43, centerY - 28, 142, 0, 79, 21, 256, 256);
+        graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+        graphics.blit(MENU_BIG, 43, centerY - 28, 142, 0, 79, 21, 256, 256);
 
         graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+        graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		graphics.blit(MENU_SMALL, centerX - 70, 8, 0, 95, 145, 58, 256, 256);
+        graphics.blit(MENU_SMALL, centerX - 70, 8, 0, 95, 145, 58, 256, 256);
 
-		RenderSystem.disableBlend();
+        RenderSystem.disableBlend();
     }
 
     private void renderPlayerInfo(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -306,24 +306,29 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int tps = statsData.getResources().getTrainingPoints();
         String characterClass = statsData.getCharacter().getCharacterClass();
         String form = statsData.getCharacter().getActiveForm();
+        String stackForm = statsData.getCharacter().getActiveStackForm();
 
         int labelX = 30;
         int valueX = 70;
         int startY = centerY - 72;
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.level").withStyle(style -> style.withBold(true)), labelX, startY, 0xD7FEF5, 0x000000);
-        drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(level)), valueX, startY, 0xFFFFFF, 0x000000);
+        drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(level)), valueX + 5, startY, 0xFFFFFF, 0x000000);
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.tps").withStyle(style -> style.withBold(true)), labelX, startY + 11, 0xD7FEF5, 0x000000);
-        drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(tps)), valueX, startY + 11, 0xFFE593, 0x000000);
+        drawStringWithBorder2(graphics, Component.literal(numberFormatter.format(tps)), valueX + 5, startY + 11, 0xFFE593, 0x000000);
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.form").withStyle(style -> style.withBold(true)), labelX, startY + 22, 0xD7FEF5, 0x000000);
         Component formComponent;
-		if (form == null || form.isEmpty()) formComponent = Component.translatable("race.dragonminez.base");
-		else formComponent = Component.translatable("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
-        drawStringWithBorder2(graphics, formComponent, valueX, startY + 22, 0xC7EAFC, 0x000000);
+        if (form == null || form.isEmpty()) {
+            formComponent = Component.translatable("race.dragonminez.base");
+        }
+        else {
+            formComponent = Component.translatable("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
+        }
+        drawStringWithBorder2(graphics, formComponent, valueX + 5, startY + 22, 0xC7EAFC, 0x000000);
 
-        if (!form.equals("base") && mouseX >= valueX && mouseX <= valueX + 60 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
+        if (!form.equals("base") && mouseX >= valueX + 5 && mouseX <= valueX + 65 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
             String currentFormGroup = statsData.getCharacter().getActiveFormGroup();
             if (currentFormGroup != null && !currentFormGroup.isEmpty()) {
                 var formConfig = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), currentFormGroup);
@@ -335,9 +340,9 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
                         List<FormattedCharSequence> tooltip = new ArrayList<>();
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.form.mastery",
-                            String.format(Locale.US, "%.2f", mastery),
-                            String.format(Locale.US, "%.0f", maxMastery))
-                            .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                                        String.format(Locale.US, "%.2f", mastery),
+                                        String.format(Locale.US, "%.0f", maxMastery))
+                                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
 
                         graphics.renderTooltip(font, tooltip, mouseX, mouseY);
                     }
@@ -345,25 +350,55 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             }
         }
 
-        drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
-        Component classComponent = Component.translatable("class.dragonminez." + characterClass);
-        drawStringWithBorder2(graphics, classComponent, valueX, startY + 33, 0xFFFFFF, 0x000000);
+        if (stackForm != null && !stackForm.isEmpty()) {
+            String currentFormGroup = statsData.getCharacter().getActiveStackFormGroup();
+            var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
+            if (currentFormGroup != null && !currentFormGroup.isEmpty() && formConfig != null) {
+                drawStringWithBorder2(graphics, Component.translatable("race.dragonminez.stack.group." + statsData.getCharacter().getActiveStackFormGroup()).withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
 
-        int statsStartY = centerY - 21;
+                var formData = formConfig.getForm(stackForm);
+                int textColor = formData != null && formData.getAuraColor() != null && !formData.getAuraColor().isEmpty()
+                        ? Integer.decode(formData.getAuraColor())
+                        : 0xC7EAFC;
+                Component stackFormComponent = Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getActiveStackFormGroup() + "." + stackForm);
+                drawStringWithBorder2(graphics, stackFormComponent, valueX + 5, startY + 33, textColor, 0x000000);
+
+                if (mouseX >= valueX + 5 && mouseX <= valueX + 65 && mouseY >= startY + 33 && mouseY <= startY + 33 + font.lineHeight) {
+                    if (formData != null) {
+                        double mastery = statsData.getCharacter().getStackFormMasteries().getMastery(currentFormGroup, stackForm);
+                        double maxMastery = formData.getMaxMastery();
+
+                        List<FormattedCharSequence> tooltip = new ArrayList<>();
+                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.form.mastery",
+                                        String.format(Locale.US, "%.2f", mastery),
+                                        String.format(Locale.US, "%.0f", maxMastery))
+                                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+
+                        graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+                    }
+                }
+            }
+        }
+
+        drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 44, 0xD7FEF5, 0x000000);
+        Component classComponent = Component.translatable("class.dragonminez." + characterClass);
+        drawStringWithBorder2(graphics, classComponent, valueX + 5, startY + 44, 0xFFFFFF, 0x000000);
+
+        int statsStartY = centerY - 11;
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 82, statsStartY, 0x68CCFF, 0x000000);
 
         String[] statNames = {"str", "skp", "res", "vit", "pwr", "ene"};
         String[] statNamesUpper = {"STR", "SKP", "RES", "VIT", "PWR", "ENE"};
         int[] statValues = {
-            statsData.getStats().getStrength(),
-            statsData.getStats().getStrikePower(),
-            statsData.getStats().getResistance(),
-            statsData.getStats().getVitality(),
-            statsData.getStats().getKiPower(),
-            statsData.getStats().getEnergy()
+                statsData.getStats().getStrength(),
+                statsData.getStats().getStrikePower(),
+                statsData.getStats().getResistance(),
+                statsData.getStats().getVitality(),
+                statsData.getStats().getKiPower(),
+                statsData.getStats().getEnergy()
         };
 
-        int statY = centerY - 3;
+        int statY = centerY + 8;
         for (int i = 0; i < statNames.length; i++) {
             int statLabelX = 42;
             int yPos = statY + (i * 12);
@@ -377,8 +412,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
             int statColor = totalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
             String statText = totalMult > 0.1
-                ? numberFormatter.format((int)modifiedValue) + " x" + String.format(Locale.US, "%.1f", 1.0 + totalMult)
-                : numberFormatter.format(baseValue);
+                    ? numberFormatter.format((int)modifiedValue) + " x" + String.format(Locale.US, "%.1f", 1.0 + totalMult)
+                    : numberFormatter.format(baseValue);
 
             drawStringWithBorder2(graphics, Component.literal(statText), valueX + 5, yPos, statColor, 0x000000);
 
@@ -389,23 +424,23 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 if (totalMult > 0.1) {
                     tooltip.add(Component.literal("").getVisualOrderText());
                     tooltip.add(Component.translatable("gui.dragonminez.character_stats.base_value")
-                        .append(": " + numberFormatter.format(baseValue))
-                        .withStyle(ChatFormatting.GRAY).getVisualOrderText());
+                            .append(": " + numberFormatter.format(baseValue))
+                            .withStyle(ChatFormatting.GRAY).getVisualOrderText());
                     tooltip.add(Component.translatable("gui.dragonminez.character_stats.modified_value")
-                        .append(": " + numberFormatter.format((int)modifiedValue))
-                        .withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                            .append(": " + numberFormatter.format((int)modifiedValue))
+                            .withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                 }
 
                 var bonuses = statsData.getBonusStats().getBonuses(statNamesUpper[i]);
                 if (!bonuses.isEmpty()) {
                     tooltip.add(Component.literal("").getVisualOrderText());
                     tooltip.add(Component.translatable("gui.dragonminez.character_stats.bonus")
-                        .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                            .withStyle(ChatFormatting.AQUA).getVisualOrderText());
                     for (var bonus : bonuses) {
                         String bonusText = bonus.name + ": " + bonus.operation +
-                            (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : java.lang.String.format(Locale.US, "%.0f", bonus.value));
+                                (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : java.lang.String.format(Locale.US, "%.0f", bonus.value));
                         tooltip.add(Component.literal("  " + bonusText)
-                            .withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                                .withStyle(ChatFormatting.GREEN).getVisualOrderText());
                     }
                 }
 
@@ -456,13 +491,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         double stmScaling = statsData.getStatScaling("STM");
 
         String[] labels = {
-            "gui.dragonminez.character_stats.melee_damage",
-            "gui.dragonminez.character_stats.strike_damage",
-            "gui.dragonminez.character_stats.stamina",
-            "gui.dragonminez.character_stats.defense",
-            "gui.dragonminez.character_stats.health",
-            "gui.dragonminez.character_stats.ki_damage",
-            "gui.dragonminez.character_stats.max_energy"
+                "gui.dragonminez.character_stats.melee_damage",
+                "gui.dragonminez.character_stats.strike_damage",
+                "gui.dragonminez.character_stats.stamina",
+                "gui.dragonminez.character_stats.defense",
+                "gui.dragonminez.character_stats.health",
+                "gui.dragonminez.character_stats.ki_damage",
+                "gui.dragonminez.character_stats.max_energy"
         };
 
         for (int i = 0; i < labels.length; i++) {
@@ -477,45 +512,45 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                     case 0 -> {
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip1").getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip2",
-                            String.format(Locale.US, "%.2f", strScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                                String.format(Locale.US, "%.2f", strScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                            String.format(Locale.US, "%.1f", maxMeleeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                                String.format(Locale.US, "%.1f", maxMeleeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
                     }
                     case 1 -> {
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip1").getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip2",
-                            String.format(Locale.US, "%.2f", skpScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                                String.format(Locale.US, "%.2f", skpScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                            String.format(Locale.US, "%.1f", maxStrikeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                                String.format(Locale.US, "%.1f", maxStrikeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
                     }
                     case 2 -> {
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip1").getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip2",
-                            String.format(Locale.US, "%.2f", stmScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                                String.format(Locale.US, "%.2f", stmScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                     }
                     case 3 -> {
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense.tooltip1").getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense.tooltip2",
-                            String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                                String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                            String.format(Locale.US, "%.1f", maxDefense)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                                String.format(Locale.US, "%.1f", maxDefense)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
                     }
                     case 4 -> {
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.health.tooltip1").getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.health.tooltip2",
-                            String.format(Locale.US, "%.2f", vitScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                                String.format(Locale.US, "%.2f", vitScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                     }
                     case 5 -> {
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip1").getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip2",
-                            String.format(Locale.US, "%.2f", pwrScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                                String.format(Locale.US, "%.2f", pwrScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                            String.format(Locale.US, "%.1f", maxKiDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                                String.format(Locale.US, "%.1f", maxKiDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
                     }
                     case 6 -> {
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip1").getVisualOrderText());
                         tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip2",
-                            String.format(Locale.US, "%.2f", eneScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                                String.format(Locale.US, "%.2f", eneScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
                     }
                 }
 
@@ -545,7 +580,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         drawStringWithBorder(graphics, Component.literal(numberFormatter.format(health)), valueX + 15, labelStartY + 48, healthColor, 0x000000);
         drawStringWithBorder(graphics, Component.literal(java.lang.String.format(Locale.US, "%.1f", kiDamage)), valueX + 15, labelStartY + 60, kiDamageColor, 0x000000);
         drawStringWithBorder(graphics, Component.literal(numberFormatter.format(energy)), valueX + 15, labelStartY + 72, energyColor, 0x000000);
-	}
+    }
 
     private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
         LivingEntity player = Minecraft.getInstance().player;
@@ -632,15 +667,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int centerY = getUiHeight() / 2;
         int buttonX = getUiWidth() - 45;
         int buttonY = centerY + 90;
-		LivingEntity player = Minecraft.getInstance().player;
+        LivingEntity player = Minecraft.getInstance().player;
 
         viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
             useHexagonView = !useHexagonView;
             ConfigManager.getUserConfig().getHud().setHexagonStatsDisplay(useHexagonView);
             ConfigManager.saveGeneralUserConfig();
             ((SwitchButton) button).toggle();
-			if (useHexagonView) player.playSound(MainSounds.SWITCH_OFF.get());
-			else player.playSound(MainSounds.SWITCH_ON.get());
+            if (useHexagonView) player.playSound(MainSounds.SWITCH_OFF.get());
+            else player.playSound(MainSounds.SWITCH_ON.get());
         });
         this.addRenderableWidget(viewSwitchButton);
     }
@@ -659,7 +694,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         int stamina = statsData.getMaxStamina();
         double defense = statsData.getDefense();
         double maxDefense = statsData.getMaxDefense();
-		float health = statsData.getMaxHealth();
+        float health = statsData.getMaxHealth();
         double kiDamage = statsData.getKiDamage();
         double maxKiDamage = statsData.getMaxKiDamage();
         int energy = statsData.getMaxEnergy();
@@ -769,13 +804,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             List<FormattedCharSequence> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip1").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip2",
-                String.format(Locale.US, "%.2f", strScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                    String.format(Locale.US, "%.2f", strScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                String.format(Locale.US, "%.1f", maxMeleeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                    String.format(Locale.US, "%.1f", maxMeleeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
             tooltip.add(Component.literal("").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.melee_damage").append(": ")
-                .append(Component.literal(String.format(Locale.US, "%.1f", meleeDamage)))
-                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    .append(Component.literal(String.format(Locale.US, "%.1f", meleeDamage)))
+                    .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             graphics.renderTooltip(font, tooltip, mouseX, mouseY);
         }
 
@@ -783,13 +818,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             List<FormattedCharSequence> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip1").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip2",
-                String.format(Locale.US, "%.2f", skpScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                    String.format(Locale.US, "%.2f", skpScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                String.format(Locale.US, "%.1f", maxStrikeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                    String.format(Locale.US, "%.1f", maxStrikeDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
             tooltip.add(Component.literal("").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.strike_damage").append(": ")
-                .append(Component.literal(String.format(Locale.US, "%.1f", strikeDamage)))
-                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    .append(Component.literal(String.format(Locale.US, "%.1f", strikeDamage)))
+                    .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             graphics.renderTooltip(font, tooltip, mouseX, mouseY);
         }
 
@@ -797,20 +832,20 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             List<FormattedCharSequence> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense.tooltip1").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense.tooltip2",
-                String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                    String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                String.format(Locale.US, "%.1f", maxDefense)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                    String.format(Locale.US, "%.1f", maxDefense)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
             tooltip.add(Component.literal("").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip1").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip2",
-                String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                    String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
             tooltip.add(Component.literal("").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.defense").append(": ")
-                .append(Component.literal(String.format(Locale.US, "%.1f", defense)))
-                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    .append(Component.literal(String.format(Locale.US, "%.1f", defense)))
+                    .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.stamina").append(": ")
-                .append(Component.literal(numberFormatter.format(stamina)))
-                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    .append(Component.literal(numberFormatter.format(stamina)))
+                    .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             graphics.renderTooltip(font, tooltip, mouseX, mouseY);
         }
 
@@ -818,13 +853,13 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             List<FormattedCharSequence> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip1").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip2",
-                String.format(Locale.US, "%.2f", pwrScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                    String.format(Locale.US, "%.2f", pwrScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_value",
-                String.format(Locale.US, "%.1f", maxKiDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+                    String.format(Locale.US, "%.1f", maxKiDamage)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
             tooltip.add(Component.literal("").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.ki_damage").append(": ")
-                .append(Component.literal(String.format(Locale.US, "%.1f", kiDamage)))
-                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    .append(Component.literal(String.format(Locale.US, "%.1f", kiDamage)))
+                    .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             graphics.renderTooltip(font, tooltip, mouseX, mouseY);
         }
 
@@ -832,11 +867,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             List<FormattedCharSequence> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip1").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip2",
-                String.format(Locale.US, "%.2f", eneScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                    String.format(Locale.US, "%.2f", eneScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
             tooltip.add(Component.literal("").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.max_energy").append(": ")
-                .append(Component.literal(numberFormatter.format(energy)))
-                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    .append(Component.literal(numberFormatter.format(energy)))
+                    .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             graphics.renderTooltip(font, tooltip, mouseX, mouseY);
         }
 
@@ -844,11 +879,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             List<FormattedCharSequence> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.health.tooltip1").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.health.tooltip2",
-                String.format(Locale.US, "%.2f", vitScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+                    String.format(Locale.US, "%.2f", vitScaling)).withStyle(ChatFormatting.YELLOW).getVisualOrderText());
             tooltip.add(Component.literal("").getVisualOrderText());
             tooltip.add(Component.translatable("gui.dragonminez.character_stats.health").append(": ")
-                .append(Component.literal(numberFormatter.format(health)))
-                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    .append(Component.literal(numberFormatter.format(health)))
+                    .withStyle(ChatFormatting.AQUA).getVisualOrderText());
             graphics.renderTooltip(font, tooltip, mouseX, mouseY);
         }
     }
