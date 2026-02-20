@@ -18,7 +18,6 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
     public ButtonInfo render(StatsData statsData) {
         ActionMode currentMode = statsData.getStatus().getSelectedAction();
         String race = statsData.getCharacter().getRaceName();
-
         boolean hasSuperform = false;
         var skillConfig = ConfigManager.getSkillsConfig();
         for (String formSkill : skillConfig.getFormSkills()) {

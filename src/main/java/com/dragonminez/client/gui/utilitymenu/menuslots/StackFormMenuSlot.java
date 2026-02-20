@@ -18,6 +18,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
     public ButtonInfo render(StatsData statsData) {
         ActionMode currentMode = statsData.getStatus().getSelectedAction();
 
+<<<<<<< feat/dynamicFormAndStackFormSkills
         boolean hasStackform = false;
         var skillConfig = ConfigManager.getSkillsConfig();
         for (String formSkill : skillConfig.getStackSkills()) {
@@ -32,6 +33,24 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
                     Component.translatable("race.dragonminez.stack.group." + statsData.getCharacter().getSelectedStackFormGroup()).withStyle(ChatFormatting.BOLD),
                     Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getSelectedStackFormGroup() + "." + TransformationsHelper.getFirstStackFormGroup(statsData.getCharacter().getSelectedStackFormGroup())),
                     currentMode == ActionMode.STACK);
+=======
+        // FIXME: The first time a Stack Form Group is unlocked, no Stack Form Group is selected
+        //  so the button will always be empty unless players click it after.
+        if (statsData.getSkills().getSkillLevel("kaioken") >= 1
+                || statsData.getSkills().getSkillLevel("ultrainstinct") >= 1
+                || statsData.getSkills().getSkillLevel("ultraego") >= 1) {
+            String selectedStackFormGroup = statsData.getCharacter().getSelectedStackFormGroup();
+            String firstStackFormGroup = TransformationsHelper.getFirstStackFormGroup(selectedStackFormGroup);
+            if (selectedStackFormGroup != null && !selectedStackFormGroup.isEmpty()
+                    && firstStackFormGroup != null && !firstStackFormGroup.isEmpty()) {
+                return new ButtonInfo(
+                        Component.translatable("race.dragonminez.stack.group." + selectedStackFormGroup).withStyle(ChatFormatting.BOLD),
+                        Component.translatable("race.dragonminez.stack.form." + selectedStackFormGroup + "." + firstStackFormGroup),
+                        currentMode == ActionMode.STACK);
+            } else {
+                return new ButtonInfo();
+            }
+>>>>>>> main
         } else {
             return new ButtonInfo();
         }
