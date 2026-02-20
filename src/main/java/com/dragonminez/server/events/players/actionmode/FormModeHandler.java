@@ -19,13 +19,9 @@ public class FormModeHandler implements IActionModeHandler {
             String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
 
             String type = ConfigManager.getFormGroup(data.getCharacter().getRaceName(), group).getFormType();
-            int skillLvl = switch (type) {
-                case "super" -> data.getSkills().getSkillLevel("superform");
-                case "god" -> data.getSkills().getSkillLevel("godform");
-                case "legendary" -> data.getSkills().getSkillLevel("legendaryforms");
-                case "android" -> data.getSkills().getSkillLevel("androidforms");
-                default -> 1;
-            };
+            int skillLvl = data.getSkills().getSkillLevel(
+                    convertSuperformTypes(type)
+            );
             return (5 * Math.max(1, skillLvl));
         }
         return 0;
@@ -80,5 +76,15 @@ public class FormModeHandler implements IActionModeHandler {
             }
             player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", translatedFormName), true);
         }
+    }
+
+    private String convertSuperformTypes(String type) {
+        return switch (type) {
+            case "super" -> "superform";
+            case "god" -> "godform";
+            case "legendary" -> "legendaryforms";
+            case "android" -> "androidforms";
+            default -> type;
+        };
     }
 }
