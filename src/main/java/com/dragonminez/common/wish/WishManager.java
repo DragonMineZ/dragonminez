@@ -90,6 +90,7 @@ public class WishManager {
             wishes.add(new ItemWish("wish.shenron.mightfruit.name", "wish.shenron.mightfruit.desc", "dragonminez:might_tree_fruit", 16));
             wishes.add(new ItemWish("wish.shenron.namekcpu.name", "wish.shenron.namekcpu.desc", "dragonminez:t2_radar_cpu", 1));
             wishes.add(new ItemWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", "dragonminez:saiyan_ship", 1));
+            wishes.add(new PassiveResetWish("wish.shenron.racialskillreset.name", "wish.shenron.racialskillreset.desc"));
 
             List<Tuple<String, Integer>> materials = new ArrayList<>();
             materials.add(new Tuple<>("dragonminez:kikono_shard", 32));
@@ -105,6 +106,7 @@ public class WishManager {
             wishes.add(new ItemWish("wish.porunga.senzu.name", "wish.porunga.senzu.desc", "dragonminez:senzu_bean", 32));
             wishes.add(new TPSWish("wish.porunga.tps.name", "wish.porunga.tps.desc", 15000));
             wishes.add(new ItemWish("wish.porunga.bravesword.name", "wish.porunga.bravesword.desc", "dragonminez:brave_sword", 1));
+            wishes.add(new PassiveResetWish("wish.porunga.racialskillreset.name", "wish.porunga.racialskillreset.desc"));
 
             List<Tuple<String, Integer>> materials = new ArrayList<>();
             materials.add(new Tuple<>("dragonminez:kikono_shard", 64));
