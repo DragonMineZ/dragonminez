@@ -655,12 +655,12 @@ public class ConfigManager {
     }
 
     private static void setupDefaultStats(RaceStatsConfig config) {
-        setupInitialStats(config.getWarrior(), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
-		setupScalingStats(config.getWarrior(), 1.0, 0.75, 0.5, 0.75, 1.5, 0.5, 1.0);
-        setupInitialStats(config.getSpiritualist(), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
-		setupScalingStats(config.getSpiritualist(), 0.5, 0.5, 0.25, 0.25, 1.0, 1.0, 1.5);
-        setupInitialStats(config.getMartialArtist(), 5, 10, 10, 10, 5, 5, 0.0035, 0.008, 0.009);
-		setupScalingStats(config.getMartialArtist(), 0.75, 1.0, 0.75, 1.0, 1.75, 0.75, 1.25);
+        setupInitialStats(config.getClassStats("warrior"), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
+		setupScalingStats(config.getClassStats("warrior"), 1.0, 0.75, 0.5, 0.75, 1.5, 0.5, 1.0);
+        setupInitialStats(config.getClassStats("spiritualist"), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
+		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 0.25, 0.25, 1.0, 1.0, 1.5);
+        setupInitialStats(config.getClassStats("martialartist"), 5, 10, 10, 10, 5, 5, 0.0035, 0.008, 0.009);
+		setupScalingStats(config.getClassStats("martialartist"), 0.75, 1.0, 0.75, 1.0, 1.75, 0.75, 1.25);
     }
 
     private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene, double healthRegen, double energyRegen, double staminaRegen) {

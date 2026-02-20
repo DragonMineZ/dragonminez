@@ -28,8 +28,6 @@ public class Character {
     public static final String GENDER_FEMALE = "female";
 
     public static final String CLASS_WARRIOR = "warrior";
-    public static final String CLASS_SPIRITUALIST = "spiritualist";
-    public static final String CLASS_MARTIALARTIST = "martialartist";
 
     private int hairId;
     private CustomHair hairBase = new CustomHair();
