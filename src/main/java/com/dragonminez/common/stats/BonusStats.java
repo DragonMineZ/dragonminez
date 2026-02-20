@@ -54,18 +54,22 @@ public class BonusStats {
 		}
 	}
 
+    public void clearBonus(String stat, String bonusName) {
+        stat = stat.toUpperCase();
+        if (!bonuses.containsKey(stat)) return;
+
+        List<StatBonus> statBonuses = bonuses.get(stat);
+        statBonuses.removeIf(bonus -> bonus.name.contains(bonusName));
+    }
+
     public void clearAll(String stat) {
         stat = stat.toUpperCase();
-        if (!bonuses.containsKey(stat)) {
-            return;
-        }
+        if (!bonuses.containsKey(stat)) return;
         bonuses.get(stat).clear();
     }
 
     public void clearAllStats() {
-        for (List<StatBonus> bonusList : bonuses.values()) {
-            bonusList.clear();
-        }
+        for (List<StatBonus> bonusList : bonuses.values()) bonusList.clear();
     }
 
     public double calculateBonus(String stat, int baseStat) {

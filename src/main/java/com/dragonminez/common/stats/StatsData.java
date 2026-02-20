@@ -227,6 +227,220 @@ public class StatsData {
         return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
     }
 
+    public double getTotalMultiplier(String statName) {
+        double form = getFormMultiplier(statName);
+        double stack = getStackFormMultiplier(statName);
+        double effect = getEffectsMultiplier(statName);
+
+        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect;
+        else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0);
+    }
+
+    public double getFormMultiplier(String statName) {
+        String currentForm = character.getActiveForm();
+        String currentFormGroup = character.getActiveFormGroup();
+
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 1.0;
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
+
+        var formConfig = ConfigManager.getFormGroup(character.getRaceName(), currentFormGroup);
+        if (formConfig == null) return 1.0;
+
+        var formData = formConfig.getForm(currentForm);
+        if (formData == null) return 1.0;
+
+        double baseMult = switch (statName.toUpperCase()) {
+            case "STR" -> formData.getStrMultiplier();
+            case "SKP" -> formData.getSkpMultiplier();
+            case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
+            case "VIT" -> formData.getVitMultiplier();
+            case "PWR" -> formData.getPwrMultiplier();
+            case "ENE" -> formData.getEneMultiplier();
+            default -> 1.0;
+        };
+
+        double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
+        double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
+
+        return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
+    }
+
+    public double getStackFormMultiplier(String statName) {
+        String currentForm = character.getActiveStackForm();
+        String currentFormGroup = character.getActiveStackFormGroup();
+
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("")) return 1.0;
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
+
+        var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
+        if (formConfig == null) return 1.0;
+
+        var formData = formConfig.getForm(currentForm);
+        if (formData == null) return 1.0;
+
+        double baseMult = switch (statName.toUpperCase()) {
+            case "STR" -> formData.getStrMultiplier();
+            case "SKP" -> formData.getSkpMultiplier();
+            case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
+            case "VIT" -> formData.getVitMultiplier();
+            case "PWR" -> formData.getPwrMultiplier();
+            case "ENE" -> formData.getEneMultiplier();
+            default -> 1.0;
+        };
+
+        double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
+        double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
+
+        return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
+    }
+
+    public double getEffectsMultiplier(String statName) {
+        double rawEffect = effects.getTotalEffectMultiplier();
+
+        return switch (statName.toUpperCase()) {
+            case "STR", "SKP", "PWR" -> rawEffect;
+            case "DEF" -> 1.0 + ((rawEffect - 1.0) * 0.5);
+            default -> 1.0;
+        };
+    }
+
+    public double getAdjustedStaminaDrainMultiplier() {
+        if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 1.0;
+
+        var formData = character.getActiveFormData();
+        var stackFormData = character.getActiveStackFormData();
+        if (formData == null && stackFormData == null) return 1.0;
+
+        double adjustedBaseDrain = 0;
+        if (character.hasActiveForm() && formData != null) {
+            double baseDrain = formData.getStaminaDrainMultiplier();
+            if (character.hasActiveStackForm() && stackFormData != null) {
+                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
+            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+            adjustedBaseDrain = baseDrain / divisor;
+        }
+
+        double adjustedStackDrain = 0;
+        if (character.hasActiveStackForm() && stackFormData != null) {
+            double stackDrain = stackFormData.getStackDrainMultiplier();
+            if (character.hasActiveForm() && formData != null) {
+                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+            adjustedStackDrain = stackDrain / stackDivisor;
+        }
+
+        return Math.max(0.001, adjustedBaseDrain + adjustedStackDrain);
+    }
+
+    public double getAdjustedEnergyDrain() {
+        if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
+
+        var formData = character.getActiveFormData();
+        var stackFormData = character.getActiveStackFormData();
+        if (formData == null && stackFormData == null) return 0.0;
+
+        double adjustedBaseDrain = 0;
+        if (character.hasActiveForm() && formData != null) {
+            double baseDrain = formData.getEnergyDrain();
+            if (character.hasActiveStackForm() && stackFormData != null) {
+                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
+            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+            adjustedBaseDrain = baseDrain / divisor;
+        }
+
+        double adjustedStackDrain = 0;
+        if (character.hasActiveStackForm() && stackFormData != null) {
+            double stackDrain = stackFormData.getEnergyDrain();
+            if (character.hasActiveForm() && formData != null) {
+                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+            adjustedStackDrain = stackDrain / stackDivisor;
+        }
+
+        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
+        return Math.max(0.001, drainPercentage * this.getMaxEnergy());
+    }
+
+    public double getAdjustedStaminaDrain() {
+        if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
+
+        var formData = character.getActiveFormData();
+        var stackFormData = character.getActiveStackFormData();
+        if (formData == null && stackFormData == null) return 0.0;
+
+        double adjustedBaseDrain = 0;
+        if (character.hasActiveForm() && formData != null) {
+            double baseDrain = formData.getStaminaDrain();
+            if (character.hasActiveStackForm() && stackFormData != null) {
+                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
+            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+            adjustedBaseDrain = baseDrain / divisor;
+        }
+
+        double adjustedStackDrain = 0;
+        if (character.hasActiveStackForm() && stackFormData != null) {
+            double stackDrain = stackFormData.getStaminaDrain();
+            if (character.hasActiveForm() && formData != null) {
+                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+            adjustedStackDrain = stackDrain / stackDivisor;
+        }
+
+        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
+        return Math.max(0.001, drainPercentage * this.getMaxStamina());
+    }
+
+    public double getAdjustedHealthDrain() {
+        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
+            return 0.0;
+        }
+
+        var formData = character.getActiveFormData();
+        var stackFormData = character.getActiveStackFormData();
+        if (formData == null && stackFormData == null) {
+            return 0.0;
+        }
+
+        double adjustedBaseDrain = 0;
+        if (character.hasActiveForm() && formData != null) {
+            double baseDrain = formData.getHealthDrain();
+            if (character.hasActiveStackForm() && stackFormData != null) {
+                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
+            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
+            adjustedBaseDrain = baseDrain / divisor;
+        }
+
+        double adjustedStackDrain = 0;
+        if (character.hasActiveStackForm() && stackFormData != null) {
+            double stackDrain = stackFormData.getHealthDrain();
+            if (character.hasActiveForm() && formData != null) {
+                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
+            }
+            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
+            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
+            adjustedStackDrain = stackDrain / stackDivisor;
+        }
+
+        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
+        return Math.max(0.001, drainPercentage * this.getMaxHealth());
+    }
+
+
+
     public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
                                            int hairId, com.dragonminez.common.hair.CustomHair customHair,
                                            int bodyType, int eyesType, int noseType, int mouthType, int tattooType,
@@ -325,12 +539,12 @@ public class StatsData {
 
     private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
         if (config == null) return switch (characterClass.toLowerCase()) {
-			case "spiritualist" -> new RaceStatsConfig().getSpiritualist();
+            case "spiritualist" -> new RaceStatsConfig().getSpiritualist();
             case "martialartist" -> new RaceStatsConfig().getMartialArtist();
             default -> new RaceStatsConfig().getWarrior();
         };
         return switch (characterClass.toLowerCase()) {
-			case "spiritualist" -> config.getSpiritualist();
+            case "spiritualist" -> config.getSpiritualist();
             case "martialartist" -> config.getMartialArtist();
             default -> config.getWarrior();
         };
@@ -372,243 +586,6 @@ public class StatsData {
         cooldowns.tick();
     }
 
-    public double getTotalMultiplier(String statName) {
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-            return (getFormMultiplier(statName)) * (getStackFormMultiplier(statName)) * (getEffectsMultiplier(statName));
-        }
-        return getFormMultiplier(statName) + getStackFormMultiplier(statName) + getEffectsMultiplier(statName);
-    }
-
-    public double getFormMultiplier(String statName) {
-        double multChange = 1.0;
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-            multChange = 0.0;
-        }
-
-        String currentForm = character.getActiveForm();
-        String currentFormGroup = character.getActiveFormGroup();
-
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 1.0 - multChange;
-        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0 - multChange;
-
-        var formConfig = ConfigManager.getFormGroup(character.getRaceName(), currentFormGroup);
-        if (formConfig == null) return 1.0 - multChange;
-
-        var formData = formConfig.getForm(currentForm);
-        if (formData == null) return 1.0 - multChange;
-
-        double baseMult = switch (statName.toUpperCase()) {
-            case "STR" -> formData.getStrMultiplier();
-            case "SKP" -> formData.getSkpMultiplier();
-            case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
-            case "VIT" -> formData.getVitMultiplier();
-            case "PWR" -> formData.getPwrMultiplier();
-            case "ENE" -> formData.getEneMultiplier();
-            default -> 1.0;
-        };
-
-        baseMult -= multChange;
-        double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
-        double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
-
-        return baseMult * (1.0 + masteryBonus);
-    }
-
-    public double getStackFormMultiplier(String statName) {
-        double multChange = 1.0;
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-            multChange = 0.0;
-        }
-
-        String currentForm = character.getActiveStackForm();
-        String currentFormGroup = character.getActiveStackFormGroup();
-
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("")) return 1.0 - multChange;
-        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0 - multChange;
-
-        var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
-        if (formConfig == null) return 1.0 - multChange;
-
-        var formData = formConfig.getForm(currentForm);
-        if (formData == null) return 1.0 - multChange;
-
-        double baseMult = switch (statName.toUpperCase()) {
-            case "STR" -> formData.getStrMultiplier();
-            case "SKP" -> formData.getSkpMultiplier();
-            case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
-            case "VIT" -> formData.getVitMultiplier();
-            case "PWR" -> formData.getPwrMultiplier();
-            case "ENE" -> formData.getEneMultiplier();
-            default -> 1.0;
-        };
-
-        baseMult -= multChange;
-        double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
-        double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
-
-        return baseMult * (1.0 + masteryBonus);
-    }
-
-    public double getEffectsMultiplier(String statName) {
-        return switch (statName.toUpperCase()) {
-            case "STR", "SKP", "PWR" -> effects.getTotalEffectMultiplier();
-            case "DEF" -> effects.getTotalEffectMultiplier() * 0.5;
-            default -> {
-                if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-                    yield 0.0;
-                }
-                yield 1.0;
-            }
-        };
-    }
-
-    public double getAdjustedStaminaDrainMultiplier() {
-        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-            return 0.0;
-        }
-
-        var formData = character.getActiveFormData();
-        var stackFormData = character.getActiveStackFormData();
-        if (formData == null && stackFormData == null) {
-            return 0.0;
-        }
-
-        double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && formData != null) {
-            double baseDrain = formData.getStaminaDrainMultiplier();
-            if (character.hasActiveStackForm() && stackFormData != null) {
-                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-            adjustedBaseDrain = baseDrain / divisor;
-        }
-
-        double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && stackFormData != null) {
-            double stackDrain = stackFormData.getStackDrainMultiplier();
-            if (character.hasActiveForm() && formData != null) {
-                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-            adjustedStackDrain = stackDrain / stackDivisor;
-        }
-
-        return Math.max(0.001, adjustedBaseDrain + adjustedStackDrain);
-    }
-
-    public double getAdjustedEnergyDrain() {
-        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-            return 0.0;
-        }
-
-        var formData = character.getActiveFormData();
-        var stackFormData = character.getActiveStackFormData();
-        if (formData == null && stackFormData == null) {
-            return 0.0;
-        }
-
-        double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && formData != null) {
-            double baseDrain = formData.getEnergyDrain();
-            if (character.hasActiveStackForm() && stackFormData != null) {
-                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-            adjustedBaseDrain = baseDrain / divisor;
-        }
-
-        double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && stackFormData != null) {
-            double stackDrain = stackFormData.getEnergyDrain();
-            if (character.hasActiveForm() && formData != null) {
-                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-            adjustedStackDrain = stackDrain / stackDivisor;
-        }
-
-        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
-        return Math.max(0.001, drainPercentage * this.getMaxEnergy());
-    }
-
-    public double getAdjustedStaminaDrain() {
-        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-            return 0.0;
-        }
-
-        var formData = character.getActiveFormData();
-        var stackFormData = character.getActiveStackFormData();
-        if (formData == null && stackFormData == null) {
-            return 0.0;
-        }
-
-        double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && formData != null) {
-            double baseDrain = formData.getStaminaDrain();
-            if (character.hasActiveStackForm() && stackFormData != null) {
-                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-            adjustedBaseDrain = baseDrain / divisor;
-        }
-
-        double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && stackFormData != null) {
-            double stackDrain = stackFormData.getStaminaDrain();
-            if (character.hasActiveForm() && formData != null) {
-                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-            adjustedStackDrain = stackDrain / stackDivisor;
-        }
-
-        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
-        return Math.max(0.001, drainPercentage * this.getMaxStamina());
-    }
-
-    public double getAdjustedHealthDrain() {
-        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-            return 0.0;
-        }
-
-        var formData = character.getActiveFormData();
-        var stackFormData = character.getActiveStackFormData();
-        if (formData == null && stackFormData == null) {
-            return 0.0;
-        }
-
-        double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && formData != null) {
-            double baseDrain = formData.getHealthDrain();
-            if (character.hasActiveStackForm() && stackFormData != null) {
-                baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
-            double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-            adjustedBaseDrain = baseDrain / divisor;
-        }
-
-        double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && stackFormData != null) {
-            double stackDrain = stackFormData.getHealthDrain();
-            if (character.hasActiveForm() && formData != null) {
-                stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
-            }
-            double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
-            double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-            adjustedStackDrain = stackDrain / stackDivisor;
-        }
-
-        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
-        return Math.max(0.001, drainPercentage * this.getMaxHealth());
-    }
-
     public void saveApparanceData(CompoundTag nbt) {
         nbt.put("Character", character.save());
     }
@@ -624,6 +601,7 @@ public class StatsData {
         nbt.put("Effects", effects.save());
         nbt.put("QuestData", questData.serializeNBT());
         nbt.put("BonusStats", bonusStats.save());
+        nbt.put("Training", training.save());
         nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
         return nbt;
     }
@@ -656,6 +634,9 @@ public class StatsData {
         if (nbt.contains("BonusStats")) {
             bonusStats.load(nbt.getCompound("BonusStats"));
         }
+        if (nbt.contains("Training")) {
+            training.load(nbt.getCompound("Training"));
+        }
         if (nbt.contains("HasInitializedHealth")) {
             hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
         }
@@ -675,6 +656,7 @@ public class StatsData {
         this.effects.copyFrom(other.effects);
         this.questData.deserializeNBT(other.questData.serializeNBT());
         this.bonusStats.copyFrom(other.bonusStats);
+        this.training.copyFrom(other.training);
         this.hasInitializedHealth = other.hasInitializedHealth;
 
         if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {

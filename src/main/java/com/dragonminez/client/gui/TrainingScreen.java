@@ -259,8 +259,19 @@ public class TrainingScreen extends Screen {
 		int notesToSpawn = isChord ? 2 : 1;
 
 		List<Integer> availableLanes = new ArrayList<>();
-		for (int i = 0; i < 4; i++) availableLanes.add(i);
+		for (int i = 0; i < 4; i++) {
+			boolean isLaneBlocked = false;
+			for (FallingArrow arrow : arrows) {
+				if (arrow.direction == i && arrow.isHold) {
+					isLaneBlocked = true;
+					break;
+				}
+			}
+			if (!isLaneBlocked) availableLanes.add(i);
+		}
+		if (availableLanes.isEmpty()) return;
 		Collections.shuffle(availableLanes);
+		notesToSpawn = Math.min(notesToSpawn, availableLanes.size());
 
 		for (int i = 0; i < notesToSpawn; i++) {
 			int dir = availableLanes.get(i);

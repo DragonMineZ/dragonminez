@@ -55,16 +55,13 @@ public class Effects {
     }
 
     public double getTotalEffectMultiplier() {
-        double totalMultiplier = 0.0;
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-            totalMultiplier = 1.0;
-        }
+        if (effectMap.isEmpty()) return 1.0;
+
+        boolean isMultiplicative = ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers();
+        double totalMultiplier = 1.0;
         for (Effect effect : effectMap.values()) {
-            if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-                totalMultiplier *= effect.getPower();
-            } else {
-                totalMultiplier += effect.getPower();
-            }
+            if (isMultiplicative) totalMultiplier *= effect.getPower();
+            else totalMultiplier += (effect.getPower() - 1.0);
         }
         return totalMultiplier;
     }
