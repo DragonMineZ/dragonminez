@@ -13,19 +13,24 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class TriggerAnimationS2C {
+
+	public enum AnimationType {
+		EVASION, DASH, KI_BLAST_SHOT, COMBO
+	}
+
 	private final UUID playerUUID;
-	private final String animationType;
+	private final AnimationType animationType;
 	private final int variant;
 	private final int entityId;
 
-	public TriggerAnimationS2C(UUID playerUUID, String animationType, int variant) {
+	public TriggerAnimationS2C(UUID playerUUID, AnimationType animationType, int variant) {
 		this.playerUUID = playerUUID;
 		this.animationType = animationType;
 		this.variant = variant;
 		this.entityId = -1;
 	}
 
-	public TriggerAnimationS2C(UUID playerUUID, String animationType, int variant, int entityId) {
+	public TriggerAnimationS2C(UUID playerUUID, AnimationType animationType, int variant, int entityId) {
 		this.playerUUID = playerUUID;
 		this.animationType = animationType;
 		this.variant = variant;
@@ -34,36 +39,33 @@ public class TriggerAnimationS2C {
 
 	public TriggerAnimationS2C(FriendlyByteBuf buffer) {
 		this.playerUUID = buffer.readUUID();
-		this.animationType = buffer.readUtf();
+		this.animationType = buffer.readEnum(AnimationType.class);
 		this.variant = buffer.readInt();
 		this.entityId = buffer.readInt();
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
 		buffer.writeUUID(playerUUID);
-		buffer.writeUtf(animationType);
+		buffer.writeEnum(animationType);
 		buffer.writeInt(variant);
 		buffer.writeInt(entityId);
 	}
 
-	public boolean handle(Supplier<NetworkEvent.Context> contextSupplier) {
+	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
-		context.enqueueWork(() -> {
-			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-				if (Minecraft.getInstance().level != null) {
-					Player player = Minecraft.getInstance().level.getPlayerByUUID(playerUUID);
-					if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
-						switch (animationType) {
-							case "evasion" -> animatable.dragonminez$triggerEvasion();
-							case "dash" -> animatable.dragonminez$triggerDash(variant);
-							case "ki_blast_shot" -> animatable.dragonminez$setShootingKi(variant == 0);
-							case "combo" -> animatable.dragonminez$triggerCombo(variant);
-						}
+		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+			if (Minecraft.getInstance().level != null) {
+				Player player = Minecraft.getInstance().level.getPlayerByUUID(playerUUID);
+				if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
+					switch (animationType) {
+						case EVASION -> animatable.dragonminez$triggerEvasion();
+						case DASH -> animatable.dragonminez$triggerDash(variant);
+						case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
+						case COMBO -> animatable.dragonminez$triggerCombo(variant);
 					}
 				}
-			});
-		});
+			}
+		}));
 		context.setPacketHandled(true);
-		return true;
 	}
 }

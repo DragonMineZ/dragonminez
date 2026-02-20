@@ -10,22 +10,26 @@ import java.util.function.Supplier;
 
 public class UpdateStatC2S {
 
-    private final String statusKey;
+	public enum StatAction {
+		CHARGE_KI, DESCEND, ACTION_CHARGE, BLOCK
+	}
+
+	private final StatAction statusKey;
     private final boolean value;
 
-    public UpdateStatC2S(String statusKey, boolean value) {
+    public UpdateStatC2S(StatAction statusKey, boolean value) {
         this.statusKey = statusKey;
         this.value = value;
     }
 
     public static void encode(UpdateStatC2S msg, FriendlyByteBuf buf) {
-        buf.writeUtf(msg.statusKey);
+        buf.writeEnum(msg.statusKey);
         buf.writeBoolean(msg.value);
     }
 
     public static UpdateStatC2S decode(FriendlyByteBuf buf) {
         return new UpdateStatC2S(
-                buf.readUtf(),
+                buf.readEnum(StatAction.class),
                 buf.readBoolean()
         );
     }
@@ -37,16 +41,16 @@ public class UpdateStatC2S {
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 switch (msg.statusKey) {
-                    case "isChargingKi":
+					case CHARGE_KI:
                         if (data.getStatus().isChargingKi() != msg.value) data.getStatus().setChargingKi(msg.value);
                         break;
-                    case "isDescending":
+					case DESCEND:
 						if (data.getStatus().isDescending() != msg.value) data.getStatus().setDescending(msg.value);
                         break;
-					case "isActionCharging":
+					case ACTION_CHARGE:
 						if (data.getStatus().isActionCharging() != msg.value) data.getStatus().setActionCharging(msg.value);
 						break;
-					case "isBlocking":
+					case BLOCK:
 						if (data.getStatus().isBlocking() != msg.value) data.getStatus().setBlocking(msg.value);
 						if (msg.value) data.getStatus().setLastBlockTime(System.currentTimeMillis());
 						break;

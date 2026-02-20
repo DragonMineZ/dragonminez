@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
+import com.dragonminez.common.network.CompressionUtil;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.Saga;
@@ -8,12 +9,13 @@ import com.dragonminez.common.util.QuestObjectiveTypeAdapter;
 import com.dragonminez.common.util.QuestRewardTypeAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.HashMap;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -24,34 +26,28 @@ public class SyncSagasS2C {
             .registerTypeAdapter(QuestReward.class, new QuestRewardTypeAdapter())
             .create();
 
-    private final Map<String, Saga> sagas;
+    private final byte[] compressedSagas;
 
     public SyncSagasS2C(Map<String, Saga> sagas) {
-        this.sagas = sagas;
+        this.compressedSagas = CompressionUtil.compress(GSON.toJson(sagas));
     }
 
     public SyncSagasS2C(FriendlyByteBuf buf) {
-        this.sagas = new HashMap<>();
-        int size = buf.readInt();
-        for (int i = 0; i < size; i++) {
-            String sagaJson = buf.readUtf(1048576);
-            Saga saga = GSON.fromJson(sagaJson, Saga.class);
-            if (saga != null && saga.getId() != null) {
-                this.sagas.put(saga.getId(), saga);
-            }
-        }
+        this.compressedSagas = buf.readByteArray();
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeInt(sagas.size());
-        sagas.values().forEach(saga -> {
-            buf.writeUtf(GSON.toJson(saga));
-        });
+        buf.writeByteArray(compressedSagas);
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> SagaManager.applySyncedSagas(sagas));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                String decompressedJson = CompressionUtil.decompress(compressedSagas);
+                Type mapType = new TypeToken<Map<String, Saga>>(){}.getType();
+                Map<String, Saga> sagas = GSON.fromJson(decompressedJson, mapType);
+                if (sagas != null) SagaManager.applySyncedSagas(sagas);
+            });
         });
         ctx.get().setPacketHandled(true);
     }

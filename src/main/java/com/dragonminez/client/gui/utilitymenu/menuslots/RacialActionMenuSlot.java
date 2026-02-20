@@ -42,7 +42,7 @@ public class RacialActionMenuSlot extends AbstractMenuSlot implements IUtilityMe
         String racialSkill = ConfigManager.getRaceCharacter(race) == null ? "" : ConfigManager.getRaceCharacter(race).getRacialSkill();
         if ("saiyan".equals(race)) {
             boolean wasActive = statsData.getStatus().isTailVisible();
-            NetworkHandler.sendToServer(new ExecuteActionC2S("toggle_tail"));
+            NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_TAIL));
             playToggleSound(!wasActive);
         }
         else if ("namekian".equals(racialSkill) || "bioandroid".equals(racialSkill) || "majin".equals(racialSkill)) {

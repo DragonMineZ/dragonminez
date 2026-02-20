@@ -234,7 +234,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 					.message(Component.translatable("gui.dragonminez.skills.purchase"))
 					.onPress(btn -> {
 						if (canAfford) {
-							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("purchase", selectedSkill, cost));
+							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.PURCHASE, selectedSkill, cost));
 							updateStatsData();
 						}
 					})

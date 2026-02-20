@@ -12,21 +12,36 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
 public class TrainingRewardC2S {
-	private final String stat;
+
+	public enum TrainStat {
+		NONE(""), STR("STR"), SKP("SKP"), RES("RES"), VIT("VIT"), PWR("PWR"), ENE("ENE");
+
+		private final String statKey;
+
+		TrainStat(String statKey) {
+			this.statKey = statKey;
+		}
+
+		public String getStatKey() {
+			return statKey;
+		}
+	}
+
+	private final TrainStat stat;
 	private final int points;
 
-	public TrainingRewardC2S(String stat, int points) {
+	public TrainingRewardC2S(TrainStat stat, int points) {
 		this.stat = stat;
 		this.points = points;
 	}
 
 	public TrainingRewardC2S(FriendlyByteBuf buf) {
-		this.stat = buf.readUtf();
+		this.stat = buf.readEnum(TrainStat.class);
 		this.points = buf.readInt();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
-		buf.writeUtf(stat);
+		buf.writeEnum(stat);
 		buf.writeInt(points);
 	}
 
@@ -41,13 +56,13 @@ public class TrainingRewardC2S {
 						return;
 					}
 					if (points == 0) {
-						statsData.getTraining().setCurrentTrainingStat(stat);
+						statsData.getTraining().setCurrentTrainingStat(stat.getStatKey());
 						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 						return;
 					}
-					if (statsData.getTraining().canTrain(stat)) {
-						statsData.getStats().addStat(stat, points);
-						statsData.getTraining().addTrainingPoints(stat, points);
+					if (statsData.getTraining().canTrain(stat.getStatKey())) {
+						statsData.getStats().addStat(stat.getStatKey(), points);
+						statsData.getTraining().addTrainingPoints(stat.getStatKey(), points);
 						player.playSound(SoundEvents.PLAYER_LEVELUP, 0.6F, 1.0F);
 						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					}

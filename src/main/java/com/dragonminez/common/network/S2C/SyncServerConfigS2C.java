@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.common.config.*;
+import com.dragonminez.common.network.CompressionUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -16,39 +17,45 @@ import java.util.function.Supplier;
 public class SyncServerConfigS2C {
 
     private static final Gson GSON = new GsonBuilder().create();
-    private final String generalServerJson;
-    private final String skillsJson;
-    private final String formsJson;
-    private final String raceStatsJson;
-    private final String raceCharacterJson;
+    private final byte[] generalServerBytes;
+    private final byte[] skillsBytes;
+    private final byte[] formsBytes;
+    private final byte[] raceStatsBytes;
+    private final byte[] raceCharacterBytes;
 
     public SyncServerConfigS2C(GeneralServerConfig serverConfig, SkillsConfig skillsConfig, Map<String, Map<String, FormConfig>> formsConfigs, Map<String, RaceStatsConfig> statsConfigs, Map<String, RaceCharacterConfig> characterConfigs) {
-        this.generalServerJson = GSON.toJson(serverConfig);
-        this.skillsJson = GSON.toJson(skillsConfig);
-        this.formsJson = GSON.toJson(formsConfigs);
-        this.raceStatsJson = GSON.toJson(statsConfigs);
-        this.raceCharacterJson = GSON.toJson(characterConfigs);
+        this.generalServerBytes = CompressionUtil.compress(GSON.toJson(serverConfig));
+        this.skillsBytes = CompressionUtil.compress(GSON.toJson(skillsConfig));
+        this.formsBytes = CompressionUtil.compress(GSON.toJson(formsConfigs));
+        this.raceStatsBytes = CompressionUtil.compress(GSON.toJson(statsConfigs));
+        this.raceCharacterBytes = CompressionUtil.compress(GSON.toJson(characterConfigs));
     }
 
     public SyncServerConfigS2C(FriendlyByteBuf buf) {
-        this.generalServerJson = buf.readUtf(1048576);
-        this.skillsJson = buf.readUtf(1048576);
-        this.formsJson = buf.readUtf(1048576);
-        this.raceStatsJson = buf.readUtf(1048576);
-        this.raceCharacterJson = buf.readUtf(1048576);
+        this.generalServerBytes = buf.readByteArray();
+        this.skillsBytes = buf.readByteArray();
+        this.formsBytes = buf.readByteArray();
+        this.raceStatsBytes = buf.readByteArray();
+        this.raceCharacterBytes = buf.readByteArray();
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeUtf(generalServerJson, 1048576);
-        buf.writeUtf(skillsJson,1048576 );
-        buf.writeUtf(formsJson, 1048576);
-        buf.writeUtf(raceStatsJson, 1048576);
-        buf.writeUtf(raceCharacterJson, 1048576);
+        buf.writeByteArray(generalServerBytes);
+        buf.writeByteArray(skillsBytes);
+        buf.writeByteArray(formsBytes);
+        buf.writeByteArray(raceStatsBytes);
+        buf.writeByteArray(raceCharacterBytes);
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                String generalServerJson = CompressionUtil.decompress(generalServerBytes);
+                String skillsJson = CompressionUtil.decompress(skillsBytes);
+                String formsJson = CompressionUtil.decompress(formsBytes);
+                String raceStatsJson = CompressionUtil.decompress(raceStatsBytes);
+                String raceCharacterJson = CompressionUtil.decompress(raceCharacterBytes);
+
                 GeneralServerConfig serverConfig = GSON.fromJson(generalServerJson, GeneralServerConfig.class);
                 SkillsConfig skillsConfig = GSON.fromJson(skillsJson, SkillsConfig.class);
 

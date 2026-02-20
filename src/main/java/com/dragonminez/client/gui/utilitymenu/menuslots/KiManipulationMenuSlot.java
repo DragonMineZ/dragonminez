@@ -26,7 +26,7 @@ public class KiManipulationMenuSlot extends AbstractMenuSlot implements IUtility
     public void handle(StatsData statsData, boolean rightClick) {
         if (statsData.getSkills().hasSkill("kimanipulation") && statsData.getSkills().hasSkill("kicontrol")) {
             boolean wasActive = statsData.getSkills().isSkillActive("kimanipulation");
-            NetworkHandler.sendToServer(new ExecuteActionC2S("toggle_ki_weapon", rightClick));
+            NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.TOGGLE_KI_WEAPON, rightClick));
             playToggleSound(!wasActive);
         }
     }

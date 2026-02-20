@@ -3,7 +3,6 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
-import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
@@ -188,7 +187,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 .textureCoords(0, 0, 0, 10)
                 .textureSize(10, 10)
                 .onPress(button -> {
-                    NetworkHandler.sendToServer(new IncreaseStatC2S(statName, tpMultiplier));
+                    IncreaseStatC2S.StatType statEnum = IncreaseStatC2S.StatType.valueOf(statName.toUpperCase());
+                    NetworkHandler.sendToServer(new IncreaseStatC2S(statEnum, tpMultiplier));
                 })
                 .build();
     }
@@ -411,14 +411,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
             double totalMult = statsData.getTotalMultiplier(statNamesUpper[i]);
             int baseValue = statValues[i];
-            double modifiedValue = baseValue * (1.0 + totalMult);
+            double modifiedValue = baseValue * totalMult;
 
             Component statComponent = Component.translatable("gui.dragonminez.character_stats." + statNames[i]).withStyle(style -> style.withBold(true));
             drawStringWithBorder2(graphics, statComponent, statLabelX, yPos, 0xD71432, 0x000000);
 
+            boolean multiNotAdd = ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers();
             int statColor = totalMult > 0.1 ? 0xFFFF00 : 0xFFD7AB;
-            String statText = totalMult > 0.1
-                    ? numberFormatter.format((int)modifiedValue) + " x" + String.format(Locale.US, "%.1f", 1.0 + totalMult)
+            String statText = multiNotAdd && totalMult > 1.0 || !multiNotAdd && totalMult > 0.1
+                    ? numberFormatter.format((int)modifiedValue) + " x" + String.format(Locale.US, "%.1f", totalMult)
                     : numberFormatter.format(baseValue);
 
             drawStringWithBorder2(graphics, Component.literal(statText), valueX + 5, yPos, statColor, 0x000000);
@@ -427,7 +428,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 List<FormattedCharSequence> tooltip = new ArrayList<>();
                 tooltip.add(Component.translatable("gui.dragonminez.character_stats." + statNames[i] + ".desc").getVisualOrderText());
 
-                if (totalMult > 0.1) {
+                if (multiNotAdd && totalMult > 1.0 || !multiNotAdd && totalMult > 0.1) {
                     tooltip.add(Component.literal("").getVisualOrderText());
                     tooltip.add(Component.translatable("gui.dragonminez.character_stats.base_value")
                             .append(": " + numberFormatter.format(baseValue))
@@ -435,6 +436,31 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                     tooltip.add(Component.translatable("gui.dragonminez.character_stats.modified_value")
                             .append(": " + numberFormatter.format((int)modifiedValue))
                             .withStyle(ChatFormatting.YELLOW).getVisualOrderText());
+
+                    double formMultiplier = statsData.getFormMultiplier(statNames[i]);
+                    double stackMultiplier = statsData.getStackFormMultiplier(statNames[i]);
+                    double effectsMultiplier = statsData.getEffectsMultiplier(statNames[i]);
+                    if (multiNotAdd && (formMultiplier > 1.0 || stackMultiplier > 1.0 || effectsMultiplier > 1.0)
+                            || !multiNotAdd && (formMultiplier >= 0.1 || stackMultiplier >= 0.1 || effectsMultiplier >= 0.1)) {
+                        tooltip.add(Component.literal("").getVisualOrderText());
+                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.multipliers")
+                                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                    }
+                    if (multiNotAdd && formMultiplier > 1.0 || !multiNotAdd && formMultiplier > 0.1) {
+                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.form_multiplier")
+                                .append(" x" + String.format(Locale.US, "%.1f", formMultiplier))
+                                .withStyle(ChatFormatting.GOLD).getVisualOrderText());
+                    }
+                    if (multiNotAdd && stackMultiplier > 1.0 || !multiNotAdd && stackMultiplier > 0.1) {
+                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.stack_multiplier")
+                                .append(" x" + String.format(Locale.US, "%.1f", stackMultiplier))
+                                .withStyle(ChatFormatting.RED).getVisualOrderText());
+                    }
+                    if (multiNotAdd && effectsMultiplier > 1.0 || !multiNotAdd && effectsMultiplier > 0.1) {
+                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.effects_multiplier")
+                                .append(" x" + String.format(Locale.US, "%.1f", effectsMultiplier))
+                                .withStyle(ChatFormatting.LIGHT_PURPLE).getVisualOrderText());
+                    }
                 }
 
                 var bonuses = statsData.getBonusStats().getBonuses(statNamesUpper[i]);
@@ -443,7 +469,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                     tooltip.add(Component.translatable("gui.dragonminez.character_stats.bonus")
                             .withStyle(ChatFormatting.AQUA).getVisualOrderText());
                     for (var bonus : bonuses) {
-                        String bonusText = bonus.name + ": " + bonus.operation +
+                        String bonusText = bonus.name.replace("_", " +") + ": " + bonus.operation +
                                 (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : java.lang.String.format(Locale.US, "%.0f", bonus.value));
                         tooltip.add(Component.literal("  " + bonusText)
                                 .withStyle(ChatFormatting.GREEN).getVisualOrderText());
