@@ -19,7 +19,6 @@ public class DMZServer {
 		SkillsCommand.register(dispatcher);
 		PointsCommand.register(dispatcher);
 		MasteryCommand.register(dispatcher);
-		StackMasteryCommand.register(dispatcher);
 		LocateCommand.register(dispatcher);
 		PartyCommand.register(dispatcher);
 		StoryCommand.register(dispatcher);
