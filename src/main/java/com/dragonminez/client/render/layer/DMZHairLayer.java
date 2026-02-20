@@ -177,7 +177,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			progressMap.put(entityId, 0.0f);
 		}
 
-        int phase = stats.getStatus().getActiveKaiokenPhase();
+        int phase = TransformationsHelper.getKaiokenPhase(stats);
         if (phase > 0) {
             colorFrom = applyKaiokenToHex(colorFrom, phase);
             colorTo = applyKaiokenToHex(colorTo, phase);
