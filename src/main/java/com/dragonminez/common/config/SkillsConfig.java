@@ -11,11 +11,22 @@ public class SkillsConfig {
 	public int getConfigVersion() { return configVersion; }
 	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
-    private Map<String, SkillCosts> skills = new HashMap<>();
+	private final List<String> formSkills = new ArrayList<>();
+	private final List<String> stackSkills = new ArrayList<>();
+	private final Map<String, SkillCosts> skills = new HashMap<>();
 
     public SkillsConfig() { createDefaults(); }
 
     private void createDefaults() {
+		formSkills.add("superform");
+		formSkills.add("legendaryforms");
+		formSkills.add("godform");
+		formSkills.add("androidforms");
+
+		stackSkills.add("kaioken");
+		stackSkills.add("ultrainstinct");
+		stackSkills.add("ultraego");
+
         List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(-1);
         jumpCosts.add(2000);
@@ -137,7 +148,15 @@ public class SkillsConfig {
 		skills.put("fusion", new SkillCosts(fusionCosts));
     }
 
-    public Map<String, SkillCosts> getSkills() {
+	public List<String> getFormSkills() {
+		return formSkills;
+	}
+
+	public List<String> getStackSkills() {
+		return stackSkills;
+	}
+
+	public Map<String, SkillCosts> getSkills() {
         return skills;
     }
 

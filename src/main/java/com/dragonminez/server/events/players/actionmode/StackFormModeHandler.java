@@ -19,12 +19,7 @@ public class StackFormModeHandler implements IActionModeHandler {
             String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
             String type = ConfigManager.getStackFormGroup(group).getFormType();
-            int skillLvl = switch (type) {
-                case "kaioken" -> data.getSkills().getSkillLevel("kaioken");
-                case "ultrainstinct" -> data.getSkills().getSkillLevel("ultrainstinct");
-                case "ultraego" -> data.getSkills().getSkillLevel("ultraego");
-                default -> 1;
-            };
+            int skillLvl = data.getSkills().getSkillLevel(type);
             return (5 * Math.max(1, skillLvl));
         }
         return 0;
