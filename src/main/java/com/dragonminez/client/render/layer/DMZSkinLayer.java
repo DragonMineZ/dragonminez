@@ -122,7 +122,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             return;
         }
 
-        if (logicKey.equals("saiyan") && stats.getStatus().isTailVisible()) {
+        boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || raceName.equals("saiyan");
+        if (isSaiyanLogic && stats.getStatus().isTailVisible()) {
             float[] tailColor = character.hasActiveForm() ? hair : hexToRGB("#572117");
             renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", tailColor, partialTick, packedLight, packedOverlay, alpha);
         }
@@ -135,31 +136,16 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         switch (logicKey) {
-            case "bioandroid", "bioandroid_semi", "bioandroid_perfect":
-                renderBodyBioAndroid(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, hair, alpha, partialTick, packedLight, packedOverlay, key);
-                break;
-
-            case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid":
-                renderBodyMajin(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, alpha, partialTick, packedLight, packedOverlay, key);
-                break;
-
-            case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third":
-                renderBodyFrostDemon(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, hair, alpha, partialTick, packedLight, packedOverlay, key);
-                break;
-
-            case "namekian", "namekian_orange":
-                renderBodyNamekian(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, alpha, partialTick, packedLight, packedOverlay);
-                break;
-
-            case "human", "saiyan", "saiyan_ssj4":
-                renderBodyHumanSaiyan(poseStack, animatable, model, bufferSource, player, stats, b1, hair, alpha, partialTick, packedLight, packedOverlay);
-                break;
-
-            default:
+            case "human", "saiyan", "saiyan_ssj4" -> renderBodyHumanSaiyan(poseStack, animatable, model, bufferSource, player, stats, b1, hair, alpha, partialTick, packedLight, packedOverlay);
+            case "namekian", "namekian_orange" -> renderBodyNamekian(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, alpha, partialTick, packedLight, packedOverlay);
+            case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid" -> renderBodyMajin(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, alpha, partialTick, packedLight, packedOverlay, logicKey);
+            case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third" -> renderBodyFrostDemon(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, hair, alpha, partialTick, packedLight, packedOverlay, logicKey);
+            case "bioandroid", "bioandroid_semi", "bioandroid_perfect" -> renderBodyBioAndroid(poseStack, animatable, model, bufferSource, player, stats, b1, b2, b3, hair, alpha, partialTick, packedLight, packedOverlay, logicKey);
+            default -> {
                 String gender = (raceConfig != null && raceConfig.hasGender()) ? "_" + character.getGender().toLowerCase() : "";
-                ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + key + gender + ".png");
+                ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + logicKey + gender + ".png");
                 renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(customTex), b1[0], b1[1], b1[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
-                break;
+            }
         }
     }
 

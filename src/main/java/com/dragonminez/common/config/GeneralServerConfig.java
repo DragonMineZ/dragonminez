@@ -46,7 +46,6 @@ public class GeneralServerConfig {
         private int maxStatValue = 10000;
 		private boolean storyModeEnabled = true;
 		private boolean createDefaultSagas = true;
-        private boolean kaiokenStackable = true;
         private int senzuCooldownTicks = 240;
         private Map<String, float[]> foodRegenerations = createDefaultFoodRegenerations();
         private double mightFruitPower = 1.2;
@@ -66,7 +65,6 @@ public class GeneralServerConfig {
         public int getMaxStatValue() { return Math.max(1000, Math.min(maxStatValue, Integer.MAX_VALUE)); }
 		public boolean isStoryModeEnabled() { return storyModeEnabled; }
 		public boolean isCreateDefaultSagas() { return createDefaultSagas; }
-		public boolean isKaiokenStackable() { return kaiokenStackable; }
         public int getSenzuCooldownTicks() { return Math.max(0, Math.min(senzuCooldownTicks, Integer.MAX_VALUE)); }
 
         public float[] getFoodRegeneration(String itemId) {

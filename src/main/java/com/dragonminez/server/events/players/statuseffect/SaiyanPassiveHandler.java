@@ -34,6 +34,9 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
                 handleSaiyanPassive(serverPlayer, data);
             }
         }
+        if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) {
+            serverPlayer.removeEffect(MainEffects.SAIYAN_PASSIVE.get());
+        }
     }
 
     private static void handleSaiyanPassive(ServerPlayer player, StatsData data) {

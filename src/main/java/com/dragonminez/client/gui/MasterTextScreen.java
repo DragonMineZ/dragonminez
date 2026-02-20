@@ -2,6 +2,8 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.network.C2S.NPCActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -233,19 +235,21 @@ public class MasterTextScreen extends Screen {
 						})
 						.build());
 			} else {
-				this.addRenderableWidget(new TexturedTextButton.Builder()
-						.position(x, y)
-						.size(74, 20)
-						.texture(BUTTONS_TEXTURE)
-						.textureCoords(0, 28, 0, 48)
-						.textureSize(74, 20)
-						.message(Component.translatable("gui.dragonminez.button.popo.haircut"))
-						.onPress(btn -> {
-							if (Minecraft.getInstance().player.level().isClientSide()) {
-								Minecraft.getInstance().setScreen(new HairEditorScreen(null, stats.getCharacter()));
-							}
-						})
-						.build());
+				if (HairManager.canUseHair(stats.getCharacter())) {
+					this.addRenderableWidget(new TexturedTextButton.Builder()
+							.position(x, y)
+							.size(74, 20)
+							.texture(BUTTONS_TEXTURE)
+							.textureCoords(0, 28, 0, 48)
+							.textureSize(74, 20)
+							.message(Component.translatable("gui.dragonminez.button.popo.haircut"))
+							.onPress(btn -> {
+								if (Minecraft.getInstance().player.level().isClientSide()) {
+									Minecraft.getInstance().setScreen(new HairEditorScreen(null, stats.getCharacter()));
+								}
+							})
+							.build());
+				}
 			}
 		}
 	}

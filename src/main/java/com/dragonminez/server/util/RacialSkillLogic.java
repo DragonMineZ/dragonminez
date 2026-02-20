@@ -137,7 +137,8 @@ public class RacialSkillLogic {
 		if (target instanceof MastersEntity) return;
 
 		if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {
-			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);
+			int secondsLeft = data.getCooldowns().getCooldown(Cooldowns.DRAIN);
+			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown", secondsLeft), true);
 			return;
 		}
 

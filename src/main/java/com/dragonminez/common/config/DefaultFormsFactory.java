@@ -289,7 +289,7 @@ public class DefaultFormsFactory {
         overdrive.setAuraColor("#FFFD99");
 		overdrive.setHasLightnings(true);
 		overdrive.setLightningColor("#E6F2F5");
-		overdrive.setHairType("ssj");
+		overdrive.setHairType("ssj2");
         setDefaultMasteryValues(overdrive);
         overdrive.setStackDrainMultiplier(2.0);
 
@@ -302,7 +302,7 @@ public class DefaultFormsFactory {
         solaris.setDefMultiplier(2.5);
         solaris.setPwrMultiplier(2.65);
         solaris.setEnergyDrain(0.22);
-		solaris.setHairType("ssj");
+		solaris.setHairType("ssj2");
         setDefaultMasteryValues(solaris);
         solaris.setStackDrainMultiplier(2.0);
 
@@ -368,7 +368,7 @@ public class DefaultFormsFactory {
         fusedAndroid.setHasLightnings(true);
         fusedAndroid.setLightningColor("#E63232");
         fusedAndroid.setBodyColor1("#4D9AE8");
-		fusedAndroid.setHairType("ssj");
+		fusedAndroid.setHairType("ssj2");
         fusedAndroid.setForcedHairCode("");
         setDefaultMasteryValues(fusedAndroid);
         fusedAndroid.setStackDrainMultiplier(2.0);
@@ -552,7 +552,7 @@ public class DefaultFormsFactory {
         ssj2.setDefMultiplier(1.65);
         ssj2.setPwrMultiplier(2.25);
         ssj2.setEnergyDrain(0.16);
-		ssj2.setHairType("ssj");
+		ssj2.setHairType("ssj2");
         setDefaultMasteryValues(ssj2);
         ssj2.setStackDrainMultiplier(2.0);
 

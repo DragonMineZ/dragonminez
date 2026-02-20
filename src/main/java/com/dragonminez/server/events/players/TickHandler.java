@@ -397,9 +397,7 @@ public class TickHandler {
 
 	private static boolean performAction(ServerPlayer player, StatsData data, ActionMode mode) {
 		IActionModeHandler handler = ACTION_MODE_HANDLERS.get(mode.name());
-		if (handler != null) {
-			return handler.performAction(player, data);
-		}
+		if (handler != null) return handler.performAction(player, data);
 		return false;
 	}
 
@@ -420,7 +418,8 @@ public class TickHandler {
 				data.getResources().removeStamina(staminaDrain);
 				player.setHealth(player.getHealth() - healthDrain);
 			} else {
-				NetworkHandler.sendToServer(new ExecuteActionC2S("force_descend"));
+				data.getCharacter().clearActiveStackForm();
+				data.getCharacter().clearActiveForm();
 			}
 		}
 	}

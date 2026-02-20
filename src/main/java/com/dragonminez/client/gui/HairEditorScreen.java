@@ -1135,7 +1135,7 @@ public class HairEditorScreen extends ScaledScreen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (isDraggingModel) {
+        if (isDraggingModel && !colorPickerVisible) {
             double uiMouseX = toUiX(mouseX);
 			double uiMouseY = toUiY(mouseY);
             double deltaX = uiMouseX - lastMouseX;
@@ -1310,7 +1310,8 @@ public class HairEditorScreen extends ScaledScreen {
 
 		NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, character.getHairBase()));
 		NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, character.getHairSSJ()));
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, character.getHairSSJ3()));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, character.getHairSSJ2()));
+		NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, character.getHairSSJ3()));
 
         if (previousScreen != null) {
             isSwitchingMenu = true;

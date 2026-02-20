@@ -195,10 +195,24 @@ public class FusionLogic {
 		}
 
 		double finalMult = minMult + (ratio * (maxMult - minMult));
+		String[] statsToBoost = ConfigManager.getServerConfig().getGameplay().getFusionBoosts();
 
-		l.getBonusStats().addBonus("STR", "FusionBonus", "+", p.getStats().getStrength() * finalMult);
-		l.getBonusStats().addBonus("SKP", "FusionBonus", "+", p.getStats().getStrikePower() * finalMult);
-		l.getBonusStats().addBonus("PWR", "FusionBonus", "+", p.getStats().getKiPower() * finalMult);
+		for (String stat : statsToBoost) {
+			int partnerStatValue = getStatValue(p, stat);
+			l.getBonusStats().addBonus(stat, "FusionBonus", "+", partnerStatValue * finalMult);
+		}
+	}
+
+	private static int getStatValue(StatsData data, String statName) {
+		return switch (statName) {
+			case "STR" -> data.getStats().getStrength();
+			case "SKP" -> data.getStats().getStrikePower();
+			case "RES" -> data.getStats().getResistance();
+			case "VIT" -> data.getStats().getVitality();
+			case "PWR" -> data.getStats().getKiPower();
+			case "ENE" -> data.getStats().getEnergy();
+			default -> 0;
+		};
 	}
 
 	private static void mixAppearance(StatsData l, StatsData p) {

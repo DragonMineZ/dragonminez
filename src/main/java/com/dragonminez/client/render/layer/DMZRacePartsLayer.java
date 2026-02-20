@@ -3,6 +3,7 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -94,9 +95,13 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
         boolean hasForm = (character.hasActiveForm() && !currentForm.equals("base"));
 
-        String customModelValue = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+        RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+        String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
                 ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
-        final String logicKey = customModelValue.isEmpty() ? race : customModelValue;
+
+        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+        if (logicKey.isEmpty()) logicKey = race;
 
         float[] colorBody1 = ColorUtils.hexToRgb(character.getBodyColor());
         float[] currentHairForTail = ColorUtils.hexToRgb(character.getHairColor());
@@ -152,20 +157,18 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             return colorBody1;
         }
 
-        if (logicKey.equals("majin") || logicKey.equals("majin_super") || logicKey.equals("majin_ultra") ||
-                logicKey.equals("majin_evil") || logicKey.equals("majin_kid") || race.equals("majin")) {
-
+        if (logicKey.startsWith("majin") || race.equals("majin")) {
             setupMajinParts(partsModel, character.getGender().toLowerCase(), character.getHairId());
             return colorBody1;
         }
 
-        if (logicKey.equals("frostdemon") || race.equals("frostdemon")) {
-            if (currentForm.equals(FrostDemonForms.FINAL_FORM) || currentForm.equals(FrostDemonForms.FULLPOWER)) {
+        if (logicKey.startsWith("frostdemon") || race.equals("frostdemon")) {
+            if (currentForm.equals(FrostDemonForms.FINAL_FORM) || currentForm.equals(FrostDemonForms.FULLPOWER) || logicKey.equals("frostdemon_fifth") || currentForm.contains("fifth")) {
                 return null;
             }
 
             boolean isSecondForm = currentForm.equals(FrostDemonForms.SECOND_FORM);
-            if (race.equals("frostdemon") && isSecondForm) {
+            if (isSecondForm) {
                 partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
             } else {
                 partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
@@ -202,12 +205,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
     }
 
     private void setupFrostDemonParts(BakedGeoModel partsModel, String currentForm) {
-        if (Objects.equals(currentForm, FrostDemonForms.SECOND_FORM)) {
-            partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
-        }
-        else {
-            partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
-        }
+        if (Objects.equals(currentForm, FrostDemonForms.SECOND_FORM)) partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
+        else partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
     }
 
     private void setupMajinParts(BakedGeoModel partsModel, String gender, int hairType) {

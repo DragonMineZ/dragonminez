@@ -21,6 +21,8 @@ public class BioPassiveHandler implements IStatusEffectHandler {
 
 	@Override
 	public void onPlayerSecond(ServerPlayer serverPlayer, StatsData data) {
-
+		if (!data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {
+			serverPlayer.removeEffect(MainEffects.BIOANDROID_PASSIVE.get());
+		}
 	}
 }

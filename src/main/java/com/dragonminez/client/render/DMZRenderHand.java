@@ -251,7 +251,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             return;
         }
 
-        if (logicKey.startsWith("frostdemon") && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER) || Objects.equals(form, FrostDemonForms.FIFTH_FORM))) {
+        if (logicKey.startsWith("frostdemon") && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER) || Objects.equals(form, FrostDemonForms.FIFTH_FORM) || logicKey.equals("frostdemon_fifth"))) {
             pathPrefix = "textures/entity/races/frostdemon/" + (logicKey.contains("fifth") ? "fifth" : "finalform") + "_bodytype_" + bodyType + "_";
             renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
             if (bodyType == 0) renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), h);
