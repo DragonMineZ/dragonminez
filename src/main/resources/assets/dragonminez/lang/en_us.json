@@ -266,6 +266,8 @@
   "wish.shenron.namekcpu.desc": "Receive a Namekian Radar CPU.",
   "wish.shenron.saiyanship.name": "Saiyan Spaceship",
   "wish.shenron.saiyanship.desc": "Receive a Saiyan Spaceship.",
+  "wish.shenron.racialskillreset.name": "Reset Passive",
+  "wish.shenron.racialskillreset.desc": "Resets the player's Racial Passive Skill. This only applies to Saiyans, Namekians and Majin",
   "wish.porunga.senzu.name": "Senzu Beans",
   "wish.porunga.senzu.desc": "Receive some Senzu Beans.",
   "wish.porunga.tps.name": "Training Points",
@@ -282,6 +284,8 @@
   "wish.porunga.pothala_yellow.desc": "Receive a pair of Yellow Potara Earrings.",
   "wish.porunga.pothala_green.name": "Potara Earrings (Green)",
   "wish.porunga.pothala_green.desc": "Receive a pair of Green Potara Earrings.",
+  "wish.porunga.racialskillreset.name": "Reset Passive",
+  "wish.porunga.racialskillreset.desc": "Resets the player's Racial Passive Skill. This only applies to Saiyans, Namekians and Majin",
 
   "//": "RACES, CLASSES, GENDERS",
   "race.dragonminez.human": "§bHuman",
