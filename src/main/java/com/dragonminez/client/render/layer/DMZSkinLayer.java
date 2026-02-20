@@ -5,6 +5,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -20,6 +21,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -86,6 +88,30 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!f.getBodyColor2().isEmpty()) b2 = hexToRGB(f.getBodyColor2());
             if (!f.getBodyColor3().isEmpty()) b3 = hexToRGB(f.getBodyColor3());
             if (!f.getHairColor().isEmpty()) hair = hexToRGB(f.getHairColor());
+        }
+
+        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == com.dragonminez.common.stats.ActionMode.FORM) {
+            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+            if (nextForm != null) {
+                float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+
+                if (!nextForm.getBodyColor1().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getBodyColor1());
+                    b1 = new float[]{Mth.lerp(factor, b1[0], target[0]), Mth.lerp(factor, b1[1], target[1]), Mth.lerp(factor, b1[2], target[2])};
+                }
+                if (!nextForm.getBodyColor2().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getBodyColor2());
+                    b2 = new float[]{Mth.lerp(factor, b2[0], target[0]), Mth.lerp(factor, b2[1], target[1]), Mth.lerp(factor, b2[2], target[2])};
+                }
+                if (!nextForm.getBodyColor3().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getBodyColor3());
+                    b3 = new float[]{Mth.lerp(factor, b3[0], target[0]), Mth.lerp(factor, b3[1], target[1]), Mth.lerp(factor, b3[2], target[2])};
+                }
+                if (!nextForm.getHairColor().isEmpty()) {
+                    float[] target = hexToRGB(nextForm.getHairColor());
+                    hair = new float[]{Mth.lerp(factor, hair[0], target[0]), Mth.lerp(factor, hair[1], target[1]), Mth.lerp(factor, hair[2], target[2])};
+                }
+            }
         }
 
         boolean isOozaruForm = raceName.equals("saiyan") &&
@@ -294,24 +320,43 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
     private void renderHair(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
         var character = stats.getCharacter();
-        String raceName = character.getRace().toLowerCase();
+        String raceName = character.getRaceName().toLowerCase();
         String currentForm = character.getActiveForm();
         int hairId = character.getHairId();
 
         if (!HairManager.canUseHair(character)) return;
         if (raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) return;
         if (hairId == 5) return;
-		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
+        if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
 
-        float[] tempTint = hexToRGB(character.getHairColor());
+        float[] currentTint = hexToRGB(character.getHairColor());
         if (character.hasActiveForm() && character.getActiveFormData() != null) {
             var activeForm = character.getActiveFormData();
             if (!activeForm.getHairColor().isEmpty()) {
-                tempTint = hexToRGB(activeForm.getHairColor());
+                currentTint = hexToRGB(activeForm.getHairColor());
             }
         }
 
-        final float[] hairTint = tempTint;
+        float[] finalTint = currentTint;
+
+        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+
+            if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
+                float[] targetTint = hexToRGB(nextForm.getHairColor());
+
+                float chargeProgress = stats.getResources().getActionCharge() / 100.0f;
+                chargeProgress = Mth.clamp(chargeProgress, 0.0f, 1.0f);
+
+                finalTint = new float[] {
+                        Mth.lerp(chargeProgress, currentTint[0], targetTint[0]),
+                        Mth.lerp(chargeProgress, currentTint[1], targetTint[1]),
+                        Mth.lerp(chargeProgress, currentTint[2], targetTint[2])
+                };
+            }
+        }
+
+        final float[] hairTint = finalTint;
 
         model.getBone("head").ifPresent(headBone -> {
             float originalZ = headBone.getPosZ();
@@ -421,6 +466,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     }
 
     private void dispatchFaceRender(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, boolean isModelEmpty, String race, float pt, int pl, int po, float alpha) {
+
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+
         float[] eye1 = hexToRGB(character.getEye1Color());
         float[] eye2 = hexToRGB(character.getEye2Color());
         float[] skin = hexToRGB(character.getBodyColor());
@@ -434,6 +482,46 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!f.getHairColor().isEmpty()) hair = hexToRGB(f.getHairColor());
             if (!f.getBodyColor1().isEmpty()) skin = hexToRGB(f.getBodyColor1());
             if (!f.getBodyColor2().isEmpty()) b2 = hexToRGB(f.getBodyColor2());
+        }
+
+        if (stats != null && stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+            if (nextForm != null) {
+                float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+
+                if (!nextForm.getEye1Color().isEmpty()) {
+                    float[] targetEye1 = hexToRGB(nextForm.getEye1Color());
+                    eye1 = new float[]{
+                            Mth.lerp(factor, eye1[0], targetEye1[0]),
+                            Mth.lerp(factor, eye1[1], targetEye1[1]),
+                            Mth.lerp(factor, eye1[2], targetEye1[2])
+                    };
+                }
+                if (!nextForm.getEye2Color().isEmpty()) {
+                    float[] targetEye2 = hexToRGB(nextForm.getEye2Color());
+                    eye2 = new float[]{
+                            Mth.lerp(factor, eye2[0], targetEye2[0]),
+                            Mth.lerp(factor, eye2[1], targetEye2[1]),
+                            Mth.lerp(factor, eye2[2], targetEye2[2])
+                    };
+                }
+                if (!nextForm.getBodyColor1().isEmpty()) {
+                    float[] targetSkin = hexToRGB(nextForm.getBodyColor1());
+                    skin = new float[]{
+                            Mth.lerp(factor, skin[0], targetSkin[0]),
+                            Mth.lerp(factor, skin[1], targetSkin[1]),
+                            Mth.lerp(factor, skin[2], targetSkin[2])
+                    };
+                }
+                if (!nextForm.getHairColor().isEmpty()) {
+                    float[] targetHair = hexToRGB(nextForm.getHairColor());
+                    hair = new float[]{
+                            Mth.lerp(factor, hair[0], targetHair[0]),
+                            Mth.lerp(factor, hair[1], targetHair[1]),
+                            Mth.lerp(factor, hair[2], targetHair[2])
+                    };
+                }
+            }
         }
 
         if (faceKey.equals("human") || faceKey.equals("saiyan") || faceKey.equals("saiyan_ssj4")) {

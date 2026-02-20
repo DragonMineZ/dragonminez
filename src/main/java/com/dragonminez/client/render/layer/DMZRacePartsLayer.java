@@ -102,9 +102,39 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         final String logicKey = customModelValue.isEmpty() ? race : customModelValue;
 
         float[] colorBody1 = ColorUtils.hexToRgb(character.getBodyColor());
+        float[] currentHairForTail = ColorUtils.hexToRgb(character.getHairColor());
+
         if (hasForm && character.getActiveFormData() != null) {
             String formBody = character.getActiveFormData().getBodyColor1();
             if (!formBody.isEmpty()) colorBody1 = ColorUtils.hexToRgb(formBody);
+
+            String formHair = character.getActiveFormData().getHairColor();
+            if (!formHair.isEmpty()) currentHairForTail = ColorUtils.hexToRgb(formHair);
+        }
+
+        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == com.dragonminez.common.stats.ActionMode.FORM) {
+            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+            if (nextForm != null) {
+                float factor = net.minecraft.util.Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+
+                if (!nextForm.getBodyColor1().isEmpty()) {
+                    float[] targetBody = ColorUtils.hexToRgb(nextForm.getBodyColor1());
+                    colorBody1 = new float[] {
+                            net.minecraft.util.Mth.lerp(factor, colorBody1[0], targetBody[0]),
+                            net.minecraft.util.Mth.lerp(factor, colorBody1[1], targetBody[1]),
+                            net.minecraft.util.Mth.lerp(factor, colorBody1[2], targetBody[2])
+                    };
+                }
+
+                if (!nextForm.getHairColor().isEmpty()) {
+                    float[] targetHair = ColorUtils.hexToRgb(nextForm.getHairColor());
+                    currentHairForTail = new float[] {
+                            net.minecraft.util.Mth.lerp(factor, currentHairForTail[0], targetHair[0]),
+                            net.minecraft.util.Mth.lerp(factor, currentHairForTail[1], targetHair[1]),
+                            net.minecraft.util.Mth.lerp(factor, currentHairForTail[2], targetHair[2])
+                    };
+                }
+            }
         }
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || race.equals("saiyan");
@@ -112,11 +142,11 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         if (isSaiyanLogic && !stats.getStatus().isTailVisible() && !isOozaru) {
             setupSaiyanParts(partsModel);
-            float[] tailColor = ColorUtils.hexToRgb("#572117");
-            if (hasForm && character.getActiveFormData() != null) {
-                String formHair = character.getActiveFormData().getHairColor();
-                if (!formHair.isEmpty()) tailColor = ColorUtils.hexToRgb(formHair);
-            }
+
+            float[] tailColor = (hasForm || stats.getStatus().isActionCharging())
+                    ? currentHairForTail
+                    : ColorUtils.hexToRgb("#572117");
+
             return tailColor;
         }
 
@@ -133,24 +163,18 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         }
 
         if (logicKey.equals("frostdemon") || race.equals("frostdemon")) {
-            if (currentForm.equals(FrostDemonForms.FINAL_FORM) ||
-                    currentForm.equals(FrostDemonForms.FULLPOWER)) {
+            if (currentForm.equals(FrostDemonForms.FINAL_FORM) || currentForm.equals(FrostDemonForms.FULLPOWER)) {
                 return null;
             }
-            boolean isHornedModel = logicKey.equals("frostdemon");
-            boolean isPrimitiveForm = currentForm.isEmpty() || currentForm.equals("base") ||
-                    currentForm.equals(FrostDemonForms.SECOND_FORM);
 
-            if (isHornedModel || isPrimitiveForm) {
-
-                if (race.equals("frostdemon") && currentForm.equals(FrostDemonForms.SECOND_FORM)) {
-                    partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
-                } else {
-                    partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
-                }
-
-                return ColorUtils.rgbIntToFloat(0x1A1A1A);
+            boolean isSecondForm = currentForm.equals(FrostDemonForms.SECOND_FORM);
+            if (race.equals("frostdemon") && isSecondForm) {
+                partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
+            } else {
+                partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
             }
+
+            return ColorUtils.rgbIntToFloat(0x1A1A1A);
         }
 
         return null;
