@@ -74,7 +74,7 @@ public class FormModeHandler implements IActionModeHandler {
             if (data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty()) {
                 String translatedStackFormGroup = I18n.get("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
                 String translatedStackFormName = I18n.get("race.dragonminez.stack.form." + data.getCharacter().getActiveStackFormGroup() + "." + data.getCharacter().getActiveStackForm());
-                translatedFormName += " " + translatedStackFormGroup + " " +translatedStackFormName;
+                translatedFormName += " " + translatedStackFormGroup + " x " +translatedStackFormName;
             }
 
             if (!player.hasEffect(MainEffects.TRANSFORMED.get())) {
