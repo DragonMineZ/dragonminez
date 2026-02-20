@@ -55,6 +55,7 @@ public class GeneralServerConfig {
 		private String[] fusionBoosts = {"STR", "SKP", "PWR"};
 		private int fusionDurationSeconds = 900;
 		private int fusionCooldownSeconds = 1800;
+		private boolean multiplicationInsteadOfAdditionForMultipliers = false;
 
 		public boolean isCommandOutputOnConsole() { return commandOutputOnConsole; }
 		public int getReviveCooldownSeconds() { return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE)); }
@@ -79,8 +80,11 @@ public class GeneralServerConfig {
 		public String[] getFusionBoosts() { return fusionBoosts; }
 		public int getFusionDurationSeconds() { return Math.max(0, Math.min(fusionDurationSeconds, Integer.MAX_VALUE)); }
 		public int getFusionCooldownSeconds() { return Math.max(0, Math.min(fusionCooldownSeconds, Integer.MAX_VALUE)); }
+		public boolean isMultiplicationInsteadOfAdditionForMultipliers() {
+			return multiplicationInsteadOfAdditionForMultipliers;
+		}
 
-        private static Map<String, float[]> createDefaultFoodRegenerations() {
+		private static Map<String, float[]> createDefaultFoodRegenerations() {
             Map<String, float[]> defaults = new HashMap<>();
             defaults.put("dragonminez:raw_dino_meat", new float[]{0.10f, 0.10f, 0.10f});
             defaults.put("dragonminez:cooked_dino_meat", new float[]{0.15f, 0.15f, 0.15f});
