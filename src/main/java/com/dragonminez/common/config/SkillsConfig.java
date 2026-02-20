@@ -11,6 +11,7 @@ public class SkillsConfig {
 	public int getConfigVersion() { return configVersion; }
 	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
+	private final List<String> kiSkills = new ArrayList<>();
 	private final List<String> formSkills = new ArrayList<>();
 	private final List<String> stackSkills = new ArrayList<>();
 	private final Map<String, SkillCosts> skills = new HashMap<>();
@@ -147,6 +148,10 @@ public class SkillsConfig {
 		fusionCosts.add(75000);
 		skills.put("fusion", new SkillCosts(fusionCosts));
     }
+
+	public List<String> getKiSkills() {
+		return kiSkills;
+	}
 
 	public List<String> getFormSkills() {
 		return formSkills;

@@ -171,6 +171,7 @@
   "gui.dragonminez.skills.tab.skills": "Skills",
   "gui.dragonminez.skills.tab.kiattacks": "Ki Attacks",
   "gui.dragonminez.skills.tab.forms": "Forms",
+  "gui.dragonminez.skills.tab.stacks": "Stacks",
   "gui.dragonminez.skills.level": "Level: %s/%s",
   "gui.dragonminez.skills.upgrade": "Upgrade",
   "gui.dragonminez.skills.purchase": "Purchase",
