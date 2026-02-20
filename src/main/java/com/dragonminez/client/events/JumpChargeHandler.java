@@ -32,6 +32,8 @@ public class JumpChargeHandler {
             if (!data.getStatus().hasCreatedCharacter()) return;
 			if (data.getResources().getPowerRelease() < 5) return;
 
+            if (!data.getSkills().hasSkill("jump") || !data.getSkills().isSkillActive("jump")) return;
+
             jumpLevel[0] = data.getSkills().getSkillLevel("jump");
 			isStunned[0] = data.getStatus().isStunned();
         });

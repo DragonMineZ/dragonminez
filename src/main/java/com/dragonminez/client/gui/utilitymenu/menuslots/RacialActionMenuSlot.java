@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.utilitymenu.menuslots;
 import com.dragonminez.client.gui.utilitymenu.AbstractMenuSlot;
 import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.client.gui.utilitymenu.IUtilityMenuSlot;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -16,6 +17,7 @@ public class RacialActionMenuSlot extends AbstractMenuSlot implements IUtilityMe
     public ButtonInfo render(StatsData statsData) {
         ActionMode currentMode = statsData.getStatus().getSelectedAction();
         String race = statsData.getCharacter().getRaceName();
+        String racialSkill = ConfigManager.getRaceCharacter(race) == null ? "" : ConfigManager.getRaceCharacter(race).getRacialSkill();
 
         if ("saiyan".equals(race)) {
             return new ButtonInfo(
@@ -23,7 +25,7 @@ public class RacialActionMenuSlot extends AbstractMenuSlot implements IUtilityMe
                     Component.translatable("gui.action.dragonminez." + (statsData.getStatus().isTailVisible())),
                     statsData.getStatus().isTailVisible()
             );
-        } else if ("namekian".equals(race) || "bioandroid".equals(race) || "majin".equals(race)) {
+        } else if ("namekian".equals(racialSkill) || "bioandroid".equals(racialSkill) || "majin".equals(racialSkill)) {
             return new ButtonInfo(
                     Component.translatable("gui.action.dragonminez.racial." + race).withStyle(ChatFormatting.BOLD),
                     Component.translatable("gui.action.dragonminez." + (statsData.getStatus().getSelectedAction() == ActionMode.RACIAL ? "true" : "false")),
@@ -35,14 +37,15 @@ public class RacialActionMenuSlot extends AbstractMenuSlot implements IUtilityMe
     }
 
     @Override
-    public void handle(StatsData statsData) {
+    public void handle(StatsData statsData, boolean rightClick) {
         String race = statsData.getCharacter().getRaceName();
+        String racialSkill = ConfigManager.getRaceCharacter(race) == null ? "" : ConfigManager.getRaceCharacter(race).getRacialSkill();
         if ("saiyan".equals(race)) {
             boolean wasActive = statsData.getStatus().isTailVisible();
             NetworkHandler.sendToServer(new ExecuteActionC2S("toggle_tail"));
             playToggleSound(!wasActive);
         }
-        else if ("namekian".equals(race) || "bioandroid".equals(race) || "majin".equals(race)) {
+        else if ("namekian".equals(racialSkill) || "bioandroid".equals(racialSkill) || "majin".equals(racialSkill)) {
             boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.RACIAL;
             NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.RACIAL));
             playToggleSound(!wasActive);

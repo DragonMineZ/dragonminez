@@ -40,6 +40,7 @@ public class XenoverseHUD {
 				int maxKi = data.getMaxEnergy();
 				int maxStm = data.getMaxStamina();
 				int powerRelease = resources.getPowerRelease();
+				if (powerRelease > 100) powerRelease = 100;
 				int formRelease;
 				if (resources.getActionCharge() < 10) formRelease = 10 + resources.getActionCharge();
 				else formRelease = resources.getActionCharge();

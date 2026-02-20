@@ -118,7 +118,7 @@ public class ForgeCommonEvents {
 				endFusionIfNeeded(player);
 
 				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
-					if (data.getStatus().isAlive()) data.getCooldowns().addCooldown(Cooldowns.REVIVE, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
+					if (data.getStatus().isAlive()) data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
 					if (data.getStatus().hasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
 					data.getEffects().removeAllEffects();

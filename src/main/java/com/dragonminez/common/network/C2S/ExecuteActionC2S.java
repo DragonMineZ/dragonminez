@@ -18,18 +18,26 @@ import java.util.function.Supplier;
 
 public class ExecuteActionC2S {
 	private final String action;
+	private final boolean rightClick;
 	private static int kiWeaponCycle = 0;
 
 	public ExecuteActionC2S(String action) {
+		this(action, false);
+	}
+
+	public ExecuteActionC2S(String action, boolean rightClick) {
 		this.action = action;
+		this.rightClick = rightClick;
 	}
 
 	public ExecuteActionC2S(FriendlyByteBuf buffer) {
 		this.action = buffer.readUtf();
+		this.rightClick = buffer.readBoolean();
 	}
 
 	public void encode(FriendlyByteBuf buffer) {
 		buffer.writeUtf(action);
+		buffer.writeBoolean(rightClick);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
@@ -76,34 +84,40 @@ public class ExecuteActionC2S {
 							needsSync = true;
 						}
 						case "force_descend" -> {
-							FormConfig.FormData previousStackForm = TransformationsHelper.getPreviousStackForm(data);
-							if (previousStackForm != null) {
-								data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousStackForm.getName());
-							} else {
+							if (rightClick) {
 								data.getCharacter().clearActiveStackForm();
-							}
-
-							FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-							if (previousForm != null) {
-								data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-							} else {
 								if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
 								else data.getCharacter().clearActiveForm();
+							} else {
+								FormConfig.FormData previousStackForm = TransformationsHelper.getPreviousStackForm(data);
+								if (previousStackForm != null) {
+									data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousStackForm.getName());
+								} else {
+									data.getCharacter().clearActiveStackForm();
+								}
+
+								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+								if (previousForm != null) {
+									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+								} else {
+									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
+									else data.getCharacter().clearActiveForm();
+								}
 							}
+							
 							if (data.getCharacter().getActiveForm().isEmpty() || (data.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
 								data.getResources().setPowerRelease(0);
-
 							}
 							needsSync = true;
 						}
 						case "cycle_form_group" -> {
 							data.getStatus().setSelectedAction(ActionMode.FORM);
-							TransformationsHelper.cycleSelectedFormGroup(data);
+							TransformationsHelper.cycleSelectedFormGroup(data, rightClick);
 							needsSync = true;
 						}
 						case "cycle_stack_form_group" -> {
 							data.getStatus().setSelectedAction(ActionMode.STACK);
-							TransformationsHelper.cycleSelectedStackFormGroup(data);
+							TransformationsHelper.cycleSelectedStackFormGroup(data, rightClick);
 							needsSync = true;
 						}
 						case "instant_transform" -> {
@@ -132,29 +146,27 @@ public class ExecuteActionC2S {
 							needsSync = true;
 						}
 						case "toggle_ki_weapon" -> {
-							switch (kiWeaponCycle) {
-								case 0 -> {
-									if (data.getSkills().hasSkill("kimanipulation")) {
-										data.getSkills().setSkillActive("kimanipulation", true);
-										data.getStatus().setKiWeaponType("blade");
-										kiWeaponCycle = 1;
+							if (data.getSkills().hasSkill("kimanipulation")) {
+								if (rightClick) {
+									data.getSkills().setSkillActive("kimanipulation", !data.getSkills().isSkillActive("kimanipulation"));
+								} else {
+									switch (kiWeaponCycle) {
+										case 0 -> {
+											data.getStatus().setKiWeaponType("blade");
+											kiWeaponCycle = 1;
+										}
+										case 1 -> {
+											data.getStatus().setKiWeaponType("scythe");
+											kiWeaponCycle = 2;
+										}
+										case 2 -> {
+											data.getStatus().setKiWeaponType("clawlance");
+											kiWeaponCycle = 0;
+										}
 									}
 								}
-								case 1 -> {
-									data.getStatus().setKiWeaponType("scythe");
-									kiWeaponCycle = 2;
-								}
-								case 2 -> {
-									data.getStatus().setKiWeaponType("clawlance");
-									kiWeaponCycle = 3;
-								}
-								case 3 -> {
-									data.getSkills().setSkillActive("kimanipulation", false);
-									data.getStatus().setKiWeaponType("blade");
-									kiWeaponCycle = 0;
-								}
+								needsSync = true;
 							}
-							needsSync = true;
 						}
 					}
 

@@ -20,7 +20,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.function.Supplier;
 
@@ -135,7 +134,7 @@ public class NPCActionC2S {
 
 	private static void handleBaba(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
-			if (!data.getCooldowns().hasCooldown(Cooldowns.REVIVE)) {
+			if (!data.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA)) {
 				data.getStatus().setAlive(true);
 				player.sendSystemMessage(Component.translatable("gui.dragonminez.lines.baba.revived"));
 			}

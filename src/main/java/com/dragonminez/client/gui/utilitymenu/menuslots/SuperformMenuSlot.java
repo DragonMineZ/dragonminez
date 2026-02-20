@@ -29,7 +29,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
     }
 
     @Override
-    public void handle(StatsData statsData) {
+    public void handle(StatsData statsData, boolean rightClick) {
         if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1 || statsData.getSkills().getSkillLevel("androidforms") >= 1) {
             boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.FORM;
             if (wasActive && statsData.getCharacter().hasActiveForm()) {
@@ -41,7 +41,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
                 NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FORM));
                 playToggleSound(true);
             } else {
-                NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_form_group"));
+                NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_form_group", rightClick));
                 playToggleSound(true);
             }
         }

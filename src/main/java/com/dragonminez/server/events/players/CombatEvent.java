@@ -124,15 +124,18 @@ public class CombatEvent {
 							attacker.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
 							ComboManager.resetCombo(attacker.getUUID());
 							attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+							attacker.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20, 0, false, false, true));
 						}
 					} else {
 						ComboManager.resetCombo(attacker.getUUID());
 						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
 						attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+						attacker.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20, 0, false, false, true));
 					}
 				} else {
 					ComboManager.resetCombo(attacker.getUUID());
 					attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
+					attacker.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20, 0, false, false, true));
 				}
 
 				double finalDmzDamage;

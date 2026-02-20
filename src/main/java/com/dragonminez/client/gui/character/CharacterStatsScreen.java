@@ -375,7 +375,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
                         tooltip.add(Component.literal(" ")
                                 .append(stackFormComponent.copy().withStyle(ChatFormatting.GRAY))
-                                .append(Component.literal(": " + String.format(Locale.US, "%.2f", mastery) + " / " + String.format(Locale.US, "%.0f", maxMastery)).withStyle(ChatFormatting.LIGHT_PURPLE))
+                                .append(Component.literal(": " + String.format(Locale.US, "%.2f", mastery) + " / " + String.format(Locale.US, "%.0f", maxMastery)).withStyle(ChatFormatting.AQUA))
                                 .getVisualOrderText());
                     }
                 }

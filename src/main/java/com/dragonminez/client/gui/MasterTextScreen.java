@@ -145,7 +145,7 @@ public class MasterTextScreen extends Screen {
 	}
 
 	private void initEnma(int x, int y, StatsData stats) {
-		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE);
+		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
 		this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.main", Minecraft.getInstance().player.getName());
 
 		this.addRenderableWidget(new TexturedTextButton.Builder()
@@ -167,8 +167,8 @@ public class MasterTextScreen extends Screen {
 	}
 
 	private void initBaba(int x, int y, StatsData stats) {
-		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE);
-		int cdTime = hasCd ? (int) stats.getCooldowns().getCooldown(Cooldowns.REVIVE) / 20 : 0;
+		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
+		int cdTime = hasCd ? (int) stats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20 : 0;
 		this.currentDialogue = Component.translatable("gui.dragonminez.lines.baba.main", Minecraft.getInstance().player.getName(), cdTime);
 
 		if (!hasCd) {

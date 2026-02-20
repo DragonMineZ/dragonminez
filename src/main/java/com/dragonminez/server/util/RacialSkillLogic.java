@@ -36,21 +36,19 @@ public class RacialSkillLogic {
 			LivingEntity target = getTargetEntity(player, 3.0);
 			RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 
-			if (target == null) {
-				return;
-			}
-
+			if (target == null) return;
 			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative() && !(target instanceof MastersEntity) && !(target instanceof PunchMachineEntity)) {
 				player.displayClientMessage(Component.translatable("message.dragonminez.racial.target_too_strong"), true);
 				return;
 			}
 
-			switch (config.getRacialSkill()) {
+			if (config != null) switch (config.getRacialSkill()) {
 				case "namekian" -> handleNamekianAssimilation(player, data, target);
 				case "majin" -> handleMajinAbsorption(player, data, target);
 				case "bioandroid" -> handleBioAndroidDrain(player, data, target);
 				default -> {}
 			}
+
 		});
 	}
 
@@ -61,11 +59,6 @@ public class RacialSkillLogic {
 
 		if (data.getResources().getRacialSkillCount() >= config.getNamekianAssimilationAmount()) {
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.limit_reached"), true);
-			return;
-		}
-
-		if (data.getCooldowns().hasCooldown(Cooldowns.ASSIMILATION)) {
-			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);
 			return;
 		}
 
@@ -106,11 +99,6 @@ public class RacialSkillLogic {
 
 		if (data.getResources().getRacialSkillCount() >= config.getMajinAbsorptionAmount()) {
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.limit_reached"), true);
-			return;
-		}
-
-		if (data.getCooldowns().hasCooldown(Cooldowns.ABSORPTION)) {
-			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);
 			return;
 		}
 
@@ -164,6 +152,7 @@ public class RacialSkillLogic {
 		data.getStatus().setDrainingTargetId(target.getId());
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN_ACTIVE, duration);
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);
+		player.addEffect(new MobEffectInstance(MainEffects.BIOANDROID_PASSIVE.get(), config.getBioAndroidCooldownSeconds() * 20, 0, false, false, true));
 		player.playSound(MainSounds.TP_SHORT.get());
 		target.playSound(MainSounds.TP_SHORT.get());
 	}

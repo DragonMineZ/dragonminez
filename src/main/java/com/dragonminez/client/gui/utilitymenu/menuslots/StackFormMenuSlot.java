@@ -30,7 +30,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
     }
 
     @Override
-    public void handle(StatsData statsData) {
+    public void handle(StatsData statsData, boolean rightClick) {
         if (statsData.getSkills().getSkillLevel("kaioken") >= 1
                 || statsData.getSkills().getSkillLevel("ultrainstinct") >= 1
                 || statsData.getSkills().getSkillLevel("ultraego") >= 1) {
@@ -44,7 +44,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
                 NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.STACK));
                 playToggleSound(true);
             } else {
-                NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_stack_form_group"));
+                NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_stack_form_group", rightClick));
                 playToggleSound(true);
             }
         }

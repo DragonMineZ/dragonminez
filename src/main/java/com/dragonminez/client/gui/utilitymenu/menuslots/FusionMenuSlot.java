@@ -26,7 +26,7 @@ public class FusionMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot
     }
 
     @Override
-    public void handle(StatsData statsData) {
+    public void handle(StatsData statsData, boolean rightClick) {
         if (statsData.getSkills().hasSkill("fusion")) {
             boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.FUSION;
             NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.FUSION));

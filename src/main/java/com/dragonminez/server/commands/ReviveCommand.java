@@ -11,7 +11,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.GameType;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +38,7 @@ public class ReviveCommand {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getStatus().isAlive()) {
 					data.getStatus().setAlive(true);
-					data.getCooldowns().removeCooldown(Cooldowns.REVIVE);
+					data.getCooldowns().removeCooldown(Cooldowns.REVIVE_BABA);
 					player.setHealth(player.getMaxHealth());
 					player.sendSystemMessage(Component.translatable("command.dragonminez.revive.target"));
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

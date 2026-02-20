@@ -9,10 +9,8 @@ public class Cooldowns {
     private final Map<String, Integer> cooldowns;
 
     public static final String SENZU_KARIN = "SenzuKarin";
-    public static final String REVIVE = "Revive";
+    public static final String REVIVE_BABA = "Revive";
     public static final String ZENKAI = "Zenkai";
-	public static final String ASSIMILATION = "Assimilation";
-	public static final String ABSORPTION = "Absorption";
 	public static final String DRAIN = "Drain";
 	public static final String COMBAT = "CombatTimer";
 	public static final String POISE_CD = "PoiseCooldown";
@@ -23,6 +21,8 @@ public class Cooldowns {
 	public static final String DASH_ACTIVE = "DashActive";
 	public static final String KI_BLAST_CD = "KiBlastCooldown";
 	public static final String COMBO_ATTACK_CD = "ComboAttackCooldown";
+	public static final String MAJIN_REVIVE_ACTIVE = "MajinReviveActive";
+	public static final String MAJIN_REVIVE_CD = "MajinReviveCooldown";
 
     public Cooldowns() {
         this.cooldowns = new HashMap<>();

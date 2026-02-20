@@ -436,9 +436,9 @@ public class StatsEvents {
 
 		final int[] jumpLevel = {0};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (data.getStatus().hasCreatedCharacter()) {
-				jumpLevel[0] = data.getSkills().getSkillLevel("jump");
-			}
+			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (!data.getSkills().hasSkill("jump") || !data.getSkills().isSkillActive("jump")) return;
+			jumpLevel[0] = data.getSkills().getSkillLevel("jump");
 		});
 
 		if (jumpLevel[0] <= 0) return;

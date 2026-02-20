@@ -11,6 +11,8 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -325,7 +327,7 @@ public class RaceSelectionScreen extends ScaledScreen {
     private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
         LivingEntity player = Minecraft.getInstance().player;
         if (player == null) return;
-
+		int adjustedScale = getAdjustedModelScale(scale);
         Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
         Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
         pose.mul(cameraOrientation);
@@ -344,7 +346,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 150.0D);
-        InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
+        InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
         graphics.pose().popPose();
 
         player.yBodyRot = yBodyRotO;
@@ -353,6 +355,31 @@ public class RaceSelectionScreen extends ScaledScreen {
         player.yHeadRotO = yHeadRotO;
         player.yHeadRot = yHeadRot;
     }
+
+	protected int getAdjustedModelScale(int baseScale) {
+		var player = Minecraft.getInstance().player;
+		if (player == null) return baseScale;
+
+		final float[] inverseScale = {1.0f};
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			var character = stats.getCharacter();
+			var activeForm = character.getActiveFormData();
+
+			float currentScale;
+			if (activeForm != null) {
+				float[] formScaling = activeForm.getModelScaling();
+				float[] charScaling = character.getModelScaling();
+				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
+			} else {
+				float[] charScaling = character.getModelScaling();
+				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
+			}
+
+			if (currentScale > 1.0f) inverseScale[0] = 0.9375f / currentScale;
+		});
+
+		return (int)(baseScale * inverseScale[0]);
+	}
 
     private List<String> wrapText(String text, int maxWidth) {
         List<String> lines = new ArrayList<>();

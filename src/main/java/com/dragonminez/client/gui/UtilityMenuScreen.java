@@ -140,8 +140,9 @@ public class UtilityMenuScreen extends Screen {
 
 	private void handleSlotClick(int index) {
 		IUtilityMenuSlot menuSlot = MENU_SLOTS.get(index);
+		boolean wasRightClick = Minecraft.getInstance().options.keyUse.isDown();
 		if (menuSlot != null) {
-			menuSlot.handle(statsData);
+			menuSlot.handle(statsData, wasRightClick);
 		}
 	}
 
@@ -172,7 +173,7 @@ public class UtilityMenuScreen extends Screen {
 
 			// Middle Row
 			MENU_SLOTS.set(6, new EmptyMenuSlot());
-			MENU_SLOTS.set(7, new EmptyMenuSlot());
+			MENU_SLOTS.set(7, new JumpMenuSlot());
 
 			// Bottom Row
 			MENU_SLOTS.set(10, new KiManipulationMenuSlot());

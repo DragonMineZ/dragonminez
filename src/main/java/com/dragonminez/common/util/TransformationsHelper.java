@@ -171,7 +171,7 @@ public class TransformationsHelper {
 		return !group.equalsIgnoreCase("") && !currentForm.equalsIgnoreCase("");
 	}
 
-	public static void cycleSelectedFormGroup(StatsData statsData) {
+	public static void cycleSelectedFormGroup(StatsData statsData, boolean reverse) {
 		String race = statsData.getCharacter().getRaceName();
 		Map<String, FormConfig> allGroups = ConfigManager.getAllFormsForRace(race);
 		if (allGroups.isEmpty()) return;
@@ -189,17 +189,25 @@ public class TransformationsHelper {
 		int index = unlockedGroups.indexOf(current);
 
 		String nextGroup;
-		if (index == -1 || index >= unlockedGroups.size() - 1) {
-			nextGroup = unlockedGroups.get(0);
+		if (reverse) {
+			if (index <= 0) {
+				nextGroup = unlockedGroups.get(unlockedGroups.size() - 1);
+			} else {
+				nextGroup = unlockedGroups.get(index - 1);
+			}
 		} else {
-			nextGroup = unlockedGroups.get(index + 1);
+			if (index == -1 || index >= unlockedGroups.size() - 1) {
+				nextGroup = unlockedGroups.get(0);
+			} else {
+				nextGroup = unlockedGroups.get(index + 1);
+			}
 		}
 
         if(nextGroup != null ) statsData.getCharacter().setSelectedFormGroup(nextGroup);
 
     }
 
-	public static void cycleSelectedStackFormGroup(StatsData statsData) {
+	public static void cycleSelectedStackFormGroup(StatsData statsData, boolean reverse) {
 		Map<String, FormConfig> allGroups = ConfigManager.getAllStackForms();
 		if (allGroups.isEmpty()) return;
 
@@ -216,10 +224,18 @@ public class TransformationsHelper {
 		int index = unlockedGroups.indexOf(current);
 
 		String nextGroup;
-		if (index == -1 || index >= unlockedGroups.size() - 1) {
-			nextGroup = unlockedGroups.get(0);
+		if (reverse) {
+			if (index <= 0) {
+				nextGroup = unlockedGroups.get(unlockedGroups.size() - 1);
+			} else {
+				nextGroup = unlockedGroups.get(index - 1);
+			}
 		} else {
-			nextGroup = unlockedGroups.get(index + 1);
+			if (index == -1 || index >= unlockedGroups.size() - 1) {
+				nextGroup = unlockedGroups.get(0);
+			} else {
+				nextGroup = unlockedGroups.get(index + 1);
+			}
 		}
 
 		if(nextGroup != null ) statsData.getCharacter().setSelectedStackFormGroup(nextGroup);

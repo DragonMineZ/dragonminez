@@ -442,10 +442,12 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
+		STATUS_EFFECT_HANDLERS.add(new ComboStatusHandler());
+		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
+		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());
 	}
 
 	public static void registerActionModeHandler(String actionMode, IActionModeHandler actionModeHandler) {
-		// FIXME: Should we write an error to the log when someone attempts to register a handler for an existing mode?
 		ACTION_MODE_HANDLERS.putIfAbsent(actionMode, actionModeHandler);
 	}
 

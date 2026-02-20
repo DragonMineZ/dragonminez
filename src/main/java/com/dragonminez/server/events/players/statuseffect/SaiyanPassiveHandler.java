@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players.statuseffect;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Cooldowns;
@@ -15,7 +16,9 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
 
     @Override
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
-
+        if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) {
+            player.removeEffect(MainEffects.SAIYAN_PASSIVE.get());
+        }
     }
 
     @Override

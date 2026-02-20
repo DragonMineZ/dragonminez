@@ -1,5 +1,6 @@
 package com.dragonminez.server.events.players.actionmode;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IActionModeHandler;
 import com.dragonminez.server.util.RacialSkillLogic;
@@ -9,7 +10,8 @@ public class RacialModeHandler implements IActionModeHandler {
     @Override
     public int handleActionCharge(ServerPlayer player, StatsData data) {
         String race = data.getCharacter().getRaceName();
-        if ("bioandroid".equals(race)) {
+        String racialSkill = ConfigManager.getRaceCharacter(race) == null ? "" : ConfigManager.getRaceCharacter(race).getRacialSkill();
+        if ("bioandroid".equals(racialSkill)) {
             RacialSkillLogic.attemptRacialAction(player);
             data.getStatus().setActionCharging(false);
             return 0;
