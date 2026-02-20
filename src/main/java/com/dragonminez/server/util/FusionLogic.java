@@ -58,8 +58,24 @@ public class FusionLogic {
 		if (MinecraftForge.EVENT_BUS.post(event)) return false;
 		applyFusion(leader, partner, lData, pData, "METAMORU", lvl1, lvl2);
 		lData.getStatus().setFusionTimer(finalDuration);
-		leader.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), finalDuration, 0, false, false));
-		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), finalDuration, 0, false, false));
+		leader.addEffect(
+				new MobEffectInstance(
+						MainEffects.FUSED.get(),
+						finalDuration,
+						0,
+						false,
+						false
+				)
+		);
+		partner.addEffect(
+				new MobEffectInstance(
+						MainEffects.FUSED.get(),
+						finalDuration,
+						0,
+						false,
+						false
+				)
+		);
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()),true);
 		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
 		return true;

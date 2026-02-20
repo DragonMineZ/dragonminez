@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players.actionmode;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -10,6 +11,7 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 
 public class FormModeHandler implements IActionModeHandler {
     @Override
@@ -77,6 +79,18 @@ public class FormModeHandler implements IActionModeHandler {
                 String translatedStackFormGroup = I18n.get("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
                 String translatedStackFormName = I18n.get("race.dragonminez.stack.form." + data.getCharacter().getActiveStackFormGroup() + "." + data.getCharacter().getActiveStackForm());
                 translatedFormName += " " + translatedStackFormGroup + " " +translatedStackFormName;
+            }
+
+            if (!player.hasEffect(MainEffects.TRANSFORMED.get())) {
+                player.addEffect(
+                        new MobEffectInstance(
+                                MainEffects.TRANSFORMED.get(),
+                                -1,
+                                0,
+                                false,
+                                false,
+                                true)
+                );
             }
             player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", translatedFormName), true);
         }

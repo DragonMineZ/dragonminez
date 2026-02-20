@@ -32,12 +32,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
@@ -124,18 +121,45 @@ public class CombatEvent {
 							attacker.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 0.8f, 1.0f);
 							ComboManager.resetCombo(attacker.getUUID());
 							attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
-							attacker.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20, 0, false, false, true));
+							attacker.addEffect(
+									new MobEffectInstance(
+											MainEffects.COMBO_CD.get(),
+											ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20,
+											0,
+											false,
+											false,
+											true
+									)
+							);
 						}
 					} else {
 						ComboManager.resetCombo(attacker.getUUID());
 						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.5F);
 						attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
-						attacker.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20, 0, false, false, true));
+						attacker.addEffect(
+								new MobEffectInstance(
+										MainEffects.COMBO_CD.get(),
+										ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20,
+										0,
+										false,
+										false,
+										true
+								)
+						);
 					}
 				} else {
 					ComboManager.resetCombo(attacker.getUUID());
 					attackerData.getCooldowns().setCooldown(Cooldowns.COMBO_ATTACK_CD, ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20);
-					attacker.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20, 0, false, false, true));
+					attacker.addEffect(
+							new MobEffectInstance(
+									MainEffects.COMBO_CD.get(),
+									ConfigManager.getServerConfig().getCombat().getComboAttacksCooldownSeconds() * 20,
+									0,
+									false,
+									false,
+									true
+							)
+					);
 				}
 
 				double finalDmzDamage;
@@ -251,6 +275,16 @@ public class CombatEvent {
 									victim.addEffect(new MobEffectInstance(MainEffects.STUN.get(), stunDuration, 0, false, false, true));
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+									victim.addEffect(
+											new MobEffectInstance(
+													MainEffects.POISE_CD.get(),
+													regenCd,
+													0,
+													false,
+													false,
+													true
+											)
+									);
 
 									int currentStamina = victimData.getResources().getCurrentStamina();
 									victimData.getResources().setCurrentStamina(currentStamina / 2);
@@ -270,6 +304,16 @@ public class CombatEvent {
 
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
+									victim.addEffect(
+											new MobEffectInstance(
+													MainEffects.POISE_CD.get(),
+													regenCd,
+													0,
+													false,
+													false,
+													true
+											)
+									);
 
 									float originalDmg = (float) currentDamage[0];
 									float finalDmg;
@@ -279,7 +323,16 @@ public class CombatEvent {
 										if (sourceEntity instanceof LivingEntity attackerLiving) {
 											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
-											attackerLiving.addEffect(new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true));
+											attackerLiving.addEffect(
+													new MobEffectInstance(
+															MainEffects.STAGGER.get(),
+															60,
+															1,
+															false,
+															false,
+															true
+													)
+											);
 										}
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
 
@@ -492,14 +545,43 @@ public class CombatEvent {
 
 			if (canDoubleDash) {
 				data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
+				player.addEffect(
+						new MobEffectInstance(
+								MainEffects.DASH_CD.get(),
+								dashCdTicks,
+								0,
+								false,
+								false,
+								true
+						)
+				);
+
 				data.getCooldowns().setCooldown(Cooldowns.DOUBLEDASH_CD, doubleDashCdTicks);
+				player.addEffect(
+						new MobEffectInstance(
+								MainEffects.DOUBLEDASH_CD.get(),
+								doubleDashCdTicks,
+								0,
+								false,
+								false,
+								true
+						)
+				);
+
 				data.getCooldowns().removeCooldown(Cooldowns.DASH_ACTIVE);
-				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
-				player.addEffect(new MobEffectInstance(MainEffects.DOUBLEDASH_CD.get(), doubleDashCdTicks, 0, false, false, true));
 			} else {
 				data.getCooldowns().setCooldown(Cooldowns.DASH_CD, dashCdTicks);
+				player.addEffect(
+						new MobEffectInstance(
+								MainEffects.DASH_CD.get(),
+								dashCdTicks,
+								0,
+								false,
+								false,
+								true
+						)
+				);
 				data.getCooldowns().setCooldown(Cooldowns.DASH_ACTIVE, 15);
-				player.addEffect(new MobEffectInstance(MainEffects.DASH_CD.get(), dashCdTicks, 0, false, false, true));
 			}
 
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.5F, 1.5F + player.getRandom().nextFloat() * 0.3F);
