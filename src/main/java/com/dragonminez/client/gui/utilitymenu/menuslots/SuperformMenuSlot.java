@@ -19,10 +19,17 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         String race = statsData.getCharacter().getRaceName();
 
         if (statsData.getSkills().getSkillLevel("superform") >= 1 || statsData.getSkills().getSkillLevel("legendaryforms") >= 1 || statsData.getSkills().getSkillLevel("godform") >= 1 || statsData.getSkills().getSkillLevel("androidforms") >= 1) {
-            return new ButtonInfo(
-                    Component.translatable("race.dragonminez." + race + ".group." + statsData.getCharacter().getSelectedFormGroup()).withStyle(ChatFormatting.BOLD),
-                    Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + TransformationsHelper.getFirstFormGroup(statsData.getCharacter().getSelectedFormGroup(), race)),
-                    currentMode == ActionMode.FORM);
+            String selectedFormGroup = statsData.getCharacter().getSelectedFormGroup();
+            String firstFormGroup = TransformationsHelper.getFirstFormGroup(selectedFormGroup, race);
+            if (selectedFormGroup != null && !selectedFormGroup.isEmpty()
+                    && firstFormGroup != null && !firstFormGroup.isEmpty()) {
+                return new ButtonInfo(
+                        Component.translatable("race.dragonminez." + race + ".group." + statsData.getCharacter().getSelectedFormGroup()).withStyle(ChatFormatting.BOLD),
+                        Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + TransformationsHelper.getFirstFormGroup(statsData.getCharacter().getSelectedFormGroup(), race)),
+                        currentMode == ActionMode.FORM);
+            } else {
+                return new ButtonInfo();
+            }
         } else {
             return new ButtonInfo();
         }
