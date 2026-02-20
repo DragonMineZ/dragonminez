@@ -73,11 +73,12 @@ public class FormModeHandler implements IActionModeHandler {
             if (data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty()) {
                 Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
                 Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getActiveStackFormGroup() + "." + data.getCharacter().getActiveStackForm());
+
                 translatedFormName = Component.empty()
                         .append(translatedFormName)
-                        .append(Component.literal(" "))
-                        .append(translatedStackFormGroup)
                         .append(Component.literal(" x "))
+                        .append(translatedStackFormGroup)
+                        .append(Component.literal(" "))
                         .append(translatedStackFormName);
             }
 

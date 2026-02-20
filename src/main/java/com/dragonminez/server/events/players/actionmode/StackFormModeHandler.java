@@ -68,12 +68,24 @@ public class StackFormModeHandler implements IActionModeHandler {
 
             Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
             Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());
-            String translatedStackForm = translatedStackFormGroup + " " + translatedStackFormName;
+            Component fullFormName;
+
             if (data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty()) {
                 Component translatedFormName = Component.translatable("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
-                translatedStackForm = translatedFormName + " x " + translatedStackForm;
+                fullFormName = Component.empty()
+                        .append(translatedFormName)
+                        .append(Component.literal(" x "))
+                        .append(translatedStackFormGroup)
+                        .append(Component.literal(" "))
+                        .append(translatedStackFormName);
+            } else {
+                fullFormName = Component.empty()
+                        .append(translatedStackFormGroup)
+                        .append(Component.literal(" "))
+                        .append(translatedStackFormName);
             }
-            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", (translatedStackForm)), true);
+
+            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", fullFormName), true);
 
             if (!player.hasEffect(MainEffects.STACK_TRANSFORMED.get())) {
                 player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED.get(), -1, 0, false, false, true));
