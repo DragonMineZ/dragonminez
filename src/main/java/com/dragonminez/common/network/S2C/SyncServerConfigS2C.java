@@ -31,19 +31,19 @@ public class SyncServerConfigS2C {
     }
 
     public SyncServerConfigS2C(FriendlyByteBuf buf) {
-        this.generalServerJson = buf.readUtf(32767);
-        this.skillsJson = buf.readUtf(32767);
-        this.formsJson = buf.readUtf(32767);
-        this.raceStatsJson = buf.readUtf(32767);
-        this.raceCharacterJson = buf.readUtf(32767);
+        this.generalServerJson = buf.readUtf(1048576);
+        this.skillsJson = buf.readUtf(1048576);
+        this.formsJson = buf.readUtf(1048576);
+        this.raceStatsJson = buf.readUtf(1048576);
+        this.raceCharacterJson = buf.readUtf(1048576);
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeUtf(generalServerJson);
-        buf.writeUtf(skillsJson);
-        buf.writeUtf(formsJson);
-        buf.writeUtf(raceStatsJson);
-        buf.writeUtf(raceCharacterJson);
+        buf.writeUtf(generalServerJson, 1048576);
+        buf.writeUtf(skillsJson,1048576 );
+        buf.writeUtf(formsJson, 1048576);
+        buf.writeUtf(raceStatsJson, 1048576);
+        buf.writeUtf(raceCharacterJson, 1048576);
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {

@@ -66,7 +66,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
         String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData().hasCustomModel())
+        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
                 ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
 
         String key = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
@@ -436,9 +436,20 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         String currentForm = character.getActiveForm();
         int bodyType = character.getBodyType();
 
-        String customModelValue = (character.hasActiveForm() && character.getActiveFormData().hasCustomModel())
-                ? character.getActiveFormData().getCustomModel().toLowerCase()
-                : (ConfigManager.getRaceCharacter(raceName) != null ? ConfigManager.getRaceCharacter(raceName).getCustomModel().toLowerCase() : "");
+        String customModelValue = "";
+        if (character.hasActiveForm()) {
+            var activeForm = character.getActiveFormData();
+            if (activeForm != null && activeForm.hasCustomModel()) {
+                customModelValue = activeForm.getCustomModel().toLowerCase();
+            }
+        }
+
+        if (customModelValue.isEmpty()) {
+            var raceConfig = ConfigManager.getRaceCharacter(raceName);
+            if (raceConfig != null && raceConfig.getCustomModel() != null && !raceConfig.getCustomModel().isEmpty()) {
+                customModelValue = raceConfig.getCustomModel().toLowerCase();
+            }
+        }
 
         final boolean isModelEmpty = customModelValue.isEmpty();
         final String finalFaceKey = isModelEmpty ? raceName : customModelValue;

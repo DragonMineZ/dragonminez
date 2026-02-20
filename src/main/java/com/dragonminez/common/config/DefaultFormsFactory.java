@@ -767,7 +767,7 @@ public class DefaultFormsFactory {
         FormConfig.FormData evil = new FormConfig.FormData();
         evil.setName(MajinForms.EVIL);
         evil.setUnlockOnSkillLevel(2);
-        evil.setCustomModel("");
+        evil.setCustomModel("human_slim");
         evil.setModelScaling(new float[]{0.9f, 1.0f, 0.9f});
         evil.setStrMultiplier(1.75);
         evil.setSkpMultiplier(1.75);

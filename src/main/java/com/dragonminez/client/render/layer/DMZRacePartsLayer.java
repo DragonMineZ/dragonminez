@@ -94,10 +94,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
         boolean hasForm = (character.hasActiveForm() && !currentForm.equals("base"));
 
-        String customModelValue = (character.hasActiveForm() && character.getActiveFormData().hasCustomModel())
-                ? character.getActiveFormData().getCustomModel().toLowerCase()
-                : (ConfigManager.getRaceCharacter(race) != null ? ConfigManager.getRaceCharacter(race).getCustomModel().toLowerCase() : "");
-
+        String customModelValue = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
         final String logicKey = customModelValue.isEmpty() ? race : customModelValue;
 
         float[] colorBody1 = ColorUtils.hexToRgb(character.getBodyColor());
@@ -149,7 +147,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             return tailColor;
         }
 
-        if (logicKey.equals("namekian") || logicKey.equals("namekian_orange") || race.equals("namekian")) {
+        if (logicKey.equals("namekian") || logicKey.equals("namekian_orange")) {
             setupNamekianParts(partsModel, character.getHairId());
             return colorBody1;
         }

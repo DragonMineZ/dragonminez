@@ -54,7 +54,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             var character = data.getCharacter();
             String race = character.getRaceName().toLowerCase();
             String gender = character.getGender().toLowerCase();
-            String customRaceGender = ConfigManager.getRaceCharacter(race).hasGender() ? gender : "";
+            String customRaceGender = (ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).hasGender()) ? gender : "";
             String currentForm = character.getActiveForm();
             int bodyType = character.getBodyType();
 
@@ -139,6 +139,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         if (customRaceGender != null && !customRaceGender.isEmpty()) customRaceGender = "_" + customRaceGender;
         ResourceLocation customLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/" + modelName + customRaceGender + ".geo.json");
+
         if (fileExists(customLoc)) return customLoc;
 
         return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;

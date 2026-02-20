@@ -13,6 +13,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorItem;
+import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -49,10 +50,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @OnlyIn(Dist.CLIENT)
 public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -115,6 +113,8 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
     }
 
+
+
     private void applyBlockingTransform(PoseStack stack, float side) {
         stack.translate(side * -0.25F, -0.15F, -0.4F);
         stack.mulPose(Axis.XP.rotationDegrees(-20.0F));
@@ -123,21 +123,20 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
     }
 
     private void renderHand(PoseStack pPoseStack, MultiBufferSource pBuffer, int pCombinedLight, AbstractClientPlayer pPlayer, ModelPart pRendererArm, ModelPart pRendererArmwear) {
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, pPlayer);
-        var stats = statsCap.orElse(new StatsData(pPlayer));
+        var stats = StatsProvider.get(StatsCapability.INSTANCE, pPlayer).orElse(new StatsData(pPlayer));
         var character = stats.getCharacter();
+        int kaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
 
-        PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
-        playermodel.attackTime = 0.0F;
-        playermodel.crouching = false;
-        playermodel.swimAmount = 0.0F;
-        playermodel.setupAnim(pPlayer, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
+        this.model.attackTime = 0.0F;
+        this.model.crouching = false;
+        this.model.swimAmount = 0.0F;
+        this.model.setupAnim(pPlayer, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
         pRendererArm.xRot = 0.0F;
 
-        String raceName = character.getRace().toLowerCase();
+        String raceName = character.getRaceName().toLowerCase();
         int bodyType = character.getBodyType();
         String currentForm = character.getActiveForm();
-        boolean hasForm = (currentForm != null && !currentForm.isEmpty() && !currentForm.equals("base"));
+        boolean hasForm = (character.hasActiveForm() && !Objects.equals(currentForm, "base"));
 
         float[] b1 = ColorUtils.hexToRgb(character.getBodyColor());
         float[] b2 = ColorUtils.hexToRgb(character.getBodyColor2());
@@ -145,80 +144,62 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         float[] hair = ColorUtils.hexToRgb(character.getHairColor());
 
         if (hasForm && character.getActiveFormData() != null) {
-            var activeForm = character.getActiveFormData();
-            if (!activeForm.getBodyColor1().isEmpty()) b1 = ColorUtils.hexToRgb(activeForm.getBodyColor1());
-            if (!activeForm.getBodyColor2().isEmpty()) b2 = ColorUtils.hexToRgb(activeForm.getBodyColor2());
-            if (!activeForm.getBodyColor3().isEmpty()) b3 = ColorUtils.hexToRgb(activeForm.getBodyColor3());
-            if (!activeForm.getHairColor().isEmpty()) hair = ColorUtils.hexToRgb(activeForm.getHairColor());
+            var f = character.getActiveFormData();
+            if (!f.getBodyColor1().isEmpty()) b1 = ColorUtils.hexToRgb(f.getBodyColor1());
+            if (!f.getBodyColor2().isEmpty()) b2 = ColorUtils.hexToRgb(f.getBodyColor2());
+            if (!f.getBodyColor3().isEmpty()) b3 = ColorUtils.hexToRgb(f.getBodyColor3());
+            if (!f.getHairColor().isEmpty()) hair = ColorUtils.hexToRgb(f.getHairColor());
         }
 
-        int phase = TransformationsHelper.getKaiokenPhase(stats);
-        b1 = applyKaiokenTint(b1, phase);
-        b2 = applyKaiokenTint(b2, phase);
-        b3 = applyKaiokenTint(b3, phase);
-        hair = applyKaiokenTint(hair, phase);
+        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+            if (nextForm != null) {
+                float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+                if (!nextForm.getBodyColor1().isEmpty()) {
+                    float[] target = ColorUtils.hexToRgb(nextForm.getBodyColor1());
+                    b1 = new float[]{Mth.lerp(factor, b1[0], target[0]), Mth.lerp(factor, b1[1], target[1]), Mth.lerp(factor, b1[2], target[2])};
+                }
+                if (!nextForm.getBodyColor2().isEmpty()) {
+                    float[] target = ColorUtils.hexToRgb(nextForm.getBodyColor2());
+                    b2 = new float[]{Mth.lerp(factor, b2[0], target[0]), Mth.lerp(factor, b2[1], target[1]), Mth.lerp(factor, b2[2], target[2])};
+                }
+                if (!nextForm.getBodyColor3().isEmpty()) {
+                    float[] target = ColorUtils.hexToRgb(nextForm.getBodyColor3());
+                    b3 = new float[]{Mth.lerp(factor, b3[0], target[0]), Mth.lerp(factor, b3[1], target[1]), Mth.lerp(factor, b3[2], target[2])};
+                }
+                if (!nextForm.getHairColor().isEmpty()) {
+                    float[] target = ColorUtils.hexToRgb(nextForm.getHairColor());
+                    hair = new float[]{Mth.lerp(factor, hair[0], target[0]), Mth.lerp(factor, hair[1], target[1]), Mth.lerp(factor, hair[2], target[2])};
+                }
+            }
+        }
+
+        b1 = applyKaiokenTint(b1, kaiokenPhase);
+        b2 = applyKaiokenTint(b2, kaiokenPhase);
+        b3 = applyKaiokenTint(b3, kaiokenPhase);
+        hair = applyKaiokenTint(hair, kaiokenPhase);
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
-        boolean isStandard = raceName.equals("human") || raceName.equals("saiyan");
+        String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
+
+        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+        if (logicKey.isEmpty()) logicKey = raceName;
+
         boolean forceVanilla = (raceConfig != null && raceConfig.useVanillaSkin());
-		String gender = character.getGender().toLowerCase();
-		String customModel = (raceConfig != null) ? raceConfig.getCustomModel() : "";
-
-        boolean isOozaru = currentForm != null && (
-                currentForm.contains(SaiyanForms.OOZARU) ||
-                        currentForm.contains(SaiyanForms.GOLDEN_OOZARU)
-        );
-
-        boolean useDefaultSkin = isStandard && bodyType == 0 && !isOozaru;
+        boolean isOozaru = currentForm != null && (currentForm.contains("oozaru"));
+        boolean useDefaultSkin = (logicKey.equals("human") || logicKey.equals("saiyan")) && bodyType == 0 && !isOozaru;
 
         if (forceVanilla || useDefaultSkin) {
-            float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, phase);
-
-            ResourceLocation playerSkin = pPlayer.getSkinTextureLocation();
-
-            VertexConsumer vc = pBuffer.getBuffer(RenderType.entityTranslucent(playerSkin));
-            pRendererArm.render(pPoseStack, vc, pCombinedLight, OverlayTexture.NO_OVERLAY, skinTint[0], skinTint[1], skinTint[2], 1.0F);
-
-        } else if (customModel == null || customModel.isEmpty()) {
-            if (raceName.equals("saiyan") && isOozaru) {
-
-                String oozaruPath = "textures/entity/races/humansaiyan/oozaru_";
-
-                float[] furColor = (currentForm.contains(SaiyanForms.GOLDEN_OOZARU)) ?
-                        ColorUtils.hexToRgb("#FFD700") : ColorUtils.hexToRgb("#6B1E0E");
-
-                float[] skinColor = ColorUtils.hexToRgb("#CC978D");
-
-                if (hasForm && character.getActiveFormData() != null) {
-                    var form = character.getActiveFormData();
-
-                    if (form.getHairColor() != null && !form.getHairColor().isEmpty()) {
-                        furColor = ColorUtils.hexToRgb(form.getHairColor());
-                    }
-
-                    if (!form.getBodyColor1().isEmpty()) skinColor = ColorUtils.hexToRgb(form.getBodyColor1());
-                }
-
-                renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(oozaruPath + "layer1.png"), furColor);
-                renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(oozaruPath + "layer2.png"), skinColor);
-
-            } else {
-                renderRaceLayers(pPoseStack, pBuffer, pCombinedLight, pRendererArm, raceName, currentForm, gender, bodyType, b1, b2, b3, hair);
-            }
+            float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, kaiokenPhase);
+            renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), skinTint);
         } else {
-			if (hasForm && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel() && !character.getActiveFormData().getCustomModel().isEmpty()) {
-				String customPath = "textures/entity/races/" + character.getActiveFormData().getCustomModel() + ".png";
-				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(customPath), new float[]{1, 1, 1});
-			} else {
-				String customPath = "textures/entity/races/" + customModel + ".png";
-				renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, loc(customPath), new float[]{1, 1, 1});
-			}
-		}
+            renderRaceLayers(pPoseStack, pBuffer, pCombinedLight, pRendererArm, logicKey, currentForm, character.getGender().toLowerCase(), bodyType, b1, b2, b3, hair);
+        }
 
         renderTattoos(pPoseStack, pBuffer, pCombinedLight, pRendererArm, stats);
-
-        renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer,pRendererArm);
-
+        renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm);
     }
 
     private void renderKiWeapon(PoseStack ps, MultiBufferSource buffer, int light, AbstractClientPlayer player, StatsData stats, HumanoidArm arm) {
@@ -261,71 +242,42 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
         ps.popPose();
     }
 
-    private void renderRaceLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String race, String form, String gender, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
+    private void renderRaceLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String logicKey, String form, String gender, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
         String pathPrefix;
-        boolean isBio = race.equals("bioandroid");
-        boolean isFrost = race.equals("frostdemon");
-        boolean isNamek = race.equals("namekian");
-        boolean isMajin = race.equals("majin");
+        List<String> layeredRaces = Arrays.asList("human", "saiyan", "saiyan_ssj4", "namekian", "namekian_orange", "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "bioandroid", "bioandroid_semi", "bioandroid_perfect");
 
-        if (isFrost && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER)
-                || Objects.equals(form, FrostDemonForms.FIFTH_FORM))) {
-            pathPrefix = "textures/entity/races/frostdemon/finalform_bodytype_" + bodyType + "_";
-            renderFrostFinalLayers(stack, buffer, light, arm, pathPrefix, bodyType, b1, b2, b3, h);
-        } else {
-            if (isBio) {
-                String textureFormName = "base";
-                if (form != null && !form.isEmpty()) {
-                    String f = form.toLowerCase();
+        if (!layeredRaces.contains(logicKey)) {
+            renderPart(stack, buffer, light, arm, loc("textures/entity/races/" + logicKey + (gender.contains("female") ? "_female" : "_male") + ".png"), b1);
+            return;
+        }
 
-                    if (f.equals(BioAndroidForms.SEMI_PERFECT)) {
-                        textureFormName = "semiperfect";
-                    }
-                    else if (f.equals(BioAndroidForms.BASE)) {
-                        textureFormName = "base";
-                    }
-                    else {
-                        textureFormName = "perfect";
-                    }
-                }
-                pathPrefix = "textures/entity/races/bioandroid/" + textureFormName + "_" + bodyType + "_";
-            }
-            else if (isMajin) {
-                String f = (form == null || form.isEmpty()) ? "base" : form.toLowerCase();
-
-                boolean isStandardForm = f.equals("base") || f.equals("pure") || f.equals("kid") ||
-                        f.equals("ultra") || f.equals("evil");
-
-                if (!isStandardForm) {
-                    f = "super";
-                    bodyType = 0;
-                }
-
-                pathPrefix = "textures/entity/races/majin/" + f + "_" + bodyType + "_" + gender + "_";
-            }
-
-            else if (isFrost || isNamek) {
-                pathPrefix = "textures/entity/races/" + race + "/bodytype_" + bodyType + "_";
-            }
+        if (logicKey.startsWith("frostdemon") && (Objects.equals(form, FrostDemonForms.FINAL_FORM) || Objects.equals(form, FrostDemonForms.FULLPOWER) || Objects.equals(form, FrostDemonForms.FIFTH_FORM))) {
+            pathPrefix = "textures/entity/races/frostdemon/" + (logicKey.contains("fifth") ? "fifth" : "finalform") + "_bodytype_" + bodyType + "_";
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+            if (bodyType == 0) renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), h);
             else {
-                pathPrefix = "textures/entity/races/humansaiyan/bodytype_" + gender + "_";
-            }
-
-            if (pathPrefix.contains("humansaiyan") && (form == null || !form.contains("oozaru"))) {
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "1.png"), b1);
-            } else {
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
                 renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
+                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), (bodyType == 1 ? b3 : h));
             }
-
-            // Capas extra de Bio y Frost
-            if (isFrost || isBio) {
-                renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer4.png"), h);
-                if (bodyType == 0) {
-                    renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer5.png"), ColorUtils.hexToRgb("#e67d40"));
-                }
-            }
+        } else if (logicKey.startsWith("bioandroid")) {
+            String phase = logicKey.contains("semi") ? "semiperfect" : (logicKey.contains("perfect") || (form != null && !form.isEmpty()) ? "perfect" : "base");
+            pathPrefix = "textures/entity/races/bioandroid/" + phase + "_" + bodyType + "_";
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), phase.equals("perfect") ? new float[]{1,1,1} : b2);
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer4.png"), h);
+        } else if (logicKey.startsWith("majin")) {
+            String f = logicKey.contains("kid") ? "kid" : (logicKey.contains("evil") ? "evil" : (logicKey.contains("super") ? "super" : (logicKey.contains("ultra") ? "ultra" : "base")));
+            pathPrefix = "textures/entity/races/majin/" + f + "_0_" + (gender.contains("female") ? "female" : "male") + "_";
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+        } else if (logicKey.startsWith("namekian")) {
+            pathPrefix = "textures/entity/races/namekian/bodytype_0_";
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), b2);
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
+        } else {
+            pathPrefix = "textures/entity/races/humansaiyan/bodytype_" + (gender.contains("female") ? "female" : "male") + "_";
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "1.png"), b1);
         }
     }
 
