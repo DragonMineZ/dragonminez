@@ -52,14 +52,14 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
             boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.STACK;
             if (wasActive && statsData.getCharacter().hasActiveStackForm()) {
                 if (TransformationsHelper.canDescend(statsData)) {
-                    NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
+                    NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
                     playToggleSound(false);
                 }
             } else if (!wasActive) {
                 NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.STACK));
                 playToggleSound(true);
             } else {
-                NetworkHandler.sendToServer(new ExecuteActionC2S("cycle_stack_form_group", rightClick));
+                NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_STACK_FORM_GROUP, rightClick));
                 playToggleSound(true);
             }
         }

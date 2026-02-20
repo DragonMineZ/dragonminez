@@ -12,79 +12,85 @@ import java.util.function.Supplier;
 
 public class IncreaseStatC2S {
 
-    private final String statName;
-    private final int multiplier;
+	public enum StatType {
+		STR, SKP, RES, VIT, PWR, ENE
+	}
 
-    public IncreaseStatC2S(String statName, int multiplier) {
-        this.statName = statName;
-        this.multiplier = multiplier;
-    }
+	private final StatType statType;
+	private final int multiplier;
 
-    public static void encode(IncreaseStatC2S msg, FriendlyByteBuf buf) {
-        buf.writeUtf(msg.statName);
-        buf.writeInt(msg.multiplier);
-    }
+	public IncreaseStatC2S(StatType statType, int multiplier) {
+		this.statType = statType;
+		this.multiplier = multiplier;
+	}
 
-    public static IncreaseStatC2S decode(FriendlyByteBuf buf) {
-        return new IncreaseStatC2S(
-                buf.readUtf(),
-                buf.readInt()
-        );
-    }
+	public static void encode(IncreaseStatC2S msg, FriendlyByteBuf buf) {
+		buf.writeEnum(msg.statType);
+		buf.writeInt(msg.multiplier);
+	}
 
-    public static void handle(IncreaseStatC2S msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
-            if (player == null) return;
+	public static IncreaseStatC2S decode(FriendlyByteBuf buf) {
+		return new IncreaseStatC2S(
+				buf.readEnum(StatType.class),
+				buf.readInt()
+		);
+	}
 
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
-                int currentStat = getCurrentStat(data, msg.statName);
+	public static void handle(IncreaseStatC2S msg, Supplier<NetworkEvent.Context> ctx) {
+		ctx.get().enqueueWork(() -> {
+			ServerPlayer player = ctx.get().getSender();
+			if (player == null) return;
 
-                if (currentStat >= maxStats) return;
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				String statNameStr = msg.statType.name();
 
-                int availableTPs = data.getResources().getTrainingPoints();
-                if (availableTPs <= 0) return;
+				int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+				int currentStat = getCurrentStat(data, statNameStr);
 
-                double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
-                int baseCost = (int) Math.round((data.getLevel() * multiplier) * multiplier * 4.0);
+				if (currentStat >= maxStats) return;
 
-                int statsCanIncrease = Math.min(msg.multiplier, maxStats - currentStat);
+				int availableTPs = data.getResources().getTrainingPoints();
+				if (availableTPs <= 0) return;
 
-                int statsToIncrease = data.calculateStatIncrease(baseCost, statsCanIncrease, availableTPs, maxStats, multiplier);
+				double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
+				int baseCost = (int) Math.round((data.getLevel() * multiplier) * multiplier * 4.0);
 
-                if (statsToIncrease <= 0) return;
+				int statsCanIncrease = Math.min(msg.multiplier, maxStats - currentStat);
 
-                int finalIncrease = Math.min(statsToIncrease, maxStats - currentStat);
+				int statsToIncrease = data.calculateStatIncrease(baseCost, statsCanIncrease, availableTPs, maxStats, multiplier);
 
-                int tpCost = data.calculateRecursiveCost(finalIncrease, baseCost, maxStats, multiplier);
+				if (statsToIncrease <= 0) return;
 
-                if (tpCost > availableTPs) return;
+				int finalIncrease = Math.min(statsToIncrease, maxStats - currentStat);
 
-                increaseStat(data, player, msg.statName, finalIncrease);
-                data.getResources().removeTrainingPoints(tpCost);
-            });
-        });
-        ctx.get().setPacketHandled(true);
-    }
+				int tpCost = data.calculateRecursiveCost(finalIncrease, baseCost, maxStats, multiplier);
 
-    private static int getCurrentStat(StatsData data, String statName) {
-        return switch (statName.toUpperCase()) {
-            case "STR" -> data.getStats().getStrength();
-            case "SKP" -> data.getStats().getStrikePower();
-            case "RES" -> data.getStats().getResistance();
-            case "VIT" -> data.getStats().getVitality();
-            case "PWR" -> data.getStats().getKiPower();
-            case "ENE" -> data.getStats().getEnergy();
-            default -> 0;
-        };
-    }
+				if (tpCost > availableTPs) return;
 
-    private static void increaseStat(StatsData data, ServerPlayer player, String statName, int amount) {
-        switch (statName.toUpperCase()) {
-            case "STR" -> data.getStats().addStrength(amount);
-            case "SKP" -> data.getStats().addStrikePower(amount);
-            case "RES" -> {
+				increaseStat(data, player, statNameStr, finalIncrease);
+				data.getResources().removeTrainingPoints(tpCost);
+			});
+		});
+		ctx.get().setPacketHandled(true);
+	}
+
+	private static int getCurrentStat(StatsData data, String statName) {
+		return switch (statName.toUpperCase()) {
+			case "STR" -> data.getStats().getStrength();
+			case "SKP" -> data.getStats().getStrikePower();
+			case "RES" -> data.getStats().getResistance();
+			case "VIT" -> data.getStats().getVitality();
+			case "PWR" -> data.getStats().getKiPower();
+			case "ENE" -> data.getStats().getEnergy();
+			default -> 0;
+		};
+	}
+
+	private static void increaseStat(StatsData data, ServerPlayer player, String statName, int amount) {
+		switch (statName.toUpperCase()) {
+			case "STR" -> data.getStats().addStrength(amount);
+			case "SKP" -> data.getStats().addStrikePower(amount);
+			case "RES" -> {
 				int oldMaxStamina = data.getMaxStamina();
 
 				data.getStats().addResistance(amount);
@@ -93,8 +99,8 @@ public class IncreaseStatC2S {
 				if (newMaxStamina > oldMaxStamina) {
 					data.getResources().addStamina(newMaxStamina - oldMaxStamina);
 				}
-            }
-            case "VIT" -> {
+			}
+			case "VIT" -> {
 				float oldMaxHealth = data.getMaxHealth();
 
 				data.getStats().addVitality(amount);
@@ -103,9 +109,9 @@ public class IncreaseStatC2S {
 				if (newMaxHealth > oldMaxHealth) {
 					player.heal(newMaxHealth - oldMaxHealth);
 				}
-            }
-            case "PWR" -> data.getStats().addKiPower(amount);
-            case "ENE" -> {
+			}
+			case "PWR" -> data.getStats().addKiPower(amount);
+			case "ENE" -> {
 				int oldMaxEnergy = data.getMaxEnergy();
 
 				data.getStats().addEnergy(amount);
@@ -114,8 +120,7 @@ public class IncreaseStatC2S {
 				if (newMaxEnergy > oldMaxEnergy) {
 					data.getResources().addEnergy(newMaxEnergy - oldMaxEnergy);
 				}
-            }
-        }
-    }
+			}
+		}
+	}
 }
-

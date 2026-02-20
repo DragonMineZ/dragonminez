@@ -6,20 +6,22 @@ import com.dragonminez.common.stats.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.Locale;
 import java.util.function.Supplier;
 
 public class UpdateSkillC2S {
 
+	public enum SkillAction {
+		TOGGLE, UPGRADE, PURCHASE
+	}
+
 	private final String skillName;
-	private final String action;
+	private final SkillAction action;
 	private final int cost;
 
-	public UpdateSkillC2S(String action, String skillName, int cost) {
+	public UpdateSkillC2S(SkillAction action, String skillName, int cost) {
 		this.skillName = skillName;
 		this.action = action;
 		this.cost = cost;
@@ -27,13 +29,13 @@ public class UpdateSkillC2S {
 
 	public UpdateSkillC2S(FriendlyByteBuf buf) {
 		this.skillName = buf.readUtf();
-		this.action = buf.readUtf();
+		this.action = buf.readEnum(SkillAction.class);
 		this.cost = buf.readInt();
 	}
 
 	public void encode(FriendlyByteBuf buf) {
 		buf.writeUtf(this.skillName);
-		buf.writeUtf(this.action);
+		buf.writeEnum(this.action);
 		buf.writeInt(this.cost);
 	}
 
@@ -43,15 +45,14 @@ public class UpdateSkillC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					Skill skill = data.getSkills().getSkill(skillName);
-
-					switch (action.toLowerCase(Locale.ROOT)) {
-						case "toggle":
+					switch (action) {
+						case TOGGLE:
 							if (skill != null && skill.getLevel() > 0) {
 								skill.setActive(!skill.isActive());
 							}
 							break;
 
-						case "upgrade":
+						case UPGRADE:
 							if (skill != null && !skill.isMaxLevel()) {
 								if (data.getResources().getTrainingPoints() >= cost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 									data.getResources().removeTrainingPoints(cost);
@@ -59,13 +60,14 @@ public class UpdateSkillC2S {
 								}
 							}
 							break;
-						case "purchase":
+						case PURCHASE:
 							if (!data.getSkills().hasSkill(skillName)) {
 								if (data.getResources().getTrainingPoints() >= cost) {
 									data.getResources().removeTrainingPoints(cost);
 									data.getSkills().setSkillLevel(skillName, 1);
 								}
 							}
+							break;
 					}
 
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

@@ -110,7 +110,7 @@ public class CombatEvent {
 						staminaRequired = (int) (staminaRequired * 1.25);
 
 						if (attacker instanceof ServerPlayer serverPlayer) {
-							NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), "combo", nextCombo), serverPlayer);
+							NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.COMBO, nextCombo), serverPlayer);
 						}
 
 						attacker.level().playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), MainSounds.CRITICO1.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (nextCombo * 0.1F));
@@ -450,7 +450,7 @@ public class CombatEvent {
 							SoundSource.PLAYERS,
 							1.0F,
 							1.2F + player.getRandom().nextFloat() * 0.2F);
-					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "evasion", 0), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.EVASION, 0), player);
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 					return;
 				}
@@ -531,7 +531,7 @@ public class CombatEvent {
 
 			int dashDirection = getDashDirectionFromInput(xInput, zInput);
 			if (canDoubleDash) dashDirection += 4;
-			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), "dash", dashDirection, player.getId()), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.DASH, dashDirection, player.getId()), player);
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		});
 	}

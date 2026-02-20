@@ -114,7 +114,8 @@ public class TrainingScreen extends Screen {
 		this.arrows.clear();
 		this.clearWidgets();
 		for(int i=0; i<4; i++) laneCooldowns[i] = 0;
-		NetworkHandler.sendToServer(new TrainingRewardC2S(selectedStat, 0));
+		TrainingRewardC2S.TrainStat statEnum = TrainingRewardC2S.TrainStat.valueOf(selectedStat.toUpperCase());
+		NetworkHandler.sendToServer(new TrainingRewardC2S(statEnum, 0));
 	}
 
 	@Override
@@ -377,7 +378,8 @@ public class TrainingScreen extends Screen {
 	}
 
 	private void completeRound() {
-		NetworkHandler.sendToServer(new TrainingRewardC2S(selectedStat, REWARD_PER_ROUND));
+		TrainingRewardC2S.TrainStat statEnum = TrainingRewardC2S.TrainStat.valueOf(selectedStat.toUpperCase());
+		NetworkHandler.sendToServer(new TrainingRewardC2S(statEnum, REWARD_PER_ROUND));
 		score = 0;
 
 		Player player = Minecraft.getInstance().player;
@@ -396,7 +398,8 @@ public class TrainingScreen extends Screen {
 				Component.translatable("gui.dragonminez.training.complete") :
 				Component.translatable("gui.dragonminez.training.failed");
 		Minecraft.getInstance().player.displayClientMessage(msg, true);
-		NetworkHandler.sendToServer(new TrainingRewardC2S(selectedStat, -1));
+		TrainingRewardC2S.TrainStat statEnum = TrainingRewardC2S.TrainStat.valueOf(selectedStat.toUpperCase());
+		NetworkHandler.sendToServer(new TrainingRewardC2S(statEnum,  -1));
 	}
 
 	private int getColorForDirection(int dir) {

@@ -30,7 +30,7 @@ public class DescendFormMenuSlot extends AbstractMenuSlot implements IUtilityMen
     public void handle(StatsData statsData, boolean rightClick) {
         String race = statsData.getCharacter().getRaceName();
         if ("frostdemon".equals(race) || "majin".equals(race) || "bioandroid".equals(race)) {
-            NetworkHandler.sendToServer(new ExecuteActionC2S("force_descend", rightClick));
+            NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, rightClick));
             playToggleSound(false);
         }
     }

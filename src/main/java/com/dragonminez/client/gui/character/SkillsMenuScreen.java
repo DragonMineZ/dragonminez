@@ -275,7 +275,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					.message(Component.translatable("gui.dragonminez.skills.upgrade"))
 					.onPress(btn -> {
 						if (canUpgrade) {
-							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S("upgrade", selectedSkill, cost));
+							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, selectedSkill, cost));
 							updateStatsData();
 						}
 					})

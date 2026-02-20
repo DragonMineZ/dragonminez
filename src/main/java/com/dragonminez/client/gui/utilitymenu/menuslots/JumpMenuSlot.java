@@ -28,7 +28,7 @@ public class JumpMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
     public void handle(StatsData statsData, boolean rightClick) {
         if (statsData.getSkills().hasSkill("jump")) {
             boolean wasActive = statsData.getSkills().isSkillActive("jump");
-            NetworkHandler.sendToServer(new UpdateSkillC2S("toggle", "jump", 0));
+            NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, "jump", 0));
             playToggleSound(wasActive);
         }
     }

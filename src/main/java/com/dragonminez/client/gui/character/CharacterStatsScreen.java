@@ -187,7 +187,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 .textureCoords(0, 0, 0, 10)
                 .textureSize(10, 10)
                 .onPress(button -> {
-                    NetworkHandler.sendToServer(new IncreaseStatC2S(statName, tpMultiplier));
+                    IncreaseStatC2S.StatType statEnum = IncreaseStatC2S.StatType.valueOf(statName.toUpperCase());
+                    NetworkHandler.sendToServer(new IncreaseStatC2S(statEnum, tpMultiplier));
                 })
                 .build();
     }

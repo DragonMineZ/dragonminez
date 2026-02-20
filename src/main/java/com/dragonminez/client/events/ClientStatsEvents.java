@@ -78,7 +78,7 @@ public class ClientStatsEvents {
 			boolean shouldBlock = isRightClickDown && mainHandEmpty && offHandEmpty && !isStunned && !isDescendKeyPressed;
 			if (shouldBlock != data.getStatus().isBlocking()) {
 				data.getStatus().setBlocking(shouldBlock);
-				NetworkHandler.sendToServer(new UpdateStatC2S("isBlocking", shouldBlock));
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, shouldBlock));
 			}
 
 			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
@@ -103,7 +103,7 @@ public class ClientStatsEvents {
 
 			if (isActionKeyPressed && !wasTransformKeyDown) {
 				if (transformDoubleTapTimer > 0) {
-					NetworkHandler.sendToServer(new ExecuteActionC2S("instant_transform"));
+					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
 					transformDoubleTapTimer = 0;
 				} else {
 					transformDoubleTapTimer = 20;
@@ -112,20 +112,20 @@ public class ClientStatsEvents {
 			wasTransformKeyDown = isActionKeyPressed;
 
 			if (isKiChargeKeyPressed != data.getStatus().isChargingKi()) {
-				NetworkHandler.sendToServer(new UpdateStatC2S("isChargingKi", isKiChargeKeyPressed));
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.CHARGE_KI, isKiChargeKeyPressed));
 			}
 
 			if (isDescendKeyPressed != data.getStatus().isDescending()) {
-				NetworkHandler.sendToServer(new UpdateStatC2S("isDescending", isDescendKeyPressed));
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.DESCEND, isDescendKeyPressed));
 			}
 
 			if (isActionKeyPressed != data.getStatus().isActionCharging()) {
-				NetworkHandler.sendToServer(new UpdateStatC2S("isActionCharging", isActionKeyPressed));
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.ACTION_CHARGE, isActionKeyPressed));
 			}
 
 			boolean isDescendActionDown = isDescendKeyPressed && isActionKeyPressed;
 			if (isDescendActionDown && !wasDescendActionDown && (data.getStatus().getSelectedAction().equals(ActionMode.FORM) || data.getStatus().getSelectedAction().equals(ActionMode.STACK))) {
-				NetworkHandler.sendToServer(new ExecuteActionC2S("descend"));
+				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
 			}
 			wasDescendActionDown = isDescendActionDown;
 
@@ -146,7 +146,7 @@ public class ClientStatsEvents {
 					Skill kiSense = data.getSkills().getSkill("kisense");
 					if (kiSense == null) return;
 					int kiSenseLevel = kiSense.getLevel();
-					if (kiSenseLevel > 0) NetworkHandler.sendToServer(new UpdateSkillC2S("toggle", kiSense.getName(), 0));
+					if (kiSenseLevel > 0) NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
 				} else {
 					ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
 				}
