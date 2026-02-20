@@ -89,6 +89,7 @@ public class MasteryCommand {
 	}
 
 	private static int setMastery(CommandContext<CommandSourceStack> ctx, boolean add) throws CommandSyntaxException {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
 		String group = StringArgumentType.getString(ctx, "group");
 		String form = StringArgumentType.getString(ctx, "form");
@@ -111,7 +112,7 @@ public class MasteryCommand {
 		});
 
 		String modeKey = add ? "add" : "set";
-		source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".success", value, group, form, target.getName().getString()), true);
+		source.sendSuccess(() -> Component.translatable("command.dragonminez.mastery." + modeKey + ".success", value, group, form, target.getName().getString()), log);
 
 		return 1;
 	}

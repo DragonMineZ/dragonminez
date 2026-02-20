@@ -36,6 +36,7 @@ public class GeneralServerConfig {
     }
 
     public static class GameplayConfig {
+		private boolean commandOutputOnConsole = true;
 		private int reviveCooldownSeconds = 300;
         private double tpGainMultiplier = 1.0;
 		private double tpCostMultiplier = 1.0;
@@ -55,6 +56,7 @@ public class GeneralServerConfig {
 		private int fusionDurationSeconds = 900;
 		private int fusionCooldownSeconds = 1800;
 
+		public boolean isCommandOutputOnConsole() { return commandOutputOnConsole; }
 		public int getReviveCooldownSeconds() { return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE)); }
         public double getTpsGainMultiplier() { return Math.max(0, Math.min(tpGainMultiplier, Double.MAX_VALUE)); }
 		public double getTpCostMultiplier() { return Math.max(0.01, Math.min(tpCostMultiplier, Double.MAX_VALUE)); }

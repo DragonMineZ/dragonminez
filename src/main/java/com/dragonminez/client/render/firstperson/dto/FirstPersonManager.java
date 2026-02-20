@@ -46,7 +46,7 @@ public class FirstPersonManager {
 					}
 				}
 
-				if (activeForm.getName().contains("ozaru")) BASE_OFFSET_Z[0] = 1.5F;
+				if (activeForm != null && activeForm.getName().contains("ozaru")) BASE_OFFSET_Z[0] = 1.5F;
 			}
 		});
 

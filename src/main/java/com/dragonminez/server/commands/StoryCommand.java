@@ -112,6 +112,7 @@ public class StoryCommand {
     }
 
     private static int finishQuest(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
+        boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
             String questArg = StringArgumentType.getString(context, "quest"); // Leemos como String
@@ -144,7 +145,7 @@ public class StoryCommand {
                     successCount++;
                 }
 
-                context.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.story.complete_all" + saga.getName()), true);
+                context.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.story.complete_all" + saga.getName()), log);
 
             } else {
                 try {
@@ -208,6 +209,7 @@ public class StoryCommand {
     }
 
     private static int removeQuest(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
+        boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
             int questId = IntegerArgumentType.getInteger(context, "quest");
@@ -253,9 +255,9 @@ public class StoryCommand {
             final int finalCount = successCount;
             final int totalPlayers = targetPlayers.size();
             context.getSource().sendSuccess(() ->
-                    Component.translatable("command.dragonminez.story.quest_removed", sagaId, questId), false);
+                    Component.translatable("command.dragonminez.story.quest_removed", sagaId, questId), log);
             context.getSource().sendSuccess(() ->
-                    Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
+                    Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), log);
 
             return successCount;
 
@@ -266,6 +268,7 @@ public class StoryCommand {
     }
 
     private static int resetSaga(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
+        boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
 
@@ -291,9 +294,9 @@ public class StoryCommand {
             final int finalCount = successCount;
             final int totalPlayers = targetPlayers.size();
             context.getSource().sendSuccess(() ->
-                    Component.translatable("command.dragonminez.story.saga_reset", sagaId), false);
+                    Component.translatable("command.dragonminez.story.saga_reset", sagaId), log);
             context.getSource().sendSuccess(() ->
-                    Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), false);
+                    Component.translatable("command.dragonminez.story.players_affected", finalCount, totalPlayers), log);
 
             return successCount;
 

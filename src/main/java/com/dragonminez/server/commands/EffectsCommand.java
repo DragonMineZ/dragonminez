@@ -53,6 +53,7 @@ public class EffectsCommand {
 	}
 
 	private static int giveEffect(CommandSourceStack source, Collection<ServerPlayer> targets, String effectName, int duration) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		double power = getEffectPower(effectName);
 		if (power == 0.0) {
 			source.sendFailure(Component.translatable("command.dragonminez.effects.unknown_effect", effectName));
@@ -70,14 +71,15 @@ public class EffectsCommand {
 		String durationText = duration == -1 ? "permanent" : duration + " seconds";
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.give_success", effectName, power, targets.iterator().next().getName().getString(), durationText), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.give_success", effectName, power, targets.iterator().next().getName().getString(), durationText), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.give_multiple", effectName, power, targets.size(), durationText), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.give_multiple", effectName, power, targets.size(), durationText), log);
 		}
 		return targets.size();
 	}
 
 	private static int removeEffect(CommandSourceStack source, Collection<ServerPlayer> targets, String effectName) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (data.getEffects().hasEffect(effectName)) {
@@ -87,14 +89,15 @@ public class EffectsCommand {
 			});
 		}
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.remove_success", effectName, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.remove_success", effectName, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.remove_multiple", effectName, targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.remove_multiple", effectName, targets.size()), log);
 		}
 		return targets.size();
 	}
 
 	private static int clearEffects(CommandSourceStack source, Collection<ServerPlayer> targets) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getEffects().clear();
@@ -102,9 +105,9 @@ public class EffectsCommand {
 			});
 		}
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.clear_success", targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.clear_success", targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.clear_multiple", targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.effects.clear_multiple", targets.size()), log);
 		}
 		return targets.size();
 	}

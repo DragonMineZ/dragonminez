@@ -37,7 +37,7 @@ public class TickHandler {
 
     private static final int REGEN_INTERVAL = 20;
     private static final int SYNC_INTERVAL = 10;
-    private static final double MEDITATION_BONUS_PER_LEVEL = 0.025;
+    private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
     private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
 	private static int masterySeconds = 0;
 

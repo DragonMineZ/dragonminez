@@ -1,5 +1,6 @@
 package com.dragonminez.server.commands;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -93,6 +94,7 @@ public class BonusCommand {
 	}
 
 	private static int addBonus(CommandSourceStack source, String stat, String operation, double value, String bonusName, Collection<ServerPlayer> targets) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 
 		if (!isValidStat(finalStat) && !finalStat.equals("ALL")) {
@@ -114,14 +116,15 @@ public class BonusCommand {
 		}
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.success", bonusName, finalStat, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.success", bonusName, finalStat, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.multiple", bonusName, targets.size(), finalStat), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.add.multiple", bonusName, targets.size(), finalStat), log);
 		}
 		return targets.size();
 	}
 
 	private static int removeBonus(CommandSourceStack source, String stat, String bonusName, Collection<ServerPlayer> targets) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 
 		if (!isValidStat(finalStat)) {
@@ -137,14 +140,15 @@ public class BonusCommand {
 		}
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.success", bonusName, finalStat, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.success", bonusName, finalStat, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.multiple", bonusName, targets.size(), finalStat), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.remove.multiple", bonusName, targets.size(), finalStat), log);
 		}
 		return targets.size();
 	}
 
 	private static int clearStat(CommandSourceStack source, String stat, Collection<ServerPlayer> targets) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 
 		if (!isValidStat(finalStat) && !finalStat.equals("ALL")) {
@@ -164,9 +168,9 @@ public class BonusCommand {
 		}
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.success", finalStat, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.success", finalStat, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.multiple", finalStat, targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.bonus.clear.multiple", finalStat, targets.size()), log);
 		}
 		return targets.size();
 	}

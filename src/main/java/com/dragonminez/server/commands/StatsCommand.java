@@ -85,6 +85,7 @@ public class StatsCommand {
 	}
 
 	private static int modifyStats(CommandSourceStack source, String stat, String amountStr, Collection<ServerPlayer> targets, String mode) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 		if (!isValidStat(finalStat)) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_stat", stat));
@@ -131,10 +132,10 @@ public class StatsCommand {
 
 		if (successCount == 1 && targets.size() == 1) {
 			ServerPlayer single = targets.iterator().next();
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".success", finalStat, amountStr, single.getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".success", finalStat, amountStr, single.getName().getString()), log);
 		} else {
 			int finalSuccess = successCount;
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".multiple", finalSuccess, finalStat, amountStr), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats." + mode + ".multiple", finalSuccess, finalStat, amountStr), log);
 		}
 
 		return successCount;
@@ -150,6 +151,7 @@ public class StatsCommand {
 	}
 
 	private static int resetStats(CommandSourceStack source, Collection<ServerPlayer> targets, String keepPercentageStr) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		Integer keepPercentage = null;
 		if (keepPercentageStr != null && !keepPercentageStr.isEmpty()) {
 			try {
@@ -221,9 +223,9 @@ public class StatsCommand {
 		}
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.success", targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.success", targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.multiple", targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.multiple", targets.size()), log);
 		}
 		return targets.size();
 	}

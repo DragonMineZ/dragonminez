@@ -59,6 +59,7 @@ public class SkillsCommand {
 	}
 
 	private static int setSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName, int level) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(skillName.toLowerCase())) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
@@ -72,14 +73,15 @@ public class SkillsCommand {
 		}
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_success", skillName, level, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_success", skillName, level, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_multiple", skillName, level, targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.set_multiple", skillName, level, targets.size()), log);
 		}
 		return targets.size();
 	}
 
 	private static int removeSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		String lowerName = skillName.toLowerCase();
 		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
@@ -96,9 +98,9 @@ public class SkillsCommand {
 		}
 
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_success", skillName, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_success", skillName, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_multiple", skillName, targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.skills.remove_multiple", skillName, targets.size()), log);
 		}
 		return targets.size();
 	}

@@ -1,5 +1,6 @@
 package com.dragonminez.server.commands;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -51,6 +52,7 @@ public class PointsCommand {
 	}
 
 	private static int setPoints(CommandSourceStack source, Collection<ServerPlayer> targets, int amount) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getResources().setTrainingPoints(amount);
@@ -58,14 +60,15 @@ public class PointsCommand {
 			});
 		}
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.set.success", amount, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.set.success", amount, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.set.multiple", amount, targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.set.multiple", amount, targets.size()), log);
 		}
 		return targets.size();
 	}
 
 	private static int addPoints(CommandSourceStack source, Collection<ServerPlayer> targets, int amount) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getResources().addTrainingPoints(amount);
@@ -73,14 +76,15 @@ public class PointsCommand {
 			});
 		}
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.add.success", amount, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.add.success", amount, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.add.multiple", amount, targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.add.multiple", amount, targets.size()), log);
 		}
 		return targets.size();
 	}
 
 	private static int removePoints(CommandSourceStack source, Collection<ServerPlayer> targets, int amount) {
+		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				int currentPoints = data.getResources().getTrainingPoints();
@@ -90,9 +94,9 @@ public class PointsCommand {
 			});
 		}
 		if (targets.size() == 1) {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.remove.success", amount, targets.iterator().next().getName().getString()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.remove.success", amount, targets.iterator().next().getName().getString()), log);
 		} else {
-			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.remove.multiple", amount, targets.size()), true);
+			source.sendSuccess(() -> Component.translatable("command.dragonminez.points.remove.multiple", amount, targets.size()), log);
 		}
 		return targets.size();
 	}

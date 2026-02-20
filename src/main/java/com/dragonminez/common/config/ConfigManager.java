@@ -128,7 +128,11 @@ public class ConfigManager {
 					backupOldConfig(serverConfigPath);
 					serverConfig = new GeneralServerConfig();
 					overwriteServer = true;
-				} else overwriteServer = true;
+				} else if (serverConfig.getConfigVersion() == 0) {
+					backupOldConfig(serverConfigPath);
+					serverConfig = new GeneralServerConfig();
+					overwriteServer = true;
+				}
 			} catch (Exception e) {
 				backupOldConfig(serverConfigPath);
 				serverConfig = new GeneralServerConfig();
@@ -159,7 +163,11 @@ public class ConfigManager {
 					backupOldConfig(skillsConfigPath);
 					skillsConfig = new SkillsConfig();
 					overwriteSkills = true;
-				} else overwriteSkills = true;
+				} else if (skillsConfig.getConfigVersion() == 0) {
+					backupOldConfig(skillsConfigPath);
+					skillsConfig = new SkillsConfig();
+					overwriteSkills = true;
+				}
 			} catch (Exception e) {
 				backupOldConfig(skillsConfigPath);
 				skillsConfig = new SkillsConfig();
@@ -187,6 +195,10 @@ public class ConfigManager {
 			try {
 				entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
 				if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION) {
+					backupOldConfig(entitiesConfigPath);
+					entitiesConfig = createDefaultEntitiesConfig();
+					overwriteEntities = true;
+				} else if (entitiesConfig.getConfigVersion() == 0) {
 					backupOldConfig(entitiesConfigPath);
 					entitiesConfig = createDefaultEntitiesConfig();
 					overwriteEntities = true;
@@ -222,7 +234,11 @@ public class ConfigManager {
 					backupOldConfig(characterPath);
 					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
 					overwriteCharacter = true;
-				} else overwriteCharacter = true;
+				} else if (characterConfig.getConfigVersion() == 0) {
+					backupOldConfig(characterPath);
+					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+					overwriteCharacter = true;
+				}
 			} catch (Exception e) {
 				backupOldConfig(characterPath);
 				characterConfig = createDefaultCharacterConfig(raceName, isDefault);
@@ -241,6 +257,10 @@ public class ConfigManager {
 			try {
 				statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
 				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION) {
+					backupOldConfig(statsPath);
+					statsConfig = createDefaultStatsConfig();
+					overwriteStats = true;
+				} else if (statsConfig.getConfigVersion() == 0) {
 					backupOldConfig(statsPath);
 					statsConfig = createDefaultStatsConfig();
 					overwriteStats = true;
@@ -264,7 +284,7 @@ public class ConfigManager {
 			recreateForms = true;
 		} else if (!raceForms.isEmpty()) {
 			for (FormConfig formGroup : raceForms.values()) {
-				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0) {
 					recreateForms = true;
 					break;
 				}
