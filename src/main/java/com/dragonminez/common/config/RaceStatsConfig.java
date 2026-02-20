@@ -2,22 +2,31 @@ package com.dragonminez.common.config;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 public class RaceStatsConfig {
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
     private int configVersion = CURRENT_VERSION;
     public int getConfigVersion() { return configVersion; }
     public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
-    private ClassStats warrior = new ClassStats();
-    private ClassStats spiritualist = new ClassStats();
-    private ClassStats martialArtist = new ClassStats();
+    private final Map<String, ClassStats> classes = new HashMap<>();
     public RaceStatsConfig() {}
 
-    public ClassStats getWarrior() { return warrior; }
-    public ClassStats getSpiritualist() { return spiritualist; }
-    public ClassStats getMartialArtist() { return martialArtist; }
+    public ClassStats getClassStats(String characterClass) {
+        if (!this.classes.containsKey(characterClass)) {
+            this.classes.put(characterClass, new ClassStats());
+        }
+        return this.classes.get(characterClass);
+    }
 
+    public Collection<String> getAllClasses() {
+        return this.classes.keySet();
+    }
 
     public static class ClassStats {
         private BaseStats baseStats = new BaseStats();

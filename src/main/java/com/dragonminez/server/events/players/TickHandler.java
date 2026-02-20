@@ -191,12 +191,7 @@ public class TickHandler {
     }
 
     private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-        return switch (characterClass.toLowerCase()) {
-            case "warrior" -> config.getWarrior();
-            case "spiritualist" -> config.getSpiritualist();
-            case "martialartist", "martial_artist" -> config.getMartialArtist();
-            default -> config.getWarrior();
-        };
+        return config.getClassStats(characterClass);
     }
 
     private static void regenerateHealth(ServerPlayer player, StatsData data,
