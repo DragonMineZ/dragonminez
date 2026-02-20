@@ -5,13 +5,16 @@ import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.particles.AuraParticle;
 import com.dragonminez.common.init.particles.DivineParticle;
+import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -322,7 +325,19 @@ public class AuraRenderHandler {
 	private static float[] getKiColor(StatsData stats) {
 		var character = stats.getCharacter();
 		String kiHex = character.getAuraColor();
-        if (character.hasActiveStackForm()
+        if (stats.getStatus().isActionCharging()) {
+            if (stats.getStatus().getSelectedAction().equals(ActionMode.FORM)) {
+                FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(stats);
+                if (nextForm != null && nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty()) {
+                    kiHex = nextForm.getAuraColor();
+                }
+            } else if (stats.getStatus().getSelectedAction().equals(ActionMode.STACK)) {
+                FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+                if (nextForm != null && nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty()) {
+                    kiHex = nextForm.getAuraColor();
+                }
+            }
+        } else if (character.hasActiveStackForm()
                 && character.getActiveStackFormData() != null
                 && character.getActiveStackFormData().getAuraColor() != null
                 && !character.getActiveStackFormData().getAuraColor().isEmpty()) {
