@@ -11,7 +11,16 @@ public class MajinStatusHandler implements IStatusEffectHandler {
     public void handleStatusEffects(ServerPlayer player, StatsData data) {
         if (data.getEffects().hasEffect("majin")) {
             if (!player.hasEffect(MainEffects.MAJIN.get())) {
-                player.addEffect(new MobEffectInstance(MainEffects.MAJIN.get(), -1, 0, false, false, true));
+                player.addEffect(
+                        new MobEffectInstance(
+                                MainEffects.MAJIN.get(),
+                                -1,
+                                0,
+                                false,
+                                false,
+                                true
+                        )
+                );
             }
         } else {
             player.removeEffect(MainEffects.MAJIN.get());

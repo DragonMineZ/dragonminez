@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players.actionmode;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -10,6 +11,7 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 
 public class StackFormModeHandler implements IActionModeHandler {
     @Override
@@ -19,12 +21,7 @@ public class StackFormModeHandler implements IActionModeHandler {
             String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
             String type = ConfigManager.getStackFormGroup(group).getFormType();
-            int skillLvl = switch (type) {
-                case "kaioken" -> data.getSkills().getSkillLevel("kaioken");
-                case "ultrainstinct" -> data.getSkills().getSkillLevel("ultrainstinct");
-                case "ultraego" -> data.getSkills().getSkillLevel("ultraego");
-                default -> 1;
-            };
+            int skillLvl = data.getSkills().getSkillLevel(type);
             return (5 * Math.max(1, skillLvl));
         }
         return 0;
@@ -78,6 +75,10 @@ public class StackFormModeHandler implements IActionModeHandler {
                 translatedStackForm = translatedFormName + " x " + translatedStackForm;
             }
             player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", (translatedStackForm)), true);
+
+            if (!player.hasEffect(MainEffects.STACK_TRANSFORMED.get())) {
+                player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED.get(), -1, 0, false, false, true));
+            }
         }
     }
 }

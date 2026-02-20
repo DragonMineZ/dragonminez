@@ -152,6 +152,7 @@ public class TickHandler {
 
 			for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
 				handler.onPlayerTick(serverPlayer, data);
+				handler.handleStatusEffects(serverPlayer, data);
 			}
 
 			if (tickCounter % 20 == 0) {

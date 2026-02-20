@@ -2,6 +2,7 @@ package com.dragonminez.server.events.players.actionmode;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
@@ -10,6 +11,7 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 
 public class FormModeHandler implements IActionModeHandler {
     @Override
@@ -19,13 +21,9 @@ public class FormModeHandler implements IActionModeHandler {
             String group = data.getCharacter().hasActiveForm() ? data.getCharacter().getActiveFormGroup() : data.getCharacter().getSelectedFormGroup();
 
             String type = ConfigManager.getFormGroup(data.getCharacter().getRaceName(), group).getFormType();
-            int skillLvl = switch (type) {
-                case "super" -> data.getSkills().getSkillLevel("superform");
-                case "god" -> data.getSkills().getSkillLevel("godform");
-                case "legendary" -> data.getSkills().getSkillLevel("legendaryforms");
-                case "android" -> data.getSkills().getSkillLevel("androidforms");
-                default -> 1;
-            };
+            int skillLvl = data.getSkills().getSkillLevel(
+                    convertSuperformTypes(type)
+            );
             return (5 * Math.max(1, skillLvl));
         }
         return 0;
@@ -78,7 +76,29 @@ public class FormModeHandler implements IActionModeHandler {
                 String translatedStackFormName = I18n.get("race.dragonminez.stack.form." + data.getCharacter().getActiveStackFormGroup() + "." + data.getCharacter().getActiveStackForm());
                 translatedFormName += " " + translatedStackFormGroup + " x " +translatedStackFormName;
             }
+
+            if (!player.hasEffect(MainEffects.TRANSFORMED.get())) {
+                player.addEffect(
+                        new MobEffectInstance(
+                                MainEffects.TRANSFORMED.get(),
+                                -1,
+                                0,
+                                false,
+                                false,
+                                true)
+                );
+            }
             player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", translatedFormName), true);
         }
+    }
+
+    private String convertSuperformTypes(String type) {
+        return switch (type) {
+            case "super" -> "superform";
+            case "god" -> "godform";
+            case "legendary" -> "legendaryforms";
+            case "android" -> "androidforms";
+            default -> type;
+        };
     }
 }
