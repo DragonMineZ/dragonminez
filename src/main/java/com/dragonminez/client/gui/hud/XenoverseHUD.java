@@ -41,7 +41,6 @@ public class XenoverseHUD {
 				int maxKi = data.getMaxEnergy();
 				int maxStm = data.getMaxStamina();
 				int powerRelease = resources.getPowerRelease();
-				if (powerRelease > 100) powerRelease = 100;
 				int formRelease;
 				if (resources.getActionCharge() < 10) formRelease = 10 + resources.getActionCharge();
 				else formRelease = resources.getActionCharge();
@@ -145,7 +144,7 @@ public class XenoverseHUD {
 
 				guiGraphics.blit(racialIcons, initialX + 15, isMajin ? (initialY + 12) : (initialY + 13), isCustomRace ? 103 : iconU, baseIconV, 16, 16);
 
-				float fillRatio = powerRelease / 100.0f;
+				float fillRatio = Math.min(powerRelease, 100) / 100.0f;
 				int fillHeight = (int) (16 * fillRatio);
 
 				if (fillHeight > 0) {
