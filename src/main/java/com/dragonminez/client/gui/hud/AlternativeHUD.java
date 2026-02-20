@@ -51,12 +51,14 @@ public class AlternativeHUD {
 				String raceName = character.getRaceName();
 				String auraColor = character.getAuraColor();
 
-				if (character.getActiveForm() != null) {
-					FormConfig.FormData formData = character.getActiveFormData();
-					if (formData != null) auraColor = formData.getAuraColor();
-				} else if (character.getActiveStackForm() != null) {
-					FormConfig.FormData formData = character.getActiveStackFormData();
-					if (formData != null) auraColor = formData.getAuraColor();
+				FormConfig.FormData formData = null;
+				if (character.getActiveStackForm() != null && !character.getActiveStackForm().isEmpty()) {
+					formData = character.getActiveStackFormData();
+				} else if (character.getActiveForm() != null && !character.getActiveForm().isEmpty()) {
+					formData = character.getActiveFormData();
+				}
+				if (formData != null && formData.getAuraColor() != null && !formData.getAuraColor().isEmpty()) {
+					auraColor = formData.getAuraColor();
 				}
 
 				float currentHP = Minecraft.getInstance().player.getHealth();
