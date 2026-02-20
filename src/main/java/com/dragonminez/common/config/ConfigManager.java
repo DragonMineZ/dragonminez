@@ -505,10 +505,10 @@ public class ConfigManager {
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFFFF");
 
-        config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
-		config.setGodformTpCost(new int[]{});
-		config.setLegendaryformsTpCost(new int[]{});
-		config.setAndroidformsTpCost(new int[]{80000, 120000});
+		config.setFormSkillTpCosts("superform", new Integer[]{20000, 80000, 120000, 160000});
+		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts( "legendaryforms", new Integer[]{});
+		config.setFormSkillTpCosts("androidforms" , new Integer[]{80000, 120000});
     }
 
     private static void setupSaiyanCharacter(RaceCharacterConfig config) {
@@ -529,9 +529,9 @@ public class ConfigManager {
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFFFF");
 
-        config.setSuperformTpCost(new int[]{20000, 40000, 60000, 80000, 100000, 120000, 140000, 160000});
-        config.setGodformTpCost(new int[]{});
-        config.setLegendaryformsTpCost(new int[]{});
+		config.setFormSkillTpCosts("superform", new Integer[]{20000, 40000, 60000, 80000, 100000, 120000, 140000, 160000});
+		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts( "legendaryforms", new Integer[]{});
     }
 
     private static void setupNamekianCharacter(RaceCharacterConfig config) {
@@ -552,9 +552,9 @@ public class ConfigManager {
         config.setDefaultEye2Color("#0E1011");
         config.setDefaultAuraColor("#7FFF00");
 
-        config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
-        config.setGodformTpCost(new int[]{});
-        config.setLegendaryformsTpCost(new int[]{});
+		config.setFormSkillTpCosts("superform", new Integer[]{20000, 80000, 120000, 160000});
+		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts( "legendaryforms", new Integer[]{});
     }
 
     private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
@@ -575,9 +575,9 @@ public class ConfigManager {
         config.setDefaultEye2Color("#FF001D");
         config.setDefaultAuraColor("#5F00FF");
 
-		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000, 200000});
-        config.setGodformTpCost(new int[]{});
-        config.setLegendaryformsTpCost(new int[]{});
+		config.setFormSkillTpCosts("superform", new Integer[]{20000, 80000, 120000, 160000, 200000});
+		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts( "legendaryforms", new Integer[]{});
     }
 
     private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
@@ -598,9 +598,9 @@ public class ConfigManager {
         config.setDefaultEye2Color("#960909");
         config.setDefaultAuraColor("#1AA700");
 
-		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
-        config.setGodformTpCost(new int[]{});
-        config.setLegendaryformsTpCost(new int[]{});
+		config.setFormSkillTpCosts("superform", new Integer[]{20000, 80000, 120000, 160000});
+		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts( "legendaryforms", new Integer[]{});
     }
 
     private static void setupMajinCharacter(RaceCharacterConfig config) {
@@ -621,9 +621,9 @@ public class ConfigManager {
         config.setDefaultEye2Color("#B40000");
         config.setDefaultAuraColor("#FF6DFF");
 
-		config.setSuperformTpCost(new int[]{20000, 80000, 120000, 160000});
-        config.setGodformTpCost(new int[]{});
-        config.setLegendaryformsTpCost(new int[]{});
+		config.setFormSkillTpCosts("superform", new Integer[]{20000, 80000, 120000, 160000});
+		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts( "legendaryforms", new Integer[]{});
     }
 
     private static void setupDefaultCharacter(RaceCharacterConfig config) {
@@ -643,9 +643,9 @@ public class ConfigManager {
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
 
-		config.setSuperformTpCost(new int[]{});
-		config.setGodformTpCost(new int[]{});
-		config.setLegendaryformsTpCost(new int[]{});
+		config.setFormSkillTpCosts("superform", new Integer[]{});
+		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts( "legendaryforms", new Integer[]{});
     }
 
     private static RaceStatsConfig createDefaultStatsConfig() {

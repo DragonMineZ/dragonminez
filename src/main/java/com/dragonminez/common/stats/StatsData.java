@@ -9,6 +9,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.Collection;
+
 public class StatsData {
     private final Player player;
     private final Stats stats;
@@ -281,12 +283,12 @@ public class StatsData {
     public void updateTransformationSkillLimits(String raceName) {
         RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
         if (charConfig != null) {
-            int superformMax = charConfig.getSuperformTpCost() != null ? charConfig.getSuperformTpCost().length : 0;
-            int godformMax = charConfig.getGodformTpCost() != null ? charConfig.getGodformTpCost().length : 0;
-            int legendaryMax = charConfig.getLegendaryformsTpCost() != null ? charConfig.getLegendaryformsTpCost().length : 0;
-            int androidMax = charConfig.getAndroidformsTpCost() != null ? charConfig.getAndroidformsTpCost().length : 0;
-
-            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax, androidMax);
+            Collection<String> formSkills = charConfig.getFormSkills();
+            for (String skillName : formSkills) {
+                Integer[] tpCosts = charConfig.getFormSkillTpCosts(skillName);
+                int maxLevel = tpCosts != null ? tpCosts.length : 0;
+                skills.registerDefaultSkill(skillName, maxLevel);
+            }
         }
     }
 

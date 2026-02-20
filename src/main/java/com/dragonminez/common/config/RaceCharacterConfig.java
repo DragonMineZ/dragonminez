@@ -1,7 +1,11 @@
 package com.dragonminez.common.config;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 public class RaceCharacterConfig {
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
     private int configVersion = CURRENT_VERSION;
     public int getConfigVersion() { return configVersion; }
     public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
@@ -26,10 +30,7 @@ public class RaceCharacterConfig {
     private String defaultEye1Color = null;
     private String defaultEye2Color = null;
     private String defaultAuraColor = null;
-    private int[] superformTpCost = null;
-    private int[] godformTpCost = null;
-    private int[] legendaryformsTpCost = null;
-    private int[] androidformsTpCost = null;
+    private Map<String, Integer[]> formSkillsCosts = new HashMap<>();
 
     public RaceCharacterConfig() {}
 
@@ -53,10 +54,10 @@ public class RaceCharacterConfig {
     public String getDefaultEye1Color() { return defaultEye1Color; }
     public String getDefaultEye2Color() { return defaultEye2Color; }
     public String getDefaultAuraColor() { return defaultAuraColor; }
-    public int[] getSuperformTpCost() { return superformTpCost; }
-    public int[] getGodformTpCost() { return godformTpCost; }
-    public int[] getLegendaryformsTpCost() { return legendaryformsTpCost; }
-    public int[] getAndroidformsTpCost() { return androidformsTpCost; }
+    public Integer[] getFormSkillTpCosts(String form) { return formSkillsCosts.getOrDefault(form, new Integer[]{}); }
+    public Collection<String> getFormSkills() {
+        return formSkillsCosts.keySet();
+    }
 
     public void setRaceName(String raceName) { this.raceName = raceName; }
     public void setHasGender(boolean hasGender) { this.hasGender = hasGender; }
@@ -78,10 +79,9 @@ public class RaceCharacterConfig {
     public void setDefaultEye1Color(String defaultEye1Color) { this.defaultEye1Color = defaultEye1Color; }
     public void setDefaultEye2Color(String defaultEye2Color) { this.defaultEye2Color = defaultEye2Color; }
     public void setDefaultAuraColor(String defaultAuraColor) { this.defaultAuraColor = defaultAuraColor; }
-    public void setSuperformTpCost(int[] costs) { this.superformTpCost = costs; }
-    public void setGodformTpCost(int[] costs) { this.godformTpCost = costs; }
-    public void setLegendaryformsTpCost(int[] costs) { this.legendaryformsTpCost = costs; }
-    public void setAndroidformsTpCost(int[] costs) { this.androidformsTpCost = costs; }
+    public void setFormSkillTpCosts(String form, Integer[] costs) {
+        formSkillsCosts.put(form, costs);
+    }
 
     public boolean hasCustomModel() {
         return this.customModel != null && !this.customModel.isEmpty();
