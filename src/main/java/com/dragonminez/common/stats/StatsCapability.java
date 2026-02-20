@@ -43,13 +43,8 @@ public class StatsCapability {
     public static void onPlayerClone(PlayerEvent.Clone event) {
         Player player = event.getEntity();
         Player original = event.getOriginal();
-
         original.reviveCaps();
-
-        StatsProvider.get(INSTANCE, player).ifPresent(newData ->
-                StatsProvider.get(INSTANCE, original).ifPresent(newData::copyFrom)
-        );
-
+        StatsProvider.get(INSTANCE, player).ifPresent(newData -> StatsProvider.get(INSTANCE, original).ifPresent(newData::copyFrom));
         original.invalidateCaps();
     }
 

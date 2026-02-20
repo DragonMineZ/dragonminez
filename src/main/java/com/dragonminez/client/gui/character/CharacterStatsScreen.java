@@ -121,7 +121,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         int centerY = getUiHeight() / 2;
         int buttonX = 27;
-        int startY = centerY - 4;
+        int startY = centerY - 15;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         int availableTPs = statsData.getResources().getTrainingPoints();
@@ -217,7 +217,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
         if (statsData == null) return;
 
         int centerY = getUiHeight() / 2;
-        int tpcY = centerY + 84;
+        int tpcY = centerY + 73;
 
         int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
         double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
@@ -320,72 +320,78 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
         drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.form").withStyle(style -> style.withBold(true)), labelX, startY + 22, 0xD7FEF5, 0x000000);
         Component formComponent;
-        if (form == null || form.isEmpty()) {
-            formComponent = Component.translatable("race.dragonminez.base");
-        }
-        else {
-            formComponent = Component.translatable("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
-        }
+        boolean isBase = form == null || form.isEmpty() || form.equals("base");
+
+        if (isBase) formComponent = Component.translatable("race.dragonminez.base");
+        else formComponent = Component.translatable("race.dragonminez." + statsData.getCharacter().getRaceName() + ".form." + statsData.getCharacter().getActiveFormGroup() + "." + form);
         drawStringWithBorder2(graphics, formComponent, valueX + 5, startY + 22, 0xC7EAFC, 0x000000);
 
-        if (!form.equals("base") && mouseX >= valueX + 5 && mouseX <= valueX + 65 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
-            String currentFormGroup = statsData.getCharacter().getActiveFormGroup();
-            if (currentFormGroup != null && !currentFormGroup.isEmpty()) {
-                var formConfig = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), currentFormGroup);
-                if (formConfig != null) {
-                    var formData = formConfig.getForm(form);
-                    if (formData != null) {
-                        double mastery = statsData.getCharacter().getFormMasteries().getMastery(currentFormGroup, form);
-                        double maxMastery = formData.getMaxMastery();
+        if (mouseX >= valueX + 5 && mouseX <= valueX + 85 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
+            List<FormattedCharSequence> tooltip = new ArrayList<>();
+            boolean hasTitle = false;
 
-                        List<FormattedCharSequence> tooltip = new ArrayList<>();
-                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.form.mastery",
-                                        String.format(Locale.US, "%.2f", mastery),
-                                        String.format(Locale.US, "%.0f", maxMastery))
-                                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+            if (!isBase) {
+                String currentFormGroup = statsData.getCharacter().getActiveFormGroup();
+                if (currentFormGroup != null && !currentFormGroup.isEmpty()) {
+                    var formConfig = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), currentFormGroup);
+                    if (formConfig != null) {
+                        var formData = formConfig.getForm(form);
+                        if (formData != null) {
+                            if (!hasTitle) {
+                                tooltip.add(Component.translatable("gui.dragonminez.character_stats.form.mastery").withStyle(ChatFormatting.GOLD).getVisualOrderText());
+                                hasTitle = true;
+                            }
 
-                        graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+                            double mastery = statsData.getCharacter().getFormMasteries().getMastery(currentFormGroup, form);
+                            double maxMastery = formData.getMaxMastery();
+
+                            tooltip.add(Component.literal(" ")
+                                    .append(formComponent.copy().withStyle(ChatFormatting.GRAY))
+                                    .append(Component.literal(": " + String.format(Locale.US, "%.2f", mastery) + " / " + String.format(Locale.US, "%.0f", maxMastery)).withStyle(ChatFormatting.AQUA))
+                                    .getVisualOrderText());
+                        }
                     }
                 }
             }
-        }
 
-        if (stackForm != null && !stackForm.isEmpty()) {
-            String currentFormGroup = statsData.getCharacter().getActiveStackFormGroup();
-            var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
-            if (currentFormGroup != null && !currentFormGroup.isEmpty() && formConfig != null) {
-                drawStringWithBorder2(graphics, Component.translatable("race.dragonminez.stack.group." + statsData.getCharacter().getActiveStackFormGroup()).withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
+            if (stackForm != null && !stackForm.isEmpty()) {
+                String currentStackGroup = statsData.getCharacter().getActiveStackFormGroup();
+                var stackFormConfig = ConfigManager.getStackFormGroup(currentStackGroup);
 
-                var formData = formConfig.getForm(stackForm);
-                int textColor = formData != null && formData.getAuraColor() != null && !formData.getAuraColor().isEmpty()
-                        ? Integer.decode(formData.getAuraColor())
-                        : 0xC7EAFC;
-                Component stackFormComponent = Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getActiveStackFormGroup() + "." + stackForm);
-                drawStringWithBorder2(graphics, stackFormComponent, valueX + 5, startY + 33, textColor, 0x000000);
-
-                if (mouseX >= valueX + 5 && mouseX <= valueX + 65 && mouseY >= startY + 33 && mouseY <= startY + 33 + font.lineHeight) {
+                if (currentStackGroup != null && !currentStackGroup.isEmpty() && stackFormConfig != null) {
+                    var formData = stackFormConfig.getForm(stackForm);
                     if (formData != null) {
-                        double mastery = statsData.getCharacter().getStackFormMasteries().getMastery(currentFormGroup, stackForm);
+                        if (!hasTitle) {
+                            tooltip.add(Component.translatable("gui.dragonminez.character_stats.form.mastery").withStyle(ChatFormatting.GOLD).getVisualOrderText());
+                            hasTitle = true;
+                        }
+
+                        double mastery = statsData.getCharacter().getStackFormMasteries().getMastery(currentStackGroup, stackForm);
                         double maxMastery = formData.getMaxMastery();
 
-                        List<FormattedCharSequence> tooltip = new ArrayList<>();
-                        tooltip.add(Component.translatable("gui.dragonminez.character_stats.form.mastery",
-                                        String.format(Locale.US, "%.2f", mastery),
-                                        String.format(Locale.US, "%.0f", maxMastery))
-                                .withStyle(ChatFormatting.AQUA).getVisualOrderText());
+                        Component stackFormComponent = Component.translatable("race.dragonminez.stack.group." + currentStackGroup)
+                                .append(" ")
+                                .append(Component.translatable("race.dragonminez.stack.form." + currentStackGroup + "." + stackForm));
 
-                        graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+                        tooltip.add(Component.literal(" ")
+                                .append(stackFormComponent.copy().withStyle(ChatFormatting.GRAY))
+                                .append(Component.literal(": " + String.format(Locale.US, "%.2f", mastery) + " / " + String.format(Locale.US, "%.0f", maxMastery)).withStyle(ChatFormatting.LIGHT_PURPLE))
+                                .getVisualOrderText());
                     }
                 }
             }
+
+            if (!tooltip.isEmpty()) {
+                graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+            }
         }
 
-        drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 44, 0xD7FEF5, 0x000000);
+        drawStringWithBorder2(graphics, Component.translatable("gui.dragonminez.character_stats.class").withStyle(style -> style.withBold(true)), labelX, startY + 33, 0xD7FEF5, 0x000000);
         Component classComponent = Component.translatable("class.dragonminez." + characterClass);
-        drawStringWithBorder2(graphics, classComponent, valueX + 5, startY + 44, 0xFFFFFF, 0x000000);
+        drawStringWithBorder2(graphics, classComponent, valueX + 5, startY + 33, 0xFFFFFF, 0x000000);
 
-        int statsStartY = centerY - 11;
-        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats"), 82, statsStartY, 0x68CCFF, 0x000000);
+        int statsStartY = centerY - 21;
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.stats").withStyle(ChatFormatting.BOLD), 82, statsStartY, 0x68CCFF, 0x000000);
 
         String[] statNames = {"str", "skp", "res", "vit", "pwr", "ene"};
         String[] statNamesUpper = {"STR", "SKP", "RES", "VIT", "PWR", "ENE"};
@@ -398,7 +404,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
                 statsData.getStats().getEnergy()
         };
 
-        int statY = centerY + 8;
+        int statY = centerY - 3;
         for (int i = 0; i < statNames.length; i++) {
             int statLabelX = 42;
             int yPos = statY + (i * 12);
@@ -453,11 +459,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     }
 
     private void renderStatisticsInfo(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (useHexagonView) {
-            renderStatisticsInfoHexagon(graphics, mouseX, mouseY);
-        } else {
-            renderStatisticsInfoList(graphics, mouseX, mouseY);
-        }
+        if (useHexagonView) renderStatisticsInfoHexagon(graphics, mouseX, mouseY);
+        else renderStatisticsInfoList(graphics, mouseX, mouseY);
     }
 
     private void renderStatisticsInfoList(GuiGraphics graphics, int mouseX, int mouseY) {

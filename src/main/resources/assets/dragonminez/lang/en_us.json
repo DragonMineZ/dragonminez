@@ -74,7 +74,7 @@
   "gui.dragonminez.character_stats.base_value": "Base Value",
   "gui.dragonminez.character_stats.modified_value": "Modified Value",
   "gui.dragonminez.character_stats.bonus": "Bonus:",
-  "gui.dragonminez.character_stats.form.mastery": "Mastery: %s / %s",
+  "gui.dragonminez.character_stats.form.mastery": "Mastery:",
   "gui.dragonminez.character_stats.alignment.good": "§aGood §f- %s",
   "gui.dragonminez.character_stats.alignment.neutral": "§eNeutral §f- %s",
   "gui.dragonminez.character_stats.alignment.evil": "§cEvil §f- %s",

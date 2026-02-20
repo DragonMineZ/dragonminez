@@ -63,12 +63,19 @@ public class Skills {
 	}
 
     private int calculateMaxLevel(String skillName) {
-        int costBasedMaxLevel = ConfigManager.getSkillsConfig().getSkillCosts(skillName).getCosts().size();
-        if (skillName.equalsIgnoreCase("potentialunlock")) {
-            return Math.min(costBasedMaxLevel, 30);
-        } else {
-            return Math.min(costBasedMaxLevel, 50);
-        }
+        int costBasedMaxLevel = 0;
+        try {
+            var config = ConfigManager.getSkillsConfig();
+            if (config != null) {
+                var skillCosts = config.getSkillCosts(skillName);
+                if (skillCosts != null && skillCosts.getCosts() != null) {
+                    costBasedMaxLevel = skillCosts.getCosts().size();
+                }
+            }
+        } catch (Exception ignored) {}
+
+        if (skillName.equalsIgnoreCase("potentialunlock")) return Math.min(costBasedMaxLevel, 30);
+        else return Math.min(costBasedMaxLevel, 50);
     }
 
     public void setSkillLevel(String name, int level) {

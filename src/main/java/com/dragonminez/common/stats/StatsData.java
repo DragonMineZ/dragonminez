@@ -65,6 +65,8 @@ public class StatsData {
         RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
         RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
+        if (baseStats == null) baseStats = new RaceStatsConfig().getWarrior().getBaseStats();
+
         int initialStats = baseStats.getStrength() + baseStats.getStrikePower() +
                 baseStats.getResistance() + baseStats.getVitality() +
                 baseStats.getKiPower() + baseStats.getEnergy();
@@ -216,6 +218,8 @@ public class StatsData {
         RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
         RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
+        if (baseStats == null) baseStats = new RaceStatsConfig().getWarrior().getBaseStats();
+
         boolean hasDefaultStats = stats.getStrength() <= 5 && stats.getStrikePower() <= 5 &&
                 stats.getResistance() <= 5 && stats.getVitality() <= 5 &&
                 stats.getKiPower() <= 5 && stats.getEnergy() <= 5;
@@ -259,6 +263,17 @@ public class StatsData {
         RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
         RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 
+        if (scaling == null) return switch (statName.toUpperCase()) {
+            case "STR" -> new RaceStatsConfig().getWarrior().getStatScaling().getStrengthScaling();
+            case "SKP" -> new RaceStatsConfig().getWarrior().getStatScaling().getStrikePowerScaling();
+            case "STM" -> new RaceStatsConfig().getWarrior().getStatScaling().getStaminaScaling();
+            case "DEF" -> new RaceStatsConfig().getWarrior().getStatScaling().getDefenseScaling();
+            case "VIT" -> new RaceStatsConfig().getWarrior().getStatScaling().getVitalityScaling();
+            case "PWR" -> new RaceStatsConfig().getWarrior().getStatScaling().getKiPowerScaling();
+            case "ENE" -> new RaceStatsConfig().getWarrior().getStatScaling().getEnergyScaling();
+            default -> 1.0;
+        };
+
         return switch (statName.toUpperCase()) {
             case "STR" -> scaling.getStrengthScaling();
             case "SKP" -> scaling.getStrikePowerScaling();
@@ -272,9 +287,13 @@ public class StatsData {
     }
 
     private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
+        if (config == null) return switch (characterClass.toLowerCase()) {
+			case "spiritualist" -> new RaceStatsConfig().getSpiritualist();
+            case "martialartist" -> new RaceStatsConfig().getMartialArtist();
+            default -> new RaceStatsConfig().getWarrior();
+        };
         return switch (characterClass.toLowerCase()) {
-            case "warrior" -> config.getWarrior();
-            case "spiritualist" -> config.getSpiritualist();
+			case "spiritualist" -> config.getSpiritualist();
             case "martialartist" -> config.getMartialArtist();
             default -> config.getWarrior();
         };
@@ -317,7 +336,6 @@ public class StatsData {
     }
 
     public double getTotalMultiplier(String statName) {
-        // TODO: Add a config option deciding between additive multipliers and multiplicative multipliers
         return getFormMultiplier(statName) + getStackFormMultiplier(statName) + getEffectsMultiplier(statName);
     }
 
@@ -399,9 +417,9 @@ public class StatsData {
         }
 
         double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+        if (character.hasActiveForm() && formData != null) {
             double baseDrain = formData.getStaminaDrainMultiplier();
-            if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+            if (character.hasActiveStackForm() && stackFormData != null) {
                 baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
@@ -410,9 +428,9 @@ public class StatsData {
         }
 
         double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+        if (character.hasActiveStackForm() && stackFormData != null) {
             double stackDrain = stackFormData.getStackDrainMultiplier();
-            if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            if (character.hasActiveForm() && formData != null) {
                 stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
@@ -435,9 +453,9 @@ public class StatsData {
         }
 
         double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+        if (character.hasActiveForm() && formData != null) {
             double baseDrain = formData.getEnergyDrain();
-            if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+            if (character.hasActiveStackForm() && stackFormData != null) {
                 baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
@@ -446,9 +464,9 @@ public class StatsData {
         }
 
         double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+        if (character.hasActiveStackForm() && stackFormData != null) {
             double stackDrain = stackFormData.getEnergyDrain();
-            if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            if (character.hasActiveForm() && formData != null) {
                 stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
@@ -472,9 +490,9 @@ public class StatsData {
         }
 
         double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+        if (character.hasActiveForm() && formData != null) {
             double baseDrain = formData.getStaminaDrain();
-            if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+            if (character.hasActiveStackForm() && stackFormData != null) {
                 baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
@@ -483,9 +501,9 @@ public class StatsData {
         }
 
         double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+        if (character.hasActiveStackForm() && stackFormData != null) {
             double stackDrain = stackFormData.getStaminaDrain();
-            if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            if (character.hasActiveForm() && formData != null) {
                 stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
@@ -509,9 +527,9 @@ public class StatsData {
         }
 
         double adjustedBaseDrain = 0;
-        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+        if (character.hasActiveForm() && formData != null) {
             double baseDrain = formData.getHealthDrain();
-            if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+            if (character.hasActiveStackForm() && stackFormData != null) {
                 baseDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
@@ -520,9 +538,9 @@ public class StatsData {
         }
 
         double adjustedStackDrain = 0;
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+        if (character.hasActiveStackForm() && stackFormData != null) {
             double stackDrain = stackFormData.getHealthDrain();
-            if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            if (character.hasActiveForm() && formData != null) {
                 stackDrain *= formData.getStackDrainMultiplier() * stackFormData.getStackDrainMultiplier();
             }
             double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
