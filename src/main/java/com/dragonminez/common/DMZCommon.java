@@ -2,7 +2,6 @@ package com.dragonminez.common;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.ModCommonEvents;
 import com.dragonminez.common.init.*;
@@ -46,7 +45,5 @@ public class DMZCommon {
 		MainGameRules.register();
 		MainDamageTypes.register();
 
-		WorldGuardCompat.init();
     }
 }
-

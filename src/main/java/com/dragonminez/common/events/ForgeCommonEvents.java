@@ -4,6 +4,7 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -224,6 +225,8 @@ public class ForgeCommonEvents {
 
 		TickHandler.registerActionModeHandlers();
 		TickHandler.registerStatusEffectHandlers();
+
+		WorldGuardCompat.init();
 
 		ServerLevel overworld = event.getServer().getLevel(Level.OVERWORLD);
 		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);

@@ -35,7 +35,8 @@ public abstract class QuestReward {
     public enum RewardType {
         ITEM,
         COMMAND,
-        TPS
+        TPS,
+        SKILL
     }
 
     public enum DifficultyType {

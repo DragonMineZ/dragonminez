@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 
 public class SaiyanPassiveHandler implements IStatusEffectHandler {
     private static int saiyanZenkaiSeconds = 0;
@@ -32,6 +33,9 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
             if (ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("saiyan")) {
                 handleSaiyanPassive(serverPlayer, data);
             }
+        }
+        if (!data.getCooldowns().hasCooldown(Cooldowns.ZENKAI)) {
+            serverPlayer.removeEffect(MainEffects.SAIYAN_PASSIVE.get());
         }
     }
 
@@ -64,6 +68,16 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
 
             data.getResources().addRacialSkillCount(1);
             data.getCooldowns().setCooldown(Cooldowns.ZENKAI, config.getSaiyanZenkaiCooldownSeconds());
+            player.addEffect(
+                    new MobEffectInstance(
+                            MainEffects.SAIYAN_PASSIVE.get(),
+                            config.getSaiyanZenkaiCooldownSeconds() * 20,
+                            0,
+                            false,
+                            false,
+                            true
+                    )
+            );
             NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
             saiyanZenkaiSeconds = 0;
         }

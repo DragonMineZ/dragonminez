@@ -70,20 +70,14 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             var activeFormData = character.getActiveFormData();
             if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
                 modelKey = activeFormData.getCustomModel();
-            } else if (this.customModel != null && !this.customModel.isEmpty()) {
-                modelKey = this.customModel;
-            }
+            } else if (this.customModel != null && !this.customModel.isEmpty()) modelKey = this.customModel;
 
-            if (!modelKey.isEmpty()) {
-                return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType, customRaceGender);
-            }
 
-            if (race.equals("bioandroid")) {
-                return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
-            }
+            if (!modelKey.isEmpty()) return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType, customRaceGender);
 
+
+            if (race.equals("bioandroid")) return isBaseForm ? BIO_ANDROID : BIO_ANDROID_PERFECT;
             if (race.equals("frostdemon")) return FROST_DEMON;
-
             if (race.equals("namekian")) return BASE_DEFAULT;
 
             if (race.equals("majin")) {

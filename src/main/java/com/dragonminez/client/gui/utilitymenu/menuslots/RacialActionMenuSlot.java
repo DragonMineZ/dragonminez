@@ -27,7 +27,7 @@ public class RacialActionMenuSlot extends AbstractMenuSlot implements IUtilityMe
             );
         } else if ("namekian".equals(racialSkill) || "bioandroid".equals(racialSkill) || "majin".equals(racialSkill)) {
             return new ButtonInfo(
-                    Component.translatable("gui.action.dragonminez.racial." + race).withStyle(ChatFormatting.BOLD),
+                    Component.translatable("gui.action.dragonminez.racial." + racialSkill).withStyle(ChatFormatting.BOLD),
                     Component.translatable("gui.action.dragonminez." + (statsData.getStatus().getSelectedAction() == ActionMode.RACIAL ? "true" : "false")),
                     currentMode == ActionMode.RACIAL
             );

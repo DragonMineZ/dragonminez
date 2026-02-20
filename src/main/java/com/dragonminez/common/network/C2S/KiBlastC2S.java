@@ -1,6 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -10,7 +10,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -54,6 +54,16 @@ public class KiBlastC2S {
 					data.getResources().removeEnergy(cost);
 
 					data.getCooldowns().setCooldown(Cooldowns.KI_BLAST_CD, 32);
+					player.addEffect(
+							new MobEffectInstance(
+									MainEffects.KI_BLAST_CD.get(),
+									32,
+									0,
+									false,
+									false,
+									true
+							)
+					);
 
 					float damage = (float) (data.getKiDamage() * Math.max(0.5f, (0.05f * data.getSkills().getSkillLevel("kicontrol"))));
 

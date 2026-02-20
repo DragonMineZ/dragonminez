@@ -15,7 +15,6 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,8 +24,6 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class RacialSkillLogic {
 
@@ -140,19 +137,47 @@ public class RacialSkillLogic {
 		if (target instanceof MastersEntity) return;
 
 		if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {
-			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown"), true);
+			int secondsLeft = data.getCooldowns().getCooldown(Cooldowns.DRAIN);
+			player.displayClientMessage(Component.translatable("message.dragonminez.racial.cooldown", secondsLeft), true);
 			return;
 		}
 
 		int duration = 120;
 
 		teleportBehindTarget(player, target);
-		target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false, true));
-		player.addEffect(new MobEffectInstance(MainEffects.STUN.get(), duration, 0, false, false, true));
+		target.addEffect(
+				new MobEffectInstance(
+						MainEffects.STUN.get(),
+						duration,
+						0,
+						false,
+						false,
+						true
+				)
+		);
+		player.addEffect(
+				new MobEffectInstance(
+						MainEffects.STUN.get(),
+						duration,
+						0,
+						false,
+						false,
+						true
+				)
+		);
 		data.getStatus().setDrainingTargetId(target.getId());
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN_ACTIVE, duration);
 		data.getCooldowns().addCooldown(Cooldowns.DRAIN, config.getBioAndroidCooldownSeconds() * 20);
-		player.addEffect(new MobEffectInstance(MainEffects.BIOANDROID_PASSIVE.get(), config.getBioAndroidCooldownSeconds() * 20, 0, false, false, true));
+		player.addEffect(
+				new MobEffectInstance(
+						MainEffects.BIOANDROID_PASSIVE.get(),
+						config.getBioAndroidCooldownSeconds() * 20,
+						0,
+						false,
+						false,
+						true
+				)
+		);
 		player.playSound(MainSounds.TP_SHORT.get());
 		target.playSound(MainSounds.TP_SHORT.get());
 	}

@@ -21,6 +21,8 @@ public class MajinReviveHandler implements IStatusEffectHandler {
 
 	@Override
 	public void onPlayerSecond(ServerPlayer serverPlayer, StatsData data) {
-
+		if (!data.getCooldowns().hasCooldown(Cooldowns.MAJIN_REVIVE_CD)) {
+			serverPlayer.removeEffect(MainEffects.MAJIN_REVIVE.get());
+		}
 	}
 }

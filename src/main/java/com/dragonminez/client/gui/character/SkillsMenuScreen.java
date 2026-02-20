@@ -42,7 +42,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     private static final int MAX_VISIBLE_SKILLS = 8;
     private static final int BUTTON_ANIM_TIME = 5;
 
-    private enum SkillCategory { SKILLS, KI, FORMS }
+    private enum SkillCategory { SKILLS, KI, FORMS, STACKS }
     private SkillCategory currentCategory = SkillCategory.SKILLS;
 
     private StatsData statsData;
@@ -54,7 +54,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private int descScrollOffset = 0;
 	private int maxDescScroll = 0;
 
-    private ClippableTextureButton skillsButton, kiButton, formsButton;
+    private ClippableTextureButton skillsButton, kiButton, formsButton, stacksButton;
     private int animTick = 0;
     private boolean isHotZoneHovered = false;
 
@@ -160,9 +160,26 @@ public class SkillsMenuScreen extends BaseMenuScreen {
                 })
                 .build();
 
+        stacksButton = new ClippableTextureButton.Builder()
+                .position(hiddenX, buttonY + 96)
+                .size(26, 32)
+                .texture(MENU_BIG)
+                .textureCoords(226, 44, 226, 44)
+                .clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
+                .onPress(btn -> {
+                    currentCategory = SkillCategory.STACKS;
+                    selectedSkill = null;
+                    scrollOffset = 0;
+                    descScrollOffset = 0;
+                    updateSkillsList();
+                    refreshButtons();
+                })
+                .build();
+
         this.addRenderableWidget(skillsButton);
         this.addRenderableWidget(kiButton);
         this.addRenderableWidget(formsButton);
+        this.addRenderableWidget(stacksButton);
     }
 
     private void updateSkillsList() {
@@ -176,22 +193,37 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         Skills skills = statsData.getSkills();
         List<String> skillNames = new ArrayList<>();
 
+        var skillsConfig = ConfigManager.getSkillsConfig();
         switch (currentCategory) {
             case SKILLS:
                 skills.getAllSkills().forEach((name, skill) -> {
-                    if (!name.equals("superform") && !name.equals("godform") && !name.equals("legendaryforms") && !name.equals("androidforms")) {
+                    if (!skillsConfig.getKiSkills().contains(name)
+                            && !skillsConfig.getStackSkills().contains(name)
+                            && !skillsConfig.getFormSkills().contains(name)) {
                         skillNames.add(name);
                     }
                 });
                 break;
             case KI:
-                // KI skills can be added here in the future
+                skills.getAllSkills().forEach((name, skill) -> {
+                    if (skillsConfig.getKiSkills().contains(name)) {
+                        skillNames.add(name);
+                    }
+                });
                 break;
             case FORMS:
-                if (skills.hasSkill("superform")) skillNames.add("superform");
-                if (skills.hasSkill("godform")) skillNames.add("godform");
-                if (skills.hasSkill("legendaryforms")) skillNames.add("legendaryforms");
-				if (skills.hasSkill("androidforms")) skillNames.add("androidforms");
+                skills.getAllSkills().forEach((name, skill) -> {
+                    if (skillsConfig.getFormSkills().contains(name)) {
+                        skillNames.add(name);
+                    }
+                });
+                break;
+            case STACKS:
+                skills.getAllSkills().forEach((name, skill) -> {
+                    if (skillsConfig.getStackSkills().contains(name)) {
+                        skillNames.add(name);
+                    }
+                });
                 break;
         }
 
@@ -229,7 +261,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int currentTPS = statsData.getResources().getTrainingPoints();
         boolean canUpgrade = skill.getLevel() < skill.getMaxLevel() && currentTPS >= cost;
 		if (cost == -1 || cost == Integer.MAX_VALUE) return;
-		boolean isSuperForm = selectedSkill.equals("superform") || selectedSkill.equals("godform") || selectedSkill.equals("legendaryforms");
+
+        var skillsConfig = ConfigManager.getSkillsConfig();
+		boolean isSuperForm = skillsConfig.getFormSkills().contains(selectedSkill);
 
         if (skill.getLevel() < skill.getMaxLevel() && skill.getLevel() != skill.getMaxLevel() || isSuperForm) {
 			upgradeButton = new TexturedTextButton.Builder()
@@ -253,7 +287,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
     }
 
     private int getUpgradeCost(String skillName, int currentLevel) {
-		if (skillName.contains("form")) {
+		if (skillName.equalsIgnoreCase("superform")
+                || skillName.equalsIgnoreCase("godform")
+                || skillName.equalsIgnoreCase("legendaryforms")
+                || skillName.equalsIgnoreCase("androidforms")) {
 			var raceConfig = ConfigManager.getRaceCharacter(statsData.getCharacter().getRaceName());
 			int[] costs = null;
 			switch (skillName) {
@@ -311,7 +348,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         int hotZoneX = leftPanelX + 122;
         int hotZoneY = leftPanelY + 6;
         int hotZoneWidth = 48;
-        int hotZoneHeight = 100;
+        int hotZoneHeight = 133;
 
         isHotZoneHovered = mouseX >= hotZoneX && mouseX < hotZoneX + hotZoneWidth &&
                            mouseY >= hotZoneY && mouseY < hotZoneY + hotZoneHeight;
@@ -326,6 +363,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
         skillsButton.setX(newX);
         kiButton.setX(newX);
         formsButton.setX(newX);
+        stacksButton.setX(newX);
     }
 
     private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -400,6 +438,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case SKILLS -> title = "gui.dragonminez.skills.tab.skills";
 			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
 			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
+            case STACKS -> title = "gui.dragonminez.skills.tab.stacks";
 		}
 
 		drawCenteredStringWithBorder(graphics, Component.translatable(title)

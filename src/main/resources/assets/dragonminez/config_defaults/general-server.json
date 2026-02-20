@@ -1,0 +1,142 @@
+{
+  "configVersion": 1,
+  "worldGen": {
+    // Should DMZ structures be generated?
+    "generateCustomStructures": true,
+    // Should Dragon Balls be generated in the world?
+    // This also disable the Dragon Ball rescattering from Shenron/Porunga
+    "generateDragonBalls": true,
+    // Is otherworld dimension active?
+    // Note: Dimension generates always, but this disables
+    // the events to it, like SpacePod travel, death system, etc.
+    "otherworldActive": true,
+    // Dragon Ball spawn range from world origin (0,0)
+    "dbSpawnRange": 3000
+  },
+  "gameplay": {
+    // Should console output be enabled? Players will always receive the output besides of this setting.
+    "commandOutputOnConsole": true,
+    "reviveCooldownSeconds": 300,
+    "tpGainMultiplier": 1.0,
+    // TP Cost multiplier is not lineal, it increases exponentially.
+    // Formula: tpCost = (level * tpCostMultiplier) * tpCostMultiplier * 1.5
+    // In addition, leveling up a stat with a x10 does not cost 10 times more TP, it is recursive.
+    "tpCostMultiplier": 1.0,
+    // How much TP in percentage is gained by killing an entity, based on their max health
+    "tpHealthRatio": 0.1,
+    // How much TP is gained per hit landed on an entity
+    "tpPerHit": 2,
+    // TP Multiplier while being in the Hyperbolic Time Chamber
+    "HTCTpMultiplier": 2.5,
+    // Self explanatory
+    "maxStatValue": 10000,
+    // Is Story Mode enabled? Should we generate the default Sagas?
+    "storyModeEnabled": true,
+    "createDefaultSagas": true,
+    "senzu_cooldown_ticks": 240,
+    "food_regenerations": {
+      // Food item registry name : [health, ki, stamina] restored
+      // Has support for modded food items or vanilla items
+      // IE: "minecraft:cooked_beef": [0.1, 0.0, 0.0]
+      "dragonminez:frog_legs_cooked": [0.10, 0.10, 0.10],
+      "dragonminez:might_tree_fruit": [0.35, 0.35, 0.35],
+      "dragonminez:raw_dino_meat": [0.10, 0.10, 0.10],
+      "dragonminez:dino_tail_raw": [0.15, 0.15, 0.15],
+      "dragonminez:frog_legs_raw": [0.05, 0.05, 0.05],
+      "dragonminez:heart_medicine": [1.0, 1.0, 1.0],
+      "dragonminez:cooked_dino_meat": [0.15, 0.15, 0.15],
+      "dragonminez:dino_tail_cooked": [0.20, 0.20, 0.20],
+      "dragonminez:senzu_bean": [1.0, 1.0, 1.0]
+    },
+    // Stat multiplier for Effects
+    "might_fruit_power": 1.2,
+    "majin_power": 1.3,
+    "metamoruFusionThreshold": 0.5,
+    "fusionBoosts": ["STR","SKP","PWR"],
+    "fusionDurationSeconds": 900,
+    "fusionCooldownSeconds": 1800
+  },
+  // Combat configuration
+  "combat": {
+    // If true, players who log out during combat will be killed upon next login (Only PvP)
+    "killPlayersOnCombatLogout": true,
+    // Stamina cost relative to damage dealt
+    "staminaConsumptionRatio": 0.125,
+    // Enable to make attacks respect attack cooldown like in vanilla Minecraft.
+    // Disable to make attacks not respect attack cooldown, allowing for faster attacks, like 1.8 PvP.
+    "respectAttackCooldown": true,
+    "enableBlocking": true,
+    // Parrying needs blocking to be true to work
+    "enableParrying": true,
+    "enableComboAttacks": true,
+    "comboAttacksCooldownSeconds": 8,
+    "enablePerfectEvasion": true,
+    "parryWindowMs": 150,
+    "blockDamageReductionCap": 0.8,
+    "blockDamageReductionMin": 0.4,
+    "poiseDamageMultiplier": 0.25,
+    "poiseRegenCooldown": 100,
+    "blockBreakStunDurationTicks": 60,
+    "perfectEvasionWindowMs": 150,
+    "dashCooldownSeconds": 4,
+    "doubleDashCooldownSeconds": 12,
+    // Ki weapons config, first value is damage multiplier, second value is Ki Cost multiplier
+    "kiBladeConfig": [1.0, 1.0],
+    "kiScytheConfig": [1.5, 1.5],
+    "kiClawLanceConfig": [2.0, 2.0]
+  },
+  "racialSkills": {
+    // Needs to be true for racial skills to work, but you can disable a specific skill if needed
+    "enableRacialSkills": true,
+    "humanRacialSkill": true,
+    // 1.4 means 40% more ki regen
+    "humanKiRegenBoost": 1.4,
+    "saiyanRacialSkill": true,
+    // How many Zenkai activations are possible, no way to gain more than this
+    "saiyanZenkaiAmount": 3,
+    // Health regen ratio upon Zenkai activation
+    "saiyanZenkaiHealthRegen": 0.2,
+    // Stat boost multiplier upon Zenkai activation, 0.1 means 10% boost
+    "saiyanZenkaiStatBoost": 0.1,
+    // Which stats are boosted upon Zenkai activation
+    "saiyanZenkaiBoosts": ["STR", "SKP", "PWR"],
+    "saiyanZenkaiCooldownSeconds": 900,
+    "namekianRacialSkill": true,
+    "namekianAssimilationAmount": 4,
+    "namekianAssimilationHealthRegen": 0.35,
+    "namekianAssimilationStatBoost": 0.15,
+    "namekianAssimilationBoosts": ["STR", "SKP", "PWR"],
+    // If true, Namekian assimilation can be done on NPCs from Namek (Traders and Villagers)
+    "namekianAssimilationOnNamekNpcs": true,
+    "frostDemonRacialSkill": true,
+    // 1.25 means 25% more TP gain, this stacks with other TP gain multipliers in a ADDITIVE way, not multiplicative
+    "frostDemonTPBoost": 1.25,
+    "bioAndroidRacialSkill": true,
+    "bioAndroidCooldownSeconds": 900,
+    // 0.25 means 25% of damage dealt is drained as health, ki regen is boosted x3
+    "bioAndroidDrainRatio": 0.25,
+    "majinAbsoprtionSkill": true,
+    "majinReviveSkill": true,
+    "majinAbsorptionAmount": 3,
+    "majinAbsorptionHealthRegen": 0.3,
+    "majinAbsorptionStatsCopy": 0.1,
+    "majinAbsorptionBoosts": ["STR", "SKP", "PWR"],
+    // If true, Majin absorption can be done on mobs (any MOB, not ENTITY)
+    "majinAbsorptionOnMobs": true,
+    "majinReviveCooldownSeconds": 3600,
+    "majinReviveHealthRatioPerBlop": 0.25
+  },
+  // Storage configuration
+  // Available storage types: "NBT", "JSON", "DATABASE", case sensitive
+  "storage": {
+    "storageType": "NBT",
+    "host": "localhost",
+    "port": 3306,
+    "database": "dragonminez",
+    "table": "player_data",
+    "username": "root",
+    "password": "password",
+    "poolSize": 10,
+    "threadPoolSize": 4
+  }
+}

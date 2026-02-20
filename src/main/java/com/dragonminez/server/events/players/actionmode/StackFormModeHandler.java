@@ -2,14 +2,15 @@ package com.dragonminez.server.events.players.actionmode;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.IActionModeHandler;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 
 public class StackFormModeHandler implements IActionModeHandler {
     @Override
@@ -19,12 +20,7 @@ public class StackFormModeHandler implements IActionModeHandler {
             String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
             String type = ConfigManager.getStackFormGroup(group).getFormType();
-            int skillLvl = switch (type) {
-                case "kaioken" -> data.getSkills().getSkillLevel("kaioken");
-                case "ultrainstinct" -> data.getSkills().getSkillLevel("ultrainstinct");
-                case "ultraego" -> data.getSkills().getSkillLevel("ultraego");
-                default -> 1;
-            };
+            int skillLvl = data.getSkills().getSkillLevel(type);
             return (5 * Math.max(1, skillLvl));
         }
         return 0;
@@ -70,13 +66,18 @@ public class StackFormModeHandler implements IActionModeHandler {
 
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
-            String translatedFormGroup = I18n.get("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
-            String translatedFormName = I18n.get("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());
+            Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
+            Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());
+            String translatedStackForm = translatedStackFormGroup + " " + translatedStackFormName;
             if (data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty()) {
-                String translatedStackFormName = I18n.get("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
-                translatedFormName = translatedStackFormName + " " + translatedFormGroup + " " + translatedFormName;
+                Component translatedFormName = Component.translatable("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
+                translatedStackForm = translatedFormName + " x " + translatedStackForm;
             }
-            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", (translatedFormName)), true);
+            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", (translatedStackForm)), true);
+
+            if (!player.hasEffect(MainEffects.STACK_TRANSFORMED.get())) {
+                player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED.get(), -1, 0, false, false, true));
+            }
         }
     }
 }

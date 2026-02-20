@@ -1172,7 +1172,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (isDraggingModel) {
+        if (isDraggingModel && !colorPickerVisible) {
             double uiMouseX = toUiX(mouseX);
             double deltaX = uiMouseX - lastMouseX;
             playerRotation += (float)(deltaX * 0.8);
