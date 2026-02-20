@@ -70,13 +70,14 @@ public class StackFormModeHandler implements IActionModeHandler {
 
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
-            String translatedFormGroup = I18n.get("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
-            String translatedFormName = I18n.get("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());
+            String translatedStackFormGroup = I18n.get("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
+            String translatedStackFormName = I18n.get("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());
+            String translatedStackForm = translatedStackFormGroup + " " + translatedStackFormName;
             if (data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty()) {
-                String translatedStackFormName = I18n.get("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
-                translatedFormName = translatedStackFormName + " " + translatedFormGroup + " " + translatedFormName;
+                String translatedFormName = I18n.get("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
+                translatedStackForm = translatedFormName + " x " + translatedStackForm;
             }
-            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", (translatedFormName)), true);
+            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", (translatedStackForm)), true);
         }
     }
 }
