@@ -89,21 +89,30 @@ public class StatsData {
 
     public float getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
-        double vitMult = 1.0 + getFormMultiplier("VIT");
+        double vitMult = getFormMultiplier("VIT");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            vitMult += 1.0;
+        }
         double bonusVit = bonusStats.calculateBonus("VIT", 0);
         return (float) ((stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
     }
 
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
-        double eneMult = 1.0 + getFormMultiplier("ENE");
+        double eneMult = getFormMultiplier("ENE");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            eneMult += 1.0;
+        }
         double bonusEne = bonusStats.calculateBonus("ENE", 0);
         return (int) (20 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
     }
 
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
-        double resMult = 1.0 + getTotalMultiplier("RES");
+        double resMult = getTotalMultiplier("RES");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            resMult += 1.0;
+        }
         double bonusRes = bonusStats.calculateBonus("RES", 0);
         return (int) (20 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
     }
@@ -114,7 +123,10 @@ public class StatsData {
 
     public double getMaxMeleeDamage() {
         double strScaling = getStatScaling("STR");
-        double strMult = 1.0 + getTotalMultiplier("STR");
+        double strMult = getTotalMultiplier("STR");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            strMult += 1.0;
+        }
         double bonusStr = bonusStats.calculateBonus("STR", 0);
         return (1 + (stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling));
     }
@@ -128,7 +140,10 @@ public class StatsData {
 
     public double getMeleeDamage() {
         double strScaling = getStatScaling("STR");
-        double strMult = 1.0 + getTotalMultiplier("STR");
+        double strMult = getTotalMultiplier("STR");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            strMult += 1.0;
+        }
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
         double bonusStr = bonusStats.calculateBonus("STR", 0);
         return (1 + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * releaseMultiplier);
@@ -137,8 +152,12 @@ public class StatsData {
     public double getMaxStrikeDamage() {
         double skpScaling = getStatScaling("SKP");
         double strScaling = getStatScaling("STR");
-        double skpMult = 1.0 + getTotalMultiplier("SKP");
-        double strMult = 1.0 + getTotalMultiplier("STR");
+        double skpMult = getTotalMultiplier("SKP");
+        double strMult = getTotalMultiplier("STR");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            skpMult += 1.0;
+            strMult += 1.0;
+        }
         double bonusSkp = bonusStats.calculateBonus("SKP", 0);
         double bonusStr = bonusStats.calculateBonus("STR", 0);
         return (1 + (stats.getStrikePower() * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * 0.25);
@@ -147,8 +166,12 @@ public class StatsData {
     public double getStrikeDamage() {
         double skpScaling = getStatScaling("SKP");
         double strScaling = getStatScaling("STR");
-        double skpMult = 1.0 + getTotalMultiplier("SKP");
-        double strMult = 1.0 + getTotalMultiplier("STR");
+        double skpMult = getTotalMultiplier("SKP");
+        double strMult = getTotalMultiplier("STR");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            skpMult += 1.0;
+            strMult += 1.0;
+        }
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
         double bonusSkp = bonusStats.calculateBonus("SKP", 0);
         double bonusStr = bonusStats.calculateBonus("STR", 0);
@@ -158,14 +181,20 @@ public class StatsData {
 
     public double getMaxKiDamage() {
         double pwrScaling = getStatScaling("PWR");
-        double pwrMult = 1.0 + getTotalMultiplier("PWR");
+        double pwrMult = getTotalMultiplier("PWR");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            pwrMult += 1.0;
+        }
         double bonusPwr = bonusStats.calculateBonus("PWR", 0);
         return (stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling);
     }
 
     public double getKiDamage() {
         double pwrScaling = getStatScaling("PWR");
-        double pwrMult = 1.0 + getTotalMultiplier("PWR");
+        double pwrMult = getTotalMultiplier("PWR");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            pwrMult += 1.0;
+        }
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
         double bonusPwr = bonusStats.calculateBonus("PWR", 0);
         return ((stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling)) * releaseMultiplier;
@@ -173,7 +202,10 @@ public class StatsData {
 
     public double getMaxDefense() {
         double defScaling = getStatScaling("DEF");
-        double resMult = 1.0 + getTotalMultiplier("RES");
+        double resMult = getTotalMultiplier("RES");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            resMult += 1.0;
+        }
         double bonusRes = bonusStats.calculateBonus("RES", 0);
         double armor = player.getArmorValue();
         double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
@@ -182,7 +214,10 @@ public class StatsData {
 
     public double getDefense() {
         double defScaling = getStatScaling("DEF");
-        double resMult = 1.0 + getTotalMultiplier("RES");
+        double resMult = getTotalMultiplier("RES");
+        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            resMult += 1.0;
+        }
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
         double bonusRes = bonusStats.calculateBonus("RES", 0);
         double armor = player.getArmorValue();
@@ -336,32 +371,41 @@ public class StatsData {
     }
 
     public double getTotalMultiplier(String statName) {
+        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            return (getFormMultiplier(statName)) * (getStackFormMultiplier(statName)) * (getEffectsMultiplier(statName));
+        }
         return getFormMultiplier(statName) + getStackFormMultiplier(statName) + getEffectsMultiplier(statName);
     }
 
     public double getFormMultiplier(String statName) {
+        double multChange = 1.0;
+        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            multChange = 0.0;
+        }
+
         String currentForm = character.getActiveForm();
         String currentFormGroup = character.getActiveFormGroup();
 
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 0.0;
-        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 0.0;
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 1.0 - multChange;
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0 - multChange;
 
         var formConfig = ConfigManager.getFormGroup(character.getRaceName(), currentFormGroup);
-        if (formConfig == null) return 0.0;
+        if (formConfig == null) return 1.0 - multChange;
 
         var formData = formConfig.getForm(currentForm);
-        if (formData == null) return 0.0;
+        if (formData == null) return 1.0 - multChange;
 
         double baseMult = switch (statName.toUpperCase()) {
-            case "STR" -> formData.getStrMultiplier() - 1.0;
-            case "SKP" -> formData.getSkpMultiplier() - 1.0;
-            case "RES" -> (formData.getDefMultiplier() - 1.0 + formData.getStmMultiplier() - 1.0) / 2.0;
-            case "VIT" -> formData.getVitMultiplier() - 1.0;
-            case "PWR" -> formData.getPwrMultiplier() - 1.0;
-            case "ENE" -> formData.getEneMultiplier() - 1.0;
-            default -> 0.0;
+            case "STR" -> formData.getStrMultiplier();
+            case "SKP" -> formData.getSkpMultiplier();
+            case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
+            case "VIT" -> formData.getVitMultiplier();
+            case "PWR" -> formData.getPwrMultiplier();
+            case "ENE" -> formData.getEneMultiplier();
+            default -> 1.0;
         };
 
+        baseMult -= multChange;
         double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
         double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
 
@@ -369,28 +413,34 @@ public class StatsData {
     }
 
     public double getStackFormMultiplier(String statName) {
+        double multChange = 1.0;
+        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            multChange = 0.0;
+        }
+
         String currentForm = character.getActiveStackForm();
         String currentFormGroup = character.getActiveStackFormGroup();
 
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("")) return 0.0;
-        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 0.0;
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("")) return 1.0 - multChange;
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0 - multChange;
 
         var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
-        if (formConfig == null) return 0.0;
+        if (formConfig == null) return 1.0 - multChange;
 
         var formData = formConfig.getForm(currentForm);
-        if (formData == null) return 0.0;
+        if (formData == null) return 1.0 - multChange;
 
         double baseMult = switch (statName.toUpperCase()) {
-            case "STR" -> formData.getStrMultiplier() - 1.0;
-            case "SKP" -> formData.getSkpMultiplier() - 1.0;
-            case "RES" -> (formData.getDefMultiplier() - 1.0 + formData.getStmMultiplier() - 1.0) / 2.0;
-            case "VIT" -> formData.getVitMultiplier() - 1.0;
-            case "PWR" -> formData.getPwrMultiplier() - 1.0;
-            case "ENE" -> formData.getEneMultiplier() - 1.0;
-            default -> 0.0;
+            case "STR" -> formData.getStrMultiplier();
+            case "SKP" -> formData.getSkpMultiplier();
+            case "RES" -> (formData.getDefMultiplier() + formData.getStmMultiplier()) / 2.0;
+            case "VIT" -> formData.getVitMultiplier();
+            case "PWR" -> formData.getPwrMultiplier();
+            case "ENE" -> formData.getEneMultiplier();
+            default -> 1.0;
         };
 
+        baseMult -= multChange;
         double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
         double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
 
@@ -401,7 +451,12 @@ public class StatsData {
         return switch (statName.toUpperCase()) {
             case "STR", "SKP", "PWR" -> effects.getTotalEffectMultiplier();
             case "DEF" -> effects.getTotalEffectMultiplier() * 0.5;
-            default -> 0.0;
+            default -> {
+                if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+                    yield 0.0;
+                }
+                yield 1.0;
+            }
         };
     }
 

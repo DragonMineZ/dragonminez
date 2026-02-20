@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats;
 
+import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -55,8 +56,15 @@ public class Effects {
 
     public double getTotalEffectMultiplier() {
         double totalMultiplier = 0.0;
+        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+            totalMultiplier = 1.0;
+        }
         for (Effect effect : effectMap.values()) {
-            totalMultiplier += effect.getPower();
+            if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+                totalMultiplier *= effect.getPower();
+            } else {
+                totalMultiplier += effect.getPower();
+            }
         }
         return totalMultiplier;
     }
