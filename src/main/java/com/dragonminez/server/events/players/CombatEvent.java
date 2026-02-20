@@ -90,6 +90,7 @@ public class CombatEvent {
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
 				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrainMultiplier();
+				System.out.println("Stamina required formula: " + baseStaminaRequired + " * " + staminaDrainMultiplier + " = " + (baseStaminaRequired * staminaDrainMultiplier));
 				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
 				int currentStamina = attackerData.getResources().getCurrentStamina();
 
@@ -135,6 +136,7 @@ public class CombatEvent {
 				} else ComboManager.resetCombo(attacker.getUUID());
 
 				double finalDmzDamage;
+				System.out.println("Stamina Required: " + staminaRequired + " | Current Stamina: " + currentStamina);
 				if (currentStamina >= staminaRequired) {
 					finalDmzDamage = dmzDamage;
 					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);

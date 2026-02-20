@@ -49,6 +49,8 @@ public class TickHandler {
 
         UUID playerId = serverPlayer.getUUID();
         int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
+		if (serverPlayer.getHealth() < 0) serverPlayer.setHealth(1);
+		if (serverPlayer.getHealth() <= 0.25) serverPlayer.kill();
 
         StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
             if (!data.getStatus().hasCreatedCharacter()) return;

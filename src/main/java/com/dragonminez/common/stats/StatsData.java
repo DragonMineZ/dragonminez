@@ -225,169 +225,27 @@ public class StatsData {
         return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
     }
 
-    public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
-                                           int hairId, com.dragonminez.common.hair.CustomHair customHair,
-                                           int bodyType, int eyesType, int noseType, int mouthType, int tattooType,
-                                           String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
-                                           String eye1Color, String eye2Color, String auraColor) {
-        character.setRace(raceName);
-        character.setGender(gender);
-        character.setCharacterClass(characterClass);
-        character.setHairId(hairId);
-        if (customHair != null) character.setHairBase(customHair);
-        character.setBodyType(bodyType);
-        character.setEyesType(eyesType);
-        character.setNoseType(noseType);
-        character.setMouthType(mouthType);
-        character.setTattooType(tattooType);
-        character.setHairColor(hairColor);
-        character.setBodyColor(bodyColor);
-        character.setBodyColor2(bodyColor2);
-        character.setBodyColor3(bodyColor3);
-        character.setEye1Color(eye1Color);
-        character.setEye2Color(eye2Color);
-        character.setAuraColor(auraColor);
-        status.setCreatedCharacter(true);
-
-        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
-        RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
-
-        if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
-
-        boolean hasDefaultStats = stats.getStrength() <= 5 && stats.getStrikePower() <= 5 &&
-                stats.getResistance() <= 5 && stats.getVitality() <= 5 &&
-                stats.getKiPower() <= 5 && stats.getEnergy() <= 5;
-
-        if (hasDefaultStats) {
-            stats.setStrength(baseStats.getStrength());
-            stats.setStrikePower(baseStats.getStrikePower());
-            stats.setResistance(baseStats.getResistance());
-            stats.setVitality(baseStats.getVitality());
-            stats.setKiPower(baseStats.getKiPower());
-            stats.setEnergy(baseStats.getEnergy());
-        }
-
-        resources.setCurrentEnergy(getMaxEnergy());
-        resources.setCurrentStamina(getMaxStamina());
-        resources.setCurrentPoise(getMaxPoise());
-        resources.setPowerRelease(5);
-        resources.setAlignment(100);
-        character.setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(this));
-
-        updateTransformationSkillLimits(raceName);
-    }
-
-    public void updateTransformationSkillLimits(String raceName) {
-        RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
-        if (charConfig != null) {
-            int superformMax = charConfig.getSuperformTpCost() != null ? charConfig.getSuperformTpCost().length : 0;
-            int godformMax = charConfig.getGodformTpCost() != null ? charConfig.getGodformTpCost().length : 0;
-            int legendaryMax = charConfig.getLegendaryformsTpCost() != null ? charConfig.getLegendaryformsTpCost().length : 0;
-            int androidMax = charConfig.getAndroidformsTpCost() != null ? charConfig.getAndroidformsTpCost().length : 0;
-
-            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax, androidMax);
-        }
-    }
-
-    public double getStatScaling(String statName) {
-        String raceName = character.getRaceName();
-        String characterClass = character.getCharacterClass();
-
-        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
-        RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
-
-        if (scaling == null) return switch (statName.toUpperCase()) {
-            case "STR" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStrengthScaling();
-            case "SKP" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStrikePowerScaling();
-            case "STM" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStaminaScaling();
-            case "DEF" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getDefenseScaling();
-            case "VIT" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getVitalityScaling();
-            case "PWR" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getKiPowerScaling();
-            case "ENE" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getEnergyScaling();
-            default -> 1.0;
-        };
-
-        return switch (statName.toUpperCase()) {
-            case "STR" -> scaling.getStrengthScaling();
-            case "SKP" -> scaling.getStrikePowerScaling();
-            case "STM" -> scaling.getStaminaScaling();
-            case "DEF" -> scaling.getDefenseScaling();
-            case "VIT" -> scaling.getVitalityScaling();
-            case "PWR" -> scaling.getKiPowerScaling();
-            case "ENE" -> scaling.getEnergyScaling();
-            default -> 1.0;
-        };
-    }
-
-    private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-        if (config == null) {
-            return new RaceStatsConfig().getClassStats(characterClass);
-        }
-        return config.getClassStats(characterClass);
-    }
-
-    public int calculateRecursiveCost(int statsToAdd, int baseMultiplier, int maxStats, double multiplier) {
-        int totalCost = 0;
-        int currentTotalStats = stats.getTotalStats();
-
-        for (int i = 0; i < statsToAdd; i++) {
-            if (currentTotalStats + i >= maxStats * 6) break;
-            int statLevel = (currentTotalStats + i) / 6;
-            totalCost += (int) Math.round(baseMultiplier + (multiplier * statLevel));
-        }
-        return (int) Math.round(totalCost * 1.25);
-    }
-
-    public int calculateStatIncrease(int baseMultiplier, int statsToAdd, int availableTPs, int maxStats, double multiplier) {
-        int statsIncreased = 0;
-        int costAccumulated = 0;
-        int currentTotalStats = stats.getTotalStats();
-
-        while (statsIncreased < statsToAdd) {
-            if (currentTotalStats + statsIncreased >= maxStats * 6) break;
-
-            int statLevel = (currentTotalStats + statsIncreased) / 6;
-            int costForStat = (int) Math.round(baseMultiplier + (multiplier * statLevel));
-
-            if (costAccumulated + costForStat > availableTPs) break;
-
-            costAccumulated += costForStat;
-            statsIncreased++;
-        }
-
-        return statsIncreased;
-    }
-
-    public void tick() {
-        cooldowns.tick();
-    }
-
     public double getTotalMultiplier(String statName) {
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-            return (getFormMultiplier(statName)) * (getStackFormMultiplier(statName)) * (getEffectsMultiplier(statName));
-        }
-        return getFormMultiplier(statName) + getStackFormMultiplier(statName) + getEffectsMultiplier(statName);
+        double form = getFormMultiplier(statName);
+        double stack = getStackFormMultiplier(statName);
+        double effect = getEffectsMultiplier(statName);
+
+        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect;
+        else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0);
     }
 
     public double getFormMultiplier(String statName) {
-        double multChange = 1.0;
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-            multChange = 0.0;
-        }
-
         String currentForm = character.getActiveForm();
         String currentFormGroup = character.getActiveFormGroup();
 
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 1.0 - multChange;
-        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0 - multChange;
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("base")) return 1.0;
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
 
         var formConfig = ConfigManager.getFormGroup(character.getRaceName(), currentFormGroup);
-        if (formConfig == null) return 1.0 - multChange;
+        if (formConfig == null) return 1.0;
 
         var formData = formConfig.getForm(currentForm);
-        if (formData == null) return 1.0 - multChange;
+        if (formData == null) return 1.0;
 
         double baseMult = switch (statName.toUpperCase()) {
             case "STR" -> formData.getStrMultiplier();
@@ -399,30 +257,24 @@ public class StatsData {
             default -> 1.0;
         };
 
-        baseMult -= multChange;
         double mastery = character.getFormMasteries().getMastery(currentFormGroup, currentForm);
         double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
 
-        return baseMult * (1.0 + masteryBonus);
+        return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
     }
 
     public double getStackFormMultiplier(String statName) {
-        double multChange = 1.0;
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-            multChange = 0.0;
-        }
-
         String currentForm = character.getActiveStackForm();
         String currentFormGroup = character.getActiveStackFormGroup();
 
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("")) return 1.0 - multChange;
-        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0 - multChange;
+        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("")) return 1.0;
+        if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
 
         var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);
-        if (formConfig == null) return 1.0 - multChange;
+        if (formConfig == null) return 1.0;
 
         var formData = formConfig.getForm(currentForm);
-        if (formData == null) return 1.0 - multChange;
+        if (formData == null) return 1.0;
 
         double baseMult = switch (statName.toUpperCase()) {
             case "STR" -> formData.getStrMultiplier();
@@ -434,36 +286,28 @@ public class StatsData {
             default -> 1.0;
         };
 
-        baseMult -= multChange;
         double mastery = character.getStackFormMasteries().getMastery(currentFormGroup, currentForm);
         double masteryBonus = mastery * formData.getStatMultPerMasteryPoint();
 
-        return baseMult * (1.0 + masteryBonus);
+        return 1.0 + ((baseMult - 1.0) * (1.0 + masteryBonus));
     }
 
     public double getEffectsMultiplier(String statName) {
+        double rawEffect = effects.getTotalEffectMultiplier();
+
         return switch (statName.toUpperCase()) {
-            case "STR", "SKP", "PWR" -> effects.getTotalEffectMultiplier();
-            case "DEF" -> effects.getTotalEffectMultiplier() * 0.5;
-            default -> {
-                if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
-                    yield 0.0;
-                }
-                yield 1.0;
-            }
+            case "STR", "SKP", "PWR" -> rawEffect;
+            case "DEF" -> 1.0 + ((rawEffect - 1.0) * 0.5);
+            default -> 1.0;
         };
     }
 
     public double getAdjustedStaminaDrainMultiplier() {
-        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-            return 0.0;
-        }
+        if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 1.0;
 
         var formData = character.getActiveFormData();
         var stackFormData = character.getActiveStackFormData();
-        if (formData == null && stackFormData == null) {
-            return 0.0;
-        }
+        if (formData == null && stackFormData == null) return 1.0;
 
         double adjustedBaseDrain = 0;
         if (character.hasActiveForm() && formData != null) {
@@ -491,15 +335,11 @@ public class StatsData {
     }
 
     public double getAdjustedEnergyDrain() {
-        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-            return 0.0;
-        }
+        if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
 
         var formData = character.getActiveFormData();
         var stackFormData = character.getActiveStackFormData();
-        if (formData == null && stackFormData == null) {
-            return 0.0;
-        }
+        if (formData == null && stackFormData == null) return 0.0;
 
         double adjustedBaseDrain = 0;
         if (character.hasActiveForm() && formData != null) {
@@ -528,15 +368,11 @@ public class StatsData {
     }
 
     public double getAdjustedStaminaDrain() {
-        if (!character.hasActiveForm() && !character.hasActiveStackForm()) {
-            return 0.0;
-        }
+        if (!character.hasActiveForm() && !character.hasActiveStackForm()) return 0.0;
 
         var formData = character.getActiveFormData();
         var stackFormData = character.getActiveStackFormData();
-        if (formData == null && stackFormData == null) {
-            return 0.0;
-        }
+        if (formData == null && stackFormData == null) return 0.0;
 
         double adjustedBaseDrain = 0;
         if (character.hasActiveForm() && formData != null) {
@@ -601,6 +437,153 @@ public class StatsData {
         return Math.max(0.001, drainPercentage * this.getMaxHealth());
     }
 
+
+
+    public void initializeWithRaceAndClass(String raceName, String characterClass, String gender,
+                                           int hairId, com.dragonminez.common.hair.CustomHair customHair,
+                                           int bodyType, int eyesType, int noseType, int mouthType, int tattooType,
+                                           String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
+                                           String eye1Color, String eye2Color, String auraColor) {
+        character.setRace(raceName);
+        character.setGender(gender);
+        character.setCharacterClass(characterClass);
+        character.setHairId(hairId);
+        if (customHair != null) character.setHairBase(customHair);
+        character.setBodyType(bodyType);
+        character.setEyesType(eyesType);
+        character.setNoseType(noseType);
+        character.setMouthType(mouthType);
+        character.setTattooType(tattooType);
+        character.setHairColor(hairColor);
+        character.setBodyColor(bodyColor);
+        character.setBodyColor2(bodyColor2);
+        character.setBodyColor3(bodyColor3);
+        character.setEye1Color(eye1Color);
+        character.setEye2Color(eye2Color);
+        character.setAuraColor(auraColor);
+        status.setCreatedCharacter(true);
+
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
+
+        if (baseStats == null) baseStats = new RaceStatsConfig().getWarrior().getBaseStats();
+
+        boolean hasDefaultStats = stats.getStrength() <= 5 && stats.getStrikePower() <= 5 &&
+                stats.getResistance() <= 5 && stats.getVitality() <= 5 &&
+                stats.getKiPower() <= 5 && stats.getEnergy() <= 5;
+
+        if (hasDefaultStats) {
+            stats.setStrength(baseStats.getStrength());
+            stats.setStrikePower(baseStats.getStrikePower());
+            stats.setResistance(baseStats.getResistance());
+            stats.setVitality(baseStats.getVitality());
+            stats.setKiPower(baseStats.getKiPower());
+            stats.setEnergy(baseStats.getEnergy());
+        }
+
+        resources.setCurrentEnergy(getMaxEnergy());
+        resources.setCurrentStamina(getMaxStamina());
+        resources.setCurrentPoise(getMaxPoise());
+        resources.setPowerRelease(5);
+        resources.setAlignment(100);
+        character.setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(this));
+
+        updateTransformationSkillLimits(raceName);
+    }
+
+    public void updateTransformationSkillLimits(String raceName) {
+        RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
+        if (charConfig != null) {
+            int superformMax = charConfig.getSuperformTpCost() != null ? charConfig.getSuperformTpCost().length : 0;
+            int godformMax = charConfig.getGodformTpCost() != null ? charConfig.getGodformTpCost().length : 0;
+            int legendaryMax = charConfig.getLegendaryformsTpCost() != null ? charConfig.getLegendaryformsTpCost().length : 0;
+            int androidMax = charConfig.getAndroidformsTpCost() != null ? charConfig.getAndroidformsTpCost().length : 0;
+
+            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax, androidMax);
+        }
+    }
+
+    public double getStatScaling(String statName) {
+        String raceName = character.getRaceName();
+        String characterClass = character.getCharacterClass();
+
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+        RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+        RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
+
+        if (scaling == null) return switch (statName.toUpperCase()) {
+            case "STR" -> new RaceStatsConfig().getWarrior().getStatScaling().getStrengthScaling();
+            case "SKP" -> new RaceStatsConfig().getWarrior().getStatScaling().getStrikePowerScaling();
+            case "STM" -> new RaceStatsConfig().getWarrior().getStatScaling().getStaminaScaling();
+            case "DEF" -> new RaceStatsConfig().getWarrior().getStatScaling().getDefenseScaling();
+            case "VIT" -> new RaceStatsConfig().getWarrior().getStatScaling().getVitalityScaling();
+            case "PWR" -> new RaceStatsConfig().getWarrior().getStatScaling().getKiPowerScaling();
+            case "ENE" -> new RaceStatsConfig().getWarrior().getStatScaling().getEnergyScaling();
+            default -> 1.0;
+        };
+
+        return switch (statName.toUpperCase()) {
+            case "STR" -> scaling.getStrengthScaling();
+            case "SKP" -> scaling.getStrikePowerScaling();
+            case "STM" -> scaling.getStaminaScaling();
+            case "DEF" -> scaling.getDefenseScaling();
+            case "VIT" -> scaling.getVitalityScaling();
+            case "PWR" -> scaling.getKiPowerScaling();
+            case "ENE" -> scaling.getEnergyScaling();
+            default -> 1.0;
+        };
+    }
+
+    private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
+        if (config == null) return switch (characterClass.toLowerCase()) {
+            case "spiritualist" -> new RaceStatsConfig().getSpiritualist();
+            case "martialartist" -> new RaceStatsConfig().getMartialArtist();
+            default -> new RaceStatsConfig().getWarrior();
+        };
+        return switch (characterClass.toLowerCase()) {
+            case "spiritualist" -> config.getSpiritualist();
+            case "martialartist" -> config.getMartialArtist();
+            default -> config.getWarrior();
+        };
+    }
+
+    public int calculateRecursiveCost(int statsToAdd, int baseMultiplier, int maxStats, double multiplier) {
+        int totalCost = 0;
+        int currentTotalStats = stats.getTotalStats();
+
+        for (int i = 0; i < statsToAdd; i++) {
+            if (currentTotalStats + i >= maxStats * 6) break;
+            int statLevel = (currentTotalStats + i) / 6;
+            totalCost += (int) Math.round(baseMultiplier + (multiplier * statLevel));
+        }
+        return (int) Math.round(totalCost * 1.25);
+    }
+
+    public int calculateStatIncrease(int baseMultiplier, int statsToAdd, int availableTPs, int maxStats, double multiplier) {
+        int statsIncreased = 0;
+        int costAccumulated = 0;
+        int currentTotalStats = stats.getTotalStats();
+
+        while (statsIncreased < statsToAdd) {
+            if (currentTotalStats + statsIncreased >= maxStats * 6) break;
+
+            int statLevel = (currentTotalStats + statsIncreased) / 6;
+            int costForStat = (int) Math.round(baseMultiplier + (multiplier * statLevel));
+
+            if (costAccumulated + costForStat > availableTPs) break;
+
+            costAccumulated += costForStat;
+            statsIncreased++;
+        }
+
+        return statsIncreased;
+    }
+
+    public void tick() {
+        cooldowns.tick();
+    }
+
     public void saveApparanceData(CompoundTag nbt) {
         nbt.put("Character", character.save());
     }
@@ -616,6 +599,7 @@ public class StatsData {
         nbt.put("Effects", effects.save());
         nbt.put("QuestData", questData.serializeNBT());
         nbt.put("BonusStats", bonusStats.save());
+        nbt.put("Training", training.save());
         nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
         return nbt;
     }
@@ -648,6 +632,9 @@ public class StatsData {
         if (nbt.contains("BonusStats")) {
             bonusStats.load(nbt.getCompound("BonusStats"));
         }
+        if (nbt.contains("Training")) {
+            training.load(nbt.getCompound("Training"));
+        }
         if (nbt.contains("HasInitializedHealth")) {
             hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
         }
@@ -667,6 +654,7 @@ public class StatsData {
         this.effects.copyFrom(other.effects);
         this.questData.deserializeNBT(other.questData.serializeNBT());
         this.bonusStats.copyFrom(other.bonusStats);
+        this.training.copyFrom(other.training);
         this.hasInitializedHealth = other.hasInitializedHealth;
 
         if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {

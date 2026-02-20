@@ -46,10 +46,10 @@ import java.util.*;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class AuraRenderHandler {
-	private static final ResourceLocation AURA_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiaura.geo.json");
-	private static final ResourceLocation AURA_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_0.png");
-	private static final ResourceLocation AURA_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
-	private static final ResourceLocation AURA_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
+    private static final ResourceLocation AURA_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiaura.geo.json");
+    private static final ResourceLocation AURA_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_0.png");
+    private static final ResourceLocation AURA_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
+    private static final ResourceLocation AURA_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
     private static final ResourceLocation AURA_SLOW_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiaura2.geo.json");
 
     private static final ResourceLocation SPARK_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
@@ -63,6 +63,10 @@ public class AuraRenderHandler {
     private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
     private static final Map<Integer, Long> FUSION_START_TIME = new HashMap<>();
     private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new HashMap<>();
+
+    // Mapas para la transición de color por jugador
+    private static final Map<Integer, Float> COLOR_PROGRESS_MAP = new HashMap<>();
+    private static final Map<Integer, Long> COLOR_TICK_MAP = new HashMap<>();
 
     private static class CachedAuraData {
         float auraScaleX, auraScaleY, auraScaleZ;
@@ -170,7 +174,7 @@ public class AuraRenderHandler {
                     long timeSinceStart = gameTime - FUSION_START_TIME.get(playerId);
 
                     if (timeSinceStart < 60) {
-                        float[] color = getKiColor(stats);
+                        float[] color = getInterpolatedKiColor(player, stats, partialTick);
                         int r = (int)(color[0] * 255);
                         int g = (int)(color[1] * 255);
                         int b = (int)(color[2] * 255);
@@ -225,6 +229,9 @@ public class AuraRenderHandler {
         PULSE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
         PULSE_LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
         LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+
+        COLOR_PROGRESS_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
+        COLOR_TICK_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 
         var sparks = AuraRenderQueue.getAndClearSparks();
         if (sparks != null && !sparks.isEmpty()) {
@@ -282,11 +289,11 @@ public class AuraRenderHandler {
         };
     }
 
-	private static void syncModelToPlayer(BakedGeoModel auraModel, BakedGeoModel playerModel) {
-		for (GeoBone auraBone : auraModel.topLevelBones()) {
-			syncBoneRecursively(auraBone, playerModel);
-		}
-	}
+    private static void syncModelToPlayer(BakedGeoModel auraModel, BakedGeoModel playerModel) {
+        for (GeoBone auraBone : auraModel.topLevelBones()) {
+            syncBoneRecursively(auraBone, playerModel);
+        }
+    }
 
     private static void showBoneChain(GeoBone bone) {
         setHiddenRecursive(bone, false);
@@ -310,34 +317,23 @@ public class AuraRenderHandler {
         }
     }
 
-	private static void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
-		sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
-			destBone.setRotX(sourceBone.getRotX());
-			destBone.setRotY(sourceBone.getRotY());
-			destBone.setRotZ(sourceBone.getRotZ());
-			destBone.setPosX(sourceBone.getPosX());
-			destBone.setPosY(sourceBone.getPosY());
-			destBone.setPosZ(sourceBone.getPosZ());
-		});
-		for (GeoBone child : destBone.getChildBones()) syncBoneRecursively(child, sourceModel);
-	}
+    private static void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
+        sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
+            destBone.setRotX(sourceBone.getRotX());
+            destBone.setRotY(sourceBone.getRotY());
+            destBone.setRotZ(sourceBone.getRotZ());
+            destBone.setPosX(sourceBone.getPosX());
+            destBone.setPosY(sourceBone.getPosY());
+            destBone.setPosZ(sourceBone.getPosZ());
+        });
+        for (GeoBone child : destBone.getChildBones()) syncBoneRecursively(child, sourceModel);
+    }
 
-	private static float[] getKiColor(StatsData stats) {
-		var character = stats.getCharacter();
-		String kiHex = character.getAuraColor();
-        if (stats.getStatus().isActionCharging()) {
-            if (stats.getStatus().getSelectedAction().equals(ActionMode.FORM)) {
-                FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(stats);
-                if (nextForm != null && nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty()) {
-                    kiHex = nextForm.getAuraColor();
-                }
-            } else if (stats.getStatus().getSelectedAction().equals(ActionMode.STACK)) {
-                FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-                if (nextForm != null && nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty()) {
-                    kiHex = nextForm.getAuraColor();
-                }
-            }
-        } else if (character.hasActiveStackForm()
+    private static String getBaseKiColorHex(StatsData stats) {
+        var character = stats.getCharacter();
+        String kiHex = character.getAuraColor();
+
+        if (character.hasActiveStackForm()
                 && character.getActiveStackFormData() != null
                 && character.getActiveStackFormData().getAuraColor() != null
                 && !character.getActiveStackFormData().getAuraColor().isEmpty()) {
@@ -347,9 +343,63 @@ public class AuraRenderHandler {
                 && character.getActiveFormData().getAuraColor() != null
                 && !character.getActiveFormData().getAuraColor().isEmpty()) {
             kiHex = character.getActiveFormData().getAuraColor();
-		}
-		return ColorUtils.hexToRgb(kiHex);
-	}
+        }
+
+        return kiHex;
+    }
+
+    private static float[] getInterpolatedKiColor(Player player, StatsData stats, float partialTick) {
+        int entityId = player.getId();
+        String baseHex = getBaseKiColorHex(stats);
+
+        if (stats.getStatus().isActionCharging()) {
+            String targetHex = baseHex;
+            FormConfig.FormData nextForm = null;
+
+            boolean hasStackForm = stats.getCharacter().hasActiveStackForm();
+
+            if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+                nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+            } else if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+                if (!hasStackForm) nextForm = TransformationsHelper.getNextAvailableForm(stats);
+            }
+
+            if (nextForm != null && nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty()) {
+                targetHex = nextForm.getAuraColor();
+            }
+
+            float lastProgress = COLOR_PROGRESS_MAP.getOrDefault(entityId, 0.0f);
+            long lastTick = COLOR_TICK_MAP.getOrDefault(entityId, 0L);
+            float targetProgress = stats.getResources().getActionCharge() / 100.0f;
+            long currentTick = player.tickCount;
+            float interpolationSpeed = 0.15f;
+
+            if (currentTick != lastTick) {
+                lastProgress = lastProgress + (targetProgress - lastProgress) * interpolationSpeed;
+                COLOR_TICK_MAP.put(entityId, currentTick);
+                COLOR_PROGRESS_MAP.put(entityId, lastProgress);
+            }
+
+            float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastProgress, targetProgress);
+            smoothProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
+
+            return interpolateColor(baseHex, targetHex, smoothProgress);
+        } else {
+            COLOR_PROGRESS_MAP.put(entityId, 0.0f);
+            return ColorUtils.hexToRgb(baseHex);
+        }
+    }
+
+    private static float[] interpolateColor(String hexFrom, String hexTo, float factor) {
+        float[] rgbFrom = ColorUtils.hexToRgb(hexFrom);
+        float[] rgbTo = ColorUtils.hexToRgb(hexTo);
+
+        float r = Mth.lerp(factor, rgbFrom[0], rgbTo[0]);
+        float g = Mth.lerp(factor, rgbFrom[1], rgbTo[1]);
+        float b = Mth.lerp(factor, rgbFrom[2], rgbTo[2]);
+
+        return new float[]{r, g, b};
+    }
 
     private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, boolean isActive) {
         var player = entry.player();
@@ -380,7 +430,7 @@ public class AuraRenderHandler {
 
         data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
         data.auraScaleX = aura[0]; data.auraScaleY = aura[1]; data.auraScaleZ = aura[2];
-        data.color = getKiColor(stats);
+        data.color = getInterpolatedKiColor(player, stats, entry.partialTick());
         data.model = auraModel;
         data.playerModel = entry.playerModel();
 
@@ -494,7 +544,7 @@ public class AuraRenderHandler {
         float finalScaleY = aura[1];
         float finalScaleZ = aura[2] * expansion;
 
-        float[] color = getKiColor(stats);
+        float[] color = getInterpolatedKiColor(player, stats, entry.partialTick());
 
         syncModelToPlayer(slowModel, entry.playerModel());
 
@@ -548,7 +598,7 @@ public class AuraRenderHandler {
         float[] aura = getAuraScale(stats);
         data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
         data.auraScaleX = aura[0]; data.auraScaleY = aura[1]; data.auraScaleZ = aura[2];
-        data.color = getKiColor(stats);
+        data.color = getInterpolatedKiColor(player, stats, partialTick);
         data.model = auraModel;
 
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
@@ -643,16 +693,7 @@ public class AuraRenderHandler {
         if (stats == null) return;
 
         float scale = 1.0f;
-        int particleColor = 0xFFFFFF;
-
         var character = stats.getCharacter();
-
-        try {
-            String hex = character.getAuraColor();
-            if (hex != null && !hex.isEmpty()) {
-                particleColor = Integer.decode(hex);
-            }
-        } catch (Exception ignored) {}
 
         if (character.hasActiveForm()) {
             var activeForm = character.getActiveFormData();
@@ -661,19 +702,17 @@ public class AuraRenderHandler {
                 if (scales != null && scales.length >= 1) {
                     scale = scales[0];
                 }
-
-                String formHex = activeForm.getAuraColor();
-
-                if (formHex != null && !formHex.isEmpty()) {
-                    try {
-                        particleColor = Integer.decode(formHex);
-                    } catch (Exception ignored) {}
-                }
             }
         }
 
-		if (!stats.getStatus().hasCreatedCharacter()) return;
-		if (!stats.getStatus().isAuraActive()) return;
+        if (!stats.getStatus().hasCreatedCharacter()) return;
+        if (!stats.getStatus().isAuraActive()) return;
+
+        float[] rgbColor = getInterpolatedKiColor(player, stats, 1.0f);
+        int r = (int) Math.max(0, Math.min(255, rgbColor[0] * 255));
+        int g = (int) Math.max(0, Math.min(255, rgbColor[1] * 255));
+        int b = (int) Math.max(0, Math.min(255, rgbColor[2] * 255));
+        int particleColor = (r << 16) | (g << 8) | b;
 
         for (int i = 0; i < 1; i++) spawnCalmAuraParticle(player, scale, particleColor);
 
@@ -839,7 +878,7 @@ public class AuraRenderHandler {
         double velY = 0.1f;
         double velZ = Math.sin(angle) * speedBase;
 
-		for (int i = 0; i < 3; i++) level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
+        for (int i = 0; i < 3; i++) level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
     }
 
     private static void spawnFloatingRubble(Player player, float totalScale) {
@@ -863,7 +902,6 @@ public class AuraRenderHandler {
 
         double velY = 0.05 + (random.nextDouble() * 0.1);
 
-            level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
+        level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
     }
-
 }
