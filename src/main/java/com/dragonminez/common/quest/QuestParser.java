@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -127,6 +128,11 @@ public class QuestParser {
             case "COMMAND":
                 String command = json.get("command").getAsString();
                 reward = new CommandReward(command);
+                break;
+            case "SKILL":
+                String skill = json.get("skill").getAsString();
+                int level = json.get("level").getAsInt();
+                reward = new SkillReward(skill, level);
                 break;
         }
 
