@@ -27,10 +27,15 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> SAIYAN_PASSIVE = EFFECTS.register("saiyan_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> BIOANDROID_PASSIVE = EFFECTS.register("bioandroid_passive", DMZEffect::new);
 	public static final RegistryObject<MobEffect> MAJIN_REVIVE = EFFECTS.register("majin_revive", DMZEffect::new);
+	public static final RegistryObject<MobEffect> KI_BLAST_CD = EFFECTS.register("ki_blast_cd", DMZEffect::new);
+	public static final RegistryObject<MobEffect> POISE_CD = EFFECTS.register("poise_cd", DMZEffect::new);
 
 	// Status Effects | Beneficial
 	public static final RegistryObject<MobEffect> KICHARGE = EFFECTS.register("kicharge", () -> new DMZEffect(true));
 	public static final RegistryObject<MobEffect> TRANSFORM = EFFECTS.register("transform", () -> new DMZEffect(true));
+	public static final RegistryObject<MobEffect> TRANSFORMED = EFFECTS.register("transformed", () -> new DMZEffect(true));
+	public static final RegistryObject<MobEffect> STACK_TRANSFORM = EFFECTS.register("stack_transform", () -> new DMZEffect(true));
+	public static final RegistryObject<MobEffect> STACK_TRANSFORMED = EFFECTS.register("stack_transformed", () -> new DMZEffect(true));
 	public static final RegistryObject<MobEffect> FLY = EFFECTS.register("fly", () -> new DMZEffect(true));
 
 	// Bonus Effects | Beneficial

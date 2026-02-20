@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.FormConfig;
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.ActionMode;
@@ -13,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 public class ExecuteActionC2S {
@@ -57,6 +56,7 @@ public class ExecuteActionC2S {
 											data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousForm.getName());
 										} else {
 											data.getCharacter().clearActiveStackForm();
+											player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 										}
 									} else {
 										data.getResources().setPowerRelease(0);
@@ -69,8 +69,13 @@ public class ExecuteActionC2S {
 										if (previousForm != null) {
 											data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
 										} else {
-											if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-											else data.getCharacter().clearActiveForm();
+											if (data.getStatus().isAndroidUpgraded()) {
+												data.getCharacter().setActiveForm("androidforms", "androidbase");
+											}
+											else {
+												data.getCharacter().clearActiveForm();
+											}
+											player.removeEffect(MainEffects.TRANSFORMED.get());
 										}
 									} else {
 										data.getResources().setPowerRelease(0);

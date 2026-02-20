@@ -395,6 +395,7 @@
   "effect.dragonminez.doubledash_cd": "Double Dash",
   "effect.dragonminez.kicharge": "Ki Charge",
   "effect.dragonminez.transform": "Transforming",
+  "effect.dragonminez.transformed": "Transformed",
   "effect.dragonminez.fly": "Flying",
   "effect.dragonminez.majin": "Majin Mark",
   "effect.dragonminez.mightfruit": "Might Fruit",
@@ -402,6 +403,10 @@
   "effect.dragonminez.saiyan_passive": "Zenkai CD",
   "effect.dragonminez.bioandroid_passive": "Life Drain CD",
   "effect.dragonminez.majin_revive": "Revive CD",
+  "effect.dragonminez.ki_blast_cd": "Ki Blast CD",
+  "effect.dragonminez.poise_cd": "Poise CD",
+  "effect.dragonminez.stack_transform": "Stacking Form",
+  "effect.dragonminez.stack_transformed": "Stacked Form",
 
   "//": "ENTITIES",
   "entity.dragonminez.master_karin": "Master Korin",
