@@ -5,6 +5,7 @@ import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.MajinForms;
@@ -67,11 +68,12 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             }
 
             String modelKey = "";
+            RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
             var activeFormData = character.getActiveFormData();
             if (activeFormData != null && activeFormData.hasCustomModel() && !activeFormData.getCustomModel().isEmpty()) {
                 modelKey = activeFormData.getCustomModel();
-            } else if (this.customModel != null && !this.customModel.isEmpty()) modelKey = this.customModel;
-
+            } else if (raceConfig != null && !raceConfig.getCustomModel().isEmpty()) modelKey = raceConfig.getCustomModel();
+            else if (this.customModel != null && !this.customModel.isEmpty()) modelKey = this.customModel;
 
             if (!modelKey.isEmpty()) return resolveCustomModel(modelKey, isSlimSkin, isMale, bodyType, customRaceGender);
 
@@ -81,9 +83,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             if (race.equals("namekian")) return BASE_DEFAULT;
 
             if (race.equals("majin")) {
-                if (isBaseForm) {
-                    return isMale ? MAJIN_FAT : MAJIN_SLIM;
-                }
+                if (isBaseForm) return isMale ? MAJIN_FAT : MAJIN_SLIM;
                 return isMale ? BASE_DEFAULT : MAJIN_SLIM;
             }
 

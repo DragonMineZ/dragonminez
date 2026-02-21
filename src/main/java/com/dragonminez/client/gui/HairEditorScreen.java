@@ -43,10 +43,8 @@ import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
 public class HairEditorScreen extends ScaledScreen {
-    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/menu/menubig.png");
-    private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/buttons/characterbuttons.png");
+    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
+    private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 
     private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
     private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
@@ -102,6 +100,8 @@ public class HairEditorScreen extends ScaledScreen {
 	private boolean physicsEnabled = true;
 	private CustomTextureButton modeButton;
 	private CustomTextureButton physicsButton;
+	private TexturedTextButton exportButton;
+	private TexturedTextButton importButton;
 
 	private EditBox hexColorField;
 	private boolean isUpdatingFromCode = false;
@@ -744,7 +744,7 @@ public class HairEditorScreen extends ScaledScreen {
         codeField.setMaxLength(65536);
         addRenderableWidget(codeField);
 
-        addRenderableWidget(new TexturedTextButton.Builder()
+        exportButton = new TexturedTextButton.Builder()
                 .position(centerX - 70 - 84, bottomY - 25)
                 .size(74, 20)
                 .texture(STAT_BUTTONS)
@@ -752,9 +752,10 @@ public class HairEditorScreen extends ScaledScreen {
                 .textureSize(74, 20)
                 .message(Component.translatable("gui.dragonminez.hair_editor.export"))
                 .onPress(btn -> exportCode())
-                .build());
+                .build();
+		addRenderableWidget(exportButton);
 
-        addRenderableWidget(new TexturedTextButton.Builder()
+        importButton = new TexturedTextButton.Builder()
                 .position(centerX + 70 + 14, bottomY - 25)
 				.size(74, 20)
 				.texture(STAT_BUTTONS)
@@ -762,7 +763,8 @@ public class HairEditorScreen extends ScaledScreen {
 				.textureSize(74, 20)
                 .message(Component.translatable("gui.dragonminez.hair_editor.import"))
                 .onPress(btn -> importCode())
-                .build());
+                .build();
+		addRenderableWidget(importButton);
 
         addRenderableWidget(new TexturedTextButton.Builder()
                 .position(centerX - 163, bottomY)
@@ -847,6 +849,13 @@ public class HairEditorScreen extends ScaledScreen {
         graphics.pose().pushPose();
         graphics.pose().translate(0.0D, 0.0D, 400.0D);
         super.render(graphics, uiMouseX, uiMouseY, partialTick);
+
+		if (exportButton != null && exportButton.isHovered()) {
+			graphics.renderTooltip(font, font.split(Component.translatable("gui.dragonminez.hair_editor.export.desc"), 200), uiMouseX, uiMouseY);
+		} else if (importButton != null && importButton.isHovered()) {
+			graphics.renderTooltip(font, font.split(Component.translatable("gui.dragonminez.hair_editor.import.desc"), 200), uiMouseX, uiMouseY);
+		}
+
         graphics.pose().popPose();
         endUiScale(graphics);
     }

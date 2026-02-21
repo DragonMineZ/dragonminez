@@ -499,6 +499,7 @@ public class StatsData {
         if (charConfig != null) {
             Collection<String> formSkills = charConfig.getFormSkills();
             for (String skillName : formSkills) {
+                if (skillName.contains("android")) continue;
                 Integer[] tpCosts = charConfig.getFormSkillTpCosts(skillName);
                 int maxLevel = tpCosts != null ? tpCosts.length : 0;
                 skills.registerDefaultSkill(skillName, maxLevel);

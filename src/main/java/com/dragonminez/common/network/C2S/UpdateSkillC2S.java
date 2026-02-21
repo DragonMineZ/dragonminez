@@ -45,6 +45,7 @@ public class UpdateSkillC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					Skill skill = data.getSkills().getSkill(skillName);
+					System.out.println("Packet received: " + action + " " + skillName + " with cost " + cost);
 					switch (action) {
 						case TOGGLE:
 							if (skill != null && skill.getLevel() > 0) {
@@ -53,9 +54,7 @@ public class UpdateSkillC2S {
 							break;
 
 						case UPGRADE:
-                            if (skill != null && !skill.isMaxLevel()
-									&& data.getResources().getTrainingPoints() >= cost
-									&& cost != -1) {
+							if (skill != null && !skill.isMaxLevel() && data.getResources().getTrainingPoints() >= cost && cost != -1 && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
                                 data.getResources().removeTrainingPoints(cost);
                                 skill.addLevel(1);
                             }

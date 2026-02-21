@@ -557,47 +557,47 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
                 switch (i) {
                     case 0 -> {
-                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip1"), 170));
+                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip1"), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.melee_damage.tooltip2",
-                                String.format(Locale.US, "%.2f", strScaling)).withStyle(ChatFormatting.YELLOW), 170));
+                                String.format(Locale.US, "%.2f", strScaling)).withStyle(ChatFormatting.YELLOW), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.max_value",
-                                String.format(Locale.US, "%.1f", maxMeleeDamage)).withStyle(ChatFormatting.GREEN), 170));
+                                String.format(Locale.US, "%.1f", maxMeleeDamage)).withStyle(ChatFormatting.GREEN), 180));
                     }
                     case 1 -> {
-                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip1"), 170));
+                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip1"), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.strike_damage.tooltip2",
-                                String.format(Locale.US, "%.2f", skpScaling)).withStyle(ChatFormatting.YELLOW), 170));
+                                String.format(Locale.US, "%.2f", skpScaling)).withStyle(ChatFormatting.YELLOW), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.max_value",
-                                String.format(Locale.US, "%.1f", maxStrikeDamage)).withStyle(ChatFormatting.GREEN), 170));
+                                String.format(Locale.US, "%.1f", maxStrikeDamage)).withStyle(ChatFormatting.GREEN), 180));
                     }
                     case 2 -> {
-                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip1"), 170));
+                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip1"), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.stamina.tooltip2",
-                                String.format(Locale.US, "%.2f", stmScaling)).withStyle(ChatFormatting.YELLOW), 170));
+                                String.format(Locale.US, "%.2f", stmScaling)).withStyle(ChatFormatting.YELLOW), 180));
                     }
                     case 3 -> {
-                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.defense.tooltip1"), 170));
+                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.defense.tooltip1"), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.defense.tooltip2",
-                                String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW), 170));
+                                String.format(Locale.US, "%.2f", resScaling)).withStyle(ChatFormatting.YELLOW), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.max_value",
-                                String.format(Locale.US, "%.1f", maxDefense)).withStyle(ChatFormatting.GREEN), 170));
+                                String.format(Locale.US, "%.1f", maxDefense)).withStyle(ChatFormatting.GREEN), 180));
                     }
                     case 4 -> {
-                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.health.tooltip1"), 170));
+                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.health.tooltip1"), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.health.tooltip2",
-                                String.format(Locale.US, "%.2f", vitScaling)).withStyle(ChatFormatting.YELLOW), 170));
+                                String.format(Locale.US, "%.2f", vitScaling)).withStyle(ChatFormatting.YELLOW), 180));
                     }
                     case 5 -> {
-                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip1"), 170));
+                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip1"), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.ki_damage.tooltip2",
-                                String.format(Locale.US, "%.2f", pwrScaling)).withStyle(ChatFormatting.YELLOW), 170));
+                                String.format(Locale.US, "%.2f", pwrScaling)).withStyle(ChatFormatting.YELLOW), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.max_value",
-                                String.format(Locale.US, "%.1f", maxKiDamage)).withStyle(ChatFormatting.GREEN), 170));
+                                String.format(Locale.US, "%.1f", maxKiDamage)).withStyle(ChatFormatting.GREEN), 180));
                     }
                     case 6 -> {
-                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip1"), 170));
+                        tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip1"), 180));
                         tooltip.addAll(font.split(Component.translatable("gui.dragonminez.character_stats.max_energy.tooltip2",
-                                String.format(Locale.US, "%.2f", eneScaling)).withStyle(ChatFormatting.YELLOW), 170));
+                                String.format(Locale.US, "%.2f", eneScaling)).withStyle(ChatFormatting.YELLOW), 180));
                     }
                 }
 

@@ -16,7 +16,12 @@ public class Skills {
     }
 
     public void registerDefaultSkill(String skillName, int maxLevel) {
-        skillMap.put(skillName, new Skill(skillName, maxLevel));
+        String lowerName = skillName.toLowerCase();
+        if (skillMap.containsKey(lowerName)) {
+            skillMap.get(lowerName).setMaxLevel(maxLevel);
+        } else {
+            skillMap.put(lowerName, new Skill(skillName, maxLevel));
+        }
     }
 
     public Skill getSkill(String name) {
