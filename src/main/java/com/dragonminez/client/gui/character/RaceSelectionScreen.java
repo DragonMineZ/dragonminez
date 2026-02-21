@@ -231,16 +231,18 @@ public class RaceSelectionScreen extends ScaledScreen {
 		if (selectedRaceIndex >= races.size()) selectedRaceIndex = 0;
 		String currentRace = races.get(selectedRaceIndex);
 
-		if (!ConfigManager.isDefaultRace(currentRace)) return;
+		if (ConfigManager.getRaceCharacter(currentRace) == null) return;
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
+		String racialSkill = ConfigManager.getRaceCharacter(currentRace).getRacialSkill();
+		if (racialSkill == null || racialSkill.isEmpty()) return;
 
-		String titleKey = "skill.dragonminez.racial_" + currentRace;
-		String descKey = "skill.dragonminez.racial_" + currentRace + ".desc";
+		String titleKey = "skill.dragonminez.racial_" + racialSkill;
+		String descKey = "skill.dragonminez.racial_" + racialSkill + ".desc";
 
 		Component titleComp = Component.translatable(titleKey);
 		String description = "";
 
-		switch (currentRace) {
+		switch (racialSkill) {
 			case "human" -> {
 				int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
 				description = Component.translatable(descKey, regen).getString();

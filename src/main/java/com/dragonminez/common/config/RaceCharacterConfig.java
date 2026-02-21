@@ -1,8 +1,6 @@
 package com.dragonminez.common.config;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class RaceCharacterConfig {
     public static final int CURRENT_VERSION = 2;
@@ -30,7 +28,7 @@ public class RaceCharacterConfig {
     private String defaultEye1Color = null;
     private String defaultEye2Color = null;
     private String defaultAuraColor = null;
-    private Map<String, Integer[]> formSkillsCosts = new HashMap<>();
+    private Map<String, List<Integer>> formSkillsCosts = new HashMap<>();
 
     public RaceCharacterConfig() {}
 
@@ -54,7 +52,10 @@ public class RaceCharacterConfig {
     public String getDefaultEye1Color() { return defaultEye1Color; }
     public String getDefaultEye2Color() { return defaultEye2Color; }
     public String getDefaultAuraColor() { return defaultAuraColor; }
-    public Integer[] getFormSkillTpCosts(String form) { return formSkillsCosts.getOrDefault(form, new Integer[]{}); }
+    public Integer[] getFormSkillTpCosts(String form) {
+        List<Integer> list = formSkillsCosts.getOrDefault(form, new ArrayList<>());
+        return list.toArray(new Integer[0]);
+    }
     public Collection<String> getFormSkills() {
         return formSkillsCosts.keySet();
     }
@@ -80,7 +81,7 @@ public class RaceCharacterConfig {
     public void setDefaultEye2Color(String defaultEye2Color) { this.defaultEye2Color = defaultEye2Color; }
     public void setDefaultAuraColor(String defaultAuraColor) { this.defaultAuraColor = defaultAuraColor; }
     public void setFormSkillTpCosts(String form, Integer[] costs) {
-        formSkillsCosts.put(form, costs);
+        formSkillsCosts.put(form, new ArrayList<>(Arrays.asList(costs)));
     }
 
     public boolean hasCustomModel() {

@@ -25,8 +25,8 @@ public class SkillsConfig {
 		formSkills.add("androidforms");
 
 		stackSkills.add("kaioken");
-		stackSkills.add("ultrainstinct");
-		stackSkills.add("ultraego");
+		//stackSkills.add("ultrainstinct");
+		//stackSkills.add("ultraego");
 
         List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(1000);
