@@ -76,7 +76,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         if (renderColor != null) {
             syncModelToPlayer(partsModel, playerModel);
-            RenderType partsRenderType = RenderType.entityTranslucentCull(RACES_PARTS_TEXTURE);
+            RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
 
             int phase = TransformationsHelper.getKaiokenPhase(stats);
             float[] tintedColor = applyKaiokenTint(renderColor[0], renderColor[1], renderColor[2], phase);
@@ -162,12 +162,20 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
             return colorBody1;
         }
 
-        if (logicKey.startsWith("frostdemon") || race.equals("frostdemon")) {
-            if (currentForm.equals(FrostDemonForms.FINAL_FORM) || currentForm.equals(FrostDemonForms.FULLPOWER) || logicKey.equals("frostdemon_fifth") || currentForm.contains("fifth")) {
+        if (logicKey.startsWith("frostdemon")) {
+            boolean isSpecialForm = currentForm.equals(FrostDemonForms.FINAL_FORM) ||
+                    currentForm.equals(FrostDemonForms.FULLPOWER) ||
+                    currentForm.equals(FrostDemonForms.THIRD_FORM) ||
+                    logicKey.equals("frostdemon_fifth") ||
+                    logicKey.equals("frostdemon_third") ||
+                    currentForm.contains("fifth");
+
+            if (isSpecialForm) {
                 return null;
             }
 
             boolean isSecondForm = currentForm.equals(FrostDemonForms.SECOND_FORM);
+
             if (isSecondForm) {
                 partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
             } else {
@@ -204,10 +212,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         }
     }
 
-    private void setupFrostDemonParts(BakedGeoModel partsModel, String currentForm) {
-        if (Objects.equals(currentForm, FrostDemonForms.SECOND_FORM)) partsModel.getBone("cuernos2").ifPresent(this::showBoneChain);
-        else partsModel.getBone("cuernos").ifPresent(this::showBoneChain);
-    }
 
     private void setupMajinParts(BakedGeoModel partsModel, String gender, int hairType) {
         String earName = (gender.contains("female") || gender.contains("mujer")) ? "orejas3" :

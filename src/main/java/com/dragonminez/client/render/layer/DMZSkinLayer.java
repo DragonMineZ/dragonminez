@@ -90,8 +90,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!f.getHairColor().isEmpty()) hair = hexToRGB(f.getHairColor());
         }
 
-        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == com.dragonminez.common.stats.ActionMode.FORM) {
-            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+            var nextForm = TransformationsHelper.getNextAvailableForm(stats);
             if (nextForm != null) {
                 float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 
