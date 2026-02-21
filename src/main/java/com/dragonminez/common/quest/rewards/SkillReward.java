@@ -3,11 +3,8 @@ package com.dragonminez.common.quest.rewards;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 
 public class SkillReward extends QuestReward {
     private final String skill;
@@ -35,5 +32,14 @@ public class SkillReward extends QuestReward {
                 setClaimed(true);
             });
         }
+    }
+
+    @Override
+    public Component getDescription() {
+        return Component.translatable(
+                "gui.dragonminez.quests.rewards.skill",
+                Component.translatable("skill.dragonminez." + skill),
+                level
+        );
     }
 }

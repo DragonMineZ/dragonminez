@@ -97,26 +97,39 @@ public class TransformationsHelper {
 		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(group);
 		boolean isGodGroup = config.getFormType().equalsIgnoreCase("god");
 
-		if (!isAndroidUpgraded && isAndroidGroup) return null;
-		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return null;
+		if (!isAndroidUpgraded && isAndroidGroup) {
+			return null;
+		}
+		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) {
+			return null;
+		}
 
 		String currentFormName = statsData.getCharacter().getActiveForm();
-		boolean foundCurrent = currentFormName.isEmpty();
-
-		for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
-			if (!foundCurrent) {
-				if (entry.getKey().equalsIgnoreCase(currentFormName)) {
-					foundCurrent = true;
+		String nextFormName;
+		FormConfig.FormData nextFormConfig = null;
+		if (currentFormName == null || currentFormName.isEmpty()) {
+			nextFormName = statsData.getCharacter().getSelectedForm();
+            nextFormConfig = config.getForm(nextFormName);
+        } else {
+			boolean foundCurrent = false;
+			for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
+				if (!foundCurrent) {
+					if (entry.getKey().equalsIgnoreCase(currentFormName)) {
+						foundCurrent = true;
+					}
+					continue;
 				}
-				continue;
+
+				nextFormConfig = entry.getValue();
+				break;
 			}
-
-			int reqLevel = entry.getValue().getUnlockOnSkillLevel();
-			int myLevel = getSkillLevelForType(statsData, config.getFormType());
-
-			if (reqLevel <= myLevel) return entry.getValue();
 		}
-		return null;
+		if (nextFormConfig != null) {
+			int reqLevel = nextFormConfig.getUnlockOnSkillLevel();
+			int myLevel = getSkillLevelForType(statsData, config.getFormType());
+			return reqLevel <= myLevel ? nextFormConfig : null;
+		}
+		return nextFormConfig;
 	}
 
 	public static FormConfig.FormData getNextAvailableStackForm(StatsData statsData) {
@@ -130,22 +143,31 @@ public class TransformationsHelper {
 		if (config == null) return null;
 
 		String currentFormName = statsData.getCharacter().getActiveStackForm();
-		boolean foundCurrent = currentFormName.isEmpty();
-
-		for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
-			if (!foundCurrent) {
-				if (entry.getKey().equalsIgnoreCase(currentFormName)) {
-					foundCurrent = true;
+		String nextFormName;
+		FormConfig.FormData nextFormConfig = null;
+		if (currentFormName == null || currentFormName.isEmpty()) {
+			nextFormName = statsData.getCharacter().getSelectedStackForm();
+			nextFormConfig = config.getForm(nextFormName);
+		} else {
+			boolean foundCurrent = false;
+			for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
+				if (!foundCurrent) {
+					if (entry.getKey().equalsIgnoreCase(currentFormName)) {
+						foundCurrent = true;
+					}
+					continue;
 				}
-				continue;
+
+				nextFormConfig = entry.getValue();
+				break;
 			}
-
-			int reqLevel = entry.getValue().getUnlockOnSkillLevel();
-			int myLevel = getSkillLevelForStackType(statsData, config.getFormType());
-
-			if (reqLevel <= myLevel) return entry.getValue();
 		}
-		return null;
+		if (nextFormConfig != null) {
+			int reqLevel = nextFormConfig.getUnlockOnSkillLevel();
+			int myLevel = getSkillLevelForStackType(statsData, config.getFormType());
+			return reqLevel <= myLevel ? nextFormConfig : null;
+		}
+		return nextFormConfig;
 	}
 
 	public static boolean canDescend(StatsData statsData) {
@@ -174,7 +196,12 @@ public class TransformationsHelper {
 	public static void cycleSelectedFormGroup(StatsData statsData, boolean reverse) {
 		String race = statsData.getCharacter().getRaceName();
 		Map<String, FormConfig> allGroups = ConfigManager.getAllFormsForRace(race);
-		if (allGroups.isEmpty()) return;
+		if (allGroups.isEmpty()) {
+			return;
+		}
+
+		String selectedFormGroup = statsData.getCharacter().getSelectedFormGroup();
+		int offset = reverse ? -1 : 1;
 
 		List<String> unlockedGroups = new ArrayList<>();
 		for (String groupKey : allGroups.keySet()) {
@@ -183,33 +210,72 @@ public class TransformationsHelper {
 			}
 		}
 
-		if (unlockedGroups.isEmpty()) return;
-
-		String current = statsData.getCharacter().getSelectedFormGroup();
-		int index = unlockedGroups.indexOf(current);
-
-		String nextGroup;
-		if (reverse) {
-			if (index <= 0) {
-				nextGroup = unlockedGroups.get(unlockedGroups.size() - 1);
-			} else {
-				nextGroup = unlockedGroups.get(index - 1);
-			}
-		} else {
-			if (index == -1 || index >= unlockedGroups.size() - 1) {
-				nextGroup = unlockedGroups.get(0);
-			} else {
-				nextGroup = unlockedGroups.get(index + 1);
-			}
+		if (unlockedGroups.isEmpty()) {
+			return;
 		}
 
-        if(nextGroup != null ) statsData.getCharacter().setSelectedFormGroup(nextGroup);
+		int groupIndex = unlockedGroups.indexOf(selectedFormGroup);
 
+		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, selectedFormGroup);
+		List<String> unlockedFormNames = unlockedForms.stream()
+				.filter(formData -> formData.isCanAlwaysTransform() ||
+						(formData.isDirectTransformation()
+								&& statsData.getCharacter().getFormsUsedBefore().getFormGroup(selectedFormGroup).contains(formData.getName())))
+				.map(FormConfig.FormData::getName)
+				.toList();
+		String selectedForm = statsData.getCharacter().getSelectedForm();
+		int formIndex = unlockedFormNames.indexOf(selectedForm) + offset;
+		if (formIndex < 0) {
+			groupIndex--;
+			if (groupIndex < 0) {
+				groupIndex = unlockedGroups.size() - 1;
+			}
+			String nextGroup = unlockedGroups.get(groupIndex);
+			if(nextGroup != null) {
+				statsData.getCharacter().setSelectedFormGroup(nextGroup);
+			}
+			unlockedForms = getUnlockedForms(statsData, race, nextGroup);
+			unlockedFormNames = unlockedForms.stream()
+					.filter(formData -> formData.isCanAlwaysTransform() ||
+							(formData.isDirectTransformation()
+									&& statsData.getCharacter().getFormsUsedBefore().getFormGroup(selectedFormGroup).contains(formData.getName())))
+					.map(FormConfig.FormData::getName)
+					.toList();
+			formIndex = unlockedFormNames.size() - 1;
+		}
+		if (formIndex >= unlockedFormNames.size()) {
+			groupIndex++;
+			if (groupIndex >= unlockedGroups.size()) {
+				groupIndex = 0;
+			}
+			String nextGroup = unlockedGroups.get(groupIndex);
+			unlockedForms = getUnlockedForms(statsData, race, nextGroup);
+			if(nextGroup != null) {
+				statsData.getCharacter().setSelectedFormGroup(nextGroup);
+			}
+			unlockedFormNames = unlockedForms.stream()
+					.filter(formData -> formData.isCanAlwaysTransform() ||
+							(formData.isDirectTransformation()
+									&& statsData.getCharacter().getFormsUsedBefore().getFormGroup(selectedFormGroup).contains(formData.getName())))
+					.map(FormConfig.FormData::getName)
+					.toList();
+			formIndex = 0;
+		}
+
+		String nextForm = unlockedFormNames.get(formIndex);
+		if(nextForm != null ) {
+			statsData.getCharacter().setSelectedForm(nextForm);
+		}
     }
 
 	public static void cycleSelectedStackFormGroup(StatsData statsData, boolean reverse) {
 		Map<String, FormConfig> allGroups = ConfigManager.getAllStackForms();
-		if (allGroups.isEmpty()) return;
+		if (allGroups.isEmpty()) {
+			return;
+		}
+
+		String selectedStackFormGroup = statsData.getCharacter().getSelectedStackFormGroup();
+		int offset = reverse ? -1 : 1;
 
 		List<String> unlockedGroups = new ArrayList<>();
 		for (String groupKey : allGroups.keySet()) {
@@ -218,28 +284,62 @@ public class TransformationsHelper {
 			}
 		}
 
-		if (unlockedGroups.isEmpty()) return;
-
-		String current = statsData.getCharacter().getSelectedStackFormGroup();
-		int index = unlockedGroups.indexOf(current);
-
-		String nextGroup;
-		if (reverse) {
-			if (index <= 0) {
-				nextGroup = unlockedGroups.get(unlockedGroups.size() - 1);
-			} else {
-				nextGroup = unlockedGroups.get(index - 1);
-			}
-		} else {
-			if (index == -1 || index >= unlockedGroups.size() - 1) {
-				nextGroup = unlockedGroups.get(0);
-			} else {
-				nextGroup = unlockedGroups.get(index + 1);
-			}
+		if (unlockedGroups.isEmpty()) {
+			return;
 		}
 
-		if(nextGroup != null ) statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
+		int groupIndex = unlockedGroups.indexOf(selectedStackFormGroup);
 
+		List<FormConfig.FormData> unlockedStackForms = getUnlockedStackForms(statsData, selectedStackFormGroup);
+		List<String> unlockedStackFormNames = unlockedStackForms.stream()
+				.filter(formData -> formData.isCanAlwaysTransform() ||
+						(formData.isDirectTransformation()
+								&& statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(selectedStackFormGroup).contains(formData.getName())))
+				.map(FormConfig.FormData::getName)
+				.toList();
+		String selectedStackForm = statsData.getCharacter().getSelectedStackForm();
+		int formIndex = unlockedStackFormNames.indexOf(selectedStackForm) + offset;
+		if (formIndex < 0) {
+			groupIndex--;
+			if (groupIndex < 0) {
+				groupIndex = unlockedGroups.size() - 1;
+			}
+			String nextGroup = unlockedGroups.get(groupIndex);
+			if(nextGroup != null) {
+				statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
+			}
+			unlockedStackForms = getUnlockedStackForms(statsData, nextGroup);
+			unlockedStackFormNames = unlockedStackForms.stream()
+					.filter(formData -> formData.isCanAlwaysTransform() ||
+							(formData.isDirectTransformation()
+									&& statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(selectedStackFormGroup).contains(formData.getName())))
+					.map(FormConfig.FormData::getName)
+					.toList();
+			formIndex = unlockedStackFormNames.size() - 1;
+		}
+		if (formIndex >= unlockedStackFormNames.size()) {
+			groupIndex++;
+			if (groupIndex >= unlockedGroups.size()) {
+				groupIndex = 0;
+			}
+			String nextGroup = unlockedGroups.get(groupIndex);
+			unlockedStackForms = getUnlockedStackForms(statsData, nextGroup);
+			if(nextGroup != null) {
+				statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
+			}
+			unlockedStackFormNames = unlockedStackForms.stream()
+					.filter(formData -> formData.isCanAlwaysTransform() ||
+							(formData.isDirectTransformation()
+									&& statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(selectedStackFormGroup).contains(formData.getName())))
+					.map(FormConfig.FormData::getName)
+					.toList();
+			formIndex = 0;
+		}
+
+		String nextForm = unlockedStackFormNames.get(formIndex);
+		if(nextForm != null ) {
+			statsData.getCharacter().setSelectedStackForm(nextForm);
+		}
 	}
 
 	private static boolean isDefaultGroup(String race, String group) {
@@ -288,23 +388,6 @@ public class TransformationsHelper {
 			prev = f;
 		}
 		return null;
-	}
-
-	public static String getFirstFormGroup(String groupName, String raceName) {
-		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
-		if (formConfig == null) return null;
-		if ("androidforms".equalsIgnoreCase(groupName)) return "superandroid";
-
-		Optional<String> firstForm = formConfig.getForms().keySet().stream().findFirst();
-		return firstForm.orElse(null);
-	}
-
-	public static String getFirstStackFormGroup(String groupName) {
-		FormConfig formConfig = ConfigManager.getStackFormGroup(groupName);
-		if (formConfig == null) return null;
-
-		Optional<String> firstForm = formConfig.getForms().keySet().stream().findFirst();
-		return firstForm.orElse(null);
 	}
 
 	public static int getKaiokenPhase(StatsData stats) {

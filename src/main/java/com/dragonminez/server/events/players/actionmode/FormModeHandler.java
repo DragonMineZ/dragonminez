@@ -63,6 +63,9 @@ public class FormModeHandler implements IActionModeHandler {
                     data.getCharacter().getActiveFormGroup() :
                     data.getCharacter().getSelectedFormGroup();
 
+            if (!data.getCharacter().getFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
+                data.getCharacter().getFormsUsedBefore().putForm(group, nextForm.getName());
+            }
             data.getCharacter().setActiveForm(group, nextForm.getName());
             player.refreshDimensions();
 
