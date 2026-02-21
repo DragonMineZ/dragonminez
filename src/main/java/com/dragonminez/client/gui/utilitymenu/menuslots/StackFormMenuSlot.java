@@ -30,7 +30,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         if (hasStackform) {
             return new ButtonInfo(
                     Component.translatable("race.dragonminez.stack.group." + statsData.getCharacter().getSelectedStackFormGroup()).withStyle(ChatFormatting.BOLD),
-                    Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getSelectedStackFormGroup() + "." + TransformationsHelper.getFirstStackFormGroup(statsData.getCharacter().getSelectedStackFormGroup())),
+                    Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getSelectedStackFormGroup() + "." + statsData.getCharacter().getSelectedStackForm()),
                     currentMode == ActionMode.STACK);
         } else {
             return new ButtonInfo();
@@ -51,7 +51,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         if (hasStackform) {
             boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.STACK;
             if (wasActive && statsData.getCharacter().hasActiveStackForm()) {
-                if (TransformationsHelper.canDescend(statsData)) {
+                if (TransformationsHelper.canStackDescend(statsData)) {
                     NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
                     playToggleSound(false);
                 }

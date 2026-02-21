@@ -61,6 +61,9 @@ public class StackFormModeHandler implements IActionModeHandler {
                     data.getCharacter().getActiveStackFormGroup() :
                     data.getCharacter().getSelectedStackFormGroup();
 
+            if (!data.getCharacter().getStackFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
+                data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
+            }
             data.getCharacter().setActiveStackForm(group, nextForm.getName());
             player.refreshDimensions();
 

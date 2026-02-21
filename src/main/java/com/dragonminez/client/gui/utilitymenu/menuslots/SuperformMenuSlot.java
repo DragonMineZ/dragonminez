@@ -30,7 +30,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         if (hasSuperform) {
             return new ButtonInfo(
                     Component.translatable("race.dragonminez." + race + ".group." + statsData.getCharacter().getSelectedFormGroup()).withStyle(ChatFormatting.BOLD),
-                    Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + TransformationsHelper.getFirstFormGroup(statsData.getCharacter().getSelectedFormGroup(), race)),
+                    Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + statsData.getCharacter().getSelectedForm()),
                     currentMode == ActionMode.FORM);
         } else {
             return new ButtonInfo();

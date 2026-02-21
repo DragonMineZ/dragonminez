@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FormConfig {
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
     private int configVersion = CURRENT_VERSION;
     public int getConfigVersion() { return configVersion; }
     public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
@@ -90,6 +90,8 @@ public class FormConfig {
 		private double passiveMasteryGainEveryFiveSeconds = 0.001;
 		private boolean formStackable = true;
         private double stackDrainMultiplier = 2.0;
+        private boolean canAlwaysTransform = false;
+        private boolean directTransformation = false;
 
         public FormData() {}
 
@@ -129,6 +131,12 @@ public class FormConfig {
 		public double getPassiveMastery() { return Math.max(0, passiveMasteryGainEveryFiveSeconds); }
 		public boolean isFormStackable() { return formStackable; }
         public double getStackDrainMultiplier() { return Math.max(0.01, stackDrainMultiplier); }
+        public boolean isCanAlwaysTransform() {
+            return canAlwaysTransform;
+        }
+        public boolean isDirectTransformation() {
+            return directTransformation;
+        }
 
         public void setName(String name) { this.name = name; }
         public void setUnlockOnSkillLevel(int level) { this.unlockOnSkillLevel = level; }
@@ -166,6 +174,12 @@ public class FormConfig {
 		public void setPassiveMastery(double passiveMastery) { this.passiveMasteryGainEveryFiveSeconds = passiveMastery; }
 		public void setFormStackable(boolean formStackable) { this.formStackable = formStackable; }
         public void setStackDrainMultiplier(double stackDrainMultiplier) { this.stackDrainMultiplier = stackDrainMultiplier; }
+        public void setCanAlwaysTransform(boolean canAlwaysTransform) {
+            this.canAlwaysTransform = canAlwaysTransform;
+        }
+        public void setDirectTransformation(boolean directTransformation) {
+            this.directTransformation = directTransformation;
+        }
 
         public boolean hasCustomModel() {
             return customModel != null && !customModel.isEmpty();
@@ -196,4 +210,3 @@ public class FormConfig {
         }
 	}
 }
-
