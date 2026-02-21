@@ -40,8 +40,8 @@ public class DefaultFormsFactory {
 
     public void createDefaultStackForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         createDefaultKaiokenForms(formsPath, forms);
-//        createDefaultUltraInstinctForms(formsPath, forms);
-//        createDefaultUltraEgoForms(formsPath, forms);
+        createDefaultUltraInstinctForms(formsPath, forms);
+        createDefaultUltraEgoForms(formsPath, forms);
     }
 
     public void createDefaultKaiokenForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -189,6 +189,7 @@ public class DefaultFormsFactory {
         mastered.setStaminaDrain(0.06);
         mastered.setAuraColor("#E0E0E0");
         mastered.setHairColor("#E0E0E0");
+        mastered.setBodyColor2("#E0E0E0");
         mastered.setHairType("base");
         setDefaultMasteryValues(mastered);
         mastered.setStackDrainMultiplier(1.0);
@@ -236,6 +237,7 @@ public class DefaultFormsFactory {
         mastered.setStaminaDrain(0.06);
         mastered.setAuraColor("#66023C");
         mastered.setHairColor("#66023C");
+        mastered.setBodyColor2("#66023C");
         mastered.setHairType("ssj2");
         setDefaultMasteryValues(mastered);
         mastered.setStackDrainMultiplier(1.0);
@@ -424,6 +426,7 @@ public class DefaultFormsFactory {
         goldenOozaru.setCustomModel("oozaru");
         goldenOozaru.setHairColor("#FFD700");
         goldenOozaru.setAuraColor("#FFD700");
+        goldenOozaru.setBodyColor2("#FFD700");
         goldenOozaru.setModelScaling(new float[]{3.8f, 3.8f, 3.8f});
         goldenOozaru.setStrMultiplier(3.0);
         goldenOozaru.setSkpMultiplier(3.0);
@@ -440,6 +443,7 @@ public class DefaultFormsFactory {
         ssj4.setName(SaiyanForms.SUPER_SAIYAN_4);
         ssj4.setUnlockOnSkillLevel(7);
         ssj4.setHairColor("#000000");
+        ssj4.setBodyColor2("#C21E56");
         ssj4.setEye1Color("#FFD700");
         ssj4.setEye2Color("#FFD700");
         ssj4.setAuraColor("#FF0000");
@@ -468,6 +472,7 @@ public class DefaultFormsFactory {
         ssj1.setName(SaiyanForms.SUPER_SAIYAN);
         ssj1.setUnlockOnSkillLevel(1);
         ssj1.setHairColor("#FFEDB3");
+        ssj1.setBodyColor2("#FFEDB3");
         ssj1.setEye1Color("#00FFFF");
         ssj1.setEye2Color("#00FFFF");
         ssj1.setAuraColor("#FFD700");
@@ -487,6 +492,7 @@ public class DefaultFormsFactory {
         ssg2.setUnlockOnSkillLevel(2);
         ssg2.setCustomModel("");
         ssg2.setHairColor("#FFEDB3");
+        ssg2.setBodyColor2("#FFEDB3");
         ssg2.setEye1Color("#00FFFF");
         ssg2.setEye2Color("#00FFFF");
         ssg2.setAuraColor("#FFD700");
@@ -506,6 +512,7 @@ public class DefaultFormsFactory {
         ssg3.setName(SaiyanForms.SUPER_SAIYAN_GRADE_3);
         ssg3.setUnlockOnSkillLevel(3);
         ssg3.setHairColor("#FFEDB3");
+        ssg3.setBodyColor2("#FFEDB3");
         ssg3.setEye1Color("#00FFFF");
         ssg3.setEye2Color("#00FFFF");
         ssg3.setAuraColor("#FFD700");
@@ -536,6 +543,7 @@ public class DefaultFormsFactory {
         ssj1Mastered.setName(SaiyanForms.SUPER_SAIYAN_MASTERED);
         ssj1Mastered.setUnlockOnSkillLevel(4);
         ssj1Mastered.setHairColor("#FFE89E");
+        ssj1Mastered.setBodyColor2("#FFE89E");
         ssj1Mastered.setEye1Color("#00FFFF");
         ssj1Mastered.setEye2Color("#00FFFF");
         ssj1Mastered.setAuraColor("#FFD700");
@@ -554,6 +562,7 @@ public class DefaultFormsFactory {
         ssj2.setName(SaiyanForms.SUPER_SAIYAN_2);
         ssj2.setUnlockOnSkillLevel(5);
         ssj2.setHairColor("#FFE89E");
+        ssj2.setBodyColor2("#FFE89E");
         ssj2.setEye1Color("#00FFFF");
         ssj2.setEye2Color("#00FFFF");
         ssj2.setAuraColor("#FFD700");
@@ -574,6 +583,7 @@ public class DefaultFormsFactory {
         ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
         ssj3.setUnlockOnSkillLevel(6);
         ssj3.setHairColor("#FFE89E");
+        ssj3.setBodyColor2("#FFE89E");
         ssj3.setEye1Color("#00FFFF");
         ssj3.setEye2Color("#00FFFF");
         ssj3.setAuraColor("#FFD700");
