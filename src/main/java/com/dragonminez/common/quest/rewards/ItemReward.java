@@ -2,6 +2,7 @@ package com.dragonminez.common.quest.rewards;
 
 import com.dragonminez.common.quest.QuestReward;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
@@ -32,5 +33,16 @@ public class ItemReward extends QuestReward {
             player.addItem(new ItemStack(item, count));
             setClaimed(true);
         }
+    }
+
+    @Override
+    public Component getDescription() {
+        return Component.translatable(
+                "gui.dragonminez.quests.rewards.item",
+                count,
+                Component.translatable(
+                        "item." + ResourceLocation.parse(itemId).toLanguageKey()
+                )
+        );
     }
 }
