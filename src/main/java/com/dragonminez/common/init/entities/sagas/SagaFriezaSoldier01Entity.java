@@ -33,6 +33,7 @@ public class SagaFriezaSoldier01Entity extends DBSagasEntity{
                 .add(Attributes.MAX_HEALTH, 100.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.20D)
                 .add(Attributes.ATTACK_DAMAGE, 15.0D)
+                .add(Attributes.FOLLOW_RANGE, 12.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
     }
 
