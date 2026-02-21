@@ -59,10 +59,10 @@ public class ModCommonEvents {
         event.put(MainEntities.SAGA_NAPPA.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_VEGETA.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_OZARU_VEGETA.get(), SagaOzaruVegetaEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FRIEZA_SOLDIER.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), DBSagasEntity.createAttributes().build());
-        event.put(MainEntities.SAGA_MORO_SOLDIER.get(), DBSagasEntity.createAttributes().build());
+        event.put(MainEntities.SAGA_FRIEZA_SOLDIER.get(), SagaFriezaSoldier01Entity.createAttributes().build());
+        event.put(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), SagaFriezaSoldier01Entity.createAttributes().build());
+        event.put(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), SagaFriezaSoldier01Entity.createAttributes().build());
+        event.put(MainEntities.SAGA_MORO_SOLDIER.get(), SagaFriezaSoldier01Entity.createAttributes().build());
         event.put(MainEntities.SAGA_CUI.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_DODORIA.get(), DBSagasEntity.createAttributes().build());
         event.put(MainEntities.SAGA_VEGETA_NAMEK.get(), DBSagasEntity.createAttributes().build());
