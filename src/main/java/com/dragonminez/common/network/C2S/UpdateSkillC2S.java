@@ -53,20 +53,20 @@ public class UpdateSkillC2S {
 							break;
 
 						case UPGRADE:
-							if (skill != null && !skill.isMaxLevel()) {
-								if (data.getResources().getTrainingPoints() >= cost && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
-									data.getResources().removeTrainingPoints(cost);
-									skill.addLevel(1);
-								}
-							}
+                            if (skill != null && !skill.isMaxLevel()
+									&& data.getResources().getTrainingPoints() >= cost
+									&& cost != -1) {
+                                data.getResources().removeTrainingPoints(cost);
+                                skill.addLevel(1);
+                            }
 							break;
 						case PURCHASE:
-							if (!data.getSkills().hasSkill(skillName)) {
-								if (data.getResources().getTrainingPoints() >= cost) {
-									data.getResources().removeTrainingPoints(cost);
-									data.getSkills().setSkillLevel(skillName, 1);
-								}
-							}
+                            if (!data.getSkills().hasSkill(skillName)
+									&& data.getResources().getTrainingPoints() >= cost
+									&& cost != -1) {
+                                data.getResources().removeTrainingPoints(cost);
+                                data.getSkills().setSkillLevel(skillName, 1);
+                            }
 							break;
 					}
 

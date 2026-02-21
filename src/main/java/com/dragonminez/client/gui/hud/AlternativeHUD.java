@@ -44,7 +44,6 @@ public class AlternativeHUD {
 				int maxKi = data.getMaxEnergy();
 				int maxStm = data.getMaxStamina();
 				int powerRelease = resources.getPowerRelease();
-				if (powerRelease > 100) powerRelease = 100;
 				int formRelease;
 				if (resources.getActionCharge() < 10) formRelease = 10 + resources.getActionCharge();
 				else formRelease = resources.getActionCharge();
@@ -132,7 +131,7 @@ public class AlternativeHUD {
 
 				guiGraphics.pose().scale(userScale - 0.3f, userScale - 0.3f, 1.0f);
 				drawFormIcon(guiGraphics, formRelease, -40, -8);
-				drawRacialIcon(guiGraphics, raceName, powerRelease, -40, -8);
+				drawRacialIcon(guiGraphics, raceName, Math.min(powerRelease, 100), -40, -8);
 
 				guiGraphics.pose().popPose();
 

@@ -41,7 +41,6 @@ import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
 public class CharacterCustomizationScreen extends ScaledScreen {
-
     private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
 
@@ -67,6 +66,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
     private final Screen previousScreen;
     private final Character character;
     private int currentPage = 0;
+    private int currentClassIndex = 0;
     private boolean isSwitchingMenu = false;
 
     private ColorSlider hueSlider;
@@ -228,32 +228,22 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         int classPosX = 125;
         int classPosY = centerY - 90;
 
-        String currentClass = character.getCharacterClass();
-
-        if (currentClass.equals(Character.CLASS_MARTIALARTIST)) {
-            addRenderableWidget(createArrowButton(classPosX, classPosY, false,
-                    btn -> {
-                        character.setCharacterClass(Character.CLASS_WARRIOR);
-                        NetworkHandler.sendToServer(new StatsSyncC2S(character));
-                        refreshButtons();
-                    }));
-        } else if (currentClass.equals(Character.CLASS_WARRIOR)) {
+        String[] classes = ConfigManager.getAllRaceStats().get(character.getRace()).getAllClasses().toArray(new String[]{});
+        character.setCharacterClass(classes[currentClassIndex]);
+        if (currentClassIndex > 0) {
             addRenderableWidget(createArrowButton(classPosX - 105, classPosY, true,
                     btn -> {
-                        character.setCharacterClass(Character.CLASS_MARTIALARTIST);
+                        currentClassIndex--;
+                        character.setCharacterClass(classes[currentClassIndex]);
                         NetworkHandler.sendToServer(new StatsSyncC2S(character));
                         refreshButtons();
                     }));
+        }
+        if (currentClassIndex < classes.length - 1) {
             addRenderableWidget(createArrowButton(classPosX, classPosY, false,
                     btn -> {
-                        character.setCharacterClass(Character.CLASS_SPIRITUALIST);
-                        NetworkHandler.sendToServer(new StatsSyncC2S(character));
-                        refreshButtons();
-                    }));
-        } else {
-            addRenderableWidget(createArrowButton(classPosX - 105, classPosY, true,
-                    btn -> {
-                        character.setCharacterClass(Character.CLASS_WARRIOR);
+                        currentClassIndex++;
+                        character.setCharacterClass(classes[currentClassIndex]);
                         NetworkHandler.sendToServer(new StatsSyncC2S(character));
                         refreshButtons();
                     }));
@@ -1022,12 +1012,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
         if (statsConfig == null) return;
 
         String currentClass = character.getCharacterClass();
-        RaceStatsConfig.ClassStats classStats = switch (currentClass) {
-            case Character.CLASS_WARRIOR -> statsConfig.getWarrior();
-            case Character.CLASS_SPIRITUALIST -> statsConfig.getSpiritualist();
-            case Character.CLASS_MARTIALARTIST -> statsConfig.getMartialArtist();
-            default -> statsConfig.getWarrior();
-        };
+        RaceStatsConfig.ClassStats classStats = statsConfig.getClassStats(currentClass);
 
         if (classStats == null || classStats.getBaseStats() == null || classStats.getStatScaling() == null) return;
 

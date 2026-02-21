@@ -9,6 +9,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.Collection;
+
 public class StatsData {
     private final Player player;
     private final Stats stats;
@@ -65,7 +67,7 @@ public class StatsData {
         RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
         RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
-        if (baseStats == null) baseStats = new RaceStatsConfig().getWarrior().getBaseStats();
+        if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
 
         int initialStats = baseStats.getStrength() + baseStats.getStrikePower() +
                 baseStats.getResistance() + baseStats.getVitality() +
@@ -467,7 +469,7 @@ public class StatsData {
         RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
         RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
 
-        if (baseStats == null) baseStats = new RaceStatsConfig().getWarrior().getBaseStats();
+        if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
 
         boolean hasDefaultStats = stats.getStrength() <= 5 && stats.getStrikePower() <= 5 &&
                 stats.getResistance() <= 5 && stats.getVitality() <= 5 &&
@@ -495,12 +497,12 @@ public class StatsData {
     public void updateTransformationSkillLimits(String raceName) {
         RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
         if (charConfig != null) {
-            int superformMax = charConfig.getSuperformTpCost() != null ? charConfig.getSuperformTpCost().length : 0;
-            int godformMax = charConfig.getGodformTpCost() != null ? charConfig.getGodformTpCost().length : 0;
-            int legendaryMax = charConfig.getLegendaryformsTpCost() != null ? charConfig.getLegendaryformsTpCost().length : 0;
-            int androidMax = charConfig.getAndroidformsTpCost() != null ? charConfig.getAndroidformsTpCost().length : 0;
-
-            skills.updateTransformationMaxLevels(superformMax, godformMax, legendaryMax, androidMax);
+            Collection<String> formSkills = charConfig.getFormSkills();
+            for (String skillName : formSkills) {
+                Integer[] tpCosts = charConfig.getFormSkillTpCosts(skillName);
+                int maxLevel = tpCosts != null ? tpCosts.length : 0;
+                skills.registerDefaultSkill(skillName, maxLevel);
+            }
         }
     }
 
@@ -513,13 +515,13 @@ public class StatsData {
         RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
 
         if (scaling == null) return switch (statName.toUpperCase()) {
-            case "STR" -> new RaceStatsConfig().getWarrior().getStatScaling().getStrengthScaling();
-            case "SKP" -> new RaceStatsConfig().getWarrior().getStatScaling().getStrikePowerScaling();
-            case "STM" -> new RaceStatsConfig().getWarrior().getStatScaling().getStaminaScaling();
-            case "DEF" -> new RaceStatsConfig().getWarrior().getStatScaling().getDefenseScaling();
-            case "VIT" -> new RaceStatsConfig().getWarrior().getStatScaling().getVitalityScaling();
-            case "PWR" -> new RaceStatsConfig().getWarrior().getStatScaling().getKiPowerScaling();
-            case "ENE" -> new RaceStatsConfig().getWarrior().getStatScaling().getEnergyScaling();
+            case "STR" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStrengthScaling();
+            case "SKP" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStrikePowerScaling();
+            case "STM" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getStaminaScaling();
+            case "DEF" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getDefenseScaling();
+            case "VIT" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getVitalityScaling();
+            case "PWR" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getKiPowerScaling();
+            case "ENE" -> new RaceStatsConfig().getClassStats(characterClass).getStatScaling().getEnergyScaling();
             default -> 1.0;
         };
 
@@ -536,16 +538,10 @@ public class StatsData {
     }
 
     private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-        if (config == null) return switch (characterClass.toLowerCase()) {
-            case "spiritualist" -> new RaceStatsConfig().getSpiritualist();
-            case "martialartist" -> new RaceStatsConfig().getMartialArtist();
-            default -> new RaceStatsConfig().getWarrior();
-        };
-        return switch (characterClass.toLowerCase()) {
-            case "spiritualist" -> config.getSpiritualist();
-            case "martialartist" -> config.getMartialArtist();
-            default -> config.getWarrior();
-        };
+        if (config == null) {
+            return new RaceStatsConfig().getClassStats(characterClass);
+        }
+        return config.getClassStats(characterClass);
     }
 
     public int calculateRecursiveCost(int statsToAdd, int baseMultiplier, int maxStats, double multiplier) {
