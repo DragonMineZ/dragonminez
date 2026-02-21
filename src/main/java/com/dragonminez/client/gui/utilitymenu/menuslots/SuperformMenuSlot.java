@@ -28,7 +28,9 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         }
 
         if (hasSuperform) {
-            if (statsData.getCharacter().getSelectedFormGroup() == null || statsData.getCharacter().getSelectedFormGroup().isEmpty()) {
+            boolean formGroupIsEmpty = statsData.getCharacter().getSelectedFormGroup() == null || statsData.getCharacter().getSelectedFormGroup().isEmpty();
+            boolean formIsEmpty = statsData.getCharacter().getSelectedForm() == null || statsData.getCharacter().getSelectedForm().isEmpty();
+            if (formGroupIsEmpty || formIsEmpty) {
                 NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_FORM_GROUP, false));
             }
             return new ButtonInfo(

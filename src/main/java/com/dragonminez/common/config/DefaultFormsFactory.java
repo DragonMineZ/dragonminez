@@ -125,7 +125,6 @@ public class DefaultFormsFactory {
         x20.setHairType("base");
         setDefaultMasteryValues(x20);
         x20.setStackDrainMultiplier(1.0);
-        x20.setDirectTransformation(true);
 
         FormConfig.FormData x100 = new FormConfig.FormData();
         x100.setName(StackForms.X100);
@@ -141,7 +140,6 @@ public class DefaultFormsFactory {
         x100.setHairType("base");
         setDefaultMasteryValues(x100);
         x100.setStackDrainMultiplier(1.0);
-        x100.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
         stackFormData.put(StackForms.X2, x2);
@@ -348,7 +346,6 @@ public class DefaultFormsFactory {
 		androidBase.setHairType("base");
         setDefaultMasteryValues(androidBase);
         androidBase.setStackDrainMultiplier(2.0);
-        androidBase.setCanAlwaysTransform(true);
 
         FormConfig.FormData superAndroid = new FormConfig.FormData();
         superAndroid.setName(HumanForms.SUPER_ANDROID);
@@ -577,7 +574,6 @@ public class DefaultFormsFactory {
 		ssj2.setHairType("ssj2");
         setDefaultMasteryValues(ssj2);
         ssj2.setStackDrainMultiplier(2.0);
-        ssj2.setDirectTransformation(true);
 
         FormConfig.FormData ssj3 = new FormConfig.FormData();
         ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
@@ -598,7 +594,6 @@ public class DefaultFormsFactory {
 		ssj3.setHairType("ssj3");
         setDefaultMasteryValues(ssj3);
         ssj3.setStackDrainMultiplier(2.0);
-        ssj3.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
