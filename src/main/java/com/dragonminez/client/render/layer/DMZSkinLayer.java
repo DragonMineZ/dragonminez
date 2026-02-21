@@ -387,10 +387,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderAndroid(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		var character = stats.getCharacter();
 		String raceName = character.getRace().toLowerCase();
-		String currentForm = character.getActiveForm();
 		// Luego podemos hacer q el FusedAndroid (Super A13) no tenga el layer del Android, si no q tenga directamente otra skin idk
 
-		if (!raceName.equals("human")) return;
+        boolean canBeUpgraded = ConfigManager.getRaceCharacter(raceName).getFormSkillTpCosts("androidforms").length > 0;
+		if (!canBeUpgraded) return;
 		if (!stats.getStatus().isAndroidUpgraded()) return;
 
 		String androidPath = "";

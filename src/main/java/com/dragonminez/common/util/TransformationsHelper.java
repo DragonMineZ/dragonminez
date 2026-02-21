@@ -18,7 +18,7 @@ public class TransformationsHelper {
 		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
 
 		if (isAndroidGroup && !isAndroidUpgraded) return unlockedForms;
-		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup && "human".equalsIgnoreCase(raceName)) return unlockedForms;
+		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return unlockedForms;
 
 		String formType = formConfig.getFormType();
 		int skillLevel = getSkillLevelForType(statsData, formType);
@@ -98,7 +98,7 @@ public class TransformationsHelper {
 		boolean isGodGroup = config.getFormType().equalsIgnoreCase("god");
 
 		if (!isAndroidUpgraded && isAndroidGroup) return null;
-		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup && "human".equalsIgnoreCase(race)) return null;
+		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return null;
 
 		String currentFormName = statsData.getCharacter().getActiveForm();
 		boolean foundCurrent = currentFormName.isEmpty();
