@@ -5,6 +5,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -26,15 +27,13 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-import java.util.Objects;
-
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
     private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
     private static final ResourceLocation RACES_PARTS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/raceparts.png");
 
     private static final ResourceLocation ACCESORIES_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/accesories.geo.json");
-	private static final ResourceLocation SCOUTER_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/scouter.geo.json");
+    private static final ResourceLocation SCOUTER_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/scouter.geo.json");
 
     private static final ResourceLocation YAJIROBE_SWORD_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/yajirobe_katana.geo.json");
     private static final ResourceLocation YAJIROBE_SWORD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/yajirobe_katana.png");
@@ -93,7 +92,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         var character = stats.getCharacter();
         String race = character.getRaceName().toLowerCase();
         String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-        boolean hasForm = (character.hasActiveForm() && !currentForm.equals("base"));
+        String currentStackForm = character.getActiveStackForm() != null ? character.getActiveStackForm().toLowerCase() : "";
+        boolean hasForm = (character.hasActiveForm() && !currentForm.equals("base") && !currentForm.isEmpty());
+        boolean hasStackForm = (character.hasActiveStackForm() && !currentStackForm.equals("base") && !currentStackForm.isEmpty());
 
         RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
         String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
@@ -104,37 +105,68 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         if (logicKey.isEmpty()) logicKey = race;
 
         float[] colorBody1 = ColorUtils.hexToRgb(character.getBodyColor());
-        float[] currentHairForTail = ColorUtils.hexToRgb(character.getHairColor());
+        float[] colorBody2 = ColorUtils.hexToRgb(character.getBodyColor2());
 
         if (hasForm && character.getActiveFormData() != null) {
             String formBody = character.getActiveFormData().getBodyColor1();
-            if (!formBody.isEmpty()) colorBody1 = ColorUtils.hexToRgb(formBody);
+            if (formBody != null && !formBody.isEmpty()) colorBody1 = ColorUtils.hexToRgb(formBody);
 
-            String formHair = character.getActiveFormData().getHairColor();
-            if (!formHair.isEmpty()) currentHairForTail = ColorUtils.hexToRgb(formHair);
+            String formBody2 = character.getActiveFormData().getBodyColor2();
+            if (formBody2 != null && !formBody2.isEmpty()) colorBody2 = ColorUtils.hexToRgb(formBody2);
+        } else if (hasStackForm && character.getActiveStackFormData() != null) {
+            String formBody = character.getActiveStackFormData().getBodyColor1();
+            if (formBody != null && !formBody.isEmpty()) colorBody1 = ColorUtils.hexToRgb(formBody);
+
+            String formBody2 = character.getActiveStackFormData().getBodyColor2();
+            if (formBody2 != null && !formBody2.isEmpty()) colorBody2 = ColorUtils.hexToRgb(formBody2);
         }
 
-        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == com.dragonminez.common.stats.ActionMode.FORM) {
-            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
-            if (nextForm != null) {
-                float factor = net.minecraft.util.Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+        if (stats.getStatus().isActionCharging()) {
+            if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+                var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+                if (nextForm != null) {
+                    float factor = net.minecraft.util.Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 
-                if (!nextForm.getBodyColor1().isEmpty()) {
-                    float[] targetBody = ColorUtils.hexToRgb(nextForm.getBodyColor1());
-                    colorBody1 = new float[] {
-                            net.minecraft.util.Mth.lerp(factor, colorBody1[0], targetBody[0]),
-                            net.minecraft.util.Mth.lerp(factor, colorBody1[1], targetBody[1]),
-                            net.minecraft.util.Mth.lerp(factor, colorBody1[2], targetBody[2])
-                    };
+                    if (nextForm.getBodyColor1() != null && !nextForm.getBodyColor1().isEmpty()) {
+                        float[] targetBody = ColorUtils.hexToRgb(nextForm.getBodyColor1());
+                        colorBody1 = new float[]{
+                                net.minecraft.util.Mth.lerp(factor, colorBody1[0], targetBody[0]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody1[1], targetBody[1]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody1[2], targetBody[2])
+                        };
+                    }
+
+                    if (nextForm.getBodyColor2() != null && !nextForm.getBodyColor2().isEmpty()) {
+                        float[] targetBody2 = ColorUtils.hexToRgb(nextForm.getBodyColor2());
+                        colorBody2 = new float[]{
+                                net.minecraft.util.Mth.lerp(factor, colorBody2[0], targetBody2[0]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody2[1], targetBody2[1]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody2[2], targetBody2[2])
+                        };
+                    }
                 }
+            } else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+                var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+                if (nextForm != null) {
+                    float factor = net.minecraft.util.Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 
-                if (!nextForm.getHairColor().isEmpty()) {
-                    float[] targetHair = ColorUtils.hexToRgb(nextForm.getHairColor());
-                    currentHairForTail = new float[] {
-                            net.minecraft.util.Mth.lerp(factor, currentHairForTail[0], targetHair[0]),
-                            net.minecraft.util.Mth.lerp(factor, currentHairForTail[1], targetHair[1]),
-                            net.minecraft.util.Mth.lerp(factor, currentHairForTail[2], targetHair[2])
-                    };
+                    if (nextForm.getBodyColor1() != null && !nextForm.getBodyColor1().isEmpty()) {
+                        float[] targetBody = ColorUtils.hexToRgb(nextForm.getBodyColor1());
+                        colorBody1 = new float[]{
+                                net.minecraft.util.Mth.lerp(factor, colorBody1[0], targetBody[0]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody1[1], targetBody[1]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody1[2], targetBody[2])
+                        };
+                    }
+
+                    if (nextForm.getBodyColor2() != null && !nextForm.getBodyColor2().isEmpty()) {
+                        float[] targetBody2 = ColorUtils.hexToRgb(nextForm.getBodyColor2());
+                        colorBody2 = new float[]{
+                                net.minecraft.util.Mth.lerp(factor, colorBody2[0], targetBody2[0]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody2[1], targetBody2[1]),
+                                net.minecraft.util.Mth.lerp(factor, colorBody2[2], targetBody2[2])
+                        };
+                    }
                 }
             }
         }
@@ -145,11 +177,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         if (isSaiyanLogic && !stats.getStatus().isTailVisible() && !isOozaru) {
             setupSaiyanParts(partsModel);
 
-            float[] tailColor = (hasForm || stats.getStatus().isActionCharging())
-                    ? currentHairForTail
+            return (hasForm || hasStackForm || stats.getStatus().isActionCharging())
+                    ? colorBody2
                     : ColorUtils.hexToRgb("#572117");
-
-            return tailColor;
         }
 
         if (logicKey.equals("namekian") || logicKey.equals("namekian_orange")) {
