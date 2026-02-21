@@ -134,15 +134,15 @@ public class SkillsConfig {
 		kaiokenCosts.add(20000);
 		skills.put("kaioken", new SkillCosts(kaiokenCosts));
 
-//		List<Integer> ultraInstinctCosts = new ArrayList<>();
-//		ultraInstinctCosts.add(-1);
-//		ultraInstinctCosts.add(5000);
-//		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
+		List<Integer> ultraInstinctCosts = new ArrayList<>();
+		ultraInstinctCosts.add(-1);
+		ultraInstinctCosts.add(5000);
+		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
 
-//		List<Integer> ultraEgoCosts = new ArrayList<>();
-//		ultraEgoCosts.add(-1);
-//		ultraEgoCosts.add(5000);
-//		skills.put("ultraego", new SkillCosts(ultraEgoCosts));
+		List<Integer> ultraEgoCosts = new ArrayList<>();
+		ultraEgoCosts.add(-1);
+		ultraEgoCosts.add(5000);
+		skills.put("ultraego", new SkillCosts(ultraEgoCosts));
 
 		List<Integer> fusionCosts = new ArrayList<>();
 		fusionCosts.add(50000);
