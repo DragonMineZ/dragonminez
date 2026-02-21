@@ -7,6 +7,7 @@ import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import net.minecraft.nbt.CompoundTag;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Character {
@@ -16,13 +17,17 @@ public class Character {
 
     private String selectedFormGroup = "";
     private String activeFormGroup = "";
+	private String selectedForm = "";
     private String activeForm = "";
     private final FormMasteries formMasteries = new FormMasteries();
+	private UsedForms formsUsedBefore = new UsedForms();
 
     private String selectedStackFormGroup = "";
     private String activeStackFormGroup = "";
+	private String selectedStackForm = "";
     private String activeStackForm = "";
     private final FormMasteries stackFormMasteries = new FormMasteries();
+	private UsedForms stackFormsUsedBefore = new UsedForms();
 
     public static final String GENDER_MALE = "male";
     public static final String GENDER_FEMALE = "female";
@@ -92,9 +97,15 @@ public class Character {
 	public String getCharacterClass() { return characterClass; }
 	public String getSelectedFormGroup() { return selectedFormGroup; }
 	public String getActiveFormGroup() { return activeFormGroup; }
+	public String getSelectedForm() {
+		return selectedForm;
+	}
 	public String getActiveForm() { return activeForm; }
 	public String getSelectedStackFormGroup() { return selectedStackFormGroup; }
 	public String getActiveStackFormGroup() { return activeStackFormGroup; }
+	public String getSelectedStackForm() {
+		return selectedStackForm;
+	}
 	public String getActiveStackForm() { return activeStackForm; }
 	public int getHairId() { return hairId; }
 
@@ -134,7 +145,13 @@ public class Character {
 	public String getEye2Color() { return eye2Color; }
 	public String getAuraColor() { return auraColor; }
 	public FormMasteries getFormMasteries() { return formMasteries; }
+	public UsedForms getFormsUsedBefore() {
+		return formsUsedBefore;
+	}
 	public FormMasteries getStackFormMasteries() { return stackFormMasteries; }
+	public UsedForms getStackFormsUsedBefore() {
+		return stackFormsUsedBefore;
+	}
 	public Boolean getArmored() {return armored;}
 
 	public void setRace(String race) {
@@ -166,8 +183,14 @@ public class Character {
     public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
     public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
     public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
-    public void setSelectedStackFormGroup(String selectedStackFormGroup) { this.selectedStackFormGroup = selectedStackFormGroup; }
-    public void setArmored(Boolean armored) {this.armored = armored;}
+	public void setSelectedForm(String selectedForm) {
+		this.selectedForm = selectedForm;
+	}
+	public void setSelectedStackFormGroup(String selectedStackFormGroup) { this.selectedStackFormGroup = selectedStackFormGroup; }
+	public void setSelectedStackForm(String selectedStackForm) {
+		this.selectedStackForm = selectedStackForm;
+	}
+	public void setArmored(Boolean armored) {this.armored = armored;}
 
     public String getRaceName() {
         return race != null && !race.isEmpty() ? race : "human";
@@ -208,12 +231,16 @@ public class Character {
         tag.putString("AuraColor", auraColor);
         tag.putString("SelectedFormGroup", selectedFormGroup);
         tag.putString("CurrentFormGroup", activeFormGroup);
+		tag.putString("SelectedForm", selectedForm);
         tag.putString("CurrentForm", activeForm);
         tag.putString("SelectedStackFormGroup", selectedStackFormGroup);
         tag.putString("CurrentStackFormGroup", activeStackFormGroup);
+		tag.putString("SelectedStackForm", selectedStackForm);
         tag.putString("CurrentStackForm", activeStackForm);
         tag.put("FormMasteries", formMasteries.save());
         tag.put("StackFormMasteries", stackFormMasteries.save());
+		tag.put("FormsUsedBefore", formsUsedBefore.save());
+		tag.put("StackFormsUsedBefore", stackFormsUsedBefore.save());
         tag.putBoolean("isArmored", armored);
         return tag;
     }
@@ -249,12 +276,16 @@ public class Character {
         this.auraColor = tag.getString("AuraColor");
         this.selectedFormGroup = tag.getString("SelectedFormGroup");
         this.activeFormGroup = tag.getString("CurrentFormGroup");
+		this.selectedForm = tag.getString("SelectedForm");
         this.activeForm = tag.getString("CurrentForm");
         if (tag.contains("FormMasteries")) formMasteries.load(tag.getCompound("FormMasteries"));
+		if (tag.contains("FormsUsedBefore")) formsUsedBefore.load(tag.getCompound("FormsUsedBefore"));
         this.selectedStackFormGroup = tag.getString("SelectedStackFormGroup");
         this.activeStackFormGroup = tag.getString("CurrentStackFormGroup");
+		this.selectedStackForm = tag.getString("SelectedStackForm");
         this.activeStackForm = tag.getString("CurrentStackForm");
         if (tag.contains("StackFormMasteries")) stackFormMasteries.load(tag.getCompound("StackFormMasteries"));
+		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
         this.armored = tag.getBoolean("isArmored");
     }
 

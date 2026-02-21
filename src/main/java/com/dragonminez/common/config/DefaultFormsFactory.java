@@ -64,6 +64,7 @@ public class DefaultFormsFactory {
         x2.setHairType("base");
         setDefaultMasteryValues(x2);
         x2.setStackDrainMultiplier(1.0);
+        x2.setCanAlwaysTransform(true);
 
         FormConfig.FormData x3 = new FormConfig.FormData();
         x3.setName(StackForms.X3);
@@ -124,6 +125,7 @@ public class DefaultFormsFactory {
         x20.setHairType("base");
         setDefaultMasteryValues(x20);
         x20.setStackDrainMultiplier(1.0);
+        x20.setDirectTransformation(true);
 
         FormConfig.FormData x100 = new FormConfig.FormData();
         x100.setName(StackForms.X100);
@@ -139,6 +141,7 @@ public class DefaultFormsFactory {
         x100.setHairType("base");
         setDefaultMasteryValues(x100);
         x100.setStackDrainMultiplier(1.0);
+        x100.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
         stackFormData.put(StackForms.X2, x2);
@@ -174,6 +177,7 @@ public class DefaultFormsFactory {
         sign.setHairType("base");
         setDefaultMasteryValues(sign);
         sign.setStackDrainMultiplier(1.0);
+        sign.setCanAlwaysTransform(true);
 
         FormConfig.FormData mastered = new FormConfig.FormData();
         mastered.setName(StackForms.ULTRAINSTINCT_MASTERED);
@@ -188,6 +192,7 @@ public class DefaultFormsFactory {
         mastered.setHairType("base");
         setDefaultMasteryValues(mastered);
         mastered.setStackDrainMultiplier(1.0);
+        mastered.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
         stackFormData.put(StackForms.ULTRAINSTINCT_SIGN, sign);
@@ -219,6 +224,7 @@ public class DefaultFormsFactory {
         sign.setHairType("base");
         setDefaultMasteryValues(sign);
         sign.setStackDrainMultiplier(1.0);
+        sign.setCanAlwaysTransform(true);
 
         FormConfig.FormData mastered = new FormConfig.FormData();
         mastered.setName(StackForms.ULTRAEGO_MASTERED);
@@ -233,6 +239,7 @@ public class DefaultFormsFactory {
         mastered.setHairType("ssj2");
         setDefaultMasteryValues(mastered);
         mastered.setStackDrainMultiplier(1.0);
+        mastered.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
         stackFormData.put(StackForms.ULTRAEGO_SIGN, sign);
@@ -263,6 +270,7 @@ public class DefaultFormsFactory {
 		buffed.setHairType("base");
         setDefaultMasteryValues(buffed);
         buffed.setStackDrainMultiplier(2.0);
+        buffed.setCanAlwaysTransform(true);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
         fullPower.setName(HumanForms.FULLPOWER);
@@ -338,6 +346,7 @@ public class DefaultFormsFactory {
 		androidBase.setHairType("base");
         setDefaultMasteryValues(androidBase);
         androidBase.setStackDrainMultiplier(2.0);
+        androidBase.setCanAlwaysTransform(true);
 
         FormConfig.FormData superAndroid = new FormConfig.FormData();
         superAndroid.setName(HumanForms.SUPER_ANDROID);
@@ -407,6 +416,7 @@ public class DefaultFormsFactory {
 		oozaru.setHairType("base");
         setDefaultMasteryValues(oozaru);
 		oozaru.setStackDrainMultiplier(2.0);
+        oozaru.setCanAlwaysTransform(true);
 
         FormConfig.FormData goldenOozaru = new FormConfig.FormData();
         goldenOozaru.setName(SaiyanForms.GOLDEN_OOZARU);
@@ -442,6 +452,7 @@ public class DefaultFormsFactory {
 		ssj4.setHairType("base");
         setDefaultMasteryValues(ssj4);
 		ssj4.setStackDrainMultiplier(2.0);
+        ssj4.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
         oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
@@ -469,6 +480,7 @@ public class DefaultFormsFactory {
 		ssj1.setHairType("ssj");
         setDefaultMasteryValues(ssj1);
         ssj1.setStackDrainMultiplier(2.0);
+        ssj1.setCanAlwaysTransform(true);
 
         FormConfig.FormData ssg2 = new FormConfig.FormData();
         ssg2.setName(SaiyanForms.SUPER_SAIYAN_GRADE_2);
@@ -536,6 +548,7 @@ public class DefaultFormsFactory {
 		ssj1Mastered.setHairType("ssj");
         setDefaultMasteryValues(ssj1Mastered);
         ssj1Mastered.setStackDrainMultiplier(2.0);
+        ssj1Mastered.setCanAlwaysTransform(true);
 
         FormConfig.FormData ssj2 = new FormConfig.FormData();
         ssj2.setName(SaiyanForms.SUPER_SAIYAN_2);
@@ -555,6 +568,7 @@ public class DefaultFormsFactory {
 		ssj2.setHairType("ssj2");
         setDefaultMasteryValues(ssj2);
         ssj2.setStackDrainMultiplier(2.0);
+        ssj2.setDirectTransformation(true);
 
         FormConfig.FormData ssj3 = new FormConfig.FormData();
         ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
@@ -574,6 +588,7 @@ public class DefaultFormsFactory {
 		ssj3.setHairType("ssj3");
         setDefaultMasteryValues(ssj3);
         ssj3.setStackDrainMultiplier(2.0);
+        ssj3.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
         superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
@@ -611,6 +626,7 @@ public class DefaultFormsFactory {
 		giantForm.setHairType("base");
         setDefaultMasteryValues(giantForm);
         giantForm.setStackDrainMultiplier(2.0);
+        giantForm.setCanAlwaysTransform(true);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
         fullPower.setName(NamekianForms.FULLPOWER);
@@ -671,6 +687,7 @@ public class DefaultFormsFactory {
 		second.setHairType("base");
         setDefaultMasteryValues(second);
         second.setStackDrainMultiplier(2.0);
+        second.setCanAlwaysTransform(true);
 
         FormConfig.FormData third = new FormConfig.FormData();
         third.setName(FrostDemonForms.THIRD_FORM);
@@ -763,6 +780,7 @@ public class DefaultFormsFactory {
 		kid.setHairType("base");
         setDefaultMasteryValues(kid);
         kid.setStackDrainMultiplier(2.0);
+        kid.setCanAlwaysTransform(true);
 
         FormConfig.FormData evil = new FormConfig.FormData();
         evil.setName(MajinForms.EVIL);
@@ -842,6 +860,7 @@ public class DefaultFormsFactory {
 		semiPerfect.setHairType("base");
         setDefaultMasteryValues(semiPerfect);
         semiPerfect.setStackDrainMultiplier(2.0);
+        semiPerfect.setCanAlwaysTransform(true);
 
         FormConfig.FormData perfect = new FormConfig.FormData();
         perfect.setName(BioAndroidForms.PERFECT);
