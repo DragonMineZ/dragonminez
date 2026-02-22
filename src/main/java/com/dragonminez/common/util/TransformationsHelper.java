@@ -177,7 +177,9 @@ public class TransformationsHelper {
 		String group = statsData.getCharacter().getActiveFormGroup();
 		String currentForm = statsData.getCharacter().getActiveForm();
 
-		if ("androidforms".equalsIgnoreCase(group) && "androidbase".equalsIgnoreCase(currentForm)) return false;
+		if ("androidforms".equalsIgnoreCase(group) && "androidbase".equalsIgnoreCase(currentForm)) {
+			return false;
+		}
 		if (isDefaultGroup(race, group)) {
 			return !"frostdemon".equals(race) && !"majin".equals(race) && !"bioandroid".equals(race);
 		}

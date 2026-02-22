@@ -100,29 +100,41 @@ public class ExecuteActionC2S {
 						case FORCE_DESCEND -> {
 							if (rightClick) {
 								data.getCharacter().clearActiveStackForm();
-								if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-								else data.getCharacter().clearActiveForm();
+								if (data.getStatus().isAndroidUpgraded()) {
+									data.getCharacter().setActiveForm("androidforms", "androidbase");
+								}
+								else {
+									data.getCharacter().clearActiveForm();
+								}
 							} else {
-								FormConfig.FormData previousStackForm = TransformationsHelper.getPreviousStackForm(data);
-								if (previousStackForm != null) {
-									data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousStackForm.getName());
-								} else {
-									data.getCharacter().clearActiveStackForm();
+								boolean activeStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
+								boolean activeForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
+								if (activeStackForm) {
+									FormConfig.FormData previousStackForm = TransformationsHelper.getPreviousStackForm(data);
+									if (previousStackForm != null) {
+										data.getCharacter().setActiveStackForm(data.getCharacter().getActiveStackFormGroup(), previousStackForm.getName());
+									} else {
+										data.getCharacter().clearActiveStackForm();
+									}
+								} else if (activeForm) {
+									FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
+									if (previousForm != null) {
+										data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
+									} else {
+										if (data.getStatus().isAndroidUpgraded()) {
+											data.getCharacter().setActiveForm("androidforms", "androidbase");
+										}
+										else {
+											data.getCharacter().clearActiveForm();
+										}
+									}
 								}
 
-								FormConfig.FormData previousForm = TransformationsHelper.getPreviousForm(data);
-								if (previousForm != null) {
-									data.getCharacter().setActiveForm(data.getCharacter().getActiveFormGroup(), previousForm.getName());
-								} else {
-									if (data.getStatus().isAndroidUpgraded()) data.getCharacter().setActiveForm("androidforms", "androidbase");
-									else data.getCharacter().clearActiveForm();
+								if (data.getCharacter().getActiveForm().isEmpty() || (data.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
+									data.getResources().setPowerRelease(0);
 								}
+								needsSync = true;
 							}
-
-							if (data.getCharacter().getActiveForm().isEmpty() || (data.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(data.getCharacter().getActiveForm()))) {
-								data.getResources().setPowerRelease(0);
-							}
-							needsSync = true;
 						}
 						case CYCLE_FORM_GROUP -> {
 							data.getStatus().setSelectedAction(ActionMode.FORM);
