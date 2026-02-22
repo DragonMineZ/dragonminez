@@ -135,7 +135,6 @@ public class CombatEvent {
 				} else ComboManager.resetCombo(attacker.getUUID());
 
 				double finalDmzDamage;
-				System.out.println("Stamina Required: " + staminaRequired + " | Current Stamina: " + currentStamina);
 				if (currentStamina >= staminaRequired) {
 					finalDmzDamage = dmzDamage;
 					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);

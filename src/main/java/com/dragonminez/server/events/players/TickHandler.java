@@ -41,6 +41,11 @@ public class TickHandler {
 
     private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 
+	static {
+		registerActionModeHandlers();
+		registerStatusEffectHandlers();
+	}
+
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
@@ -429,6 +434,7 @@ public class TickHandler {
 	}
 
 	public static void registerStatusEffectHandlers() {
+		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioDrainHandler());
 		STATUS_EFFECT_HANDLERS.add(new DashStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new DoubleDashStatusHandler());
@@ -438,7 +444,6 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MajinStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
-		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new ComboStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());
