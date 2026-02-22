@@ -12,13 +12,18 @@ import net.minecraft.network.chat.Component;
 public class DescendFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
     @Override
     public ButtonInfo render(StatsData statsData) {
-        boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
-        String race = statsData.getCharacter().getRaceName();
-
-        if (!isAndroidUpgraded && ("frostdemon".equals(race) || "majin".equals(race) || "bioandroid".equals(race))) {
+        boolean activeForm = statsData.getCharacter().getActiveForm() != null && !statsData.getCharacter().getActiveForm().isEmpty();
+        boolean activeStackForm = statsData.getCharacter().getActiveStackForm() != null && !statsData.getCharacter().getActiveStackForm().isEmpty();
+        boolean isAndroidBaseForm = statsData.getStatus().isAndroidUpgraded() && "androidbase".equalsIgnoreCase(statsData.getCharacter().getActiveForm());
+        if (activeStackForm || (activeForm && !isAndroidBaseForm)) {
             return new ButtonInfo(
                     Component.translatable("gui.action.dragonminez.descend").withStyle(ChatFormatting.BOLD),
                     Component.translatable("gui.action.dragonminez.revert_form")
+            );
+        } else if (statsData.getResources().getPowerRelease() > 0) {
+            return new ButtonInfo(
+                    Component.translatable("gui.action.dragonminez.descend").withStyle(ChatFormatting.BOLD),
+                    Component.translatable("gui.action.dragonminez.zero_release")
             );
         } else {
             return new ButtonInfo();
@@ -27,11 +32,7 @@ public class DescendFormMenuSlot extends AbstractMenuSlot implements IUtilityMen
 
     @Override
     public void handle(StatsData statsData, boolean rightClick) {
-        boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
-        String race = statsData.getCharacter().getRaceName();
-        if (!isAndroidUpgraded && ("frostdemon".equals(race) || "majin".equals(race) || "bioandroid".equals(race))) {
-            NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, rightClick));
-            playToggleSound(false);
-        }
+        NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.FORCE_DESCEND, rightClick));
+        playToggleSound(false);
     }
 }
