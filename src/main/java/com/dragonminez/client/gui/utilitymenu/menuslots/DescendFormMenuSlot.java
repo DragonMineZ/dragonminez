@@ -20,11 +20,13 @@ public class DescendFormMenuSlot extends AbstractMenuSlot implements IUtilityMen
                     Component.translatable("gui.action.dragonminez.descend").withStyle(ChatFormatting.BOLD),
                     Component.translatable("gui.action.dragonminez.revert_form")
             );
-        } else {
+        } else if (statsData.getResources().getPowerRelease() > 0) {
             return new ButtonInfo(
                     Component.translatable("gui.action.dragonminez.descend").withStyle(ChatFormatting.BOLD),
                     Component.translatable("gui.action.dragonminez.zero_release")
             );
+        } else {
+            return new ButtonInfo();
         }
     }
 
