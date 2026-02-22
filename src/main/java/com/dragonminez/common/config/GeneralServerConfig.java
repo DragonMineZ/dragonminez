@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class GeneralServerConfig {
 	public static final int CURRENT_VERSION = 1;
-	private int configVersion = CURRENT_VERSION;
+	private int configVersion;
 	public int getConfigVersion() { return configVersion; }
 	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
@@ -116,7 +116,7 @@ public class GeneralServerConfig {
 		private int dashCooldownSeconds = 4;
 		private int doubleDashCooldownSeconds = 12;
 		private double[] kiBladeConfig = {1.0, 0.05};
-		private double[] kiScytheConfig = {1.5, 0.75};
+		private double[] kiScytheConfig = {1.5, 0.075};
 		private double[] kiClawLanceConfig = {2.0, 0.125};
 
 		public boolean isKillPlayersOnCombatLogout() { return killPlayersOnCombatLogout; }

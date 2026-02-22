@@ -8,8 +8,10 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,31 +20,30 @@ import java.util.Collection;
 import java.util.List;
 
 public class EffectsCommand {
+	private static final SuggestionProvider<CommandSourceStack> EFFECT_SUGGESTIONS = (ctx, builder) ->
+			SharedSuggestionProvider.suggest(List.of("mightfruit", "majin"), builder);
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzeffect")
 				.requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_LIST_SELF, DMZPermissions.EFFECTS_LIST_OTHERS))
 
-				// give <effect> <duration> [targets]
 				.then(Commands.literal("give")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_GIVE_SELF, DMZPermissions.EFFECTS_GIVE_OTHERS))
-						.then(Commands.argument("effect", StringArgumentType.string())
+						.then(Commands.argument("effect", StringArgumentType.string()).suggests(EFFECT_SUGGESTIONS)
 								.then(Commands.argument("duration", IntegerArgumentType.integer(-1))
 										.executes(ctx -> giveEffect(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "effect"), IntegerArgumentType.getInteger(ctx, "duration")))
 										.then(Commands.argument("targets", EntityArgument.players())
 												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.EFFECTS_GIVE_OTHERS))
 												.executes(ctx -> giveEffect(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "effect"), IntegerArgumentType.getInteger(ctx, "duration")))))))
 
-				// remove <effect> [targets]
 				.then(Commands.literal("remove")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_REMOVE_SELF, DMZPermissions.EFFECTS_REMOVE_OTHERS))
-						.then(Commands.argument("effect", StringArgumentType.string())
+						.then(Commands.argument("effect", StringArgumentType.string()).suggests(EFFECT_SUGGESTIONS)
 								.executes(ctx -> removeEffect(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "effect")))
 								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.EFFECTS_REMOVE_OTHERS))
 										.executes(ctx -> removeEffect(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "effect"))))))
 
-				// clear [targets]
 				.then(Commands.literal("clear")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.EFFECTS_CLEAR_SELF, DMZPermissions.EFFECTS_CLEAR_OTHERS))
 						.executes(ctx -> clearEffects(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException())))
@@ -119,8 +120,8 @@ public class EffectsCommand {
 		}
 
 		return switch (effectName.toLowerCase()) {
-			case "mightfruit" -> serverConfig.getGameplay().getMightFruitPower() - 1.0;
-			case "majin" -> serverConfig.getGameplay().getMajinPower() - 1.0;
+			case "mightfruit" -> serverConfig.getGameplay().getMightFruitPower();
+			case "majin" -> serverConfig.getGameplay().getMajinPower();
 			default -> 0.0;
 		};
 	}

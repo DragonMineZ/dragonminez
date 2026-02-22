@@ -95,7 +95,17 @@ public class DMZPermissions {
     // Reload
     public static final PermissionNode<Boolean> RELOAD = register("dmz.reload", "Allows reloading server configurations.", (player, uuid, context) -> false);
 
-	public static void init() {}
+    // Forms
+    public static final PermissionNode<Boolean> FORMS_SET_SELF = register("dmzform.set.self", "Allows setting your own forms.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> FORMS_SET_OTHERS = register("dmzform.set.others", "Allows setting other players' forms.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> FORMS_ADD_SELF = register("dmzform.add.self", "Allows adding forms to yourself.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> FORMS_ADD_OTHERS = register("dmzform.add.others", "Allows adding forms to other players.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> FORMS_REMOVE_SELF = register("dmzform.remove.self", "Allows removing your own forms.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> FORMS_REMOVE_OTHERS = register("dmzform.remove.others", "Allows removing other players' forms.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> FORMS_LIST_SELF = register("dmzform.list.self", "Allows listing your own forms.", (player, uuid, context) -> true);
+    public static final PermissionNode<Boolean> FORMS_LIST_OTHERS = register("dmzform.list.others", "Allows listing other players' forms.", (player, uuid, context) -> false);
+
+    public static void init() {}
 
     private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {
         PermissionNode<Boolean> permissionNode = new PermissionNode<>(Reference.MOD_ID, node, PermissionTypes.BOOLEAN, defaultResolver);
@@ -113,7 +123,7 @@ public class DMZPermissions {
         if (source.getEntity() instanceof ServerPlayer player) {
             return PermissionAPI.getPermission(player, ADMIN) || PermissionAPI.getPermission(player, node) || player.hasPermissions(2);
         }
-        return source.hasPermission(2);
+        return true;
     }
 
     public static boolean check(CommandSourceStack source, PermissionNode<Boolean> selfNode, PermissionNode<Boolean> othersNode) {

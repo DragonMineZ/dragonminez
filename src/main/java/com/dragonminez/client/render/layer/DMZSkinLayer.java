@@ -17,6 +17,7 @@ import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -29,9 +30,12 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
+    private static final Map<ResourceLocation, ResourceLocation> VALIDATED_TEXTURES_CACHE = new ConcurrentHashMap<>();
+    private static final ResourceLocation BLANK_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
     private int currentKaiokenPhase = 0;
 
     public DMZSkinLayer(GeoRenderer<T> entityRendererIn) {
@@ -146,7 +150,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4");
         if (isHumanoid && bodyType == 0) {
             ResourceLocation playerSkin = player.getSkinTextureLocation();
-            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(playerSkin), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
+            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(playerSkin)), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
             return;
         }
 
@@ -159,7 +163,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             default -> {
                 String gender = (raceConfig != null && raceConfig.hasGender()) ? "_" + character.getGender().toLowerCase() : "";
                 ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + logicKey + gender + ".png");
-                renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(customTex), b1[0], b1[1], b1[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
+                renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(customTex)), b1[0], b1[1], b1[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
             }
         }
     }
@@ -174,7 +178,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         String path = "textures/entity/races/humansaiyan/bodytype" + genderPart + "_" + bodyType + ".png";
 
         ResourceLocation textureLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
-        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(textureLoc), bodyColor[0], bodyColor[1], bodyColor[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
+        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(textureLoc)), bodyColor[0], bodyColor[1], bodyColor[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
     }
 
     private void renderBodyOozaru(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float[] bodyColor, float[] hairColor, float alpha, float partialTick, int packedLight, int packedOverlay) {
@@ -435,21 +439,21 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		else androidPath = "textures/entity/races/male_android.png";
 
 		ResourceLocation androidLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, androidPath);
-        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(androidLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
+        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(androidLoc)), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
 	}
 
     private void renderTattoos(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
 
         if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
             ResourceLocation majinMarkLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/majinm.png");
-            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(majinMarkLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
+            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(majinMarkLoc)), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
         }
 
         int tattooType = stats.getCharacter().getTattooType();
         if (tattooType == 0) return;
 
         ResourceLocation tattooLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/tattoos/tattoo_" + tattooType + ".png");
-        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(tattooLoc), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
+        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(tattooLoc)), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
 
     }
 
@@ -759,7 +763,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
     private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {
         ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
-        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(loc), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
+        renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(loc)), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
     }
 
     private void unhideParents(GeoBone bone) {
@@ -772,5 +776,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
     private float[] hexToRGB(String hexColor) {
         return ColorUtils.hexToRgb(hexColor);
+    }
+
+    private ResourceLocation getSafeTexture(ResourceLocation originalLoc) {
+        return VALIDATED_TEXTURES_CACHE.computeIfAbsent(originalLoc, loc -> {
+            if (Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()) {
+                return loc;
+            }
+            return BLANK_TEXTURE;
+        });
     }
 }

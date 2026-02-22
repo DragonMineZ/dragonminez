@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EntitiesConfig {
-	public static final int CURRENT_VERSION = 1;
-	private int configVersion = CURRENT_VERSION;
+	public static final int CURRENT_VERSION = 2;
+	private int configVersion;
 	public int getConfigVersion() { return configVersion; }
 	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 

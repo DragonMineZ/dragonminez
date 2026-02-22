@@ -5,11 +5,14 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -76,6 +79,7 @@ public class ConfigManager {
 			RACE_CHARACTER.clear();
 			RACE_FORMS.clear();
 			LOADED_RACES.clear();
+			STACK_FORMS.clear();
 
 			loadGeneralConfigs();
 			loadAllRaces();
@@ -99,6 +103,16 @@ public class ConfigManager {
 		}
 	}
 
+	private static boolean isMissingConfigVersion(Path path) {
+		if (!Files.exists(path)) return false;
+		try (Reader reader = Files.newBufferedReader(path)) {
+			JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+			return !json.has("configVersion");
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
 	private static void loadGeneralConfigs() throws IOException {
 		// General User
 		Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
@@ -106,18 +120,21 @@ public class ConfigManager {
 		if (Files.exists(userConfigPath)) {
 			try {
 				userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
-				if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION) {
+				if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION || isMissingConfigVersion(userConfigPath)) {
 					backupOldConfig(userConfigPath);
 					userConfig = new GeneralUserConfig();
+					userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
 					overwriteUser = true;
 				}
 			} catch (Exception e) {
 				backupOldConfig(userConfigPath);
 				userConfig = new GeneralUserConfig();
+				userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
 				overwriteUser = true;
 			}
 		} else {
 			userConfig = new GeneralUserConfig();
+			userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
 			overwriteUser = true;
 		}
 		if (overwriteUser) LOADER.saveConfig(userConfigPath, userConfig);
@@ -128,30 +145,29 @@ public class ConfigManager {
 		if (Files.exists(serverConfigPath)) {
 			try {
 				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
+				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION || isMissingConfigVersion(serverConfigPath)) {
 					backupOldConfig(serverConfigPath);
 					serverConfig = new GeneralServerConfig();
-					overwriteServer = true;
-				} else if (serverConfig.getConfigVersion() == 0) {
-					backupOldConfig(serverConfigPath);
-					serverConfig = new GeneralServerConfig();
+					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 					overwriteServer = true;
 				}
 			} catch (Exception e) {
 				backupOldConfig(serverConfigPath);
 				serverConfig = new GeneralServerConfig();
+				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 				overwriteServer = true;
 			}
 		} else {
 			try {
 				LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
 				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
+				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION || isMissingConfigVersion(serverConfigPath)) {
 					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 					overwriteServer = true;
 				}
 			} catch (Exception e) {
 				serverConfig = new GeneralServerConfig();
+				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 				overwriteServer = true;
 			}
 		}
@@ -163,30 +179,29 @@ public class ConfigManager {
 		if (Files.exists(skillsConfigPath)) {
 			try {
 				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
+				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION || isMissingConfigVersion(skillsConfigPath)) {
 					backupOldConfig(skillsConfigPath);
 					skillsConfig = new SkillsConfig();
-					overwriteSkills = true;
-				} else if (skillsConfig.getConfigVersion() == 0) {
-					backupOldConfig(skillsConfigPath);
-					skillsConfig = new SkillsConfig();
+					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 					overwriteSkills = true;
 				}
 			} catch (Exception e) {
 				backupOldConfig(skillsConfigPath);
 				skillsConfig = new SkillsConfig();
+				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 				overwriteSkills = true;
 			}
 		} else {
 			try {
 				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
 				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
+				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION || isMissingConfigVersion(skillsConfigPath)) {
 					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 					overwriteSkills = true;
 				}
 			} catch (Exception e) {
 				skillsConfig = new SkillsConfig();
+				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 				overwriteSkills = true;
 			}
 		}
@@ -198,22 +213,21 @@ public class ConfigManager {
 		if (Files.exists(entitiesConfigPath)) {
 			try {
 				entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
-				if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION) {
+				if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION || isMissingConfigVersion(entitiesConfigPath)) {
 					backupOldConfig(entitiesConfigPath);
 					entitiesConfig = createDefaultEntitiesConfig();
-					overwriteEntities = true;
-				} else if (entitiesConfig.getConfigVersion() == 0) {
-					backupOldConfig(entitiesConfigPath);
-					entitiesConfig = createDefaultEntitiesConfig();
+					entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
 					overwriteEntities = true;
 				}
 			} catch (Exception e) {
 				backupOldConfig(entitiesConfigPath);
 				entitiesConfig = createDefaultEntitiesConfig();
+				entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
 				overwriteEntities = true;
 			}
 		} else {
 			entitiesConfig = createDefaultEntitiesConfig();
+			entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
 			overwriteEntities = true;
 		}
 		if (overwriteEntities) LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
@@ -234,7 +248,7 @@ public class ConfigManager {
 		if (Files.exists(characterPath)) {
 			try {
 				characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
-				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION) {
+				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION || isMissingConfigVersion(characterPath)) {
 					backupOldConfig(characterPath);
 					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
 					overwriteCharacter = true;
@@ -260,7 +274,7 @@ public class ConfigManager {
 		if (Files.exists(statsPath)) {
 			try {
 				statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
-				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION) {
+				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION || isMissingConfigVersion(statsPath)) {
 					backupOldConfig(statsPath);
 					statsConfig = createDefaultStatsConfig();
 					overwriteStats = true;
@@ -288,7 +302,7 @@ public class ConfigManager {
 			recreateForms = true;
 		} else if (!raceForms.isEmpty()) {
 			for (FormConfig formGroup : raceForms.values()) {
-				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0) {
+				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || isMissingConfigVersion(formsPath)) {
 					recreateForms = true;
 					break;
 				}
@@ -325,7 +339,7 @@ public class ConfigManager {
 			recreateForms = true;
 		} else if (!stackForms.isEmpty()) {
 			for (FormConfig formGroup : stackForms.values()) {
-				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || isMissingConfigVersion(STACK_FORMS_DIR)) {
 					recreateForms = true;
 					break;
 				}
@@ -338,6 +352,12 @@ public class ConfigManager {
 			}
 			stackForms.clear();
 			FORMS_FACTORY.createDefaultStackForms(STACK_FORMS_DIR, stackForms);
+
+			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
+				entry.getValue().setConfigVersion(FormConfig.CURRENT_VERSION);
+				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
+				LOADER.saveConfig(formFilePath, entry.getValue());
+			}
 		} else {
 			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
 				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
@@ -365,6 +385,12 @@ public class ConfigManager {
 		addDefaultEntityStats(statsMap, "default", MainEntities.RED_RIBBON_ROBOT1, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, "default", MainEntities.RED_RIBBON_ROBOT2, 120.0, 15.0, 0.0);
 		addDefaultEntityStats(statsMap, "default", MainEntities.RED_RIBBON_ROBOT3, 120.0, 15.0, 0.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.SAGA_SAIBAMAN, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.SAGA_SAIBAMAN2, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.SAGA_SAIBAMAN3, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.SAGA_SAIBAMAN4, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.SAGA_SAIBAMAN5, 400.0, 25.0, 50.0);
+		addDefaultEntityStats(statsMap, "default", MainEntities.SAGA_SAIBAMAN6, 400.0, 25.0, 50.0);
 
 		//SAIYAN SAGA
 		addDefaultEntityStats(statsMap, "saiyan_saga", MainEntities.SAGA_RADITZ, 400.0, 25.0, 50.0);
