@@ -123,30 +123,6 @@ public class HairManager {
         return bytes;
     }
 
-    private static final String BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-    private static byte[] decodeBase62(String encoded) {
-        if (encoded == null || encoded.isEmpty()) return new byte[0];
-        BigInteger value = BigInteger.ZERO;
-        BigInteger base = BigInteger.valueOf(62);
-
-        for (int i = 0; i < encoded.length(); i++) {
-            char c = encoded.charAt(i);
-            int digit = BASE62_ALPHABET.indexOf(c);
-            if (digit < 0) throw new IllegalArgumentException("Invalid character in Base62 string: " + c);
-            value = value.multiply(base).add(BigInteger.valueOf(digit));
-        }
-
-        byte[] bytes = value.toByteArray();
-        if (bytes.length > 1 && bytes[0] == 0) {
-            byte[] result = new byte[bytes.length - 1];
-            System.arraycopy(bytes, 1, result, 0, result.length);
-            return result;
-        }
-
-        return bytes;
-    }
-
     public static String toCode(CustomHair hair) {
 		if (hair == null) return "";
 		try {
@@ -185,17 +161,10 @@ public class HairManager {
 			byte[] bytes = decodeFromNumbers(cleanCode);
 			CompoundTag tag;
 
-			if (isV4) {
-				byte[] decompressed = decompressOptimized(bytes);
-				ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
-				DataInputStream dataIn = new DataInputStream(byteIn);
-				tag = NbtIo.read(dataIn);
-			} else {
-				ByteArrayInputStream byteIn = new ByteArrayInputStream(bytes);
-				GZIPInputStream gzipIn = new GZIPInputStream(byteIn);
-				DataInputStream dataIn = new DataInputStream(gzipIn);
-				tag = NbtIo.read(dataIn);
-			}
+			byte[] decompressed = decompressOptimized(bytes);
+			ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
+			DataInputStream dataIn = new DataInputStream(byteIn);
+			tag = NbtIo.read(dataIn);
 
 			if (tag.contains("Base") && (tag.contains("SSJ") || tag.contains("SSJ2") || tag.contains("SSJ3"))) {
 				CustomHair base = new CustomHair();
@@ -233,7 +202,7 @@ public class HairManager {
 
 			byte[] compressed = compressOptimized(nbtBytes);
 
-			return CODE_PREFIX_FULL_V4 + encodeToNumbers(compressed);
+			return CODE_PREFIX_FULL_V5 + encodeToNumbers(compressed);
 		} catch (Exception e) {
 			LogUtil.error(Env.CLIENT, "Failed to serialize CustomHair full set to code", e);
 			return "";
