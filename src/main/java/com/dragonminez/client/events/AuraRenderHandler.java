@@ -88,6 +88,16 @@ public class AuraRenderHandler {
 
     private static final float PULSE_SPEED = 0.01f;
 
+    @SubscribeEvent
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            AuraRenderQueue.getAndClearAuras();
+            AuraRenderQueue.getAndClearSparks();
+            AuraRenderQueue.getAndClearWeapons();
+            AuraRenderQueue.getAndClearFirstPersonAuras();
+        }
+    }
+
     private static float[] getBodyScale(StatsData stats) {
         float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
         var character = stats.getCharacter();
@@ -165,9 +175,7 @@ public class AuraRenderHandler {
                 boolean isFused = stats.getStatus().isFused();
                 boolean wasFused = WAS_FUSED_CACHE.getOrDefault(playerId, false);
 
-                if (isFused && !wasFused) {
-                    FUSION_START_TIME.put(playerId, gameTime);
-                }
+                if (isFused && !wasFused) FUSION_START_TIME.put(playerId, gameTime);
                 WAS_FUSED_CACHE.put(playerId, isFused);
 
                 if (FUSION_START_TIME.containsKey(playerId)) {
@@ -793,6 +801,7 @@ public class AuraRenderHandler {
 
     private static void spawnCalmAuraParticle(Player player, float totalScale, int colorHex) {
         var mc = Minecraft.getInstance();
+        if (mc.isPaused()) return;
         var level = player.level();
         var random = player.getRandom();
 
@@ -829,6 +838,7 @@ public class AuraRenderHandler {
 
     private static void spawnPassiveDivineParticle(Player player, float totalScale, int colorHex) {
         var mc = Minecraft.getInstance();
+        if (mc.isPaused()) return;
         var level = player.level();
         var random = player.getRandom();
 

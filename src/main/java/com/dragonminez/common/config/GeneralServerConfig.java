@@ -160,7 +160,7 @@ public class GeneralServerConfig {
 		private boolean frostDemonRacialSkill = true;
 		private double frostDemonTPBoost = 1.25;
 		private boolean bioAndroidRacialSkill = true;
-		private int bioAndroidCooldownSeconds = 900;
+		private int bioAndroidCooldownSeconds = 180;
 		private double bioAndroidDrainRatio = 0.25;
 		private boolean majinAbsoprtionSkill = true;
 		private boolean majinReviveSkill = true;
