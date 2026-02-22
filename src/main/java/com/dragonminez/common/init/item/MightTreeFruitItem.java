@@ -70,7 +70,7 @@ public class MightTreeFruitItem extends Item {
 					data.getResources().setCurrentStamina(newStamina);
                 }
 
-                double effectPower = ConfigManager.getServerConfig().getGameplay().getMightFruitPower() - 1.0;
+                double effectPower = ConfigManager.getServerConfig().getGameplay().getMightFruitPower();
                 data.getEffects().addEffect("mightfruit", effectPower, EFFECT_DURATION_TICKS);
             });
 

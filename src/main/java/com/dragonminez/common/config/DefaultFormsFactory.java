@@ -20,10 +20,10 @@ public class DefaultFormsFactory {
 
     private void setDefaultMasteryValues(FormConfig.FormData form) {
         form.setMaxMastery(100.0);
-        form.setMasteryPerHit(0.05);
-        form.setMasteryPerDamageReceived(0.05);
-        form.setStatMultPerMasteryPoint(0.02);
-        form.setCostDecreasePerMasteryPoint(0.02);
+        form.setMasteryPerHit(0.001);
+        form.setMasteryPerDamageReceived(0.001);
+        form.setStatMultPerMasteryPoint(0.01);
+        form.setCostDecreasePerMasteryPoint(0.025);
 		form.setPassiveMastery(0.001);
     }
 

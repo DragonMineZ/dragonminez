@@ -131,19 +131,18 @@ public class UtilityMenuScreen extends Screen {
 			int y = centerY + (row * (BUTTON_HEIGHT + GAP)) - (BUTTON_HEIGHT / 2);
 
 			if (mouseX >= x && mouseX <= x + BUTTON_WIDTH && mouseY >= y && mouseY <= y + BUTTON_HEIGHT) {
-				handleSlotClick(i);
+				handleSlotClick(i, button);
 				return true;
 			}
 		}
 		return super.mouseClicked(mouseX, mouseY, button);
 	}
 
-	private void handleSlotClick(int index) {
+	private void handleSlotClick(int index, int button) {
 		IUtilityMenuSlot menuSlot = MENU_SLOTS.get(index);
-		boolean wasRightClick = Minecraft.getInstance().options.keyUse.isDown();
-		if (menuSlot != null) {
-			menuSlot.handle(statsData, wasRightClick);
-		}
+		boolean wasRightClick = (button == 1);
+
+		if (menuSlot != null) menuSlot.handle(statsData, wasRightClick);
 	}
 
 	@Override

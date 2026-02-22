@@ -45,7 +45,6 @@ public class UpdateSkillC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					Skill skill = data.getSkills().getSkill(skillName);
-					System.out.println("Packet received: " + action + " " + skillName + " with cost " + cost);
 					switch (action) {
 						case TOGGLE:
 							if (skill != null && skill.getLevel() > 0) {

@@ -90,7 +90,6 @@ public class CombatEvent {
 				double gravityMult = GravityLogic.getConsumptionMultiplier(attacker);
 				baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
 				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrainMultiplier();
-				System.out.println("Stamina required formula: " + baseStaminaRequired + " * " + staminaDrainMultiplier + " = " + (baseStaminaRequired * staminaDrainMultiplier));
 				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
 				int currentStamina = attackerData.getResources().getCurrentStamina();
 
@@ -186,7 +185,6 @@ public class CombatEvent {
 							}
 						}
 					}
-
 					if (!attacker.isCreative() || !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 				}
 
@@ -235,7 +233,7 @@ public class CombatEvent {
 								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
 
 								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
-								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 5.0;
+								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 2.5;
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.75f;

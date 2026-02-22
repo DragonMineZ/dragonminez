@@ -121,7 +121,7 @@ public class StatsData {
     }
 
     public int getMaxPoise() {
-        return (int) (20 + stats.getResistance() * 0.1);
+        return (int) (25 + getDefense() * 0.1);
     }
 
     public double getMaxMeleeDamage() {
@@ -270,7 +270,7 @@ public class StatsData {
         String currentForm = character.getActiveStackForm();
         String currentFormGroup = character.getActiveStackFormGroup();
 
-        if (currentForm == null || currentForm.isEmpty() || currentForm.equals("")) return 1.0;
+        if (currentForm == null || currentForm.isEmpty()) return 1.0;
         if (currentFormGroup == null || currentFormGroup.isEmpty()) return 1.0;
 
         var formConfig = ConfigManager.getStackFormGroup(currentFormGroup);

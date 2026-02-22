@@ -21,8 +21,13 @@ import java.util.List;
 
 public class SkillsCommand {
 
-	private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (ctx, builder) ->
-			SharedSuggestionProvider.suggest(ConfigManager.getSkillsConfig().getSkills().keySet(), builder);
+	private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (ctx, builder) -> {
+		var config = ConfigManager.getSkillsConfig();
+		var validSkills = config.getSkills().keySet().stream()
+				.filter(s -> !config.getStackSkills().contains(s) && !config.getFormSkills().contains(s))
+				.toList();
+		return SharedSuggestionProvider.suggest(validSkills, builder);
+	};
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("dmzskill")
@@ -60,14 +65,17 @@ public class SkillsCommand {
 
 	private static int setSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName, int level) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
-		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(skillName.toLowerCase())) {
+		String lowerName = skillName.toLowerCase();
+		var config = ConfigManager.getSkillsConfig();
+
+		if (!config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getSkills().setSkillLevel(skillName, level);
+				data.getSkills().setSkillLevel(lowerName, level);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		}
@@ -83,7 +91,9 @@ public class SkillsCommand {
 	private static int removeSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
 		String lowerName = skillName.toLowerCase();
-		if (!ConfigManager.getSkillsConfig().getSkills().containsKey(lowerName)) {
+		var config = ConfigManager.getSkillsConfig();
+
+		if (!config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
