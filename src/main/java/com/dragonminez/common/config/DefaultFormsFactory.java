@@ -40,8 +40,8 @@ public class DefaultFormsFactory {
 
     public void createDefaultStackForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         createDefaultKaiokenForms(formsPath, forms);
-        createDefaultUltraInstinctForms(formsPath, forms);
-        createDefaultUltraEgoForms(formsPath, forms);
+//        createDefaultUltraInstinctForms(formsPath, forms);
+//        createDefaultUltraEgoForms(formsPath, forms);
     }
 
     public void createDefaultKaiokenForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {

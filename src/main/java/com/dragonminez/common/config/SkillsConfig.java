@@ -26,8 +26,8 @@ public class SkillsConfig {
 		formSkills.add("androidforms");
 
 		stackSkills.add("kaioken");
-		//stackSkills.add("ultrainstinct");
-		//stackSkills.add("ultraego");
+//		stackSkills.add("ultrainstinct");
+//		stackSkills.add("ultraego");
 
 		androidBlacklistedForms.add("superform");
 		androidBlacklistedForms.add("legendaryforms");
@@ -132,17 +132,18 @@ public class SkillsConfig {
 		kaiokenCosts.add(10000);
 		kaiokenCosts.add(15000);
 		kaiokenCosts.add(20000);
+//		kaiokenCosts.add(25000);
 		skills.put("kaioken", new SkillCosts(kaiokenCosts));
 
-		List<Integer> ultraInstinctCosts = new ArrayList<>();
-		ultraInstinctCosts.add(-1);
-		ultraInstinctCosts.add(5000);
-		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
+//		List<Integer> ultraInstinctCosts = new ArrayList<>();
+//		ultraInstinctCosts.add(-1);
+//		ultraInstinctCosts.add(5000);
+//		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
 
-		List<Integer> ultraEgoCosts = new ArrayList<>();
-		ultraEgoCosts.add(-1);
-		ultraEgoCosts.add(5000);
-		skills.put("ultraego", new SkillCosts(ultraEgoCosts));
+//		List<Integer> ultraEgoCosts = new ArrayList<>();
+//		ultraEgoCosts.add(-1);
+//		ultraEgoCosts.add(5000);
+//		skills.put("ultraego", new SkillCosts(ultraEgoCosts));
 
 		List<Integer> fusionCosts = new ArrayList<>();
 		fusionCosts.add(50000);
