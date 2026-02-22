@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public class SkillsConfig {
-	public static final int CURRENT_VERSION = 1;
+	public static final int CURRENT_VERSION = 2;
 	private int configVersion = CURRENT_VERSION;
 	public int getConfigVersion() { return configVersion; }
 	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
@@ -14,6 +14,7 @@ public class SkillsConfig {
 	private final List<String> kiSkills = new ArrayList<>();
 	private final List<String> formSkills = new ArrayList<>();
 	private final List<String> stackSkills = new ArrayList<>();
+	private final List<String> androidBlacklistedForms = new ArrayList<>();
 	private final Map<String, SkillCosts> skills = new HashMap<>();
 
     public SkillsConfig() { createDefaults(); }
@@ -27,6 +28,9 @@ public class SkillsConfig {
 		stackSkills.add("kaioken");
 		//stackSkills.add("ultrainstinct");
 		//stackSkills.add("ultraego");
+
+		androidBlacklistedForms.add("superform");
+		androidBlacklistedForms.add("legendaryforms");
 
         List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(1000);
@@ -130,15 +134,15 @@ public class SkillsConfig {
 		kaiokenCosts.add(20000);
 		skills.put("kaioken", new SkillCosts(kaiokenCosts));
 
-//		List<Integer> ultraInstinctCosts = new ArrayList<>();
-//		ultraInstinctCosts.add(-1);
-//		ultraInstinctCosts.add(5000);
-//		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
+		List<Integer> ultraInstinctCosts = new ArrayList<>();
+		ultraInstinctCosts.add(-1);
+		ultraInstinctCosts.add(5000);
+		skills.put("ultrainstinct", new SkillCosts(ultraInstinctCosts));
 
-//		List<Integer> ultraEgoCosts = new ArrayList<>();
-//		ultraEgoCosts.add(-1);
-//		ultraEgoCosts.add(5000);
-//		skills.put("ultraego", new SkillCosts(ultraEgoCosts));
+		List<Integer> ultraEgoCosts = new ArrayList<>();
+		ultraEgoCosts.add(-1);
+		ultraEgoCosts.add(5000);
+		skills.put("ultraego", new SkillCosts(ultraEgoCosts));
 
 		List<Integer> fusionCosts = new ArrayList<>();
 		fusionCosts.add(50000);
@@ -159,6 +163,10 @@ public class SkillsConfig {
 
 	public List<String> getStackSkills() {
 		return stackSkills;
+	}
+
+	public List<String> getAndroidBlacklistedForms() {
+		return androidBlacklistedForms;
 	}
 
 	public Map<String, SkillCosts> getSkills() {

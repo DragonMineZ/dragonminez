@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
@@ -156,7 +157,10 @@ public class NPCActionC2S {
 
 	private static void handleGero(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
-			if (!"human".equalsIgnoreCase(data.getCharacter().getRaceName())) {
+			boolean canBeUpgraded = ConfigManager.getRaceCharacter(
+					data.getCharacter().getRaceName()
+			).getFormSkillTpCosts("androidforms").length > 0;
+			if (!canBeUpgraded) {
 				player.sendSystemMessage(Component.translatable("message.dragonminez.gero.not_human"));
 				return;
 			}
@@ -171,7 +175,7 @@ public class NPCActionC2S {
 			data.getSkills().setSkillLevel("androidforms", 1);
 			data.getSkills().removeSkill("superform");
 			data.getSkills().removeSkill("legendaryforms");
-			data.updateTransformationSkillLimits("human");
+			data.updateTransformationSkillLimits(data.getCharacter().getRaceName());
 			data.getCharacter().setSelectedFormGroup("androidforms");
 			data.getCharacter().setActiveForm("androidforms", "androidbase");
 			player.refreshDimensions();

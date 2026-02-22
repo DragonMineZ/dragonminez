@@ -124,7 +124,22 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || raceName.equals("saiyan");
         if (isSaiyanLogic && stats.getStatus().isTailVisible()) {
-            float[] tailColor = character.hasActiveForm() ? hair : hexToRGB("#572117");
+            boolean hasActiveForm = character.hasActiveForm();
+            boolean hasActiveStackForm = character.hasActiveStackForm();
+            float[] tailColor;
+            if (hasActiveForm
+                    && character.getActiveFormData() != null
+                    && character.getActiveFormData().getBodyColor2() != null
+                    && !character.getActiveFormData().getBodyColor2().isEmpty()) {
+                tailColor = hexToRGB(character.getActiveFormData().getBodyColor2());
+            } else if (hasActiveStackForm
+                    && character.getActiveStackFormData() != null
+                    && character.getActiveStackFormData().getBodyColor2() != null
+                    && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
+                tailColor = hexToRGB(character.getActiveStackFormData().getBodyColor2());
+            } else {
+                tailColor = hexToRGB("#572117");
+            }
             renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/tail1.png", tailColor, partialTick, packedLight, packedOverlay, alpha);
         }
 
@@ -321,24 +336,46 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             if (!activeForm.getHairColor().isEmpty()) {
                 currentTint = hexToRGB(activeForm.getHairColor());
             }
+        } else if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+            var activeForm = character.getActiveStackFormData();
+            if (!activeForm.getHairColor().isEmpty()) {
+                currentTint = hexToRGB(activeForm.getHairColor());
+            }
         }
 
         float[] finalTint = currentTint;
 
-        if (stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-            var nextForm = com.dragonminez.common.util.TransformationsHelper.getNextAvailableForm(stats);
+        if (stats.getStatus().isActionCharging()) {
+            if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+                var nextForm = TransformationsHelper.getNextAvailableForm(stats);
 
-            if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
-                float[] targetTint = hexToRGB(nextForm.getHairColor());
+                if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
+                    float[] targetTint = hexToRGB(nextForm.getHairColor());
 
-                float chargeProgress = stats.getResources().getActionCharge() / 100.0f;
-                chargeProgress = Mth.clamp(chargeProgress, 0.0f, 1.0f);
+                    float chargeProgress = stats.getResources().getActionCharge() / 100.0f;
+                    chargeProgress = Mth.clamp(chargeProgress, 0.0f, 1.0f);
 
-                finalTint = new float[] {
-                        Mth.lerp(chargeProgress, currentTint[0], targetTint[0]),
-                        Mth.lerp(chargeProgress, currentTint[1], targetTint[1]),
-                        Mth.lerp(chargeProgress, currentTint[2], targetTint[2])
-                };
+                    finalTint = new float[]{
+                            Mth.lerp(chargeProgress, currentTint[0], targetTint[0]),
+                            Mth.lerp(chargeProgress, currentTint[1], targetTint[1]),
+                            Mth.lerp(chargeProgress, currentTint[2], targetTint[2])
+                    };
+                }
+            } else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+                var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+
+                if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
+                    float[] targetTint = hexToRGB(nextForm.getHairColor());
+
+                    float chargeProgress = stats.getResources().getActionCharge() / 100.0f;
+                    chargeProgress = Mth.clamp(chargeProgress, 0.0f, 1.0f);
+
+                    finalTint = new float[]{
+                            Mth.lerp(chargeProgress, currentTint[0], targetTint[0]),
+                            Mth.lerp(chargeProgress, currentTint[1], targetTint[1]),
+                            Mth.lerp(chargeProgress, currentTint[2], targetTint[2])
+                    };
+                }
             }
         }
 
@@ -387,10 +424,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderAndroid(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		var character = stats.getCharacter();
 		String raceName = character.getRace().toLowerCase();
-		String currentForm = character.getActiveForm();
 		// Luego podemos hacer q el FusedAndroid (Super A13) no tenga el layer del Android, si no q tenga directamente otra skin idk
 
-		if (!raceName.equals("human")) return;
+        boolean canBeUpgraded = ConfigManager.getRaceCharacter(raceName).getFormSkillTpCosts("androidforms").length > 0;
+		if (!canBeUpgraded) return;
 		if (!stats.getStatus().isAndroidUpgraded()) return;
 
 		String androidPath = "";

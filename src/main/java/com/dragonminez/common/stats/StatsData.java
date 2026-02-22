@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.Collection;
+import java.util.List;
 
 public class StatsData {
     private final Player player;
@@ -498,8 +499,14 @@ public class StatsData {
         RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
         if (charConfig != null) {
             Collection<String> formSkills = charConfig.getFormSkills();
+            List<String> androidBlacklistedForms = ConfigManager.getSkillsConfig().getAndroidBlacklistedForms();
             for (String skillName : formSkills) {
-                if (skillName.contains("android")) continue;
+                if (status.isAndroidUpgraded() && androidBlacklistedForms.contains(skillName)) {
+                    continue;
+                }
+                if (!status.isAndroidUpgraded() && "androidforms".equalsIgnoreCase(skillName)) {
+                    continue;
+                }
                 Integer[] tpCosts = charConfig.getFormSkillTpCosts(skillName);
                 int maxLevel = tpCosts != null ? tpCosts.length : 0;
                 skills.registerDefaultSkill(skillName, maxLevel);

@@ -21,16 +21,21 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         boolean hasSuperform = false;
         var skillConfig = ConfigManager.getSkillsConfig();
         for (String formSkill : skillConfig.getFormSkills()) {
-            if (statsData.getSkills().getSkillLevel(formSkill) >= 1) {
+            if (statsData.getSkills().getSkillLevel(formSkill) >= 0) {
                 hasSuperform = true;
                 break;
             }
         }
 
         if (hasSuperform) {
+            boolean formGroupIsEmpty = statsData.getCharacter().getSelectedFormGroup() == null || statsData.getCharacter().getSelectedFormGroup().isEmpty();
+            boolean formIsEmpty = statsData.getCharacter().getSelectedForm() == null || statsData.getCharacter().getSelectedForm().isEmpty();
+            if (formGroupIsEmpty || formIsEmpty) {
+                NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_FORM_GROUP, false));
+            }
             return new ButtonInfo(
                     Component.translatable("race.dragonminez." + race + ".group." + statsData.getCharacter().getSelectedFormGroup()).withStyle(ChatFormatting.BOLD),
-                    Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + TransformationsHelper.getFirstFormGroup(statsData.getCharacter().getSelectedFormGroup(), race)),
+                    Component.translatable("race.dragonminez." + race + ".form." + statsData.getCharacter().getSelectedFormGroup() + "." + statsData.getCharacter().getSelectedForm()),
                     currentMode == ActionMode.FORM);
         } else {
             return new ButtonInfo();
@@ -42,7 +47,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         boolean hasSuperform = false;
         var skillConfig = ConfigManager.getSkillsConfig();
         for (String formSkill : skillConfig.getFormSkills()) {
-            if (statsData.getSkills().getSkillLevel(formSkill) >= 1) {
+            if (statsData.getSkills().getSkillLevel(formSkill) >= 0) {
                 hasSuperform = true;
                 break;
             }

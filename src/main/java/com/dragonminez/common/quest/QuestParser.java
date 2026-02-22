@@ -127,7 +127,8 @@ public class QuestParser {
 
             case "COMMAND":
                 String command = json.get("command").getAsString();
-                reward = new CommandReward(command);
+                JsonElement translationKeyElement = json.get("translationKey");
+                reward = new CommandReward(command, translationKeyElement != null ? translationKeyElement.getAsString() :  null);
                 break;
             case "SKILL":
                 String skill = json.get("skill").getAsString();

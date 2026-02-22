@@ -5,7 +5,6 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ClaimRewardC2S;
 import com.dragonminez.common.network.C2S.StartQuestC2S;
@@ -34,45 +33,51 @@ import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
 public class QuestsMenuScreen extends BaseMenuScreen {
-
     private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/menu/menubig.png");
-	private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-			"textures/gui/menu/menusmall.png");
+    private static final ResourceLocation MENU_SMALL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+            "textures/gui/menu/menusmall.png");
     private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "textures/gui/buttons/characterbuttons.png");
 
-	private TexturedTextButton actionButton;
+    private TexturedTextButton actionButton;
     private static final int QUEST_ITEM_HEIGHT = 20;
     private static final int MAX_VISIBLE_QUESTS = 8;
 
-	public static int SAVED_SAGA_INDEX = 0;
-	public static int SAVED_QUEST_ID = -1;
-	public static int SAVED_SCROLL_OFFSET = 0;
+    public static int SAVED_SAGA_INDEX = 0;
+    public static int SAVED_QUEST_ID = -1;
+    public static int SAVED_SCROLL_OFFSET = 0;
 
     private StatsData statsData;
     private int tickCount = 0;
-	private static final Map<String, Long> QUEST_COOLDOWNS = new HashMap<>();
-	private static final long START_QUEST_COOLDOWN = 30000;
-	private long lastClickTime = 0;
+    private static final Map<String, Long> QUEST_COOLDOWNS = new HashMap<>();
+    private static final long START_QUEST_COOLDOWN = 30000;
+    private long lastClickTime = 0;
 
     private int currentSagaIndex = 0;
     private final List<Saga> availableSagas = new ArrayList<>();
     private Quest selectedQuest = null;
     private int scrollOffset = 0;
     private int maxScroll = 0;
-	private int objectivesScrollOffset = 0;
-	private int maxObjectivesScroll = 0;
-	private int objAreaX, objAreaY, objAreaWidth, objAreaHeight;
+    private int objectivesScrollOffset = 0;
+    private int maxObjectivesScroll = 0;
+    private int rewardsScrollOffset = 0;
+    private int maxRewardsScroll = 0;
+    private int objAreaX, objAreaY, objAreaWidth, objAreaHeight;
+    private int rewardsAreaX, rewardsAreaY, rewardsAreaWidth, rewardsAreaHeight;
 
-	private int descriptionScrollOffset = 0;
-	private int maxDescriptionScroll = 0;
-	private int descAreaX, descAreaY, descAreaWidth, descAreaHeight;
-	private static final int MAX_DESC_LINES = 5;
+    private int descriptionScrollOffset = 0;
+    private int maxDescriptionScroll = 0;
+    private int descAreaX, descAreaY, descAreaWidth, descAreaHeight;
+    private static final int MAX_DESC_LINES = 5;
+
+    private static QuestPages currentPage = QuestPages.OBJECTIVES;
 
     public QuestsMenuScreen() {
         super(Component.translatable("gui.dragonminez.quests.title"));
     }
+
+    private enum QuestPages { OBJECTIVES, REWARDS; }
 
     @Override
     protected void init() {
@@ -80,20 +85,20 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         updateStatsData();
         loadAvailableSagas();
 
-		if (SAVED_SAGA_INDEX < availableSagas.size()) this.currentSagaIndex = SAVED_SAGA_INDEX;
-		else this.currentSagaIndex = 0;
-		if (SAVED_QUEST_ID != -1 && !availableSagas.isEmpty()) {
-			Saga currentSaga = availableSagas.get(this.currentSagaIndex);
-			this.selectedQuest = currentSaga.getQuestById(SAVED_QUEST_ID);
-		}
+        if (SAVED_SAGA_INDEX < availableSagas.size()) this.currentSagaIndex = SAVED_SAGA_INDEX;
+        else this.currentSagaIndex = 0;
+        if (SAVED_QUEST_ID != -1 && !availableSagas.isEmpty()) {
+            Saga currentSaga = availableSagas.get(this.currentSagaIndex);
+            this.selectedQuest = currentSaga.getQuestById(SAVED_QUEST_ID);
+        }
 
-		this.scrollOffset = SAVED_SCROLL_OFFSET;
+        this.scrollOffset = SAVED_SCROLL_OFFSET;
 
         initSagaNavigationButtons();
         updateQuestsList();
 
-		this.scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
-		if (this.selectedQuest != null) refreshButtons();
+        this.scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
+        if (this.selectedQuest != null) refreshButtons();
     }
 
     private void loadAvailableSagas() {
@@ -127,65 +132,91 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         }
     }
 
-	private void initSagaNavigationButtons() {
-		if (availableSagas.isEmpty()) return;
+    private void initSagaNavigationButtons() {
+        if (availableSagas.isEmpty()) return;
 
-		int leftPanelX = 12;
-		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
-		int bottomPanelY = leftPanelY + 213;
+        int leftPanelX = 12;
+        int centerY = getUiHeight() / 2;
+        int leftPanelY = centerY - 105;
+        int bottomPanelY = leftPanelY + 213;
 
-		if (currentSagaIndex > 0) {
-			CustomTextureButton leftArrow = createArrowButton(leftPanelX + 10, bottomPanelY - 25, true, btn -> {
-				currentSagaIndex--;
-				SAVED_SAGA_INDEX = currentSagaIndex;
-				SAVED_QUEST_ID = -1;
-				selectedQuest = null;
-				scrollOffset = 0;
-				SAVED_SCROLL_OFFSET = 0;
-				objectivesScrollOffset = 0;
-				updateQuestsList();
-				refreshButtons();
-			});
-			this.addRenderableWidget(leftArrow);
-		}
+        if (currentSagaIndex > 0) {
+            CustomTextureButton leftArrow = createArrowButton(leftPanelX + 10, bottomPanelY - 25, true, btn -> {
+                currentSagaIndex--;
+                SAVED_SAGA_INDEX = currentSagaIndex;
+                SAVED_QUEST_ID = -1;
+                selectedQuest = null;
+                scrollOffset = 0;
+                SAVED_SCROLL_OFFSET = 0;
+                objectivesScrollOffset = 0;
+                updateQuestsList();
+                refreshButtons();
+            });
+            this.addRenderableWidget(leftArrow);
+        }
 
-		if (currentSagaIndex < availableSagas.size() - 1) {
-			Saga currentSaga = availableSagas.get(currentSagaIndex);
-			Saga nextSaga = availableSagas.get(currentSagaIndex + 1);
+        if (currentSagaIndex < availableSagas.size() - 1) {
+            Saga currentSaga = availableSagas.get(currentSagaIndex);
+            Saga nextSaga = availableSagas.get(currentSagaIndex + 1);
 
-			boolean canAdvance = statsData.getQuestData().isSagaUnlocked(nextSaga.getId())
-					|| isSagaCompleted(currentSaga);
+            boolean canAdvance = statsData.getQuestData().isSagaUnlocked(nextSaga.getId())
+                    || isSagaCompleted(currentSaga);
 
-			if (canAdvance) {
-				CustomTextureButton rightArrow = createArrowButton(leftPanelX + 122, bottomPanelY - 25, false, btn -> {
-					currentSagaIndex++;
-					if (!statsData.getQuestData().isSagaUnlocked(nextSaga.getId())) NetworkHandler.sendToServer(new UnlockSagaC2S(nextSaga.getId()));
-					SAVED_SAGA_INDEX = currentSagaIndex;
-					SAVED_QUEST_ID = -1;
-					selectedQuest = null;
-					scrollOffset = 0;
-					SAVED_SCROLL_OFFSET = 0;
-					objectivesScrollOffset = 0;
-					updateQuestsList();
-					refreshButtons();
-				});
-				this.addRenderableWidget(rightArrow);
-			}
-		}
-	}
+            if (canAdvance) {
+                CustomTextureButton rightArrow = createArrowButton(leftPanelX + 122, bottomPanelY - 25, false, btn -> {
+                    currentSagaIndex++;
+                    if (!statsData.getQuestData().isSagaUnlocked(nextSaga.getId())) NetworkHandler.sendToServer(new UnlockSagaC2S(nextSaga.getId()));
+                    SAVED_SAGA_INDEX = currentSagaIndex;
+                    SAVED_QUEST_ID = -1;
+                    selectedQuest = null;
+                    scrollOffset = 0;
+                    SAVED_SCROLL_OFFSET = 0;
+                    objectivesScrollOffset = 0;
+                    updateQuestsList();
+                    refreshButtons();
+                });
+                this.addRenderableWidget(rightArrow);
+            }
+        }
+    }
 
-	private boolean isSagaCompleted(Saga saga) {
-		if (statsData == null || saga == null) return false;
-		QuestData data = statsData.getQuestData();
+    private void initQuestDetailsNavigationButtons() {
+        if (selectedQuest == null) return;
 
-		for (Quest quest : saga.getQuests()) {
-			if (!data.isQuestCompleted(saga.getId(), quest.getId())) {
-				return false;
-			}
-		}
-		return true;
-	}
+        int leftPanelX = getUiWidth() - 158;
+        int centerY = getUiHeight() / 2;
+        int leftPanelY = centerY - 105;
+        int bottomPanelY = leftPanelY + 213;
+
+        switch (currentPage) {
+            case REWARDS -> {
+                CustomTextureButton leftArrow = createArrowButton(leftPanelX + 10, bottomPanelY - 25, true, btn -> {
+                    currentPage = QuestPages.OBJECTIVES;
+                    refreshButtons();
+                });
+                this.addRenderableWidget(leftArrow);
+            }
+            case OBJECTIVES -> {
+                CustomTextureButton rightArrow = createArrowButton(leftPanelX + 122, bottomPanelY - 25, false, btn -> {
+                    currentPage = QuestPages.REWARDS;
+                    refreshButtons();
+                });
+                this.addRenderableWidget(rightArrow);
+            }
+        }
+    }
+
+    private boolean isSagaCompleted(Saga saga) {
+        if (statsData == null || saga == null) return false;
+        QuestData data = statsData.getQuestData();
+
+        for (Quest quest : saga.getQuests()) {
+            if (!data.isQuestCompleted(saga.getId(), quest.getId())) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private CustomTextureButton createArrowButton(int x, int y, boolean isLeft, CustomTextureButton.OnPress onPress) {
         return new CustomTextureButton.Builder()
@@ -212,23 +243,23 @@ public class QuestsMenuScreen extends BaseMenuScreen {
     private void updateStatsData() {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				this.statsData = data;
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                this.statsData = data;
 
-				Map<String, Saga> clientSagas = SagaManager.getClientSagas();
-				int newSize = (clientSagas != null) ? clientSagas.size() : 0;
+                Map<String, Saga> clientSagas = SagaManager.getClientSagas();
+                int newSize = (clientSagas != null) ? clientSagas.size() : 0;
 
-				if (newSize != availableSagas.size()) {
-					loadAvailableSagas();
-					if (selectedQuest != null && !availableSagas.isEmpty() && currentSagaIndex < availableSagas.size()) {
-						Saga currentSaga = availableSagas.get(currentSagaIndex);
-						this.selectedQuest = currentSaga.getQuestById(selectedQuest.getId());
-					} else this.selectedQuest = null;
-					refreshButtons();
-				}
+                if (newSize != availableSagas.size()) {
+                    loadAvailableSagas();
+                    if (selectedQuest != null && !availableSagas.isEmpty() && currentSagaIndex < availableSagas.size()) {
+                        Saga currentSaga = availableSagas.get(currentSagaIndex);
+                        this.selectedQuest = currentSaga.getQuestById(selectedQuest.getId());
+                    } else this.selectedQuest = null;
+                    refreshButtons();
+                }
 
-				updateQuestsList();
-			});
+                updateQuestsList();
+            });
         }
     }
 
@@ -273,96 +304,97 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         initSagaNavigationButtons();
         initNavigationButtons();
         initActionButton();
+        initQuestDetailsNavigationButtons();
     }
 
     private void initActionButton() {
-		if (selectedQuest == null || statsData == null) return;
+        if (selectedQuest == null || statsData == null) return;
 
-		int rightPanelX = getUiWidth() - 158;
-		int centerY = getUiHeight() / 2;
-		int rightPanelY = centerY - 105;
+        int rightPanelX = getUiWidth() - 158;
+        int centerY = getUiHeight() / 2;
+        int rightPanelY = centerY - 105;
 
-		QuestData questData = statsData.getQuestData();
-		Saga currentSaga = availableSagas.get(currentSagaIndex);
-		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
-		boolean canStart = canStartQuest(selectedQuest, currentSaga.getId());
+        QuestData questData = statsData.getQuestData();
+        Saga currentSaga = availableSagas.get(currentSagaIndex);
+        boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
+        boolean canStart = canStartQuest(selectedQuest, currentSaga.getId());
 
-		Component buttonText;
-		boolean buttonActive = true;
-		boolean isClaimAction = false;
+        Component buttonText;
+        boolean buttonActive = true;
+        boolean isClaimAction = false;
 
-		String cooldownKey = currentSaga.getId() + ":" + selectedQuest.getId();
+        String cooldownKey = currentSaga.getId() + ":" + selectedQuest.getId();
 
-		if (isCompleted) {
-			boolean hasUnclaimedRewards = false;
-			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
-				if (!questData.isRewardClaimed(currentSaga.getId(), selectedQuest.getId(), i)) {
-					hasUnclaimedRewards = true;
-					break;
-				}
-			}
+        if (isCompleted) {
+            boolean hasUnclaimedRewards = false;
+            for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
+                if (!questData.isRewardClaimed(currentSaga.getId(), selectedQuest.getId(), i)) {
+                    hasUnclaimedRewards = true;
+                    break;
+                }
+            }
 
-			if (hasUnclaimedRewards) {
-				buttonText = Component.translatable("gui.dragonminez.quests.claim_rewards");
-				isClaimAction = true;
-				buttonActive = true;
-			} else {
-				return;
-			}
-		} else if (canStart) {
-			buttonText = Component.translatable("gui.dragonminez.quests.start");
-			isClaimAction = false;
+            if (hasUnclaimedRewards) {
+                buttonText = Component.translatable("gui.dragonminez.quests.claim_rewards");
+                isClaimAction = true;
+                buttonActive = true;
+            } else {
+                return;
+            }
+        } else if (canStart) {
+            buttonText = Component.translatable("gui.dragonminez.quests.start");
+            isClaimAction = false;
 
-			long now = System.currentTimeMillis();
-			long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
+            long now = System.currentTimeMillis();
+            long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
 
-			if (now - lastRun < START_QUEST_COOLDOWN) {
-				buttonActive = false;
-			} else {
-				buttonActive = true;
-			}
-		} else {
-			return;
-		}
+            if (now - lastRun < START_QUEST_COOLDOWN) {
+                buttonActive = false;
+            } else {
+                buttonActive = true;
+            }
+        } else {
+            return;
+        }
 
-		boolean finalIsClaimAction = isClaimAction;
+        boolean finalIsClaimAction = isClaimAction;
 
-		actionButton = new TexturedTextButton.Builder()
-				.position(rightPanelX + 35, rightPanelY + 212)
-				.size(74, 20)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(buttonText)
-				.onPress(btn -> {
-					long now = System.currentTimeMillis();
-					if (now - lastClickTime < 500) return;
-					lastClickTime = now;
+        actionButton = new TexturedTextButton.Builder()
+                .position(rightPanelX + 35, rightPanelY + 212)
+                .size(74, 20)
+                .texture(BUTTONS_TEXTURE)
+                .textureCoords(0, 28, 0, 48)
+                .textureSize(74, 20)
+                .message(buttonText)
+                .onPress(btn -> {
+                    long now = System.currentTimeMillis();
+                    if (now - lastClickTime < 500) return;
+                    lastClickTime = now;
 
-					if (finalIsClaimAction) {
-						NetworkHandler.sendToServer(new ClaimRewardC2S(
-								currentSaga.getId(),
-								selectedQuest.getId()
-						));
-						this.onClose();
-					} else {
-						QUEST_COOLDOWNS.put(cooldownKey, now);
+                    if (finalIsClaimAction) {
+                        NetworkHandler.sendToServer(new ClaimRewardC2S(
+                                currentSaga.getId(),
+                                selectedQuest.getId()
+                        ));
+                        this.onClose();
+                    } else {
+                        QUEST_COOLDOWNS.put(cooldownKey, now);
 
-						boolean isHard = ConfigManager.getUserConfig().getHud().isStoryHardDifficulty();
-						NetworkHandler.sendToServer(new StartQuestC2S(
-								currentSaga.getId(),
-								selectedQuest.getId(),
-								isHard
-						));
-						this.onClose();
-					}
-					refreshButtons();
-				})
-				.build();
+                        boolean isHard = ConfigManager.getUserConfig().getHud().isStoryHardDifficulty();
+                        NetworkHandler.sendToServer(new StartQuestC2S(
+                                currentSaga.getId(),
+                                selectedQuest.getId(),
+                                isHard
+                        ));
+                        this.onClose();
+                    }
+                    refreshButtons();
+                })
+                .build();
 
-		actionButton.active = buttonActive;
-		this.addRenderableWidget(actionButton);
-	}
+        actionButton.active = buttonActive;
+        this.addRenderableWidget(actionButton);
+    }
 
     private boolean canStartQuest(Quest quest, String sagaId) {
         if (statsData == null) return false;
@@ -409,8 +441,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         int leftPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
+        graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
+        graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         renderSagaTitle(graphics, leftPanelX, leftPanelY);
         renderQuestsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
@@ -438,10 +470,10 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_QUESTS, quests.size());
 
         graphics.enableScissor(
-            toScreenCoord(panelX + 5),
-            toScreenCoord(startY),
-            toScreenCoord(panelX + 144),
-            toScreenCoord(startY + (MAX_VISIBLE_QUESTS * QUEST_ITEM_HEIGHT))
+                toScreenCoord(panelX + 5),
+                toScreenCoord(startY),
+                toScreenCoord(panelX + 144),
+                toScreenCoord(startY + (MAX_VISIBLE_QUESTS * QUEST_ITEM_HEIGHT))
         );
 
         for (int i = visibleStart; i < visibleEnd; i++) {
@@ -500,15 +532,18 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         int rightPanelY = centerY - 105;
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_SMALL, getUiWidth() - 158, centerY + 76, 0, 95, 145, 58, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+        graphics.blit(MENU_SMALL, getUiWidth() - 158, centerY + 76, 0, 95, 145, 58, 256, 256);
+        graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
+        graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
         drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(ChatFormatting.BOLD),
                 rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
         if (selectedQuest != null && statsData != null) {
-            renderQuestDetails(graphics, rightPanelX, rightPanelY);
+            switch(currentPage) {
+                case OBJECTIVES -> renderQuestDetails(graphics, rightPanelX, rightPanelY);
+                case REWARDS -> renderQuestRewards(graphics, rightPanelX, rightPanelY);
+            };
         }
     }
 
@@ -547,10 +582,10 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         this.descAreaHeight = descVisibleHeight;
 
         graphics.enableScissor(
-            toScreenCoord(panelX + 5),
-            toScreenCoord(descY),
-            toScreenCoord(panelX + 144),
-            toScreenCoord(descY + descVisibleHeight)
+                toScreenCoord(panelX + 5),
+                toScreenCoord(descY),
+                toScreenCoord(panelX + 144),
+                toScreenCoord(descY + descVisibleHeight)
         );
 
         int currentDescY = descY - descriptionScrollOffset;
@@ -575,76 +610,164 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.quests.objectives").withStyle(ChatFormatting.BOLD),
                 panelX + 15, objTitleY, 0xFFFFD700);
 
-		int objStartY = objTitleY + 15;
-		int objVisibleHeight = 65;
+        int objStartY = objTitleY + 15;
+        int objVisibleHeight = 65;
 
-		this.objAreaX = panelX + 5;
-		this.objAreaY = objStartY;
-		this.objAreaWidth = 140;
-		this.objAreaHeight = objVisibleHeight;
+        this.objAreaX = panelX + 5;
+        this.objAreaY = objStartY;
+        this.objAreaWidth = 140;
+        this.objAreaHeight = objVisibleHeight;
 
-		List<QuestObjective> objectives = selectedQuest.getObjectives();
+        List<QuestObjective> objectives = selectedQuest.getObjectives();
 
-		int totalContentHeight = 0;
-		for (QuestObjective objective : objectives) {
-			int progress = questData.getQuestObjectiveProgress(currentSaga.getId(), selectedQuest.getId(), objectives.indexOf(objective));
-			String objText = getObjectiveText(objective, progress);
-			List<String> wrappedObj = wrapText(objText, 100);
+        int totalContentHeight = 0;
+        for (QuestObjective objective : objectives) {
+            int progress = questData.getQuestObjectiveProgress(currentSaga.getId(), selectedQuest.getId(), objectives.indexOf(objective));
+            String objText = getObjectiveText(objective, progress);
+            List<String> wrappedObj = wrapText(objText, 100);
 
-			totalContentHeight += (wrappedObj.size() * 10) + 2;
-		}
+            totalContentHeight += (wrappedObj.size() * 10) + 2;
+        }
 
-		this.maxObjectivesScroll = Math.max(0, totalContentHeight - objVisibleHeight);
+        this.maxObjectivesScroll = Math.max(0, totalContentHeight - objVisibleHeight);
 
-		graphics.enableScissor(
-			toScreenCoord(panelX + 5),
-			toScreenCoord(objStartY),
-			toScreenCoord(panelX + 144),
-			toScreenCoord(objStartY + objVisibleHeight)
-		);
+        graphics.enableScissor(
+                toScreenCoord(panelX + 5),
+                toScreenCoord(objStartY),
+                toScreenCoord(panelX + 144),
+                toScreenCoord(objStartY + objVisibleHeight)
+        );
 
-		int currentRenderY = objStartY - objectivesScrollOffset;
+        int currentRenderY = objStartY - objectivesScrollOffset;
 
-		for (int i = 0; i < objectives.size(); i++) {
-			QuestObjective objective = objectives.get(i);
-			int progress = questData.getQuestObjectiveProgress(currentSaga.getId(), selectedQuest.getId(), i);
-			boolean objCompleted = progress >= objective.getRequired();
+        for (int i = 0; i < objectives.size(); i++) {
+            QuestObjective objective = objectives.get(i);
+            int progress = questData.getQuestObjectiveProgress(currentSaga.getId(), selectedQuest.getId(), i);
+            boolean objCompleted = progress >= objective.getRequired();
 
-			String objText = getObjectiveText(objective, progress);
-			String marker = objCompleted ? "✓" : "✕";
-			int markerColor = objCompleted ? 0xFF00FF00 : 0xFFFF0000;
+            String objText = getObjectiveText(objective, progress);
+            String marker = objCompleted ? "✓" : "✕";
+            int markerColor = objCompleted ? 0xFF00FF00 : 0xFFFF0000;
 
-			drawStringWithBorder(graphics, Component.literal(marker),
-					panelX + 15, currentRenderY, markerColor);
+            drawStringWithBorder(graphics, Component.literal(marker),
+                    panelX + 15, currentRenderY, markerColor);
 
-			List<String> wrappedObj = wrapText(objText, 105);
-			for (String line : wrappedObj) {
-				drawStringWithBorder(graphics, Component.literal(line),
-						panelX + 30, currentRenderY, 0xFFCCCCCC);
-				currentRenderY += 10;
-			}
-			currentRenderY += 2;
-		}
+            List<String> wrappedObj = wrapText(objText, 105);
+            for (String line : wrappedObj) {
+                drawStringWithBorder(graphics, Component.literal(line),
+                        panelX + 30, currentRenderY, 0xFFCCCCCC);
+                currentRenderY += 10;
+            }
+            currentRenderY += 2;
+        }
 
-		graphics.disableScissor();
+        graphics.disableScissor();
 
-		if (maxObjectivesScroll > 0) {
-			int scrollBarX = panelX + 138;
-			int scrollBarHeight = objVisibleHeight;
-			graphics.fill(scrollBarX, objStartY, scrollBarX + 2, objStartY + scrollBarHeight, 0xFF333333);
-			float scrollPercent = (float) objectivesScrollOffset / maxObjectivesScroll;
-			int indicatorHeight = Math.max(10, (int)((float)objVisibleHeight / totalContentHeight * objVisibleHeight));
-			int indicatorY = objStartY + (int)((scrollBarHeight - indicatorHeight) * scrollPercent);
-			graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
-		}
-	}
+        if (maxObjectivesScroll > 0) {
+            int scrollBarX = panelX + 138;
+            int scrollBarHeight = objVisibleHeight;
+            graphics.fill(scrollBarX, objStartY, scrollBarX + 2, objStartY + scrollBarHeight, 0xFF333333);
+            float scrollPercent = (float) objectivesScrollOffset / maxObjectivesScroll;
+            int indicatorHeight = Math.max(10, (int)((float)objVisibleHeight / totalContentHeight * objVisibleHeight));
+            int indicatorY = objStartY + (int)((scrollBarHeight - indicatorHeight) * scrollPercent);
+            graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
+        }
+    }
+
+    private void renderQuestRewards(GuiGraphics graphics, int panelX, int panelY) {
+        if (selectedQuest == null) return;
+
+        Saga currentSaga = availableSagas.get(currentSagaIndex);
+        QuestData questData = statsData.getQuestData();
+        boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
+
+        String displayName = Component.translatable(selectedQuest.getTitle()).getString();
+
+        int startY = panelY + 35;
+
+        drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
+                panelX + 70, startY, 0xFFFFFFFF);
+
+        String statusKey = isCompleted ? "gui.dragonminez.quests.status.complete" : "gui.dragonminez.quests.status.incomplete";
+        String statusText = Component.translatable(statusKey).getString();
+        int statusColor = isCompleted ? 0xFF00FF00 : 0xFFFFFF00;
+
+        drawCenteredStringWithBorder(graphics, Component.literal(statusText),
+                panelX + 70, startY + 15, statusColor);
+
+        int rewardsTitleY = startY + 32;
+
+        drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.quests.rewards").withStyle(ChatFormatting.BOLD),
+                panelX + 15, rewardsTitleY, 0xFFFFD700);
+
+        int rewardsStartY = rewardsTitleY + 15;
+        int rewardsVisibleHeight = 65;
+
+        this.rewardsAreaX = panelX + 5;
+        this.rewardsAreaY = rewardsStartY;
+        this.rewardsAreaWidth = 140;
+        this.rewardsAreaHeight = rewardsVisibleHeight;
+
+        List<QuestReward> rewards = selectedQuest.getRewards();
+
+        int totalContentHeight = 0;
+        for (QuestReward reward : rewards) {
+            String rewardText = reward.getDescription().getString();
+            List<String> wrappedObj = wrapText(rewardText, 100);
+
+            totalContentHeight += (wrappedObj.size() * 10) + 2;
+        }
+
+        this.maxRewardsScroll = Math.max(0, totalContentHeight - rewardsVisibleHeight);
+
+        graphics.enableScissor(
+                toScreenCoord(panelX + 5),
+                toScreenCoord(rewardsStartY),
+                toScreenCoord(panelX + 144),
+                toScreenCoord(rewardsStartY + rewardsVisibleHeight)
+        );
+
+        int currentRenderY = rewardsStartY - rewardsScrollOffset;
+
+        for (int i = 0; i < rewards.size(); i++) {
+            QuestReward reward = rewards.get(i);
+            boolean rewardClaimed = reward.isClaimed();
+
+            String rewardText = reward.getDescription().getString();
+            String marker = rewardClaimed ? "✓" : "✕";
+            int markerColor = rewardClaimed ? 0xFF00FF00 : 0xFFFF0000;
+
+            drawStringWithBorder(graphics, Component.literal(marker),
+                    panelX + 15, currentRenderY, markerColor);
+
+            List<String> wrappedReward = wrapText(rewardText, 105);
+            for (String line : wrappedReward) {
+                drawStringWithBorder(graphics, Component.literal(line),
+                        panelX + 30, currentRenderY, 0xFFCCCCCC);
+                currentRenderY += 10;
+            }
+            currentRenderY += 2;
+        }
+
+        graphics.disableScissor();
+
+        if (maxRewardsScroll > 0) {
+            int scrollBarX = panelX + 138;
+            int scrollBarHeight = rewardsVisibleHeight;
+            graphics.fill(scrollBarX, rewardsStartY, scrollBarX + 2, rewardsStartY + scrollBarHeight, 0xFF333333);
+            float scrollPercent = (float) rewardsScrollOffset / maxRewardsScroll;
+            int indicatorHeight = Math.max(10, (int)((float)rewardsVisibleHeight / totalContentHeight * rewardsVisibleHeight));
+            int indicatorY = rewardsStartY + (int)((scrollBarHeight - indicatorHeight) * scrollPercent);
+            graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
+        }
+    }
 
     private String getObjectiveText(QuestObjective objective, int currentProgress) {
         String description = Component.translatable(objective.getDescription()).getString();
         int required = objective.getRequired();
 
         if (objective.getType() == QuestObjective.ObjectiveType.KILL ||
-            objective.getType() == QuestObjective.ObjectiveType.ITEM) {
+                objective.getType() == QuestObjective.ObjectiveType.ITEM) {
             return description + " (" + currentProgress + "/" + required + ")";
         }
 
@@ -678,37 +801,37 @@ public class QuestsMenuScreen extends BaseMenuScreen {
         return lines;
     }
 
-	@Override
-	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-		double uiMouseX = toUiX(mouseX);
-		double uiMouseY = toUiY(mouseY);
-		int leftPanelX = 12;
-		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
-		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
-				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
-			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
-			SAVED_SCROLL_OFFSET = scrollOffset;
-			return true;
-		}
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        double uiMouseX = toUiX(mouseX);
+        double uiMouseY = toUiY(mouseY);
+        int leftPanelX = 12;
+        int centerY = getUiHeight() / 2;
+        int leftPanelY = centerY - 105;
+        if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
+                uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
+            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
+            SAVED_SCROLL_OFFSET = scrollOffset;
+            return true;
+        }
 
-		if (selectedQuest != null && maxDescriptionScroll > 0 &&
-				uiMouseX >= descAreaX && uiMouseX <= descAreaX + descAreaWidth &&
-				uiMouseY >= descAreaY && uiMouseY <= descAreaY + descAreaHeight) {
-			int scrollAmount = (int)(delta * 10);
-			descriptionScrollOffset = Math.max(0, Math.min(maxDescriptionScroll, descriptionScrollOffset - scrollAmount));
-			return true;
-		}
+        if (selectedQuest != null && maxDescriptionScroll > 0 &&
+                uiMouseX >= descAreaX && uiMouseX <= descAreaX + descAreaWidth &&
+                uiMouseY >= descAreaY && uiMouseY <= descAreaY + descAreaHeight) {
+            int scrollAmount = (int)(delta * 10);
+            descriptionScrollOffset = Math.max(0, Math.min(maxDescriptionScroll, descriptionScrollOffset - scrollAmount));
+            return true;
+        }
 
-		if (selectedQuest != null && maxObjectivesScroll > 0 &&
-				uiMouseX >= objAreaX && uiMouseX <= objAreaX + objAreaWidth &&
-				uiMouseY >= objAreaY && uiMouseY <= objAreaY + objAreaHeight) {
-			int scrollAmount = (int)(delta * 10);
-			objectivesScrollOffset = Math.max(0, Math.min(maxObjectivesScroll, objectivesScrollOffset - scrollAmount));
-			return true;
-		}
-		return super.mouseScrolled(mouseX, mouseY, delta);
-	}
+        if (selectedQuest != null && maxObjectivesScroll > 0 &&
+                uiMouseX >= rewardsAreaX && uiMouseX <= rewardsAreaX + rewardsAreaWidth &&
+                uiMouseY >= rewardsAreaY && uiMouseY <= rewardsAreaY + rewardsAreaHeight) {
+            int scrollAmount = (int)(delta * 10);
+            objectivesScrollOffset = Math.max(0, Math.min(maxObjectivesScroll, objectivesScrollOffset - scrollAmount));
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
+    }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -728,9 +851,9 @@ public class QuestsMenuScreen extends BaseMenuScreen {
                 Quest quest = quests.get(i);
                 if (quest != null) {
                     selectedQuest = quest;
-					SAVED_QUEST_ID = quest.getId();
-					descriptionScrollOffset = 0;
-					objectivesScrollOffset = 0;
+                    SAVED_QUEST_ID = quest.getId();
+                    descriptionScrollOffset = 0;
+                    objectivesScrollOffset = 0;
                     refreshButtons();
                 }
                 return true;

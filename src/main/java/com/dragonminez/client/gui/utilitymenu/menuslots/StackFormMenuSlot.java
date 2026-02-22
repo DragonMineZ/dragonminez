@@ -28,9 +28,14 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         }
 
         if (hasStackform) {
+            boolean formGroupIsEmpty = statsData.getCharacter().getSelectedStackFormGroup() == null || statsData.getCharacter().getSelectedStackFormGroup().isEmpty();
+            boolean formIsEmpty = statsData.getCharacter().getSelectedStackForm() == null || statsData.getCharacter().getSelectedStackForm().isEmpty();
+            if (formGroupIsEmpty || formIsEmpty) {
+                NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_STACK_FORM_GROUP, false));
+            }
             return new ButtonInfo(
                     Component.translatable("race.dragonminez.stack.group." + statsData.getCharacter().getSelectedStackFormGroup()).withStyle(ChatFormatting.BOLD),
-                    Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getSelectedStackFormGroup() + "." + TransformationsHelper.getFirstStackFormGroup(statsData.getCharacter().getSelectedStackFormGroup())),
+                    Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getSelectedStackFormGroup() + "." + statsData.getCharacter().getSelectedStackForm()),
                     currentMode == ActionMode.STACK);
         } else {
             return new ButtonInfo();
@@ -51,7 +56,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         if (hasStackform) {
             boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.STACK;
             if (wasActive && statsData.getCharacter().hasActiveStackForm()) {
-                if (TransformationsHelper.canDescend(statsData)) {
+                if (TransformationsHelper.canStackDescend(statsData)) {
                     NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
                     playToggleSound(false);
                 }

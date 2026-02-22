@@ -1,5 +1,7 @@
 package com.dragonminez.common.quest;
 
+import net.minecraft.network.chat.Component;
+
 public abstract class QuestReward {
     private final RewardType type;
     private boolean claimed;
@@ -31,6 +33,8 @@ public abstract class QuestReward {
     }
 
     public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);
+
+    public abstract Component getDescription();
 
     public enum RewardType {
         ITEM,

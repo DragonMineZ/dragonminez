@@ -40,8 +40,8 @@ public class DefaultFormsFactory {
 
     public void createDefaultStackForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
         createDefaultKaiokenForms(formsPath, forms);
-//        createDefaultUltraInstinctForms(formsPath, forms);
-//        createDefaultUltraEgoForms(formsPath, forms);
+        createDefaultUltraInstinctForms(formsPath, forms);
+        createDefaultUltraEgoForms(formsPath, forms);
     }
 
     public void createDefaultKaiokenForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -64,6 +64,7 @@ public class DefaultFormsFactory {
         x2.setHairType("base");
         setDefaultMasteryValues(x2);
         x2.setStackDrainMultiplier(1.0);
+        x2.setCanAlwaysTransform(true);
 
         FormConfig.FormData x3 = new FormConfig.FormData();
         x3.setName(StackForms.X3);
@@ -174,6 +175,7 @@ public class DefaultFormsFactory {
         sign.setHairType("base");
         setDefaultMasteryValues(sign);
         sign.setStackDrainMultiplier(1.0);
+        sign.setCanAlwaysTransform(true);
 
         FormConfig.FormData mastered = new FormConfig.FormData();
         mastered.setName(StackForms.ULTRAINSTINCT_MASTERED);
@@ -185,9 +187,11 @@ public class DefaultFormsFactory {
         mastered.setStaminaDrain(0.06);
         mastered.setAuraColor("#E0E0E0");
         mastered.setHairColor("#E0E0E0");
+        mastered.setBodyColor2("#E0E0E0");
         mastered.setHairType("base");
         setDefaultMasteryValues(mastered);
         mastered.setStackDrainMultiplier(1.0);
+        mastered.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
         stackFormData.put(StackForms.ULTRAINSTINCT_SIGN, sign);
@@ -219,6 +223,7 @@ public class DefaultFormsFactory {
         sign.setHairType("base");
         setDefaultMasteryValues(sign);
         sign.setStackDrainMultiplier(1.0);
+        sign.setCanAlwaysTransform(true);
 
         FormConfig.FormData mastered = new FormConfig.FormData();
         mastered.setName(StackForms.ULTRAEGO_MASTERED);
@@ -230,9 +235,11 @@ public class DefaultFormsFactory {
         mastered.setStaminaDrain(0.06);
         mastered.setAuraColor("#66023C");
         mastered.setHairColor("#66023C");
+        mastered.setBodyColor2("#66023C");
         mastered.setHairType("ssj2");
         setDefaultMasteryValues(mastered);
         mastered.setStackDrainMultiplier(1.0);
+        mastered.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> stackFormData = new LinkedHashMap<>();
         stackFormData.put(StackForms.ULTRAEGO_SIGN, sign);
@@ -263,6 +270,7 @@ public class DefaultFormsFactory {
 		buffed.setHairType("base");
         setDefaultMasteryValues(buffed);
         buffed.setStackDrainMultiplier(2.0);
+        buffed.setCanAlwaysTransform(true);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
         fullPower.setName(HumanForms.FULLPOWER);
@@ -407,6 +415,7 @@ public class DefaultFormsFactory {
 		oozaru.setHairType("base");
         setDefaultMasteryValues(oozaru);
 		oozaru.setStackDrainMultiplier(2.0);
+        oozaru.setCanAlwaysTransform(true);
 
         FormConfig.FormData goldenOozaru = new FormConfig.FormData();
         goldenOozaru.setName(SaiyanForms.GOLDEN_OOZARU);
@@ -414,6 +423,7 @@ public class DefaultFormsFactory {
         goldenOozaru.setCustomModel("oozaru");
         goldenOozaru.setHairColor("#FFD700");
         goldenOozaru.setAuraColor("#FFD700");
+        goldenOozaru.setBodyColor2("#FFD700");
         goldenOozaru.setModelScaling(new float[]{3.8f, 3.8f, 3.8f});
         goldenOozaru.setStrMultiplier(3.0);
         goldenOozaru.setSkpMultiplier(3.0);
@@ -430,6 +440,7 @@ public class DefaultFormsFactory {
         ssj4.setName(SaiyanForms.SUPER_SAIYAN_4);
         ssj4.setUnlockOnSkillLevel(7);
         ssj4.setHairColor("#000000");
+        ssj4.setBodyColor2("#C21E56");
         ssj4.setEye1Color("#FFD700");
         ssj4.setEye2Color("#FFD700");
         ssj4.setAuraColor("#FF0000");
@@ -442,6 +453,7 @@ public class DefaultFormsFactory {
 		ssj4.setHairType("base");
         setDefaultMasteryValues(ssj4);
 		ssj4.setStackDrainMultiplier(2.0);
+        ssj4.setDirectTransformation(true);
 
         Map<String, FormConfig.FormData> oozaruFormData = new LinkedHashMap<>();
         oozaruFormData.put(SaiyanForms.OOZARU, oozaru);
@@ -457,6 +469,7 @@ public class DefaultFormsFactory {
         ssj1.setName(SaiyanForms.SUPER_SAIYAN);
         ssj1.setUnlockOnSkillLevel(1);
         ssj1.setHairColor("#FFEDB3");
+        ssj1.setBodyColor2("#FFEDB3");
         ssj1.setEye1Color("#00FFFF");
         ssj1.setEye2Color("#00FFFF");
         ssj1.setAuraColor("#FFD700");
@@ -469,12 +482,14 @@ public class DefaultFormsFactory {
 		ssj1.setHairType("ssj");
         setDefaultMasteryValues(ssj1);
         ssj1.setStackDrainMultiplier(2.0);
+        ssj1.setCanAlwaysTransform(true);
 
         FormConfig.FormData ssg2 = new FormConfig.FormData();
         ssg2.setName(SaiyanForms.SUPER_SAIYAN_GRADE_2);
         ssg2.setUnlockOnSkillLevel(2);
         ssg2.setCustomModel("");
         ssg2.setHairColor("#FFEDB3");
+        ssg2.setBodyColor2("#FFEDB3");
         ssg2.setEye1Color("#00FFFF");
         ssg2.setEye2Color("#00FFFF");
         ssg2.setAuraColor("#FFD700");
@@ -494,6 +509,7 @@ public class DefaultFormsFactory {
         ssg3.setName(SaiyanForms.SUPER_SAIYAN_GRADE_3);
         ssg3.setUnlockOnSkillLevel(3);
         ssg3.setHairColor("#FFEDB3");
+        ssg3.setBodyColor2("#FFEDB3");
         ssg3.setEye1Color("#00FFFF");
         ssg3.setEye2Color("#00FFFF");
         ssg3.setAuraColor("#FFD700");
@@ -524,6 +540,7 @@ public class DefaultFormsFactory {
         ssj1Mastered.setName(SaiyanForms.SUPER_SAIYAN_MASTERED);
         ssj1Mastered.setUnlockOnSkillLevel(4);
         ssj1Mastered.setHairColor("#FFE89E");
+        ssj1Mastered.setBodyColor2("#FFE89E");
         ssj1Mastered.setEye1Color("#00FFFF");
         ssj1Mastered.setEye2Color("#00FFFF");
         ssj1Mastered.setAuraColor("#FFD700");
@@ -536,11 +553,13 @@ public class DefaultFormsFactory {
 		ssj1Mastered.setHairType("ssj");
         setDefaultMasteryValues(ssj1Mastered);
         ssj1Mastered.setStackDrainMultiplier(2.0);
+        ssj1Mastered.setCanAlwaysTransform(true);
 
         FormConfig.FormData ssj2 = new FormConfig.FormData();
         ssj2.setName(SaiyanForms.SUPER_SAIYAN_2);
         ssj2.setUnlockOnSkillLevel(5);
         ssj2.setHairColor("#FFE89E");
+        ssj2.setBodyColor2("#FFE89E");
         ssj2.setEye1Color("#00FFFF");
         ssj2.setEye2Color("#00FFFF");
         ssj2.setAuraColor("#FFD700");
@@ -560,6 +579,7 @@ public class DefaultFormsFactory {
         ssj3.setName(SaiyanForms.SUPER_SAIYAN_3);
         ssj3.setUnlockOnSkillLevel(6);
         ssj3.setHairColor("#FFE89E");
+        ssj3.setBodyColor2("#FFE89E");
         ssj3.setEye1Color("#00FFFF");
         ssj3.setEye2Color("#00FFFF");
         ssj3.setAuraColor("#FFD700");
@@ -611,6 +631,7 @@ public class DefaultFormsFactory {
 		giantForm.setHairType("base");
         setDefaultMasteryValues(giantForm);
         giantForm.setStackDrainMultiplier(2.0);
+        giantForm.setCanAlwaysTransform(true);
 
         FormConfig.FormData fullPower = new FormConfig.FormData();
         fullPower.setName(NamekianForms.FULLPOWER);
@@ -671,6 +692,7 @@ public class DefaultFormsFactory {
 		second.setHairType("base");
         setDefaultMasteryValues(second);
         second.setStackDrainMultiplier(2.0);
+        second.setCanAlwaysTransform(true);
 
         FormConfig.FormData third = new FormConfig.FormData();
         third.setName(FrostDemonForms.THIRD_FORM);
@@ -763,6 +785,7 @@ public class DefaultFormsFactory {
 		kid.setHairType("base");
         setDefaultMasteryValues(kid);
         kid.setStackDrainMultiplier(2.0);
+        kid.setCanAlwaysTransform(true);
 
         FormConfig.FormData evil = new FormConfig.FormData();
         evil.setName(MajinForms.EVIL);
@@ -842,6 +865,7 @@ public class DefaultFormsFactory {
 		semiPerfect.setHairType("base");
         setDefaultMasteryValues(semiPerfect);
         semiPerfect.setStackDrainMultiplier(2.0);
+        semiPerfect.setCanAlwaysTransform(true);
 
         FormConfig.FormData perfect = new FormConfig.FormData();
         perfect.setName(BioAndroidForms.PERFECT);

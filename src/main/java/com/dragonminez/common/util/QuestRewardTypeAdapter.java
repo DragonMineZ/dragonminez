@@ -3,6 +3,7 @@ package com.dragonminez.common.util;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
 import com.google.gson.*;
 
@@ -15,16 +16,13 @@ public class QuestRewardTypeAdapter implements JsonSerializer<QuestReward>, Json
         JsonObject jsonObject = json.getAsJsonObject();
         String type = jsonObject.get("type").getAsString();
 
-        switch (type.toUpperCase()) {
-            case "ITEM":
-                return context.deserialize(jsonObject, ItemReward.class);
-            case "COMMAND":
-                return context.deserialize(jsonObject, CommandReward.class);
-            case "TPS":
-                return context.deserialize(jsonObject, TPSReward.class);
-            default:
-                throw new JsonParseException("Unknown reward type: " + type);
-        }
+        return switch (type.toUpperCase()) {
+            case "ITEM" -> context.deserialize(jsonObject, ItemReward.class);
+            case "COMMAND" -> context.deserialize(jsonObject, CommandReward.class);
+            case "TPS" -> context.deserialize(jsonObject, TPSReward.class);
+            case "SKILL" -> context.deserialize(jsonObject, SkillReward.class);
+            default -> throw new JsonParseException("Unknown reward type: " + type);
+        };
     }
 
     @Override
