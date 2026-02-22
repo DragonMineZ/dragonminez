@@ -269,7 +269,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
     private void renderRaceLayers(PoseStack stack, MultiBufferSource buffer, int light, ModelPart arm, String logicKey, String form, String gender, int bodyType, float[] b1, float[] b2, float[] b3, float[] h) {
         String pathPrefix;
-        List<String> layeredRaces = Arrays.asList("human", "saiyan", "saiyan_ssj4", "namekian", "namekian_orange", "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "bioandroid", "bioandroid_semi", "bioandroid_perfect");
+        List<String> layeredRaces = Arrays.asList("human","human_slim", "saiyan", "saiyan_ssj4", "namekian", "namekian_orange", "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "bioandroid", "bioandroid_semi", "bioandroid_perfect");
 
         if (!layeredRaces.contains(logicKey)) {
             renderPart(stack, buffer, light, arm, loc("textures/entity/races/" + logicKey + ".png"), b1);
@@ -305,10 +305,19 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
             renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer2.png"), phase.equals("perfect") ? new float[]{1,1,1} : b2);
             renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer3.png"), b3);
             renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer4.png"), h);
-        } else if (logicKey.startsWith("majin")) {
-            String f = logicKey.contains("kid") ? "kid" : (logicKey.contains("evil") ? "evil" : (logicKey.contains("super") ? "super" : "base"));
-            pathPrefix = "textures/entity/races/majin/" + f + "_0_" + (gender.contains("female") ? "female" : "male") + "_";
-            renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
+        }else if (logicKey.startsWith("majin")) {
+            String f = "base";
+            if (logicKey.contains("kid")) f = "kid";
+            else if (logicKey.contains("evil")) f = "evil";
+            else if (logicKey.contains("super")) f = "super";
+            else if (logicKey.contains("ultra")) f = "ultra";
+
+            String genderSuffix = gender.contains("female") ? "female" : "male";
+
+            pathPrefix = "textures/entity/races/majin/" + f + "_0_" + genderSuffix;
+
+            renderPart(stack, buffer, light, arm, loc(pathPrefix + "_layer1.png"), b1);
+
         } else if (logicKey.startsWith("namekian")) {
             pathPrefix = "textures/entity/races/namekian/bodytype_0_";
             renderPart(stack, buffer, light, arm, loc(pathPrefix + "layer1.png"), b1);
