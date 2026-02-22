@@ -594,8 +594,8 @@ public class ConfigManager {
         config.setDefaultBodyColor2("#9FE321");
         config.setDefaultBodyColor3("#FF7600");
         config.setDefaultHairColor("#187600");
-        config.setDefaultEye1Color("#FF4747");
-        config.setDefaultEye2Color("#960909");
+        config.setDefaultEye1Color("#383838");
+        config.setDefaultEye2Color("#383838");
         config.setDefaultAuraColor("#1AA700");
 
 		config.setFormSkillTpCosts("superform", new Integer[]{20000, 80000, 120000, 160000});

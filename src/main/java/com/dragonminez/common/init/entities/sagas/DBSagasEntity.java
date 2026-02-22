@@ -47,6 +47,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> AURA_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_EVADING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -63,6 +64,12 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     protected int teleportCooldown = 0;
     protected int castTimer = 0;
     private int chargeSoundTimer = 0;
+
+    //EVADE
+    private boolean canEvade = false;
+    private int evadeThreshold = 0;
+    private int currentEvadeTimer = 0;
+    private int evasionStateTicks = 0;
 
     private boolean isAttacking = false;
 
@@ -112,6 +119,17 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         super.tick();
 
         if (!this.level().isClientSide) {
+
+            if (this.canEvade) {
+                if (this.hurtTime > 0 && this.currentEvadeTimer > 0) {
+                    this.currentEvadeTimer--;
+
+                    if (this.currentEvadeTimer <= 0) {
+                        this.performEvasion();
+                    }
+                }
+            }
+
             if (this.teleportCooldown > 0) this.teleportCooldown--;
 
             if (this.isCharge()) {
@@ -131,39 +149,48 @@ public class DBSagasEntity extends Monster implements GeoEntity {
                     this.playSound(MainSounds.KI_SPARKS.get(), 0.3F, pitch);
                 }
             }
+
+            if (this.isEvading()) {
+                evasionStateTicks++;
+
+                if (evasionStateTicks > 12) {
+                    this.setEvading(false);
+                    this.evasionStateTicks = 0;
+                }
+            }
+
         }
     }
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "base_controller", 5, this::walkPredicate));
+        controllers.add(new AnimationController<>(this, "base_controller", 5    , this::walkPredicate));
+        controllers.add(new AnimationController<>(this, "evasion_controller", 0, this::evasionPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
-
     }
 
     private <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
-        if (isCasting()) {
+        if (this.isEvading() || this.isCasting()) {
             return PlayState.STOP;
         }
+
         if (entity.isFlying()) {
-            event.getController().setAnimation(RawAnimation.begin().thenLoop("fly"));
-            return PlayState.CONTINUE;
+            return event.setAndContinue(RawAnimation.begin().thenLoop("fly"));
         }
 
         if (event.isMoving()) {
             if (entity.isAggressive() || entity.getTarget() != null) {
-                event.getController().setAnimation(RawAnimation.begin().thenLoop("run"));
+                return event.setAndContinue(RawAnimation.begin().thenLoop("run"));
             } else {
-                event.getController().setAnimation(RawAnimation.begin().thenLoop("walk"));
+                return event.setAndContinue(RawAnimation.begin().thenLoop("walk"));
             }
-            return PlayState.CONTINUE;
         }
 
-        event.getController().setAnimation(RawAnimation.begin().thenLoop("idle"));
-        return PlayState.CONTINUE;
+        return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
     }
+
 
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
@@ -196,6 +223,14 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         return PlayState.STOP;
     }
 
+    private <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event) {
+        if (this.isEvading()) {
+            return event.setAndContinue(RawAnimation.begin().thenPlay("evade"));
+        }
+        event.getController().forceAnimationReset();
+        return PlayState.STOP;
+    }
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
@@ -208,6 +243,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(KI_CHARGE, false);
         this.entityData.define(IS_LIGHTNING, false);
         this.entityData.define(LIGHTNING_COLOR, 0xFFFFFF);
+        this.entityData.define(IS_EVADING, false);
     }
 
     @Override
@@ -255,12 +291,32 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     public int getLightningColor() { return this.entityData.get(LIGHTNING_COLOR); }
     public void setLightningColor(int color) { this.entityData.set(LIGHTNING_COLOR, color); }
 
+    public void setEvading(boolean evading) { this.entityData.set(IS_EVADING, evading); }
+    public boolean isEvading() { return this.entityData.get(IS_EVADING); }
+
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
         return false;
     }
     public boolean isBattleDamaged() {
         return this.getHealth() <= this.getMaxHealth() / 2.0F;
+    }
+
+    private void performEvasion() {
+        this.setEvading(true);
+        this.evasionStateTicks = 0;
+        this.currentEvadeTimer = this.evadeThreshold;
+
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY(), this.getZ(), 5, 0.2, 0.1, 0.2, 0.1);
+        }
+
+        float yaw = this.getYRot();
+        double bX = Math.sin(Math.toRadians(yaw));
+        double bZ = -Math.cos(Math.toRadians(yaw));
+
+        this.setDeltaMovement(new Vec3(bX * 1.5, 0.5, bZ * 1.5));
+        this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
     }
 
     @Override
@@ -508,6 +564,12 @@ public class DBSagasEntity extends Monster implements GeoEntity {
                 colorBorder
         );
         this.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.5F);
+    }
+
+    public void evade(boolean active, int cooldown) {
+        this.canEvade = active;
+        this.evadeThreshold = cooldown;
+        this.currentEvadeTimer = cooldown;
     }
 
     /**

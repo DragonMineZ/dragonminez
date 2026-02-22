@@ -22,6 +22,7 @@ public class SagaCellPerfectEntity extends DBSagasEntity {
 
     public SagaCellPerfectEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.evade(true, 20);
         this.setFlySpeed(0.6D);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(2147483647);

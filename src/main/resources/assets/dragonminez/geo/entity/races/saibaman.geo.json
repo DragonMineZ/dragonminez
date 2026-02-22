@@ -94,7 +94,7 @@
 				{
 					"name": "armorRightArm",
 					"parent": "right_arm",
-					"pivot": [-5, 22, 0],
+					"pivot": [-5.5, 22, 0],
 					"cubes": [
 						{"origin": [-7, 12, -2], "size": [3, 12, 4], "inflate": 0.2, "uv": [40, 16]}
 					]
@@ -119,7 +119,7 @@
 				{
 					"name": "armorLeftArm",
 					"parent": "left_arm",
-					"pivot": [5, 22, 0],
+					"pivot": [5.5, 22, 0],
 					"cubes": [
 						{"origin": [4, 12, -2], "size": [3, 12, 4], "inflate": 0.2, "uv": [32, 48]}
 					]

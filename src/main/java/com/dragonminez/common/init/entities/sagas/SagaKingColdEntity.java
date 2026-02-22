@@ -24,6 +24,7 @@ public class SagaKingColdEntity extends DBSagasEntity {
 
     public SagaKingColdEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.evade(true, 40);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(80000000);
         }

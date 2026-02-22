@@ -30,14 +30,18 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
 
     public SagaFreezerBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-		if (this instanceof IBattlePower bp) {
-			if (this.getName().toString().contains("fp")) {
-				bp.setBattlePower(120000000);
-			} else {
-				bp.setBattlePower(60000000);
-			}
-		}
+
+        this.evade(true, 40);
+
+        if (this instanceof IBattlePower bp) {
+            if (this.getName().toString().contains("fp")) {
+                bp.setBattlePower(120000000);
+            } else {
+                bp.setBattlePower(60000000);
+            }
+        }
     }
+
     @Override
     public void tick() {
         super.tick();
@@ -61,8 +65,7 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
 
                 if (distSqr > 120.0D && this.kiBlastCooldown <= 0) {
                     startCasting(SKILL_DEATH_BALL);
-                }
-                else if (distSqr > 100.0D && this.kiLaserCooldown <= 0) {
+                } else if (distSqr > 100.0D && this.kiLaserCooldown <= 0) {
                     startCasting(SKILL_LASER_COMBO);
                 }
             }
@@ -87,8 +90,7 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
                         if (this.castTimer >= 60) {
                             stopCasting();
                         }
-                    }
-                    else if (currentSkill == SKILL_DEATH_BALL) {
+                    } else if (currentSkill == SKILL_DEATH_BALL) {
                         if (this.castTimer >= 20) {
                             shootGenericKiBlast(
                                     target,
@@ -141,7 +143,10 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("kiball"));
             }
         }
-        event.getController().forceAnimationReset();
+
+        if (!this.isCasting()) {
+            event.getController().forceAnimationReset();
+        }
         return PlayState.STOP;
     }
 }

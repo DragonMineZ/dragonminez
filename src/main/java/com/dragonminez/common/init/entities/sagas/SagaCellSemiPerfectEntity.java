@@ -20,7 +20,8 @@ public class SagaCellSemiPerfectEntity extends DBSagasEntity {
 
     public SagaCellSemiPerfectEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-		if (this instanceof IBattlePower bp) {
+        this.evade(true, 40);
+        if (this instanceof IBattlePower bp) {
             bp.setBattlePower(1450000000);
 		}
     }

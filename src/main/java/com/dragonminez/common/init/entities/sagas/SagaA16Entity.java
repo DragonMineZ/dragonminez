@@ -20,6 +20,7 @@ public class SagaA16Entity extends DBSagasEntity {
 
     public SagaA16Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.evade(true, 40);
 		if (this instanceof IBattlePower bp) {
             bp.setBattlePower(745000000);
 		}
