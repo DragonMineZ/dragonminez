@@ -902,7 +902,12 @@
   "item.dragonminez.gamma2_armor_chestplate": "Red Ribbon Army Chestplate (§3Gamma 2§r)",
   "item.dragonminez.gamma2_armor_leggings": "Red Ribbon Army Leggings (§3Gamma 2§r)",
   "item.dragonminez.gamma2_armor_boots": "Red Ribbon Army Boots (§3Gamma 2§r)",
-
+  "item.dragonminez.orange_high_armor_chestplate": "Orange Star High School Chestplate",
+  "item.dragonminez.orange_high_armor_leggings": "Orange Star High School Leggings",
+  "item.dragonminez.orange_high_armor_boots": "Orange Star High School Boots",
+  "item.dragonminez.granola_armor_chestplate": "Granola Chestplate",
+  "item.dragonminez.granola_armor_leggings": "Granola Leggings",
+  "item.dragonminez.granola_armor_boots": "Granola Boots",
   "//": "COMMANDS",
   "command.dragonminez.stats.set.success": "§e[DMZ-Stats]§r Stat %s set to %s for %s",
   "command.dragonminez.stats.add.success.added": "§e[DMZ-Stats]§r Added %s points of %s to %s",
