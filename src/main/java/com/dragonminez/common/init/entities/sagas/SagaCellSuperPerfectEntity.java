@@ -31,7 +31,8 @@ public class SagaCellSuperPerfectEntity extends DBSagasEntity {
         this.setKiCharge(true);
         this.setLightning(true);
         this.setLightningColor(0xA1FFFF);
-        this.evade(true, 20);
+        this.useCombo1(true, 20*20);
+        this.evade(true, 10);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(2147483647);
         }

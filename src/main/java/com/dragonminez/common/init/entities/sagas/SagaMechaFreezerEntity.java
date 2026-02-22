@@ -23,7 +23,8 @@ public class SagaMechaFreezerEntity extends DBSagasEntity {
     public SagaMechaFreezerEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.evade(true, 40);
-		if (this instanceof IBattlePower bp) {
+        this.useCombo1(true, 20*20);
+        if (this instanceof IBattlePower bp) {
             bp.setBattlePower(140000000);
 		}
     }

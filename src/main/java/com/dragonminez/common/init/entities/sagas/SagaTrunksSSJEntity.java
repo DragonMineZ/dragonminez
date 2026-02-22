@@ -22,6 +22,7 @@ public class SagaTrunksSSJEntity extends DBSagasEntity {
         super(pEntityType, pLevel);
         this.setAuraColor(0xFFF06E);
         this.setKiCharge(true);
+        this.useCombo1(true, 20*20);
 		if (this instanceof IBattlePower bp) {
             bp.setBattlePower(1800000000);
 		}

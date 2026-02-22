@@ -32,6 +32,7 @@ public class SagaFreezerBaseEntity extends DBSagasEntity {
         super(pEntityType, pLevel);
 
         this.evade(true, 40);
+        this.useCombo1(true, 20*20);
 
         if (this instanceof IBattlePower bp) {
             if (this.getName().toString().contains("fp")) {

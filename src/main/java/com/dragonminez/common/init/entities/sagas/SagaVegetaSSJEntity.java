@@ -19,6 +19,8 @@ public class SagaVegetaSSJEntity extends DBSagasEntity{
 
     public SagaVegetaSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+        this.useCombo1(true, 20*20);
+        this.evade(true, 60);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(1875000000);
 		}

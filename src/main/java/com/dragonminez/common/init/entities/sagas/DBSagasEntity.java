@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.ki.*;
 import net.minecraft.core.BlockPos;
@@ -47,7 +48,10 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> AURA_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+
+    //COMBOS O EVADIR
     private static final EntityDataAccessor<Boolean> IS_EVADING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_COMBOING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final EntityDataAccessor<Integer> BATTLE_POWER = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -70,6 +74,13 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     private int evadeThreshold = 0;
     private int currentEvadeTimer = 0;
     private int evasionStateTicks = 0;
+
+    //COMBO 1
+    private boolean comboEnabled = false;
+    private int comboCooldownMax = 0;
+    private int currentComboCooldown = 0;
+    private int comboTimer = 0;
+    private LivingEntity comboTarget = null;
 
     private boolean isAttacking = false;
 
@@ -120,12 +131,48 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
         if (!this.level().isClientSide) {
 
+            if (this.comboEnabled) {
+                if (this.currentComboCooldown > 0) this.currentComboCooldown--;
+
+                if (this.isComboing()) {
+                    this.comboTimer++;
+                    handleComboLogic();
+                }
+                else if (this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null) {
+                    if (this.distanceTo(this.getTarget()) < 6.0D) {
+                        this.comboTarget = this.getTarget();
+                        this.setComboing(true);
+                        this.comboTimer = 0;
+                        this.currentComboCooldown = comboCooldownMax;
+                    }
+                }
+            }
+
+            if (this.currentComboCooldown > 0) this.currentComboCooldown--;
+
             if (this.canEvade) {
                 if (this.hurtTime > 0 && this.currentEvadeTimer > 0) {
                     this.currentEvadeTimer--;
 
                     if (this.currentEvadeTimer <= 0) {
                         this.performEvasion();
+                    }
+                }
+            }
+
+            if (this.comboEnabled) {
+                if (this.currentComboCooldown > 0) this.currentComboCooldown--;
+
+                if (this.isComboing()) {
+                    this.comboTimer++;
+                    handleComboLogic();
+                }
+                else if (this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null) {
+                    if (this.distanceTo(this.getTarget()) < 6.0D) {
+                        this.comboTarget = this.getTarget();
+                        this.setComboing(true);
+                        this.comboTimer = 0;
+                        this.currentComboCooldown = comboCooldownMax;
                     }
                 }
             }
@@ -191,7 +238,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
     }
 
-
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
@@ -229,21 +275,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         }
         event.getController().forceAnimationReset();
         return PlayState.STOP;
-    }
-
-    @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(IS_CASTING, false);
-        this.entityData.define(IS_FLYING, false);
-        this.entityData.define(SKILL_TYPE, 0);
-        this.entityData.define(BATTLE_POWER, 20);
-        this.entityData.define(AURA_COLOR, 0xFFFFFF);
-        this.entityData.define(TRANSFORMING, false);
-        this.entityData.define(KI_CHARGE, false);
-        this.entityData.define(IS_LIGHTNING, false);
-        this.entityData.define(LIGHTNING_COLOR, 0xFFFFFF);
-        this.entityData.define(IS_EVADING, false);
     }
 
     @Override
@@ -294,6 +325,15 @@ public class DBSagasEntity extends Monster implements GeoEntity {
     public void setEvading(boolean evading) { this.entityData.set(IS_EVADING, evading); }
     public boolean isEvading() { return this.entityData.get(IS_EVADING); }
 
+    public void setComboing(boolean comboing) { this.entityData.set(IS_COMBOING, comboing); }
+    public boolean isComboing() { return this.entityData.get(IS_COMBOING); }
+
+    private void stopCombo() {
+        this.setComboing(false);
+        this.comboTimer = 0;
+        this.comboTarget = null;
+    }
+
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
         return false;
@@ -319,6 +359,61 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
     }
 
+    public void useCombo1(boolean active, int cooldown) {
+        this.comboEnabled = active;
+        this.comboCooldownMax = cooldown;
+    }
+
+    private void handleComboLogic() {
+        if (comboTarget == null || !comboTarget.isAlive()) {
+            this.stopCombo();
+            return;
+        }
+
+        this.getNavigation().stop();
+        this.setDeltaMovement(0, 0, 0);
+        this.lookAt(comboTarget, 360, 360);
+
+        if (comboTimer == 1) {
+            Vec3 targetLook = comboTarget.getLookAngle().normalize();
+            double posX = comboTarget.getX() + (targetLook.x * 1.5);
+            double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
+            this.teleportTo(posX, comboTarget.getY(), posZ);
+            this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
+        }
+
+        if (comboTimer > 1 && comboTimer <= 20) {
+            if (comboTimer % 5 == 0) { //GOLPE CADA X TICKS
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    float r = 1.0F;
+                    float g = 1.0F;
+                    float b = 1.0F;
+
+                    serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), comboTarget.getX(),
+                            comboTarget.getY() + 1.2, comboTarget.getZ(), 0, 1.0f, 1.0f, 1.0f, 1.0);
+
+                }
+                comboTarget.hurt(this.damageSources().mobAttack(this), 2.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 0.7F, 1.4F);
+            }
+        }
+
+        if (comboTimer == 21) {
+            Vec3 targetLook = comboTarget.getLookAngle().normalize();
+            double posX = comboTarget.getX() - (targetLook.x * 1.5);
+            double posZ = comboTarget.getZ() - (targetLook.z * 1.5);
+            this.teleportTo(posX, comboTarget.getY(), posZ);
+            this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
+
+            Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
+            comboTarget.setDeltaMovement(pushDir.x * 2.2, 0.4, pushDir.z * 2.2);
+            comboTarget.hurt(this.damageSources().mobAttack(this), 8.0F);
+
+            this.stopCombo();
+        }
+    }
+
+    //DATOS
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
@@ -336,6 +431,21 @@ public class DBSagasEntity extends Monster implements GeoEntity {
         if (pCompound.contains("FlySpeed")) this.flySpeed = pCompound.getDouble("FlySpeed");
         if (pCompound.contains("KiBlastDamage")) this.kiBlastDamage = pCompound.getFloat("KiBlastDamage");
         if (pCompound.contains("KiBlastSpeed")) this.kiBlastSpeed = pCompound.getFloat("KiBlastSpeed");
+    }
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(IS_CASTING, false);
+        this.entityData.define(IS_FLYING, false);
+        this.entityData.define(SKILL_TYPE, 0);
+        this.entityData.define(BATTLE_POWER, 20);
+        this.entityData.define(AURA_COLOR, 0xFFFFFF);
+        this.entityData.define(TRANSFORMING, false);
+        this.entityData.define(KI_CHARGE, false);
+        this.entityData.define(IS_LIGHTNING, false);
+        this.entityData.define(LIGHTNING_COLOR, 0xFFFFFF);
+        this.entityData.define(IS_EVADING, false);
+        this.entityData.define(IS_COMBOING, false);
     }
 
     public double getRoarDamage() { return roarDamage;}

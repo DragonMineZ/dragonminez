@@ -19,7 +19,9 @@ public class SagaGokuYardratEntity extends DBSagasEntity{
 
     public SagaGokuYardratEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-		if (this instanceof IBattlePower bp) {
+        this.useCombo1(true, 20*20);
+        this.evade(true, 60);
+        if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(200000000);
 		}
     }
