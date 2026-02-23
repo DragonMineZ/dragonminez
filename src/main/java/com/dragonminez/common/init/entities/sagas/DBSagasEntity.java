@@ -773,6 +773,16 @@ public class DBSagasEntity extends Monster implements GeoEntity {
                 newEntity.getPersistentData().putBoolean("dmz_is_hardmode", isHardMode);
             }
 
+            if (this.getPersistentData().contains("dmz_saga_id")) {
+                String sagaId = this.getPersistentData().getString("dmz_saga_id");
+                newEntity.getPersistentData().putString("dmz_saga_id", sagaId);
+            }
+
+            if (this.getPersistentData().contains("dmz_quest_owner")) {
+                String questOwner = this.getPersistentData().getString("dmz_quest_owner");
+                newEntity.getPersistentData().putString("dmz_quest_owner", questOwner);
+            }
+
             level.addFreshEntity(newEntity);
             this.discard();
         }

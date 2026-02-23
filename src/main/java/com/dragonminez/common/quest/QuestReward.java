@@ -3,49 +3,39 @@ package com.dragonminez.common.quest;
 import net.minecraft.network.chat.Component;
 
 public abstract class QuestReward {
-    private final RewardType type;
-    private boolean claimed;
-    private DifficultyType difficultyType = DifficultyType.ALL;
+	private final RewardType type;
+	private DifficultyType difficultyType = DifficultyType.ALL;
 
-    public QuestReward(RewardType type) {
-        this.type = type;
-        this.claimed = false;
-    }
+	public QuestReward(RewardType type) {
+		this.type = type;
+	}
 
-    public RewardType getType() {
-        return type;
-    }
+	public RewardType getType() {
+		return type;
+	}
 
-    public boolean isClaimed() {
-        return claimed;
-    }
+	public DifficultyType getDifficultyType() {
+		return difficultyType;
+	}
 
-    public void setClaimed(boolean claimed) {
-        this.claimed = claimed;
-    }
+	public void setDifficultyType(DifficultyType difficultyType) {
+		this.difficultyType = difficultyType;
+	}
 
-    public DifficultyType getDifficultyType() {
-        return difficultyType;
-    }
+	public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);
 
-    public void setDifficultyType(DifficultyType difficultyType) {
-        this.difficultyType = difficultyType;
-    }
+	public abstract Component getDescription();
 
-    public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);
+	public enum RewardType {
+		ITEM,
+		COMMAND,
+		TPS,
+		SKILL
+	}
 
-    public abstract Component getDescription();
-
-    public enum RewardType {
-        ITEM,
-        COMMAND,
-        TPS,
-        SKILL
-    }
-
-    public enum DifficultyType {
-        ALL,
-        NORMAL,
-        HARD
-    }
+	public enum DifficultyType {
+		ALL,
+		NORMAL,
+		HARD
+	}
 }

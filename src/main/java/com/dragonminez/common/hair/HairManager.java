@@ -22,8 +22,8 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 public class HairManager {
-    private static final String[] DEFAULT_HAIR_RACES = {"human", "saiyan"};
-    private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
+	private static final String[] DEFAULT_HAIR_RACES = {"human", "saiyan"};
+	private static final Map<Integer, String> PRESET_CODES = new HashMap<>();
 	private static final Map<Integer, CustomHair> PRESET_CACHE = new HashMap<>();
 	private static final Map<Integer, CustomHair[]> PRESET_FULL_CACHE = new HashMap<>();
 
@@ -31,9 +31,20 @@ public class HairManager {
 	private static final String CODE_PREFIX_FULL_V4 = "DMZF4:";
 	private static final String CODE_PREFIX_V5 = "DMZ5:";
 	private static final String CODE_PREFIX_FULL_V5 = "DMZF5:";
+
+	private static final String CODE_PREFIX = "DMZ1:";
+	private static final String CODE_PREFIX_FULL = "DMZF1:";
+
 	private static final String FULL_SET_SEPARATOR = "\\|";
 	private static final String FULL_SET_JOINER = "|";
-    static { initializeDefaultPresets(); }
+
+	// Alfabetos
+	private static final String BASE64_URL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	private static final String BASE62_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+	static {
+		initializeDefaultPresets();
+	}
 
     private static void initializeDefaultPresets() {
 		// Goku
@@ -58,74 +69,70 @@ public class HairManager {
         registerPreset(10, "DMZF5:O1aeZAW1RH_9uBwQQQFA8Qo1xqMHMuycgX5vpktjogFJaxHpDCQhYVNFkEWyMwQDgVUUqjIDcsRIIKggpyBIOw3syCwHBEk4IUQoNBQCaWmRGNpkp7X3W_ezM5OffyRCqksVRRfMfP6916_Pn7dPVmxWFYsTb8J_mbFYrF6dWNphbE6rXPEn1qx9FIj3qXJGvhRaNhXpxXBj_GGfune3u4jM_7FwRnuIzOZrTd3H5nayA-_cB9Z8Xiz-91HVnL4423cR5b915XrMmJpxYAyAv4tgX8zYyFwRs5tAs5Jn3kfwp0dPRfhDu3cLODK8_r9QMAl_z78cYSjVVYif8BdCDe9dDjBjawWDg515lohopw_fAVR3nzjVjxL4z1Thaj4Y4_MJlFFEaKcWzb8CkWdfuUjFHVgx6_Fhu1Vqz5AmRsyynCflSdaCOGJvf13kfBRQeF9xB9Uy4psXaBou688gSh7yuoJlETttmeFcH1X9y2ojbU_3CCEl3s7LybhaWE637nZRG3MevhhFI6iYOfrW30IP0pK4-uKihCl6R3vIcq-3Mn-K07AdRDcL6Ku-C8VnyLKlknfoqImdjjvR0m2SnyCKM72fkK49sLXlSR8DAvHTWdMWCj2qreY20NsyG723dKQC9LeKR2OuItK7kVcVFSh2WvcsLsFro2XXmhpWV8tErhO9ytPEO64qEMtXKMhyoB5qxFl6bFZiLKsTQOBsk-i7G9Qgqebt_pmtIevLrYVcElPh09FwZUIHwS4iz0uBZS5ceNr6CaLejYVcK6NIdxUujI7PmcVwoGeCW58hG1r19JHIcoc4XqAYnfeJFC0so9_irYNF4TC7xFGDlfm-WCpFA6hZpAbarKCKKDq7bEYvp_Wrlpz9b3WPrXXOqT2WsfUXsuJciWMHqCxbjetEBpzowdq7JnmTwmNJchfTKezMD-4l91vvoGu9OLu7yEcmCjBdYoygxkiCBQabD9G4rkutyNckQgLEJxJpml3fHsgwu3Pu4A3JY0cQhbB5VYL51NCXmq6ui-117rJ18A8ClzzqB9y2I96TUMjTAglwxm7334a40YyFkMjfEDEVTgjHh-MEE5NKHN9cUM7IIKO9BPQ_rSie8KUfEHEIog0380q9uuWlgLcShHzIW4c3fJngnuZ4NLDZJL7GDYHJc9OKHqbTtbicSh8B-7Ui7QOBGFCmRdlHif-0B819nNrMQrv3HisX2NuXkaUXSKHQhgHEyLh8_0aw_QAxz5Z0EpsyI1oYbiUqQ1tk1ALbKCR2DlsYHKnvmiWZLEmP7LiR35_Ec2y5fRleHcQJ2knCyKiU-LTs9kCRTsnWAegPLu8F0anW8XBQZnPYBC29Nq9dwSSY9rC6m3e0Nd-vgD3-fzlCnp_Eb2fEXZ2PAUsnJ91Qj0y6HzO0WOBgIyKArrinXSxX-eQy1BfK8qboYUNXbI2DBcZAuA6Q8sRNyb9a2mUkZDpGtqc9x4NZC7ifmby9QN34IYfFXwAExYJX1atNoAUxdZORJn7vh2JN9L3lt8KJeTnCQsEq64jQhZYNaiaZK6IuG69H5quoW8XGwaZc5eeQfcvm5rrz0EOJCySuVLKhB-T4EctCDZ93GCTGZHPbQ7kDhOu-Kzvv4Kwjwj1gA-R3VnxoUjTLDvn2eUC3z13lPIH3JVAGKKIRkXTLzsizIv4yLQZhhgpwGDcA9W9f6Y1wgzInUypNi0KLue2HyPcOXMEnuro08cRjoKMmSRqygkd4Ip_1MjPUpwps4oJLj0Kbom4_UKDAoaqxPWCLQMc3b4SupmlxGmV5awfdJXgMhRjSx8l8Hp3yunUCa7yQfcqa4Xs4iVSrf6SwARwtGKVMuM9gCLBewjqUJSXx8gGqQQZb5ZT_GZePN7Kzx04mEQdjhK1jvk70VKLhVu6zJCxyigJzwtKDh5MvmUkKcCYbMYeGeTkaXGMtBLo3AAnWUDsWNStLsYYYLi5TsARawY44rMmZypTHyfOAnB7MPB7zNqtYAjuuAr3ZKx2_sTSCWPHuKXpYC5Nwy725RaluBGK8oZOKdPkzGdW5DE-hjlfZVgcdcqqRdEmioZVi6KELFeqFEUKw77xiiLA_eaBmYG6RXIFRCk041xvVzSZ_yfcAFW2IhkFy6TIumXbpj4IhzoEuK8FAQK48e1fV7sJgHJcMFdQJiT4QJWS8f9SSNhs21ULCW2kSERAbohqeIWExhTKgVx-PYUEt3KMZJVCgmmWYodcSHiJIXuNdmMVEnWjCokCzrVVCgk949QefyGhQ7UWWkjYC4Y8ptb3WMaFKZnaDV5ISVADy-R63mTioGRfLi0SnOy1b9o0CNQYmTd0jeEVulxjuIwptMaQgYt_hFdl_2HSTzwyddJPYd9ji9wmC8nAHvsnp7P4keXmr1Qo-1YMlQZbC28Y4Favb4jeivWC6q3M3ZkmKD1ZhcSnQo6nC74N0YLbDg5WSYA_7O5JeAnEwM2kPC6VfhaVMnBcyKhRx6QFYeQYOV0oOWZec93kmALddZJjZqv_A-Q4K2QXqC2wIMnh0GABU1Y12MAMJcdh8VihrYdTe60ytdeORCVMjnasGMUnSNOeOvUp2MmxeJXFdqS44H-VBFevhD-mpquTqb32bmqvnVFf8xH0AiboDf2uyg5ixvvfWR_PTM0gtS88QvbI1A4TrKaulBnvh7WNxcREXT3Sv5rvsOpqk_oBSufb9qhzUUAMu7_XtEIxstCHsxz6bFggkcn5DZ-FAiCLgU3Q6bw2hXZl72WsErwx0OiAmNmCmsChTiD59lRiM_n2ukeypOHVPB6oqhJqQytn8VqlslRhMSViNZwFaRFkVGrsWPaGjDJa9MvAImywAjaOOyBEUs623DkhLSoJKF-WIYxkL0Hlq6OyMf5FkgtQ_QdnOiWYKWwPvJIWPRlAkhXInedewEXURlL1OVZdVGok0jC9Gsy9jfyGlCMS6aOG-mN1Ina5wp-JtJ2zM6sMk1Bw3eL9KHjvax-j4NrUx5MDPtli4P9RWrVK1YXyMl_NF_J4tGW47QiUh9uCaPTPo4PE_vid8HEQyquDKcngppeR3-Fv_0B5tcSAVraFgeFQ7WDxLiyuLlW3qzoTuhkvZi22VJQuBvdrnL5j3w5QGPCKQKnH5se9Z562mfGClutRzDhqPdo0vLJsj1K39984UVaQR9Zh6J-LIgvkYbUlx7qgUaraLGrbqu4hi0fSaLxn0yzskXZc1BM3SmJMbmwoE0PJbnQs_izurFoVLUfPDdSdrIGNl4agA07nGhtjMWhAehc1fS1bmqasS0mMkzniywDTZjF0QyDmsmjvghjp2bLeZEVSz8AL8vokZzvKwzpSpcbl2xojNabegyo4N6BIZsPaVvRAZUq5rXOeEByX3bnN7YyAIaZ1Dsh7S2R0kEfx1cjP5IET5W-TvzMw7c84tcvSO4Rd5wUQpE3tREc28tPY1NmmvH4ivewxPhvSR6AsZsFUkIO7ItMxEtKHSKOmW0-hDUgSxE0rmyK25Zw_fIUQugQQSAOKciQnJ715ccCRRbQccBK4OmTqFkB4B789MDSmEvpVilz0CLQOxoqCK7v-BO0kRDnd1QBToHAUSnhKUnxIOJz6gQbXKN7XH7Lsr55usBinnXAZJXl5kV-ZC_pHAE5b0ZyHOmCIGCGp8oDjq90IEEwkxXJ7P4EynQVT295w5MAEtyUFK9_pyEaeElDnB85LPSWFWD9Eccp-WnAT2BYlVYWlydEdiyGVGJoMd1yY2pRULTeFBsp0jmn8_Uu57GVIJcmoPgHjvJLOZPXOm2DH8zierI7pWwc1QiwOrJaBRlb5pAnPhbzWbNqSarC9eIqJCVgV3ZTSpJaNAI7GzUXaVXfO2PyBixorlwVW9_hgH67OFlWegi1zofcJSlpZYOfy46Pi-x_0K5-GFyCG-Itle3e4PLAJORSU6pObmPy7V3G1N7ZfEVjdREQ0yRCVq9Mb_aZr0IhXBlazL2iSFTC5oEk46JGdVulSrZJigv2RdL-zabGZg7BX0eRnAxFg4HGcRSSNCx0DY0LK0JbdN3tGoEXBXkweajhdxQ8ID7Jjjl1LkNcbJ5KWRp-zWY7X8shQPkMIawrURxjiFQobkV5Opa73lZSXTTl86PU-uYZDr9ayHjoUOIiM6_KjgCn8PcUp_NTOI47xd0XdoiQ95Vu2w2rCAHnE9RV_4nrNaUqlUlg9UBkwbilGhnMaCnL_EkgXfZSo1iJHqqM5RAGVLvNBcTqlN6e3YPZAjyyNyK_6Md3RQIIk3RhcuBl6d-GXgHCs2xT1wwIlLyY8an_Mrz-bilBDo6zq8TtZT3HMsjTpWbJfwZFZpms5hJP6k2KojlQCvOxnsP7OvLU1UD__iycR74uoo3IjfNmnrZMBbRFD8Cq2qh-UcmYzucZWJmySTshWSZBrSRKnHxDXqvBZTX5cc5C-cVA2ejogD6ddQKjqiSIHxND_mJqkO_Q_6m2eqW52mj44t2Z4WjM8rRme1gxPa4anNcPTmuFpzfC0ZnhaMzytGZ7eIMPT2L8B");
     }
 
-    private static final String BASE64_URL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	private static byte[] compressOptimized(byte[] data) throws Exception {
+		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+		Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
+		try (DeflaterOutputStream defOut = new DeflaterOutputStream(byteOut, deflater)) {
+			defOut.write(data);
+		}
+		deflater.end();
+		return byteOut.toByteArray();
+	}
 
-    private static byte[] compressOptimized(byte[] data) throws Exception {
-        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
-        DeflaterOutputStream defOut = new DeflaterOutputStream(byteOut, deflater);
-        defOut.write(data);
-        defOut.close();
-        deflater.end();
-        return byteOut.toByteArray();
-    }
+	private static byte[] decompressOptimized(byte[] data) throws Exception {
+		ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
+		Inflater inflater = new Inflater(true);
+		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+		try (InflaterInputStream infIn = new InflaterInputStream(byteIn, inflater)) {
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = infIn.read(buffer)) != -1) {
+				byteOut.write(buffer, 0, len);
+			}
+		}
+		inflater.end();
+		return byteOut.toByteArray();
+	}
 
-    private static byte[] decompressOptimized(byte[] data) throws Exception {
-        ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
-        Inflater inflater = new Inflater(true);
-        InflaterInputStream infIn = new InflaterInputStream(byteIn, inflater);
-        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int len;
-        while ((len = infIn.read(buffer)) != -1) byteOut.write(buffer, 0, len);
-        infIn.close();
-        inflater.end();
-        return byteOut.toByteArray();
-    }
+	private static String encodeBigInt(byte[] bytes, String alphabet) {
+		if (bytes == null || bytes.length == 0) return "";
+		BigInteger value = new BigInteger(1, bytes);
+		if (value.equals(BigInteger.ZERO)) return String.valueOf(alphabet.charAt(0));
 
-    private static String encodeToNumbers(byte[] bytes) {
-        if (bytes == null || bytes.length == 0) return "";
-        BigInteger value = new BigInteger(1, bytes);
-        if (value.equals(BigInteger.ZERO)) return String.valueOf(BASE64_URL_ALPHABET.charAt(0));
+		StringBuilder result = new StringBuilder();
+		BigInteger base = BigInteger.valueOf(alphabet.length());
 
-        StringBuilder result = new StringBuilder();
-        BigInteger base = BigInteger.valueOf(64);
+		while (value.compareTo(BigInteger.ZERO) > 0) {
+			BigInteger[] divmod = value.divideAndRemainder(base);
+			result.append(alphabet.charAt(divmod[1].intValue()));
+			value = divmod[0];
+		}
 
-        while (value.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger[] divmod = value.divideAndRemainder(base);
-            result.append(BASE64_URL_ALPHABET.charAt(divmod[1].intValue()));
-            value = divmod[0];
-        }
+		return result.reverse().toString();
+	}
 
-        return result.reverse().toString();
-    }
+	private static byte[] decodeBigInt(String encoded, String alphabet) {
+		if (encoded == null || encoded.isEmpty()) return new byte[0];
+		BigInteger value = BigInteger.ZERO;
+		BigInteger base = BigInteger.valueOf(alphabet.length());
 
-    private static byte[] decodeFromNumbers(String encoded) {
-        return decodeBase64Url(encoded);
-    }
+		for (int i = 0; i < encoded.length(); i++) {
+			char c = encoded.charAt(i);
+			int digit = alphabet.indexOf(c);
+			if (digit < 0) throw new IllegalArgumentException("Invalid character in string: " + c);
+			value = value.multiply(base).add(BigInteger.valueOf(digit));
+		}
 
-    private static byte[] decodeBase64Url(String encoded) {
-        if (encoded == null || encoded.isEmpty()) return new byte[0];
-        BigInteger value = BigInteger.ZERO;
-        BigInteger base = BigInteger.valueOf(64);
+		byte[] bytes = value.toByteArray();
+		if (bytes.length > 1 && bytes[0] == 0) {
+			byte[] result = new byte[bytes.length - 1];
+			System.arraycopy(bytes, 1, result, 0, result.length);
+			return result;
+		}
+		return bytes;
+	}
 
-        for (int i = 0; i < encoded.length(); i++) {
-            char c = encoded.charAt(i);
-            int digit = BASE64_URL_ALPHABET.indexOf(c);
-            if (digit < 0) throw new IllegalArgumentException("Invalid character in Base64URL string: " + c);
-            value = value.multiply(base).add(BigInteger.valueOf(digit));
-        }
-
-        byte[] bytes = value.toByteArray();
-        if (bytes.length > 1 && bytes[0] == 0) {
-            byte[] result = new byte[bytes.length - 1];
-            System.arraycopy(bytes, 1, result, 0, result.length);
-            return result;
-        }
-        return bytes;
-    }
-
-    public static String toCode(CustomHair hair) {
+	public static String toCode(CustomHair hair) {
 		if (hair == null) return "";
 		try {
 			CompoundTag tag = hair.save();
@@ -135,9 +142,9 @@ public class HairManager {
 			dataOut.close();
 			byte[] nbtBytes = nbtOut.toByteArray();
 
-			byte[] compressed = compressOptimized(nbtBytes);
+			byte[] compressed = compressOptimized(nbtOut.toByteArray());
 
-			return CODE_PREFIX_V5 + encodeToNumbers(compressed);
+			return CODE_PREFIX + encodeBigInt(compressed, BASE62_ALPHABET);
 		} catch (Exception e) {
 			LogUtil.error(Env.CLIENT, "Failed to serialize CustomHair to code", e);
 			return "";
@@ -153,20 +160,22 @@ public class HairManager {
 		}
 
 		try {
-			String cleanCode = code;
-			boolean isV5 = code.startsWith(CODE_PREFIX_V5);
-			boolean isV4 = code.startsWith(CODE_PREFIX_V4);
+			byte[] bytes;
 
-			if (isV5) cleanCode = code.substring(CODE_PREFIX_V5.length());
-			else if (isV4) cleanCode = code.substring(CODE_PREFIX_V4.length());
-
-			byte[] bytes = decodeFromNumbers(cleanCode);
-			CompoundTag tag;
+			if (code.startsWith(CODE_PREFIX)) {
+				bytes = decodeBigInt(code.substring(CODE_PREFIX.length()), BASE62_ALPHABET);
+			} else if (code.startsWith(CODE_PREFIX_V5)) {
+				bytes = decodeBigInt(code.substring(CODE_PREFIX_V5.length()), BASE64_URL_ALPHABET);
+			} else if (code.startsWith(CODE_PREFIX_V4)) {
+				bytes = decodeBigInt(code.substring(CODE_PREFIX_V4.length()), BASE64_URL_ALPHABET);
+			} else {
+				return null;
+			}
 
 			byte[] decompressed = decompressOptimized(bytes);
 			ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
 			DataInputStream dataIn = new DataInputStream(byteIn);
-			tag = NbtIo.read(dataIn);
+			CompoundTag tag = NbtIo.read(dataIn);
 
 			if (tag.contains("Base") && (tag.contains("SSJ") || tag.contains("SSJ2") || tag.contains("SSJ3"))) {
 				CustomHair base = new CustomHair();
@@ -200,11 +209,10 @@ public class HairManager {
 			DataOutputStream dataOut = new DataOutputStream(nbtOut);
 			NbtIo.write(fullSetTag, dataOut);
 			dataOut.close();
-			byte[] nbtBytes = nbtOut.toByteArray();
 
-			byte[] compressed = compressOptimized(nbtBytes);
+			byte[] compressed = compressOptimized(nbtOut.toByteArray());
 
-			return CODE_PREFIX_FULL_V5 + encodeToNumbers(compressed);
+			return CODE_PREFIX_FULL + encodeBigInt(compressed, BASE62_ALPHABET);
 		} catch (Exception e) {
 			LogUtil.error(Env.CLIENT, "Failed to serialize CustomHair full set to code", e);
 			return "";
@@ -214,24 +222,25 @@ public class HairManager {
 	public static CustomHair[] fromFullSetCode(String code) {
 		if (code == null) return null;
 
-		boolean isV5 = code.startsWith(CODE_PREFIX_FULL_V5);
-		boolean isV4 = code.startsWith(CODE_PREFIX_FULL_V4);
-
-		if (!isV5 && !isV4) return null;
+		if (!isFullSetCode(code)) return null;
 
 		try {
-			String cleanCode = isV5 ?
-				code.substring(CODE_PREFIX_FULL_V5.length()) :
-				code.substring(CODE_PREFIX_FULL_V4.length());
+			byte[] bytes;
 
-			byte[] bytes = decodeFromNumbers(cleanCode);
-			CompoundTag fullSetTag;
+			if (code.startsWith(CODE_PREFIX_FULL)) {
+				bytes = decodeBigInt(code.substring(CODE_PREFIX_FULL.length()), BASE62_ALPHABET);
+			} else if (code.startsWith(CODE_PREFIX_FULL_V5)) {
+				bytes = decodeBigInt(code.substring(CODE_PREFIX_FULL_V5.length()), BASE64_URL_ALPHABET);
+			} else if (code.startsWith(CODE_PREFIX_FULL_V4)) {
+				bytes = decodeBigInt(code.substring(CODE_PREFIX_FULL_V4.length()), BASE64_URL_ALPHABET);
+			} else {
+				return null;
+			}
 
 			byte[] decompressed = decompressOptimized(bytes);
 			ByteArrayInputStream byteIn = new ByteArrayInputStream(decompressed);
 			DataInputStream dataIn = new DataInputStream(byteIn);
-			fullSetTag = NbtIo.read(dataIn);
-
+			CompoundTag fullSetTag = NbtIo.read(dataIn);
 
 			CustomHair base = null, ssj = null, ssj2 = null, ssj3 = null;
 
@@ -287,40 +296,40 @@ public class HairManager {
 	}
 
 	public static boolean isFullSetCode(String code) {
-		return code != null && (code.startsWith(CODE_PREFIX_FULL_V5) || code.startsWith(CODE_PREFIX_FULL_V4));
+		return code != null && (code.startsWith(CODE_PREFIX_FULL) || code.startsWith(CODE_PREFIX_FULL_V5) || code.startsWith(CODE_PREFIX_FULL_V4));
 	}
 
-    public static boolean canUseHair(Character character) {
-        if (character == null) return false;
-        String race = character.getRace().toLowerCase();
-        String gender = character.getGender().toLowerCase();
+	public static boolean canUseHair(Character character) {
+		if (character == null) return false;
+		String race = character.getRace().toLowerCase();
+		String gender = character.getGender().toLowerCase();
 
-        for (String defaultRace : DEFAULT_HAIR_RACES) if (race.equals(defaultRace)) return true;
+		for (String defaultRace : DEFAULT_HAIR_RACES) if (race.equals(defaultRace)) return true;
 
-        if (race.equals("majin")) return gender.equals(Character.GENDER_FEMALE);
-        if (race.equals("bioandroid") || race.equals("frostdemon") || race.equals("namekian")) return false;
+		if (race.equals("majin")) return gender.equals(Character.GENDER_FEMALE);
+		if (race.equals("bioandroid") || race.equals("frostdemon") || race.equals("namekian")) return false;
 
-        RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-        return config != null && config.canUseHair();
-    }
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+		return config != null && config.canUseHair();
+	}
 
-    public static CustomHair getEffectiveHair(Character character) {
-        if (!canUseHair(character)) return null;
-        int hairId = character.getHairId();
-        if (hairId == 0) {
-            CustomHair custom = character.getHairBase();
-            if (custom == null) {
-                custom = new CustomHair();
-                character.setHairBase(custom);
-            }
-            return custom;
-        }
+	public static CustomHair getEffectiveHair(Character character) {
+		if (!canUseHair(character)) return null;
+		int hairId = character.getHairId();
+		if (hairId == 0) {
+			CustomHair custom = character.getHairBase();
+			if (custom == null) {
+				custom = new CustomHair();
+				character.setHairBase(custom);
+			}
+			return custom;
+		}
 
-        return getPresetHair(hairId, character.getHairColor());
-    }
+		return getPresetHair(hairId, character.getHairColor());
+	}
 
-    public static CustomHair getPresetHair(int presetId, String hairColor) {
-        return getPresetHairByType(presetId, hairColor, 0);
+	public static CustomHair getPresetHair(int presetId, String hairColor) {
+		return getPresetHairByType(presetId, hairColor, 0);
 	}
 
 	public static CustomHair getPresetHairSSJ(int presetId, String hairColor) {
@@ -377,11 +386,11 @@ public class HairManager {
 		return basic;
 	}
 
-    public static void registerPreset(int presetId, String code) {
-        if (presetId > 0 && code != null && !code.isEmpty()) PRESET_CODES.put(presetId, code);
-    }
+	public static void registerPreset(int presetId, String code) {
+		if (presetId > 0 && code != null && !code.isEmpty()) PRESET_CODES.put(presetId, code);
+	}
 
-    public static int getPresetCount() {
-        return PRESET_CODES.size();
-    }
+	public static int getPresetCount() {
+		return PRESET_CODES.size();
+	}
 }

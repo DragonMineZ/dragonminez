@@ -46,6 +46,9 @@ public class FusionLogic {
 			}
 		}
 
+		if (lData.getStatus().isFused() || pData.getStatus().isFused() ||
+				lData.getStatus().getFusionPartnerUUID() != null || pData.getStatus().getFusionPartnerUUID() != null) return false;
+
 		int fusionlvl1 = lData.getSkills().getSkillLevel("fusion");
 		int fusionlvl2 = pData.getSkills().getSkillLevel("fusion");
 		int fusionProm = (fusionlvl1 + fusionlvl2) / 2;

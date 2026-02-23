@@ -7,39 +7,34 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 public class SkillReward extends QuestReward {
-    private final String skill;
-    private final int level;
+	private final String skill;
+	private final int level;
 
-    public SkillReward(String skill, int level) {
-        super(RewardType.SKILL);
-        this.skill = skill;
-        this.level = level;
-    }
+	public SkillReward(String skill, int level) {
+		super(RewardType.SKILL);
+		this.skill = skill;
+		this.level = level;
+	}
 
-    public String getSkill() {
-        return skill;
-    }
+	public String getSkill() {
+		return skill;
+	}
 
-    public int getLevel() {
-        return level;
-    }
+	public int getLevel() {
+		return level;
+	}
 
-    @Override
-    public void giveReward(ServerPlayer player) {
-        if (!isClaimed()) {
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                data.getSkills().setSkillLevel(skill, level);
-                setClaimed(true);
-            });
-        }
-    }
+	@Override
+	public void giveReward(ServerPlayer player) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> data.getSkills().setSkillLevel(skill, level));
+	}
 
-    @Override
-    public Component getDescription() {
-        return Component.translatable(
-                "gui.dragonminez.quests.rewards.skill",
-                Component.translatable("skill.dragonminez." + skill),
-                level
-        );
-    }
+	@Override
+	public Component getDescription() {
+		return Component.translatable(
+				"gui.dragonminez.quests.rewards.skill",
+				Component.translatable("skill.dragonminez." + skill),
+				level
+		);
+	}
 }

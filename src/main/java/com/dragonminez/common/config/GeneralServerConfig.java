@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = 1;
+	public static final int CURRENT_VERSION = 2;
 	private int configVersion;
 	public int getConfigVersion() { return configVersion; }
 	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }

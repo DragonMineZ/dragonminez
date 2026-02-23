@@ -167,7 +167,6 @@ public class StatsCommand {
 		}
 
 		final Integer finalKeepPercentage = keepPercentage;
-		System.out.println("finalKeepPercentage: " + finalKeepPercentage + " | initial input: " + keepPercentageStr);
 
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {

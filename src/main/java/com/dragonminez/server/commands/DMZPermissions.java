@@ -105,6 +105,9 @@ public class DMZPermissions {
     public static final PermissionNode<Boolean> FORMS_LIST_SELF = register("dmzform.list.self", "Allows listing your own forms.", (player, uuid, context) -> true);
     public static final PermissionNode<Boolean> FORMS_LIST_OTHERS = register("dmzform.list.others", "Allows listing other players' forms.", (player, uuid, context) -> false);
 
+    public static final PermissionNode<Boolean> SAIYAN_TAIL_SELF = register("dmzsaiyantail.set.self", "Allows setting your own saiyan tail.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> SAIYAN_TAIL_OTHERS = register("dmzsaiyantail.set.others", "Allows setting other players' saiyan tail.", (player, uuid, context) -> false);
+
     public static void init() {}
 
     private static PermissionNode<Boolean> register(String node, String description, PermissionNode.PermissionResolver<Boolean> defaultResolver) {
