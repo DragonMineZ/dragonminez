@@ -7,7 +7,6 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
-import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
@@ -406,6 +405,12 @@ public class TickHandler {
 	private static void handleActiveFormDrains(ServerPlayer player, StatsData data) {
 		boolean hasActiveForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
+		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().hasSaiyanTail()) {
+			data.getCharacter().clearActiveForm();
+			player.removeEffect(MainEffects.TRANSFORMED.get());
+			player.refreshDimensions();
+		}
+
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
 			int energyDrain = (int) Math.round(data.getAdjustedEnergyDrain());
 			int staminaDrain = (int) Math.round(data.getAdjustedStaminaDrain());
@@ -428,7 +433,9 @@ public class TickHandler {
 				}
 			} else {
 				data.getCharacter().clearActiveStackForm();
+				player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 				data.getCharacter().clearActiveForm();
+				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
 			}
 		}

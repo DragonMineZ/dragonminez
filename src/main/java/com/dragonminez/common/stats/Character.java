@@ -7,7 +7,6 @@ import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import net.minecraft.nbt.CompoundTag;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Character {
@@ -28,6 +27,8 @@ public class Character {
     private String activeStackForm = "";
     private final FormMasteries stackFormMasteries = new FormMasteries();
 	private UsedForms stackFormsUsedBefore = new UsedForms();
+
+	private boolean hasSaiyanTail = true;
 
     public static final String GENDER_MALE = "male";
     public static final String GENDER_FEMALE = "female";
@@ -152,6 +153,9 @@ public class Character {
 	public UsedForms getStackFormsUsedBefore() {
 		return stackFormsUsedBefore;
 	}
+	public boolean hasSaiyanTail() {
+		return hasSaiyanTail;
+	}
 	public Boolean getArmored() {return armored;}
 
 	public void setRace(String race) {
@@ -189,6 +193,9 @@ public class Character {
 	public void setSelectedStackFormGroup(String selectedStackFormGroup) { this.selectedStackFormGroup = selectedStackFormGroup; }
 	public void setSelectedStackForm(String selectedStackForm) {
 		this.selectedStackForm = selectedStackForm;
+	}
+	public void setSaiyanTail(boolean hasSaiyanTail) {
+		this.hasSaiyanTail = hasSaiyanTail;
 	}
 	public void setArmored(Boolean armored) {this.armored = armored;}
 
@@ -241,6 +248,7 @@ public class Character {
         tag.put("StackFormMasteries", stackFormMasteries.save());
 		tag.put("FormsUsedBefore", formsUsedBefore.save());
 		tag.put("StackFormsUsedBefore", stackFormsUsedBefore.save());
+		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
         tag.putBoolean("isArmored", armored);
         return tag;
     }
@@ -286,6 +294,7 @@ public class Character {
         this.activeStackForm = tag.getString("CurrentStackForm");
         if (tag.contains("StackFormMasteries")) stackFormMasteries.load(tag.getCompound("StackFormMasteries"));
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
+		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
         this.armored = tag.getBoolean("isArmored");
     }
 
@@ -302,6 +311,11 @@ public class Character {
         this.activeFormGroup = "";
         this.activeForm = "";
     }
+
+	public void clearSelectedForm() {
+		this.selectedFormGroup = "";
+		this.selectedForm = "";
+	}
 
     public FormConfig.FormData getActiveFormData() {
         if (!hasActiveForm()) return null;
