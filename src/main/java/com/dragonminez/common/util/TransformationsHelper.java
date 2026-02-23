@@ -11,14 +11,24 @@ public class TransformationsHelper {
 	public static List<FormConfig.FormData> getUnlockedForms(StatsData statsData, String raceName, String groupName) {
 		List<FormConfig.FormData> unlockedForms = new ArrayList<>();
 		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
-		if (formConfig == null) return unlockedForms;
+		if (formConfig == null) {
+			return unlockedForms;
+		}
 
 		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(groupName);
 		boolean isGodGroup = formConfig.getFormType().equalsIgnoreCase("god");
 		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
+		boolean requiresSaiyanTail = "oozaru".equalsIgnoreCase(formConfig.getGroupName());
 
-		if (isAndroidGroup && !isAndroidUpgraded) return unlockedForms;
-		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) return unlockedForms;
+		if (isAndroidGroup && !isAndroidUpgraded) {
+			return unlockedForms;
+		}
+		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) {
+			return unlockedForms;
+		}
+		if (requiresSaiyanTail && !statsData.getCharacter().hasSaiyanTail()) {
+			return unlockedForms;
+		}
 
 		String formType = formConfig.getFormType();
 		int skillLevel = getSkillLevelForType(statsData, formType);
@@ -34,7 +44,9 @@ public class TransformationsHelper {
 	public static List<FormConfig.FormData> getUnlockedStackForms(StatsData statsData, String groupName) {
 		List<FormConfig.FormData> unlockedForms = new ArrayList<>();
 		FormConfig formConfig = ConfigManager.getStackFormGroup(groupName);
-		if (formConfig == null) return unlockedForms;
+		if (formConfig == null) {
+			return unlockedForms;
+		}
 
 		String formType = formConfig.getFormType();
 		int skillLevel = getSkillLevelForStackType(statsData, formType);
@@ -68,14 +80,16 @@ public class TransformationsHelper {
 		String selectedGroup = null;
 		for (String groupKey : allGroups.keySet()) {
 			FormConfig config = ConfigManager.getFormGroup(race, groupKey);
-			int[] reqLevels = config.getForms().values().stream()
-					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
-					.sorted()
-					.toArray();
+			if (config != null && (!config.getGroupName().contains("oozaru") || statsData.getCharacter().hasSaiyanTail())) {
+				int[] reqLevels = config.getForms().values().stream()
+						.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
+						.sorted()
+						.toArray();
 
-			if (reqLevels.length > 0 && reqLevels[0] < lowestReqLevel) {
-				lowestReqLevel = reqLevels[0];
-				selectedGroup = groupKey;
+				if (reqLevels.length > 0 && reqLevels[0] < lowestReqLevel) {
+					lowestReqLevel = reqLevels[0];
+					selectedGroup = groupKey;
+				}
 			}
 		}
 
@@ -84,10 +98,18 @@ public class TransformationsHelper {
 
 	public static String getFirstAvailableForm(StatsData statsData) {
 		String group = getGroupWithFirstAvailableForm(statsData);
-		if (group == null) return null;
+		if (group == null) {
+			return null;
+		}
 
 		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
-		if (config == null) return null;
+		if (config == null) {
+			return null;
+		}
+
+		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().hasSaiyanTail()) {
+			return null;
+		}
 
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
@@ -101,19 +123,27 @@ public class TransformationsHelper {
 				statsData.getCharacter().getActiveFormGroup() :
 				statsData.getCharacter().getSelectedFormGroup();
 
-		if (group == null || group.isEmpty()) return null;
+		if (group == null || group.isEmpty()) {
+			return null;
+		}
 
 		FormConfig config = ConfigManager.getFormGroup(race, group);
-		if (config == null) return null;
+		if (config == null) {
+			return null;
+		}
 
 		boolean isAndroidUpgraded = statsData.getStatus().isAndroidUpgraded();
 		boolean isAndroidGroup = "androidforms".equalsIgnoreCase(group);
 		boolean isGodGroup = config.getFormType().equalsIgnoreCase("god");
+		boolean requiresSaiyanTail = "oozaru".equalsIgnoreCase(config.getGroupName());
 
 		if (!isAndroidUpgraded && isAndroidGroup) {
 			return null;
 		}
 		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) {
+			return null;
+		}
+		if (requiresSaiyanTail && !statsData.getCharacter().hasSaiyanTail()) {
 			return null;
 		}
 
@@ -150,10 +180,14 @@ public class TransformationsHelper {
 				statsData.getCharacter().getActiveStackFormGroup() :
 				statsData.getCharacter().getSelectedStackFormGroup();
 
-		if (group == null || group.isEmpty()) return null;
+		if (group == null || group.isEmpty()) {
+			return null;
+		}
 
 		FormConfig config = ConfigManager.getStackFormGroup(group);
-		if (config == null) return null;
+		if (config == null) {
+			return null;
+		}
 
 		String currentFormName = statsData.getCharacter().getActiveStackForm();
 		String nextFormName;
@@ -184,7 +218,9 @@ public class TransformationsHelper {
 	}
 
 	public static boolean canDescend(StatsData statsData) {
-		if (!statsData.getCharacter().hasActiveForm()) return false;
+		if (!statsData.getCharacter().hasActiveForm()) {
+			return false;
+		}
 
 		String race = statsData.getCharacter().getRaceName();
 		String group = statsData.getCharacter().getActiveFormGroup();
@@ -200,7 +236,9 @@ public class TransformationsHelper {
 	}
 
 	public static boolean canStackDescend(StatsData statsData) {
-		if (!statsData.getCharacter().hasActiveStackForm()) return false;
+		if (!statsData.getCharacter().hasActiveStackForm()) {
+			return false;
+		}
 
 		String group = statsData.getCharacter().getActiveStackFormGroup();
 		String currentForm = statsData.getCharacter().getActiveStackForm();
@@ -374,7 +412,9 @@ public class TransformationsHelper {
 		String current = statsData.getCharacter().getActiveForm();
 
 		FormConfig config = ConfigManager.getFormGroup(race, group);
-		if (config == null) return null;
+		if (config == null) {
+			return null;
+		}
 
 		FormConfig.FormData prev = null;
 		for (FormConfig.FormData f : config.getForms().values()) {
@@ -393,7 +433,9 @@ public class TransformationsHelper {
 		String current = statsData.getCharacter().getActiveStackForm();
 
 		FormConfig config = ConfigManager.getStackFormGroup(group);
-		if (config == null) return null;
+		if (config == null) {
+			return null;
+		}
 
 		FormConfig.FormData prev = null;
 		for (FormConfig.FormData f : config.getForms().values()) {

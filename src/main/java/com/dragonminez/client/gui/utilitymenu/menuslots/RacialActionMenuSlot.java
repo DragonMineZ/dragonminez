@@ -17,9 +17,10 @@ public class RacialActionMenuSlot extends AbstractMenuSlot implements IUtilityMe
     public ButtonInfo render(StatsData statsData) {
         ActionMode currentMode = statsData.getStatus().getSelectedAction();
         String race = statsData.getCharacter().getRaceName();
+        String form = statsData.getCharacter().getActiveForm();
         String racialSkill = ConfigManager.getRaceCharacter(race) == null ? "" : ConfigManager.getRaceCharacter(race).getRacialSkill();
 
-        if ("saiyan".equals(race)) {
+        if ("saiyan".equals(race) && (statsData.getCharacter().hasSaiyanTail() || (form != null && form.contains("oozaru")))) {
             return new ButtonInfo(
                     Component.translatable("gui.action.dragonminez.tail").withStyle(ChatFormatting.BOLD),
                     Component.translatable("gui.action.dragonminez." + (statsData.getStatus().isTailVisible())),

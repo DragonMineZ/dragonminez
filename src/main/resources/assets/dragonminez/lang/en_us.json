@@ -922,6 +922,8 @@
   "command.dragonminez.points.add.multiple": "§e[DMZ-Points]§r Added %s Training Points to %d players.",
   "command.dragonminez.points.remove.success": "§e[DMZ-Points]§r Removed %s Training Points from %s",
   "command.dragonminez.points.remove.multiple": "§e[DMZ-Points]§r Removed %s Training Points from %d players.",
+  "command.dragonminez.saiyantail.set.success": "§e[DMZ-SaiyanTail]§r Saiyan Tail set to %s for %s",
+  "command.dragonminez.saiyantail.set.multiple": "§e[DMZ-SaiyanTail]§r Saiyan Tail set to %s for %d players.",
   "command.dragonminez.bonus.add.success": "§e[DMZ-Bonus]§r Added bonus '%s' to %s for %s",
   "command.dragonminez.bonus.add.multiple": "§e[DMZ-Bonus]§r Added bonus '%s' to %d players for %s",
   "command.dragonminez.revive.success.self": "§e[DMZ-Revive]§r You have been revived!",

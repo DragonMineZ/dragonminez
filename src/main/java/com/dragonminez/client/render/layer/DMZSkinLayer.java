@@ -1,7 +1,5 @@
 package com.dragonminez.client.render.layer;
 
-import com.dragonminez.Env;
-import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
@@ -129,7 +127,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || raceName.equals("saiyan");
-        if (isSaiyanLogic && stats.getStatus().isTailVisible()) {
+        if (isSaiyanLogic && stats.getStatus().isTailVisible() && character.hasSaiyanTail()) {
             boolean hasActiveForm = character.hasActiveForm();
             boolean hasActiveStackForm = character.hasActiveStackForm();
             float[] tailColor;

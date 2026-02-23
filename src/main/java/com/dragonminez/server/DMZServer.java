@@ -14,6 +14,7 @@ public class DMZServer {
 
 	public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
 		StatsCommand.register(dispatcher);
+		SaiyanTailCommand.register(dispatcher);
 		BonusCommand.register(dispatcher);
 		EffectsCommand.register(dispatcher);
 		SkillsCommand.register(dispatcher);
