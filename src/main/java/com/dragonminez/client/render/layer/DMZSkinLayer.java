@@ -430,7 +430,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		String raceName = character.getRace().toLowerCase();
 		// Luego podemos hacer q el FusedAndroid (Super A13) no tenga el layer del Android, si no q tenga directamente otra skin idk
 
-        boolean canBeUpgraded = ConfigManager.getRaceCharacter(raceName).getFormSkillTpCosts("androidforms").length > 0;
+        boolean canBeUpgraded = ConfigManager.getRaceCharacter(raceName) != null && ConfigManager.getRaceCharacter(raceName).getFormSkillTpCosts("androidforms").length > 0;
 		if (!canBeUpgraded) return;
 		if (!stats.getStatus().isAndroidUpgraded()) return;
 
