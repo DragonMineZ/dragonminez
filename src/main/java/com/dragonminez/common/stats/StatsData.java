@@ -342,6 +342,7 @@ public class StatsData {
 
         var formData = character.getActiveFormData();
         var stackFormData = character.getActiveStackFormData();
+        var powerRelease = (double) (resources.getPowerRelease() / calculateMaxPowerRelease());
         if (formData == null && stackFormData == null) return 0.0;
 
         double adjustedBaseDrain = 0;
@@ -352,7 +353,7 @@ public class StatsData {
             }
             double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
             double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-            adjustedBaseDrain = baseDrain / divisor;
+            adjustedBaseDrain = (baseDrain / divisor) * powerRelease;
         }
 
         double adjustedStackDrain = 0;
@@ -363,7 +364,7 @@ public class StatsData {
             }
             double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
             double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-            adjustedStackDrain = stackDrain / stackDivisor;
+            adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
         }
 
         double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
@@ -375,6 +376,7 @@ public class StatsData {
 
         var formData = character.getActiveFormData();
         var stackFormData = character.getActiveStackFormData();
+        var powerRelease = (double) (resources.getPowerRelease() / calculateMaxPowerRelease());
         if (formData == null && stackFormData == null) return 0.0;
 
         double adjustedBaseDrain = 0;
@@ -385,7 +387,7 @@ public class StatsData {
             }
             double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
             double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-            adjustedBaseDrain = baseDrain / divisor;
+            adjustedBaseDrain = (baseDrain / divisor) * powerRelease;
         }
 
         double adjustedStackDrain = 0;
@@ -396,7 +398,7 @@ public class StatsData {
             }
             double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
             double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-            adjustedStackDrain = stackDrain / stackDivisor;
+            adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
         }
 
         double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
@@ -410,6 +412,7 @@ public class StatsData {
 
         var formData = character.getActiveFormData();
         var stackFormData = character.getActiveStackFormData();
+        var powerRelease = (double) (resources.getPowerRelease() / calculateMaxPowerRelease());
         if (formData == null && stackFormData == null) {
             return 0.0;
         }
@@ -422,7 +425,7 @@ public class StatsData {
             }
             double mastery = character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm());
             double divisor = 1.0 + (mastery * formData.getCostDecreasePerMasteryPoint());
-            adjustedBaseDrain = baseDrain / divisor;
+            adjustedBaseDrain = (baseDrain / divisor) * powerRelease;
         }
 
         double adjustedStackDrain = 0;
@@ -433,7 +436,7 @@ public class StatsData {
             }
             double stackMastery = character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm());
             double stackDivisor = 1.0 + (stackMastery * stackFormData.getCostDecreasePerMasteryPoint());
-            adjustedStackDrain = stackDrain / stackDivisor;
+            adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
         }
 
         double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
@@ -582,6 +585,10 @@ public class StatsData {
         }
 
         return statsIncreased;
+    }
+
+    public int calculateMaxPowerRelease() {
+        return 50 + (skills.getSkillLevel("potentialunlock") * 5);
     }
 
     public void tick() {
