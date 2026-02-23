@@ -89,6 +89,7 @@ public class FormModeHandler implements IActionModeHandler {
                 player.addEffect(new MobEffectInstance(MainEffects.TRANSFORMED.get(), -1, 0, false, false, true));
             }
             player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", translatedFormName), true);
+            player.refreshDimensions();
         }
     }
 

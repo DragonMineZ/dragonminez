@@ -17,6 +17,7 @@ import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier01Entity;
 import com.dragonminez.common.init.entities.sagas.SagaFriezaSoldier02Entity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,10 +43,7 @@ import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -503,50 +501,68 @@ public class StatsEvents {
 
     @SubscribeEvent
     public static void onEntitySize(EntityEvent.Size event) {
-        if (!(event.getEntity() instanceof Player player)) return;
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Player)) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			float[] scaling = data.getCharacter().getModelScaling();
-			if (scaling == null || scaling.length < 2) scaling = new float[]{0.9375f, 0.9375f, 0.9375f};
+        StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
+            var character = data.getCharacter();
+            var activeForm = character.getActiveFormData();
+            String currentForm = character.getActiveForm();
+            String race = character.getRaceName().toLowerCase();
 
-			float currentScaleX = scaling[0];
-			float currentScaleY = scaling[1];
+            String customModelValue = "";
 
-			if (data.getCharacter().hasActiveForm()) {
-				FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-				if (activeForm != null) {
-					float[] formMultiplier = activeForm.getModelScaling();
-					currentScaleX *= formMultiplier[0];
-					currentScaleY *= formMultiplier[1];
-				}
-			}
+            if (character.hasActiveForm() && activeForm != null) {
+                if (activeForm.hasCustomModel()) {
+                    customModelValue = activeForm.getCustomModel().toLowerCase();
+                }
+            }
 
-			final float BASE_SCALE = 0.9375f;
+            if (customModelValue.isEmpty()) {
+                var raceConfig = ConfigManager.getRaceCharacter(race);
+                if (raceConfig != null && raceConfig.getCustomModel() != null) {
+                    customModelValue = raceConfig.getCustomModel().toLowerCase();
+                }
+            }
 
-			float ratioX = currentScaleX / BASE_SCALE;
-			float ratioY = currentScaleY / BASE_SCALE;
+            float scalingX, scalingY;
 
-			if (Math.abs(ratioX - 1.0f) > 0.001F || Math.abs(ratioY - 1.0f) > 0.001F) {
-				float newWidth = 0.6F * ratioX;
-				float newHeight = 1.8F * ratioY;
+            boolean isOozaru = customModelValue.equals("oozaru") ||
+                    (currentForm != null && currentForm.contains("oozaru")) ||
+                    (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
 
-				Pose pose = event.getPose();
-				float poseMultiplier = 1.0F;
-				float eyePoseMultiplier = 1.0F;
+            if (isOozaru) {
+                scalingX = 3.4f;
+                scalingY = 3.4f;
+            } else {
+                if (activeForm != null) {
+                    scalingX = activeForm.getModelScaling()[0];
+                    scalingY = activeForm.getModelScaling()[1];
+                } else {
+                    scalingX = character.getModelScaling()[0];
+                    scalingY = character.getModelScaling()[1];
+                }
+            }
 
-				if (pose == Pose.CROUCHING) {
-					poseMultiplier = 1.5F / 1.8F;
-					eyePoseMultiplier = 1.27F / 1.62F;
-				} else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-					poseMultiplier = 0.6F / 1.8F;
-					eyePoseMultiplier = 0.4F / 1.62F;
-				}
+            float newWidth = 0.6F * scalingX;
+            float newHeight = 1.9F * scalingY;
 
-				EntityDimensions newDims = EntityDimensions.fixed(newWidth, newHeight * poseMultiplier);
-				event.setNewSize(newDims);
-				event.setNewEyeHeight(1.62F * ratioY * eyePoseMultiplier);
-			}
-		});
-	}
+            Pose pose = event.getPose();
+            float poseHeightMultiplier = 1.0F;
+            float eyeHeightMultiplier = 1.0F;
 
+            if (pose == Pose.CROUCHING) {
+                poseHeightMultiplier = 1.5F / 1.8F;
+                eyeHeightMultiplier = 1.27F / 1.62F;
+            } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+                poseHeightMultiplier = 0.6F / 1.8F;
+                eyeHeightMultiplier = 0.4F / 1.62F;
+            }
+
+            EntityDimensions newDims = EntityDimensions.fixed(newWidth, newHeight * poseHeightMultiplier);
+            event.setNewSize(newDims);
+
+            event.setNewEyeHeight(1.7F * scalingY * eyeHeightMultiplier);
+        });
+    }
 }

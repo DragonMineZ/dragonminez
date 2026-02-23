@@ -93,6 +93,7 @@ public class StackFormModeHandler implements IActionModeHandler {
             if (!player.hasEffect(MainEffects.STACK_TRANSFORMED.get())) {
                 player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED.get(), -1, 0, false, false, true));
             }
+            player.refreshDimensions();
         }
     }
 }
