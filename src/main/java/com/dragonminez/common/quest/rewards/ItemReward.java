@@ -9,40 +9,37 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 public class ItemReward extends QuestReward {
-    private final String itemId;
-    private final int count;
+	private final String itemId;
+	private final int count;
 
-    public ItemReward(ItemStack itemStack) {
-        super(RewardType.ITEM);
-        this.itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).toString();
-        this.count = itemStack.getCount();
-    }
+	public ItemReward(ItemStack itemStack) {
+		super(RewardType.ITEM);
+		this.itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).toString();
+		this.count = itemStack.getCount();
+	}
 
-    public String getItemId() {
-        return itemId;
-    }
+	public String getItemId() {
+		return itemId;
+	}
 
-    public int getCount() {
-        return count;
-    }
+	public int getCount() {
+		return count;
+	}
 
-    @Override
-    public void giveReward(ServerPlayer player) {
-        if (!isClaimed()) {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-            player.addItem(new ItemStack(item, count));
-            setClaimed(true);
-        }
-    }
+	@Override
+	public void giveReward(ServerPlayer player) {
+		Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+		player.addItem(new ItemStack(item, count));
+	}
 
-    @Override
-    public Component getDescription() {
-        return Component.translatable(
-                "gui.dragonminez.quests.rewards.item",
-                count,
-                Component.translatable(
-                        "item." + ResourceLocation.parse(itemId).toLanguageKey()
-                )
-        );
-    }
+	@Override
+	public Component getDescription() {
+		return Component.translatable(
+				"gui.dragonminez.quests.rewards.item",
+				count,
+				Component.translatable(
+						"item." + ResourceLocation.parse(itemId).toLanguageKey()
+				)
+		);
+	}
 }

@@ -595,10 +595,6 @@ public class StatsData {
         cooldowns.tick();
     }
 
-    public void saveApparanceData(CompoundTag nbt) {
-        nbt.put("Character", character.save());
-    }
-
     public CompoundTag save() {
         CompoundTag nbt = new CompoundTag();
         nbt.put("Stats", stats.save());

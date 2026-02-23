@@ -53,18 +53,14 @@ public class ClaimRewardC2S {
 
 					for (int i = 0; i < rewards.size(); i++) {
 						if (!stats.getQuestData().isRewardClaimed(sagaId, questId, i)) {
-							QuestReward reward = rewards.get(i);
-
-							reward.giveReward(player);
-
+							rewards.get(i).giveReward(player);
 							stats.getQuestData().claimReward(sagaId, questId, i);
 							anyClaimed = true;
 						}
 					}
 
-					if (anyClaimed) {
-						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-					}
+					if (anyClaimed) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+
 				}
 			});
 		});
