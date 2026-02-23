@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.redribbon;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
@@ -16,6 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -118,11 +120,19 @@ public class RedRibbonEntity extends Monster implements GeoEntity {
 		return true;
 	}
 
-	public static boolean canSpawnHere(EntityType<? extends RedRibbonEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
-		if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
-		if (random.nextFloat() < 0.90f) return false;
-		boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
-		boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
-		return solidGround && noCollision;
-	}
+    public static boolean canSpawnHere(EntityType<? extends RedRibbonEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
+        if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
+
+        BlockState stateAtPos = world.getBlockState(pos);
+        if (!stateAtPos.isAir() && !stateAtPos.canBeReplaced()) {
+            return false;
+        }
+
+        BlockState ground = world.getBlockState(pos.below());
+        if (!ground.isFaceSturdy(world, pos.below(), Direction.UP)) {
+            return false;
+        }
+        return world.noCollision(entity.getDimensions().makeBoundingBox(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
+    }
+
 }

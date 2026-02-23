@@ -44,7 +44,7 @@ public class NamekBiomes {
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 
-		//addWaterMobs(spawnBuilder);
+		addWaterMobs(spawnBuilder);
         spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 0.9, 0.1D);
         spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 0.9, 0.1D);
         spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 0.9, 0.1D);
@@ -78,7 +78,7 @@ public class NamekBiomes {
 		MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
 		BiomeGenerationSettings.Builder biomeBuilder = new BiomeGenerationSettings.Builder(placedFeatures, carvers);
 
-		//addWaterMobs(spawnBuilder);
+		addWaterMobs(spawnBuilder);
         spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER.get(), 0.9, 0.1D);
         spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), 0.9, 0.1D);
         spawnBuilder.addMobCharge(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), 0.9, 0.1D);
@@ -135,7 +135,7 @@ public class NamekBiomes {
 				.temperature(2.0f)
 				.downfall(0.0f)
 				.specialEffects(new BiomeSpecialEffects.Builder()
-						.waterColor(4159204)
+						.waterColor(0x97ED72)
 						.waterFogColor(329011)
 						.skyColor(skyColor)
 						.fogColor(12638463)

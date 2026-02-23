@@ -1,4 +1,5 @@
 {
+  "type": "minecraft:jigsaw",
   "biomes": [
     "minecraft:badlands",
     "minecraft:bamboo_jungle",
@@ -38,8 +39,37 @@
     "minecraft:windswept_savanna",
     "minecraft:wooded_badlands"
   ],
-  "spawn_overrides": {},
-  "type": "minecraft:jigsaw",
+  "spawn_overrides": {
+    "monster": {
+      "bounding_box": "piece",
+      "spawns": [
+        {
+          "type": "dragonminez:red_ribbon_soldier",
+          "weight": 100,
+          "minCount": 2,
+          "maxCount": 4
+        },
+        {
+          "type": "dragonminez:robot1",
+          "weight": 43,
+          "minCount": 1,
+          "maxCount": 2
+        },
+        {
+          "type": "dragonminez:robot2",
+          "weight": 42,
+          "minCount": 1,
+          "maxCount": 2
+        },
+        {
+          "type": "dragonminez:robot3",
+          "weight": 41,
+          "minCount": 1,
+          "maxCount": 2
+        }
+      ]
+    }
+  },
   "start_pool": "dragonminez:rrtower",
   "size": 7,
   "step": "surface_structures",

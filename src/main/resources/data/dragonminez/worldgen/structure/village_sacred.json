@@ -1,6 +1,18 @@
 {
   "biomes": "dragonminez:sacred_land",
-  "spawn_overrides": {},
+  "spawn_overrides": {
+    "creature": {
+      "bounding_box": "piece",
+      "spawns": [
+        {
+          "type": "dragonminez:namek_warrior",
+          "weight": 80,
+          "minCount": 1,
+          "maxCount": 3
+        }
+      ]
+    }
+  },
   "type": "minecraft:jigsaw",
   "start_pool": "dragonminez:village_sacred/sacred_center",
   "size": 7,

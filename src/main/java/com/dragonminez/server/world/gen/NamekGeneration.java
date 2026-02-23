@@ -133,7 +133,7 @@ public class NamekGeneration {
 		context.register(NAMEK_NOISE_SETTINGS, new NoiseGeneratorSettings(
 				noiseSettings,
 				MainBlocks.NAMEK_STONE.get().defaultBlockState(),
-				MainBlocks.NAMEK_WATER_LIQUID.get().defaultBlockState(),
+				Blocks.WATER.defaultBlockState(),
 				router,
 				finalRules,
 				List.of(),

@@ -2,7 +2,7 @@
   "name": "dragonminez:village_ajissa/namek_warrior",
   "fallback": "minecraft:empty",
   "elements": [{
-    "weight": 2,
+    "weight": 4,
     "element": {
       "location": "dragonminez:village_ajissa/entities/namek_warriors/namek_warrior1",
       "processors": "minecraft:empty",
@@ -10,7 +10,7 @@
       "element_type": "minecraft:single_pool_element"
     }
   },{
-    "weight": 2,
+    "weight": 4,
     "element": {
       "location": "dragonminez:village_ajissa/entities/namek_warriors/namek_warrior2",
       "processors": "minecraft:empty",

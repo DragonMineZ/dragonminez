@@ -7,6 +7,7 @@ import com.dragonminez.common.init.entities.goals.VillageAlertSystem;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -32,6 +33,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jetbrains.annotations.Nullable;
@@ -282,11 +284,18 @@ public class NamekWarriorEntity extends PathfinderMob implements GeoEntity {
         return true;
     }
 
-    public static boolean canSpawnHere(EntityType<? extends DBSagasEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
+    public static boolean canSpawnHere(EntityType<? extends NamekWarriorEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
         if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
-        if (random.nextFloat() < 0.95f) return false;
-        boolean solidGround = world.getBlockState(pos.below()).isSolidRender(world, pos.below());
-        boolean noCollision = world.isUnobstructed(world.getBlockState(pos), pos, CollisionContext.empty());
-        return solidGround && noCollision;
+
+        BlockState stateAtPos = world.getBlockState(pos);
+        if (!stateAtPos.isAir() && !stateAtPos.canBeReplaced()) {
+            return false;
+        }
+
+        BlockState ground = world.getBlockState(pos.below());
+        if (!ground.isFaceSturdy(world, pos.below(), Direction.UP)) {
+            return false;
+        }
+        return world.noCollision(entity.getDimensions().makeBoundingBox(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
     }
 }
