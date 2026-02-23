@@ -367,8 +367,8 @@ public class StatsData {
             adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
         }
 
-        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
-        return Math.max(0.001, drainPercentage * this.getMaxEnergy());
+        double drainAmount = adjustedBaseDrain + adjustedStackDrain;
+        return drainAmount != 0 ? Math.max(1, drainAmount * 100) : 0;
     }
 
     public double getAdjustedStaminaDrain() {
@@ -401,8 +401,8 @@ public class StatsData {
             adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
         }
 
-        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
-        return Math.max(0.001, drainPercentage * this.getMaxStamina());
+        double drainAmount = adjustedBaseDrain + adjustedStackDrain;
+        return drainAmount != 0 ? Math.max(1, drainAmount * 100) : 0;
     }
 
     public double getAdjustedHealthDrain() {
@@ -439,8 +439,8 @@ public class StatsData {
             adjustedStackDrain = (stackDrain / stackDivisor) * powerRelease;
         }
 
-        double drainPercentage = adjustedBaseDrain + adjustedStackDrain;
-        return Math.max(0.001, drainPercentage * this.getMaxHealth());
+        double drainAmount = adjustedBaseDrain + adjustedStackDrain;
+        return drainAmount != 0 ? Math.max(1, drainAmount * 100) : 0;
     }
 
 
