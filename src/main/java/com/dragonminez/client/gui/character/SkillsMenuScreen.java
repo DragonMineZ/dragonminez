@@ -497,7 +497,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		if (skill != null) {
 			drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()), panelX + 72, startY + 12, 0xFFAAAAAA);
-			if (getUpgradeCost(selectedSkill, skill.getLevel()) != Integer.MAX_VALUE) {
+			int upgradeCost = getUpgradeCost(selectedSkill, skill.getLevel());
+            if (upgradeCost != Integer.MAX_VALUE && upgradeCost > 0) {
 				drawCenteredStringWithBorder(graphics, Component.literal("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))), panelX + 72, startY + 24, 0xFFAAAAAA);
 			}
 		} else {
