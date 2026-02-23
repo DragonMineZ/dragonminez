@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = 2;
+	public static final int CURRENT_VERSION = 3;
 	private int configVersion;
 	public int getConfigVersion() { return configVersion; }
 	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
@@ -100,6 +100,7 @@ public class GeneralServerConfig {
 	public static class CombatConfig {
 		private boolean killPlayersOnCombatLogout = true;
 		private double staminaConsumptionRatio = 0.125;
+		private int baselineFormDrain = 200;
 		private boolean respectAttackCooldown = true;
 		private boolean enableBlocking = true;
 		private boolean enableParrying = true;
@@ -121,6 +122,9 @@ public class GeneralServerConfig {
 
 		public boolean isKillPlayersOnCombatLogout() { return killPlayersOnCombatLogout; }
 		public double getStaminaConsumptionRatio() { return Math.max(0, Math.min(staminaConsumptionRatio, Double.MAX_VALUE)); }
+		public int getBaselineFormDrain() {
+			return baselineFormDrain;
+		}
 		public boolean isRespectAttackCooldown() { return respectAttackCooldown; }
 		public boolean isEnableBlocking() { return enableBlocking; }
 		public boolean isEnableParrying() { return enableParrying; }

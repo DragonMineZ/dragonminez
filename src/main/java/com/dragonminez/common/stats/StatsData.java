@@ -368,7 +368,7 @@ public class StatsData {
         }
 
         double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-        return drainAmount != 0 ? Math.max(1, drainAmount * 100) : 0;
+        return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
     }
 
     public double getAdjustedStaminaDrain() {
@@ -402,7 +402,7 @@ public class StatsData {
         }
 
         double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-        return drainAmount != 0 ? Math.max(1, drainAmount * 100) : 0;
+        return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
     }
 
     public double getAdjustedHealthDrain() {
@@ -440,7 +440,7 @@ public class StatsData {
         }
 
         double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-        return drainAmount != 0 ? Math.max(1, drainAmount * 100) : 0;
+        return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
     }
 
 
