@@ -156,6 +156,7 @@ public class StatsEvents {
 					victimData.getStatus().setChargingKi(false);
 					victimData.getStatus().setActionCharging(false);
 					victimData.getCharacter().setActiveForm(null, null);
+					victimData.getCharacter().setActiveStackForm(null, null);
 				}
 			});
         }

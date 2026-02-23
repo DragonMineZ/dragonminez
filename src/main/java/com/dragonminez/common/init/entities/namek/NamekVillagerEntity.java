@@ -91,18 +91,18 @@ public class NamekVillagerEntity extends Villager implements GeoEntity {
 
     static {
         // (new ItemStack(ITEM REQUERIDO, CANTIDAD), new ItemStack(ITEM REQUERIDO 2, CANTIDAD), new ItemStack(ITEM COMPRADO, CANTIDAD), USOS MAXIMOS, XP));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 1), new ItemStack(Items.CARROT, 3), new ItemStack(MainItems.FROG_LEGS_RAW.get(), 2), 10, 3));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 3), new ItemStack(Items.BUCKET, 1), new ItemStack(MainItems.HEALING_BUCKET.get(), 1), 3, 2));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(MainBlocks.NAMEK_BLOCK.get(), 8), 64, 0));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 32), new ItemStack(Items.AIR), new ItemStack(MainItems.T2_RADAR_CHIP.get(), 1), 2, 6));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 16), new ItemStack(Items.ANCIENT_DEBRIS, 1), new ItemStack(Items.NETHERITE_SCRAP, 2), 16, 3));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 28), new ItemStack(Items.DIAMOND, 4), new ItemStack(Items.NETHERITE_SCRAP, 2), 4, 4));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(Items.CARROT, 3), 10, 1));
-        TRADES.add(new CustomTrade(new ItemStack(Items.CARROT, 8), new ItemStack(Items.AIR), new ItemStack(Items.EMERALD, 2), 10, 2));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(Items.POTATO, 3), 10, 1));
-        TRADES.add(new CustomTrade(new ItemStack(Items.POTATO, 8), new ItemStack(Items.AIR), new ItemStack(Items.EMERALD, 2), 10, 2));
-        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(Items.BEETROOT, 3), 10, 1));
-        TRADES.add(new CustomTrade(new ItemStack(Items.BEETROOT, 8), new ItemStack(Items.AIR), new ItemStack(Items.EMERALD, 2), 10, 2));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 1), new ItemStack(Items.CARROT, 3), new ItemStack(MainItems.FROG_LEGS_RAW.get(), 2), 10, 6));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 3), new ItemStack(Items.BUCKET, 1), new ItemStack(MainItems.HEALING_BUCKET.get(), 1), 3, 5));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(MainBlocks.NAMEK_BLOCK.get(), 8), 64, 3));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 32), new ItemStack(Items.AIR), new ItemStack(MainItems.T2_RADAR_CHIP.get(), 1), 2, 9));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 16), new ItemStack(Items.ANCIENT_DEBRIS, 1), new ItemStack(Items.NETHERITE_SCRAP, 2), 16, 6));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 28), new ItemStack(Items.DIAMOND, 4), new ItemStack(Items.NETHERITE_SCRAP, 2), 4, 7));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(Items.CARROT, 3), 10, 3));
+        TRADES.add(new CustomTrade(new ItemStack(Items.CARROT, 8), new ItemStack(Items.AIR), new ItemStack(Items.EMERALD, 2), 10, 5));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(Items.POTATO, 3), 10, 3));
+        TRADES.add(new CustomTrade(new ItemStack(Items.POTATO, 8), new ItemStack(Items.AIR), new ItemStack(Items.EMERALD, 2), 10, 5));
+        TRADES.add(new CustomTrade(new ItemStack(Items.EMERALD, 2), new ItemStack(Items.AIR), new ItemStack(Items.BEETROOT, 3), 10, 3));
+        TRADES.add(new CustomTrade(new ItemStack(Items.BEETROOT, 8), new ItemStack(Items.AIR), new ItemStack(Items.EMERALD, 2), 10, 5));
     }
 
     @Override

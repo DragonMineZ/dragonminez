@@ -407,9 +407,9 @@ public class TickHandler {
 		boolean hasActiveForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
-			int energyDrain = (int) data.getAdjustedEnergyDrain();
-			int staminaDrain = (int) data.getAdjustedStaminaDrain();
-			int healthDrain = (int) data.getAdjustedHealthDrain();
+			int energyDrain = (int) Math.round(data.getAdjustedEnergyDrain());
+			int staminaDrain = (int) Math.round(data.getAdjustedStaminaDrain());
+			double healthDrain = Math.round(data.getAdjustedHealthDrain());
 
 			boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyDrain;
 			boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaDrain;
@@ -418,10 +418,18 @@ public class TickHandler {
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
 				data.getResources().removeEnergy(energyDrain);
 				data.getResources().removeStamina(staminaDrain);
-				player.setHealth(player.getHealth() - healthDrain);
+				if ((player.getHealth() - healthDrain) >= 1.0) {
+					player.setHealth((float) (player.getHealth() - healthDrain));
+				} else {
+					player.setHealth(1.0f);
+					data.getCharacter().clearActiveForm();
+					data.getCharacter().clearActiveStackForm();
+					player.refreshDimensions();
+				}
 			} else {
 				data.getCharacter().clearActiveStackForm();
 				data.getCharacter().clearActiveForm();
+				player.refreshDimensions();
 			}
 		}
 	}
