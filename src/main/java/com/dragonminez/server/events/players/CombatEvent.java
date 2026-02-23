@@ -32,12 +32,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CombatEvent {
@@ -98,7 +95,8 @@ public class CombatEvent {
 						dmzDamage = attackerData.getStrikeDamage();
 						int currentCombo = ComboManager.getCombo(attacker.getUUID());
 						Entity target = event.getEntity();
-						if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target)) currentCombo = 0;
+						if (currentCombo > 0 && !ComboManager.shouldContinueCombo(attacker.getUUID(), target))
+							currentCombo = 0;
 
 
 						int nextCombo = (currentCombo % 4) + 1;
@@ -187,10 +185,12 @@ public class CombatEvent {
 					if (!attacker.isCreative() || !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 				}
 
-				if (attacker instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				if (attacker instanceof ServerPlayer serverPlayer)
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 
 				if (event.getEntity() instanceof Player) {
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
+					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
+						attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 				}
 
 				if (event.getEntity() instanceof PunchMachineEntity punchMachineEntity) {
@@ -232,7 +232,7 @@ public class CombatEvent {
 								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
 
 								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
-								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 2.5;
+								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 3;
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.75f;
@@ -341,9 +341,19 @@ public class CombatEvent {
 											double percentage = (currentPoiseVal / maxPoise) * 100.0;
 											double r, g, b;
 
-											if (percentage > 66) {r = 0.2;g = 0.9;b = 1.0;}
-											else if (percentage > 33) {r = 1.0;g = 0.5;b = 0.0;}
-											else {r = 1.0;g = 0.1;b = 0.1;}
+											if (percentage > 66) {
+												r = 0.2;
+												g = 0.9;
+												b = 1.0;
+											} else if (percentage > 33) {
+												r = 1.0;
+												g = 0.5;
+												b = 0.0;
+											} else {
+												r = 1.0;
+												g = 0.1;
+												b = 0.1;
+											}
 
 											Vec3 look = victim.getLookAngle();
 											Vec3 spawnPos = victim.getEyePosition().add(look.scale(0.6)).subtract(0, 0.3, 0);
@@ -381,7 +391,8 @@ public class CombatEvent {
 							String formName = victimData.getCharacter().getActiveForm();
 							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived(), activeForm.getMaxMastery());
 
-							if (victim instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+							if (victim instanceof ServerPlayer serverPlayer)
+								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 						}
 					}
 				}
@@ -497,17 +508,17 @@ public class CombatEvent {
 			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
 			player.hurtMarked = true;
 
-            if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                serverLevel.sendParticles(
-                        net.minecraft.core.particles.ParticleTypes.EXPLOSION,
-                        player.getX(), player.getY() + 0.5, player.getZ(),
-                        1,
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.0
-                );
-            }
+			if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+				serverLevel.sendParticles(
+						net.minecraft.core.particles.ParticleTypes.EXPLOSION,
+						player.getX(), player.getY() + 0.5, player.getZ(),
+						1,
+						0.0,
+						0.0,
+						0.0,
+						0.0
+				);
+			}
 
 			int dashCdSeconds = ConfigManager.getServerConfig().getCombat().getDashCooldownSeconds();
 			int doubleDashCdSeconds = ConfigManager.getServerConfig().getCombat().getDoubleDashCooldownSeconds();
