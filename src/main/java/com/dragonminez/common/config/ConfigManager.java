@@ -248,22 +248,21 @@ public class ConfigManager {
 		if (Files.exists(characterPath)) {
 			try {
 				characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
-				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION || isMissingConfigVersion(characterPath)) {
+				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION || characterConfig.getConfigVersion() == 0 || isMissingConfigVersion(characterPath)) {
 					backupOldConfig(characterPath);
 					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
-					overwriteCharacter = true;
-				} else if (characterConfig.getConfigVersion() == 0) {
-					backupOldConfig(characterPath);
-					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+					characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
 					overwriteCharacter = true;
 				}
 			} catch (Exception e) {
 				backupOldConfig(characterPath);
 				characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+				characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
 				overwriteCharacter = true;
 			}
 		} else {
 			characterConfig = createDefaultCharacterConfig(raceName, isDefault);
+			characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
 			overwriteCharacter = true;
 		}
 		if (overwriteCharacter) LOADER.saveConfig(characterPath, characterConfig);
@@ -274,22 +273,21 @@ public class ConfigManager {
 		if (Files.exists(statsPath)) {
 			try {
 				statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
-				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION || isMissingConfigVersion(statsPath)) {
+				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION || statsConfig.getConfigVersion() == 0 || isMissingConfigVersion(statsPath)) {
 					backupOldConfig(statsPath);
 					statsConfig = createDefaultStatsConfig();
-					overwriteStats = true;
-				} else if (statsConfig.getConfigVersion() == 0) {
-					backupOldConfig(statsPath);
-					statsConfig = createDefaultStatsConfig();
+					statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
 					overwriteStats = true;
 				}
 			} catch (Exception e) {
 				backupOldConfig(statsPath);
 				statsConfig = createDefaultStatsConfig();
+				statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
 				overwriteStats = true;
 			}
 		} else {
 			statsConfig = createDefaultStatsConfig();
+			statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
 			overwriteStats = true;
 		}
 		if (overwriteStats) LOADER.saveConfig(statsPath, statsConfig);
@@ -301,8 +299,10 @@ public class ConfigManager {
 		if (isDefault && !LOADER.hasExistingFiles(formsPath)) {
 			recreateForms = true;
 		} else if (!raceForms.isEmpty()) {
-			for (FormConfig formGroup : raceForms.values()) {
-				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || isMissingConfigVersion(formsPath)) {
+			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
+				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
+				FormConfig formGroup = entry.getValue();
+				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0 || isMissingConfigVersion(formFilePath)) {
 					recreateForms = true;
 					break;
 				}
@@ -315,6 +315,12 @@ public class ConfigManager {
 			}
 			raceForms.clear();
 			FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
+
+			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
+				entry.getValue().setConfigVersion(FormConfig.CURRENT_VERSION);
+				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
+				LOADER.saveConfig(formFilePath, entry.getValue());
+			}
 		} else {
 			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
 				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
@@ -331,15 +337,16 @@ public class ConfigManager {
 	private static void createOrLoadStackForms(boolean isDefault) throws IOException {
 		Files.createDirectories(STACK_FORMS_DIR);
 
-		// Forms Config
 		Map<String, FormConfig> stackForms = LOADER.loadStackForms(STACK_FORMS_DIR);
 		boolean recreateForms = false;
 
 		if (isDefault && !LOADER.hasExistingFiles(STACK_FORMS_DIR)) {
 			recreateForms = true;
 		} else if (!stackForms.isEmpty()) {
-			for (FormConfig formGroup : stackForms.values()) {
-				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || isMissingConfigVersion(STACK_FORMS_DIR)) {
+			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
+				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
+				FormConfig formGroup = entry.getValue();
+				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0 || isMissingConfigVersion(formFilePath)) {
 					recreateForms = true;
 					break;
 				}
@@ -360,6 +367,7 @@ public class ConfigManager {
 			}
 		} else {
 			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
+				entry.getValue().setConfigVersion(FormConfig.CURRENT_VERSION);
 				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
 				LOADER.saveConfig(formFilePath, entry.getValue());
 			}
