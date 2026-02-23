@@ -1,11 +1,13 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -138,6 +140,8 @@ public class CreateCharacterC2S {
                             msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
                             msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
                             msg.eye1Color, msg.eye2Color, msg.auraColor);
+                    data.getCharacter().setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(data));
+                    data.getCharacter().setSelectedForm(TransformationsHelper.getFirstAvailableForm(data));
 					player.refreshDimensions();
                     NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
                 }

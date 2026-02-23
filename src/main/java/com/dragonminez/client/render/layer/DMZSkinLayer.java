@@ -1,5 +1,7 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
@@ -150,7 +152,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4");
         if (isHumanoid && bodyType == 0) {
             ResourceLocation playerSkin = player.getSkinTextureLocation();
-            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(playerSkin)), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
+            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(playerSkin), 1.0f, 1.0f, 1.0f, 1.0f, partialTick, packedLight, packedOverlay, alpha);
             return;
         }
 

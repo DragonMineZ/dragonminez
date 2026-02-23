@@ -82,6 +82,19 @@ public class TransformationsHelper {
 		return selectedGroup;
 	}
 
+	public static String getFirstAvailableForm(StatsData statsData) {
+		String group = getGroupWithFirstAvailableForm(statsData);
+		if (group == null) return null;
+
+		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
+		if (config == null) return null;
+
+		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
+
+	 return firstForm.map(FormConfig.FormData::getName).orElse(null);
+	}
+
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
 		String race = statsData.getCharacter().getRaceName();
 		String group = statsData.getCharacter().hasActiveForm() ?
