@@ -67,7 +67,7 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
             player.displayClientMessage(Component.translatable("message.dragonminez.racial.zenkai.used"), true);
 
             data.getResources().addRacialSkillCount(1);
-            data.getCooldowns().setCooldown(Cooldowns.ZENKAI, config.getSaiyanZenkaiCooldownSeconds());
+            data.getCooldowns().setCooldown(Cooldowns.ZENKAI, config.getSaiyanZenkaiCooldownSeconds() * 20);
             player.addEffect(
                     new MobEffectInstance(
                             MainEffects.SAIYAN_PASSIVE.get(),

@@ -223,9 +223,6 @@ public class ForgeCommonEvents {
 		DMZPermissions.init();
 		SagaManager.loadSagas(event.getServer());
 
-		TickHandler.registerActionModeHandlers();
-		TickHandler.registerStatusEffectHandlers();
-
 		WorldGuardCompat.init();
 
 		ServerLevel overworld = event.getServer().getLevel(Level.OVERWORLD);

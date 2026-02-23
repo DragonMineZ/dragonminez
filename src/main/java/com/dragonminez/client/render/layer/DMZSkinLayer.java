@@ -430,8 +430,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		String raceName = character.getRace().toLowerCase();
 		// Luego podemos hacer q el FusedAndroid (Super A13) no tenga el layer del Android, si no q tenga directamente otra skin idk
 
-        boolean canBeUpgraded = ConfigManager.getRaceCharacter(raceName) != null & ConfigManager.getRaceCharacter(raceName).getFormSkillTpCosts("androidforms").length > 0;
-        if (!canBeUpgraded) return;
+        boolean canBeUpgraded = ConfigManager.getRaceCharacter(raceName) != null && ConfigManager.getRaceCharacter(raceName).getFormSkillTpCosts("androidforms").length > 0;
+		if (!canBeUpgraded) return;
 		if (!stats.getStatus().isAndroidUpgraded()) return;
 
 		String androidPath = "";
@@ -586,25 +586,23 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             return;
         }
 
-//        switch (race) {
-//            case "human", "saiyan":
-//                renderHumanFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
-//                break;
-//            case "namekian":
-//                renderNamekianFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, pt, pl, po, alpha);
-//                break;
-//            case "frostdemon":
-//                renderFrostFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, skin, b2, pt, pl, po, alpha);
-//                break;
-//            case "bioandroid":
-//                renderBioFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, pt, pl, po, alpha);
-//                break;
-//            case "majin":
-//                renderMajinFace(model, poseStack, animatable, bufferSource, character, eye1, skin, pt, pl, po, alpha);
-//                break;
-//        }
-
-        renderCustomFace(model, poseStack, animatable, bufferSource, character, faceKey, eye1, eye2, skin, hair, pt, pl, po, alpha);
+        switch (race) {
+            case "human", "saiyan":
+                renderHumanFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
+                break;
+            case "namekian":
+                renderNamekianFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, pt, pl, po, alpha);
+                break;
+            case "frostdemon":
+                renderFrostFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, skin, b2, pt, pl, po, alpha);
+                break;
+            case "bioandroid":
+                renderBioFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, pt, pl, po, alpha);
+                break;
+            case "majin":
+                renderMajinFace(model, poseStack, animatable, bufferSource, character, eye1, skin, pt, pl, po, alpha);
+                break;
+        }
     }
 
     private void renderHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
@@ -743,22 +741,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
-    }
-
-    private void renderCustomFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
-        //textures/entity/races/raza/faces/
-        String folder = "textures/entity/races/" + faceKey + "/faces/";
-        String prefix = faceKey + "_";
-        float[] white = {1.0f, 1.0f, 1.0f};
-
-        // Ojos
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_0.png", white, pt, pl, po, alpha);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_1.png", eye1, pt, pl, po, alpha);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_3.png", hair, pt, pl, po, alpha);
-
-        // Nariz y Boca
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
-        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
     }
 
     private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {

@@ -46,10 +46,10 @@ public class TransformStatusHandler implements IStatusEffectHandler {
 
     @Override
     public void onPlayerTick(ServerPlayer serverPlayer, StatsData data) {
-        if (data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm().equals("base") || data.getCharacter().getActiveForm() == null) {
+        if (data.getCharacter().getActiveForm() == null || data.getCharacter().getActiveForm().isEmpty() || data.getCharacter().getActiveForm().equals("base")) {
             serverPlayer.removeEffect(MainEffects.TRANSFORM.get());
         }
-        if (data.getCharacter().getActiveStackForm().isEmpty() || data.getCharacter().getActiveStackForm().equals("base") || data.getCharacter().getActiveStackForm() == null) {
+        if (data.getCharacter().getActiveStackForm() == null || data.getCharacter().getActiveStackForm().isEmpty() || data.getCharacter().getActiveStackForm().equals("base")) {
             serverPlayer.removeEffect(MainEffects.STACK_TRANSFORM.get());
         }
     }

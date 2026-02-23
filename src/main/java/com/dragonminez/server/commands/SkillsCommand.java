@@ -68,7 +68,7 @@ public class SkillsCommand {
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 
-		if (!config.getSkills().containsKey(lowerName)) {
+		if (config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
@@ -93,7 +93,7 @@ public class SkillsCommand {
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 
-		if (!config.getSkills().containsKey(lowerName)) {
+		if (config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}

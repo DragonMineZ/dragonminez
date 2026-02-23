@@ -73,6 +73,13 @@ public class EntityStatsHandler {
 	}
 
 	@SubscribeEvent
+	public static void onPlayerDeath(PlayerEvent.PlayerRespawnEvent event) {
+		if (!event.getEntity().level().isClientSide() && event.getEntity() instanceof ServerPlayer player) {
+			cleanupQuestEntities(player.serverLevel(), player.getUUID());
+		}
+	}
+
+	@SubscribeEvent
 	public static void onEntityTick(LivingEvent.LivingTickEvent event) {
 		LivingEntity entity = event.getEntity();
 		if (entity.level().isClientSide() || entity.tickCount % 1000 != 0) return;

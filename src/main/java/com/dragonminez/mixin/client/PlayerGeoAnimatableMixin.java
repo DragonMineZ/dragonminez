@@ -21,6 +21,7 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,7 +32,7 @@ import static com.dragonminez.client.animation.Animations.*;
 @Mixin(AbstractClientPlayer.class)
 public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayerAnimatable {
 
-	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+	private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
 
 	@Unique
 	private double dragonminez$lastPosX = Double.NaN;

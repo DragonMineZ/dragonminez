@@ -41,6 +41,11 @@ public class TickHandler {
 
     private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 
+	static {
+		registerActionModeHandlers();
+		registerStatusEffectHandlers();
+	}
+
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
@@ -402,9 +407,9 @@ public class TickHandler {
 		boolean hasActiveForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
-			int energyDrain = (int) data.getAdjustedEnergyDrain();
-			int staminaDrain = (int) data.getAdjustedStaminaDrain();
-			int healthDrain = (int) data.getAdjustedHealthDrain();
+			int energyDrain = (int) Math.round(data.getAdjustedEnergyDrain());
+			int staminaDrain = (int) Math.round(data.getAdjustedStaminaDrain());
+			double healthDrain = Math.round(data.getAdjustedHealthDrain());
 
 			boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyDrain;
 			boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaDrain;
@@ -413,10 +418,18 @@ public class TickHandler {
 			if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
 				data.getResources().removeEnergy(energyDrain);
 				data.getResources().removeStamina(staminaDrain);
-				player.setHealth(player.getHealth() - healthDrain);
+				if ((player.getHealth() - healthDrain) >= 1.0) {
+					player.setHealth((float) (player.getHealth() - healthDrain));
+				} else {
+					player.setHealth(1.0f);
+					data.getCharacter().clearActiveForm();
+					data.getCharacter().clearActiveStackForm();
+					player.refreshDimensions();
+				}
 			} else {
 				data.getCharacter().clearActiveStackForm();
 				data.getCharacter().clearActiveForm();
+				player.refreshDimensions();
 			}
 		}
 	}
@@ -429,6 +442,7 @@ public class TickHandler {
 	}
 
 	public static void registerStatusEffectHandlers() {
+		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioDrainHandler());
 		STATUS_EFFECT_HANDLERS.add(new DashStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new DoubleDashStatusHandler());
@@ -438,7 +452,6 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MajinStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
-		STATUS_EFFECT_HANDLERS.add(new TransformStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new ComboStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());
