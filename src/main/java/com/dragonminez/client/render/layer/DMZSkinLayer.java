@@ -423,6 +423,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         if (faceKey.startsWith("bioandroid")) { renderBioFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, pt, pl, po, alpha); return; }
         if (faceKey.equals("majin") || faceKey.equals("majin_super") || faceKey.equals("majin_ultra") || faceKey.equals("majin_evil") || faceKey.equals("majin_kid")) { renderMajinFace(model, poseStack, animatable, bufferSource, character, eye1, skin, pt, pl, po, alpha); return; }
 
+        renderCustomFace(model, poseStack, animatable, bufferSource, character, faceKey, eye1, eye2, skin, hair, pt, pl, po, alpha);
+
         switch (race) {
             case "human", "saiyan" -> renderHumanFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
             case "namekian" -> renderNamekianFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, pt, pl, po, alpha);
@@ -501,7 +503,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         float[] color0 = phase.equals("base") ? ColorUtils.hexToRgb("#FF6B6B") : ColorUtils.hexToRgb("#FFFFFF");
         String textureBase = folder + phase + "_eye_layer";
 
-        renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer0.png")).getPath(), color0, pt, pl, po, alpha);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer0.png")).getPath(), eye2, pt, pl, po, alpha);
         renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer1.png")).getPath(), eye1, pt, pl, po, alpha);
     }
 
@@ -520,6 +522,20 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
         renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
+    }
+
+    private void renderCustomFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
+        String folder = "textures/entity/races/" + faceKey + "/faces/";
+        String prefix = faceKey + "_";
+        float[] white = {1.0f, 1.0f, 1.0f};
+
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_0.png", white, pt, pl, po, alpha);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_1.png", eye1, pt, pl, po, alpha);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_2.png", eye2, pt, pl, po, alpha);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_3.png", hair, pt, pl, po, alpha);
+
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
+        renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
     }
 
     private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {

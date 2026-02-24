@@ -863,6 +863,12 @@ public class DefaultFormsFactory {
 		semiPerfect.setSkpMultiplier(1.5);
 		semiPerfect.setDefMultiplier(1.4);
 		semiPerfect.setPwrMultiplier(1.5);
+        semiPerfect.setHairColor("");
+        semiPerfect.setEye1Color("#0095FF");
+        semiPerfect.setEye2Color("#FFFFFF");
+        semiPerfect.setBodyColor1("");
+        semiPerfect.setBodyColor2("");
+        semiPerfect.setBodyColor3("");
 		semiPerfect.setHairType("base");
 		setDefaultMasteryValues(semiPerfect);
 		semiPerfect.setStackDrainMultiplier(2.0);
@@ -877,6 +883,12 @@ public class DefaultFormsFactory {
 		perfect.setSkpMultiplier(2.25);
 		perfect.setDefMultiplier(1.85);
 		perfect.setPwrMultiplier(2.25);
+        perfect.setHairColor("");
+        perfect.setEye1Color("#F6A6FF");
+        perfect.setEye2Color("#FFFFFF");
+        perfect.setBodyColor1("");
+        perfect.setBodyColor2("");
+        perfect.setBodyColor3("");
 		perfect.setHairType("base");
 		setDefaultMasteryValues(perfect);
 		perfect.setStackDrainMultiplier(2.0);
@@ -891,6 +903,11 @@ public class DefaultFormsFactory {
 		superPerfect.setDefMultiplier(2.35);
 		superPerfect.setPwrMultiplier(3.0);
 		superPerfect.setEnergyDrain(0.16);
+        superPerfect.setEye1Color("#F6A6FF");
+        superPerfect.setEye2Color("#FFFFFF");
+        superPerfect.setBodyColor1("");
+        superPerfect.setBodyColor2("");
+        superPerfect.setBodyColor3("");
 		superPerfect.setAuraColor("FFFF69");
 		superPerfect.setHasLightnings(true);
 		superPerfect.setLightningColor("#1AA1C7");
