@@ -776,7 +776,7 @@ public class DefaultFormsFactory {
         FormConfig.FormData kid = new FormConfig.FormData();
         kid.setName(MajinForms.KID);
         kid.setUnlockOnSkillLevel(1);
-        kid.setCustomModel("human_slim");
+        kid.setCustomModel("majin_kid");
         kid.setModelScaling(new float[]{0.7f, 0.7f, 0.7f});
         kid.setStrMultiplier(1.5);
         kid.setSkpMultiplier(1.5);
@@ -790,7 +790,7 @@ public class DefaultFormsFactory {
         FormConfig.FormData evil = new FormConfig.FormData();
         evil.setName(MajinForms.EVIL);
         evil.setUnlockOnSkillLevel(2);
-        evil.setCustomModel("human_slim");
+        evil.setCustomModel("majin_evil");
         evil.setModelScaling(new float[]{0.9f, 1.0f, 0.9f});
         evil.setStrMultiplier(1.75);
         evil.setSkpMultiplier(1.75);
