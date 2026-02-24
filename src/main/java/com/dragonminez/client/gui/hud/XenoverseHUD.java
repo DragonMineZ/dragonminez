@@ -111,11 +111,11 @@ public class XenoverseHUD {
 				// HP Bar
 				guiGraphics.blit(hud, initialX + 31, initialY + 13, 14, 2, 141, 9);
 				if (currentHP < maxHP * 0.33) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, Math.min((int) currentHPBarWidth, 76), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, Math.min((int) currentHPBarWidth, 145), 5);
 				} else if (currentHP < maxHP * 0.66) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, Math.min((int) currentHPBarWidth, 76), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, Math.min((int) currentHPBarWidth, 145), 5);
 				} else {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, Math.min((int) currentHPBarWidth, 76), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, Math.min((int) currentHPBarWidth, 145), 5);
 				}
 
 				// Ki Bar with Aura Color
@@ -123,12 +123,12 @@ public class XenoverseHUD {
 
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, Math.min((int) currentKiBarWidth, 76), 4);
+				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, Math.min((int) currentKiBarWidth, 145), 4);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 				// Stamina Bar
 				guiGraphics.blit(hud, initialX + 28, initialY + 28, 9, 105, 100, 7);
-				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, Math.min((int) currentStmBarWidth, 76), 5);
+				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, Math.min((int) currentStmBarWidth, 145), 5);
 
 				// Racial Icon / Power Release
 				RenderSystem.setShaderTexture(0, racialIcons);

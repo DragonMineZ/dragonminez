@@ -3,292 +3,294 @@ package com.dragonminez.client.render.layer;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
-    import com.dragonminez.common.stats.StatsCapability;
-    import com.dragonminez.common.stats.StatsProvider;
-    import com.mojang.blaze3d.vertex.PoseStack;
-    import com.mojang.blaze3d.vertex.VertexConsumer;
-    import net.minecraft.client.player.AbstractClientPlayer;
-    import net.minecraft.client.renderer.MultiBufferSource;
-    import net.minecraft.client.renderer.RenderType;
-    import net.minecraft.client.renderer.texture.OverlayTexture;
-    import net.minecraft.resources.ResourceLocation;
-    import net.minecraft.world.entity.EquipmentSlot;
-    import net.minecraft.world.entity.LivingEntity;
-    import net.minecraft.world.item.ArmorItem;
-    import net.minecraft.world.item.DyeableArmorItem;
-    import net.minecraft.world.item.ItemStack;
-    import net.minecraftforge.client.ForgeHooksClient;
-    import net.minecraftforge.registries.ForgeRegistries;
-    import software.bernie.geckolib.cache.object.BakedGeoModel;
-    import software.bernie.geckolib.cache.object.GeoBone;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.DyeableArmorItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.registries.ForgeRegistries;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
-    import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
-    private static final ResourceLocation MAJIN_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "geo/armor/armormajinfat.geo.json");
-    private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "geo/armor/armormajinslim.geo.json");
-    private static final ResourceLocation OOZARU_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "geo/armor/armoroozaru.geo.json");
+	private static final ResourceLocation MAJIN_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"geo/armor/armormajinfat.geo.json");
+	private static final ResourceLocation MAJIN_SLIM_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"geo/armor/armormajinslim.geo.json");
+	private static final ResourceLocation OOZARU_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"geo/armor/armoroozaru.geo.json");
 
-    private static final List<String> SLIM_SUPPORTED_MODELS = Arrays.asList(
-            "majin_evil", "majin_kid", "majin_super", "majin_ultra", "majin", "saiyan", "human", "saiyan_ssj4"
-    );
+	private static final List<String> SLIM_SUPPORTED_MODELS = Arrays.asList(
+			"majin_evil", "majin_kid", "majin_super", "majin_ultra", "majin", "saiyan", "human", "saiyan_ssj4"
+	);
 
-    public DMZCustomArmorLayer(GeoRenderer<T> entityRendererIn) {
-        super(entityRendererIn);
-    }
+	public DMZCustomArmorLayer(GeoRenderer<T> entityRendererIn) {
+		super(entityRendererIn);
+	}
 
-    @Override
-    public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        if (animatable.isSpectator()) return;
+	@Override
+	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (animatable.isSpectator()) return;
 
-        ItemStack stack = animatable.getItemBySlot(EquipmentSlot.CHEST);
-        if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem armorItem)) return;
+		ItemStack stack = animatable.getItemBySlot(EquipmentSlot.CHEST);
+		if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem armorItem)) return;
 
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
-        if (stats == null) return;
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+		if (stats == null) return;
 
-        if (stats.getCharacter().getArmored()) {
-            return;
-        }
-        var character = stats.getCharacter();
-        String raceName = character.getRaceName().toLowerCase();
-        String gender = stats.getCharacter().getGender().toLowerCase();
-        String currentForm = stats.getCharacter().getActiveForm();
+		if (stats.getCharacter().getArmored()) {
+			return;
+		}
+		var character = stats.getCharacter();
+		String raceName = character.getRaceName().toLowerCase();
+		String gender = stats.getCharacter().getGender().toLowerCase();
+		String currentForm = stats.getCharacter().getActiveForm();
 
-        var raceConfig = ConfigManager.getRaceCharacter(raceName);
-        String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
-                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
+		var raceConfig = ConfigManager.getRaceCharacter(raceName);
+		String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+		String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+				? character.getActiveFormData().getCustomModel().toLowerCase() : "";
 
-        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-        if (logicKey.isEmpty()) logicKey = raceName;
+		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (logicKey.isEmpty()) logicKey = raceName;
 
-        boolean isVanilla = ForgeRegistries.ITEMS.getKey(stack.getItem()).getNamespace().equals("minecraft");
-        boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
+		boolean isVanilla = ForgeRegistries.ITEMS.getKey(stack.getItem()).getNamespace().equals("minecraft");
+		boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
 		boolean isPothala = stack.getItem().getDescriptionId().contains("pothala");
 
-        if (isPothala || (!isVanilla && !isDbzArmor)) return;
+		if (isPothala || (!isVanilla && !isDbzArmor)) return;
 
-        boolean shouldRender = false;
-        boolean isSlimTarget = false;
-        boolean isOozaruTarget = false;
+		boolean shouldRender = false;
+		boolean isSlimTarget = false;
+		boolean isOozaruTarget = false;
 
-        if (logicKey.equals("oozaru") || (raceName.equals("saiyan") && ("oozaru".equalsIgnoreCase(currentForm) || "golden_oozaru".equalsIgnoreCase(currentForm)))) {
-            shouldRender = true;
-            isOozaruTarget = true;
-        }
-        else if (logicKey.equals("majin_fat") || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
-            shouldRender = true;
-            isSlimTarget = false;
-        }
-        else if (gender.equals("female") || gender.equals("mujer") || gender.equals("fem")) {
-            boolean isKnownModel = SLIM_SUPPORTED_MODELS.contains(logicKey);
-            boolean hasGenderConfig = (raceConfig != null && raceConfig.hasGender());
+		if (logicKey.equals("oozaru") || (raceName.equals("saiyan") && ("oozaru".equalsIgnoreCase(currentForm) || "golden_oozaru".equalsIgnoreCase(currentForm)))) {
+			shouldRender = true;
+			isOozaruTarget = true;
+		} else if (logicKey.equals("majin_fat") || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
+			shouldRender = true;
+			isSlimTarget = false;
+		} else if (gender.equals("female") || gender.equals("mujer") || gender.equals("fem")) {
+			boolean isKnownModel = SLIM_SUPPORTED_MODELS.contains(logicKey);
+			boolean hasGenderConfig = (raceConfig != null && raceConfig.hasGender());
 
-            if (isKnownModel || hasGenderConfig) {
-                shouldRender = true;
-                isSlimTarget = true;
-            }
-        }
+			Optional<GeoBone> boobasBone = playerModel.getBone("boobas");
+			boolean hasVisibleBoobas = boobasBone.isPresent() && !boobasBone.get().isHidden();
 
-        if (!shouldRender) return;
+			if (isKnownModel || hasGenderConfig || hasVisibleBoobas) {
+				shouldRender = true;
+				isSlimTarget = true;
+			}
+		}
 
-        if (isDbzArmor) {
-            ResourceLocation texture = getDbzArmorTexture((DbzArmorItem) stack.getItem(), stack);
-            Map<String, float[]> originalScales = new HashMap<>();
-            Map<String, Boolean> originalVisibility = new HashMap<>();
+		if (!shouldRender) return;
 
-            saveStateRecursively(playerModel, originalScales, originalVisibility);
+		if (isDbzArmor) {
+			ResourceLocation texture = getDbzArmorTexture((DbzArmorItem) stack.getItem(), stack);
+			Map<String, float[]> originalScales = new HashMap<>();
+			Map<String, Boolean> originalVisibility = new HashMap<>();
 
-            poseStack.pushPose();
+			saveStateRecursively(playerModel, originalScales, originalVisibility);
 
-            float translateY = isOozaruTarget ? -0.087f : -0.025f;
-            float inflation = isOozaruTarget ? 1.021f : 1.02f;
+			poseStack.pushPose();
 
-            poseStack.translate(0, translateY, 0);
-            inflateRecursively(playerModel, inflation);
+			float translateY = isOozaruTarget ? -0.087f : -0.025f;
+			float inflation = isOozaruTarget ? 1.021f : 1.02f;
 
-            applyBodyOnlyVisibility(playerModel);
+			poseStack.translate(0, translateY, 0);
+			inflateRecursively(playerModel, inflation);
 
-            renderModel(playerModel, poseStack, bufferSource, animatable, texture, 1.0F, 1.0F, 1.0F, partialTick, packedLight);
+			applyBodyOnlyVisibility(playerModel);
 
-            poseStack.popPose();
-            restoreStateRecursively(playerModel, originalScales, originalVisibility);
-        } else {
-            ResourceLocation targetModelLoc;
-            if (isOozaruTarget) {
-                targetModelLoc = OOZARU_ARMOR_MODEL;
-            } else {
-                targetModelLoc = isSlimTarget ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL;
-            }
+			renderModel(playerModel, poseStack, bufferSource, animatable, texture, 1.0F, 1.0F, 1.0F, partialTick, packedLight);
 
-            BakedGeoModel vanillaArmorModel = getGeoModel().getBakedModel(targetModelLoc);
+			poseStack.popPose();
+			restoreStateRecursively(playerModel, originalScales, originalVisibility);
+		} else {
+			ResourceLocation targetModelLoc;
+			if (isOozaruTarget) {
+				targetModelLoc = OOZARU_ARMOR_MODEL;
+			} else {
+				targetModelLoc = isSlimTarget ? MAJIN_SLIM_ARMOR_MODEL : MAJIN_ARMOR_MODEL;
+			}
 
-            if (vanillaArmorModel != null) {
-                ResourceLocation texture = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, null);
+			BakedGeoModel vanillaArmorModel = getGeoModel().getBakedModel(targetModelLoc);
 
-                for (GeoBone bone : vanillaArmorModel.topLevelBones()) {
-                    syncBoneRecursively(bone, playerModel);
-                }
+			if (vanillaArmorModel != null) {
+				ResourceLocation texture = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, null);
+
+				for (GeoBone bone : vanillaArmorModel.topLevelBones()) {
+					syncBoneRecursively(bone, playerModel);
+				}
 
 				poseStack.pushPose();
 				poseStack.translate(0, -0.05f, 0);
-                renderModel(vanillaArmorModel, poseStack, bufferSource, animatable, texture, 1.0F, 1.0F, 1.0F, partialTick, packedLight);
+				renderModel(vanillaArmorModel, poseStack, bufferSource, animatable, texture, 1.0F, 1.0F, 1.0F, partialTick, packedLight);
 				poseStack.popPose();
 
-                if (armorItem instanceof DyeableArmorItem) {
-                    ResourceLocation overlayTex = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, "overlay");
-                    renderModel(vanillaArmorModel, poseStack, bufferSource, animatable, overlayTex, 1f, 1f, 1f, partialTick, packedLight);
-                }
-            }
-        }
-    }
+				if (armorItem instanceof DyeableArmorItem) {
+					ResourceLocation overlayTex = getVanillaArmorTexture(animatable, stack, EquipmentSlot.CHEST, "overlay");
+					renderModel(vanillaArmorModel, poseStack, bufferSource, animatable, overlayTex, 1f, 1f, 1f, partialTick, packedLight);
+				}
+			}
+		}
+	}
 
-    private void applyBodyOnlyVisibility(BakedGeoModel model) {
-        for (GeoBone bone : model.topLevelBones()) {
-            setRecursiveVisible(bone, false);
-        }
+	private void applyBodyOnlyVisibility(BakedGeoModel model) {
+		for (GeoBone bone : model.topLevelBones()) {
+			setRecursiveVisible(bone, false);
+		}
 
-        model.getBone("body").ifPresent(body -> {
-            body.setHidden(false);
+		model.getBone("body").ifPresent(body -> {
+			body.setHidden(false);
 
-            GeoBone parent = body.getParent();
-            while (parent != null) {
-                parent.setHidden(false);
-                parent = parent.getParent();
-            }
+			GeoBone parent = body.getParent();
+			while (parent != null) {
+				parent.setHidden(false);
+				parent = parent.getParent();
+			}
 
-            for (GeoBone child : body.getChildBones()) {
-                child.setHidden(true);
-                setRecursiveVisible(child, false);
-            }
-        });
-    }
+			for (GeoBone child : body.getChildBones()) {
+				child.setHidden(true);
+				setRecursiveVisible(child, false);
+			}
+		});
+	}
 
-    private void setRecursiveVisible(GeoBone bone, boolean visible) {
-        bone.setHidden(!visible);
-        for (GeoBone child : bone.getChildBones()) {
-            setRecursiveVisible(child, visible);
-        }
-    }
+	private void setRecursiveVisible(GeoBone bone, boolean visible) {
+		bone.setHidden(!visible);
+		for (GeoBone child : bone.getChildBones()) {
+			setRecursiveVisible(child, visible);
+		}
+	}
 
-    private void saveStateRecursively(BakedGeoModel model, Map<String, float[]> scales, Map<String, Boolean> visibility) {
-        for (GeoBone bone : model.topLevelBones()) {
-            saveBoneState(bone, scales, visibility);
-        }
-    }
+	private void saveStateRecursively(BakedGeoModel model, Map<String, float[]> scales, Map<String, Boolean> visibility) {
+		for (GeoBone bone : model.topLevelBones()) {
+			saveBoneState(bone, scales, visibility);
+		}
+	}
 
-    private void saveBoneState(GeoBone bone, Map<String, float[]> scales, Map<String, Boolean> visibility) {
-        scales.put(bone.getName(), new float[]{bone.getScaleX(), bone.getScaleY(), bone.getScaleZ()});
-        visibility.put(bone.getName(), bone.isHidden());
+	private void saveBoneState(GeoBone bone, Map<String, float[]> scales, Map<String, Boolean> visibility) {
+		scales.put(bone.getName(), new float[]{bone.getScaleX(), bone.getScaleY(), bone.getScaleZ()});
+		visibility.put(bone.getName(), bone.isHidden());
 
-        for (GeoBone child : bone.getChildBones()) {
-            saveBoneState(child, scales, visibility);
-        }
-    }
+		for (GeoBone child : bone.getChildBones()) {
+			saveBoneState(child, scales, visibility);
+		}
+	}
 
-    private void inflateRecursively(BakedGeoModel model, float inflation) {
-        for (GeoBone bone : model.topLevelBones()) {
-            inflateBone(bone, inflation);
-        }
-    }
+	private void inflateRecursively(BakedGeoModel model, float inflation) {
+		for (GeoBone bone : model.topLevelBones()) {
+			inflateBone(bone, inflation);
+		}
+	}
 
-    private void inflateBone(GeoBone bone, float inflation) {
-        bone.setScaleX(bone.getScaleX() * inflation);
-        bone.setScaleY(bone.getScaleY() * inflation);
-        bone.setScaleZ(bone.getScaleZ() * inflation);
+	private void inflateBone(GeoBone bone, float inflation) {
+		bone.setScaleX(bone.getScaleX() * inflation);
+		bone.setScaleY(bone.getScaleY() * inflation);
+		bone.setScaleZ(bone.getScaleZ() * inflation);
 
-        for (GeoBone child : bone.getChildBones()) {
-            inflateBone(child, inflation);
-        }
-    }
+		for (GeoBone child : bone.getChildBones()) {
+			inflateBone(child, inflation);
+		}
+	}
 
-    private void restoreStateRecursively(BakedGeoModel model, Map<String, float[]> scales, Map<String, Boolean> visibility) {
-        for (GeoBone bone : model.topLevelBones()) {
-            restoreBoneState(bone, scales, visibility);
-        }
-    }
+	private void restoreStateRecursively(BakedGeoModel model, Map<String, float[]> scales, Map<String, Boolean> visibility) {
+		for (GeoBone bone : model.topLevelBones()) {
+			restoreBoneState(bone, scales, visibility);
+		}
+	}
 
-    private void restoreBoneState(GeoBone bone, Map<String, float[]> scales, Map<String, Boolean> visibility) {
-        if (scales.containsKey(bone.getName())) {
-            float[] s = scales.get(bone.getName());
-            bone.setScaleX(s[0]);
-            bone.setScaleY(s[1]);
-            bone.setScaleZ(s[2]);
-        }
-        if (visibility.containsKey(bone.getName())) {
-            bone.setHidden(visibility.get(bone.getName()));
-        }
+	private void restoreBoneState(GeoBone bone, Map<String, float[]> scales, Map<String, Boolean> visibility) {
+		if (scales.containsKey(bone.getName())) {
+			float[] s = scales.get(bone.getName());
+			bone.setScaleX(s[0]);
+			bone.setScaleY(s[1]);
+			bone.setScaleZ(s[2]);
+		}
+		if (visibility.containsKey(bone.getName())) {
+			bone.setHidden(visibility.get(bone.getName()));
+		}
 
-        for (GeoBone child : bone.getChildBones()) {
-            restoreBoneState(child, scales, visibility);
-        }
-    }
+		for (GeoBone child : bone.getChildBones()) {
+			restoreBoneState(child, scales, visibility);
+		}
+	}
 
-    private void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
-        sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
-            destBone.setRotX(sourceBone.getRotX());
-            destBone.setRotY(sourceBone.getRotY());
-            destBone.setRotZ(sourceBone.getRotZ());
-            destBone.setPosX(sourceBone.getPosX());
-            destBone.setPosY(sourceBone.getPosY());
-            destBone.setPosZ(sourceBone.getPosZ());
-            destBone.setPivotX(sourceBone.getPivotX());
-            destBone.setPivotY(sourceBone.getPivotY());
-            destBone.setPivotZ(sourceBone.getPivotZ());
+	private void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
+		sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
+			destBone.setRotX(sourceBone.getRotX());
+			destBone.setRotY(sourceBone.getRotY());
+			destBone.setRotZ(sourceBone.getRotZ());
+			destBone.setPosX(sourceBone.getPosX());
+			destBone.setPosY(sourceBone.getPosY());
+			destBone.setPosZ(sourceBone.getPosZ());
+			destBone.setPivotX(sourceBone.getPivotX());
+			destBone.setPivotY(sourceBone.getPivotY());
+			destBone.setPivotZ(sourceBone.getPivotZ());
 
-            float inflation = 1.05f;
-            destBone.setScaleX(sourceBone.getScaleX() * inflation);
-            destBone.setScaleY(sourceBone.getScaleY() * inflation);
-            destBone.setScaleZ(sourceBone.getScaleZ() * inflation);
-        });
+			float inflation = 1.05f;
+			destBone.setScaleX(sourceBone.getScaleX() * inflation);
+			destBone.setScaleY(sourceBone.getScaleY() * inflation);
+			destBone.setScaleZ(sourceBone.getScaleZ() * inflation);
+		});
 
-        for (GeoBone child : destBone.getChildBones()) {
-            syncBoneRecursively(child, sourceModel);
-        }
-    }
+		for (GeoBone child : destBone.getChildBones()) {
+			syncBoneRecursively(child, sourceModel);
+		}
+	}
 
-    private ResourceLocation getDbzArmorTexture(DbzArmorItem item, ItemStack stack) {
-        String itemId = item.getItemId();
-        boolean isDamaged = false;
-        if (item.isDamageOn()) {
-            isDamaged = stack.getDamageValue() > stack.getMaxDamage() / 2;
-        }
-        String suffix = isDamaged ? "_damaged_layer1.png" : "_layer1.png";
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/" + itemId + suffix);
-    }
+	private ResourceLocation getDbzArmorTexture(DbzArmorItem item, ItemStack stack) {
+		String itemId = item.getItemId();
+		boolean isDamaged = false;
+		if (item.isDamageOn()) {
+			isDamaged = stack.getDamageValue() > stack.getMaxDamage() / 2;
+		}
+		String suffix = isDamaged ? "_damaged_layer1.png" : "_layer1.png";
+		return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/armor/" + itemId + suffix);
+	}
 
-    private ResourceLocation getVanillaArmorTexture(LivingEntity entity, ItemStack stack, EquipmentSlot slot, String type) {
-        ArmorItem item = (ArmorItem) stack.getItem();
-        String materialName = item.getMaterial().getName();
-        String domain = "minecraft";
-        if (materialName.contains(":")) {
-            String[] split = materialName.split(":", 2);
-            domain = split[0];
-            materialName = split[1];
-        } else {
-            ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(item);
-            if (itemRegistryName != null) domain = itemRegistryName.getNamespace();
-        }
-        String typeSuffix = (type == null || type.isEmpty()) ? "" : "_" + type;
-        String textureLocation = String.format("%s:textures/models/armor/%s_layer_1%s.png", domain, materialName, typeSuffix);
-        return ResourceLocation.parse(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
-    }
+	private ResourceLocation getVanillaArmorTexture(LivingEntity entity, ItemStack stack, EquipmentSlot slot, String type) {
+		ArmorItem item = (ArmorItem) stack.getItem();
+		String materialName = item.getMaterial().getName();
+		String domain = "minecraft";
+		if (materialName.contains(":")) {
+			String[] split = materialName.split(":", 2);
+			domain = split[0];
+			materialName = split[1];
+		} else {
+			ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(item);
+			if (itemRegistryName != null) domain = itemRegistryName.getNamespace();
+		}
+		String typeSuffix = (type == null || type.isEmpty()) ? "" : "_" + type;
+		String textureLocation = String.format("%s:textures/models/armor/%s_layer_1%s.png", domain, materialName, typeSuffix);
+		return ResourceLocation.parse(ForgeHooksClient.getArmorTexture(entity, stack, textureLocation, slot, type));
+	}
 
-    private void renderModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float r, float g, float b, float partialTick, int packedLight) {
-        RenderType armorRenderType = RenderType.armorCutoutNoCull(texture);
-        getRenderer().reRender(model, poseStack, bufferSource, animatable, armorRenderType,
-                bufferSource.getBuffer(armorRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-                r, g, b, 1.0f);
-    }
+	private void renderModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float r, float g, float b, float partialTick, int packedLight) {
+		RenderType armorRenderType = RenderType.armorCutoutNoCull(texture);
+		getRenderer().reRender(model, poseStack, bufferSource, animatable, armorRenderType,
+				bufferSource.getBuffer(armorRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+				r, g, b, 1.0f);
+	}
 }
