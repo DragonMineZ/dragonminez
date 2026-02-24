@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import lombok.Getter;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
@@ -38,6 +39,7 @@ public class ConfigManager {
 
 	private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
 	private static SkillsConfig SERVER_SYNCED_SKILLS;
+	private static MasterSkillsOfferingConfig SERVER_SYNCED_SKILL_OFFERINGS;
 	private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
 	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
@@ -45,6 +47,8 @@ public class ConfigManager {
 	private static GeneralUserConfig userConfig;
 	private static GeneralServerConfig serverConfig;
 	private static SkillsConfig skillsConfig;
+	private static MasterSkillsOfferingConfig skillOfferingsConfig;
+	@Getter
 	private static EntitiesConfig entitiesConfig;
 
 	public static void initialize() {
@@ -200,6 +204,40 @@ public class ConfigManager {
 			}
 		}
 		if (overwriteSkills) LOADER.saveConfig(skillsConfigPath, skillsConfig);
+
+		// Skills
+		Path skillOfferingsConfigPath = CONFIG_DIR.resolve("skill-offerings.json");
+		boolean overwriteSkillOfferings = false;
+		if (Files.exists(skillsConfigPath)) {
+			try {
+				skillOfferingsConfig = LOADER.loadConfig(skillOfferingsConfigPath, MasterSkillsOfferingConfig.class);
+				if (skillOfferingsConfig.getConfigVersion() < MasterSkillsOfferingConfig.CURRENT_VERSION || isMissingConfigVersion(skillOfferingsConfigPath)) {
+					backupOldConfig(skillOfferingsConfigPath);
+					skillOfferingsConfig = new MasterSkillsOfferingConfig();
+					skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
+					overwriteSkillOfferings = true;
+				}
+			} catch (Exception e) {
+				backupOldConfig(skillOfferingsConfigPath);
+				skillOfferingsConfig = new MasterSkillsOfferingConfig();
+				skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
+				overwriteSkillOfferings = true;
+			}
+		} else {
+			try {
+				LOADER.saveDefaultFromTemplate(skillOfferingsConfigPath, "skill-offerings.json");
+				skillOfferingsConfig = LOADER.loadConfig(skillOfferingsConfigPath, MasterSkillsOfferingConfig.class);
+				if (skillOfferingsConfig.getConfigVersion() < MasterSkillsOfferingConfig.CURRENT_VERSION || isMissingConfigVersion(skillOfferingsConfigPath)) {
+					skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
+					overwriteSkillOfferings = true;
+				}
+			} catch (Exception e) {
+				skillOfferingsConfig = new MasterSkillsOfferingConfig();
+				skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
+				overwriteSkillOfferings = true;
+			}
+		}
+		if (overwriteSkillOfferings) LOADER.saveConfig(skillOfferingsConfigPath, skillOfferingsConfig);
 
 		// Entities
 		Path entitiesConfigPath = CONFIG_DIR.resolve("entities.json");
@@ -780,9 +818,10 @@ public class ConfigManager {
 		}
 	}
 
-	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters) {
+	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, MasterSkillsOfferingConfig syncedSkillOfferingsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters) {
 		SERVER_SYNCED_GENERAL_SERVER = syncedServerConfig;
 		SERVER_SYNCED_SKILLS = syncedSkillsConfig;
+		SERVER_SYNCED_SKILL_OFFERINGS = syncedSkillOfferingsConfig;
 		SERVER_SYNCED_FORMS = syncedForms;
 		SERVER_SYNCED_STATS = syncedStats;
 		SERVER_SYNCED_CHARACTER = syncedCharacters;
@@ -791,6 +830,7 @@ public class ConfigManager {
 	public static void clearServerSync() {
 		SERVER_SYNCED_GENERAL_SERVER = null;
 		SERVER_SYNCED_SKILLS = null;
+		SERVER_SYNCED_SKILL_OFFERINGS = null;
 		SERVER_SYNCED_FORMS = null;
 		SERVER_SYNCED_STATS = null;
 		SERVER_SYNCED_CHARACTER = null;
@@ -849,6 +889,11 @@ public class ConfigManager {
 		return skillsConfig != null ? skillsConfig : new SkillsConfig();
 	}
 
+	public static MasterSkillsOfferingConfig getSkillOfferingsConfig() {
+		if (SERVER_SYNCED_SKILL_OFFERINGS != null) return SERVER_SYNCED_SKILL_OFFERINGS;
+		return skillOfferingsConfig != null ? skillOfferingsConfig : new MasterSkillsOfferingConfig();
+	}
+
 	public static EntitiesConfig.EntityStats getEntityStats(String sagaId, String registryName) {
 		if (entitiesConfig != null && entitiesConfig.getSagaEntityStats() != null) {
 			if (sagaId != null && !sagaId.isEmpty()) {
@@ -863,9 +908,5 @@ public class ConfigManager {
 			}
 		}
 		return null;
-	}
-
-	public static EntitiesConfig getEntitiesConfig() {
-		return entitiesConfig;
 	}
 }
