@@ -3,6 +3,7 @@ package com.dragonminez.common.config;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.google.gson.Gson;
+import lombok.AllArgsConstructor;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,13 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+@AllArgsConstructor
 public class ConfigLoader {
-
     private final Gson gson;
-
-    public ConfigLoader(Gson gson) {
-        this.gson = gson;
-    }
 
     public <T> T loadConfig(Path path, Class<T> clazz) throws IOException {
         String content = Files.readString(path, StandardCharsets.UTF_8);

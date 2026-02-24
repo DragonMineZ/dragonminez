@@ -144,11 +144,11 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 			float currentScale;
 			if (activeForm != null) {
-				float[] formScaling = activeForm.getModelScaling();
-				float[] charScaling = character.getModelScaling();
+				Float[] formScaling = activeForm.getModelScaling();
+				Float[] charScaling = character.getModelScaling();
 				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
 			} else {
-				float[] charScaling = character.getModelScaling();
+				Float[] charScaling = character.getModelScaling();
 				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
 			}
 

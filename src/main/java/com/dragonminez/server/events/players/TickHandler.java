@@ -122,11 +122,7 @@ public class TickHandler {
 				}
 			}
 
-			if (isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK))) {
-				data.getStatus().setAuraActive(true);
-			} else {
-				data.getStatus().setAuraActive(false);
-			}
+            data.getStatus().setAuraActive(isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK)));
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
@@ -172,7 +168,7 @@ public class TickHandler {
 				handleActionCharge(serverPlayer, data);
 				handleActiveFormDrains(serverPlayer, data);
 				GravityLogic.tick(serverPlayer);
-				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
+				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 					if (!data.getStatus().isAlive() && !serverPlayer.serverLevel().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
 						if (!serverPlayer.isSpectator() && !serverPlayer.isCreative()) {
 							ServerLevel otherworld = serverPlayer.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
@@ -237,8 +233,8 @@ public class TickHandler {
 		if (activeCharging) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
-			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
+			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
@@ -255,8 +251,8 @@ public class TickHandler {
 		} else if (currentEnergy < maxEnergy) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus;
-			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
+			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
@@ -269,8 +265,8 @@ public class TickHandler {
 		if (data.getStatus().isAndroidUpgraded()) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus;
-			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
-					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
+			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
@@ -295,7 +291,7 @@ public class TickHandler {
 				if (formData != null) maxMastery = formData.getMaxMastery();
 
 				if (!data.getCharacter().getFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
-					double masteryGain = formData != null ? formData.getPassiveMastery() : 0.001;
+					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
 					data.getCharacter().getFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
 				}
 			}
@@ -309,7 +305,7 @@ public class TickHandler {
 				if (formData != null) maxMastery = formData.getMaxMastery();
 
 				if (!data.getCharacter().getStackFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
-					double masteryGain = formData != null ? formData.getPassiveMastery() : 0.001;
+					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
 					data.getCharacter().getStackFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
 				}
 			}
@@ -413,7 +409,7 @@ public class TickHandler {
 	private static void handleActiveFormDrains(ServerPlayer player, StatsData data) {
 		boolean hasActiveForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
-		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().hasSaiyanTail()) {
+		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()) {
 			data.getCharacter().clearActiveForm();
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			player.refreshDimensions();

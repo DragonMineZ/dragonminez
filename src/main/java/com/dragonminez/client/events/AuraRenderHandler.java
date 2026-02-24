@@ -665,7 +665,7 @@ public class AuraRenderHandler {
         var character = stats.getCharacter();
         var formData = character.getActiveFormData();
         if (!stats.getCharacter().hasActiveForm() || formData == null) return;
-        if (!formData.hasLightnings()) return;
+        if (!formData.getHasLightnings()) return;
         float[] color = ColorUtils.hexToRgb(formData.getLightningColor());
 
         float[] scales = getAuraScale(stats);
@@ -706,7 +706,7 @@ public class AuraRenderHandler {
         if (character.hasActiveForm()) {
             var activeForm = character.getActiveFormData();
             if (activeForm != null) {
-                float[] scales = activeForm.getModelScaling();
+                Float[] scales = activeForm.getModelScaling();
                 if (scales != null && scales.length >= 1) {
                     scale = scales[0];
                 }
@@ -762,7 +762,7 @@ public class AuraRenderHandler {
             poseStack.mulPose(Axis.ZP.rotationDegrees(randomsource.nextFloat() * 360.0F + rotationTime * 90.0F));
 
             float width = randomsource.nextFloat() * 5.0F + 4.0F;
-            float length = randomsource.nextFloat() * 1.0F + 0.5F;
+            float length = randomsource.nextFloat() + 0.5F;
 
             Matrix4f matrix4f = poseStack.last().pose();
 
@@ -795,7 +795,7 @@ public class AuraRenderHandler {
     }
 
     private static void vertex4(VertexConsumer pConsumer, Matrix4f pMatrix, float pWidth, float pLength, int r, int g, int b, int alpha) {
-        pConsumer.vertex(pMatrix, 0.0F, pWidth, 1.0F * pLength).color(r, g, b, alpha).endVertex();
+        pConsumer.vertex(pMatrix, 0.0F, pWidth, pLength).color(r, g, b, alpha).endVertex();
     }
 
 

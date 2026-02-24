@@ -42,6 +42,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import org.jspecify.annotations.NonNull;
 
 @OnlyIn(Dist.CLIENT)
 public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -123,7 +124,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		String raceName = stats.getCharacter().getRaceName().toLowerCase();
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(raceName);
-		boolean forceVanilla = (raceConfig != null && raceConfig.useVanillaSkin());
+		boolean forceVanilla = (raceConfig != null && raceConfig.getUseVanillaSkin());
 
 		java.util.function.BiConsumer<ResourceLocation, float[]> layerConsumer = (texture, color) -> {
 			float[] finalColor = applyKaiokenTint(color, kaiokenPhase);
@@ -160,7 +161,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 			}
 			case "scythe" -> {
 				KI_SCYTHE_MODEL.rightArm.copyFrom(isRight ? this.model.rightArm : this.model.leftArm);
-				ps.translate(isRight ? -0.06D : 0.65D, isRight ? 0.1D : 0.1d, isRight ? -0.2D : 0.5D);
+				ps.translate(isRight ? -0.06D : 0.65D, 0.1D, isRight ? -0.2D : 0.5D);
 				ps.mulPose(Axis.YP.rotationDegrees(isRight ? 15.0F : -15.0F));
 				renderKiPart(ps, buffer, light, KI_SCYTHE_MODEL.scythe_right, color);
 			}
@@ -237,7 +238,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		}
 	}
 
-	protected void setupRotations(AbstractClientPlayer pEntityLiving, PoseStack pPoseStack, float pAgeInTicks, float pRotationYaw, float pPartialTicks) {
+	protected void setupRotations(AbstractClientPlayer pEntityLiving, @NonNull PoseStack pPoseStack, float pAgeInTicks, float pRotationYaw, float pPartialTicks) {
 		float f = pEntityLiving.getSwimAmount(pPartialTicks);
 		if (pEntityLiving.isFallFlying()) {
 			super.setupRotations(pEntityLiving, pPoseStack, pAgeInTicks, pRotationYaw, pPartialTicks);
@@ -264,7 +265,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 	}
 
 	@Override
-	public ResourceLocation getTextureLocation(AbstractClientPlayer pEntity) {
+	public @NonNull ResourceLocation getTextureLocation(AbstractClientPlayer pEntity) {
 		return pEntity.getSkinTextureLocation();
 	}
 
@@ -288,7 +289,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		float intensity = Math.min(0.6f, phase * 0.1f);
 
-		float newR = rgb[0] * (1.0f - intensity) + (1.0f * intensity);
+		float newR = rgb[0] * (1.0f - intensity) + (intensity);
 		float newG = rgb[1] * (1.0f - intensity);
 		float newB = rgb[2] * (1.0f - intensity);
 

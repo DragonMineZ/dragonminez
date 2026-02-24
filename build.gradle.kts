@@ -168,6 +168,10 @@ dependencies {
     implementation("com.eliotlash.mclib:mclib:20")
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
 
+    // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
+    compileOnly("org.projectlombok:lombok:1.18.42")
+    annotationProcessor("org.projectlombok:lombok:1.18.42")
+
     // Database libraries
     jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.7,)") { jarJar.ranged(this, "[3.5.7,)") }
     jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }

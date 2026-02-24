@@ -1,15 +1,21 @@
 package com.dragonminez.common.config;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Getter
 public class SkillsConfig {
 	public static final int CURRENT_VERSION = 2;
+
+	@Setter
 	private int configVersion;
-	public int getConfigVersion() { return configVersion; }
-	public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
 	private final List<String> kiSkills = new ArrayList<>();
 	private final List<String> formSkills = new ArrayList<>();
@@ -154,40 +160,14 @@ public class SkillsConfig {
 		skills.put("fusion", new SkillCosts(fusionCosts));
     }
 
-	public List<String> getKiSkills() {
-		return kiSkills;
-	}
-
-	public List<String> getFormSkills() {
-		return formSkills;
-	}
-
-	public List<String> getStackSkills() {
-		return stackSkills;
-	}
-
-	public List<String> getAndroidBlacklistedForms() {
-		return androidBlacklistedForms;
-	}
-
-	public Map<String, SkillCosts> getSkills() {
-        return skills;
-    }
-
     public SkillCosts getSkillCosts(String skillName) {
         return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>()));
     }
 
-
+	@Getter
+	@NoArgsConstructor
+	@AllArgsConstructor
     public static class SkillCosts {
         private List<Integer> costs;
-
-        public SkillCosts(List<Integer> costs) {
-            this.costs = costs;
-        }
-
-        public List<Integer> getCosts() {
-            return costs;
-        }
     }
 }
