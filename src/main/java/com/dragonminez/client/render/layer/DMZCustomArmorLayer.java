@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
     import com.dragonminez.common.stats.StatsCapability;
     import com.dragonminez.common.stats.StatsProvider;
@@ -24,8 +25,10 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
     import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-    import java.util.HashMap;
-    import java.util.Map;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
@@ -35,6 +38,10 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             "geo/armor/armormajinslim.geo.json");
     private static final ResourceLocation OOZARU_ARMOR_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
             "geo/armor/armoroozaru.geo.json");
+
+    private static final List<String> SLIM_SUPPORTED_MODELS = Arrays.asList(
+            "majin_evil", "majin_kid", "majin_super", "majin_ultra", "majin", "saiyan", "human", "saiyan_ssj4"
+    );
 
     public DMZCustomArmorLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
@@ -53,10 +60,18 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         if (stats.getCharacter().getArmored()) {
             return;
         }
-
-        String race = stats.getCharacter().getRaceName().toLowerCase();
+        var character = stats.getCharacter();
+        String raceName = character.getRaceName().toLowerCase();
         String gender = stats.getCharacter().getGender().toLowerCase();
         String currentForm = stats.getCharacter().getActiveForm();
+
+        var raceConfig = ConfigManager.getRaceCharacter(raceName);
+        String raceCustomModel = (raceConfig != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
+
+        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+        if (logicKey.isEmpty()) logicKey = raceName;
 
         boolean isVanilla = ForgeRegistries.ITEMS.getKey(stack.getItem()).getNamespace().equals("minecraft");
         boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
@@ -68,14 +83,19 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         boolean isSlimTarget = false;
         boolean isOozaruTarget = false;
 
-        if (race.equals("saiyan") && "oozaru".equalsIgnoreCase(currentForm)) {
+        if (logicKey.equals("oozaru") || (raceName.equals("saiyan") && ("oozaru".equalsIgnoreCase(currentForm) || "golden_oozaru".equalsIgnoreCase(currentForm)))) {
             shouldRender = true;
             isOozaruTarget = true;
-        } else if (race.equals("majin") && gender.equals("male")) {
+        }
+        else if (logicKey.equals("majin_fat") || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
             shouldRender = true;
             isSlimTarget = false;
-        } else if (gender.equals("female")) {
-            if (race.equals("majin") || race.equals("human") || race.equals("saiyan")) {
+        }
+        else if (gender.equals("female") || gender.equals("mujer") || gender.equals("fem")) {
+            boolean isKnownModel = SLIM_SUPPORTED_MODELS.contains(logicKey);
+            boolean hasGenderConfig = (raceConfig != null && raceConfig.hasGender());
+
+            if (isKnownModel || hasGenderConfig) {
                 shouldRender = true;
                 isSlimTarget = true;
             }
