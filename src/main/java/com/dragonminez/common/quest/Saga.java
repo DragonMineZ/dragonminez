@@ -1,8 +1,14 @@
 package com.dragonminez.common.quest;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 public class Saga {
     private final String id;
     private final String name;
@@ -18,38 +24,6 @@ public class Saga {
         this.requirements = requirements;
         this.unlocked = false;
         this.currentQuestIndex = 0;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public List<Quest> getQuests() {
-        return quests;
-    }
-
-    public SagaRequirements getRequirements() {
-        return requirements;
-    }
-
-    public boolean isUnlocked() {
-        return unlocked;
-    }
-
-    public void setUnlocked(boolean unlocked) {
-        this.unlocked = unlocked;
-    }
-
-    public int getCurrentQuestIndex() {
-        return currentQuestIndex;
-    }
-
-    public void setCurrentQuestIndex(int index) {
-        this.currentQuestIndex = index;
     }
 
     public Quest getCurrentQuest() {
@@ -79,16 +53,11 @@ public class Saga {
                 .orElse(null);
     }
 
+    @Setter
+    @Getter
+    @AllArgsConstructor
     public static class SagaRequirements {
         private final String previousSagaId;
-
-        public SagaRequirements(String previousSagaId) {
-            this.previousSagaId = previousSagaId;
-        }
-
-        public String getPreviousSagaId() {
-            return previousSagaId;
-        }
     }
 }
 

@@ -31,7 +31,7 @@ public class AlternativeHUD {
 
 	public static final IGuiOverlay HUD_ALTERNATIVE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
-		if (!ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
+		if (!ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
 
 
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
@@ -152,8 +152,8 @@ public class AlternativeHUD {
 	};
 
 	private static void drawBarValues(GuiGraphics guiGraphics, float current, float max, int x, int y) {
-		if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
-			boolean percentage = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage();
+		if (ConfigManager.getUserConfig().getHud().getAdvancedDescription()) {
+			boolean percentage = ConfigManager.getUserConfig().getHud().getAdvancedDescriptionPercentage();
 			String text;
 			if (percentage) {
 				text = String.format("%.0f", (current / max) * 100) + "%";

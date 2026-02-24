@@ -26,7 +26,7 @@ public class TransformationsHelper {
 		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) {
 			return unlockedForms;
 		}
-		if (requiresSaiyanTail && !statsData.getCharacter().hasSaiyanTail()) {
+		if (requiresSaiyanTail && !statsData.getCharacter().isHasSaiyanTail()) {
 			return unlockedForms;
 		}
 
@@ -80,7 +80,7 @@ public class TransformationsHelper {
 		String selectedGroup = null;
 		for (String groupKey : allGroups.keySet()) {
 			FormConfig config = ConfigManager.getFormGroup(race, groupKey);
-			if (config != null && (!config.getGroupName().contains("oozaru") || statsData.getCharacter().hasSaiyanTail())) {
+			if (config != null && (!config.getGroupName().contains("oozaru") || statsData.getCharacter().isHasSaiyanTail())) {
 				int[] reqLevels = config.getForms().values().stream()
 						.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
 						.sorted()
@@ -107,7 +107,7 @@ public class TransformationsHelper {
 			return null;
 		}
 
-		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().hasSaiyanTail()) {
+		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) {
 			return null;
 		}
 
@@ -143,7 +143,7 @@ public class TransformationsHelper {
 		if (isAndroidUpgraded && !isAndroidGroup && !isGodGroup) {
 			return null;
 		}
-		if (requiresSaiyanTail && !statsData.getCharacter().hasSaiyanTail()) {
+		if (requiresSaiyanTail && !statsData.getCharacter().isHasSaiyanTail()) {
 			return null;
 		}
 
@@ -271,8 +271,8 @@ public class TransformationsHelper {
 
 		List<FormConfig.FormData> unlockedForms = getUnlockedForms(statsData, race, selectedFormGroup);
 		List<String> unlockedFormNames = unlockedForms.stream()
-				.filter(formData -> formData.isCanAlwaysTransform() ||
-						(formData.isDirectTransformation()
+				.filter(formData -> formData.getCanAlwaysTransform() ||
+						(formData.getDirectTransformation()
 								&& statsData.getCharacter().getFormsUsedBefore().getFormGroup(selectedFormGroup).contains(formData.getName())))
 				.map(FormConfig.FormData::getName)
 				.toList();
@@ -289,8 +289,8 @@ public class TransformationsHelper {
 			}
 			unlockedForms = getUnlockedForms(statsData, race, nextGroup);
 			unlockedFormNames = unlockedForms.stream()
-					.filter(formData -> formData.isCanAlwaysTransform() ||
-							(formData.isDirectTransformation()
+					.filter(formData -> formData.getCanAlwaysTransform() ||
+							(formData.getDirectTransformation()
 									&& statsData.getCharacter().getFormsUsedBefore().getFormGroup(selectedFormGroup).contains(formData.getName())))
 					.map(FormConfig.FormData::getName)
 					.toList();
@@ -307,8 +307,8 @@ public class TransformationsHelper {
 				statsData.getCharacter().setSelectedFormGroup(nextGroup);
 			}
 			unlockedFormNames = unlockedForms.stream()
-					.filter(formData -> formData.isCanAlwaysTransform() ||
-							(formData.isDirectTransformation()
+					.filter(formData -> formData.getCanAlwaysTransform() ||
+							(formData.getDirectTransformation()
 									&& statsData.getCharacter().getFormsUsedBefore().getFormGroup(selectedFormGroup).contains(formData.getName())))
 					.map(FormConfig.FormData::getName)
 					.toList();
@@ -345,8 +345,8 @@ public class TransformationsHelper {
 
 		List<FormConfig.FormData> unlockedStackForms = getUnlockedStackForms(statsData, selectedStackFormGroup);
 		List<String> unlockedStackFormNames = unlockedStackForms.stream()
-				.filter(formData -> formData.isCanAlwaysTransform() ||
-						(formData.isDirectTransformation()
+				.filter(formData -> formData.getCanAlwaysTransform() ||
+						(formData.getDirectTransformation()
 								&& statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(selectedStackFormGroup).contains(formData.getName())))
 				.map(FormConfig.FormData::getName)
 				.toList();
@@ -363,8 +363,8 @@ public class TransformationsHelper {
 			}
 			unlockedStackForms = getUnlockedStackForms(statsData, nextGroup);
 			unlockedStackFormNames = unlockedStackForms.stream()
-					.filter(formData -> formData.isCanAlwaysTransform() ||
-							(formData.isDirectTransformation()
+					.filter(formData -> formData.getCanAlwaysTransform() ||
+							(formData.getDirectTransformation()
 									&& statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(selectedStackFormGroup).contains(formData.getName())))
 					.map(FormConfig.FormData::getName)
 					.toList();
@@ -381,8 +381,8 @@ public class TransformationsHelper {
 				statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
 			}
 			unlockedStackFormNames = unlockedStackForms.stream()
-					.filter(formData -> formData.isCanAlwaysTransform() ||
-							(formData.isDirectTransformation()
+					.filter(formData -> formData.getCanAlwaysTransform() ||
+							(formData.getDirectTransformation()
 									&& statsData.getCharacter().getStackFormsUsedBefore().getFormGroup(selectedStackFormGroup).contains(formData.getName())))
 					.map(FormConfig.FormData::getName)
 					.toList();

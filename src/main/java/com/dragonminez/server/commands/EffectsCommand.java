@@ -54,7 +54,7 @@ public class EffectsCommand {
 	}
 
 	private static int giveEffect(CommandSourceStack source, Collection<ServerPlayer> targets, String effectName, int duration) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		double power = getEffectPower(effectName);
 		if (power == 0.0) {
 			source.sendFailure(Component.translatable("command.dragonminez.effects.unknown_effect", effectName));
@@ -80,7 +80,7 @@ public class EffectsCommand {
 	}
 
 	private static int removeEffect(CommandSourceStack source, Collection<ServerPlayer> targets, String effectName) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (data.getEffects().hasEffect(effectName)) {
@@ -98,7 +98,7 @@ public class EffectsCommand {
 	}
 
 	private static int clearEffects(CommandSourceStack source, Collection<ServerPlayer> targets) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getEffects().clear();

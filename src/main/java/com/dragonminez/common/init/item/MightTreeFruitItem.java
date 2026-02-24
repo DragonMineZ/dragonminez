@@ -14,6 +14,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -43,10 +44,10 @@ public class MightTreeFruitItem extends Item {
     }
 
     @Override
-    public ItemStack finishUsingItem(ItemStack pStack, Level pLevel, LivingEntity pLivingEntity) {
+    public @NonNull ItemStack finishUsingItem(@NonNull ItemStack pStack, Level pLevel, @NonNull LivingEntity pLivingEntity) {
         if (!pLevel.isClientSide && pLivingEntity instanceof ServerPlayer player) {
             String itemId = "dragonminez:might_tree_fruit";
-            float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+            Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
                 if (regens != null && regens.length >= 3) {

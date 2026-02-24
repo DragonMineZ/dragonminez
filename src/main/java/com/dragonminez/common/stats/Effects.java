@@ -57,7 +57,7 @@ public class Effects {
     public double getTotalEffectMultiplier() {
         if (effectMap.isEmpty()) return 1.0;
 
-        boolean isMultiplicative = ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers();
+        boolean isMultiplicative = ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers();
         double totalMultiplier = 1.0;
         for (Effect effect : effectMap.values()) {
             if (isMultiplicative) totalMultiplier *= effect.getPower();

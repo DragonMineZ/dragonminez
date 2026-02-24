@@ -64,7 +64,7 @@ public class SkillsCommand {
 	}
 
 	private static int setSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName, int level) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 
@@ -89,7 +89,7 @@ public class SkillsCommand {
 	}
 
 	private static int removeSkill(CommandSourceStack source, Collection<ServerPlayer> targets, String skillName) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 

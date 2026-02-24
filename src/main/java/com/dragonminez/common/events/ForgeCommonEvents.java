@@ -25,7 +25,6 @@ import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.DMZServer;
 import com.dragonminez.server.commands.*;
 import com.dragonminez.server.events.DragonBallsHandler;
-import com.dragonminez.server.events.players.TickHandler;
 import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
@@ -91,7 +90,7 @@ public class ForgeCommonEvents {
 			DragonBallsHandler.syncRadar(player.serverLevel());
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) {
+				if (ConfigManager.getServerConfig().getCombat().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
 				}
 				endFusionIfNeeded(player);
@@ -103,7 +102,7 @@ public class ForgeCommonEvents {
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout()) {
+				if (ConfigManager.getServerConfig().getCombat().getKillPlayersOnCombatLogout()) {
 					if (data.getCooldowns().hasCooldown(Cooldowns.COMBAT)) player.kill();
 				}
 				endFusionIfNeeded(player);
@@ -118,7 +117,7 @@ public class ForgeCommonEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				endFusionIfNeeded(player);
 
-				if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
+				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 					if (data.getStatus().isAlive()) data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
 					if (data.getStatus().hasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
@@ -149,9 +148,7 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onGamemodeChange(PlayerEvent.PlayerChangeGameModeEvent event) {
 		if (event.getEntity() instanceof ServerPlayer player && event.getNewGameMode() != GameType.SPECTATOR) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				endFusionIfNeeded(player);
-			});
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> endFusionIfNeeded(player));
 		}
 	}
 
@@ -179,7 +176,7 @@ public class ForgeCommonEvents {
 
 			if (target instanceof ServerPlayer targetPlayer) {
 				StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
-					if (!targetData.getStatus().isBlocking() && !((ServerPlayer) target).isCreative() && ComboManager.getCombo(attacker.getUUID()) != 4) {
+					if (!targetData.getStatus().isBlocking() && !targetPlayer.isCreative() && ComboManager.getCombo(attacker.getUUID()) != 4) {
 						serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
 					}
 				});
@@ -234,7 +231,7 @@ public class ForgeCommonEvents {
 			OtherworldRegionLoader.loadPreGeneratedRegions(otherworld);
 		}
 
-		if (ConfigManager.getServerConfig().getWorldGen().isGenerateDragonBalls()) {
+		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 			if (overworld != null) {
 				DragonBallSavedData data = DragonBallSavedData.get(overworld);
 				if (!data.hasFirstSpawnHappened(false)) {
@@ -365,9 +362,7 @@ public class ForgeCommonEvents {
 					ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
 					if (partner != null) {
 						if (!partner.isDeadOrDying()) partner.kill();
-						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(partnerData -> {
-							FusionLogic.endFusion(partner, partnerData, true);
-						});
+						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(partnerData -> FusionLogic.endFusion(partner, partnerData, true));
 					}
 				}
 				FusionLogic.endFusion(player, data, true);

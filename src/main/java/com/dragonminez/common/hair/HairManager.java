@@ -309,7 +309,7 @@ public class HairManager {
 		if (race.equals("bioandroid") || race.equals("frostdemon") || race.equals("namekian")) return false;
 
 		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-		return config != null && config.canUseHair();
+		return config != null && config.getCanUseHair();
 	}
 
 	public static CustomHair getEffectiveHair(Character character) {

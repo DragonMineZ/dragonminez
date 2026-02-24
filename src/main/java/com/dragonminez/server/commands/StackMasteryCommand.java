@@ -52,20 +52,16 @@ public class StackMasteryCommand {
 
     private static final SuggestionProvider<CommandSourceStack> SUGGEST_GROUPS = (context, builder) -> {
         try {
-            ServerPlayer player = getTarget(context);
-            if (player != null) {
-                return SharedSuggestionProvider.suggest(ConfigManager.getAllStackForms().keySet(), builder);
-            }
+            return SharedSuggestionProvider.suggest(ConfigManager.getAllStackForms().keySet(), builder);
         } catch (Exception ignored) {}
         return SharedSuggestionProvider.suggest(new ArrayList<>(), builder);
     };
 
     private static final SuggestionProvider<CommandSourceStack> SUGGEST_FORMS = (context, builder) -> {
         try {
-            ServerPlayer player = getTarget(context);
             String groupName = StringArgumentType.getString(context, "group");
 
-            if (player != null && groupName != null) {
+            if (groupName != null) {
                 FormConfig groupConfig = ConfigManager.getStackFormGroup(groupName);
                 if (groupConfig != null) {
                     return SharedSuggestionProvider.suggest(groupConfig.getForms().keySet(), builder);
@@ -81,7 +77,7 @@ public class StackMasteryCommand {
     }
 
     private static int setMastery(CommandContext<CommandSourceStack> ctx, boolean add) throws CommandSyntaxException {
-        boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+        boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
         String group = StringArgumentType.getString(ctx, "group");
         String form = StringArgumentType.getString(ctx, "form");

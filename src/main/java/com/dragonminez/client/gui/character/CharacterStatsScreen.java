@@ -27,6 +27,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
+import org.jspecify.annotations.NonNull;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     protected void init() {
         super.init();
 
-        useHexagonView = ConfigManager.getUserConfig().getHud().isHexagonStatsDisplay();
+        useHexagonView = ConfigManager.getUserConfig().getHud().getHexagonStatsDisplay();
 
         updateStatsData();
         initStatButtons();
@@ -88,14 +89,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
     private void updateStatsData() {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                this.statsData = data;
-            });
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> this.statsData = data);
         }
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (!isAnimating()) this.renderBackground(graphics);
 
         int uiMouseX = (int) Math.round(toUiX(mouseX));
@@ -425,9 +424,8 @@ public class CharacterStatsScreen extends BaseMenuScreen {
             drawStringWithBorder2(graphics, Component.literal(statText), valueX + 5, yPos, statColor, 0x000000);
 
             if (mouseX >= statLabelX && mouseX <= statLabelX + 25 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
-                List<FormattedCharSequence> tooltip = new ArrayList<>();
                 Component descComponent = Component.translatable("gui.dragonminez.character_stats." + statNames[i] + ".desc");
-                tooltip.addAll(font.split(descComponent, 180));
+                List<FormattedCharSequence> tooltip = new ArrayList<>(font.split(descComponent, 180));
 
                 if (hasMult) {
                     tooltip.add(Component.literal("").getVisualOrderText());

@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jspecify.annotations.NonNull;
 
 public class ShenronEntity extends DragonWishEntity {
 
@@ -24,7 +25,7 @@ public class ShenronEntity extends DragonWishEntity {
 
 	@OnlyIn(Dist.CLIENT)
 	@Override
-	public InteractionResult mobInteract(Player player, InteractionHand hand) {
+	public @NonNull InteractionResult mobInteract(@NonNull Player player, @NonNull InteractionHand hand) {
 		if (this.level().isClientSide && this.getOwnerName().equals(player.getName().getString())) {
 			if (!this.hasGrantedWish() && Minecraft.getInstance().player.equals(player)) {
 				Minecraft.getInstance().setScreen(new WishesScreen("shenron", 1));
@@ -35,7 +36,7 @@ public class ShenronEntity extends DragonWishEntity {
 	}
 
 	@Override
-	public void remove(RemovalReason reason) {
+	public void remove(@NonNull RemovalReason reason) {
 		if (!this.level().isClientSide && reason == RemovalReason.DISCARDED) {
 			onDespawn();
 		}
@@ -47,7 +48,7 @@ public class ShenronEntity extends DragonWishEntity {
 			serverLevel.setWeatherParameters(6000, 0, false, false);
 			serverLevel.setDayTime(this.getInvokingTime());
 
-			if (ConfigManager.getServerConfig().getWorldGen().isGenerateDragonBalls()) {
+			if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 				DragonBallsHandler.scatterDragonBalls(serverLevel, false);
 				ServerPlayer owner = serverLevel.getServer().getPlayerList().getPlayerByName(this.getOwnerName());
 				if (owner != null) {

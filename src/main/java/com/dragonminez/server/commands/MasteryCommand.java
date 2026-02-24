@@ -53,14 +53,12 @@ public class MasteryCommand {
 	private static final SuggestionProvider<CommandSourceStack> SUGGEST_GROUPS = (context, builder) -> {
 		try {
 			ServerPlayer player = getTarget(context);
-			if (player != null) {
-				String race = StatsProvider.get(StatsCapability.INSTANCE, player)
-						.map(data -> data.getCharacter().getRaceName())
-						.orElse("human");
+            String race = StatsProvider.get(StatsCapability.INSTANCE, player)
+                    .map(data -> data.getCharacter().getRaceName())
+                    .orElse("human");
 
-				return SharedSuggestionProvider.suggest(ConfigManager.getAllFormsForRace(race).keySet(), builder);
-			}
-		} catch (Exception ignored) {}
+            return SharedSuggestionProvider.suggest(ConfigManager.getAllFormsForRace(race).keySet(), builder);
+        } catch (Exception ignored) {}
 		return SharedSuggestionProvider.suggest(new ArrayList<>(), builder);
 	};
 
@@ -69,7 +67,7 @@ public class MasteryCommand {
 			ServerPlayer player = getTarget(context);
 			String groupName = StringArgumentType.getString(context, "group");
 
-			if (player != null && groupName != null) {
+			if (groupName != null) {
 				String race = StatsProvider.get(StatsCapability.INSTANCE, player)
 						.map(data -> data.getCharacter().getRaceName())
 						.orElse("human");
@@ -89,7 +87,7 @@ public class MasteryCommand {
 	}
 
 	private static int setMastery(CommandContext<CommandSourceStack> ctx, boolean add) throws CommandSyntaxException {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
 		String group = StringArgumentType.getString(ctx, "group");
 		String form = StringArgumentType.getString(ctx, "form");
