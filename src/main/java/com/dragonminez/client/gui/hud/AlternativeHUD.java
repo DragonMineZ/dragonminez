@@ -105,10 +105,10 @@ public class AlternativeHUD {
 				guiGraphics.pose().scale(userScale - 0.5f, userScale - 0.5f, 1.0f);
 
 				RenderSystem.setShaderTexture(0, hud);
-				guiGraphics.blit(hud, - 18, - 17, 0, 0, 83, 9, 128, 128);
+				guiGraphics.blit(hud, -18, -17, 0, 0, 83, 9, 128, 128);
 
 				int hpTextureV = (currentHP < maxHP * 0.33) ? 33 : (currentHP < maxHP * 0.66) ? 22 : 11;
-				guiGraphics.blit(hud, - 16, - 14, 2, hpTextureV, 7 + (int) currentHPBarWidth, 5, 128, 128);
+				guiGraphics.blit(hud, -16, -14, 2, hpTextureV, 7 + Math.min((int) currentHPBarWidth, 76), 5, 128, 128);
 
 				drawTinyText(guiGraphics, powerRelease + "%", -20, 24, ColorUtils.hexToInt("#FACAF7"));
 				drawBarValues(guiGraphics, currentHP, maxHP, 24, -14);
@@ -120,11 +120,11 @@ public class AlternativeHUD {
 				guiGraphics.pose().scale(userScale - 0.5f, userScale - 0.5f, 1.0f);
 
 				RenderSystem.setShaderTexture(0, hud);
-				guiGraphics.blit(hud, - 18, - 11, 0, 44, 83, 9, 128, 128);
+				guiGraphics.blit(hud, -18, -11, 0, 44, 83, 9, 128, 128);
 
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, - 15,  - 8, 3, 61, 7 + (int) currentKiBarWidth, 4, 128, 128);
+				guiGraphics.blit(hud, -15, -8, 3, 61, 7 + Math.min((int) currentKiBarWidth, 76), 4, 128, 128);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 				drawBarValues(guiGraphics, currentKi, maxKi, 24, -8);
@@ -140,9 +140,9 @@ public class AlternativeHUD {
 				guiGraphics.pose().scale(userScale - 0.5f, userScale - 0.5f, 1.0f);
 
 				RenderSystem.setShaderTexture(0, hud);
-				guiGraphics.blit(hud, - 12, - 11, 0, 72, 83, 9, 128, 128);
-				guiGraphics.blit(hud, - 10, - 8, 2, 90, -5 + (int) currentStmBarWidth, 4, 128, 128);
-				guiGraphics.blit(hud, 65, - 8, 77, 90, 4, 4, 128, 128);
+				guiGraphics.blit(hud, -12, -11, 0, 72, 83, 9, 128, 128);
+				guiGraphics.blit(hud, -10, -8, 2, 90, -5 + Math.min((int) currentStmBarWidth, 76), 4, 128, 128);
+				guiGraphics.blit(hud, 65, -8, 77, 90, 4, 4, 128, 128);
 
 				drawBarValues(guiGraphics, currentStm, maxStm, 29, -8);
 
@@ -174,7 +174,7 @@ public class AlternativeHUD {
 		float fillRatio = powerRelease / 100.0f;
 		int fillHeight = (int) (16 * fillRatio);
 		if (fillHeight > 0) {
-			guiGraphics.blit(racialIcons, x+7, y +4+ (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight);
+			guiGraphics.blit(racialIcons, x + 7, y + 4 + (16 - fillHeight), isCustomRace ? 103 : iconU, 18 + (16 - fillHeight), 16, fillHeight);
 		}
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderTexture(0, xvhud);

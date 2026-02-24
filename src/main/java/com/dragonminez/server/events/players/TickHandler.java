@@ -10,7 +10,10 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
-import com.dragonminez.server.events.players.actionmode.*;
+import com.dragonminez.server.events.players.actionmode.FormModeHandler;
+import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
+import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
+import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
@@ -32,32 +35,32 @@ public class TickHandler {
 	private static final Map<String, IActionModeHandler> ACTION_MODE_HANDLERS = new HashMap<>();
 	private static final List<IStatusEffectHandler> STATUS_EFFECT_HANDLERS = new ArrayList<>();
 
-    private static final int REGEN_INTERVAL = 20;
-    private static final int SYNC_INTERVAL = 10;
-    private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
-    private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
+	private static final int REGEN_INTERVAL = 20;
+	private static final int SYNC_INTERVAL = 10;
+	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
+	private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
 	private static int masterySeconds = 0;
 
-    private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
+	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 
 	static {
 		registerActionModeHandlers();
 		registerStatusEffectHandlers();
 	}
 
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
-        if (!(event.player instanceof ServerPlayer serverPlayer)) return;
+	@SubscribeEvent
+	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
+		if (!(event.player instanceof ServerPlayer serverPlayer)) return;
 
 
-        UUID playerId = serverPlayer.getUUID();
-        int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
-		if (serverPlayer.getHealth() < 0) serverPlayer.setHealth(1);
-		if (serverPlayer.getHealth() <= 0.25) serverPlayer.kill();
+		UUID playerId = serverPlayer.getUUID();
+		int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
+		if (serverPlayer.getHealth() < 0 && !serverPlayer.isDeadOrDying()) serverPlayer.setHealth(1);
+		if (serverPlayer.getHealth() <= 0.25 && !serverPlayer.isDeadOrDying()) serverPlayer.kill();
 
-        StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+			if (!data.getStatus().hasCreatedCharacter()) return;
 
 			if (serverPlayer.hasEffect(MainEffects.STUN.get())) {
 				data.getStatus().setChargingKi(false);
@@ -67,7 +70,8 @@ public class TickHandler {
 
 				data.getCooldowns().tick();
 				data.getEffects().tick();
-				if (serverPlayer.tickCount % SYNC_INTERVAL == 0) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				if (serverPlayer.tickCount % SYNC_INTERVAL == 0)
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				return;
 			} else {
 				data.getCooldowns().tick();
@@ -75,33 +79,33 @@ public class TickHandler {
 				if (data.getStatus().isStunned()) data.getStatus().setStunned(false);
 			}
 
-            boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
-            boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
-            boolean isChargingKi = data.getStatus().isChargingKi();
-            boolean isDescending = data.getStatus().isDescending();
-            int meditationLevel = data.getSkills().getSkillLevel("meditation");
+			boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
+			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
+			boolean isChargingKi = data.getStatus().isChargingKi();
+			boolean isDescending = data.getStatus().isDescending();
+			int meditationLevel = data.getSkills().getSkillLevel("meditation");
 
-            if (shouldRegen) {
-                String raceName = data.getCharacter().getRaceName();
-                String characterClass = data.getCharacter().getCharacterClass();
+			if (shouldRegen) {
+				String raceName = data.getCharacter().getRaceName();
+				String characterClass = data.getCharacter().getCharacterClass();
 
-                RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-                if (raceConfig != null) {
-                    RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+				RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+				if (raceConfig != null) {
+					RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
 
-                    double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
-                    boolean activeCharging = isChargingKi && !isDescending;
+					double meditationBonus = meditationLevel > 0 ? 1.0 + (meditationLevel * MEDITATION_BONUS_PER_LEVEL) : 1.0;
+					boolean activeCharging = isChargingKi && !isDescending;
 
-                    regenerateHealth(serverPlayer, data, classStats);
-                    regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
-                    regenerateStamina(data, classStats, meditationBonus);
+					regenerateHealth(serverPlayer, data, classStats);
+					regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
+					regenerateStamina(data, classStats, meditationBonus);
 					regeneratePoise(data, meditationBonus);
-                }
+				}
 
-                playerTickCounters.put(playerId, 0);
-            } else {
-                playerTickCounters.put(playerId, tickCounter);
-            }
+				playerTickCounters.put(playerId, 0);
+			} else {
+				playerTickCounters.put(playerId, tickCounter);
+			}
 
 			if (isChargingKi && tickCounter % 20 == 0) {
 				int currentRelease = data.getResources().getPowerRelease();
@@ -127,7 +131,8 @@ public class TickHandler {
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
 				boolean holdingYajirobe = serverPlayer.getMainHandItem().getItem() == MainItems.KATANA_YAJIROBE.get() || serverPlayer.getOffhandItem().getItem() == MainItems.KATANA_YAJIROBE.get();
-				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe)) data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
+				if (data.getStatus().isRenderKatana() != (hasYajirobe && !holdingYajirobe))
+					data.getStatus().setRenderKatana(hasYajirobe && !holdingYajirobe);
 
 				ItemStack backItem = ItemStack.EMPTY;
 				for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
@@ -145,13 +150,15 @@ public class TickHandler {
 				}
 
 				if (backItem != ItemStack.EMPTY) {
-					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId())) data.getStatus().setBackWeapon(backItem.getDescriptionId());
+					if (!data.getStatus().getBackWeapon().equals(backItem.getDescriptionId()))
+						data.getStatus().setBackWeapon(backItem.getDescriptionId());
 				} else data.getStatus().setBackWeapon("");
 
 				boolean hasScouter = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
 				if (hasScouter) {
 					String scouterItem = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId();
-					if (!data.getStatus().getScouterItem().equals(scouterItem)) data.getStatus().setScouterItem(scouterItem);
+					if (!data.getStatus().getScouterItem().equals(scouterItem))
+						data.getStatus().setScouterItem(scouterItem);
 				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
 
 			}
@@ -189,66 +196,66 @@ public class TickHandler {
 			}
 		});
 
-    }
+	}
 
-    @SubscribeEvent
-    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        playerTickCounters.remove(event.getEntity().getUUID());
-    }
+	@SubscribeEvent
+	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+		playerTickCounters.remove(event.getEntity().getUUID());
+	}
 
-    private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-        return config.getClassStats(characterClass);
-    }
+	private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
+		return config.getClassStats(characterClass);
+	}
 
-    private static void regenerateHealth(ServerPlayer player, StatsData data,
-                                        RaceStatsConfig.ClassStats classStats) {
-        int currentHealth = (int) player.getHealth();
-        float maxHealth = player.getMaxHealth();
+	private static void regenerateHealth(ServerPlayer player, StatsData data,
+										 RaceStatsConfig.ClassStats classStats) {
+		int currentHealth = (int) player.getHealth();
+		float maxHealth = player.getMaxHealth();
 
-        if (currentHealth < maxHealth) {
-            double baseRegen = classStats.getHealthRegenRate();
-            double regenAmount = maxHealth * baseRegen;
+		if (currentHealth < maxHealth) {
+			double baseRegen = classStats.getHealthRegenRate();
+			double regenAmount = maxHealth * baseRegen;
 			if (regenAmount <= 1.0) return;
 
 			float newHealth = (float) Math.min(maxHealth, currentHealth + Math.ceil(regenAmount));
-            player.setHealth(newHealth);
-        }
-    }
+			player.setHealth(newHealth);
+		}
+	}
 
-    private static void regenerateEnergy(ServerPlayer player, StatsData data,
-                                        RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
-        int currentEnergy = data.getResources().getCurrentEnergy();
-        int maxEnergy = data.getMaxEnergy();
+	private static void regenerateEnergy(ServerPlayer player, StatsData data,
+										 RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+		int currentEnergy = data.getResources().getCurrentEnergy();
+		int maxEnergy = data.getMaxEnergy();
 
-        boolean hasActiveForm = data.getCharacter().hasActiveForm();
-        FormConfig.FormData activeForm = hasActiveForm ? data.getCharacter().getActiveFormData() : null;
+		boolean hasActiveForm = data.getCharacter().hasActiveForm();
+		FormConfig.FormData activeForm = hasActiveForm ? data.getCharacter().getActiveFormData() : null;
 		boolean hasActiveStackForm = data.getCharacter().hasActiveStackForm();
 		FormConfig.FormData activeStackForm = hasActiveStackForm ? data.getCharacter().getActiveStackFormData() : null;
 
-        double energyChange = 0;
+		double energyChange = 0;
 
-        if (activeCharging) {
-            double baseRegen = classStats.getEnergyRegenRate();
-            double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
-            if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
-                    && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
+		if (activeCharging) {
+			double baseRegen = classStats.getEnergyRegenRate();
+			double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
-                regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-            }
+				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
+			}
 
 			if (regenAmount <= 1.0) {
 				regenAmount = 0.5;
 			}
-            energyChange += regenAmount;
+			energyChange += regenAmount;
 
-            DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
-            if (MinecraftForge.EVENT_BUS.post(kiEvent)) {
-                energyChange = 0;
-            }
-        } else if (currentEnergy < maxEnergy) {
-            double baseRegen = classStats.getEnergyRegenRate();
-            double regenAmount = maxEnergy * baseRegen * meditationBonus;
-            if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
+			DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
+			if (MinecraftForge.EVENT_BUS.post(kiEvent)) {
+				energyChange = 0;
+			}
+		} else if (currentEnergy < maxEnergy) {
+			double baseRegen = classStats.getEnergyRegenRate();
+			double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
 					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
@@ -256,14 +263,14 @@ public class TickHandler {
 			if (regenAmount <= 1.0) {
 				regenAmount = 0.5;
 			}
-            energyChange += regenAmount;
-        }
+			energyChange += regenAmount;
+		}
 
 		if (data.getStatus().isAndroidUpgraded()) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus;
-            if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
-                    && ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
+			if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills()
+					&& ConfigManager.getServerConfig().getRacialSkills().isHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
@@ -308,37 +315,38 @@ public class TickHandler {
 			}
 		}
 
-        if (energyChange != 0) {
-            int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
-            data.getResources().setCurrentEnergy(newEnergy);
+		if (energyChange != 0) {
+			int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
+			data.getResources().setCurrentEnergy(newEnergy);
 
-            if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm )) {
-                data.getCharacter().clearActiveForm();
+			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
+				data.getCharacter().clearActiveForm();
 				data.getCharacter().clearActiveStackForm();
 				data.getResources().setPowerRelease(0);
 				data.getResources().setActionCharge(0);
 				player.refreshDimensions();
-            }
-        }
-    }
+			}
+		}
+	}
 
-    private static void regenerateStamina(StatsData data,
-                                         RaceStatsConfig.ClassStats classStats, double meditationBonus) {
-        int currentStamina = data.getResources().getCurrentStamina();
-        int maxStamina = data.getMaxStamina();
+	private static void regenerateStamina(StatsData data,
+										  RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+		int currentStamina = data.getResources().getCurrentStamina();
+		int maxStamina = data.getMaxStamina();
 
-        if (currentStamina < maxStamina) {
-            double baseRegen = classStats.getStaminaRegenRate();
-            double regenAmount = maxStamina * baseRegen * meditationBonus;
+		if (currentStamina < maxStamina) {
+			double baseRegen = classStats.getStaminaRegenRate();
+			double regenAmount = maxStamina * baseRegen * meditationBonus;
 			if (regenAmount <= 1.0) regenAmount = 0.5;
 
-            int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
-            data.getResources().setCurrentStamina(newStamina);
-        }
-    }
+			int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
+			data.getResources().setCurrentStamina(newStamina);
+		}
+	}
 
 	private static void regeneratePoise(StatsData data, double meditationBonus) {
-		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking() || data.getStatus().isStunned()) return;
+		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking() || data.getStatus().isStunned())
+			return;
 
 		int currentPoise = data.getResources().getCurrentPoise();
 		int maxPoise = data.getMaxPoise();

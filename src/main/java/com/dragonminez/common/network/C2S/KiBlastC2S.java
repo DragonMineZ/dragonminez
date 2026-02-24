@@ -1,5 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -48,8 +50,10 @@ public class KiBlastC2S {
 					if (data.getCooldowns().hasCooldown(Cooldowns.KI_BLAST_CD)) return;
 					if (data.getStatus().isStunned()) return;
 					if (!data.getSkills().hasSkill("kicontrol")) return;
+					GeneralServerConfig config = ConfigManager.getServerConfig();
+					int baseCost = config != null ? config.getCombat().getBaselineFormDrain() : 200;
 
-					int cost = (int) (data.getMaxEnergy() * 0.08);
+					int cost = (int) (data.getMaxEnergy() * 0.02 + 0.1 * baseCost);
 					if (data.getResources().getCurrentEnergy() < cost) return;
 					data.getResources().removeEnergy(cost);
 
@@ -69,8 +73,8 @@ public class KiBlastC2S {
 
 					KiBlastEntity kiBlast = new KiBlastEntity(player.level(), player);
 					kiBlast.setup(player, damage, 0.5F, 1.5f, msg.colorMain, msg.colorBorder);
-                    kiBlast.setPos(player.getX(), player.getEyeY() - 0.4, player.getZ());
-                    kiBlast.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.5F);
+					kiBlast.setPos(player.getX(), player.getEyeY() - 0.4, player.getZ());
+					kiBlast.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.5F);
 					player.level().addFreshEntity(kiBlast);
 
 					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_BLAST_SHOT, 0, player.getId()), player);

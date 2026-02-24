@@ -9,6 +9,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
+import com.dragonminez.common.stats.Character;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
@@ -66,6 +67,7 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().hasCreatedCharacter()) return;
+			Character character = data.getCharacter();
 
 			boolean isStunned = data.getStatus().isStunned();
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
@@ -82,8 +84,21 @@ public class ClientStatsEvents {
 			}
 
 			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
-				String hexColor = data.getCharacter().getAuraColor();
-				int colorMain = ColorUtils.hexToInt(hexColor);
+				String kiHex;
+				if (character.hasActiveStackForm()
+						&& character.getActiveStackFormData() != null
+						&& character.getActiveStackFormData().getAuraColor() != null
+						&& !character.getActiveStackFormData().getAuraColor().isEmpty()) {
+					kiHex = character.getActiveStackFormData().getAuraColor();
+				} else if (character.hasActiveForm()
+						&& character.getActiveFormData() != null
+						&& character.getActiveFormData().getAuraColor() != null
+						&& !character.getActiveFormData().getAuraColor().isEmpty()) {
+					kiHex = character.getActiveFormData().getAuraColor();
+				} else {
+					kiHex = character.getAuraColor();
+				}
+				int colorMain = ColorUtils.hexToInt(kiHex);
 				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
@@ -146,14 +161,16 @@ public class ClientStatsEvents {
 					Skill kiSense = data.getSkills().getSkill("kisense");
 					if (kiSense == null) return;
 					int kiSenseLevel = kiSense.getLevel();
-					if (kiSenseLevel > 0) NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
+					if (kiSenseLevel > 0)
+						NetworkHandler.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.TOGGLE, kiSense.getName(), 0));
 				} else {
 					ScouterHUD.setRenderingInfo(!ScouterHUD.isRenderingInfo());
 				}
 			}
 
 			if (hasScouter) {
-				if (ScouterHUD.getScouterColor() != player.getItemBySlot(EquipmentSlot.HEAD).getItem()) ScouterHUD.setScouterColor(player.getItemBySlot(EquipmentSlot.HEAD).getItem());
+				if (ScouterHUD.getScouterColor() != player.getItemBySlot(EquipmentSlot.HEAD).getItem())
+					ScouterHUD.setScouterColor(player.getItemBySlot(EquipmentSlot.HEAD).getItem());
 			}
 		});
 	}
@@ -163,7 +180,8 @@ public class ClientStatsEvents {
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (player == null) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {if (!data.getStatus().hasCreatedCharacter()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getStatus().hasCreatedCharacter()) return;
 			boolean isStunned = data.getStatus().isStunned();
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
