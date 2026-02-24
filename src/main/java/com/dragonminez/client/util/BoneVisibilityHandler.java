@@ -1,7 +1,5 @@
 package com.dragonminez.client.util;
 
-import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -9,9 +7,7 @@ import com.dragonminez.common.util.lists.MajinForms;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.PlayerModelPart;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 
@@ -69,13 +65,10 @@ public class BoneVisibilityHandler {
                 boolean showNormalTail;
 
                 if (isSaiyan) {
-                    showNormalTail = stats.getStatus().isTailVisible();
-                }
-                else if (isHuman || isNamekian || isMajin) {
-                    showNormalTail = false;
+                    showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().hasSaiyanTail();
                 }
                 else {
-                    showNormalTail = true;
+                    showNormalTail = !isHuman && !isNamekian && !isMajin && stats.getCharacter().hasSaiyanTail();
                 }
 
                 setHiddenRecursive(bone, !showNormalTail);
