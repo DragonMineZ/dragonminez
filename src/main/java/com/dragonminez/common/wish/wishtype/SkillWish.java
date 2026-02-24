@@ -1,10 +1,11 @@
 
-package com.dragonminez.common.wish;
+package com.dragonminez.common.wish.wishtype;
 
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.wish.Wish;
 import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 

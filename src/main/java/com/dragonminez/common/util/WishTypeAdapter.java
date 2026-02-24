@@ -1,6 +1,7 @@
 package com.dragonminez.common.util;
 
 import com.dragonminez.common.wish.*;
+import com.dragonminez.common.wish.wishtype.*;
 import com.google.gson.*;
 
 import java.lang.reflect.Type;
@@ -26,6 +27,7 @@ public class WishTypeAdapter implements JsonSerializer<Wish>, JsonDeserializer<W
             case "multi_wish" -> new GsonBuilder().create().fromJson(json, MultiItemWish.class);
             case "skill" -> new GsonBuilder().create().fromJson(json, SkillWish.class);
             case "passivereset" -> new GsonBuilder().create().fromJson(json, PassiveResetWish.class);
+            case "restoresaiyantail" -> new GsonBuilder().create().fromJson(json, RestoreSaiyanTailWish.class);
             default -> throw new JsonParseException("Unknown wish type: " + type);
         };
     }

@@ -3,6 +3,7 @@ package com.dragonminez.common.wish;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.util.WishTypeAdapter;
+import com.dragonminez.common.wish.wishtype.*;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.*;
 import net.minecraft.server.MinecraftServer;
@@ -91,6 +92,7 @@ public class WishManager {
             wishes.add(new ItemWish("wish.shenron.namekcpu.name", "wish.shenron.namekcpu.desc", "dragonminez:t2_radar_cpu", 1));
             wishes.add(new ItemWish("wish.shenron.saiyanship.name", "wish.shenron.saiyanship.desc", "dragonminez:saiyan_ship", 1));
             wishes.add(new PassiveResetWish("wish.shenron.racialskillreset.name", "wish.shenron.racialskillreset.desc"));
+            wishes.add(new RestoreSaiyanTailWish("wish.shenron.restoresaiyantail.name", "wish.shenron.restoresaiyantail.desc"));
 
             List<Tuple<String, Integer>> materials = new ArrayList<>();
             materials.add(new Tuple<>("dragonminez:kikono_shard", 32));
