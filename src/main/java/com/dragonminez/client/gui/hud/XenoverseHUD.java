@@ -111,11 +111,11 @@ public class XenoverseHUD {
 				// HP Bar
 				guiGraphics.blit(hud, initialX + 31, initialY + 13, 14, 2, 141, 9);
 				if (currentHP < maxHP * 0.33) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, (int) currentHPBarWidth, 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, Math.min((int) currentHPBarWidth, 76), 5);
 				} else if (currentHP < maxHP * 0.66) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, (int) currentHPBarWidth, 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, Math.min((int) currentHPBarWidth, 76), 5);
 				} else {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, (int) currentHPBarWidth, 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, Math.min((int) currentHPBarWidth, 76), 5);
 				}
 
 				// Ki Bar with Aura Color
@@ -123,12 +123,12 @@ public class XenoverseHUD {
 
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, (int) currentKiBarWidth, 4);
+				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, Math.min((int) currentKiBarWidth, 76), 4);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 				// Stamina Bar
 				guiGraphics.blit(hud, initialX + 28, initialY + 28, 9, 105, 100, 7);
-				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, (int) currentStmBarWidth, 5);
+				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, Math.min((int) currentStmBarWidth, 76), 5);
 
 				// Racial Icon / Power Release
 				RenderSystem.setShaderTexture(0, racialIcons);
@@ -168,19 +168,19 @@ public class XenoverseHUD {
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().scale(finalTextScale, finalTextScale, 1.0f);
 
-				drawStringWithBorder(guiGraphics, powerRelease + "%", (int)((initialX + 7) / finalTextScale), (int)((initialY + 32) / finalTextScale), ColorUtils.hexToInt("#FACAF7"));
+				drawStringWithBorder(guiGraphics, powerRelease + "%", (int) ((initialX + 7) / finalTextScale), (int) ((initialY + 32) / finalTextScale), ColorUtils.hexToInt("#FACAF7"));
 
 				if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
 					boolean showPercent = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage();
 
 					String hpText = showPercent ? String.format("%.0f", (currentHP / maxHP) * 100) + "%" : numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
-					drawStringWithBorder(guiGraphics, hpText, (int)((initialX + 100) / finalTextScale), (int)((initialY + 15) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
+					drawStringWithBorder(guiGraphics, hpText, (int) ((initialX + 100) / finalTextScale), (int) ((initialY + 15) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
 
 					String kiText = showPercent ? String.format("%.0f", (currentKi / (float) maxKi) * 100) + "%" : numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
-					drawStringWithBorder(guiGraphics, kiText, (int)((initialX + 90) / finalTextScale), (int)((initialY + 23) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
+					drawStringWithBorder(guiGraphics, kiText, (int) ((initialX + 90) / finalTextScale), (int) ((initialY + 23) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
 
 					String stmText = showPercent ? String.format("%.0f", (currentStm / (float) maxStm) * 100) + "%" : numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
-					drawStringWithBorder(guiGraphics, stmText, (int)((initialX + 80) / finalTextScale), (int)((initialY + 30) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
+					drawStringWithBorder(guiGraphics, stmText, (int) ((initialX + 80) / finalTextScale), (int) ((initialY + 30) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));
 				}
 
 				guiGraphics.pose().popPose();
