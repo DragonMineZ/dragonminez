@@ -33,10 +33,10 @@ public class SaiyanTailCommand {
 	}
 
 	private static int setSaiyanTail(CommandSourceStack source, Collection<ServerPlayer> targets, boolean exists) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.getCharacter().setSaiyanTail(exists);
+				data.getCharacter().setHasSaiyanTail(exists);
 				data.getCharacter().clearSelectedForm();
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});

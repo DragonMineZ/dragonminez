@@ -12,8 +12,6 @@ import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -21,12 +19,11 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.stats.Stats;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,14 +88,12 @@ public class SpacePodScreen extends Screen {
 
 		final boolean[] kaioUnlocked = {false};
 		if (this.minecraft.player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(cap -> {
-				kaioUnlocked[0] = cap.getStatus().isInKaioPlanet();
-			});
+			StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(cap -> kaioUnlocked[0] = cap.getStatus().isInKaioPlanet());
 		}
 
 		destinations.add(new PlanetDestination("gui.dragonminez.spacepod.overworld", Level.OVERWORLD, 0, true));
 		destinations.add(new PlanetDestination("gui.dragonminez.spacepod.namek", NamekDimension.NAMEK_KEY, 1, true));
-		if (ConfigManager.getServerConfig().getWorldGen().isOtherworldActive()) {
+		if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
 			destinations.add(new PlanetDestination("gui.dragonminez.spacepod.otherworld", OtherworldDimension.OTHERWORLD_KEY, 2, kaioUnlocked[0]));
 		} else {
 			destinations.add(new PlanetDestination("gui.dragonminez.spacepod.otherworld", null, 2, false));
@@ -119,7 +114,7 @@ public class SpacePodScreen extends Screen {
 	}
 
 	@Override
-	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		this.renderBackground(graphics);
 
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);

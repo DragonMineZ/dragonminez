@@ -27,7 +27,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
     public static void init() {}
 
     private static void createDefaultSagaFiles(Path sagaDir) {
-		if (ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled() && ConfigManager.getServerConfig().getGameplay().isCreateDefaultSagas()) {
+		if (ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled() && ConfigManager.getServerConfig().getGameplay().getCreateDefaultSagas()) {
 			createSaiyanSagaFile(sagaDir);
 			createFriezaSagaFile(sagaDir);
 			createAndroidSagaFile(sagaDir);
@@ -643,20 +643,20 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
     private static JsonObject createReward(String type, int amount, String item, int count, String command) {
         JsonObject reward = new JsonObject();
         reward.addProperty("type", type);
-        if (type.equals("TPS")) {
-            reward.addProperty("amount", amount);
-        } else if (type.equals("ITEM")) {
-            reward.addProperty("item", item);
-            reward.addProperty("count", count);
-        } else if (type.equals("COMMAND")) {
-            reward.addProperty("command", command);
+        switch (type) {
+            case "TPS" -> reward.addProperty("amount", amount);
+            case "ITEM" -> {
+                reward.addProperty("item", item);
+                reward.addProperty("count", count);
+            }
+            case "COMMAND" -> reward.addProperty("command", command);
         }
         return reward;
     }
 
     public static void loadSagas(MinecraftServer server) {
         LOADED_SAGAS.clear();
-		if (!ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled()) return;
+		if (!ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled()) return;
 
         if (server == null) {
             LogUtil.warn(Env.COMMON, "Cannot load sagas: server is null");
@@ -693,10 +693,8 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
         try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             JsonObject root = GSON.fromJson(reader, JsonObject.class);
             Saga saga = parseSaga(root);
-            if (saga != null) {
-                LOADED_SAGAS.put(saga.getId(), saga);
-                LogUtil.info(Env.COMMON, "Loaded saga: {}", saga.getName());
-            }
+            LOADED_SAGAS.put(saga.getId(), saga);
+            LogUtil.info(Env.COMMON, "Loaded saga: {}", saga.getName());
         } catch (Exception e) {
             LogUtil.error(Env.COMMON, "Failed to load saga file: {}", file, e);
         }
@@ -718,9 +716,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
             JsonArray questsArray = json.getAsJsonArray("quests");
             for (JsonElement questElement : questsArray) {
                 Quest quest = QuestParser.parseQuest(questElement.getAsJsonObject());
-                if (quest != null) {
-                    quests.add(quest);
-                }
+                quests.add(quest);
             }
         }
 
@@ -728,7 +724,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
     }
 
     public static Map<String, Saga> getAllSagas() {
-		if (!ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled()) return null;
+		if (!ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled()) return null;
         return new HashMap<>(LOADED_SAGAS);
     }
 
@@ -737,7 +733,7 @@ public class SagaManager extends SimplePreparableReloadListener<Map<String, Saga
     }
 
     public static Map<String, Saga> getClientSagas() {
-		if (!ConfigManager.getServerConfig().getGameplay().isStoryModeEnabled()) return null;
+		if (!ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled()) return null;
         return new HashMap<>(CLIENT_SAGAS);
     }
 

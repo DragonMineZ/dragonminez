@@ -3,7 +3,6 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
-import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralUserConfig;
 import com.dragonminez.common.init.MainSounds;
@@ -64,7 +63,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
         configOptions.clear();
 
 		configOptions.add(new ConfigOption("config.firstPersonAnimated",
-			ConfigType.BOOLEAN, hudConfig.isFirstPersonAnimated() ? 1 : 0, 0, 1,
+			ConfigType.BOOLEAN, hudConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
 			v -> hudConfig.setFirstPersonAnimated(v > 0)));
 
         configOptions.add(new ConfigOption("config.xenoverseHudPosX",
@@ -76,19 +75,19 @@ public class ConfigMenuScreen extends BaseMenuScreen {
             v -> hudConfig.setXenoverseHudPosY(v.intValue())));
 
         configOptions.add(new ConfigOption("config.advancedDescription",
-            ConfigType.BOOLEAN, hudConfig.isAdvancedDescription() ? 1 : 0, 0, 1,
+            ConfigType.BOOLEAN, hudConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
             v -> hudConfig.setAdvancedDescription(v > 0)));
 
         configOptions.add(new ConfigOption("config.advancedDescriptionPercentage",
-            ConfigType.BOOLEAN, hudConfig.isAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
+            ConfigType.BOOLEAN, hudConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
             v -> hudConfig.setAdvancedDescriptionPercentage(v > 0)));
 
         configOptions.add(new ConfigOption("config.alternativeHud",
-            ConfigType.BOOLEAN, hudConfig.isAlternativeHud() ? 1 : 0, 0, 1,
+            ConfigType.BOOLEAN, hudConfig.getAlternativeHud() ? 1 : 0, 0, 1,
             v -> hudConfig.setAlternativeHud(v > 0)));
 
         configOptions.add(new ConfigOption("config.hexagonStatsDisplay",
-            ConfigType.BOOLEAN, hudConfig.isHexagonStatsDisplay() ? 1 : 0, 0, 1,
+            ConfigType.BOOLEAN, hudConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
             v -> hudConfig.setHexagonStatsDisplay(v > 0)));
 
 		configOptions.add(new ConfigOption("config.menuScaleMultiplier",
@@ -120,11 +119,11 @@ public class ConfigMenuScreen extends BaseMenuScreen {
             v -> hudConfig.setStaminaBarPosY(v.intValue())));
 
         configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
-                ConfigType.BOOLEAN, hudConfig.isStoryHardDifficulty() ? 1 : 0, 0, 1,
+                ConfigType.BOOLEAN, hudConfig.getStoryHardDifficulty() ? 1 : 0, 0, 1,
                 v -> hudConfig.setStoryHardDifficulty(v > 0)));
 
 		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
-				ConfigType.BOOLEAN, hudConfig.isCameraMovementDuringFlight() ? 1 : 0, 0, 1,
+				ConfigType.BOOLEAN, hudConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
 				v -> hudConfig.setCameraMovementDuringFlight(v > 0)));
     }
 

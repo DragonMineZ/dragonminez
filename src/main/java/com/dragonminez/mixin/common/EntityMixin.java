@@ -23,15 +23,15 @@ public abstract class EntityMixin {
 		if (!(self instanceof Player player)) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			float[] scaling = data.getCharacter().getModelScaling();
-			if (scaling == null || scaling.length < 2) scaling = new float[]{0.9375f, 0.9375f, 0.9375f};
+			Float[] scaling = data.getCharacter().getModelScaling();
+			if (scaling == null || scaling.length < 2) scaling = new Float[]{0.9375f, 0.9375f, 0.9375f};
 
 			float currentScaleY = scaling[1];
 
 			if (data.getCharacter().hasActiveForm()) {
 				FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
 				if (activeForm != null) {
-					float[] formMultiplier = activeForm.getModelScaling();
+					Float[] formMultiplier = activeForm.getModelScaling();
 					currentScaleY *= formMultiplier[1];
 				}
 			}

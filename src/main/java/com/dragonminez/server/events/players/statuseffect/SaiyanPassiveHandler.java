@@ -29,7 +29,7 @@ public class SaiyanPassiveHandler implements IStatusEffectHandler {
 
     @Override
     public void onPlayerSecond(ServerPlayer serverPlayer, StatsData data) {
-        if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isSaiyanRacialSkill()) {
+        if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getSaiyanRacialSkill()) {
             if (ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("saiyan")) {
                 handleSaiyanPassive(serverPlayer, data);
             }

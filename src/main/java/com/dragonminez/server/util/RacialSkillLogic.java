@@ -52,7 +52,7 @@ public class RacialSkillLogic {
 	private static void handleNamekianAssimilation(ServerPlayer player, StatsData data, LivingEntity target) {
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
-		if (!config.isNamekianRacialSkill()) return;
+		if (!config.getNamekianRacialSkill()) return;
 
 		if (data.getResources().getRacialSkillCount() >= config.getNamekianAssimilationAmount()) {
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.limit_reached"), true);
@@ -66,7 +66,7 @@ public class RacialSkillLogic {
 			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(tData ->
 					isNamek.set(tData.getCharacter().getRaceName().equals("namekian")));
 			isValidTarget = isNamek.get();
-		} else if (config.isNamekianAssimilationOnNamekNpcs()) {
+		} else if (config.getNamekianAssimilationOnNamekNpcs()) {
 			isValidTarget = (target instanceof NamekWarriorEntity || target instanceof NamekTraderEntity);
 		}
 
@@ -92,7 +92,7 @@ public class RacialSkillLogic {
 	private static void handleMajinAbsorption(ServerPlayer player, StatsData data, LivingEntity target) {
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
-		if (!config.isMajinAbsoprtionSkill()) return;
+		if (!config.getMajinAbsoprtionSkill()) return;
 
 		if (data.getResources().getRacialSkillCount() >= config.getMajinAbsorptionAmount()) {
 			player.displayClientMessage(Component.translatable("message.dragonminez.racial.limit_reached"), true);
@@ -112,7 +112,7 @@ public class RacialSkillLogic {
 				}
 			});
 			success = true;
-		} else if (target instanceof Mob && config.isMajinAbsorptionOnMobs()) {
+		} else if (target instanceof Mob && config.getMajinAbsorptionOnMobs()) {
 			float maxHp = target.getMaxHealth();
 			int bonus = (int) Math.max(1, maxHp * ratio);
 			String[] mobBonuses = config.getMajinAbsorptionBoosts();
@@ -133,7 +133,7 @@ public class RacialSkillLogic {
 	private static void handleBioAndroidDrain(ServerPlayer player, StatsData data, LivingEntity target) {
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
 
-		if (!config.isBioAndroidRacialSkill()) return;
+		if (!config.getBioAndroidRacialSkill()) return;
 		if (target instanceof MastersEntity) return;
 
 		if (data.getCooldowns().hasCooldown(Cooldowns.DRAIN)) {

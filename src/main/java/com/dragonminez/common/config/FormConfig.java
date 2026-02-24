@@ -1,44 +1,22 @@
 package com.dragonminez.common.config;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Setter
+@Getter
+@NoArgsConstructor
 public class FormConfig {
     public static final int CURRENT_VERSION = 2;
     private int configVersion;
-    public int getConfigVersion() { return configVersion; }
-    public void setConfigVersion(int configVersion) { this.configVersion = configVersion; }
 
     private String groupName;
     private String formType = "super";
     private Map<String, FormData> forms = new LinkedHashMap<>();
-
-    public FormConfig() {}
-
-    public String getGroupName() {
-        return groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-
-    public String getFormType() {
-        return formType;
-    }
-
-    public void setFormType(String formType) {
-        this.formType = formType;
-    }
-
-
-    public Map<String, FormData> getForms() {
-        return forms;
-    }
-
-    public void setForms(Map<String, FormData> forms) {
-        this.forms = forms;
-    }
 
     public FormData getForm(String formName) {
         for (FormData formData : forms.values()) {
@@ -53,160 +31,95 @@ public class FormConfig {
         return forms.get(key);
     }
 
+    @Setter
+    @Getter
+    @NoArgsConstructor
     public static class FormData {
         private String name = "";
-        private int unlockOnSkillLevel = 0;
+        private Integer unlockOnSkillLevel = 0;
         private String customModel = "";
         private String bodyColor1 = "";
         private String bodyColor2 = "";
         private String bodyColor3 = "";
-		private String hairType = "";
+        private String hairType = "";
         private String forcedHairCode = "";
         private String hairColor = "";
         private String eye1Color = "";
         private String eye2Color = "";
         private String auraColor = "";
-		private boolean hasLightnings = false;
-		private String lightningColor = "";
-        private float[] modelScaling = {0.9375f, 0.9375f, 0.9375f};
-        private double strMultiplier = 1.0;
-        private double skpMultiplier = 1.0;
-        private double stmMultiplier = 1.0;
-        private double defMultiplier = 1.0;
-        private double vitMultiplier = 1.0;
-        private double pwrMultiplier = 1.0;
-        private double eneMultiplier = 1.0;
-        private double speedMultiplier = 1.0;
-        private double staminaDrainMultiplier = 1.0;
-        private double energyDrain = 0.0;
-        private double staminaDrain = 0.0;
-        private double healthDrain = 0.0;
-        private double attackSpeed = 1.0;
-        private double maxMastery = 100.0;
-        private double masteryPerHit = 0.01;
-        private double masteryPerDamageReceived = 0.01;
-        private double statMultPerMasteryPoint = 0.02;
-        private double costDecreasePerMasteryPoint = 0.02;
-		private double passiveMasteryGainEveryFiveSeconds = 0.001;
-		private boolean formStackable = true;
-        private double stackDrainMultiplier = 2.0;
-        private boolean canAlwaysTransform = false;
-        private boolean directTransformation = false;
+        private Boolean hasLightnings = false;
+        private String lightningColor = "";
+        private Float[] modelScaling = {0.9375f, 0.9375f, 0.9375f};
+        private Double strMultiplier = 1.0;
+        private Double skpMultiplier = 1.0;
+        private Double stmMultiplier = 1.0;
+        private Double defMultiplier = 1.0;
+        private Double vitMultiplier = 1.0;
+        private Double pwrMultiplier = 1.0;
+        private Double eneMultiplier = 1.0;
+        private Double speedMultiplier = 1.0;
+        private Double staminaDrainMultiplier = 1.0;
+        private Double energyDrain = 0.0;
+        private Double staminaDrain = 0.0;
+        private Double healthDrain = 0.0;
+        private Double attackSpeed = 1.0;
+        private Double maxMastery = 100.0;
+        private Double masteryPerHit = 0.01;
+        private Double masteryPerDamageReceived = 0.01;
+        private Double statMultPerMasteryPoint = 0.02;
+        private Double costDecreasePerMasteryPoint = 0.02;
+        private Double passiveMasteryGainEveryFiveSeconds = 0.001;
+        private Boolean formStackable = true;
+        private Double stackDrainMultiplier = 2.0;
+        private Boolean canAlwaysTransform = false;
+        private Boolean directTransformation = false;
 
-        public FormData() {}
+        public Double getStrMultiplier() { return Math.max(0.01, strMultiplier); }
+        public Double getSkpMultiplier() { return Math.max(0.01, skpMultiplier); }
+        public Double getStmMultiplier() { return Math.max(0.01, stmMultiplier); }
+        public Double getDefMultiplier() { return Math.max(0.01, defMultiplier); }
+        public Double getVitMultiplier() { return Math.max(0.01, vitMultiplier); }
+        public Double getPwrMultiplier() { return Math.max(0.01, pwrMultiplier); }
+        public Double getEneMultiplier() { return Math.max(0.01, eneMultiplier); }
+        public Double getSpeedMultiplier() { return Math.max(0.01, speedMultiplier); }
+        public Double getStaminaDrainMultiplier() { return Math.max(0, staminaDrainMultiplier); }
+        public Double getEnergyDrain() { return Math.max(0, energyDrain); }
+        public Double getStaminaDrain() { return Math.max(0, staminaDrain); }
+        public Double getHealthDrain() { return Math.max(0, healthDrain); }
+        public Double getAttackSpeed() { return Math.max(0.1, attackSpeed); }
+        public Double getMasteryPerHit() { return Math.max(0,  masteryPerHit); }
+        public Double getMasteryPerDamageReceived() { return Math.max(0, masteryPerDamageReceived); }
+        public Double getStatMultPerMasteryPoint() { return Math.max(0, statMultPerMasteryPoint); }
+        public Double getCostDecreasePerMasteryPoint() { return Math.max(0, costDecreasePerMasteryPoint); }
+        public Double getPassiveMasteryGainEveryFiveSeconds() { return Math.max(0, passiveMasteryGainEveryFiveSeconds); }
+        public Double getStackDrainMultiplier() { return Math.max(0.01, stackDrainMultiplier); }
 
-        public String getName() { return name; }
-        public int getUnlockOnSkillLevel() { return unlockOnSkillLevel; }
-        public String getCustomModel() { return customModel; }
-        public String getBodyColor1() { return bodyColor1; }
-        public String getBodyColor2() { return bodyColor2; }
-        public String getBodyColor3() { return bodyColor3; }
-		public String getHairType() { return hairType; }
-        public String getForcedHairCode() { return forcedHairCode; }
-        public String getHairColor() { return hairColor; }
-        public String getEye1Color() { return eye1Color; }
-        public String getEye2Color() { return eye2Color; }
-        public String getAuraColor() { return auraColor; }
-		public boolean hasLightnings() { return hasLightnings; }
-		public String getLightningColor() { return lightningColor; }
-        public float[] getModelScaling() { return modelScaling; }
-        public double getStrMultiplier() { return Math.max(0.01, strMultiplier); }
-        public double getSkpMultiplier() { return Math.max(0.01, skpMultiplier); }
-        public double getStmMultiplier() { return Math.max(0.01, stmMultiplier); }
-        public double getDefMultiplier() { return Math.max(0.01, defMultiplier); }
-        public double getVitMultiplier() { return Math.max(0.01, vitMultiplier); }
-        public double getPwrMultiplier() { return Math.max(0.01, pwrMultiplier); }
-        public double getEneMultiplier() { return Math.max(0.01, eneMultiplier); }
-        public double getSpeedMultiplier() { return Math.max(0.01, speedMultiplier); }
-        public double getStaminaDrainMultiplier() { return Math.max(0, staminaDrainMultiplier); }
-        public double getEnergyDrain() { return Math.max(0, energyDrain); }
-        public double getStaminaDrain() { return Math.max(0, staminaDrain); }
-        public double getHealthDrain() { return Math.max(0, healthDrain); }
-        public double getAttackSpeed() { return Math.max(0.1, attackSpeed); }
-        public double getMaxMastery() { return maxMastery; }
-        public double getMasteryPerHit() { return Math.max(0,  masteryPerHit); }
-        public double getMasteryPerDamageReceived() { return Math.max(0, masteryPerDamageReceived); }
-        public double getStatMultPerMasteryPoint() { return Math.max(0, statMultPerMasteryPoint); }
-        public double getCostDecreasePerMasteryPoint() { return Math.max(0, costDecreasePerMasteryPoint); }
-		public double getPassiveMastery() { return Math.max(0, passiveMasteryGainEveryFiveSeconds); }
-		public boolean isFormStackable() { return formStackable; }
-        public double getStackDrainMultiplier() { return Math.max(0.01, stackDrainMultiplier); }
-        public boolean isCanAlwaysTransform() {
-            return canAlwaysTransform;
-        }
-        public boolean isDirectTransformation() {
-            return directTransformation;
-        }
-
-        public void setName(String name) { this.name = name; }
-        public void setUnlockOnSkillLevel(int level) { this.unlockOnSkillLevel = level; }
-        public void setCustomModel(String customModel) { this.customModel = customModel; }
-        public void setBodyColor1(String bodyColor1) { this.bodyColor1 = bodyColor1; }
-        public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
-        public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
-		public void setHairType(String hairType) { this.hairType = hairType; }
-        public void setForcedHairCode(String forcedHairCode) { this.forcedHairCode = forcedHairCode; }
-        public void setHairColor(String hairColor) { this.hairColor = hairColor; }
-        public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
-        public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
-        public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
-		public void setHasLightnings(boolean hasLightnings) { this.hasLightnings = hasLightnings; }
-		public void setLightningColor(String lightningColor) { this.lightningColor = lightningColor; }
-        public void setModelScaling(float[] modelScaling) { this.modelScaling = modelScaling; }
-        public void setStrMultiplier(double strMultiplier) { this.strMultiplier = strMultiplier; }
-        public void setSkpMultiplier(double skpMultiplier) { this.skpMultiplier = skpMultiplier; }
-        public void setStmMultiplier(double stmMultiplier) { this.stmMultiplier = stmMultiplier; }
-        public void setDefMultiplier(double defMultiplier) { this.defMultiplier = defMultiplier; }
-        public void setVitMultiplier(double vitMultiplier) { this.vitMultiplier = vitMultiplier; }
-        public void setPwrMultiplier(double pwrMultiplier) { this.pwrMultiplier = pwrMultiplier; }
-        public void setEneMultiplier(double eneMultiplier) { this.eneMultiplier = eneMultiplier; }
-        public void setSpeedMultiplier(double speedMultiplier) { this.speedMultiplier = speedMultiplier; }
-        public void setStaminaDrainMultiplier(double staminaDrainMultiplier) { this.staminaDrainMultiplier = staminaDrainMultiplier; }
-        public void setEnergyDrain(double energyDrain) { this.energyDrain = energyDrain; }
-        public void setStaminaDrain(double staminaDrain) { this.staminaDrain = staminaDrain; }
-        public void setHealthDrain(double healthDrain) { this.healthDrain = healthDrain; }
-        public void setAttackSpeed(double attackSpeed) { this.attackSpeed = attackSpeed; }
-        public void setMaxMastery(double maxMastery) { this.maxMastery = maxMastery; }
-        public void setMasteryPerHit(double masteryPerHit) { this.masteryPerHit = masteryPerHit; }
-        public void setMasteryPerDamageReceived(double masteryPerDamageReceived) { this.masteryPerDamageReceived = masteryPerDamageReceived; }
-        public void setStatMultPerMasteryPoint(double statMultPerMasteryPoint) { this.statMultPerMasteryPoint = statMultPerMasteryPoint; }
-        public void setCostDecreasePerMasteryPoint(double costDecreasePerMasteryPoint) { this.costDecreasePerMasteryPoint = costDecreasePerMasteryPoint; }
-		public void setPassiveMastery(double passiveMastery) { this.passiveMasteryGainEveryFiveSeconds = passiveMastery; }
-		public void setFormStackable(boolean formStackable) { this.formStackable = formStackable; }
-        public void setStackDrainMultiplier(double stackDrainMultiplier) { this.stackDrainMultiplier = stackDrainMultiplier; }
-        public void setCanAlwaysTransform(boolean canAlwaysTransform) {
-            this.canAlwaysTransform = canAlwaysTransform;
-        }
-        public void setDirectTransformation(boolean directTransformation) {
-            this.directTransformation = directTransformation;
-        }
-
-        public boolean hasCustomModel() {
+        public Boolean hasCustomModel() {
             return customModel != null && !customModel.isEmpty();
         }
 
-        public boolean hasBodyColorOverride() {
+        public Boolean hasBodyColorOverride() {
             return !bodyColor1.isEmpty() || !bodyColor2.isEmpty() || !bodyColor3.isEmpty();
         }
 
-		public boolean hasDefinedHairType() {
-			return hairType != null && !hairType.isEmpty();
-		}
+        public Boolean hasDefinedHairType() {
+            return hairType != null && !hairType.isEmpty();
+        }
 
-        public boolean hasHairCodeOverride() {
+        public Boolean hasHairCodeOverride() {
             return !forcedHairCode.isEmpty();
         }
 
-        public boolean hasHairColorOverride() {
+        public Boolean hasHairColorOverride() {
             return hairColor != null && !hairColor.isEmpty();
         }
 
-        public boolean hasEyeColorOverride() {
+        public Boolean hasEyeColorOverride() {
             return !eye1Color.isEmpty() || !eye2Color.isEmpty();
         }
 
-        public boolean hasAuraColorOverride() {
+        public Boolean hasAuraColorOverride() {
             return auraColor != null && !auraColor.isEmpty();
         }
-	}
+    }
 }

@@ -46,7 +46,7 @@ public class StoryCommand {
                         .toList());
                 return SharedSuggestionProvider.suggest(suggestions, builder);
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return SharedSuggestionProvider.suggest(new String[]{"all", "1", "2", "3"}, builder);
     };
@@ -112,7 +112,7 @@ public class StoryCommand {
     }
 
     private static int finishQuest(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
-        boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+        boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
             String questArg = StringArgumentType.getString(context, "quest"); // Leemos como String
@@ -209,7 +209,7 @@ public class StoryCommand {
     }
 
     private static int removeQuest(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
-        boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+        boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
             int questId = IntegerArgumentType.getInteger(context, "quest");
@@ -268,7 +268,7 @@ public class StoryCommand {
     }
 
     private static int resetSaga(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
-        boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+        boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
 

@@ -56,9 +56,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         float alpha = player.isSpectator() ? 0.15f : 1.0f;
 
-        BiConsumer<ResourceLocation, float[]> geoConsumer = (texture, color) -> {
-            renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
-        };
+        BiConsumer<ResourceLocation, float[]> geoConsumer = (texture, color) -> renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
 
         gatherBodyLayers(player, stats, partialTick, geoConsumer);
         renderHair(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
@@ -147,7 +145,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
             case "bioandroid", "bioandroid_semi", "bioandroid_perfect" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
             default -> {
-                String gender = (raceConfig != null && raceConfig.hasGender()) ? "_" + character.getGender().toLowerCase() : "";
+                String gender = (raceConfig != null && raceConfig.getHasGender()) ? "_" + character.getGender().toLowerCase() : "";
                 ResourceLocation customTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + logicKey + gender + ".png");
                 consumer.accept(getSafeTexture(customTex), b1);
             }
@@ -235,12 +233,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
     }
 
     private static void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
-        String phase;
-        if (key.equals("bioandroid_semi")) phase = "semiperfect";
-        else if (key.equals("bioandroid_perfect")) phase = "perfect";
-        else if (key.equals("bioandroid_base")) phase = "base";
-        else if (key.equals("bioandroid")) phase = character.hasActiveForm() ? "perfect" : "base";
-        else phase = "perfect";
+        String phase = switch (key) {
+            case "bioandroid_semi" -> "semiperfect";
+            case "bioandroid_perfect" -> "perfect";
+            case "bioandroid_base" -> "base";
+            case "bioandroid" -> character.hasActiveForm() ? "perfect" : "base";
+            default -> "perfect";
+        };
 
         String prefix = "textures/entity/races/bioandroid/" + phase + "_0_";
         float[] stinger = ColorUtils.hexToRgb("#D9B28D");
@@ -527,7 +526,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         if (this.currentKaiokenPhase > 0) {
             float intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
 
-            r = r * (1.0f - intensity) + (1.0f * intensity);
+            r = r * (1.0f - intensity) + (intensity);
             g = g * (1.0f - intensity);
             b = b * (1.0f - intensity);
         }

@@ -5,13 +5,16 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.quest.QuestData;
 import com.dragonminez.common.util.TransformationsHelper;
+import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
+@Getter
 public class StatsData {
     private final Player player;
     private final Stats stats;
@@ -42,18 +45,6 @@ public class StatsData {
         this.bonusStats = new BonusStats();
         this.training = new Training();
     }
-
-    public Stats getStats() { return stats; }
-    public Status getStatus() { return status; }
-    public Cooldowns getCooldowns() { return cooldowns; }
-    public Character getCharacter() { return character; }
-    public Resources getResources() { return resources; }
-    public Skills getSkills() { return skills; }
-    public Effects getEffects() { return effects; }
-    public QuestData getQuestData() { return questData; }
-    public BonusStats getBonusStats() { return bonusStats; }
-    public Training getTraining() { return training; }
-    public Player getPlayer() { return player; }
 
     public boolean hasInitializedHealth() { return hasInitializedHealth; }
     public void setInitializedHealth(boolean initialized) { this.hasInitializedHealth = initialized; }
@@ -93,7 +84,7 @@ public class StatsData {
     public float getMaxHealth() {
         double vitScaling = getStatScaling("VIT");
         double vitMult = getFormMultiplier("VIT");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             vitMult += 1.0;
         }
         double bonusVit = bonusStats.calculateBonus("VIT", 0);
@@ -103,7 +94,7 @@ public class StatsData {
     public int getMaxEnergy() {
         double eneScaling = getStatScaling("ENE");
         double eneMult = getFormMultiplier("ENE");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             eneMult += 1.0;
         }
         double bonusEne = bonusStats.calculateBonus("ENE", 0);
@@ -113,7 +104,7 @@ public class StatsData {
     public int getMaxStamina() {
         double stmScaling = getStatScaling("STM");
         double resMult = getTotalMultiplier("RES");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             resMult += 1.0;
         }
         double bonusRes = bonusStats.calculateBonus("RES", 0);
@@ -127,7 +118,7 @@ public class StatsData {
     public double getMaxMeleeDamage() {
         double strScaling = getStatScaling("STR");
         double strMult = getTotalMultiplier("STR");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             strMult += 1.0;
         }
         double bonusStr = bonusStats.calculateBonus("STR", 0);
@@ -144,7 +135,7 @@ public class StatsData {
     public double getMeleeDamage() {
         double strScaling = getStatScaling("STR");
         double strMult = getTotalMultiplier("STR");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             strMult += 1.0;
         }
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
@@ -157,7 +148,7 @@ public class StatsData {
         double strScaling = getStatScaling("STR");
         double skpMult = getTotalMultiplier("SKP");
         double strMult = getTotalMultiplier("STR");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             skpMult += 1.0;
             strMult += 1.0;
         }
@@ -171,7 +162,7 @@ public class StatsData {
         double strScaling = getStatScaling("STR");
         double skpMult = getTotalMultiplier("SKP");
         double strMult = getTotalMultiplier("STR");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             skpMult += 1.0;
             strMult += 1.0;
         }
@@ -185,7 +176,7 @@ public class StatsData {
     public double getMaxKiDamage() {
         double pwrScaling = getStatScaling("PWR");
         double pwrMult = getTotalMultiplier("PWR");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             pwrMult += 1.0;
         }
         double bonusPwr = bonusStats.calculateBonus("PWR", 0);
@@ -195,7 +186,7 @@ public class StatsData {
     public double getKiDamage() {
         double pwrScaling = getStatScaling("PWR");
         double pwrMult = getTotalMultiplier("PWR");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             pwrMult += 1.0;
         }
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
@@ -206,7 +197,7 @@ public class StatsData {
     public double getMaxDefense() {
         double defScaling = getStatScaling("DEF");
         double resMult = getTotalMultiplier("RES");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             resMult += 1.0;
         }
         double bonusRes = bonusStats.calculateBonus("RES", 0);
@@ -218,7 +209,7 @@ public class StatsData {
     public double getDefense() {
         double defScaling = getStatScaling("DEF");
         double resMult = getTotalMultiplier("RES");
-        if (!ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) {
+        if (!ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
             resMult += 1.0;
         }
         double releaseMultiplier = resources.getPowerRelease() / 100.0;
@@ -233,7 +224,7 @@ public class StatsData {
         double stack = getStackFormMultiplier(statName);
         double effect = getEffectsMultiplier(statName);
 
-        if (ConfigManager.getServerConfig().getGameplay().isMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect;
+        if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) return form * stack * effect;
         else return 1.0 + (form - 1.0) + (stack - 1.0) + (effect - 1.0);
     }
 
@@ -549,10 +540,7 @@ public class StatsData {
     }
 
     private RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {
-        if (config == null) {
-            return new RaceStatsConfig().getClassStats(characterClass);
-        }
-        return config.getClassStats(characterClass);
+        return Objects.requireNonNullElseGet(config, RaceStatsConfig::new).getClassStats(characterClass);
     }
 
     public int calculateRecursiveCost(int statsToAdd, int baseMultiplier, int maxStats, double multiplier) {

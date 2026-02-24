@@ -63,13 +63,13 @@ public class CombatEvent {
 				ComboManager.setNextHitAsCombo(attacker.getUUID(), false);
 				boolean isCooldownFull = false;
 
-				if (ConfigManager.getServerConfig().getCombat().isRespectAttackCooldown()) {
+				if (ConfigManager.getServerConfig().getCombat().getRespectAttackCooldown()) {
 					float adjustedStrength = attacker.getAttackStrengthScale(0.5F);
 
 					if (attackerData.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
 						if (activeForm != null) {
-							adjustedStrength *= (float) activeForm.getAttackSpeed();
+							adjustedStrength *= activeForm.getAttackSpeed().floatValue();
 						}
 					}
 
@@ -189,7 +189,7 @@ public class CombatEvent {
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 
 				if (event.getEntity() instanceof Player) {
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout())
+					if (ConfigManager.getServerConfig().getCombat().getKillPlayersOnCombatLogout())
 						attackerData.getCooldowns().addCooldown(Cooldowns.COMBAT, 200);
 				}
 
@@ -212,12 +212,12 @@ public class CombatEvent {
 				if (victimData.getStatus().hasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
 					boolean isPvP = source.getEntity() instanceof Player;
-					if (ConfigManager.getServerConfig().getCombat().isKillPlayersOnCombatLogout() && isPvP)
+					if (ConfigManager.getServerConfig().getCombat().getKillPlayersOnCombatLogout() && isPvP)
 						victimData.getCooldowns().addCooldown(Cooldowns.COMBAT, 120);
 					double defense = victimData.getDefense();
 					boolean blocked = false;
 
-					if (ConfigManager.getServerConfig().getCombat().isEnableBlocking()) {
+					if (ConfigManager.getServerConfig().getCombat().getEnableBlocking()) {
 						Entity sourceEntity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
 						if (victimData.getStatus().isBlocking() && !victimData.getStatus().isStunned() && sourceEntity != null) {
 							Vec3 targetLook = victim.getLookAngle();
@@ -229,7 +229,7 @@ public class CombatEvent {
 								long currentTime = System.currentTimeMillis();
 								long blockTime = victimData.getStatus().getLastBlockTime();
 								int parryWindow = ConfigManager.getServerConfig().getCombat().getParryWindowMs();
-								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().isEnableParrying();
+								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().getEnableParrying();
 
 								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
 								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 3;
@@ -437,7 +437,7 @@ public class CombatEvent {
 			long lastHurtTime = data.getStatus().getLastHurtTime();
 			int evasionWindow = ConfigManager.getServerConfig().getCombat().getPerfectEvasionWindowMs();
 			boolean isEvasion = (currentTime - lastHurtTime) <= evasionWindow;
-			boolean evasionActive = ConfigManager.getServerConfig().getCombat().isEnablePerfectEvasion();
+			boolean evasionActive = ConfigManager.getServerConfig().getCombat().getEnablePerfectEvasion();
 
 			if (isEvasion && evasionActive) {
 				int maxEnergy = data.getMaxEnergy();

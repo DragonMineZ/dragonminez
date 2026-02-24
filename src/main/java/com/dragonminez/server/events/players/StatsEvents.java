@@ -6,7 +6,6 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
-import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
@@ -262,7 +261,7 @@ public class StatsEvents {
         ItemStack stack = event.getItemStack();
         String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
 
-        float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+        Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
         if (regens != null && regens.length >= 3) {
             player.startUsingItem(event.getHand());
             event.setCancellationResult(InteractionResult.CONSUME);
@@ -275,7 +274,7 @@ public class StatsEvents {
 
         ItemStack stack = event.getItem();
         String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
-        float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+        Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
 
         if (regens != null && regens.length >= 3) {
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
@@ -394,15 +393,15 @@ public class StatsEvents {
 					if (entityReachAttr.getModifier(FORM_REACH_UUID) != null) entityReachAttr.removeModifier(FORM_REACH_UUID);
 				}
 
-				float[] scaling = data.getCharacter().getModelScaling();
-				if (scaling == null || scaling.length < 2) scaling = new float[]{0.9375f, 0.9375f, 0.9375f};
+                Float[] scaling = data.getCharacter().getModelScaling();
+				if (scaling == null || scaling.length < 2) scaling = new Float[]{0.9375f, 0.9375f, 0.9375f};
 
 				float currentScaleY = scaling[1];
 
 				if (data.getCharacter().hasActiveForm()) {
 					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
 					if (activeForm != null) {
-						float[] formMultiplier = activeForm.getModelScaling();
+                        Float[] formMultiplier = activeForm.getModelScaling();
 						currentScaleY *= formMultiplier[1];
 					}
 				}

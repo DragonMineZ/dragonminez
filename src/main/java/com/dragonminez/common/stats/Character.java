@@ -5,10 +5,14 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
 
+@Setter
+@Getter
 public class Character {
     private String race;
     private String gender;
@@ -93,23 +97,6 @@ public class Character {
 		}
 	}
 
-	public String getRace() { return race; }
-	public String getGender() { return gender; }
-	public String getCharacterClass() { return characterClass; }
-	public String getSelectedFormGroup() { return selectedFormGroup; }
-	public String getActiveFormGroup() { return activeFormGroup; }
-	public String getSelectedForm() {
-		return selectedForm;
-	}
-	public String getActiveForm() { return activeForm; }
-	public String getSelectedStackFormGroup() { return selectedStackFormGroup; }
-	public String getActiveStackFormGroup() { return activeStackFormGroup; }
-	public String getSelectedStackForm() {
-		return selectedStackForm;
-	}
-	public String getActiveStackForm() { return activeStackForm; }
-	public int getHairId() { return hairId; }
-
 	public CustomHair getHairBase() {
 		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
 		return hairBase;
@@ -133,31 +120,6 @@ public class Character {
 		return hairSSJ3;
 	}
 
-	public int getBodyType() { return bodyType; }
-	public int getEyesType() { return eyesType; }
-	public int getNoseType() { return noseType; }
-	public int getMouthType() { return mouthType; }
-	public int getTattooType() { return tattooType; }
-	public String getBodyColor() { return bodyColor; }
-	public String getBodyColor2() { return bodyColor2; }
-	public String getBodyColor3() { return bodyColor3; }
-	public String getHairColor() { return hairColor; }
-	public String getEye1Color() { return eye1Color; }
-	public String getEye2Color() { return eye2Color; }
-	public String getAuraColor() { return auraColor; }
-	public FormMasteries getFormMasteries() { return formMasteries; }
-	public UsedForms getFormsUsedBefore() {
-		return formsUsedBefore;
-	}
-	public FormMasteries getStackFormMasteries() { return stackFormMasteries; }
-	public UsedForms getStackFormsUsedBefore() {
-		return stackFormsUsedBefore;
-	}
-	public boolean hasSaiyanTail() {
-		return hasSaiyanTail;
-	}
-	public Boolean getArmored() {return armored;}
-
 	public void setRace(String race) {
 		if (race != null) {
 			this.race = race.toLowerCase();
@@ -167,51 +129,21 @@ public class Character {
 		if (!canHaveGender() && !gender.equals(GENDER_MALE)) this.gender = GENDER_MALE;
 	}
 
-	public void setGender(String gender) { this.gender = gender; }
-	public void setCharacterClass(String characterClass) { this.characterClass = characterClass; }
-	public void setHairId(int hairId) { this.hairId = hairId; }
-	public void setHairBase(CustomHair hairBase) { this.hairBase = hairBase; }
-	public void setHairSSJ(CustomHair hairSSJ) { this.hairSSJ = hairSSJ; }
-	public void setHairSSJ2(CustomHair hairSSJ2) { this.hairSSJ2 = hairSSJ2; }
-	public void setHairSSJ3(CustomHair hairSSJ3) { this.hairSSJ3 = hairSSJ3; }
-    public void setBodyType(int bodyType) { this.bodyType = bodyType; }
-    public void setEyesType(int eyesType) { this.eyesType = eyesType; }
-    public void setNoseType(int noseType) { this.noseType = noseType; }
-    public void setMouthType(int mouthType) { this.mouthType = mouthType; }
-	public void setTattooType(int tattooType) { this.tattooType = tattooType; }
-    public void setBodyColor(String bodyColor) { this.bodyColor = bodyColor; }
-    public void setBodyColor2(String bodyColor2) { this.bodyColor2 = bodyColor2; }
-    public void setBodyColor3(String bodyColor3) { this.bodyColor3 = bodyColor3; }
-    public void setHairColor(String hairColor) { this.hairColor = hairColor; }
-    public void setEye1Color(String eye1Color) { this.eye1Color = eye1Color; }
-    public void setEye2Color(String eye2Color) { this.eye2Color = eye2Color; }
-    public void setAuraColor(String auraColor) { this.auraColor = auraColor; }
-    public void setSelectedFormGroup(String selectedFormGroup) { this.selectedFormGroup = selectedFormGroup; }
-	public void setSelectedForm(String selectedForm) {
-		this.selectedForm = selectedForm;
-	}
-	public void setSelectedStackFormGroup(String selectedStackFormGroup) { this.selectedStackFormGroup = selectedStackFormGroup; }
-	public void setSelectedStackForm(String selectedStackForm) {
-		this.selectedStackForm = selectedStackForm;
-	}
-	public void setSaiyanTail(boolean hasSaiyanTail) {
-		this.hasSaiyanTail = hasSaiyanTail;
-	}
-	public void setArmored(Boolean armored) {this.armored = armored;}
-
     public String getRaceName() {
         return race != null && !race.isEmpty() ? race : "human";
     }
 
 	public boolean canHaveGender() {
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
-		return raceConfig != null ? raceConfig.hasGender() : true;
+		return raceConfig != null ? raceConfig.getHasGender() : true;
 	}
 
-	public float[] getModelScaling() {
+	public Float[] getModelScaling() {
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
-		if (raceConfig != null) return raceConfig.getDefaultModelScaling();
-		return new float[]{0.9375f, 0.9375f, 0.9375f};
+		if (raceConfig != null) {
+			return raceConfig.getDefaultModelScaling();
+		}
+		return new Float[]{0.9375f, 0.9375f, 0.9375f};
 	}
 
     public CompoundTag save() {
@@ -259,7 +191,7 @@ public class Character {
 		} else if (tag.contains("Race", 3)) {
 			int oldRaceId = tag.getInt("Race");
 			List<String> races = ConfigManager.getLoadedRaces();
-			this.race = (races != null && oldRaceId >= 0 && oldRaceId < races.size()) ? races.get(oldRaceId) : "human";
+			this.race = oldRaceId >= 0 && oldRaceId < races.size() ? races.get(oldRaceId) : "human";
 		} else this.race = "human";
 
 
@@ -318,7 +250,9 @@ public class Character {
 	}
 
     public FormConfig.FormData getActiveFormData() {
-        if (!hasActiveForm()) return null;
+        if (!hasActiveForm()) {
+			return null;
+		}
         return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
     }
 
@@ -337,7 +271,9 @@ public class Character {
     }
 
     public FormConfig.FormData getActiveStackFormData() {
-        if (!hasActiveStackForm()) return null;
+        if (!hasActiveStackForm()) {
+			return null;
+		}
         return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
     }
 

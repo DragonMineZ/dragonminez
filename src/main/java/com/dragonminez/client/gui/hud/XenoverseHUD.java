@@ -30,7 +30,7 @@ public class XenoverseHUD {
 
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
-		if (ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
+		if (ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			Character character = data.getCharacter();
 			Status status = data.getStatus();
@@ -170,8 +170,8 @@ public class XenoverseHUD {
 
 				drawStringWithBorder(guiGraphics, powerRelease + "%", (int) ((initialX + 7) / finalTextScale), (int) ((initialY + 32) / finalTextScale), ColorUtils.hexToInt("#FACAF7"));
 
-				if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
-					boolean showPercent = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage();
+				if (ConfigManager.getUserConfig().getHud().getAdvancedDescription()) {
+					boolean showPercent = ConfigManager.getUserConfig().getHud().getAdvancedDescriptionPercentage();
 
 					String hpText = showPercent ? String.format("%.0f", (currentHP / maxHP) * 100) + "%" : numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
 					drawStringWithBorder(guiGraphics, hpText, (int) ((initialX + 100) / finalTextScale), (int) ((initialY + 15) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));

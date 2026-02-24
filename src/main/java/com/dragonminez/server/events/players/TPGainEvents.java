@@ -55,7 +55,7 @@ public class TPGainEvents {
 		}
 
 		// FrostDemon passive
-		if (ConfigManager.getServerConfig().getRacialSkills().isEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().isFrostDemonRacialSkill()) {
+		if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()) {
 			StatsProvider.get(StatsCapability.INSTANCE, event.getPlayer()).ifPresent(data -> {
 				if (data.getCharacter().getRace().equals("frostdemon")) {
 					double frostDemonMultiplier = ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost() - 1.0;

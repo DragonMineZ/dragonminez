@@ -52,7 +52,7 @@ public class PointsCommand {
 	}
 
 	private static int setPoints(CommandSourceStack source, Collection<ServerPlayer> targets, int amount) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getResources().setTrainingPoints(amount);
@@ -68,7 +68,7 @@ public class PointsCommand {
 	}
 
 	private static int addPoints(CommandSourceStack source, Collection<ServerPlayer> targets, int amount) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getResources().addTrainingPoints(amount);
@@ -84,7 +84,7 @@ public class PointsCommand {
 	}
 
 	private static int removePoints(CommandSourceStack source, Collection<ServerPlayer> targets, int amount) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				int currentPoints = data.getResources().getTrainingPoints();

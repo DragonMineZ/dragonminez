@@ -14,7 +14,7 @@ public class FirstPersonManager {
 
 	public static boolean shouldRenderFirstPerson(Player player) {
 		if (player != Minecraft.getInstance().player) return false;
-		if (!ConfigManager.getUserConfig().getHud().isFirstPersonAnimated()) return false;
+		if (!ConfigManager.getUserConfig().getHud().getFirstPersonAnimated()) return false;
 		if (player.getMainHandItem().getItem() instanceof MapItem || player.getOffhandItem().getItem() instanceof MapItem) return false;
 		if (Minecraft.getInstance().screen instanceof ChatScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 		if (Minecraft.getInstance().screen != null) return false;
@@ -29,7 +29,7 @@ public class FirstPersonManager {
 		final float[][] scaling = {{BASE_SCALE, BASE_SCALE, BASE_SCALE}};
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			float[] modelScaling = data.getCharacter().getModelScaling();
+			Float[] modelScaling = data.getCharacter().getModelScaling();
 			if (modelScaling != null && modelScaling.length >= 2) {
 				scaling[0][0] = modelScaling[0];
 				scaling[0][1] = modelScaling[1];
@@ -40,7 +40,7 @@ public class FirstPersonManager {
 				if (activeForm != null) {
 					String formName = activeForm.getName().toLowerCase();
 					if (!formName.contains("ozaru")) {
-						float[] formScaling = activeForm.getModelScaling();
+						Float[] formScaling = activeForm.getModelScaling();
 						scaling[0][0] = formScaling[0];
 						scaling[0][1] = formScaling[1];
 					}
