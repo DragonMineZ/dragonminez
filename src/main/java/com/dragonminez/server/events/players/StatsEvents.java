@@ -512,13 +512,11 @@ public class StatsEvents {
             String race = character.getRaceName().toLowerCase();
 
             String customModelValue = "";
-
             if (character.hasActiveForm() && activeForm != null) {
                 if (activeForm.hasCustomModel()) {
                     customModelValue = activeForm.getCustomModel().toLowerCase();
                 }
             }
-
             if (customModelValue.isEmpty()) {
                 var raceConfig = ConfigManager.getRaceCharacter(race);
                 if (raceConfig != null && raceConfig.getCustomModel() != null) {
@@ -545,8 +543,11 @@ public class StatsEvents {
                 }
             }
 
-            float newWidth = 0.6F * scalingX;
-            float newHeight = 1.9F * scalingY;
+            float rawWidth = 0.6F * scalingX;
+            float rawHeight = 1.9F * scalingY;
+
+            float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
+            float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
 
             Pose pose = event.getPose();
             float poseHeightMultiplier = 1.0F;
@@ -560,10 +561,14 @@ public class StatsEvents {
                 eyeHeightMultiplier = 0.4F / 1.62F;
             }
 
-            EntityDimensions newDims = EntityDimensions.fixed(newWidth, newHeight * poseHeightMultiplier);
+            EntityDimensions newDims = EntityDimensions.fixed(finalWidth, finalHeight * poseHeightMultiplier);
             event.setNewSize(newDims);
 
-            event.setNewEyeHeight(1.7F * scalingY * eyeHeightMultiplier);
+            float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
+            float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
+
+            event.setNewEyeHeight(finalEyeHeight);
         });
     }
+
 }
