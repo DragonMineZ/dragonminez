@@ -25,11 +25,7 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
@@ -92,7 +88,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			isSlimTarget = false;
 		} else if (gender.equals("female") || gender.equals("mujer") || gender.equals("fem")) {
 			boolean isKnownModel = SLIM_SUPPORTED_MODELS.contains(logicKey);
-			boolean hasGenderConfig = (raceConfig != null && raceConfig.hasGender());
+			boolean hasGenderConfig = (raceConfig != null && raceConfig.getHasGender());
 
 			Optional<GeoBone> boobasBone = playerModel.getBone("boobas");
 			boolean hasVisibleBoobas = boobasBone.isPresent() && !boobasBone.get().isHidden();
