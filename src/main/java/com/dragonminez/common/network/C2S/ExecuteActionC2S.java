@@ -102,8 +102,7 @@ public class ExecuteActionC2S {
 								data.getCharacter().clearActiveStackForm();
 								if (data.getStatus().isAndroidUpgraded()) {
 									data.getCharacter().setActiveForm("androidforms", "androidbase");
-								}
-								else {
+								} else {
 									data.getCharacter().clearActiveForm();
 								}
 							} else {
@@ -123,8 +122,7 @@ public class ExecuteActionC2S {
 									} else {
 										if (data.getStatus().isAndroidUpgraded()) {
 											data.getCharacter().setActiveForm("androidforms", "androidbase");
-										}
-										else {
+										} else {
 											data.getCharacter().clearActiveForm();
 										}
 									}
@@ -155,7 +153,7 @@ public class ExecuteActionC2S {
 								double maxMastery = nextForm.getMaxMastery();
 
 								if (mastery >= (maxMastery * 0.25)) {
-									int cost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain() * 3);
+									int cost = (int) (data.getAdjustedEnergyDrain() * 3);
 
 									if (data.getResources().getCurrentEnergy() >= cost) {
 										data.getResources().removeEnergy(cost);
@@ -176,7 +174,8 @@ public class ExecuteActionC2S {
 								if (rightClick) {
 									data.getSkills().setSkillActive("kimanipulation", !data.getSkills().isSkillActive("kimanipulation"));
 								} else {
-									if (!data.getSkills().isSkillActive("kimanipulation")) data.getSkills().setSkillActive("kimanipulation", true);
+									if (!data.getSkills().isSkillActive("kimanipulation"))
+										data.getSkills().setSkillActive("kimanipulation", true);
 									String currentWeapon = data.getStatus().getKiWeaponType();
 									if (currentWeapon == null || currentWeapon.equals("clawlance")) {
 										data.getStatus().setKiWeaponType("blade");

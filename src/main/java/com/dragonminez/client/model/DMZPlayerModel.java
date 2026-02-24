@@ -8,7 +8,6 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.util.lists.MajinForms;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -55,7 +54,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             var character = data.getCharacter();
             String race = character.getRaceName().toLowerCase();
             String gender = character.getGender().toLowerCase();
-            String customRaceGender = (ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).hasGender()) ? gender : "";
+            String customRaceGender = (ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).getHasGender()) ? gender : "";
             String currentForm = character.getActiveForm();
             int bodyType = character.getBodyType();
 

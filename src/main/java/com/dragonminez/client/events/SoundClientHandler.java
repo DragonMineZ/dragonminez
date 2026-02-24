@@ -3,7 +3,6 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.sounds.AuraLoopSound;
-import com.dragonminez.common.stats.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -68,7 +67,7 @@ public class SoundClientHandler {
             var character = stats.getCharacter();
 
             if (character.hasActiveForm() && character.getActiveFormData() != null) {
-                if (character.getActiveFormData().hasLightnings()) {
+                if (character.getActiveFormData().getHasLightnings()) {
 
                     long currentTime = System.currentTimeMillis();
                     long nextPlayTime = LIGHTNING_TIMERS.getOrDefault(playerId, 0L);

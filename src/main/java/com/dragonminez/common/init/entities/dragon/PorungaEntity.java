@@ -4,7 +4,6 @@ import com.dragonminez.client.gui.WishesScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.server.events.DragonBallsHandler;
-import com.eliotlash.mclib.math.functions.limit.Min;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -48,7 +47,7 @@ public class PorungaEntity extends DragonWishEntity {
 			serverLevel.setWeatherParameters(6000, 0, false, false);
 			serverLevel.setDayTime(this.getInvokingTime());
 
-			if (ConfigManager.getServerConfig().getWorldGen().isGenerateDragonBalls()) {
+			if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 				DragonBallsHandler.scatterDragonBalls(serverLevel, true);
 				ServerPlayer owner = serverLevel.getServer().getPlayerList().getPlayerByName(this.getOwnerName());
 				if (owner != null) {

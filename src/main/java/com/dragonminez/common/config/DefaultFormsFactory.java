@@ -3,20 +3,16 @@ package com.dragonminez.common.config;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.util.lists.*;
-import com.google.gson.Gson;
+import lombok.AllArgsConstructor;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@AllArgsConstructor
 public class DefaultFormsFactory {
-
 	private final ConfigLoader loader;
-
-	public DefaultFormsFactory(Gson gson, ConfigLoader loader) {
-		this.loader = loader;
-	}
 
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
@@ -24,7 +20,7 @@ public class DefaultFormsFactory {
 		form.setMasteryPerDamageReceived(0.001);
 		form.setStatMultPerMasteryPoint(0.01);
 		form.setCostDecreasePerMasteryPoint(0.025);
-		form.setPassiveMastery(0.001);
+		form.setPassiveMasteryGainEveryFiveSeconds(0.001);
 	}
 
 	public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -261,7 +257,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData buffed = new FormConfig.FormData();
 		buffed.setName(HumanForms.BUFFED);
 		buffed.setUnlockOnSkillLevel(1);
-		buffed.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
+		buffed.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
 		buffed.setStrMultiplier(1.5);
 		buffed.setSkpMultiplier(1.65);
 		buffed.setDefMultiplier(1.25);
@@ -275,7 +271,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(HumanForms.FULLPOWER);
 		fullPower.setUnlockOnSkillLevel(2);
-		fullPower.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+		fullPower.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		fullPower.setStrMultiplier(1.75);
 		fullPower.setSkpMultiplier(2.0);
 		fullPower.setDefMultiplier(1.65);
@@ -288,7 +284,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData overdrive = new FormConfig.FormData();
 		overdrive.setName(HumanForms.OVERDRIVE);
 		overdrive.setUnlockOnSkillLevel(3);
-		overdrive.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
+		overdrive.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		overdrive.setStrMultiplier(3.0);
 		overdrive.setSkpMultiplier(3.35);
 		overdrive.setDefMultiplier(2.15);
@@ -304,7 +300,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData solaris = new FormConfig.FormData();
 		solaris.setName(HumanForms.SOLARIS);
 		solaris.setUnlockOnSkillLevel(4);
-		solaris.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+		solaris.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		solaris.setStrMultiplier(3.0);
 		solaris.setSkpMultiplier(3.35);
 		solaris.setDefMultiplier(2.5);
@@ -338,7 +334,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData androidBase = new FormConfig.FormData();
 		androidBase.setName(HumanForms.ANDROID_BASE);
 		androidBase.setUnlockOnSkillLevel(0);
-		androidBase.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+		androidBase.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		androidBase.setStrMultiplier(1.45);
 		androidBase.setSkpMultiplier(1.35);
 		androidBase.setDefMultiplier(1.25);
@@ -351,7 +347,7 @@ public class DefaultFormsFactory {
 		superAndroid.setName(HumanForms.SUPER_ANDROID);
 		superAndroid.setUnlockOnSkillLevel(1);
 		superAndroid.setCustomModel("");
-		superAndroid.setModelScaling(new float[]{1.05f, 1.05f, 1.05f});
+		superAndroid.setModelScaling(new Float[]{1.05f, 1.05f, 1.05f});
 		superAndroid.setStrMultiplier(2.15);
 		superAndroid.setSkpMultiplier(2.0);
 		superAndroid.setDefMultiplier(1.65);
@@ -363,7 +359,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fusedAndroid = new FormConfig.FormData();
 		fusedAndroid.setName(HumanForms.FUSED_ANDROID);
 		fusedAndroid.setUnlockOnSkillLevel(2);
-		fusedAndroid.setModelScaling(new float[]{1.4f, 1.3f, 1.4f});
+		fusedAndroid.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
 		fusedAndroid.setStrMultiplier(2.85);
 		fusedAndroid.setSkpMultiplier(2.65);
 		fusedAndroid.setDefMultiplier(2.15);
@@ -404,7 +400,7 @@ public class DefaultFormsFactory {
 		oozaru.setUnlockOnSkillLevel(0);
 		oozaru.setCustomModel("oozaru");
 		oozaru.setBodyColor2("#572117");
-		oozaru.setModelScaling(new float[]{3.8f, 3.8f, 3.8f});
+		oozaru.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
 		oozaru.setStrMultiplier(1.2);
 		oozaru.setSkpMultiplier(1.2);
 		oozaru.setDefMultiplier(1.1);
@@ -425,7 +421,7 @@ public class DefaultFormsFactory {
 		goldenOozaru.setHairColor("#FFD700");
 		goldenOozaru.setAuraColor("#FFD700");
 		goldenOozaru.setBodyColor2("#FFD700");
-		goldenOozaru.setModelScaling(new float[]{3.8f, 3.8f, 3.8f});
+		goldenOozaru.setModelScaling(new Float[]{3.8f, 3.8f, 3.8f});
 		goldenOozaru.setStrMultiplier(3.0);
 		goldenOozaru.setSkpMultiplier(3.0);
 		goldenOozaru.setDefMultiplier(1.9);
@@ -445,7 +441,7 @@ public class DefaultFormsFactory {
 		ssj4.setEye1Color("#FFD700");
 		ssj4.setEye2Color("#FFD700");
 		ssj4.setAuraColor("#FF0000");
-		ssj4.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj4.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		ssj4.setStrMultiplier(4.5);
 		ssj4.setSkpMultiplier(4.5);
 		ssj4.setDefMultiplier(2.5);
@@ -474,7 +470,7 @@ public class DefaultFormsFactory {
 		ssj1.setEye1Color("#00FFFF");
 		ssj1.setEye2Color("#00FFFF");
 		ssj1.setAuraColor("#FFD700");
-		ssj1.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj1.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		ssj1.setStrMultiplier(1.5);
 		ssj1.setSkpMultiplier(1.5);
 		ssj1.setDefMultiplier(1.25);
@@ -494,7 +490,7 @@ public class DefaultFormsFactory {
 		ssg2.setEye1Color("#00FFFF");
 		ssg2.setEye2Color("#00FFFF");
 		ssg2.setAuraColor("#FFD700");
-		ssg2.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+		ssg2.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		ssg2.setStrMultiplier(1.75);
 		ssg2.setSkpMultiplier(1.75);
 		ssg2.setDefMultiplier(1.4);
@@ -514,7 +510,7 @@ public class DefaultFormsFactory {
 		ssg3.setEye1Color("#00FFFF");
 		ssg3.setEye2Color("#00FFFF");
 		ssg3.setAuraColor("#FFD700");
-		ssg3.setModelScaling(new float[]{1.2f, 1.1f, 1.2f});
+		ssg3.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
 		ssg3.setStrMultiplier(2.75);
 		ssg3.setSkpMultiplier(2.75);
 		ssg3.setDefMultiplier(1.8);
@@ -545,7 +541,7 @@ public class DefaultFormsFactory {
 		ssj1Mastered.setEye1Color("#00FFFF");
 		ssj1Mastered.setEye2Color("#00FFFF");
 		ssj1Mastered.setAuraColor("#FFD700");
-		ssj1Mastered.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj1Mastered.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		ssj1Mastered.setStrMultiplier(1.75);
 		ssj1Mastered.setSkpMultiplier(1.75);
 		ssj1Mastered.setDefMultiplier(1.35);
@@ -566,7 +562,7 @@ public class DefaultFormsFactory {
 		ssj2.setAuraColor("#FFD700");
 		ssj2.setHasLightnings(true);
 		ssj2.setLightningColor("#A1FFF9");
-		ssj2.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj2.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		ssj2.setStrMultiplier(2.25);
 		ssj2.setSkpMultiplier(2.25);
 		ssj2.setDefMultiplier(1.65);
@@ -586,7 +582,7 @@ public class DefaultFormsFactory {
 		ssj3.setAuraColor("#FFD700");
 		ssj3.setHasLightnings(true);
 		ssj3.setLightningColor("#A1FFF9");
-		ssj3.setModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		ssj3.setModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		ssj3.setStrMultiplier(3.0);
 		ssj3.setSkpMultiplier(3.0);
 		ssj3.setDefMultiplier(2.15);
@@ -623,7 +619,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData giantForm = new FormConfig.FormData();
 		giantForm.setName(NamekianForms.GIANT);
 		giantForm.setUnlockOnSkillLevel(1);
-		giantForm.setModelScaling(new float[]{3.6f, 3.6f, 3.6f});
+		giantForm.setModelScaling(new Float[]{3.6f, 3.6f, 3.6f});
 		giantForm.setStrMultiplier(1.5);
 		giantForm.setSkpMultiplier(1.5);
 		giantForm.setDefMultiplier(1.4);
@@ -637,7 +633,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(NamekianForms.FULLPOWER);
 		fullPower.setUnlockOnSkillLevel(2);
-		fullPower.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+		fullPower.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		fullPower.setStrMultiplier(2.25);
 		fullPower.setSkpMultiplier(2.25);
 		fullPower.setDefMultiplier(1.85);
@@ -653,7 +649,7 @@ public class DefaultFormsFactory {
 		superNamekian.setAuraColor("#7FFF00");
 		superNamekian.setHasLightnings(true);
 		superNamekian.setLightningColor("#FFFFFF");
-		superNamekian.setModelScaling(new float[]{1.05f, 1.05f, 1.05f});
+		superNamekian.setModelScaling(new Float[]{1.05f, 1.05f, 1.05f});
 		superNamekian.setStrMultiplier(3.0);
 		superNamekian.setSkpMultiplier(3.0);
 		superNamekian.setDefMultiplier(2.35);
@@ -685,7 +681,7 @@ public class DefaultFormsFactory {
 		second.setName(FrostDemonForms.SECOND_FORM);
 		second.setUnlockOnSkillLevel(1);
 		second.setCustomModel("");
-		second.setModelScaling(new float[]{1.3f, 1.3f, 1.3f});
+		second.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 		second.setStrMultiplier(1.5);
 		second.setSkpMultiplier(1.5);
 		second.setDefMultiplier(1.25);
@@ -699,7 +695,7 @@ public class DefaultFormsFactory {
 		third.setName(FrostDemonForms.THIRD_FORM);
 		third.setUnlockOnSkillLevel(2);
 		third.setCustomModel("frostdemon_third");
-		third.setModelScaling(new float[]{1.4f, 1.4f, 1.4f});
+		third.setModelScaling(new Float[]{1.4f, 1.4f, 1.4f});
 		third.setStrMultiplier(1.75);
 		third.setSkpMultiplier(1.75);
 		third.setDefMultiplier(1.65);
@@ -711,7 +707,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData finalForm = new FormConfig.FormData();
 		finalForm.setName(FrostDemonForms.FINAL_FORM);
 		finalForm.setUnlockOnSkillLevel(3);
-		finalForm.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+		finalForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		finalForm.setStrMultiplier(2.25);
 		finalForm.setSkpMultiplier(2.25);
 		finalForm.setDefMultiplier(1.85);
@@ -723,7 +719,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(FrostDemonForms.FULLPOWER);
 		fullPower.setUnlockOnSkillLevel(4);
-		fullPower.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
+		fullPower.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
 		fullPower.setStrMultiplier(2.75);
 		fullPower.setSkpMultiplier(2.75);
 		fullPower.setDefMultiplier(2.15);
@@ -740,7 +736,7 @@ public class DefaultFormsFactory {
 		fifthForm.setName(FrostDemonForms.FIFTH_FORM);
 		fifthForm.setUnlockOnSkillLevel(5);
 		fifthForm.setCustomModel("frostdemon_fifth");
-		fifthForm.setModelScaling(new float[]{1.4f, 1.3f, 1.4f});
+		fifthForm.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
 		fifthForm.setStrMultiplier(3.0);
 		fifthForm.setSkpMultiplier(3.0);
 		fifthForm.setDefMultiplier(2.35);
@@ -778,7 +774,7 @@ public class DefaultFormsFactory {
 		kid.setName(MajinForms.KID);
 		kid.setUnlockOnSkillLevel(1);
 		kid.setCustomModel("majin_kid");
-		kid.setModelScaling(new float[]{0.7f, 0.7f, 0.7f});
+		kid.setModelScaling(new Float[]{0.7f, 0.7f, 0.7f});
 		kid.setStrMultiplier(1.5);
 		kid.setSkpMultiplier(1.5);
 		kid.setDefMultiplier(1.25);
@@ -792,7 +788,7 @@ public class DefaultFormsFactory {
 		evil.setName(MajinForms.EVIL);
 		evil.setUnlockOnSkillLevel(2);
 		evil.setCustomModel("majin_evil");
-		evil.setModelScaling(new float[]{0.9f, 1.0f, 0.9f});
+		evil.setModelScaling(new Float[]{0.9f, 1.0f, 0.9f});
 		evil.setStrMultiplier(1.75);
 		evil.setSkpMultiplier(1.75);
 		evil.setDefMultiplier(1.65);
@@ -810,7 +806,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superForm = new FormConfig.FormData();
 		superForm.setName(MajinForms.SUPER);
 		superForm.setUnlockOnSkillLevel(3);
-		superForm.setModelScaling(new float[]{1.0f, 1.0f, 1.0f});
+		superForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		superForm.setStrMultiplier(2.25);
 		superForm.setSkpMultiplier(2.25);
 		superForm.setDefMultiplier(2.15);
@@ -822,7 +818,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ultra = new FormConfig.FormData();
 		ultra.setName(MajinForms.ULTRA);
 		ultra.setUnlockOnSkillLevel(4);
-		ultra.setModelScaling(new float[]{1.3f, 1.2f, 1.3f});
+		ultra.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
 		ultra.setStrMultiplier(3.0);
 		ultra.setSkpMultiplier(3.0);
 		ultra.setDefMultiplier(2.5);
@@ -858,7 +854,7 @@ public class DefaultFormsFactory {
 		semiPerfect.setName(BioAndroidForms.SEMI_PERFECT);
 		semiPerfect.setUnlockOnSkillLevel(1);
 		semiPerfect.setCustomModel("bioandroid_semi");
-		semiPerfect.setModelScaling(new float[]{1.3f, 1.3f, 1.3f});
+		semiPerfect.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 		semiPerfect.setStrMultiplier(1.5);
 		semiPerfect.setSkpMultiplier(1.5);
 		semiPerfect.setDefMultiplier(1.4);
@@ -878,7 +874,7 @@ public class DefaultFormsFactory {
 		perfect.setName(BioAndroidForms.PERFECT);
 		perfect.setUnlockOnSkillLevel(2);
 		perfect.setCustomModel("bioandroid_perfect");
-		perfect.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
+		perfect.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		perfect.setStrMultiplier(2.25);
 		perfect.setSkpMultiplier(2.25);
 		perfect.setDefMultiplier(1.85);
@@ -897,7 +893,7 @@ public class DefaultFormsFactory {
 		superPerfect.setName(BioAndroidForms.SUPER_PERFECT);
 		superPerfect.setUnlockOnSkillLevel(3);
 		superPerfect.setCustomModel("bioandroid_perfect");
-		superPerfect.setModelScaling(new float[]{1.1f, 1.1f, 1.1f});
+		superPerfect.setModelScaling(new Float[]{1.1f, 1.1f, 1.1f});
 		superPerfect.setStrMultiplier(3.0);
 		superPerfect.setSkpMultiplier(3.0);
 		superPerfect.setDefMultiplier(2.35);

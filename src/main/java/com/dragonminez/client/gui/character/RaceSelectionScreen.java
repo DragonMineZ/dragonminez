@@ -4,7 +4,6 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -369,11 +368,11 @@ public class RaceSelectionScreen extends ScaledScreen {
 
 			float currentScale;
 			if (activeForm != null) {
-				float[] formScaling = activeForm.getModelScaling();
-				float[] charScaling = character.getModelScaling();
+				Float[] formScaling = activeForm.getModelScaling();
+				Float[] charScaling = character.getModelScaling();
 				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
 			} else {
-				float[] charScaling = character.getModelScaling();
+				Float[] charScaling = character.getModelScaling();
 				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
 			}
 

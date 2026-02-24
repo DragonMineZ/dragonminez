@@ -3,16 +3,18 @@ package com.dragonminez.server.world.structure.placement;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import lombok.Getter;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 
+@Getter
 public class FixedStructurePlacement extends StructurePlacement {
-
 	public static final Codec<FixedStructurePlacement> CODEC = RecordCodecBuilder.create(instance ->
 			placementCodec(instance).and(instance.group(
 					Codec.INT.fieldOf("fixed_x").forGetter(p -> p.fixedX),
@@ -40,8 +42,8 @@ public class FixedStructurePlacement extends StructurePlacement {
 	}
 
 	@Override
-	protected boolean isPlacementChunk(ChunkGeneratorStructureState structureState, int x, int z) {
-		if (!ConfigManager.getServerConfig().getWorldGen().isGenerateCustomStructures()) {
+	protected boolean isPlacementChunk(@NonNull ChunkGeneratorStructureState structureState, int x, int z) {
+		if (!ConfigManager.getServerConfig().getWorldGen().getGenerateCustomStructures()) {
 			return false;
 		} else if (x == this.fixedX && z == this.fixedZ) {
 			return true;
@@ -49,20 +51,8 @@ public class FixedStructurePlacement extends StructurePlacement {
 		return false;
 	}
 
-	public int getFixedX() {
-		return this.fixedX;
-	}
-
-	public int getFixedZ() {
-		return this.fixedZ;
-	}
-
-	public Rotation getRotation() {
-		return this.rotation;
-	}
-
 	@Override
-	public StructurePlacementType<?> type() {
+	public @NonNull StructurePlacementType<?> type() {
 		return MainStructurePlacements.FIXED_PLACEMENT.get();
 	}
 }

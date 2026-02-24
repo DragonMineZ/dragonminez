@@ -7,7 +7,6 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.stats.*;
-import com.dragonminez.common.stats.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
@@ -113,7 +112,7 @@ public class ScouterHUD {
 	public static final IGuiOverlay HUD_SCOUTER = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
+		if (ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
 
 		boolean hasScouter = mc.player.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("scouter");
 		if (!hasScouter) return;

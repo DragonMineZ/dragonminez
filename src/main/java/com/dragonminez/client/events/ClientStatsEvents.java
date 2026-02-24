@@ -40,7 +40,7 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onMouseInput(InputEvent.MouseButton.Pre event) {
 		if (Minecraft.getInstance().player == null) return;
-		if (!ConfigManager.getServerConfig().getCombat().isEnableComboAttacks()) return;
+		if (!ConfigManager.getServerConfig().getCombat().getEnableComboAttacks()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			if (!data.getStatus().hasCreatedCharacter()) return;

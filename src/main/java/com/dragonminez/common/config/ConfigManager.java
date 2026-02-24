@@ -21,7 +21,7 @@ import java.util.*;
 public class ConfigManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
-	private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory(GSON, LOADER);
+	private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory(LOADER);
 
 	private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
 	private static final Path STACK_FORMS_DIR = CONFIG_DIR.resolve("forms");
@@ -518,7 +518,7 @@ public class ConfigManager {
 
 	private static void setupHumanCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("human");
-		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);
 		config.setCanUseHair(true);
@@ -542,7 +542,7 @@ public class ConfigManager {
 
 	private static void setupSaiyanCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("saiyan");
-		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);
 		config.setCanUseHair(true);
@@ -565,7 +565,7 @@ public class ConfigManager {
 
 	private static void setupNamekianCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("namekian");
-		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
 		config.setCanUseHair(false);
@@ -588,7 +588,7 @@ public class ConfigManager {
 
 	private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("frostdemon");
-		config.setDefaultModelScaling(new float[]{0.7375f, 0.7375f, 0.7375f});
+		config.setDefaultModelScaling(new Float[]{0.7375f, 0.7375f, 0.7375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
 		config.setCanUseHair(false);
@@ -611,7 +611,7 @@ public class ConfigManager {
 
 	private static void setupBioAndroidCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("bioandroid");
-		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
 		config.setCanUseHair(false);
@@ -634,7 +634,7 @@ public class ConfigManager {
 
 	private static void setupMajinCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("majin");
-		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
 		config.setCanUseHair(true);
@@ -657,7 +657,7 @@ public class ConfigManager {
 
 	private static void setupDefaultCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("human");
-		config.setDefaultModelScaling(new float[]{0.9375f, 0.9375f, 0.9375f});
+		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);
 		config.setDefaultEyesType(0);

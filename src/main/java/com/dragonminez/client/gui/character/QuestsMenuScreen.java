@@ -25,6 +25,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,7 +78,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		super(Component.translatable("gui.dragonminez.quests.title"));
 	}
 
-	private enum QuestPages {OBJECTIVES, REWARDS;}
+	private enum QuestPages {OBJECTIVES, REWARDS}
 
 	@Override
 	protected void init() {
@@ -338,22 +339,16 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			if (hasUnclaimedRewards) {
 				buttonText = Component.translatable("gui.dragonminez.quests.claim_rewards");
 				isClaimAction = true;
-				buttonActive = true;
-			} else {
+            } else {
 				return;
 			}
 		} else if (canStart) {
 			buttonText = Component.translatable("gui.dragonminez.quests.start");
-			isClaimAction = false;
 
-			long now = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
 			long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
 
-			if (now - lastRun < START_QUEST_COOLDOWN) {
-				buttonActive = false;
-			} else {
-				buttonActive = true;
-			}
+            buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
 		} else {
 			return;
 		}
@@ -381,7 +376,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 					} else {
 						QUEST_COOLDOWNS.put(cooldownKey, now);
 
-						boolean isHard = ConfigManager.getUserConfig().getHud().isStoryHardDifficulty();
+						boolean isHard = ConfigManager.getUserConfig().getHud().getStoryHardDifficulty();
 						NetworkHandler.sendToServer(new StartQuestC2S(
 								currentSaga.getId(),
 								selectedQuest.getId(),
@@ -419,7 +414,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		this.renderBackground(graphics);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
@@ -545,7 +540,6 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 				case OBJECTIVES -> renderQuestDetails(graphics, rightPanelX, rightPanelY);
 				case REWARDS -> renderQuestRewards(graphics, rightPanelX, rightPanelY);
 			}
-			;
 		}
 	}
 

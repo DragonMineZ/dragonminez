@@ -94,7 +94,7 @@ public class BonusCommand {
 	}
 
 	private static int addBonus(CommandSourceStack source, String stat, String operation, double value, String bonusName, Collection<ServerPlayer> targets) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 
 		if (!isValidStat(finalStat) && !finalStat.equals("ALL")) {
@@ -124,7 +124,7 @@ public class BonusCommand {
 	}
 
 	private static int removeBonus(CommandSourceStack source, String stat, String bonusName, Collection<ServerPlayer> targets) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 
 		if (!isValidStat(finalStat)) {
@@ -148,7 +148,7 @@ public class BonusCommand {
 	}
 
 	private static int clearStat(CommandSourceStack source, String stat, Collection<ServerPlayer> targets) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 
 		if (!isValidStat(finalStat) && !finalStat.equals("ALL")) {

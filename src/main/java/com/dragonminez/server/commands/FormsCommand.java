@@ -62,7 +62,7 @@ public class FormsCommand {
 	}
 
 	private static int setForm(CommandSourceStack source, Collection<ServerPlayer> targets, String formName, int level) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String lowerName = formName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 
@@ -87,7 +87,7 @@ public class FormsCommand {
 	}
 
 	private static int removeForm(CommandSourceStack source, Collection<ServerPlayer> targets, String formName) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String lowerName = formName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 

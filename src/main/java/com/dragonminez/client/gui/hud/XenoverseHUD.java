@@ -30,7 +30,7 @@ public class XenoverseHUD {
 
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
-		if (ConfigManager.getUserConfig().getHud().isAlternativeHud()) return;
+		if (ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			Character character = data.getCharacter();
 			Status status = data.getStatus();
@@ -111,11 +111,11 @@ public class XenoverseHUD {
 				// HP Bar
 				guiGraphics.blit(hud, initialX + 31, initialY + 13, 14, 2, 141, 9);
 				if (currentHP < maxHP * 0.33) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, Math.min((int) currentHPBarWidth, 76), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, Math.min((int) currentHPBarWidth, 145), 5);
 				} else if (currentHP < maxHP * 0.66) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, Math.min((int) currentHPBarWidth, 76), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, Math.min((int) currentHPBarWidth, 145), 5);
 				} else {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, Math.min((int) currentHPBarWidth, 76), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, Math.min((int) currentHPBarWidth, 145), 5);
 				}
 
 				// Ki Bar with Aura Color
@@ -123,12 +123,12 @@ public class XenoverseHUD {
 
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, Math.min((int) currentKiBarWidth, 76), 4);
+				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, Math.min((int) currentKiBarWidth, 145), 4);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 				// Stamina Bar
 				guiGraphics.blit(hud, initialX + 28, initialY + 28, 9, 105, 100, 7);
-				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, Math.min((int) currentStmBarWidth, 76), 5);
+				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, Math.min((int) currentStmBarWidth, 145), 5);
 
 				// Racial Icon / Power Release
 				RenderSystem.setShaderTexture(0, racialIcons);
@@ -170,8 +170,8 @@ public class XenoverseHUD {
 
 				drawStringWithBorder(guiGraphics, powerRelease + "%", (int) ((initialX + 7) / finalTextScale), (int) ((initialY + 32) / finalTextScale), ColorUtils.hexToInt("#FACAF7"));
 
-				if (ConfigManager.getUserConfig().getHud().isAdvancedDescription()) {
-					boolean showPercent = ConfigManager.getUserConfig().getHud().isAdvancedDescriptionPercentage();
+				if (ConfigManager.getUserConfig().getHud().getAdvancedDescription()) {
+					boolean showPercent = ConfigManager.getUserConfig().getHud().getAdvancedDescriptionPercentage();
 
 					String hpText = showPercent ? String.format("%.0f", (currentHP / maxHP) * 100) + "%" : numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
 					drawStringWithBorder(guiGraphics, hpText, (int) ((initialX + 100) / finalTextScale), (int) ((initialY + 15) / finalTextScale), ColorUtils.hexToInt("#FFFFFF"));

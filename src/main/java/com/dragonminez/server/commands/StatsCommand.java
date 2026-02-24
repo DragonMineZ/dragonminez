@@ -1,8 +1,6 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.RaceCharacterConfig;
-import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -85,7 +83,7 @@ public class StatsCommand {
 	}
 
 	private static int modifyStats(CommandSourceStack source, String stat, String amountStr, Collection<ServerPlayer> targets, String mode) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		String finalStat = stat.toUpperCase();
 		if (!isValidStat(finalStat)) {
 			source.sendFailure(Component.translatable("command.dragonminez.stats.invalid_stat", stat));
@@ -151,7 +149,7 @@ public class StatsCommand {
 	}
 
 	private static int resetStats(CommandSourceStack source, Collection<ServerPlayer> targets, String keepPercentageStr) {
-		boolean log = ConfigManager.getServerConfig().getGameplay().isCommandOutputOnConsole();
+		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		Integer keepPercentage = null;
 		if (keepPercentageStr != null && !keepPercentageStr.isEmpty()) {
 			try {
