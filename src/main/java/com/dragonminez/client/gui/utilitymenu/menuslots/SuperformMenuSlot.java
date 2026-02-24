@@ -21,7 +21,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         boolean hasSuperform = false;
         var skillConfig = ConfigManager.getSkillsConfig();
         for (String formSkill : skillConfig.getFormSkills()) {
-            if (statsData.getSkills().getSkillLevel(formSkill) > 0) {
+            if (statsData.getSkills().getSkillLevel(formSkill) >= 0) {
                 hasSuperform = true;
                 break;
             }
