@@ -51,8 +51,21 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getServerConfig(), ConfigManager.getSkillsConfig(), ConfigManager.getAllForms(), ConfigManager.getAllRaceStats(), ConfigManager.getAllRaceCharacters()), serverPlayer);
-			NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), serverPlayer);
+			NetworkHandler.sendToPlayer(
+                    new SyncServerConfigS2C(
+                            ConfigManager.getServerConfig(),
+                            ConfigManager.getSkillsConfig(),
+                            ConfigManager.getSkillOfferingsConfig(),
+                            ConfigManager.getAllForms(),
+                            ConfigManager.getAllRaceStats(),
+                            ConfigManager.getAllRaceCharacters()
+                    ), serverPlayer
+            );
+			NetworkHandler.sendToPlayer(
+                    new SyncSagasS2C(
+                            SagaManager.getAllSagas()
+                    ), serverPlayer
+            );
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				QuestData questData = data.getQuestData();
@@ -82,9 +95,7 @@ public class StatsCapability {
     @SubscribeEvent
     public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
-            });
+            StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer));
         }
     }
 }

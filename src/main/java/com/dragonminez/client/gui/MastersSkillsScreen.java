@@ -23,6 +23,7 @@ import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
 public class MastersSkillsScreen extends BaseMenuScreen {
@@ -150,29 +151,11 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	}
 
 	private List<String> getMasterSkills() {
-		List<String> skills = new ArrayList<>();
-
-		switch (masterName.toLowerCase()) {
-			case "roshi":
-				skills.add("jump");
-				skills.add("meditation");
-				break;
-			case "goku":
-				skills.add("fly");
-				skills.add("kicontrol");
-				skills.add("kisense");
-				skills.add("fusion");
-				break;
-			case "kingkai":
-				skills.add("kaioken");
-				skills.add("potentialunlock");
-				skills.add("kimanipulation");
-				break;
-			default:
-				skills.add("jump");
-				break;
-		}
-		return skills;
+		Map<String, List<String>> skillOfferings = ConfigManager.getSkillOfferingsConfig().getSkillOfferings();
+		return skillOfferings.getOrDefault(
+				masterName.toLowerCase(),
+				skillOfferings.get("default")
+		);
 	}
 
 	private void updateSkillsList() {
