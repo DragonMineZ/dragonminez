@@ -542,6 +542,7 @@ public class ConfigManager {
 
 	private static void setupSaiyanCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("saiyan");
+		config.setHasSaiyanTail(true);
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);

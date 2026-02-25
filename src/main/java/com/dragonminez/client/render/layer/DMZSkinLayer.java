@@ -125,7 +125,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || raceName.equals("saiyan");
-        if (isSaiyanLogic && stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail()) {
+        boolean hasSaiyanTail = ConfigManager.getRaceCharacter(raceName).getHasSaiyanTail();
+        if ((isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail()) {
             boolean hasActiveForm = character.hasActiveForm();
             boolean hasActiveStackForm = character.hasActiveStackForm();
             float[] tailColor;

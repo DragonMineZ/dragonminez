@@ -173,8 +173,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || race.equals("saiyan");
         boolean isOozaru = logicKey.equals("oozaru") || currentForm.contains("oozaru");
+        boolean hasSaiyanTail = ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
 
-        if (isSaiyanLogic && !stats.getStatus().isTailVisible() && !isOozaru && character.isHasSaiyanTail()) {
+        if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && !isOozaru && character.isHasSaiyanTail()) {
             setupSaiyanParts(partsModel);
 
             return (hasForm || hasStackForm || stats.getStatus().isActionCharging())
