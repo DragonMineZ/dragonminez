@@ -1,5 +1,6 @@
 package com.dragonminez.client.util;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -67,7 +68,8 @@ public class BoneVisibilityHandler {
 			if (isSaiyan) {
 				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
 			} else {
-				showNormalTail = !isHuman && !isNamekian && !isMajin && stats.getCharacter().isHasSaiyanTail();
+				boolean hasSaiyanTail = stats.getCharacter().isHasSaiyanTail() && ConfigManager.getRaceCharacter(character.getRace()).getHasSaiyanTail();
+				showNormalTail = !isHuman && !isNamekian && !isMajin && hasSaiyanTail;
 			}
 
 			setHiddenRecursive(bone, !showNormalTail);
