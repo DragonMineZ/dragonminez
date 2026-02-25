@@ -130,6 +130,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				tailColor = ColorUtils.hexToRgb(character.getActiveFormData().getBodyColor2());
 			} else if (hasActiveStackForm && character.getActiveStackFormData() != null && character.getActiveStackFormData().getBodyColor2() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
 				tailColor = ColorUtils.hexToRgb(character.getActiveStackFormData().getBodyColor2());
+			} else if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
+				tailColor = ColorUtils.hexToRgb(character.getBodyColor2());
 			} else {
 				tailColor = ColorUtils.hexToRgb("#572117");
 			}
