@@ -19,6 +19,7 @@ public class RaceCharacterConfig {
     private Boolean useVanillaSkin = false;
     private String customModel = "";
     private String racialSkill = "human";
+    private Boolean hasSaiyanTail = false;
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
     private Integer defaultBodyType = 0;
     private Integer defaultHairType = 0;

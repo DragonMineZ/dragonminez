@@ -270,6 +270,11 @@ public class Character {
         this.activeStackForm = "";
     }
 
+	public void clearSelectedStackForm() {
+		this.selectedStackFormGroup = "";
+		this.selectedStackForm = "";
+	}
+
     public FormConfig.FormData getActiveStackFormData() {
         if (!hasActiveStackForm()) {
 			return null;

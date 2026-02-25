@@ -125,7 +125,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || raceName.equals("saiyan");
-        if (isSaiyanLogic && stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail()) {
+        boolean hasSaiyanTail = ConfigManager.getRaceCharacter(raceName).getHasSaiyanTail();
+        if ((isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail()) {
             boolean hasActiveForm = character.hasActiveForm();
             boolean hasActiveStackForm = character.hasActiveStackForm();
             float[] tailColor;
@@ -133,7 +134,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 tailColor = ColorUtils.hexToRgb(character.getActiveFormData().getBodyColor2());
             } else if (hasActiveStackForm && character.getActiveStackFormData() != null && character.getActiveStackFormData().getBodyColor2() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
                 tailColor = ColorUtils.hexToRgb(character.getActiveStackFormData().getBodyColor2());
-            } else {
+            } else if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
+				tailColor = ColorUtils.hexToRgb(character.getBodyColor2());
+			} else {
                 tailColor = ColorUtils.hexToRgb("#572117");
             }
             consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/tail1.png")), tailColor);

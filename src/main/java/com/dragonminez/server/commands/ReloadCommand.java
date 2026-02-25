@@ -35,8 +35,16 @@ public class ReloadCommand {
 			WishManager.loadWishes(server);
 			int syncedPlayers = 0;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(ConfigManager.getServerConfig(), ConfigManager.getSkillsConfig(),
-						ConfigManager.getAllForms(), ConfigManager.getAllRaceStats(), ConfigManager.getAllRaceCharacters()), player);
+				NetworkHandler.sendToPlayer(
+						new SyncServerConfigS2C(
+								ConfigManager.getServerConfig(),
+								ConfigManager.getSkillsConfig(),
+								ConfigManager.getSkillOfferingsConfig(),
+								ConfigManager.getAllForms(),
+								ConfigManager.getAllRaceStats(),
+								ConfigManager.getAllRaceCharacters()
+						), player
+				);
 				NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), player);
 				NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
 				syncedPlayers++;
