@@ -129,9 +129,10 @@ public class AlternativeHUD {
 
 				drawBarValues(guiGraphics, currentKi, maxKi, 24, -8);
 
-				guiGraphics.pose().scale(userScale - 0.3f, userScale - 0.3f, 1.0f);
-				drawFormIcon(guiGraphics, formRelease, -40, -8);
+                guiGraphics.pose().scale(userScale - 0.3f, userScale - 0.3f, 1.0f);
+
 				drawRacialIcon(guiGraphics, raceName, Math.min(powerRelease, 100), -40, -8);
+                drawFormIcon(guiGraphics, formRelease, -40, -8);
 
 				guiGraphics.pose().popPose();
 
@@ -145,6 +146,7 @@ public class AlternativeHUD {
 				guiGraphics.blit(hud, 65, -8, 77, 90, 4, 4, 128, 128);
 
 				drawBarValues(guiGraphics, currentStm, maxStm, 29, -8);
+                drawStringWithBorder(guiGraphics, powerRelease + "%", -115, 3, ColorUtils.hexToInt("#FACAF7"));
 
 				guiGraphics.pose().popPose();
 			}
@@ -189,6 +191,10 @@ public class AlternativeHUD {
 		if (fillFormHeight > 0) {
 			guiGraphics.blit(xvhud, x + 2, y + 12 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight);
 		}
+//
+//        if (fillFormHeight > 0) {
+//            guiGraphics.blit(xvhud, x + 10, y + 20 + (17 - fillFormHeight), 220, 130 + (17 - fillFormHeight), 26, fillFormHeight);
+//        }
 	}
 
 	private static void drawTinyText(GuiGraphics guiGraphics, String text, int x, int y, int color) {
