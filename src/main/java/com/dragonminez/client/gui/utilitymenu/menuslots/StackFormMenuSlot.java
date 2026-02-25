@@ -31,6 +31,7 @@ public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
             boolean formGroupIsEmpty = statsData.getCharacter().getSelectedStackFormGroup() == null || statsData.getCharacter().getSelectedStackFormGroup().isEmpty();
             boolean formIsEmpty = statsData.getCharacter().getSelectedStackForm() == null || statsData.getCharacter().getSelectedStackForm().isEmpty();
             if (formGroupIsEmpty || formIsEmpty) {
+                statsData.getCharacter().clearSelectedStackForm();
                 NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_STACK_FORM_GROUP, false));
             }
             return new ButtonInfo(

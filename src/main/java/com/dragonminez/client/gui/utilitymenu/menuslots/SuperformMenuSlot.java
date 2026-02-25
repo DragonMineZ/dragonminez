@@ -21,7 +21,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
         boolean hasSuperform = false;
         var skillConfig = ConfigManager.getSkillsConfig();
         for (String formSkill : skillConfig.getFormSkills()) {
-            if (statsData.getSkills().getSkillLevel(formSkill) > 0) {
+            if (statsData.getSkills().getSkillLevel(formSkill) >= 0) {
                 hasSuperform = true;
                 break;
             }
@@ -31,6 +31,7 @@ public class SuperformMenuSlot extends AbstractMenuSlot implements IUtilityMenuS
             boolean formGroupIsEmpty = statsData.getCharacter().getSelectedFormGroup() == null || statsData.getCharacter().getSelectedFormGroup().isEmpty();
             boolean formIsEmpty = statsData.getCharacter().getSelectedForm() == null || statsData.getCharacter().getSelectedForm().isEmpty();
             if (formGroupIsEmpty || formIsEmpty) {
+                statsData.getCharacter().clearSelectedForm();
                 NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_FORM_GROUP, false));
             }
             return new ButtonInfo(
