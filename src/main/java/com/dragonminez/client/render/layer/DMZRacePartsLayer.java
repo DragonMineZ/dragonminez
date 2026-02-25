@@ -177,7 +177,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
         if (isSaiyanLogic && !stats.getStatus().isTailVisible() && !isOozaru && character.isHasSaiyanTail()) {
             setupSaiyanParts(partsModel);
 
-            return (hasForm || hasStackForm || stats.getStatus().isActionCharging())
+            boolean hasBodyColor2 = character.getBodyColor2() != null && !character.getBodyColor2().isEmpty();
+            return (hasBodyColor2 || hasForm || hasStackForm || stats.getStatus().isActionCharging())
                     ? colorBody2
                     : ColorUtils.hexToRgb("#572117");
         }
