@@ -43,7 +43,20 @@ public class BoneVisibilityHandler {
 		boolean isNamekian = race.equals("namekian");
 		boolean isSuperOrUltra = Objects.equals(currentForm, MajinForms.SUPER) || Objects.equals(currentForm, MajinForms.ULTRA);
 
-		boolean isSpectator = player.isSpectator();
+        var raceConfig = ConfigManager.getRaceCharacter(race);
+        String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
+
+        String tempLogicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+        if (tempLogicKey.isEmpty()) {
+            tempLogicKey = race;
+        }
+
+        final String logicKey = tempLogicKey;
+
+
+        boolean isSpectator = player.isSpectator();
 		setBonesHidden(model, isSpectator, "body", "right_arm", "left_arm", "right_leg", "left_leg");
 		model.getBone("head").ifPresent(head -> head.setHidden(false));
 
@@ -63,23 +76,36 @@ public class BoneVisibilityHandler {
 
 		hideBone(model, "boobas", isCape || !isFemale);
 
-		model.getBone("tail1m").ifPresent(bone -> {
-			boolean showAntenna = isMajin && isFemale && isSuperOrUltra;
+
+        model.getBone("tail1m").ifPresent(bone -> {
+            boolean isTargetMajinModel = logicKey.equals("majin_kid") || logicKey.equals("majin_ultra") || logicKey.equals("majin");
+			boolean showAntenna = (isMajin && isFemale && isSuperOrUltra) || (isTargetMajinModel && isFemale);
 			setHiddenRecursive(bone, !showAntenna);
 		});
 
-		model.getBone("tail1").ifPresent(bone -> {
-			boolean showNormalTail;
+        model.getBone("tail1").ifPresent(bone -> {
+            boolean showNormalTail;
 
-			if (isSaiyan) {
-				showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
-			} else {
-				boolean hasSaiyanTail = stats.getCharacter().isHasSaiyanTail() && ConfigManager.getRaceCharacter(character.getRace()).getHasSaiyanTail();
-				showNormalTail = !isHuman && !isNamekian && !isMajin && hasSaiyanTail;
-			}
+            boolean isTaillessRace = isHuman || isNamekian || isMajin;
+            boolean isTaillessModel = logicKey.equals("human") ||
+                    logicKey.equals("namekian") ||
+                    logicKey.equals("namekian_orange") ||
+                    logicKey.equals("majin") ||
+                    logicKey.equals("majin_kid") ||
+                    logicKey.equals("majin_ultra");
 
-			setHiddenRecursive(bone, !showNormalTail);
-		});
+            boolean configHasSaiyanTail = ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
+
+            if (isSaiyan || configHasSaiyanTail) {
+                showNormalTail = stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail();
+            } else if (isTaillessRace || isTaillessModel) {
+                showNormalTail = false;
+            } else {
+                showNormalTail = true;
+            }
+
+            setHiddenRecursive(bone, !showNormalTail);
+        });
 
 		setBonesHidden(model, true, "armorHead", "armorBody", "armorBody2", "armorLeggingsBody", "armorRightArm", "armorLeftArm");
 	}
