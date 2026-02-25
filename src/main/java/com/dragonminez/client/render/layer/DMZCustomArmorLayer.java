@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.stats.StatsCapability;
@@ -285,8 +286,10 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
 	private void renderModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float r, float g, float b, float partialTick, int packedLight) {
 		RenderType armorRenderType = RenderType.armorCutoutNoCull(texture);
-		getRenderer().reRender(model, poseStack, bufferSource, animatable, armorRenderType,
-				bufferSource.getBuffer(armorRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
-				r, g, b, 1.0f);
+		if(getRenderer() instanceof DMZPlayerRenderer<T> playerRenderer) {
+			playerRenderer.reRender(this, model, poseStack, bufferSource, animatable, armorRenderType,
+					bufferSource.getBuffer(armorRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
+					r, g, b, 1.0f);
+		}
 	}
 }

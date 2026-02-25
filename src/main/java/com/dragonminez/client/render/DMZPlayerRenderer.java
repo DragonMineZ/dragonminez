@@ -28,6 +28,8 @@ import java.util.Objects;
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
+    protected GeoRenderLayer<T> caller = null;
+
     public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
         super(renderManager, model);
 
@@ -41,11 +43,20 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             this.addRenderLayer(new DMZAuraLayer<>(this));
     }
 
-    @Override
+  public void reRender(GeoRenderLayer<T> calledFrom, BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
+      T animatable, RenderType renderType, VertexConsumer buffer, float partialTick,
+      int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+      this.caller = calledFrom;
+    super.reRender(model, poseStack, bufferSource, animatable, renderType, buffer, partialTick,
+        packedLight, packedOverlay, red, green, blue, alpha);
+    this.caller = null;
+  }
+
+  @Override
     public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         float finalAlpha = animatable.isSpectator() ? 0.15f : alpha;
         super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-        BoneVisibilityHandler.updateVisibility(model, animatable);
+        BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
     }
 
     @Override

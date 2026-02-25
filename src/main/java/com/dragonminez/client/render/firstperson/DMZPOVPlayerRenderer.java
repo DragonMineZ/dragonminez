@@ -51,7 +51,7 @@ public class DMZPOVPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable
     public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
 		if (animatable.isSpectator()) alpha = 0.15f;
 		super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-        BoneVisibilityHandler.updateVisibility(model, animatable);
+        BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
     }
 
     @Override
