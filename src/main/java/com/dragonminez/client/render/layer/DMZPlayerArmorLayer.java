@@ -68,7 +68,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
             boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
             boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
-            boolean isOozaru = race.equals("saiyan") && SaiyanForms.OOZARU.equalsIgnoreCase(currentForm);
+            boolean isOozaru = race.equals("saiyan") && SaiyanForms.OOZARU.equalsIgnoreCase(currentForm) || logicKey.startsWith("oozaru") ;
 
             if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
                 if (!isArmored) {
