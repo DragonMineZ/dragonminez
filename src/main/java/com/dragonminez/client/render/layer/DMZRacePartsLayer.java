@@ -173,7 +173,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || race.equals("saiyan");
         boolean isOozaru = logicKey.equals("oozaru") || currentForm.contains("oozaru");
-        boolean hasSaiyanTail = ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
+        boolean hasSaiyanTail = raceConfig != null && ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
 
         if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && !isOozaru && character.isHasSaiyanTail()) {
             setupSaiyanParts(partsModel);
@@ -200,6 +200,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
                     currentForm.equals(FrostDemonForms.THIRD_FORM) ||
                     logicKey.equals("frostdemon_fifth") ||
                     logicKey.equals("frostdemon_third") ||
+                    logicKey.equals("frostdemon_final") ||
                     currentForm.contains("fifth");
 
             if (isSpecialForm) {

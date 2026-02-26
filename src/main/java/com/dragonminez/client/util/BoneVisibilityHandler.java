@@ -139,7 +139,6 @@ public class BoneVisibilityHandler {
 					child.setHidden(true);
 					continue;
 				}
-				System.out.println(child.getName());
 				setHiddenRecursive(child, false);
 			}
 		});

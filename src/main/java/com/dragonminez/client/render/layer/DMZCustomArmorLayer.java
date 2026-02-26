@@ -84,7 +84,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		if (logicKey.equals("oozaru") || (raceName.equals("saiyan") && ("oozaru".equalsIgnoreCase(currentForm) || "golden_oozaru".equalsIgnoreCase(currentForm)))) {
 			shouldRender = true;
 			isOozaruTarget = true;
-		} else if (logicKey.equals("majin_fat") || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
+		} else if (logicKey.equals("majin") || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
 			shouldRender = true;
 			isSlimTarget = false;
 		} else if (gender.equals("female") || gender.equals("mujer") || gender.equals("fem")) {

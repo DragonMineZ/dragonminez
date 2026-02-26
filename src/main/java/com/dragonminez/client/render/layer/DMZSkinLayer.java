@@ -125,7 +125,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         }
 
         boolean isSaiyanLogic = logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || raceName.equals("saiyan");
-        boolean hasSaiyanTail = ConfigManager.getRaceCharacter(raceName).getHasSaiyanTail();
+        boolean hasSaiyanTail = raceConfig != null && raceConfig.getHasSaiyanTail();
         if ((isSaiyanLogic || hasSaiyanTail) && stats.getStatus().isTailVisible() && stats.getCharacter().isHasSaiyanTail()) {
             boolean hasActiveForm = character.hasActiveForm();
             boolean hasActiveStackForm = character.hasActiveStackForm();
@@ -155,7 +155,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                     resolveBodyMajin(character, logicKey, b1, consumer);
             case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third" ->
                     resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
-            case "bioandroid", "bioandroid_semi", "bioandroid_perfect" ->
+            case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base" ->
                     resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
             default -> {
                 String gender = (raceConfig != null && raceConfig.getHasGender()) ? "_" + character.getGender().toLowerCase() : "";
@@ -256,6 +256,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
         };
 
         String prefix = "textures/entity/races/bioandroid/" + phase + "_0_";
+
         float[] stinger = ColorUtils.hexToRgb("#D9B28D");
         float[] white = {1.0f, 1.0f, 1.0f};
         float[] layer2Color = phase.equals("perfect") ? white : b2;
@@ -535,6 +536,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         if (faceKey.equals("bioandroid_semi")) phase = "semiperfect";
         else if (faceKey.equals("bioandroid_perfect")) phase = "perfect";
+        else if (faceKey.equals("bioandroid_base")) phase = "base";
         else if (faceKey.equals("bioandroid") && !isModelEmpty) phase = "base";
         else if (race.equals("bioandroid")) phase = (character.hasActiveForm() && currentForm.equals(BioAndroidForms.SEMI_PERFECT)) ? "semiperfect" : (character.hasActiveForm() ? "perfect" : "base");
         else phase = "base";

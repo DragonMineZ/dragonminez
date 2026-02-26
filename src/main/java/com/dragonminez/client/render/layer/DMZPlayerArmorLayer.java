@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -51,11 +52,21 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         String gender = character.getGender().toLowerCase();
         String currentForm = character.getActiveForm();
 
+        var raceConfig = ConfigManager.getRaceCharacter(race);
+        String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+        String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+                ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
+
+        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+        if (logicKey.isEmpty()) {
+            logicKey = race;
+        }
+
         boolean isArmored = character.getArmored();
 
         if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
 
-            boolean isMajin = race.equals("majin");
+            boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
             boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
             boolean isOozaru = race.equals("saiyan") && SaiyanForms.OOZARU.equalsIgnoreCase(currentForm);
 

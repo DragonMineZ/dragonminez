@@ -120,7 +120,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 return FROST_DEMON_FIFTH;
             case "frostdemon_third":
                 return FROST_DEMON_THIRD;
-            case "bioandroid":
+            case "bioandroid_base":
                 return BIO_ANDROID;
             case "bioandroid_semi":
                 return BIO_ANDROID_SEMI;
