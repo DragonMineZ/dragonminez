@@ -345,7 +345,7 @@ public class StatsData {
 
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
-		var powerRelease = (double) (resources.getPowerRelease() / calculateMaxPowerRelease());
+		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) return 0.0;
 
 		double adjustedBaseDrain = 0;
@@ -379,7 +379,7 @@ public class StatsData {
 
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
-		var powerRelease = (double) (resources.getPowerRelease() / calculateMaxPowerRelease());
+		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) return 0.0;
 
 		double adjustedBaseDrain = 0;
@@ -415,7 +415,7 @@ public class StatsData {
 
 		var formData = character.getActiveFormData();
 		var stackFormData = character.getActiveStackFormData();
-		var powerRelease = (double) (resources.getPowerRelease() / calculateMaxPowerRelease());
+		var powerRelease = resources.getPowerRelease() / 100.0;
 		if (formData == null && stackFormData == null) {
 			return 0.0;
 		}
@@ -587,10 +587,6 @@ public class StatsData {
 		}
 
 		return statsIncreased;
-	}
-
-	public int calculateMaxPowerRelease() {
-		return 50 + (skills.getSkillLevel("potentialunlock") * 5);
 	}
 
 	public void tick() {
