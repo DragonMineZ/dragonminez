@@ -257,7 +257,8 @@ public class DefaultFormsFactory {
 		FormConfig.FormData buffed = new FormConfig.FormData();
 		buffed.setName(HumanForms.BUFFED);
 		buffed.setUnlockOnSkillLevel(1);
-		buffed.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
+        buffed.setCustomModel("buffed");
+        buffed.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
 		buffed.setStrMultiplier(1.5);
 		buffed.setSkpMultiplier(1.65);
 		buffed.setDefMultiplier(1.25);
@@ -484,7 +485,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssg2 = new FormConfig.FormData();
 		ssg2.setName(SaiyanForms.SUPER_SAIYAN_GRADE_2);
 		ssg2.setUnlockOnSkillLevel(2);
-		ssg2.setCustomModel("");
+		ssg2.setCustomModel("buffed");
 		ssg2.setHairColor("#FFEDB3");
 		ssg2.setBodyColor2("#FFEDB3");
 		ssg2.setEye1Color("#00FFFF");
@@ -505,12 +506,13 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ssg3 = new FormConfig.FormData();
 		ssg3.setName(SaiyanForms.SUPER_SAIYAN_GRADE_3);
 		ssg3.setUnlockOnSkillLevel(3);
-		ssg3.setHairColor("#FFEDB3");
+        ssg3.setCustomModel("buffed");
+        ssg3.setHairColor("#FFEDB3");
 		ssg3.setBodyColor2("#FFEDB3");
 		ssg3.setEye1Color("#00FFFF");
 		ssg3.setEye2Color("#00FFFF");
 		ssg3.setAuraColor("#FFD700");
-		ssg3.setModelScaling(new Float[]{1.2f, 1.1f, 1.2f});
+		ssg3.setModelScaling(new Float[]{1.2f, 1.2f, 1.2f});
 		ssg3.setStrMultiplier(2.75);
 		ssg3.setSkpMultiplier(2.75);
 		ssg3.setDefMultiplier(1.8);
@@ -646,7 +648,8 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superNamekian = new FormConfig.FormData();
 		superNamekian.setName(NamekianForms.SUPER_NAMEKIAN);
 		superNamekian.setUnlockOnSkillLevel(3);
-		superNamekian.setAuraColor("#7FFF00");
+        superNamekian.setCustomModel("namekian_orange");
+        superNamekian.setAuraColor("#7FFF00");
 		superNamekian.setHasLightnings(true);
 		superNamekian.setLightningColor("#FFFFFF");
 		superNamekian.setModelScaling(new Float[]{1.05f, 1.05f, 1.05f});
@@ -719,7 +722,8 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(FrostDemonForms.FULLPOWER);
 		fullPower.setUnlockOnSkillLevel(4);
-		fullPower.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
+        fullPower.setCustomModel("frostdemon_fp");
+        fullPower.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
 		fullPower.setStrMultiplier(2.75);
 		fullPower.setSkpMultiplier(2.75);
 		fullPower.setDefMultiplier(2.15);
@@ -818,7 +822,8 @@ public class DefaultFormsFactory {
 		FormConfig.FormData ultra = new FormConfig.FormData();
 		ultra.setName(MajinForms.ULTRA);
 		ultra.setUnlockOnSkillLevel(4);
-		ultra.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
+        ultra.setCustomModel("majin_ultra");
+        ultra.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
 		ultra.setStrMultiplier(3.0);
 		ultra.setSkpMultiplier(3.0);
 		ultra.setDefMultiplier(2.5);
