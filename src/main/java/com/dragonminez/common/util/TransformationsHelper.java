@@ -65,7 +65,7 @@ public class TransformationsHelper {
 			case "god" -> statsData.getSkills().getSkillLevel("godform");
 			case "legendary" -> statsData.getSkills().getSkillLevel("legendaryforms");
 			case "android" -> statsData.getSkills().getSkillLevel("androidforms");
-			default -> 0;
+			default -> statsData.getSkills().getSkillLevel(formType);
 		};
 	}
 
@@ -114,7 +114,7 @@ public class TransformationsHelper {
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
-	 return firstForm.map(FormConfig.FormData::getName).orElse(null);
+		return firstForm.map(FormConfig.FormData::getName).orElse(null);
 	}
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
@@ -152,8 +152,8 @@ public class TransformationsHelper {
 		FormConfig.FormData nextFormConfig = null;
 		if (currentFormName == null || currentFormName.isEmpty()) {
 			nextFormName = statsData.getCharacter().getSelectedForm();
-            nextFormConfig = config.getForm(nextFormName);
-        } else {
+			nextFormConfig = config.getForm(nextFormName);
+		} else {
 			boolean foundCurrent = false;
 			for (Map.Entry<String, FormConfig.FormData> entry : config.getForms().entrySet()) {
 				if (!foundCurrent) {
@@ -284,7 +284,7 @@ public class TransformationsHelper {
 				groupIndex = unlockedGroups.size() - 1;
 			}
 			String nextGroup = unlockedGroups.get(groupIndex);
-			if(nextGroup != null) {
+			if (nextGroup != null) {
 				statsData.getCharacter().setSelectedFormGroup(nextGroup);
 			}
 			unlockedForms = getUnlockedForms(statsData, race, nextGroup);
@@ -303,7 +303,7 @@ public class TransformationsHelper {
 			}
 			String nextGroup = unlockedGroups.get(groupIndex);
 			unlockedForms = getUnlockedForms(statsData, race, nextGroup);
-			if(nextGroup != null) {
+			if (nextGroup != null) {
 				statsData.getCharacter().setSelectedFormGroup(nextGroup);
 			}
 			unlockedFormNames = unlockedForms.stream()
@@ -316,10 +316,10 @@ public class TransformationsHelper {
 		}
 
 		String nextForm = unlockedFormNames.get(formIndex);
-		if(nextForm != null ) {
+		if (nextForm != null) {
 			statsData.getCharacter().setSelectedForm(nextForm);
 		}
-    }
+	}
 
 	public static void cycleSelectedStackFormGroup(StatsData statsData, boolean reverse) {
 		Map<String, FormConfig> allGroups = ConfigManager.getAllStackForms();
@@ -358,7 +358,7 @@ public class TransformationsHelper {
 				groupIndex = unlockedGroups.size() - 1;
 			}
 			String nextGroup = unlockedGroups.get(groupIndex);
-			if(nextGroup != null) {
+			if (nextGroup != null) {
 				statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
 			}
 			unlockedStackForms = getUnlockedStackForms(statsData, nextGroup);
@@ -377,7 +377,7 @@ public class TransformationsHelper {
 			}
 			String nextGroup = unlockedGroups.get(groupIndex);
 			unlockedStackForms = getUnlockedStackForms(statsData, nextGroup);
-			if(nextGroup != null) {
+			if (nextGroup != null) {
 				statsData.getCharacter().setSelectedStackFormGroup(nextGroup);
 			}
 			unlockedStackFormNames = unlockedStackForms.stream()
@@ -390,7 +390,7 @@ public class TransformationsHelper {
 		}
 
 		String nextForm = unlockedStackFormNames.get(formIndex);
-		if(nextForm != null ) {
+		if (nextForm != null) {
 			statsData.getCharacter().setSelectedStackForm(nextForm);
 		}
 	}
