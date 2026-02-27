@@ -2,7 +2,6 @@ package com.dragonminez.server.world.structure.helper;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainTags;
-import com.dragonminez.server.world.biome.OverworldBiomes;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
@@ -78,13 +77,13 @@ public class DMZStructures {
 						biomes.getOrThrow(MainTags.Biomes.IS_SACREDLAND),
 						Map.of(),
 						GenerationStep.Decoration.SURFACE_STRUCTURES,
-						TerrainAdjustment.BEARD_THIN
+						TerrainAdjustment.NONE
 				),
 				pools.getOrThrow(DMZPools.ELDER_GURU),
 				1,
 				ConstantHeight.of(VerticalAnchor.absolute(0)),
 				false,
-					Heightmap.Types.WORLD_SURFACE_WG
+				Heightmap.Types.WORLD_SURFACE_WG
 		));
 
 		context.register(KAMILOOKOUT, new JigsawStructure(

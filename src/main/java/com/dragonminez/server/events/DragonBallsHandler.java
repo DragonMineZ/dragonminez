@@ -42,9 +42,7 @@ public class DragonBallsHandler {
 		activeBalls.forEach((star, pos) -> {
 			if (level.isLoaded(pos)) {
 				BlockState state = level.getBlockState(pos);
-				if (getStarFromBlock(state.getBlock()) != -1) {
-					level.removeBlock(pos, false);
-				}
+				if (getStarFromBlock(state.getBlock()) != -1) level.removeBlock(pos, false);
 			}
 		});
 
@@ -104,7 +102,7 @@ public class DragonBallsHandler {
 		int x = targetXZ.getX();
 		int z = targetXZ.getZ();
 
-		int y = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+		int y = level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
 		BlockPos realPos = new BlockPos(x, y, z);
 
 		if (!level.isLoaded(realPos)) return;
