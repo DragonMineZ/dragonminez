@@ -129,8 +129,10 @@ public class NPCActionC2S {
 		if (action == 1) {
 			ServerLevel targetLevel = player.server.getLevel(Level.OVERWORLD);
 			if (targetLevel == null) return;
-			if (player.getRespawnPosition() != null) player.teleportTo(targetLevel, player.getRespawnPosition().getX(), player.getRespawnPosition().getY(), player.getRespawnPosition().getZ(), player.getYRot(), player.getXRot());
-			else player.teleportTo(targetLevel, targetLevel.getSharedSpawnPos().getX(), targetLevel.getSharedSpawnPos().getY(), targetLevel.getSharedSpawnPos().getZ(), player.getYRot(), player.getXRot());
+			if (player.getRespawnPosition() != null)
+				player.teleportTo(targetLevel, player.getRespawnPosition().getX(), player.getRespawnPosition().getY(), player.getRespawnPosition().getZ(), player.getYRot(), player.getXRot());
+			else
+				player.teleportTo(targetLevel, targetLevel.getSharedSpawnPos().getX(), targetLevel.getSharedSpawnPos().getY(), targetLevel.getSharedSpawnPos().getZ(), player.getYRot(), player.getXRot());
 		}
 	}
 
@@ -178,6 +180,7 @@ public class NPCActionC2S {
 			data.getSkills().removeSkill("legendaryforms");
 			data.updateTransformationSkillLimits(data.getCharacter().getRaceName());
 			data.getCharacter().setSelectedFormGroup("androidforms");
+			data.getCharacter().setSelectedForm("androidbase");
 			data.getCharacter().setActiveForm("androidforms", "androidbase");
 			player.refreshDimensions();
 			player.sendSystemMessage(Component.translatable("message.dragonminez.gero.upgrade_success"));
