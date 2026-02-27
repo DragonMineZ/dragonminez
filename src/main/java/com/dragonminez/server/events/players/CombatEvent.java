@@ -232,10 +232,10 @@ public class CombatEvent {
 								boolean isParry = ((currentTime - blockTime) <= parryWindow) && ConfigManager.getServerConfig().getCombat().getEnableParrying();
 
 								double poiseMultiplier = ConfigManager.getServerConfig().getCombat().getPoiseDamageMultiplier();
-								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 3;
+								if (!(sourceEntity instanceof Player)) poiseMultiplier *= 1.5;
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
-								if (isParry) poiseDamage *= 0.75f;
+								if (isParry) poiseDamage *= 0.66f;
 								int currentPoise = victimData.getResources().getCurrentPoise();
 
 								if (currentPoise - poiseDamage <= 0) {
@@ -247,14 +247,7 @@ public class CombatEvent {
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 									victim.addEffect(
-											new MobEffectInstance(
-													MainEffects.POISE_CD.get(),
-													regenCd,
-													0,
-													false,
-													false,
-													true
-											)
+											new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true)
 									);
 
 									int currentStamina = victimData.getResources().getCurrentStamina();
@@ -276,14 +269,7 @@ public class CombatEvent {
 									int regenCd = ConfigManager.getServerConfig().getCombat().getPoiseRegenCooldown();
 									victimData.getCooldowns().setCooldown(Cooldowns.POISE_CD, regenCd);
 									victim.addEffect(
-											new MobEffectInstance(
-													MainEffects.POISE_CD.get(),
-													regenCd,
-													0,
-													false,
-													false,
-													true
-											)
+											new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true)
 									);
 
 									float originalDmg = (float) currentDamage[0];
@@ -295,14 +281,7 @@ public class CombatEvent {
 											attackerLiving.knockback(1.5D, victim.getX() - attackerLiving.getX(), victim.getZ() - attackerLiving.getZ());
 											attackerLiving.setDeltaMovement(attackerLiving.getDeltaMovement().scale(0.5));
 											attackerLiving.addEffect(
-													new MobEffectInstance(
-															MainEffects.STAGGER.get(),
-															60,
-															1,
-															false,
-															false,
-															true
-													)
+													new MobEffectInstance(MainEffects.STAGGER.get(), 60, 1, false, false, true)
 											);
 										}
 										victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.PARRY.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.9F + victim.getRandom().nextFloat() * 0.1F);
@@ -381,6 +360,8 @@ public class CombatEvent {
 					if (!blocked) {
 						if (!victimData.getStatus().isStunned() || victimData.getResources().getCurrentPoise() > 0) {
 							currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
+						} else {
+							currentDamage[0] = Math.max(1.0, currentDamage[0] - (defense * 0.75));
 						}
 					}
 
