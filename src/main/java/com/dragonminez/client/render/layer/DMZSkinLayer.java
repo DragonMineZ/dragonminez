@@ -219,8 +219,8 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private static void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
 		String basePath = "textures/entity/races/humansaiyan/oozaru_";
-		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer1.png")), bodyColor);
-		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer2.png")), bodyColor2);
+		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer1.png")), bodyColor2);
+		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer2.png")), bodyColor);
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer3.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer3.png")), new float[]{1f, 1f, 1f});
 	}
 
