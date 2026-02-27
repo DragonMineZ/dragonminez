@@ -56,6 +56,9 @@ public class TickHandler {
 
 		UUID playerId = serverPlayer.getUUID();
 		int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
+		if (tickCounter >= REGEN_INTERVAL) playerTickCounters.put(playerId, 0);
+		else playerTickCounters.put(playerId, tickCounter);
+
 		if (serverPlayer.getHealth() < 0 && !serverPlayer.isDeadOrDying()) serverPlayer.setHealth(1);
 		if (serverPlayer.getHealth() <= 0.25 && !serverPlayer.isDeadOrDying()) serverPlayer.kill();
 
@@ -70,6 +73,13 @@ public class TickHandler {
 
 				data.getCooldowns().tick();
 				data.getEffects().tick();
+
+				for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {
+					handler.onPlayerTick(serverPlayer, data);
+					handler.handleStatusEffects(serverPlayer, data);
+				}
+				if (tickCounter % 20 == 0) for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS)
+					handler.onPlayerSecond(serverPlayer, data);
 				if (serverPlayer.tickCount % SYNC_INTERVAL == 0)
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				return;
@@ -122,7 +132,7 @@ public class TickHandler {
 				}
 			}
 
-            data.getStatus().setAuraActive(isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK)));
+			data.getStatus().setAuraActive(isChargingKi || (data.getStatus().isActionCharging() && (data.getStatus().getSelectedAction() == ActionMode.FORM || data.getStatus().getSelectedAction() == ActionMode.STACK)));
 
 			if (tickCounter % 5 == 0) {
 				boolean hasYajirobe = serverPlayer.getInventory().hasAnyOf(Set.of(MainItems.KATANA_YAJIROBE.get()));
