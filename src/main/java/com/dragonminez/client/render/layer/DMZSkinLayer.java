@@ -142,18 +142,18 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/tail1.png")), tailColor);
         }
 
-        boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4");
+        boolean isHumanoid = logicKey.equals("human") || logicKey.equals("saiyan") || logicKey.equals("saiyan_ssj4") || logicKey.equals("buffed");
         if (isHumanoid && bodyType == 0) {
             consumer.accept(player.getSkinTextureLocation(), new float[]{1.0f, 1.0f, 1.0f});
             return;
         }
 
         switch (logicKey) {
-            case "human", "saiyan", "saiyan_ssj4" -> resolveBodyHumanSaiyan(character, b1, consumer);
+            case "human", "saiyan", "saiyan_ssj4", "buffed" -> resolveBodyHumanSaiyan(character, b1, consumer);
             case "namekian", "namekian_orange" -> resolveBodyNamekian(b1, b2, b3, consumer);
             case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid" ->
                     resolveBodyMajin(character, logicKey, b1, consumer);
-            case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third" ->
+            case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" ->
                     resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
             case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base" ->
                     resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
@@ -242,6 +242,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
                 consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer4.png")), hair);
             } else if (bodyType == 2) {
                 consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer3.png")), hair);
+                consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer2.png")), b2);
             }
         }
     }
@@ -392,7 +393,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
         boolean isOozaruForm = raceName.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU));
         if (isOozaruForm || finalFaceKey.equals("oozaru")) return;
-        boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.equals("saiyan_ssj4");
+        boolean isHumanoidModel = finalFaceKey.equals("human") || finalFaceKey.equals("saiyan") || finalFaceKey.equals("saiyan_ssj4") || finalFaceKey.equals("buffed");
         if (isHumanoidModel && bodyType == 0) return;
 
         model.getBone("head").ifPresent(headBone -> {
@@ -436,7 +437,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
             }
         }
 
-        if (faceKey.equals("human") || faceKey.equals("saiyan") || faceKey.equals("saiyan_ssj4")) {
+        if (faceKey.equals("human") || faceKey.equals("saiyan") || faceKey.equals("saiyan_ssj4") || faceKey.equals("buffed")) {
             renderHumanFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
             return;
         }

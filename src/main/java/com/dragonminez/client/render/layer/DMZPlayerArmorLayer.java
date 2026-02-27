@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -69,12 +70,20 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
             boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
             boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
             boolean isOozaru = race.equals("saiyan") && SaiyanForms.OOZARU.equalsIgnoreCase(currentForm) || logicKey.startsWith("oozaru") ;
+            boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
+                    || logicKey.startsWith("namekian_orange");
+
+            boolean isDbzArmor = this.chestplateStack != null && this.chestplateStack.getItem() instanceof DbzArmorItem;
 
             if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
                 if (!isArmored) {
                     return null;
                 }
+            } else if (isBuffed) {
+            if (isDbzArmor) {
+                return null;
             }
+        }
         }
 
         return switch (boneName) {

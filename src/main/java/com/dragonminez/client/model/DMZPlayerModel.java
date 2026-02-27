@@ -34,6 +34,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BIO_ANDROID_SEMI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_semi.geo.json");
     private static final ResourceLocation BIO_ANDROID_PERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
     private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
+    private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem_fp.geo.json");
+    private static final ResourceLocation FROSTDEMON_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fp.geo.json");
 
     private final ResourceLocation textureLocation;
     private final ResourceLocation animationLocation;
@@ -106,18 +109,28 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 if (bodyType == 0) return isSlimSkin ? BASE_SLIM : BASE_DEFAULT;
                 if (!isMale) return MAJIN_SLIM;
                 return BASE_DEFAULT;
-            case "namekian", "namekian_orange":
+            case "buffed":
+                if (bodyType == 0) return isSlimSkin ?  HUMAN_SAIYAN_FEMALE_BUFFED : HUMAN_SAIYAN_BUFFED;
+                if (!isMale) return HUMAN_SAIYAN_FEMALE_BUFFED;
+                return HUMAN_SAIYAN_BUFFED;
+            case "namekian":
                 return BASE_DEFAULT;
+            case "namekian_orange":
+                return HUMAN_SAIYAN_BUFFED;
             case "majin":
                 return isMale ? MAJIN_FAT : MAJIN_SLIM;
-            case "majin_super","majin_ultra":
+            case "majin_super":
                 return isMale ? BASE_DEFAULT : MAJIN_SLIM;
+            case "majin_ultra":
+                return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_FEMALE_BUFFED;
             case "majin_evil","majin_kid":
                 return isMale ? BASE_SLIM : MAJIN_SLIM;
             case "frostdemon","frostdemon_final":
                 return FROST_DEMON;
             case "frostdemon_fifth":
                 return FROST_DEMON_FIFTH;
+            case "frostdemon_fp":
+                return FROSTDEMON_BUFFED;
             case "frostdemon_third":
                 return FROST_DEMON_THIRD;
             case "bioandroid_base":
