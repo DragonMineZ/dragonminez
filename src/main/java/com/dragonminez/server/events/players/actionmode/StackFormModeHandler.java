@@ -13,87 +13,87 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 
 public class StackFormModeHandler implements IActionModeHandler {
-    @Override
-    public int handleActionCharge(ServerPlayer player, StatsData data) {
-        FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
-        if (nextForm != null) {
-            String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
+	@Override
+	public int handleActionCharge(ServerPlayer player, StatsData data) {
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
+		if (nextForm != null) {
+			String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
-            String type = ConfigManager.getStackFormGroup(group).getFormType();
-            int skillLvl = data.getSkills().getSkillLevel(type);
-            return (5 * Math.max(1, skillLvl));
-        }
-        return 0;
-    }
+			String type = ConfigManager.getStackFormGroup(group).getFormType();
+			int skillLvl = data.getSkills().getSkillLevel(type);
+			return (5 + 5 * Math.max(1, skillLvl));
+		}
+		return 0;
+	}
 
-    @Override
-    public boolean performAction(ServerPlayer player, StatsData data) {
-        attemptTransform(player, data);
-        return true;
-    }
+	@Override
+	public boolean performAction(ServerPlayer player, StatsData data) {
+		attemptTransform(player, data);
+		return true;
+	}
 
-    private static void attemptTransform(ServerPlayer player, StatsData data) {
-        FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
-        if (nextForm == null) return;
+	private static void attemptTransform(ServerPlayer player, StatsData data) {
+		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
+		if (nextForm == null) return;
 
-        int energyCost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
-        int staminaCost = (int) (data.getMaxStamina() * nextForm.getStaminaDrain());
-        int healthCost = (int) (data.getMaxHealth() * nextForm.getHealthDrain());
+		int energyCost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
+		int staminaCost = (int) (data.getMaxStamina() * nextForm.getStaminaDrain());
+		int healthCost = (int) (data.getMaxHealth() * nextForm.getHealthDrain());
 
-        boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyCost;
-        boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaCost;
-        boolean hasEnoughHealth = data.getPlayer().getHealth() >= healthCost;
+		boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyCost;
+		boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaCost;
+		boolean hasEnoughHealth = data.getPlayer().getHealth() >= healthCost;
 
-        if (!hasEnoughEnergy) {
-            player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki", energyCost), true);
-        }
+		if (!hasEnoughEnergy) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_ki", energyCost), true);
+		}
 
-        if (!hasEnoughStamina) {
-            player.displayClientMessage(Component.translatable("message.dragonminez.form.no_stamina", staminaCost), true);
-        }
+		if (!hasEnoughStamina) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_stamina", staminaCost), true);
+		}
 
-        if (!hasEnoughHealth) {
-            player.displayClientMessage(Component.translatable("message.dragonminez.form.no_health", healthCost), true);
-        }
+		if (!hasEnoughHealth) {
+			player.displayClientMessage(Component.translatable("message.dragonminez.form.no_health", healthCost), true);
+		}
 
-        if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
-            String group = data.getCharacter().hasActiveStackForm() ?
-                    data.getCharacter().getActiveStackFormGroup() :
-                    data.getCharacter().getSelectedStackFormGroup();
+		if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
+			String group = data.getCharacter().hasActiveStackForm() ?
+					data.getCharacter().getActiveStackFormGroup() :
+					data.getCharacter().getSelectedStackFormGroup();
 
-            if (!data.getCharacter().getStackFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
-                data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
-            }
-            data.getCharacter().setActiveStackForm(group, nextForm.getName());
-            player.refreshDimensions();
+			if (!data.getCharacter().getStackFormsUsedBefore().getFormGroup(group).contains(nextForm.getName())) {
+				data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
+			}
+			data.getCharacter().setActiveStackForm(group, nextForm.getName());
+			player.refreshDimensions();
 
-            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
-            Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
-            Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());
-            Component fullFormName;
+			Component translatedStackFormGroup = Component.translatable("race.dragonminez.stack.group." + data.getCharacter().getSelectedStackFormGroup());
+			Component translatedStackFormName = Component.translatable("race.dragonminez.stack.form." + data.getCharacter().getSelectedStackFormGroup() + "." + nextForm.getName());
+			Component fullFormName;
 
-            if (data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty()) {
-                Component translatedFormName = Component.translatable("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
-                fullFormName = Component.empty()
-                        .append(translatedFormName)
-                        .append(Component.literal(" x "))
-                        .append(translatedStackFormGroup)
-                        .append(Component.literal(" "))
-                        .append(translatedStackFormName);
-            } else {
-                fullFormName = Component.empty()
-                        .append(translatedStackFormGroup)
-                        .append(Component.literal(" "))
-                        .append(translatedStackFormName);
-            }
+			if (data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty()) {
+				Component translatedFormName = Component.translatable("race.dragonminez." + data.getCharacter().getRace() + ".form." + data.getCharacter().getActiveFormGroup() + "." + data.getCharacter().getActiveForm());
+				fullFormName = Component.empty()
+						.append(translatedFormName)
+						.append(Component.literal(" x "))
+						.append(translatedStackFormGroup)
+						.append(Component.literal(" "))
+						.append(translatedStackFormName);
+			} else {
+				fullFormName = Component.empty()
+						.append(translatedStackFormGroup)
+						.append(Component.literal(" "))
+						.append(translatedStackFormName);
+			}
 
-            player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", fullFormName), true);
+			player.sendSystemMessage(Component.translatable("message.dragonminez.transformation", fullFormName), true);
 
-            if (!player.hasEffect(MainEffects.STACK_TRANSFORMED.get())) {
-                player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED.get(), -1, 0, false, false, true));
-            }
-            player.refreshDimensions();
-        }
-    }
+			if (!player.hasEffect(MainEffects.STACK_TRANSFORMED.get())) {
+				player.addEffect(new MobEffectInstance(MainEffects.STACK_TRANSFORMED.get(), -1, 0, false, false, true));
+			}
+			player.refreshDimensions();
+		}
+	}
 }

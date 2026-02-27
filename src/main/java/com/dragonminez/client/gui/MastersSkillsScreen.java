@@ -7,7 +7,10 @@ import com.dragonminez.client.gui.character.BaseMenuScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.*;
+import com.dragonminez.common.stats.Skill;
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -39,7 +42,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private static final int MAX_VISIBLE_SKILLS = 8;
 	private static final int BUTTON_ANIM_TIME = 5;
 
-	private enum SkillCategory { SKILLS, KI }
+	private enum SkillCategory {SKILLS, KI}
+
 	private SkillCategory currentCategory = SkillCategory.SKILLS;
 
 	private StatsData statsData;
@@ -73,7 +77,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	}
 
 	@Override
-	protected void initNavigationButtons() {}
+	protected void initNavigationButtons() {
+	}
 
 	@Override
 	public void tick() {
@@ -235,7 +240,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (skillData != null && skillData.getCosts() != null) {
 			var costs = skillData.getCosts();
 			if (currentLevel < costs.size()) {
-				return costs.get(currentLevel);
+				return costs.get(currentLevel) != null ? costs.get(currentLevel) : Integer.MAX_VALUE;
 			}
 		}
 		return Integer.MAX_VALUE;
@@ -278,7 +283,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int hiddenX = leftPanelX + 122;
 		int visibleX = leftPanelX + 141;
 
-		int newX = hiddenX + (int)((visibleX - hiddenX) * animProgress);
+		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
 		skillsButton.setX(newX);
 		if (kiButton != null) kiButton.setX(newX);
 	}
@@ -303,10 +308,10 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_SKILLS, skillNames.size());
 
 		graphics.enableScissor(
-			toScreenCoord(panelX + 5),
-			toScreenCoord(startY),
-			toScreenCoord(panelX + 179),
-			toScreenCoord(startY + (MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT))
+				toScreenCoord(panelX + 5),
+				toScreenCoord(startY),
+				toScreenCoord(panelX + 179),
+				toScreenCoord(startY + (MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT))
 		);
 
 		for (int i = visibleStart; i < visibleEnd; i++) {
@@ -349,8 +354,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 			float scrollPercent = (float) scrollOffset / maxScroll;
 			float visiblePercent = (float) MAX_VISIBLE_SKILLS / totalItems;
-			int indicatorHeight = Math.max(20, (int)(scrollBarHeight * visiblePercent));
-			int indicatorY = scrollBarStartY + (int)((scrollBarHeight - indicatorHeight) * scrollPercent);
+			int indicatorHeight = Math.max(20, (int) (scrollBarHeight * visiblePercent));
+			int indicatorY = scrollBarStartY + (int) ((scrollBarHeight - indicatorHeight) * scrollPercent);
 
 			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
 		}
@@ -460,7 +465,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
 				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
 
-			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
+			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -496,11 +501,11 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private void renderMasterEntity(GuiGraphics graphics, int x, int y, float mouseX, float mouseY) {
 		if (masterEntity == null) return;
 
-		float xRotation = (float) Math.atan((double)((float)y - mouseY) / 40.0F);
-		float yRotation = (float) Math.atan((double)((float)x - mouseX) / 40.0F);
+		float xRotation = (float) Math.atan((double) ((float) y - mouseY) / 40.0F);
+		float yRotation = (float) Math.atan((double) ((float) x - mouseX) / 40.0F);
 
-		Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
-		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float)Math.PI / 180F));
+		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
+		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float) Math.PI / 180F));
 		pose.mul(cameraOrientation);
 
 		float yBodyRotO = masterEntity.yBodyRot;
