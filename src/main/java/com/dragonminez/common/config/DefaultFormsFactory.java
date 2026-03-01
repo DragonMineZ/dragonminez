@@ -887,7 +887,7 @@ public class DefaultFormsFactory {
 		perfect.setEye1Color("#F6A6FF");
 		perfect.setEye2Color("#FFFFFF");
 		perfect.setBodyColor1("");
-		perfect.setBodyColor2("");
+		perfect.setBodyColor2("#FFFFFF");
 		perfect.setBodyColor3("");
 		perfect.setHairType("base");
 		setDefaultMasteryValues(perfect);
@@ -906,7 +906,7 @@ public class DefaultFormsFactory {
 		superPerfect.setEye1Color("#F6A6FF");
 		superPerfect.setEye2Color("#FFFFFF");
 		superPerfect.setBodyColor1("");
-		superPerfect.setBodyColor2("");
+		superPerfect.setBodyColor2("FFFFFF");
 		superPerfect.setBodyColor3("");
 		superPerfect.setAuraColor("FFFF69");
 		superPerfect.setHasLightnings(true);
@@ -915,11 +915,37 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(superPerfect);
 		superPerfect.setStackDrainMultiplier(2.0);
 
+        FormConfig.FormData ultraperfect = new FormConfig.FormData();
+        ultraperfect.setName(BioAndroidForms.ULTRA_PERFECT);
+        ultraperfect.setUnlockOnSkillLevel(4);
+        ultraperfect.setCustomModel("bioandroid_ultra");
+        ultraperfect.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
+        ultraperfect.setStrMultiplier(3.5);
+        ultraperfect.setSkpMultiplier(3.5);
+        ultraperfect.setDefMultiplier(2.0);
+        ultraperfect.setPwrMultiplier(3.5);
+        ultraperfect.setSpeedMultiplier(0.6);
+        ultraperfect.setEnergyDrain(0.28);
+        ultraperfect.setStaminaDrainMultiplier(3.5);
+        ultraperfect.setAttackSpeed(0.55);
+        ultraperfect.setEye1Color("#F6A6FF");
+        ultraperfect.setEye2Color("#FFFFFF");
+        ultraperfect.setBodyColor1("");
+        ultraperfect.setBodyColor2("FFFFFF");
+        ultraperfect.setBodyColor3("");
+        ultraperfect.setAuraColor("FFFF69");
+        ultraperfect.setHasLightnings(true);
+        ultraperfect.setLightningColor("#1AA1C7");
+        ultraperfect.setHairType("base");
+        setDefaultMasteryValues(ultraperfect);
+        ultraperfect.setStackDrainMultiplier(2.0);
+
 		Map<String, FormConfig.FormData> bioFormData = new LinkedHashMap<>();
 		bioFormData.put(BioAndroidForms.SEMI_PERFECT, semiPerfect);
 		bioFormData.put(BioAndroidForms.PERFECT, perfect);
 		bioFormData.put(BioAndroidForms.SUPER_PERFECT, superPerfect);
-		bioForms.setForms(bioFormData);
+        bioFormData.put(BioAndroidForms.ULTRA_PERFECT, ultraperfect);
+        bioForms.setForms(bioFormData);
 
 		forms.put(BioAndroidForms.GROUP_BIOEVOLUTION, bioForms);
 

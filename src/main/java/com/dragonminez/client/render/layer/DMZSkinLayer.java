@@ -178,7 +178,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 					resolveBodyMajin(character, logicKey, b1, consumer);
 			case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" ->
 					resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
-			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base" ->
+			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" ->
 					resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
 			default -> {
 				String gender = (raceConfig != null && raceConfig.getHasGender()) ? "_" + character.getGender().toLowerCase() : "";
@@ -273,7 +273,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private static void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
 		String phase = switch (key) {
 			case "bioandroid_semi" -> "semiperfect";
-			case "bioandroid_perfect" -> "perfect";
+			case "bioandroid_perfect", "bioandroid_ultra" -> "perfect";
 			case "bioandroid_base" -> "base";
 			case "bioandroid" -> character.hasActiveForm() ? "perfect" : "base";
 			default -> "perfect";
@@ -285,10 +285,9 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		float[] stinger = ColorUtils.hexToRgb("#D9B28D");
 		float[] white = {1.0f, 1.0f, 1.0f};
-		float[] layer2Color = phase.equals("perfect") ? white : b2;
 
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPrefix + "layer1.png")), b1);
-		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPrefix + "layer2.png")), layer2Color);
+		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPrefix + "layer2.png")), b2);
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer3.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPrefix + "layer3.png")), b3);
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer4.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPrefix + "layer4.png")), hair);
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer5.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPrefix + "layer5.png")), stinger);

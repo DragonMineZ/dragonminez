@@ -9,4 +9,6 @@ public class BioAndroidForms {
 	public static final String SEMI_PERFECT = "semiperfect";
 	public static final String PERFECT = "perfect";
 	public static final String SUPER_PERFECT = "superperfect";
+    public static final String ULTRA_PERFECT = "ultraperfect";
+
 }
