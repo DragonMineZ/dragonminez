@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
@@ -14,13 +15,14 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -80,6 +82,7 @@ public class ForgeClientEvents {
         }
 
         Minecraft mc = Minecraft.getInstance();
+		TransformationPostShaderManager.tick();
         if (mc.player == null || mc.level == null) {
             return;
         }
@@ -111,8 +114,16 @@ public class ForgeClientEvents {
 		}
     }
 
+	@SubscribeEvent
+	public static void onRenderLevelStage(RenderLevelStageEvent event) {
+		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+			TransformationPostShaderManager.renderMaskAndApplyUniforms(event.getPartialTick(), event.getPoseStack(), event.getCamera(), event.getFrustum());
+		}
+	}
+
     @SubscribeEvent
     public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
+		TransformationPostShaderManager.reset();
         ConfigManager.clearServerSync();
     }
 }
