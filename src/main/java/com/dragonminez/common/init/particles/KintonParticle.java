@@ -72,12 +72,10 @@ public class KintonParticle extends TextureSheetParticle {
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double rParam, double gParam, double bParam) {
             int colorHex = (int) rParam;
 
-            // Desempaquetamos el Hex a R, G, B (0.0 a 1.0)
             double r = ((colorHex >> 16) & 0xFF) / 255.0;
             double g = ((colorHex >> 8) & 0xFF) / 255.0;
             double b = (colorHex & 0xFF) / 255.0;
 
-            // Creamos la partícula con los colores ya separados
             return new KintonParticle(level, x, y, z, r, g, b, this.spriteSet);
         }
     }
