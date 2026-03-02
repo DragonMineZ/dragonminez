@@ -2,33 +2,39 @@
   "targets": [
     "swap",
     "entity_mask",
-    "silhouette",
-    "sobel_mask",
-    "outline_color"
+    "colored_mask",
+    "edge_mask",
+    "h_blur"
   ],
   "passes": [
     {
-      "name": "dragonminez:transformation_silhouette",
+      "name": "dragonminez:transformation_unpack",
       "intarget": "entity_mask",
-      "outtarget": "silhouette"
+      "outtarget": "colored_mask"
     },
     {
       "name": "dragonminez:transformation_sobel",
-      "intarget": "silhouette",
-      "outtarget": "sobel_mask"
+      "intarget": "colored_mask",
+      "outtarget": "edge_mask"
     },
     {
-      "name": "dragonminez:transformation_outline_color",
-      "intarget": "sobel_mask",
-      "outtarget": "outline_color"
+      "name": "dragonminez:transformation_blur_h",
+      "intarget": "colored_mask",
+      "outtarget": "h_blur"
     },
     {
-      "name": "dragonminez:transformation_bloom",
+      "name": "dragonminez:transformation_blur_v",
+      "intarget": "h_blur",
+      "outtarget": "entity_mask"
+    },
+    {
+      "name": "dragonminez:transformation_composite",
       "intarget": "minecraft:main",
       "outtarget": "swap",
       "auxtargets": [
-        { "name": "OutlineSampler", "id": "outline_color" },
-        { "name": "EntityMaskSampler", "id": "silhouette" }
+        { "name": "ColoredMaskSampler", "id": "colored_mask" },
+        { "name": "GlowSampler", "id": "entity_mask" },
+        { "name": "EdgeSampler", "id": "edge_mask" }
       ]
     },
     {

@@ -117,7 +117,7 @@ public class ForgeClientEvents {
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
 		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-			TransformationPostShaderManager.renderMaskAndApplyUniforms(event.getPartialTick(), event.getPoseStack(), event.getCamera(), event.getFrustum());
+			TransformationPostShaderManager.flushMaskAndApplyUniforms(event.getPartialTick(), event.getPoseStack(), event.getCamera(), event.getFrustum());
 		}
 	}
 

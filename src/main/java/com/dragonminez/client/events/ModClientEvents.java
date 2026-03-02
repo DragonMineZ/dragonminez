@@ -22,18 +22,22 @@ import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
 import com.dragonminez.client.model.KiTridentModel;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
 import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
 import com.dragonminez.common.init.particles.*;
 import com.dragonminez.server.world.dimension.CustomSpecialEffects;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
@@ -43,6 +47,8 @@ import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+
+import java.io.IOException;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ModClientEvents {
@@ -58,6 +64,18 @@ public class ModClientEvents {
     public static void onKeyRegister(RegisterKeyMappingsEvent event) {
         KeyBinds.registerAll(event);
     }
+
+	@SubscribeEvent
+	public static void registerShaders(RegisterShadersEvent event) throws IOException {
+		event.registerShader(
+				new ShaderInstance(
+						event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),
+						DefaultVertexFormat.NEW_ENTITY
+				),
+				ModRenderTypes::setTransformationMaskShader
+		);
+	}
 
 	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {

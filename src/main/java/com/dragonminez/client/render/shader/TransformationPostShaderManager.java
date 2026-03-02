@@ -2,6 +2,7 @@ package com.dragonminez.client.render.shader;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -9,18 +10,14 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.mixin.client.PostChainAccessor;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EffectInstance;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
@@ -33,18 +30,20 @@ import java.util.UUID;
 
 public final class TransformationPostShaderManager {
 	private static final ResourceLocation TRANSFORMATION_EFFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shaders/post/transformation_outline.json");
+	private static final String UNPACK_PASS_NAME = Reference.MOD_ID + ":transformation_unpack";
 	private static final String SOBEL_PASS_NAME = Reference.MOD_ID + ":transformation_sobel";
-	private static final String OUTLINE_COLOR_PASS_NAME = Reference.MOD_ID + ":transformation_outline_color";
-	private static final String BLOOM_PASS_NAME = Reference.MOD_ID + ":transformation_bloom";
+	private static final String BLUR_H_PASS_NAME = Reference.MOD_ID + ":transformation_blur_h";
+	private static final String BLUR_V_PASS_NAME = Reference.MOD_ID + ":transformation_blur_v";
+	private static final String COMPOSITE_PASS_NAME = Reference.MOD_ID + ":transformation_composite";
 	private static final String MASK_TARGET = "entity_mask";
 
-	private static final MultiBufferSource.BufferSource MASK_BUFFER_SOURCE = MultiBufferSource.immediate(new BufferBuilder(4096));
 	private static final Map<UUID, TrackedShaderState> TRACKED_PLAYERS = new HashMap<>();
 	private static final Set<UUID> ACTIVE_MASK_PLAYERS = new HashSet<>();
 
 	private static boolean loadedByManager = false;
 	@Nullable
 	private static ShaderUniformState activeUniformState;
+	private static TransformationMaskBufferSource maskBufferSource = new TransformationMaskBufferSource();
 
 	private TransformationPostShaderManager() {
 	}
@@ -57,7 +56,7 @@ public final class TransformationPostShaderManager {
 		}
 
 		updateTrackedPlayers(mc);
-		if (ACTIVE_MASK_PLAYERS.isEmpty() || activeUniformState == null) {
+		if (ACTIVE_MASK_PLAYERS.isEmpty() || activeUniformState == null || !ModRenderTypes.hasTransformationMaskShader()) {
 			shutdownManagedShader(mc);
 			return;
 		}
@@ -65,7 +64,47 @@ public final class TransformationPostShaderManager {
 		ensureShaderLoaded(mc);
 	}
 
-	public static void renderMaskAndApplyUniforms(float partialTicks, PoseStack poseStack, Camera camera, Frustum frustum) {
+	public static TransformationMaskBufferSource getMaskBufferSource() {
+		return maskBufferSource;
+	}
+
+	@Nullable
+	public static MaskData getEntityMaskData(Player player) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.level == null || player == null) {
+			return null;
+		}
+
+		UUID playerId = player.getUUID();
+		if (!ACTIVE_MASK_PLAYERS.contains(playerId)) {
+			return null;
+		}
+
+		if (!ModRenderTypes.hasTransformationMaskShader() || !isTransformationShaderActive(mc)) {
+			return null;
+		}
+
+		if (player == mc.player && mc.options.getCameraType().isFirstPerson()) {
+			return null;
+		}
+
+		TrackedShaderState tracked = TRACKED_PLAYERS.get(playerId);
+		if (tracked == null || tracked.expired || tracked.uniformState == null) {
+			return null;
+		}
+
+		ShaderUniformState uniforms = tracked.uniformState;
+		return new MaskData(
+				uniforms.primaryR(),
+				uniforms.primaryG(),
+				uniforms.primaryB(),
+				uniforms.secondaryR(),
+				uniforms.secondaryG(),
+				uniforms.secondaryB()
+		);
+	}
+
+	public static void flushMaskAndApplyUniforms(float partialTicks, PoseStack poseStack, Camera camera, Frustum frustum) {
 		if (activeUniformState == null || ACTIVE_MASK_PLAYERS.isEmpty()) {
 			return;
 		}
@@ -80,7 +119,22 @@ public final class TransformationPostShaderManager {
 			return;
 		}
 
-		renderTransformedPlayersMask(mc, postChain, partialTicks, poseStack, camera, frustum);
+		RenderTarget maskTarget = postChain.getTempTarget(MASK_TARGET);
+		if (maskTarget == null) {
+			return;
+		}
+
+		maskTarget.clear(Minecraft.ON_OSX);
+		maskTarget.copyDepthFrom(mc.getMainRenderTarget());
+
+		TransformationMaskRenderState.setCurrentTarget(maskTarget);
+		try {
+			maskBufferSource.endMaskBatch();
+		} finally {
+			TransformationMaskRenderState.setCurrentTarget(null);
+			mc.getMainRenderTarget().bindWrite(false);
+		}
+
 		applyRuntimeUniforms(postChain);
 	}
 
@@ -144,54 +198,6 @@ public final class TransformationPostShaderManager {
 		}
 	}
 
-	private static void renderTransformedPlayersMask(Minecraft mc, PostChain postChain, float partialTicks, PoseStack poseStack, Camera camera, Frustum frustum) {
-		RenderTarget maskTarget = postChain.getTempTarget(MASK_TARGET);
-		if (maskTarget == null) {
-			return;
-		}
-
-		maskTarget.clear(Minecraft.ON_OSX);
-		maskTarget.copyDepthFrom(mc.getMainRenderTarget());
-		maskTarget.bindWrite(false);
-
-		double camX = camera.getPosition().x;
-		double camY = camera.getPosition().y;
-		double camZ = camera.getPosition().z;
-
-		EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
-		boolean renderHitBoxes = dispatcher.shouldRenderHitBoxes();
-		dispatcher.setRenderHitBoxes(false);
-		dispatcher.setRenderShadow(false);
-
-		for (Player player : mc.level.players()) {
-			if (!ACTIVE_MASK_PLAYERS.contains(player.getUUID())) {
-				continue;
-			}
-
-			if (player == mc.player && camera.getEntity() == player && !camera.isDetached()) {
-				continue;
-			}
-
-			if (!dispatcher.shouldRender(player, frustum, camX, camY, camZ) && !player.hasIndirectPassenger(mc.player)) {
-				continue;
-			}
-
-			double x = Mth.lerp(partialTicks, player.xOld, player.getX()) - camX;
-			double y = Mth.lerp(partialTicks, player.yOld, player.getY()) - camY;
-			double z = Mth.lerp(partialTicks, player.zOld, player.getZ()) - camZ;
-			float yaw = Mth.lerp(partialTicks, player.yRotO, player.getYRot());
-
-			poseStack.pushPose();
-			dispatcher.render(player, x, y, z, yaw, partialTicks, poseStack, MASK_BUFFER_SOURCE, dispatcher.getPackedLightCoords(player, partialTicks));
-			poseStack.popPose();
-		}
-
-		MASK_BUFFER_SOURCE.endBatch();
-		dispatcher.setRenderShadow(mc.options.entityShadows().get());
-		dispatcher.setRenderHitBoxes(renderHitBoxes);
-		mc.getMainRenderTarget().bindWrite(false);
-	}
-
 	private static void applyRuntimeUniforms(PostChain postChain) {
 		if (activeUniformState == null) {
 			return;
@@ -202,17 +208,7 @@ public final class TransformationPostShaderManager {
 			EffectInstance effect = pass.getEffect();
 			String passName = pass.getName();
 
-			if (SOBEL_PASS_NAME.equals(passName)) {
-				applyUniform(effect, "OutlineThickness", activeUniformState.outlineThickness());
-				applyUniform(effect, "EdgeThreshold", activeUniformState.edgeThreshold());
-				applyUniform(effect, "EdgeStrength", activeUniformState.edgeStrength());
-				continue;
-			}
-
-			if (OUTLINE_COLOR_PASS_NAME.equals(passName)) {
-				applyUniform(effect, "PrimaryColor", activeUniformState.primaryR(), activeUniformState.primaryG(), activeUniformState.primaryB());
-				applyUniform(effect, "SecondaryColor", activeUniformState.secondaryR(), activeUniformState.secondaryG(), activeUniformState.secondaryB());
-				applyUniform(effect, "GlowStrength", activeUniformState.glowStrength());
+			if (UNPACK_PASS_NAME.equals(passName)) {
 				applyUniform(effect, "NoiseScale", activeUniformState.noiseScale());
 				applyUniform(effect, "NoiseIntensity", activeUniformState.noiseIntensity());
 				applyUniform(effect, "NoiseScroll", activeUniformState.noiseScrollX(), activeUniformState.noiseScrollY());
@@ -220,9 +216,21 @@ public final class TransformationPostShaderManager {
 				continue;
 			}
 
-			if (BLOOM_PASS_NAME.equals(passName)) {
-				applyUniform(effect, "BloomStrength", activeUniformState.bloomStrength());
+			if (SOBEL_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "OutlineThickness", activeUniformState.outlineThickness());
+				applyUniform(effect, "EdgeThreshold", activeUniformState.edgeThreshold());
+				applyUniform(effect, "EdgeStrength", activeUniformState.edgeStrength());
+				continue;
+			}
+
+			if (BLUR_H_PASS_NAME.equals(passName) || BLUR_V_PASS_NAME.equals(passName)) {
 				applyUniform(effect, "BloomRadius", activeUniformState.bloomRadius());
+				continue;
+			}
+
+			if (COMPOSITE_PASS_NAME.equals(passName)) {
+				applyUniform(effect, "BloomStrength", activeUniformState.bloomStrength());
+				applyUniform(effect, "GlowStrength", activeUniformState.glowStrength());
 			}
 		}
 	}
@@ -267,6 +275,8 @@ public final class TransformationPostShaderManager {
 		TRACKED_PLAYERS.clear();
 		ACTIVE_MASK_PLAYERS.clear();
 		activeUniformState = null;
+		maskBufferSource = new TransformationMaskBufferSource();
+		TransformationMaskRenderState.setCurrentTarget(null);
 
 		if (shutdownShader) {
 			shutdownManagedShader(mc);
@@ -342,6 +352,16 @@ public final class TransformationPostShaderManager {
 		if (uniform != null) {
 			uniform.set(x, y, z);
 		}
+	}
+
+	public record MaskData(
+			float primaryR,
+			float primaryG,
+			float primaryB,
+			float secondaryR,
+			float secondaryG,
+			float secondaryB
+	) {
 	}
 
 	private record ResolvedShaderConfig(String signature, ShaderUniformState uniformState) {

@@ -3,6 +3,8 @@ package com.dragonminez.client.render;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.render.layer.*;
+import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -112,7 +114,22 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
             scalingZ = configScaleZ;
         }
 
-        poseStack.pushPose();
+		poseStack.pushPose();
+
+		MultiBufferSource effectiveBufferSource = bufferSource;
+		TransformationPostShaderManager.MaskData maskData = TransformationPostShaderManager.getEntityMaskData(entity);
+		if (maskData != null) {
+			TransformationMaskBufferSource maskBufferSource = TransformationPostShaderManager.getMaskBufferSource();
+			maskBufferSource.setEntityColors(
+					maskData.primaryR(),
+					maskData.primaryG(),
+					maskData.primaryB(),
+					maskData.secondaryR(),
+					maskData.secondaryG(),
+					maskData.secondaryB()
+			);
+			effectiveBufferSource = maskBufferSource.wrap(bufferSource);
+		}
 
 		if (FlySkillEvent.isFlyingFast()) {
 			float roll = FlightRollHandler.getRoll(partialTick);
@@ -128,7 +145,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
         poseStack.scale(scalingX, scalingY, scalingZ);
 
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+		super.render(entity, entityYaw, partialTick, poseStack, effectiveBufferSource, packedLight);
 
         this.shadowRadius = 0.4f * ((scalingX + scalingZ) / 2.0f);
 
