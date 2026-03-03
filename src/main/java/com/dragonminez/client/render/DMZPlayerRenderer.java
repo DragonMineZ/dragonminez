@@ -4,6 +4,7 @@ import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.util.BoneVisibilityHandler;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -73,20 +74,42 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
         String race = character.getRaceName().toLowerCase();
         String currentForm = character.getActiveForm();
 
+
+        var raceConfig = ConfigManager.getRaceCharacter(race);
+        String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+        String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
+                ? activeForm.getCustomModel().toLowerCase() : "";
+
+        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+        if (logicKey.isEmpty()) {
+            logicKey = race;
+        }
+
+        float configScaleX, configScaleY, configScaleZ;
+        if (activeForm != null) {
+            configScaleX = activeForm.getModelScaling()[0];
+            configScaleY = activeForm.getModelScaling()[1];
+            configScaleZ = activeForm.getModelScaling()[2];
+        } else {
+            configScaleX = character.getModelScaling()[0];
+            configScaleY = character.getModelScaling()[1];
+            configScaleZ = character.getModelScaling()[2];
+        }
+
         float scalingX, scalingY, scalingZ;
 
-        if (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU)) || (Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU))) {
-            scalingX = 1.0f; scalingY = 1.0f; scalingZ = 1.0f;
+        boolean isOozaru = logicKey.startsWith("oozaru") ||
+                (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) ||
+                        Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+
+        if (isOozaru) {
+            scalingX = Math.max(0.1f, configScaleX - 2.8f);
+            scalingY = Math.max(0.1f, configScaleY - 2.8f);
+            scalingZ = Math.max(0.1f, configScaleZ - 2.8f);
         } else {
-            if (activeForm != null) {
-                scalingX = activeForm.getModelScaling()[0];
-				scalingY = activeForm.getModelScaling()[1];
-				scalingZ = activeForm.getModelScaling()[2];
-            } else {
-                scalingX = character.getModelScaling()[0];
-				scalingY = character.getModelScaling()[1];
-				scalingZ = character.getModelScaling()[2];
-            }
+            scalingX = configScaleX;
+            scalingY = configScaleY;
+            scalingZ = configScaleZ;
         }
 
         poseStack.pushPose();

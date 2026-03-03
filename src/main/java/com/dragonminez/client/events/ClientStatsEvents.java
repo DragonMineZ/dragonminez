@@ -10,6 +10,7 @@ import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
@@ -24,6 +25,8 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
@@ -214,28 +217,53 @@ public class ClientStatsEvents {
 		});
 	}
 
-	@SubscribeEvent
-	public static void onComputeFovModifier(ComputeFovModifierEvent event) {
-		if (event.getPlayer() instanceof LocalPlayer player) {
-			AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
-			if (speedAttr != null) {
-				AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
-				if (formMod != null) {
-					double factor = 1.0 + formMod.getAmount();
-					if (factor > 1.0) {
-						float newFov = (float) (event.getFovModifier() / factor);
-						event.setNewFovModifier(newFov);
-					}
-				}
-				AttributeModifier gravityMod = speedAttr.getModifier(GravityLogic.GRAVITY_SPEED_UUID);
-				if (gravityMod != null) {
-					double factor = 1.0 + Math.abs(gravityMod.getAmount());
-					if (factor > 1.0) {
-						float newFov = (float) (event.getFovModifier() * factor);
-						event.setNewFovModifier(newFov);
-					}
-				}
-			}
-		}
-	}
+    @SubscribeEvent
+    public static void onComputeFovModifier(ComputeFovModifierEvent event) {
+        if (event.getPlayer() instanceof LocalPlayer player) {
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                var character = data.getCharacter();
+                var activeForm = character.getActiveFormData();
+                String currentForm = character.getActiveForm();
+                String race = character.getRaceName().toLowerCase();
+
+                var raceConfig = ConfigManager.getRaceCharacter(race);
+                String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+                String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
+                        ? activeForm.getCustomModel().toLowerCase() : "";
+
+                String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+                if (logicKey.isEmpty()) {
+                    logicKey = race;
+                }
+
+                boolean isOozaru = logicKey.startsWith("oozaru") ||
+                        (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+
+                if (isOozaru) {
+                    float newFov = event.getFovModifier() * 1.5f;
+                    event.setNewFovModifier(newFov);
+                }
+            });
+
+            AttributeInstance speedAttr = player.getAttribute(Attributes.MOVEMENT_SPEED);
+            if (speedAttr != null) {
+                AttributeModifier formMod = speedAttr.getModifier(StatsEvents.FORM_SPEED_UUID);
+                if (formMod != null) {
+                    double factor = 1.0 + formMod.getAmount();
+                    if (factor > 1.0) {
+                        float newFov = (float) (event.getFovModifier() / factor);
+                        event.setNewFovModifier(newFov);
+                    }
+                }
+                AttributeModifier gravityMod = speedAttr.getModifier(GravityLogic.GRAVITY_SPEED_UUID);
+                if (gravityMod != null) {
+                    double factor = 1.0 + Math.abs(gravityMod.getAmount());
+                    if (factor > 1.0) {
+                        float newFov = (float) (event.getFovModifier() * factor);
+                        event.setNewFovModifier(newFov);
+                    }
+                }
+            }
+        }
+    }
 }

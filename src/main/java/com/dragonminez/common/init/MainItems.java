@@ -172,6 +172,14 @@ public final class MainItems {
     public static final Map<ArmorItem.Type, RegistryObject<Item>> ORANGE_HIGH_ARMOR = fullArmorNoHelmetSet("orange_high_armor", "orange_high", false);
     // GRANOLA
     public static final Map<ArmorItem.Type, RegistryObject<Item>> GRANOLA_ARMOR = fullArmorNoHelmetSet("granola_armor", "granola", false);
+    // KEEP1000
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> AGE1000_ARMOR = fullArmorNoHelmetSet("age1000_armor", "age1000", false);
+    // GINE
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> GINE_ARMOR = fullArmorNoHelmetSet("gine_armor", "gine", false);
+    // KALE
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> KALE_ARMOR = fullArmorNoHelmetSet("kale_armor", "kale", false);
+    // CAULIFLA
+    public static final Map<ArmorItem.Type, RegistryObject<Item>> CAULIFLA_ARMOR = fullArmorNoHelmetSet("caulifla_armor", "caulifla", false);
 
 
     //INVENCIBLE

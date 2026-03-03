@@ -510,37 +510,46 @@ public class StatsEvents {
             String currentForm = character.getActiveForm();
             String race = character.getRaceName().toLowerCase();
 
-            String customModelValue = "";
-            if (character.hasActiveForm() && activeForm != null) {
-                if (activeForm.hasCustomModel()) {
-                    customModelValue = activeForm.getCustomModel().toLowerCase();
-                }
-            }
-            if (customModelValue.isEmpty()) {
-                var raceConfig = ConfigManager.getRaceCharacter(race);
-                if (raceConfig != null && raceConfig.getCustomModel() != null) {
-                    customModelValue = raceConfig.getCustomModel().toLowerCase();
-                }
+            var raceConfig = ConfigManager.getRaceCharacter(race);
+            String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+            String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
+                    ? activeForm.getCustomModel().toLowerCase() : "";
+
+            String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+            if (logicKey.isEmpty()) {
+                logicKey = race;
             }
 
-            float scalingX, scalingY;
+            float configScaleX, configScaleY;
 
-            boolean isOozaru = customModelValue.equals("oozaru") ||
-                    (currentForm != null && currentForm.contains("oozaru")) ||
+            if (activeForm != null) {
+                configScaleX = activeForm.getModelScaling()[0];
+                configScaleY = activeForm.getModelScaling()[1];
+            } else {
+                configScaleX = character.getModelScaling()[0];
+                configScaleY = character.getModelScaling()[1];
+            }
+
+            float scalingX = configScaleX;
+            float scalingY = configScaleY;
+
+            boolean isOozaru = logicKey.startsWith("oozaru") ||
                     (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
 
             if (isOozaru) {
-                scalingX = 3.4f;
-                scalingY = 3.4f;
+                float baseOozaruSize = 3.8f;
+
+                float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
+                float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
+
+                scalingX = visualScaleX * baseOozaruSize;
+                scalingY = visualScaleY * baseOozaruSize;
             } else {
-                if (activeForm != null) {
-                    scalingX = activeForm.getModelScaling()[0];
-                    scalingY = activeForm.getModelScaling()[1];
-                } else {
-                    scalingX = character.getModelScaling()[0];
-                    scalingY = character.getModelScaling()[1];
-                }
+                scalingX = configScaleX;
+                scalingY = configScaleY;
             }
+
+            // scalingX = Math.min(configScaleX, 5.0f);
 
             float rawWidth = 0.6F * scalingX;
             float rawHeight = 1.9F * scalingY;
