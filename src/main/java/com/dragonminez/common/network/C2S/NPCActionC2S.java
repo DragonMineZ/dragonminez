@@ -122,6 +122,8 @@ public class NPCActionC2S {
 			player.setHealth(20.0F);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 			player.setHealth(20.0F);
+		} else if (action == 3) {
+			data.getCharacter().setHasSaiyanTail(!data.getCharacter().isHasSaiyanTail());
 		}
 	}
 

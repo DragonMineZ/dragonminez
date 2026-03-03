@@ -110,7 +110,7 @@ public class MasterTextScreen extends Screen {
 						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.evil");
 					} else if (stats.getSkills().getSkillLevel("potentialunlock") < 10) {
 						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.level");
-					} else if (stats.getSkills().getSkillLevel("potentialunlock") == 10){
+					} else if (stats.getSkills().getSkillLevel("potentialunlock") == 10) {
 						NetworkHandler.sendToServer(new NPCActionC2S("guru", 1));
 						this.onClose();
 					}
@@ -131,6 +131,21 @@ public class MasterTextScreen extends Screen {
 					this.onClose();
 				})
 				.build());
+
+		if (ConfigManager.getRaceCharacter(stats.getCharacter().getRace()).getHasSaiyanTail()) {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 75, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable(stats.getCharacter().isHasSaiyanTail() ? "gui.dragonminez.button.dende.remove_tail" : "gui.dragonminez.button.dende.grow_tail"))
+					.onPress(b -> {
+						NetworkHandler.sendToServer(new NPCActionC2S("dende", 3));
+						this.onClose();
+					})
+					.build());
+		}
 
 		this.addRenderableWidget(new TexturedTextButton.Builder()
 				.position(x + 150, y)
@@ -328,7 +343,8 @@ public class MasterTextScreen extends Screen {
 		}
 	}
 
-	private void initToribot(int x, int y, StatsData stats) {}
+	private void initToribot(int x, int y, StatsData stats) {
+	}
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

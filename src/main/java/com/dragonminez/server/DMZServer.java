@@ -8,13 +8,13 @@ import net.minecraft.commands.CommandSourceStack;
 
 public class DMZServer {
 
-    public static void init() {
-        LogUtil.info(Env.SERVER, "Initializing DragonMineZ Server...");
-    }
+	public static void init() {
+		LogUtil.info(Env.SERVER, "Initializing DragonMineZ Server...");
+	}
 
 	public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
 		StatsCommand.register(dispatcher);
-		SaiyanTailCommand.register(dispatcher);
+		RacialSkillCommand.register(dispatcher);
 		BonusCommand.register(dispatcher);
 		EffectsCommand.register(dispatcher);
 		SkillsCommand.register(dispatcher);
