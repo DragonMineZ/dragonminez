@@ -24,6 +24,11 @@ public class ModRenderTypes extends RenderType {
 			TransformationMaskRenderState::bindMaskTarget,
 			TransformationMaskRenderState::bindMainTarget
 	);
+	private static final RenderStateShard.OutputStateShard TRANSFORMATION_PARAMS_TARGET = new RenderStateShard.OutputStateShard(
+			"transformation_params_target",
+			TransformationMaskRenderState::bindParamsTarget,
+			TransformationMaskRenderState::bindMainTarget
+	);
 
 	private static final RenderType TRANSFORMATION_MASK = create(
 			"transformation_mask",
@@ -63,6 +68,47 @@ public class ModRenderTypes extends RenderType {
 					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
 					.setWriteMaskState(COLOR_WRITE)
 					.setOutputState(TRANSFORMATION_MASK_TARGET)
+					.createCompositeState(false)
+	);
+
+	private static final RenderType TRANSFORMATION_PARAMS = create(
+			"transformation_params",
+			DefaultVertexFormat.NEW_ENTITY,
+			VertexFormat.Mode.QUADS,
+			1536,
+			false,
+			false,
+			CompositeState.builder()
+					.setShaderState(TRANSFORMATION_MASK_SHADER)
+					.setTextureState(NO_TEXTURE)
+					.setTransparencyState(NO_TRANSPARENCY)
+					.setCullState(NO_CULL)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
+					.setLightmapState(NO_LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setWriteMaskState(COLOR_WRITE)
+					.setOutputState(TRANSFORMATION_PARAMS_TARGET)
+					.createCompositeState(false)
+	);
+
+	private static final RenderType TRANSFORMATION_PARAMS_VIEW_OFFSET = create(
+			"transformation_params_view_offset",
+			DefaultVertexFormat.NEW_ENTITY,
+			VertexFormat.Mode.QUADS,
+			1536,
+			false,
+			false,
+			CompositeState.builder()
+					.setShaderState(TRANSFORMATION_MASK_SHADER)
+					.setTextureState(NO_TEXTURE)
+					.setTransparencyState(NO_TRANSPARENCY)
+					.setCullState(NO_CULL)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
+					.setLightmapState(NO_LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
+					.setWriteMaskState(COLOR_WRITE)
+					.setOutputState(TRANSFORMATION_PARAMS_TARGET)
 					.createCompositeState(false)
 	);
 
@@ -164,12 +210,27 @@ public class ModRenderTypes extends RenderType {
 		return TRANSFORMATION_MASK;
 	}
 
+	public static RenderType transformationParams(RenderType sourceRenderType) {
+		if (sourceRenderType != null && sourceRenderType.toString().contains(VIEW_OFFSET_LAYERING_TOKEN)) {
+			return TRANSFORMATION_PARAMS_VIEW_OFFSET;
+		}
+		return TRANSFORMATION_PARAMS;
+	}
+
 	public static RenderType transformationMask() {
 		return TRANSFORMATION_MASK;
 	}
 
 	public static RenderType transformationMaskViewOffset() {
 		return TRANSFORMATION_MASK_VIEW_OFFSET;
+	}
+
+	public static RenderType transformationParams() {
+		return TRANSFORMATION_PARAMS;
+	}
+
+	public static RenderType transformationParamsViewOffset() {
+		return TRANSFORMATION_PARAMS_VIEW_OFFSET;
 	}
 
 }

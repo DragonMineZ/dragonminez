@@ -11,8 +11,13 @@ const int MAX_SAMPLES = 24;
 
 void main() {
 	vec2 texel = vec2(1.0 / max(InSize.x, 1.0), 0.0);
-	float sampleRadius = max(1.0, BloomRadius * 8.0);
-	int sampleCount = int(clamp(ceil(sampleRadius), 2.0, float(MAX_SAMPLES)));
+	float sampleRadius = max(0.0, BloomRadius);
+	if (sampleRadius <= 0.001) {
+		fragColor = texture(DiffuseSampler, clamp(texCoord, vec2(0.0), vec2(1.0)));
+		return;
+	}
+
+	int sampleCount = int(clamp(ceil(sampleRadius), 1.0, float(MAX_SAMPLES)));
 	float sigma = max(0.001, sampleRadius * 0.5);
 	float invSigma2 = 1.0 / (2.0 * sigma * sigma);
 

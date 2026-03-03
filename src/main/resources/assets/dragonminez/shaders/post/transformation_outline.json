@@ -2,6 +2,7 @@
   "targets": [
     "swap",
     "entity_mask",
+    "entity_params",
     "colored_mask",
     "edge_mask",
     "h_blur"
@@ -10,7 +11,10 @@
     {
       "name": "dragonminez:transformation_unpack",
       "intarget": "entity_mask",
-      "outtarget": "colored_mask"
+      "outtarget": "colored_mask",
+      "auxtargets": [
+        { "name": "ParamsSampler", "id": "entity_params" }
+      ]
     },
     {
       "name": "dragonminez:transformation_sobel",

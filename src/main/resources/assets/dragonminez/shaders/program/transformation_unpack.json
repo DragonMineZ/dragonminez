@@ -12,6 +12,9 @@
 	"samplers": [
 		{
 			"name": "DiffuseSampler"
+		},
+		{
+			"name": "ParamsSampler"
 		}
 	],
 	"uniforms": [
@@ -33,44 +36,11 @@
 			]
 		},
 		{
-			"name": "Time",
+			"name": "AnimationTime",
 			"type": "float",
 			"count": 1,
 			"values": [
 				0.0
-			]
-		},
-		{
-			"name": "NoiseScale",
-			"type": "float",
-			"count": 1,
-			"values": [
-				4.0
-			]
-		},
-		{
-			"name": "NoiseIntensity",
-			"type": "float",
-			"count": 1,
-			"values": [
-				0.25
-			]
-		},
-		{
-			"name": "NoiseScroll",
-			"type": "float",
-			"count": 2,
-			"values": [
-				0.2,
-				0.15
-			]
-		},
-		{
-			"name": "ColorMixSpeed",
-			"type": "float",
-			"count": 1,
-			"values": [
-				0.7
 			]
 		}
 	]

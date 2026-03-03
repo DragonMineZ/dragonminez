@@ -17,9 +17,12 @@ void main() {
 	float edge = texture(EdgeSampler, texCoord).r;
 
 	float entityMask = coloredMask.a;
-	float exteriorGlowMask = max(0.0, blurred.a - entityMask);
+	float blurredAlpha = clamp(blurred.a, 0.0, 1.0);
+	float exteriorGlowMask = max(0.0, blurredAlpha - entityMask);
+	vec3 blurredColor = blurredAlpha > 0.0001 ? (blurred.rgb / blurredAlpha) : vec3(0.0);
+	blurredColor = clamp(blurredColor, 0.0, 1.0);
 
-	vec3 glow = blurred.rgb * exteriorGlowMask * max(0.0, BloomStrength);
+	vec3 glow = blurredColor * exteriorGlowMask * max(0.0, BloomStrength);
 	vec3 outline = coloredMask.rgb * edge * max(0.0, GlowStrength);
 
 	vec3 result = scene + glow + outline;

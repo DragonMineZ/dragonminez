@@ -10,15 +10,19 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 float sampleMask(vec2 uv) {
-    // Threshold alpha to binary: anything visible = 1.0
     float alpha = texture(DiffuseSampler, clamp(uv, vec2(0.0), vec2(1.0))).a;
-    return step(0.01, alpha);  // Returns 1.0 if alpha > 0.01, else 0.0
+    return step(0.01, alpha);
 }
 
 void main() {
     vec2 uv = clamp(texCoord, vec2(0.0), vec2(1.0));
     vec2 texel = 1.0 / max(InSize, vec2(1.0));
-    vec2 offset = texel * max(0.1, OutlineThickness);
+    float thicknessPx = max(0.0, OutlineThickness);
+    if (thicknessPx <= 0.001) {
+        fragColor = vec4(0.0);
+        return;
+    }
+    vec2 offset = texel * thicknessPx;
 
     float tl = sampleMask(uv + offset * vec2(-1.0, -1.0));
     float tc = sampleMask(uv + offset * vec2(0.0, -1.0));

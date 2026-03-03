@@ -128,6 +128,13 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 					maskData.secondaryG(),
 					maskData.secondaryB()
 			);
+			maskBufferSource.setEntityNoiseAndMix(
+					maskData.noiseScale(),
+					maskData.noiseIntensity(),
+					maskData.noiseScrollX(),
+					maskData.noiseScrollY(),
+					maskData.colorMixSpeed()
+			);
 			effectiveBufferSource = maskBufferSource.wrap(bufferSource);
 		}
 

@@ -134,12 +134,6 @@ public class FormConfig {
             private Integer durationTicks = 0;
             private String primaryColor = "#7FFFFF";
             private String secondaryColor = "#FFD970";
-            private Double outlineThickness = 1.0;
-            private Double edgeThreshold = 0.12;
-            private Double edgeStrength = 1.0;
-            private Double glowStrength = 1.1;
-            private Double bloomStrength = 0.7;
-            private Double bloomRadius = 1.5;
             private Double noiseScale = 4.0;
             private Double noiseIntensity = 0.25;
             private Double noiseScrollX = 0.2;
@@ -160,30 +154,6 @@ public class FormConfig {
 
             public String getSecondaryColor() {
                 return secondaryColor != null && !secondaryColor.isEmpty() ? secondaryColor : "#FFD970";
-            }
-
-            public double getOutlineThickness() {
-                return Math.max(0.1, outlineThickness != null ? outlineThickness : 1.0);
-            }
-
-            public double getEdgeThreshold() {
-                return Math.max(0.0001, edgeThreshold != null ? edgeThreshold : 0.12);
-            }
-
-            public double getEdgeStrength() {
-                return Math.max(0.0, edgeStrength != null ? edgeStrength : 1.0);
-            }
-
-            public double getGlowStrength() {
-                return Math.max(0.0, glowStrength != null ? glowStrength : 1.1);
-            }
-
-            public double getBloomStrength() {
-                return Math.max(0.0, bloomStrength != null ? bloomStrength : 0.7);
-            }
-
-            public double getBloomRadius() {
-                return Math.max(0.0, bloomRadius != null ? bloomRadius : 1.5);
             }
 
             public double getNoiseScale() {
