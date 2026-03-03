@@ -21,127 +21,132 @@ import java.util.List;
 
 public class QuestParser {
 
-    public static Quest parseQuest(JsonObject json) {
-        int id = json.get("id").getAsInt();
-        String title = json.get("title").getAsString();
-        String description = json.get("description").getAsString();
+	public static Quest parseQuest(JsonObject json) {
+		int id = json.get("id").getAsInt();
+		String title = json.get("title").getAsString();
+		String description = json.get("description").getAsString();
 
-        List<QuestObjective> objectives = new ArrayList<>();
-        if (json.has("objectives")) {
-            JsonArray objArray = json.getAsJsonArray("objectives");
-            for (JsonElement element : objArray) {
-                QuestObjective obj = parseObjective(element.getAsJsonObject());
-                if (obj != null) {
-                    objectives.add(obj);
-                }
-            }
-        }
+		List<QuestObjective> objectives = new ArrayList<>();
+		if (json.has("objectives")) {
+			JsonArray objArray = json.getAsJsonArray("objectives");
+			for (JsonElement element : objArray) {
+				QuestObjective obj = parseObjective(element.getAsJsonObject());
+				if (obj != null) {
+					objectives.add(obj);
+				}
+			}
+		}
 
-        List<QuestReward> rewards = new ArrayList<>();
-        if (json.has("rewards")) {
-            JsonArray rewardArray = json.getAsJsonArray("rewards");
-            for (JsonElement element : rewardArray) {
-                QuestReward reward = parseReward(element.getAsJsonObject());
-                if (reward != null) {
-                    rewards.add(reward);
-                }
-            }
-        }
+		List<QuestReward> rewards = new ArrayList<>();
+		if (json.has("rewards")) {
+			JsonArray rewardArray = json.getAsJsonArray("rewards");
+			for (JsonElement element : rewardArray) {
+				QuestReward reward = parseReward(element.getAsJsonObject());
+				if (reward != null) {
+					rewards.add(reward);
+				}
+			}
+		}
 
-        return new Quest(id, title, description, objectives, rewards);
-    }
+		return new Quest(id, title, description, objectives, rewards);
+	}
 
-    private static QuestObjective parseObjective(JsonObject json) {
-        String type = json.get("type").getAsString();
-        String description = json.get("description").getAsString();
+	private static QuestObjective parseObjective(JsonObject json) {
+		String type = json.get("type").getAsString();
+		String description = json.get("description").getAsString();
 
-        switch (type.toUpperCase()) {
-            case "ITEM":
-                String itemId = json.get("item").getAsString();
-                int count = json.get("count").getAsInt();
-                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-                if (item != Items.AIR) {
-                    return new ItemObjective(description, item, count);
-                }
-                break;
+		switch (type.toUpperCase()) {
+			case "ITEM":
+				String itemId = json.get("item").getAsString();
+				int count = json.get("count").getAsInt();
+				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+				if (item != Items.AIR) {
+					return new ItemObjective(description, item, count);
+				}
+				break;
 
-            case "KILL":
-                String entityId = json.get("entity").getAsString();
-                int killCount = json.get("count").getAsInt();
-                EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityId));
-                return new KillObjective(description, entityType, killCount);
+			case "KILL":
+				String entityId = json.get("entity").getAsString();
+				int killCount = json.get("count").getAsInt();
+				EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityId));
 
-            case "BIOME":
-                String biomeId = json.get("biome").getAsString();
-                return new BiomeObjective(description, biomeId);
+				double health = json.has("health") ? json.get("health").getAsDouble() : 20.0;
+				double meleeDamage = json.has("meleeDamage") ? json.get("meleeDamage").getAsDouble() : 1.0;
+				double kiDamage = json.has("kiDamage") ? json.get("kiDamage").getAsDouble() : 1.0;
 
-            case "COORDS":
-                int x = json.get("x").getAsInt();
-                int y = json.get("y").getAsInt();
-                int z = json.get("z").getAsInt();
-                int radius = json.has("radius") ? json.get("radius").getAsInt() : 10;
-                return new CoordsObjective(description, new BlockPos(x, y, z), radius);
+				return new KillObjective(description, entityType, killCount, health, meleeDamage, kiDamage);
 
-            case "INTERACT":
-                String interactEntity = json.has("entity") ? json.get("entity").getAsString() : null;
-                String entityName = json.has("entityName") ? json.get("entityName").getAsString() : null;
-                EntityType<?> interactType = interactEntity != null ?
-                    BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity)) : null;
-                return new InteractObjective(description, interactType, entityName);
+			case "BIOME":
+				String biomeId = json.get("biome").getAsString();
+				return new BiomeObjective(description, biomeId);
 
-            case "STRUCTURE":
-                String structureId = json.get("structure").getAsString();
-                return new StructureObjective(description, structureId);
-        }
+			case "COORDS":
+				int x = json.get("x").getAsInt();
+				int y = json.get("y").getAsInt();
+				int z = json.get("z").getAsInt();
+				int radius = json.has("radius") ? json.get("radius").getAsInt() : 10;
+				return new CoordsObjective(description, new BlockPos(x, y, z), radius);
 
-        return null;
-    }
+			case "INTERACT":
+				String interactEntity = json.has("entity") ? json.get("entity").getAsString() : null;
+				String entityName = json.has("entityName") ? json.get("entityName").getAsString() : null;
+				EntityType<?> interactType = interactEntity != null ?
+						BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity)) : null;
+				return new InteractObjective(description, interactType, entityName);
 
-    private static QuestReward parseReward(JsonObject json) {
-        String type = json.get("type").getAsString();
+			case "STRUCTURE":
+				String structureId = json.get("structure").getAsString();
+				return new StructureObjective(description, structureId);
+		}
 
-        QuestReward.DifficultyType difficultyType = QuestReward.DifficultyType.ALL;
-        if (type.toLowerCase().startsWith("hard:")) {
-            difficultyType = QuestReward.DifficultyType.HARD;
-            type = type.substring(5);
-        } else if (type.toLowerCase().startsWith("normal:")) {
-            difficultyType = QuestReward.DifficultyType.NORMAL;
-            type = type.substring(7);
-        }
+		return null;
+	}
 
-        QuestReward reward = null;
-        switch (type.toUpperCase()) {
-            case "ITEM":
-                String itemId = json.get("item").getAsString();
-                int count = json.has("count") ? json.get("count").getAsInt() : 1;
-                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-                if (item != Items.AIR) {
-                    reward = new ItemReward(new ItemStack(item, count));
-                }
-                break;
+	private static QuestReward parseReward(JsonObject json) {
+		String type = json.get("type").getAsString();
 
-            case "TPS":
-                int amount = json.get("amount").getAsInt();
-                reward = new TPSReward(amount);
-                break;
+		QuestReward.DifficultyType difficultyType = QuestReward.DifficultyType.ALL;
+		if (type.toLowerCase().startsWith("hard:")) {
+			difficultyType = QuestReward.DifficultyType.HARD;
+			type = type.substring(5);
+		} else if (type.toLowerCase().startsWith("normal:")) {
+			difficultyType = QuestReward.DifficultyType.NORMAL;
+			type = type.substring(7);
+		}
 
-            case "COMMAND":
-                String command = json.get("command").getAsString();
-                JsonElement translationKeyElement = json.get("translationKey");
-                reward = new CommandReward(command, translationKeyElement != null ? translationKeyElement.getAsString() :  null);
-                break;
-            case "SKILL":
-                String skill = json.get("skill").getAsString();
-                int level = json.get("level").getAsInt();
-                reward = new SkillReward(skill, level);
-                break;
-        }
+		QuestReward reward = null;
+		switch (type.toUpperCase()) {
+			case "ITEM":
+				String itemId = json.get("item").getAsString();
+				int count = json.has("count") ? json.get("count").getAsInt() : 1;
+				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
+				if (item != Items.AIR) {
+					reward = new ItemReward(new ItemStack(item, count));
+				}
+				break;
 
-        if (reward != null) {
-            reward.setDifficultyType(difficultyType);
-        }
+			case "TPS":
+				int amount = json.get("amount").getAsInt();
+				reward = new TPSReward(amount);
+				break;
 
-        return reward;
-    }
+			case "COMMAND":
+				String command = json.get("command").getAsString();
+				JsonElement translationKeyElement = json.get("translationKey");
+				reward = new CommandReward(command, translationKeyElement != null ? translationKeyElement.getAsString() : null);
+				break;
+			case "SKILL":
+				String skill = json.get("skill").getAsString();
+				int level = json.get("level").getAsInt();
+				reward = new SkillReward(skill, level);
+				break;
+		}
+
+		if (reward != null) {
+			reward.setDifficultyType(difficultyType);
+		}
+
+		return reward;
+	}
 }
 

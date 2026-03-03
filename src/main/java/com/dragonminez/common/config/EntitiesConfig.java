@@ -10,13 +10,13 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class EntitiesConfig {
-	public static final int CURRENT_VERSION = 2;
+	public static final int CURRENT_VERSION = 3;
 
 	@Setter
 	private int configVersion;
 
 	private HardModeSettings hardModeSettings = new HardModeSettings();
-	private Map<String, Map<String, EntityStats>> sagaEntityStats = new HashMap<>();
+	private Map<String, EntityStats> defaultEntityStats = new HashMap<>();
 
 	@Setter
 	@Getter
@@ -25,9 +25,14 @@ public class EntitiesConfig {
 		private Double hpMultiplier = 3.0;
 		private Double damageMultiplier = 2.0;
 
-		public Double getHpMultiplier() { return Math.max(1, hpMultiplier); }
-        public Double getDamageMultiplier() { return Math.max(1, damageMultiplier); }
-    }
+		public Double getHpMultiplier() {
+			return Math.max(1, hpMultiplier);
+		}
+
+		public Double getDamageMultiplier() {
+			return Math.max(1, damageMultiplier);
+		}
+	}
 
 	@Setter
 	@Getter
@@ -37,8 +42,16 @@ public class EntitiesConfig {
 		private Double meleeDamage;
 		private Double kiDamage;
 
-		public Double getHealth() { return health != null ? Math.max(1, health) : null; }
-		public Double getMeleeDamage() { return meleeDamage != null ? Math.max(1, meleeDamage) : null; }
-		public Double getKiDamage() { return kiDamage != null ? Math.max(1, kiDamage) : null; }
+		public Double getHealth() {
+			return health != null ? Math.max(1, health) : null;
+		}
+
+		public Double getMeleeDamage() {
+			return meleeDamage != null ? Math.max(1, meleeDamage) : null;
+		}
+
+		public Double getKiDamage() {
+			return kiDamage != null ? Math.max(1, kiDamage) : null;
+		}
 	}
 }

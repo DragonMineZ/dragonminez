@@ -64,7 +64,8 @@ public class StartQuestC2S {
 
 						String entityIdStr = killObjective.getEntityId();
 						if (entityIdStr.equals("dragonminez:saga_zarbont1")) entityIdStr = "dragonminez:saga_zarbon";
-						if (entityIdStr.equals("dragonminez:saga_frieza_third")) entityIdStr = "dragonminez:saga_frieza_second";
+						if (entityIdStr.equals("dragonminez:saga_frieza_third"))
+							entityIdStr = "dragonminez:saga_frieza_second";
 						ResourceLocation resLoc = ResourceLocation.parse(entityIdStr);
 						EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(resLoc);
 
@@ -80,6 +81,10 @@ public class StartQuestC2S {
 
 									entity.getPersistentData().putString("dmz_saga_id", sagaId);
 									entity.getPersistentData().putString("dmz_quest_owner", player.getStringUUID());
+
+									entity.getPersistentData().putDouble("dmz_quest_hp", killObjective.getHealth());
+									entity.getPersistentData().putDouble("dmz_quest_melee", killObjective.getMeleeDamage());
+									entity.getPersistentData().putDouble("dmz_quest_ki", killObjective.getKiDamage());
 
 									if (entity instanceof Mob mob) mob.setTarget(player);
 									player.serverLevel().addFreshEntity(entity);

@@ -27,34 +27,45 @@ public class EntityStatsHandler {
 		if (entity.getPersistentData().getBoolean("dmz_stats_configured")) return;
 
 		boolean isHardMode = entity.getPersistentData().getBoolean("dmz_is_hardmode");
-
-		String sagaId = entity.getPersistentData().getString("dmz_saga_id");
-		if (sagaId.isEmpty()) sagaId = "default";
-
-		String registryName = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();
-		EntitiesConfig.EntityStats stats = ConfigManager.getEntityStats(sagaId, registryName);
-
 		EntitiesConfig.HardModeSettings hardSettings = ConfigManager.getEntitiesConfig().getHardModeSettings();
 		double hpMult = isHardMode ? hardSettings.getHpMultiplier() : 1.0;
 		double dmgMult = isHardMode ? hardSettings.getDamageMultiplier() : 1.0;
 
-		if (stats != null) {
-			if (stats.getHealth() != null && entity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
-				double finalHealth = stats.getHealth() * hpMult;
-				entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(finalHealth);
-				entity.setHealth((float) finalHealth);
-			}
-			if (stats.getMeleeDamage() != null && entity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
-				double finalDmg = stats.getMeleeDamage() * dmgMult;
-				entity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(finalDmg);
-			}
-			if (entity instanceof DBSagasEntity sagaEntity && stats.getKiDamage() != null) {
-				double finalKi = stats.getKiDamage() * dmgMult;
-				sagaEntity.setKiBlastDamage((float) finalKi);
+		boolean isQuestEntity = entity.getPersistentData().contains("dmz_quest_hp");
+
+		if (isQuestEntity) {
+			double finalHealth = entity.getPersistentData().getDouble("dmz_quest_hp") * hpMult;
+			double finalMelee = entity.getPersistentData().getDouble("dmz_quest_melee") * dmgMult;
+			double finalKi = entity.getPersistentData().getDouble("dmz_quest_ki") * dmgMult;
+
+			applyStatsToEntity(entity, finalHealth, finalMelee, finalKi);
+		} else {
+			String registryName = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();
+			EntitiesConfig.EntityStats defaultStats = ConfigManager.getEntityStats(registryName);
+
+			if (defaultStats != null) {
+				double finalHealth = (defaultStats.getHealth() != null ? defaultStats.getHealth() : 20.0) * hpMult;
+				double finalMelee = (defaultStats.getMeleeDamage() != null ? defaultStats.getMeleeDamage() : 1.0) * dmgMult;
+				double finalKi = (defaultStats.getKiDamage() != null ? defaultStats.getKiDamage() : 1.0) * dmgMult;
+
+				applyStatsToEntity(entity, finalHealth, finalMelee, finalKi);
 			}
 		}
 
 		entity.getPersistentData().putBoolean("dmz_stats_configured", true);
+	}
+
+	private static void applyStatsToEntity(LivingEntity entity, double health, double melee, double ki) {
+		if (entity.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+			entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+			entity.setHealth((float) health);
+		}
+		if (entity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
+			entity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(melee);
+		}
+		if (entity instanceof DBSagasEntity sagaEntity) {
+			sagaEntity.setKiBlastDamage((float) ki);
+		}
 	}
 
 	@SubscribeEvent
