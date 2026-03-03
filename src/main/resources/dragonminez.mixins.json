@@ -11,21 +11,22 @@
     "common.LivingEntityMixin",
     "common.EntityMixin"
   ],
-  "client": [
-    "client.PlayerGeoAnimatableMixin",
-    "client.EntityRenderDispatcherMixin",
-    "client.HeldItemRendererMixin",
-    "client.MixinInjectFirstPersonRendering",
-    "client.PrimaryLevelDataMixin",
-    "client.SoundManagerMixin",
-    "client.WorldOpenFlowsMixin",
-    "client.WorldSelectionListMixin",
-    "client.TitleScreenMixin",
-    "client.FlightCameraMixin",
-    "client.FlightGameRendererMixin",
-    "client.MouseHandlerMixin",
-    "client.LocalPlayerMixin"
-  ],
+    "client": [
+      "client.PlayerGeoAnimatableMixin",
+      "client.EntityRenderDispatcherMixin",
+      "client.HeldItemRendererMixin",
+      "client.MixinInjectFirstPersonRendering",
+      "client.PrimaryLevelDataMixin",
+      "client.SoundManagerMixin",
+      "client.WorldOpenFlowsMixin",
+      "client.WorldSelectionListMixin",
+      "client.TitleScreenMixin",
+      "client.FlightCameraMixin",
+      "client.FlightGameRendererMixin",
+      "client.PostChainAccessor",
+      "client.MouseHandlerMixin",
+      "client.LocalPlayerMixin"
+    ],
   "server": [],
   "injectors": {
     "defaultRequire": 1

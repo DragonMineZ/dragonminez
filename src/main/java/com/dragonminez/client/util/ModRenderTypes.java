@@ -1,11 +1,13 @@
 package com.dragonminez.client.util;
 
+import com.dragonminez.client.render.shader.TransformationMaskRenderState;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.function.Function;
@@ -14,6 +16,104 @@ public class ModRenderTypes extends RenderType {
     public ModRenderTypes(String pName, VertexFormat pFormat, VertexFormat.Mode pMode, int pBufferSize, boolean pAffectsCrumbling, boolean pSortOnUpload, Runnable pSetupState, Runnable pClearState) {
         super(pName, pFormat, pMode, pBufferSize, pAffectsCrumbling, pSortOnUpload, pSetupState, pClearState);
     }
+
+	private static ShaderInstance transformationMaskShader;
+	private static final RenderStateShard.ShaderStateShard TRANSFORMATION_MASK_SHADER = new RenderStateShard.ShaderStateShard(() -> transformationMaskShader);
+	private static final RenderStateShard.OutputStateShard TRANSFORMATION_MASK_TARGET = new RenderStateShard.OutputStateShard(
+			"transformation_mask_target",
+			TransformationMaskRenderState::bindMaskTarget,
+			TransformationMaskRenderState::bindMainTarget
+	);
+	private static final RenderStateShard.OutputStateShard TRANSFORMATION_PARAMS_TARGET = new RenderStateShard.OutputStateShard(
+			"transformation_params_target",
+			TransformationMaskRenderState::bindParamsTarget,
+			TransformationMaskRenderState::bindMainTarget
+	);
+
+	private static final RenderType TRANSFORMATION_MASK = create(
+			"transformation_mask",
+			DefaultVertexFormat.NEW_ENTITY,
+			VertexFormat.Mode.QUADS,
+			1536,
+			false,
+			false,
+			CompositeState.builder()
+					.setShaderState(TRANSFORMATION_MASK_SHADER)
+					.setTextureState(NO_TEXTURE)
+					.setTransparencyState(NO_TRANSPARENCY)
+					.setCullState(NO_CULL)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
+					.setLightmapState(NO_LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setWriteMaskState(COLOR_WRITE)
+					.setOutputState(TRANSFORMATION_MASK_TARGET)
+					.createCompositeState(false)
+	);
+
+	private static final RenderType TRANSFORMATION_MASK_VIEW_OFFSET = create(
+			"transformation_mask_view_offset",
+			DefaultVertexFormat.NEW_ENTITY,
+			VertexFormat.Mode.QUADS,
+			1536,
+			false,
+			false,
+			CompositeState.builder()
+					.setShaderState(TRANSFORMATION_MASK_SHADER)
+					.setTextureState(NO_TEXTURE)
+					.setTransparencyState(NO_TRANSPARENCY)
+					.setCullState(NO_CULL)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
+					.setLightmapState(NO_LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
+					.setWriteMaskState(COLOR_WRITE)
+					.setOutputState(TRANSFORMATION_MASK_TARGET)
+					.createCompositeState(false)
+	);
+
+	private static final RenderType TRANSFORMATION_PARAMS = create(
+			"transformation_params",
+			DefaultVertexFormat.NEW_ENTITY,
+			VertexFormat.Mode.QUADS,
+			1536,
+			false,
+			false,
+			CompositeState.builder()
+					.setShaderState(TRANSFORMATION_MASK_SHADER)
+					.setTextureState(NO_TEXTURE)
+					.setTransparencyState(NO_TRANSPARENCY)
+					.setCullState(NO_CULL)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
+					.setLightmapState(NO_LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setWriteMaskState(COLOR_WRITE)
+					.setOutputState(TRANSFORMATION_PARAMS_TARGET)
+					.createCompositeState(false)
+	);
+
+	private static final RenderType TRANSFORMATION_PARAMS_VIEW_OFFSET = create(
+			"transformation_params_view_offset",
+			DefaultVertexFormat.NEW_ENTITY,
+			VertexFormat.Mode.QUADS,
+			1536,
+			false,
+			false,
+			CompositeState.builder()
+					.setShaderState(TRANSFORMATION_MASK_SHADER)
+					.setTextureState(NO_TEXTURE)
+					.setTransparencyState(NO_TRANSPARENCY)
+					.setCullState(NO_CULL)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
+					.setLightmapState(NO_LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
+					.setWriteMaskState(COLOR_WRITE)
+					.setOutputState(TRANSFORMATION_PARAMS_TARGET)
+					.createCompositeState(false)
+	);
+
+	private static final String VIEW_OFFSET_LAYERING_TOKEN = "view_offset_z_layering";
+
     private static final Function<ResourceLocation, RenderType> GLOW = Util.memoize((pLocation) ->
             create("glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeItemEntityTranslucentCullShader))
@@ -94,5 +194,43 @@ public class ModRenderTypes extends RenderType {
     public static RenderType kiblast(ResourceLocation pLocation) {
         return KI_BLAST.apply(pLocation);
     }
+
+	public static void setTransformationMaskShader(ShaderInstance shader) {
+		transformationMaskShader = shader;
+	}
+
+	public static boolean hasTransformationMaskShader() {
+		return transformationMaskShader != null;
+	}
+
+	public static RenderType transformationMask(RenderType sourceRenderType) {
+		if (sourceRenderType != null && sourceRenderType.toString().contains(VIEW_OFFSET_LAYERING_TOKEN)) {
+			return TRANSFORMATION_MASK_VIEW_OFFSET;
+		}
+		return TRANSFORMATION_MASK;
+	}
+
+	public static RenderType transformationParams(RenderType sourceRenderType) {
+		if (sourceRenderType != null && sourceRenderType.toString().contains(VIEW_OFFSET_LAYERING_TOKEN)) {
+			return TRANSFORMATION_PARAMS_VIEW_OFFSET;
+		}
+		return TRANSFORMATION_PARAMS;
+	}
+
+	public static RenderType transformationMask() {
+		return TRANSFORMATION_MASK;
+	}
+
+	public static RenderType transformationMaskViewOffset() {
+		return TRANSFORMATION_MASK_VIEW_OFFSET;
+	}
+
+	public static RenderType transformationParams() {
+		return TRANSFORMATION_PARAMS;
+	}
+
+	public static RenderType transformationParamsViewOffset() {
+		return TRANSFORMATION_PARAMS_VIEW_OFFSET;
+	}
 
 }

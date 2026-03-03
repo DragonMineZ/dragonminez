@@ -73,6 +73,7 @@ public class FormConfig {
         private Double stackDrainMultiplier = 2.0;
         private Boolean canAlwaysTransform = false;
         private Boolean directTransformation = false;
+        private TransformationPostShaderConfig transformationPostShader;
 
         public Double getStrMultiplier() { return Math.max(0.01, strMultiplier); }
         public Double getSkpMultiplier() { return Math.max(0.01, skpMultiplier); }
@@ -93,6 +94,9 @@ public class FormConfig {
         public Double getCostDecreasePerMasteryPoint() { return Math.max(0, costDecreasePerMasteryPoint); }
         public Double getPassiveMasteryGainEveryFiveSeconds() { return Math.max(0, passiveMasteryGainEveryFiveSeconds); }
         public Double getStackDrainMultiplier() { return Math.max(0.01, stackDrainMultiplier); }
+        public TransformationPostShaderConfig getTransformationPostShader() {
+            return transformationPostShader != null ? transformationPostShader : new TransformationPostShaderConfig();
+        }
 
         public Boolean hasCustomModel() {
             return customModel != null && !customModel.isEmpty();
@@ -120,6 +124,57 @@ public class FormConfig {
 
         public Boolean hasAuraColorOverride() {
             return auraColor != null && !auraColor.isEmpty();
+        }
+
+        @Setter
+        @Getter
+        @NoArgsConstructor
+        public static class TransformationPostShaderConfig {
+            private Boolean enabled = false;
+            private Integer durationTicks = 0;
+            private String primaryColor = "#7FFFFF";
+            private String secondaryColor = "#FFD970";
+            private Double noiseScale = 4.0;
+            private Double noiseIntensity = 0.25;
+            private Double noiseScrollX = 0.2;
+            private Double noiseScrollY = 0.15;
+            private Double colorMixSpeed = 0.7;
+
+            public boolean isEnabled() {
+                return Boolean.TRUE.equals(enabled);
+            }
+
+            public int getDurationTicks() {
+                return Math.max(0, durationTicks != null ? durationTicks : 0);
+            }
+
+            public String getPrimaryColor() {
+                return primaryColor != null && !primaryColor.isEmpty() ? primaryColor : "#7FFFFF";
+            }
+
+            public String getSecondaryColor() {
+                return secondaryColor != null && !secondaryColor.isEmpty() ? secondaryColor : "#FFD970";
+            }
+
+            public double getNoiseScale() {
+                return Math.max(0.01, noiseScale != null ? noiseScale : 4.0);
+            }
+
+            public double getNoiseIntensity() {
+                return Math.max(0.0, noiseIntensity != null ? noiseIntensity : 0.25);
+            }
+
+            public double getNoiseScrollX() {
+                return noiseScrollX != null ? noiseScrollX : 0.2;
+            }
+
+            public double getNoiseScrollY() {
+                return noiseScrollY != null ? noiseScrollY : 0.15;
+            }
+
+            public double getColorMixSpeed() {
+                return Math.max(0.0, colorMixSpeed != null ? colorMixSpeed : 0.7);
+            }
         }
     }
 }
