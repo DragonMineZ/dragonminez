@@ -50,6 +50,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private int maxScroll = 0;
 	private int descScrollOffset = 0;
 	private int maxDescScroll = 0;
+	private boolean isDraggingMainScroll = false;
+	private boolean isDraggingDescScroll = false;
 
 	private ClippableTextureButton skillsButton, kiButton, formsButton, stacksButton;
 	private int animTick = 0;
@@ -568,17 +570,17 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int descBoxW = 136;
 		int descBoxH = 6 * 12;
 
+		int scrollAmount = (int) Math.signum(delta);
+
 		if (uiMouseX >= descBoxX && uiMouseX <= descBoxX + descBoxW &&
 				uiMouseY >= descBoxY && uiMouseY <= descBoxY + descBoxH) {
-
-			descScrollOffset = Math.max(0, Math.min(maxDescScroll, descScrollOffset - (int) delta));
+			descScrollOffset = Math.max(0, Math.min(maxDescScroll, descScrollOffset - scrollAmount));
 			return true;
 		}
 
 		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
 				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
-
-			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
+			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - scrollAmount));
 			return true;
 		}
 
@@ -592,9 +594,31 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
+		int rightPanelX = getUiWidth() - 158;
+
+		int startY = leftPanelY + 30;
+		int scrollBarHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
+		int scrollBarX = leftPanelX + 135;
+
+		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 &&
+				uiMouseY >= startY && uiMouseY <= startY + scrollBarHeight) {
+			isDraggingMainScroll = true;
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			return true;
+		}
+
+		int descBoxY = (centerY - 105) + 110;
+		int descBoxH = 6 * 12;
+		int descScrollBarX = rightPanelX + 140;
+
+		if (maxDescScroll > 0 && uiMouseX >= descScrollBarX - 5 && uiMouseX <= descScrollBarX + 10 &&
+				uiMouseY >= descBoxY && uiMouseY <= descBoxY + descBoxH) {
+			isDraggingDescScroll = true;
+			descScrollOffset = calculateScrollOffset(uiMouseY, descBoxY, descBoxH, maxDescScroll);
+			return true;
+		}
 
 		List<String> skillNames = getVisibleSkillNames();
-		int startY = leftPanelY + 30;
 		int visibleStart = scrollOffset;
 		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_SKILLS, skillNames.size());
 
@@ -612,6 +636,39 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		}
 
 		return super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		double uiMouseY = toUiY(mouseY);
+
+		if (isDraggingMainScroll && maxScroll > 0) {
+			int centerY = getUiHeight() / 2;
+			int startY = (centerY - 105) + 30;
+			int scrollBarHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			return true;
+		}
+
+		if (isDraggingDescScroll && maxDescScroll > 0) {
+			int centerY = getUiHeight() / 2;
+			int descBoxY = (centerY - 105) + 110;
+			int descBoxH = 6 * 12;
+			descScrollOffset = calculateScrollOffset(uiMouseY, descBoxY, descBoxH, maxDescScroll);
+			return true;
+		}
+
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (isDraggingMainScroll || isDraggingDescScroll) {
+			isDraggingMainScroll = false;
+			isDraggingDescScroll = false;
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {

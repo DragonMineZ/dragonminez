@@ -4,7 +4,7 @@
   // If you remove a cost, you also remove a max level for that skill, but skills cannot
   // have more than 50 levels, except potential unlock which can have up to 30 levels instead.
   // Do NOT modify the configVersion, as it is used to determine if the config needs to be updated with new default values.
-  "configVersion": 2,
+  "configVersion": 3,
   "kiSkills": [],
   "formSkills": [
     "superform",
@@ -139,5 +139,28 @@
         10000
       ]
     }
+  },
+  "skillOfferings": {
+    "goku": [
+      "fly",
+      "kicontrol",
+      "kisense",
+      "fusion",
+      "potentialunlock"
+    ],
+    "default": [
+      "jump"
+    ],
+    "kingkai": [
+      "kaioken",
+      "potentialunlock",
+      "kimanipulation",
+      "fusion"
+    ],
+    "roshi": [
+      "jump",
+      "meditation",
+      "kicontrol"
+    ]
   }
 }

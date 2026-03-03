@@ -66,6 +66,9 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 	private int maxRewardsScroll = 0;
 	private int objAreaX, objAreaY, objAreaWidth, objAreaHeight;
 	private int rewardsAreaX, rewardsAreaY, rewardsAreaWidth, rewardsAreaHeight;
+	private boolean isDraggingMainScroll = false;
+	private boolean isDraggingDescScroll = false;
+	private boolean isDraggingObjScroll = false;
 
 	private int descriptionScrollOffset = 0;
 	private int maxDescriptionScroll = 0;
@@ -236,6 +239,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		super.tick();
 		tickCount++;
 
+		if (tickCount % 5 == 0) refreshButtons();
+
 		if (tickCount >= 10) {
 			tickCount = 0;
 			updateStatsData();
@@ -339,16 +344,16 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			if (hasUnclaimedRewards) {
 				buttonText = Component.translatable("gui.dragonminez.quests.claim_rewards");
 				isClaimAction = true;
-            } else {
+			} else {
 				return;
 			}
 		} else if (canStart) {
 			buttonText = Component.translatable("gui.dragonminez.quests.start");
 
-            long now = System.currentTimeMillis();
+			long now = System.currentTimeMillis();
 			long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
 
-            buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
+			buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
 		} else {
 			return;
 		}
@@ -372,7 +377,6 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 								currentSaga.getId(),
 								selectedQuest.getId()
 						));
-						this.onClose();
 					} else {
 						QUEST_COOLDOWNS.put(cooldownKey, now);
 
@@ -804,9 +808,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
+
+		int scrollAmount = (int) Math.signum(delta);
+
 		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
 				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
-			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
+			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - scrollAmount));
 			SAVED_SCROLL_OFFSET = scrollOffset;
 			return true;
 		}
@@ -814,17 +821,22 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		if (selectedQuest != null && maxDescriptionScroll > 0 &&
 				uiMouseX >= descAreaX && uiMouseX <= descAreaX + descAreaWidth &&
 				uiMouseY >= descAreaY && uiMouseY <= descAreaY + descAreaHeight) {
-			int scrollAmount = (int) (delta * 10);
-			descriptionScrollOffset = Math.max(0, Math.min(maxDescriptionScroll, descriptionScrollOffset - scrollAmount));
+			descriptionScrollOffset = Math.max(0, Math.min(maxDescriptionScroll, descriptionScrollOffset - (scrollAmount * 10)));
 			return true;
 		}
 
-		if (selectedQuest != null && maxObjectivesScroll > 0 &&
-				uiMouseX >= rewardsAreaX && uiMouseX <= rewardsAreaX + rewardsAreaWidth &&
-				uiMouseY >= rewardsAreaY && uiMouseY <= rewardsAreaY + rewardsAreaHeight) {
-			int scrollAmount = (int) (delta * 10);
-			objectivesScrollOffset = Math.max(0, Math.min(maxObjectivesScroll, objectivesScrollOffset - scrollAmount));
-			return true;
+		if (selectedQuest != null) {
+			if (currentPage == QuestPages.OBJECTIVES && maxObjectivesScroll > 0 &&
+					uiMouseX >= objAreaX && uiMouseX <= objAreaX + objAreaWidth &&
+					uiMouseY >= objAreaY && uiMouseY <= objAreaY + objAreaHeight) {
+				objectivesScrollOffset = Math.max(0, Math.min(maxObjectivesScroll, objectivesScrollOffset - (scrollAmount * 10)));
+				return true;
+			} else if (currentPage == QuestPages.REWARDS && maxRewardsScroll > 0 &&
+					uiMouseX >= rewardsAreaX && uiMouseX <= rewardsAreaX + rewardsAreaWidth &&
+					uiMouseY >= rewardsAreaY && uiMouseY <= rewardsAreaY + rewardsAreaHeight) {
+				rewardsScrollOffset = Math.max(0, Math.min(maxRewardsScroll, rewardsScrollOffset - (scrollAmount * 10)));
+				return true;
+			}
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
@@ -836,8 +848,48 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
-		List<Quest> quests = getVisibleQuests();
+		int rightPanelX = getUiWidth() - 158;
+
 		int startY = leftPanelY + 30;
+		int scrollBarHeight = MAX_VISIBLE_QUESTS * QUEST_ITEM_HEIGHT;
+		int scrollBarX = leftPanelX + 140;
+
+		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 &&
+				uiMouseY >= startY && uiMouseY <= startY + scrollBarHeight) {
+			isDraggingMainScroll = true;
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			SAVED_SCROLL_OFFSET = scrollOffset;
+			return true;
+		}
+
+		if (selectedQuest != null && maxDescriptionScroll > 0) {
+			int descScrollBarX = rightPanelX + 138;
+			if (uiMouseX >= descScrollBarX - 5 && uiMouseX <= descScrollBarX + 10 &&
+					uiMouseY >= descAreaY && uiMouseY <= descAreaY + descAreaHeight) {
+				isDraggingDescScroll = true;
+				descriptionScrollOffset = calculateScrollOffset(uiMouseY, descAreaY, descAreaHeight, maxDescriptionScroll);
+				return true;
+			}
+		}
+
+		if (selectedQuest != null) {
+			int objScrollBarX = rightPanelX + 138;
+			if (currentPage == QuestPages.OBJECTIVES && maxObjectivesScroll > 0 &&
+					uiMouseX >= objScrollBarX - 5 && uiMouseX <= objScrollBarX + 10 &&
+					uiMouseY >= objAreaY && uiMouseY <= objAreaY + objAreaHeight) {
+				isDraggingObjScroll = true;
+				objectivesScrollOffset = calculateScrollOffset(uiMouseY, objAreaY, objAreaHeight, maxObjectivesScroll);
+				return true;
+			} else if (currentPage == QuestPages.REWARDS && maxRewardsScroll > 0 &&
+					uiMouseX >= objScrollBarX - 5 && uiMouseX <= objScrollBarX + 10 &&
+					uiMouseY >= rewardsAreaY && uiMouseY <= rewardsAreaY + rewardsAreaHeight) {
+				isDraggingObjScroll = true;
+				rewardsScrollOffset = calculateScrollOffset(uiMouseY, rewardsAreaY, rewardsAreaHeight, maxRewardsScroll);
+				return true;
+			}
+		}
+
+		List<Quest> quests = getVisibleQuests();
 		int visibleStart = scrollOffset;
 		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_QUESTS, quests.size());
 		for (int i = visibleStart; i < visibleEnd; i++) {
@@ -850,12 +902,55 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 					SAVED_QUEST_ID = quest.getId();
 					descriptionScrollOffset = 0;
 					objectivesScrollOffset = 0;
+					rewardsScrollOffset = 0;
 					refreshButtons();
 				}
 				return true;
 			}
 		}
 		return super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		double uiMouseY = toUiY(mouseY);
+
+		if (isDraggingMainScroll && maxScroll > 0) {
+			int centerY = getUiHeight() / 2;
+			int startY = (centerY - 105) + 30;
+			int scrollBarHeight = MAX_VISIBLE_QUESTS * QUEST_ITEM_HEIGHT;
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			SAVED_SCROLL_OFFSET = scrollOffset;
+			return true;
+		}
+
+		if (isDraggingDescScroll && maxDescriptionScroll > 0) {
+			descriptionScrollOffset = calculateScrollOffset(uiMouseY, descAreaY, descAreaHeight, maxDescriptionScroll);
+			return true;
+		}
+
+		if (isDraggingObjScroll) {
+			if (currentPage == QuestPages.OBJECTIVES && maxObjectivesScroll > 0) {
+				objectivesScrollOffset = calculateScrollOffset(uiMouseY, objAreaY, objAreaHeight, maxObjectivesScroll);
+				return true;
+			} else if (currentPage == QuestPages.REWARDS && maxRewardsScroll > 0) {
+				rewardsScrollOffset = calculateScrollOffset(uiMouseY, rewardsAreaY, rewardsAreaHeight, maxRewardsScroll);
+				return true;
+			}
+		}
+
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (isDraggingMainScroll || isDraggingDescScroll || isDraggingObjScroll) {
+			isDraggingMainScroll = false;
+			isDraggingDescScroll = false;
+			isDraggingObjScroll = false;
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
@@ -892,10 +987,19 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
 		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
+
+		String stripped = ChatFormatting.stripFormatting(text.getString());
+		Component borderComponent = Component.literal(stripped != null ? stripped : text.getString());
+
+		if (text.getStyle().isBold()) {
+			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
+		}
+
+		graphics.drawString(this.font, borderComponent, x + 1, y, borderColor, false);
+		graphics.drawString(this.font, borderComponent, x - 1, y, borderColor, false);
+		graphics.drawString(this.font, borderComponent, x, y + 1, borderColor, false);
+		graphics.drawString(this.font, borderComponent, x, y - 1, borderColor, false);
+
 		graphics.drawString(this.font, text, x, y, textColor, false);
 	}
 

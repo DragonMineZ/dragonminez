@@ -25,7 +25,6 @@ public class BioDrainHandler implements IStatusEffectHandler {
 
 	@Override
 	public void onPlayerSecond(ServerPlayer serverPlayer, StatsData data) {
-		System.out.println("Calling BioDrainHandler onPlayerSecond");
 		handleBioDrainSecond(serverPlayer, data);
 	}
 

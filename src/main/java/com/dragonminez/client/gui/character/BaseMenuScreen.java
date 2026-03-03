@@ -19,7 +19,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public abstract class BaseMenuScreen extends ScaledScreen {
 	protected static boolean GLOBAL_SWITCHING = false;
 	protected boolean isSwitchingMenu = false;
-    private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
+	private static final ResourceLocation SCREEN_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
 	private long animationStartTime;
 	private boolean suppressOpenAnimation = false;
 	private static final long ANIMATION_DURATION = 100;
@@ -44,58 +44,58 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		initNavigationButtons();
 	}
 
-    protected void initNavigationButtons() {
+	protected void initNavigationButtons() {
 		int centerX = getUiWidth() / 2;
 		int bottomY = getUiHeight() - 30;
 
-        this.addRenderableWidget(
-            new CustomTextureButton.Builder()
-                .position(centerX - 70, bottomY)
-                .size(20, 20)
-                .texture(SCREEN_BUTTONS)
-                .textureSize(20, 20)
-                .textureCoords(0, 0, 0, 20)
-				.onPress(btn -> switchMenu(new CharacterStatsScreen()))
-				.sound(MainSounds.UI_MENU_SWITCH.get())
-                .build()
-        );
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
+						.position(centerX - 70, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(0, 0, 0, 20)
+						.onPress(btn -> switchMenu(new CharacterStatsScreen()))
+						.sound(MainSounds.UI_MENU_SWITCH.get())
+						.build()
+		);
 
-        this.addRenderableWidget(
-            new CustomTextureButton.Builder()
-                .position(centerX - 30, bottomY)
-                .size(20, 20)
-                .texture(SCREEN_BUTTONS)
-                .textureSize(20, 20)
-                .textureCoords(20, 0, 20, 20)
-				.onPress(btn -> switchMenu(new SkillsMenuScreen()))
-				.sound(MainSounds.UI_MENU_SWITCH.get())
-				.build()
-        );
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
+						.position(centerX - 30, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(20, 0, 20, 20)
+						.onPress(btn -> switchMenu(new SkillsMenuScreen()))
+						.sound(MainSounds.UI_MENU_SWITCH.get())
+						.build()
+		);
 
-        this.addRenderableWidget(
-            new CustomTextureButton.Builder()
-                .position(centerX + 10, bottomY)
-                .size(20, 20)
-                .texture(SCREEN_BUTTONS)
-                .textureSize(20, 20)
-                .textureCoords(60, 0, 60, 20)
-				.onPress(btn -> switchMenu(new QuestsMenuScreen()))
-				.sound(MainSounds.UI_MENU_SWITCH.get())
-				.build()
-        );
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
+						.position(centerX + 10, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(60, 0, 60, 20)
+						.onPress(btn -> switchMenu(new QuestsMenuScreen()))
+						.sound(MainSounds.UI_MENU_SWITCH.get())
+						.build()
+		);
 
-        this.addRenderableWidget(
-            new CustomTextureButton.Builder()
-                .position(centerX + 50, bottomY)
-                .size(20, 20)
-                .texture(SCREEN_BUTTONS)
-                .textureSize(20, 20)
-                .textureCoords(100, 0, 100, 20)
-				.onPress(btn -> switchMenu(new ConfigMenuScreen()))
-				.sound(MainSounds.UI_MENU_SWITCH.get())
-				.build()
-        );
-    }
+		this.addRenderableWidget(
+				new CustomTextureButton.Builder()
+						.position(centerX + 50, bottomY)
+						.size(20, 20)
+						.texture(SCREEN_BUTTONS)
+						.textureSize(20, 20)
+						.textureCoords(100, 0, 100, 20)
+						.onPress(btn -> switchMenu(new ConfigMenuScreen()))
+						.sound(MainSounds.UI_MENU_SWITCH.get())
+						.build()
+		);
+	}
 
 	protected void switchMenu(Screen nextScreen) {
 		if (this.minecraft != null && !(this.minecraft.screen.getClass().equals(nextScreen.getClass()))) {
@@ -105,10 +105,16 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		}
 	}
 
-    @Override
-    public boolean isPauseScreen() {
-        return false;
-    }
+	protected int calculateScrollOffset(double uiMouseY, int startY, int scrollBarHeight, int maxScrollValue) {
+		float scrollPercent = (float) (uiMouseY - startY) / scrollBarHeight;
+		scrollPercent = net.minecraft.util.Mth.clamp(scrollPercent, 0.0f, 1.0f);
+		return Math.round(scrollPercent * maxScrollValue);
+	}
+
+	@Override
+	public boolean isPauseScreen() {
+		return false;
+	}
 
 	public boolean isAnimating() {
 		if (suppressOpenAnimation) return false;
@@ -155,6 +161,6 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 			if (currentScale > 1.0f) inverseScale[0] = 0.9375f / currentScale;
 		});
 
-		return (int)(baseScale * inverseScale[0]);
+		return (int) (baseScale * inverseScale[0]);
 	}
 }

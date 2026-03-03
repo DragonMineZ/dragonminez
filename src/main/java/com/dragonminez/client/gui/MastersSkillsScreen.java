@@ -58,6 +58,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private boolean isHotZoneHovered = false;
 
 	private TexturedTextButton purchaseButton;
+	private boolean isDraggingScroll = false;
 
 	private final String masterName;
 	private final LivingEntity masterEntity;
@@ -465,7 +466,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 184 &&
 				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 239) {
 
-			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int) delta));
+			int scrollAmount = (int) Math.signum(delta);
+			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - scrollAmount));
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -479,8 +481,18 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
 
-		List<String> skillNames = getVisibleSkillNames();
 		int startY = leftPanelY + 30;
+		int scrollBarHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
+		int scrollBarX = leftPanelX + 135;
+
+		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 &&
+				uiMouseY >= startY && uiMouseY <= startY + scrollBarHeight) {
+			isDraggingScroll = true;
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			return true;
+		}
+
+		List<String> skillNames = getVisibleSkillNames();
 		int visibleStart = scrollOffset;
 		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_SKILLS, skillNames.size());
 
@@ -496,6 +508,29 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			}
 		}
 		return super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (isDraggingScroll && maxScroll > 0) {
+			double uiMouseY = toUiY(mouseY);
+			int centerY = getUiHeight() / 2;
+			int startY = (centerY - 105) + 30;
+			int scrollBarHeight = MAX_VISIBLE_SKILLS * SKILL_ITEM_HEIGHT;
+
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (isDraggingScroll) {
+			isDraggingScroll = false;
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	private void renderMasterEntity(GuiGraphics graphics, int x, int y, float mouseX, float mouseY) {

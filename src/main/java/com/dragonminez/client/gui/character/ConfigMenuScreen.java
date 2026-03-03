@@ -24,317 +24,318 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class ConfigMenuScreen extends BaseMenuScreen {
 
-    private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/menu/menubig.png");
-    private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-            "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"textures/gui/menu/menubig.png");
+	private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"textures/gui/buttons/characterbuttons.png");
 
-    private static final int CONFIG_ITEM_HEIGHT = 20;
-    private static final int MAX_VISIBLE_CONFIGS = 7;
+	private static final int CONFIG_ITEM_HEIGHT = 20;
+	private static final int MAX_VISIBLE_CONFIGS = 7;
 
-    private int tickCount = 0;
-    private int scrollOffset = 0;
-    private int maxScroll = 0;
+	private int tickCount = 0;
+	private int scrollOffset = 0;
+	private int maxScroll = 0;
+	private boolean isDraggingScroll = false;
 
-    private GeneralUserConfig.HudConfig hudConfig;
-    private final List<ConfigOption> configOptions = new ArrayList<>();
-    private final List<CustomTextureButton> decreaseButtons = new ArrayList<>();
-    private final List<CustomTextureButton> increaseButtons = new ArrayList<>();
-    private final List<SwitchButton> switchButtons = new ArrayList<>();
+	private GeneralUserConfig.HudConfig hudConfig;
+	private final List<ConfigOption> configOptions = new ArrayList<>();
+	private final List<CustomTextureButton> decreaseButtons = new ArrayList<>();
+	private final List<CustomTextureButton> increaseButtons = new ArrayList<>();
+	private final List<SwitchButton> switchButtons = new ArrayList<>();
 
-    public ConfigMenuScreen() {
-        super(Component.translatable("gui.dragonminez.config.title"));
-    }
+	public ConfigMenuScreen() {
+		super(Component.translatable("gui.dragonminez.config.title"));
+	}
 
-    @Override
-    protected void init() {
-        super.init();
-        loadConfig();
-        initializeConfigOptions();
-        initConfigButtons();
-        updateConfigsList();
-    }
+	@Override
+	protected void init() {
+		super.init();
+		loadConfig();
+		initializeConfigOptions();
+		initConfigButtons();
+		updateConfigsList();
+	}
 
-    private void loadConfig() {
-        hudConfig = ConfigManager.getUserConfig().getHud();
-    }
+	private void loadConfig() {
+		hudConfig = ConfigManager.getUserConfig().getHud();
+	}
 
-    private void initializeConfigOptions() {
-        configOptions.clear();
+	private void initializeConfigOptions() {
+		configOptions.clear();
 
 		configOptions.add(new ConfigOption("config.firstPersonAnimated",
-			ConfigType.BOOLEAN, hudConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
-			v -> hudConfig.setFirstPersonAnimated(v > 0)));
+				ConfigType.BOOLEAN, hudConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
+				v -> hudConfig.setFirstPersonAnimated(v > 0)));
 
-        configOptions.add(new ConfigOption("config.xenoverseHudPosX",
-            ConfigType.INT, hudConfig.getXenoverseHudPosX(), -1000, 2000,
-            v -> hudConfig.setXenoverseHudPosX(v.intValue())));
+		configOptions.add(new ConfigOption("config.xenoverseHudPosX",
+				ConfigType.INT, hudConfig.getXenoverseHudPosX(), -1000, 2000,
+				v -> hudConfig.setXenoverseHudPosX(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.xenoverseHudPosY",
-            ConfigType.INT, hudConfig.getXenoverseHudPosY(), -1000, 2000,
-            v -> hudConfig.setXenoverseHudPosY(v.intValue())));
+		configOptions.add(new ConfigOption("config.xenoverseHudPosY",
+				ConfigType.INT, hudConfig.getXenoverseHudPosY(), -1000, 2000,
+				v -> hudConfig.setXenoverseHudPosY(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.advancedDescription",
-            ConfigType.BOOLEAN, hudConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
-            v -> hudConfig.setAdvancedDescription(v > 0)));
+		configOptions.add(new ConfigOption("config.advancedDescription",
+				ConfigType.BOOLEAN, hudConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
+				v -> hudConfig.setAdvancedDescription(v > 0)));
 
-        configOptions.add(new ConfigOption("config.advancedDescriptionPercentage",
-            ConfigType.BOOLEAN, hudConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
-            v -> hudConfig.setAdvancedDescriptionPercentage(v > 0)));
+		configOptions.add(new ConfigOption("config.advancedDescriptionPercentage",
+				ConfigType.BOOLEAN, hudConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
+				v -> hudConfig.setAdvancedDescriptionPercentage(v > 0)));
 
-        configOptions.add(new ConfigOption("config.alternativeHud",
-            ConfigType.BOOLEAN, hudConfig.getAlternativeHud() ? 1 : 0, 0, 1,
-            v -> hudConfig.setAlternativeHud(v > 0)));
+		configOptions.add(new ConfigOption("config.alternativeHud",
+				ConfigType.BOOLEAN, hudConfig.getAlternativeHud() ? 1 : 0, 0, 1,
+				v -> hudConfig.setAlternativeHud(v > 0)));
 
-        configOptions.add(new ConfigOption("config.hexagonStatsDisplay",
-            ConfigType.BOOLEAN, hudConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
-            v -> hudConfig.setHexagonStatsDisplay(v > 0)));
+		configOptions.add(new ConfigOption("config.hexagonStatsDisplay",
+				ConfigType.BOOLEAN, hudConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
+				v -> hudConfig.setHexagonStatsDisplay(v > 0)));
 
 		configOptions.add(new ConfigOption("config.menuScaleMultiplier",
-			ConfigType.FLOAT, hudConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
-			v -> hudConfig.setMenuScaleMultiplier(v)));
+				ConfigType.FLOAT, hudConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
+				v -> hudConfig.setMenuScaleMultiplier(v)));
 
-        configOptions.add(new ConfigOption("config.healthBarPosX",
-            ConfigType.INT, hudConfig.getHealthBarPosX(), -1000, 2000,
-            v -> hudConfig.setHealthBarPosX(v.intValue())));
+		configOptions.add(new ConfigOption("config.healthBarPosX",
+				ConfigType.INT, hudConfig.getHealthBarPosX(), -1000, 2000,
+				v -> hudConfig.setHealthBarPosX(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.healthBarPosY",
-            ConfigType.INT, hudConfig.getHealthBarPosY(), -1000, 2000,
-            v -> hudConfig.setHealthBarPosY(v.intValue())));
+		configOptions.add(new ConfigOption("config.healthBarPosY",
+				ConfigType.INT, hudConfig.getHealthBarPosY(), -1000, 2000,
+				v -> hudConfig.setHealthBarPosY(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.energyBarPosX",
-            ConfigType.INT, hudConfig.getEnergyBarPosX(), -1000, 2000,
-            v -> hudConfig.setEnergyBarPosX(v.intValue())));
+		configOptions.add(new ConfigOption("config.energyBarPosX",
+				ConfigType.INT, hudConfig.getEnergyBarPosX(), -1000, 2000,
+				v -> hudConfig.setEnergyBarPosX(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.energyBarPosY",
-            ConfigType.INT, hudConfig.getEnergyBarPosY(), -1000, 2000,
-            v -> hudConfig.setEnergyBarPosY(v.intValue())));
+		configOptions.add(new ConfigOption("config.energyBarPosY",
+				ConfigType.INT, hudConfig.getEnergyBarPosY(), -1000, 2000,
+				v -> hudConfig.setEnergyBarPosY(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.staminaBarPosX",
-            ConfigType.INT, hudConfig.getStaminaBarPosX(), -1000, 2000,
-            v -> hudConfig.setStaminaBarPosX(v.intValue())));
+		configOptions.add(new ConfigOption("config.staminaBarPosX",
+				ConfigType.INT, hudConfig.getStaminaBarPosX(), -1000, 2000,
+				v -> hudConfig.setStaminaBarPosX(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.staminaBarPosY",
-            ConfigType.INT, hudConfig.getStaminaBarPosY(), -1000, 2000,
-            v -> hudConfig.setStaminaBarPosY(v.intValue())));
+		configOptions.add(new ConfigOption("config.staminaBarPosY",
+				ConfigType.INT, hudConfig.getStaminaBarPosY(), -1000, 2000,
+				v -> hudConfig.setStaminaBarPosY(v.intValue())));
 
-        configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
-                ConfigType.BOOLEAN, hudConfig.getStoryHardDifficulty() ? 1 : 0, 0, 1,
-                v -> hudConfig.setStoryHardDifficulty(v > 0)));
+		configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
+				ConfigType.BOOLEAN, hudConfig.getStoryHardDifficulty() ? 1 : 0, 0, 1,
+				v -> hudConfig.setStoryHardDifficulty(v > 0)));
 
 		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
 				ConfigType.BOOLEAN, hudConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
 				v -> hudConfig.setCameraMovementDuringFlight(v > 0)));
-    }
+	}
 
-    private void initConfigButtons() {
-        clearConfigButtons();
+	private void initConfigButtons() {
+		clearConfigButtons();
 		LivingEntity player = this.minecraft.player;
 
-        int rightPanelX = getUiWidth() - 163;
-        int centerY = getUiHeight() / 2;
-        int rightPanelY = centerY - 105;
-        int startY = rightPanelY + 35;
-        int visibleStart = scrollOffset;
-        int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
+		int rightPanelX = getUiWidth() - 163;
+		int centerY = getUiHeight() / 2;
+		int rightPanelY = centerY - 105;
+		int startY = rightPanelY + 35;
+		int visibleStart = scrollOffset;
+		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
 
-        for (int i = visibleStart; i < visibleEnd; i++) {
-            ConfigOption option = configOptions.get(i);
-            int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
-            final int index = i;
+		for (int i = visibleStart; i < visibleEnd; i++) {
+			ConfigOption option = configOptions.get(i);
+			int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
+			final int index = i;
 
-            if (option.type == ConfigType.BOOLEAN) {
-                boolean isOn = option.value > 0;
-                int switchX = rightPanelX + 65;
-                int switchY = itemY + 3;
+			if (option.type == ConfigType.BOOLEAN) {
+				boolean isOn = option.value > 0;
+				int switchX = rightPanelX + 65;
+				int switchY = itemY + 3;
 
-                SwitchButton switchBtn = new SwitchButton(switchX, switchY, isOn, Component.empty(), button -> {
-                    modifyConfigValue(index, 1);
-                    ((SwitchButton) button).toggle();
+				SwitchButton switchBtn = new SwitchButton(switchX, switchY, isOn, Component.empty(), button -> {
+					modifyConfigValue(index, 1);
+					((SwitchButton) button).toggle();
 					if (isOn) player.playSound(MainSounds.SWITCH_OFF.get());
 					else player.playSound(MainSounds.SWITCH_ON.get());
-                });
-                switchButtons.add(switchBtn);
-                this.addRenderableWidget(switchBtn);
+				});
+				switchButtons.add(switchBtn);
+				this.addRenderableWidget(switchBtn);
 
-            } else {
-                CustomTextureButton decreaseBtn = new CustomTextureButton.Builder()
-                        .position(rightPanelX + 25, itemY + 3)
-                        .size(14, 11)
-                        .texture(STAT_BUTTONS)
-                        .textureCoords(142, 0, 142, 10)
-                        .textureSize(10, 10)
-                        .onPress(button -> modifyConfigValue(index, -1))
-                        .build();
-                decreaseButtons.add(decreaseBtn);
-                this.addRenderableWidget(decreaseBtn);
+			} else {
+				CustomTextureButton decreaseBtn = new CustomTextureButton.Builder()
+						.position(rightPanelX + 25, itemY + 3)
+						.size(14, 11)
+						.texture(STAT_BUTTONS)
+						.textureCoords(142, 0, 142, 10)
+						.textureSize(10, 10)
+						.onPress(button -> modifyConfigValue(index, -1))
+						.build();
+				decreaseButtons.add(decreaseBtn);
+				this.addRenderableWidget(decreaseBtn);
 
-                CustomTextureButton increaseBtn = new CustomTextureButton.Builder()
-                        .position(rightPanelX + 108, itemY + 3)
-                        .size(14, 11)
-                        .texture(STAT_BUTTONS)
-                        .textureCoords(0, 0, 0, 10)
-                        .textureSize(10, 10)
-                        .onPress(button -> modifyConfigValue(index, 1))
-                        .build();
-                increaseButtons.add(increaseBtn);
-                this.addRenderableWidget(increaseBtn);
-            }
-        }
-    }
+				CustomTextureButton increaseBtn = new CustomTextureButton.Builder()
+						.position(rightPanelX + 108, itemY + 3)
+						.size(14, 11)
+						.texture(STAT_BUTTONS)
+						.textureCoords(0, 0, 0, 10)
+						.textureSize(10, 10)
+						.onPress(button -> modifyConfigValue(index, 1))
+						.build();
+				increaseButtons.add(increaseBtn);
+				this.addRenderableWidget(increaseBtn);
+			}
+		}
+	}
 
-    private void clearConfigButtons() {
-        for (CustomTextureButton btn : decreaseButtons) {
-            this.removeWidget(btn);
-        }
-        for (CustomTextureButton btn : increaseButtons) {
-            this.removeWidget(btn);
-        }
-        for (SwitchButton btn : switchButtons) {
-            this.removeWidget(btn);
-        }
-        decreaseButtons.clear();
-        increaseButtons.clear();
-        switchButtons.clear();
-    }
+	private void clearConfigButtons() {
+		for (CustomTextureButton btn : decreaseButtons) {
+			this.removeWidget(btn);
+		}
+		for (CustomTextureButton btn : increaseButtons) {
+			this.removeWidget(btn);
+		}
+		for (SwitchButton btn : switchButtons) {
+			this.removeWidget(btn);
+		}
+		decreaseButtons.clear();
+		increaseButtons.clear();
+		switchButtons.clear();
+	}
 
-    @Override
-    public void tick() {
-        super.tick();
-        tickCount++;
-    }
+	@Override
+	public void tick() {
+		super.tick();
+		tickCount++;
+	}
 
-    private void updateConfigsList() {
-        maxScroll = Math.max(0, configOptions.size() - MAX_VISIBLE_CONFIGS);
-    }
+	private void updateConfigsList() {
+		maxScroll = Math.max(0, configOptions.size() - MAX_VISIBLE_CONFIGS);
+	}
 
-    @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
-        int uiMouseX = (int) Math.round(toUiX(mouseX));
-        int uiMouseY = (int) Math.round(toUiY(mouseY));
+	@Override
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		this.renderBackground(graphics);
+		int uiMouseX = (int) Math.round(toUiX(mouseX));
+		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-        beginUiScale(graphics);
-        renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
-        renderLeftPanel(graphics, uiMouseX, uiMouseY);
-        renderRightPanel(graphics, uiMouseX, uiMouseY);
+		beginUiScale(graphics);
+		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
+		renderLeftPanel(graphics, uiMouseX, uiMouseY);
+		renderRightPanel(graphics, uiMouseX, uiMouseY);
 
-        super.render(graphics, uiMouseX, uiMouseY, partialTick);
-        endUiScale(graphics);
-    }
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
+		endUiScale(graphics);
+	}
 
-    private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int leftPanelX = 12;
-        int centerY = getUiHeight() / 2;
-        int leftPanelY = centerY - 105;
+	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int leftPanelY = centerY - 105;
 
-        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-        drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
-                leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
+		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
+				leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
 
-        renderConfigsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
-    }
+		renderConfigsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
+	}
 
-    private void renderConfigsList(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
-        int startY = panelY + 35;
-        int visibleStart = scrollOffset;
-        int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
+	private void renderConfigsList(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
+		int startY = panelY + 35;
+		int visibleStart = scrollOffset;
+		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
 
-        graphics.enableScissor(
-            toScreenCoord(panelX + 5),
-            toScreenCoord(startY),
-            toScreenCoord(panelX + 144),
-            toScreenCoord(startY + (MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT))
-        );
+		graphics.enableScissor(
+				toScreenCoord(panelX + 5),
+				toScreenCoord(startY),
+				toScreenCoord(panelX + 144),
+				toScreenCoord(startY + (MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT))
+		);
 
-        graphics.pose().pushPose();
-        graphics.pose().scale(0.75f, 0.75f, 0.75f);
+		graphics.pose().pushPose();
+		graphics.pose().scale(0.75f, 0.75f, 0.75f);
 
-        for (int i = visibleStart; i < visibleEnd; i++) {
-            ConfigOption option = configOptions.get(i);
-            int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
+		for (int i = visibleStart; i < visibleEnd; i++) {
+			ConfigOption option = configOptions.get(i);
+			int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
 
-            String displayName = Component.translatable("gui.dragonminez." + option.key).getString();
+			String displayName = Component.translatable("gui.dragonminez." + option.key).getString();
 
-            drawStringWithBorder(graphics, Component.literal(displayName),
-                    (int)((panelX + 15) / 0.75f), (int)(itemY / 0.75f) + 6, 0xFFFFFFFF);
-        }
+			drawStringWithBorder(graphics, Component.literal(displayName),
+					(int) ((panelX + 15) / 0.75f), (int) (itemY / 0.75f) + 6, 0xFFFFFFFF);
+		}
 
-        graphics.pose().popPose();
-        graphics.disableScissor();
+		graphics.pose().popPose();
+		graphics.disableScissor();
 
-        if (maxScroll > 0) {
-            int scrollBarX = panelX + 140;
-            int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
-            int totalItems = configOptions.size();
+		if (maxScroll > 0) {
+			int scrollBarX = panelX + 140;
+			int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
+			int totalItems = configOptions.size();
 
-            graphics.fill(scrollBarX, startY, scrollBarX + 3, startY + scrollBarHeight, 0xFF333333);
+			graphics.fill(scrollBarX, startY, scrollBarX + 3, startY + scrollBarHeight, 0xFF333333);
 
-            float scrollPercent = (float) scrollOffset / maxScroll;
-            float visiblePercent = (float) MAX_VISIBLE_CONFIGS / totalItems;
-            int indicatorHeight = Math.max(20, (int)(scrollBarHeight * visiblePercent));
-            int indicatorY = startY + (int)((scrollBarHeight - indicatorHeight) * scrollPercent);
+			float scrollPercent = (float) scrollOffset / maxScroll;
+			float visiblePercent = (float) MAX_VISIBLE_CONFIGS / totalItems;
+			int indicatorHeight = Math.max(20, (int) (scrollBarHeight * visiblePercent));
+			int indicatorY = startY + (int) ((scrollBarHeight - indicatorHeight) * scrollPercent);
 
-            graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
-        }
-    }
+			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
+		}
+	}
 
-    private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int rightPanelX = getUiWidth() - 158;
-        int centerY = getUiHeight() / 2;
-        int rightPanelY = centerY - 105;
+	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
+		int rightPanelY = centerY - 105;
 
-        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-        drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
-                rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
+		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
+				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
 
-        renderConfigValues(graphics, rightPanelX, rightPanelY);
-    }
+		renderConfigValues(graphics, rightPanelX, rightPanelY);
+	}
 
-    private void renderConfigValues(GuiGraphics graphics, int panelX, int panelY) {
-        int startY = panelY + 35;
-        int visibleStart = scrollOffset;
-        int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
+	private void renderConfigValues(GuiGraphics graphics, int panelX, int panelY) {
+		int startY = panelY + 35;
+		int visibleStart = scrollOffset;
+		int visibleEnd = Math.min(visibleStart + MAX_VISIBLE_CONFIGS, configOptions.size());
 
-        for (int i = visibleStart; i < visibleEnd; i++) {
-            ConfigOption option = configOptions.get(i);
-            int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
+		for (int i = visibleStart; i < visibleEnd; i++) {
+			ConfigOption option = configOptions.get(i);
+			int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
 
-            if (option.type != ConfigType.BOOLEAN) {
-                String valueText;
-                if (option.type == ConfigType.FLOAT) {
-                    valueText = String.format("%.2f", option.value);
-                } else {
-                    valueText = String.valueOf((int)option.value);
-                }
+			if (option.type != ConfigType.BOOLEAN) {
+				String valueText;
+				if (option.type == ConfigType.FLOAT) {
+					valueText = String.format("%.2f", option.value);
+				} else {
+					valueText = String.valueOf((int) option.value);
+				}
 
-                graphics.pose().pushPose();
-                graphics.pose().scale(0.75f, 0.75f, 0.75f);
-                drawCenteredStringWithBorder(graphics, Component.literal(valueText),
-                        (int)((panelX + 69) / 0.75f), (int)((itemY + 5) / 0.75f), 0xFFFFFFFF);
-                graphics.pose().popPose();
-            }
-        }
-    }
+				graphics.pose().pushPose();
+				graphics.pose().scale(0.75f, 0.75f, 0.75f);
+				drawCenteredStringWithBorder(graphics, Component.literal(valueText),
+						(int) ((panelX + 69) / 0.75f), (int) ((itemY + 5) / 0.75f), 0xFFFFFFFF);
+				graphics.pose().popPose();
+			}
+		}
+	}
 
-    private void modifyConfigValue(int index, int delta) {
-        if (index < 0 || index >= configOptions.size()) return;
+	private void modifyConfigValue(int index, int delta) {
+		if (index < 0 || index >= configOptions.size()) return;
 
-        ConfigOption option = configOptions.get(index);
-        boolean isShiftDown = Screen.hasShiftDown();
+		ConfigOption option = configOptions.get(index);
+		boolean isShiftDown = Screen.hasShiftDown();
 
-        if (option.type == ConfigType.BOOLEAN) {
-            option.value = option.value > 0 ? 0 : 1;
-        } else if (option.type == ConfigType.INT) {
-            int step = isShiftDown ? 5 : 1;
-            option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
-        } else if (option.type == ConfigType.FLOAT) {
+		if (option.type == ConfigType.BOOLEAN) {
+			option.value = option.value > 0 ? 0 : 1;
+		} else if (option.type == ConfigType.INT) {
+			int step = isShiftDown ? 5 : 1;
+			option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
+		} else if (option.type == ConfigType.FLOAT) {
 			float step;
 			if ("config.menuScaleMultiplier".equals(option.key)) {
 				step = isShiftDown ? 0.25f : 0.05f;
@@ -343,113 +344,159 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			}
 			option.value = Math.max(option.min, Math.min(option.max, option.value + (delta * step)));
 			option.value = Math.round(option.value * 100.0f) / 100.0f;
-        }
+		}
 
-        option.setter.accept(option.value);
+		option.setter.accept(option.value);
 
 		if ("config.menuScaleMultiplier".equals(option.key)) {
 			rebuildWidgets();
 		}
-    }
+	}
 
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        double uiMouseX = toUiX(mouseX);
-        double uiMouseY = toUiY(mouseY);
-        int leftPanelX = 12;
-        int centerY = getUiHeight() / 2;
-        int leftPanelY = centerY - 105;
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int leftPanelY = centerY - 105;
 
-        if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
-                uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
+		if (uiMouseX >= leftPanelX && uiMouseX <= leftPanelX + 148 &&
+				uiMouseY >= leftPanelY + 40 && uiMouseY <= leftPanelY + 219) {
 
-            scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - (int)delta));
-            initConfigButtons();
-            return true;
-        }
+			int scrollAmount = (int) Math.signum(delta);
+			scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset - scrollAmount));
+			initConfigButtons();
+			return true;
+		}
+		return super.mouseScrolled(mouseX, mouseY, delta);
+	}
 
-        return super.mouseScrolled(mouseX, mouseY, delta);
-    }
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int leftPanelY = centerY - 105;
 
-    private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-        LivingEntity player = this.minecraft.player;
-        if (player == null) return;
+		int startY = leftPanelY + 35;
+		int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
+		int scrollBarX = leftPanelX + 140;
 
-        int adjustedScale = getAdjustedModelScale(scale);
+		if (maxScroll > 0 && uiMouseX >= scrollBarX - 5 && uiMouseX <= scrollBarX + 10 &&
+				uiMouseY >= startY && uiMouseY <= startY + scrollBarHeight) {
+			isDraggingScroll = true;
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			initConfigButtons();
+			return true;
+		}
+		return super.mouseClicked(mouseX, mouseY, button);
+	}
 
-        float xRotation = (float) Math.atan((y - mouseY) / 40.0F);
-        float yRotation = (float) Math.atan((x - mouseX) / 40.0F);
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (isDraggingScroll && maxScroll > 0) {
+			double uiMouseY = toUiY(mouseY);
+			int centerY = getUiHeight() / 2;
+			int startY = (centerY - 105) + 35;
+			int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
 
-        Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
-        Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float)Math.PI / 180F));
-        pose.mul(cameraOrientation);
+			scrollOffset = calculateScrollOffset(uiMouseY, startY, scrollBarHeight, maxScroll);
+			initConfigButtons();
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
 
-        float yBodyRotO = player.yBodyRot;
-        float yRotO = player.getYRot();
-        float xRotO = player.getXRot();
-        float yHeadRotO = player.yHeadRotO;
-        float yHeadRot = player.yHeadRot;
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (isDraggingScroll) {
+			isDraggingScroll = false;
+			return true;
+		}
+		return super.mouseReleased(mouseX, mouseY, button);
+	}
 
-        player.yBodyRot = 180.0F + yRotation * 20.0F;
-        player.setYRot(180.0F + yRotation * 40.0F);
-        player.setXRot(-xRotation * 20.0F);
-        player.yHeadRot = player.getYRot();
-        player.yHeadRotO = player.getYRot();
+	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
+		LivingEntity player = this.minecraft.player;
+		if (player == null) return;
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0D, 0.0D, 150.0D);
-        InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
-        graphics.pose().popPose();
+		int adjustedScale = getAdjustedModelScale(scale);
 
-        player.yBodyRot = yBodyRotO;
-        player.setYRot(yRotO);
-        player.setXRot(xRotO);
-        player.yHeadRotO = yHeadRotO;
-        player.yHeadRot = yHeadRot;
-    }
+		float xRotation = (float) Math.atan((y - mouseY) / 40.0F);
+		float yRotation = (float) Math.atan((x - mouseX) / 40.0F);
 
-    private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-        int borderColor = 0xFF000000;
-        graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-        graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-        graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-        graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-        graphics.drawString(this.font, text, x, y, textColor, false);
-    }
+		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
+		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(xRotation * 20.0F * ((float) Math.PI / 180F));
+		pose.mul(cameraOrientation);
 
-    private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-        int textWidth = this.font.width(text);
-        int x = centerX - (textWidth / 2);
-        drawStringWithBorder(graphics, text, x, y, textColor);
-    }
+		float yBodyRotO = player.yBodyRot;
+		float yRotO = player.getYRot();
+		float xRotO = player.getXRot();
+		float yHeadRotO = player.yHeadRotO;
+		float yHeadRot = player.yHeadRot;
 
-    @Override
-    public void removed() {
-        if (this.minecraft != null) {
-            ConfigManager.saveGeneralUserConfig();
-        }
-        super.removed();
-    }
+		player.yBodyRot = 180.0F + yRotation * 20.0F;
+		player.setYRot(180.0F + yRotation * 40.0F);
+		player.setXRot(-xRotation * 20.0F);
+		player.yHeadRot = player.getYRot();
+		player.yHeadRotO = player.getYRot();
 
-    private enum ConfigType {
-        INT, FLOAT, BOOLEAN
-    }
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 150.0D);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
+		graphics.pose().popPose();
 
-    private static class ConfigOption {
-        String key;
-        ConfigType type;
-        float value;
-        float min;
-        float max;
-        java.util.function.Consumer<Float> setter;
+		player.yBodyRot = yBodyRotO;
+		player.setYRot(yRotO);
+		player.setXRot(xRotO);
+		player.yHeadRotO = yHeadRotO;
+		player.yHeadRot = yHeadRot;
+	}
 
-        ConfigOption(String key, ConfigType type, float value, float min, float max, java.util.function.Consumer<Float> setter) {
-            this.key = key;
-            this.type = type;
-            this.value = value;
-            this.min = min;
-            this.max = max;
-            this.setter = setter;
-        }
-    }
+	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
+		int borderColor = 0xFF000000;
+		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
+		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
+		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
+		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
+		graphics.drawString(this.font, text, x, y, textColor, false);
+	}
+
+	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
+		int textWidth = this.font.width(text);
+		int x = centerX - (textWidth / 2);
+		drawStringWithBorder(graphics, text, x, y, textColor);
+	}
+
+	@Override
+	public void removed() {
+		if (this.minecraft != null) {
+			ConfigManager.saveGeneralUserConfig();
+		}
+		super.removed();
+	}
+
+	private enum ConfigType {
+		INT, FLOAT, BOOLEAN
+	}
+
+	private static class ConfigOption {
+		String key;
+		ConfigType type;
+		float value;
+		float min;
+		float max;
+		java.util.function.Consumer<Float> setter;
+
+		ConfigOption(String key, ConfigType type, float value, float min, float max, java.util.function.Consumer<Float> setter) {
+			this.key = key;
+			this.type = type;
+			this.value = value;
+			this.min = min;
+			this.max = max;
+			this.setter = setter;
+		}
+	}
 }
