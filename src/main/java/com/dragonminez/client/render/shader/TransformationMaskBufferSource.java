@@ -8,11 +8,18 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 public final class TransformationMaskBufferSource implements MultiBufferSource {
 	private static final int MASK_BUFFER_SIZE = 8192;
 
-	private final MultiBufferSource.BufferSource maskBufferSource = MultiBufferSource.immediate(new BufferBuilder(MASK_BUFFER_SIZE));
+	private final MultiBufferSource.BufferSource maskBufferSource = MultiBufferSource.immediateWithBuffers(
+			Map.of(
+					ModRenderTypes.transformationMask(), new BufferBuilder(MASK_BUFFER_SIZE),
+					ModRenderTypes.transformationMaskViewOffset(), new BufferBuilder(MASK_BUFFER_SIZE)
+			),
+			new BufferBuilder(MASK_BUFFER_SIZE)
+	);
 	@Nullable
 	private MultiBufferSource delegate;
 	private int packedR = 255;
@@ -32,8 +39,9 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
+		RenderType maskRenderType = ModRenderTypes.transformationMask(renderType);
 		if (this.delegate == null) {
-			return this.maskBufferSource.getBuffer(ModRenderTypes.transformationMask());
+			return this.maskBufferSource.getBuffer(maskRenderType);
 		}
 
 		VertexConsumer original = this.delegate.getBuffer(renderType);
@@ -41,7 +49,7 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 			return original;
 		}
 
-		VertexConsumer maskDelegate = this.maskBufferSource.getBuffer(ModRenderTypes.transformationMask());
+		VertexConsumer maskDelegate = this.maskBufferSource.getBuffer(maskRenderType);
 		VertexConsumer packedMask = new TransformationMaskVertexConsumer(maskDelegate, this.packedR, this.packedG, this.packedB, 255);
 		return VertexMultiConsumer.create(packedMask, original);
 	}

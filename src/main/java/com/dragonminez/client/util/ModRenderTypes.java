@@ -37,13 +37,36 @@ public class ModRenderTypes extends RenderType {
 					.setTextureState(NO_TEXTURE)
 					.setTransparencyState(NO_TRANSPARENCY)
 					.setCullState(NO_CULL)
-					.setDepthTestState(LEQUAL_DEPTH_TEST)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
 					.setLightmapState(NO_LIGHTMAP)
 					.setOverlayState(NO_OVERLAY)
 					.setWriteMaskState(COLOR_WRITE)
 					.setOutputState(TRANSFORMATION_MASK_TARGET)
 					.createCompositeState(false)
 	);
+
+	private static final RenderType TRANSFORMATION_MASK_VIEW_OFFSET = create(
+			"transformation_mask_view_offset",
+			DefaultVertexFormat.NEW_ENTITY,
+			VertexFormat.Mode.QUADS,
+			1536,
+			false,
+			false,
+			CompositeState.builder()
+					.setShaderState(TRANSFORMATION_MASK_SHADER)
+					.setTextureState(NO_TEXTURE)
+					.setTransparencyState(NO_TRANSPARENCY)
+					.setCullState(NO_CULL)
+					.setDepthTestState(EQUAL_DEPTH_TEST)
+					.setLightmapState(NO_LIGHTMAP)
+					.setOverlayState(NO_OVERLAY)
+					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
+					.setWriteMaskState(COLOR_WRITE)
+					.setOutputState(TRANSFORMATION_MASK_TARGET)
+					.createCompositeState(false)
+	);
+
+	private static final String VIEW_OFFSET_LAYERING_TOKEN = "view_offset_z_layering";
 
     private static final Function<ResourceLocation, RenderType> GLOW = Util.memoize((pLocation) ->
             create("glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
@@ -134,8 +157,19 @@ public class ModRenderTypes extends RenderType {
 		return transformationMaskShader != null;
 	}
 
+	public static RenderType transformationMask(RenderType sourceRenderType) {
+		if (sourceRenderType != null && sourceRenderType.toString().contains(VIEW_OFFSET_LAYERING_TOKEN)) {
+			return TRANSFORMATION_MASK_VIEW_OFFSET;
+		}
+		return TRANSFORMATION_MASK;
+	}
+
 	public static RenderType transformationMask() {
 		return TRANSFORMATION_MASK;
+	}
+
+	public static RenderType transformationMaskViewOffset() {
+		return TRANSFORMATION_MASK_VIEW_OFFSET;
 	}
 
 }
