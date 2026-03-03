@@ -7,7 +7,9 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.common.crafting.conditions.IConditionBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -204,6 +206,30 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.define('B', Items.REPEATER)
 				.define('P', MainItems.RADAR_PIECE.get())
 				.unlockedBy(getHasName(MainItems.T1_RADAR_CHIP.get()), has(MainItems.T1_RADAR_CHIP.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.T2_RADAR_CPU.get(), 1)
+				.pattern("RCR")
+				.pattern("TTT")
+				.pattern("OCO")
+				.define('R', Items.COMPARATOR)
+				.define('O', Items.OBSERVER)
+				.define('C', MainItems.T2_RADAR_CHIP.get())
+				.define('T', MainItems.T1_RADAR_CPU.get())
+				.unlockedBy(getHasName(MainItems.T2_RADAR_CHIP.get()), has(MainItems.T2_RADAR_CHIP.get()))
+				.group(Reference.MOD_ID).save(pWriter);
+
+		ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, MainItems.NAVE_SAIYAN_ITEM.get(), 1)
+				.pattern("QCQ")
+				.pattern("CTC")
+				.pattern("RML")
+				.define('Q', Items.QUARTZ_BLOCK)
+				.define('C', MainItems.T2_RADAR_CHIP.get())
+				.define('R', Items.REPEATER)
+				.define('M', Items.MINECART)
+				.define('L', Items.RED_WOOL)
+				.define('T', MainItems.T2_RADAR_CPU.get())
+				.unlockedBy(getHasName(MainItems.T2_RADAR_CPU.get()), has(MainItems.T2_RADAR_CPU.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.DBALL_RADAR_ITEM.get(), 1)
@@ -798,21 +824,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.BLANK_PATTERN_SUPER.get()), has(MainItems.BLANK_PATTERN_SUPER.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-//		ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, MainBlocks.KIKONO_ARMOR_STATION.get(), 1)
-//				.pattern("ACA")
-//				.pattern("KLK")
-//				.pattern("ISI")
-//				.define('A', Items.ANVIL)
-//				.define('C', Items.DIAMOND_CHESTPLATE)
-//				.define('K', MainBlocks.KIKONO_BLOCK.get())
-//				.define('L', Blocks.POLISHED_BLACKSTONE_BRICK_SLAB)
-//				.define('S', Items.SMITHING_TABLE)
-//				.define('I', Items.IRON_BLOCK)
-//				.unlockedBy(getHasName(Items.DIAMOND_CHESTPLATE), has(Items.DIAMOND_CHESTPLATE))
-//				.group(Reference.MOD_ID)
-//				.save(pWriter);
-
-				new DMZKikonoRecipeProvider(pWriter).generate();
+		new DMZKikonoRecipeProvider(pWriter).generate();
 
 	}
 
