@@ -96,7 +96,6 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		this.scrollOffset = SAVED_SCROLL_OFFSET;
 
 		initSagaNavigationButtons();
-		initTabButtons();
 		updateQuestsList();
 
 		this.scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
@@ -302,41 +301,10 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		return visibleQuests;
 	}
 
-	private void initTabButtons() {
-		int centerX = getUiWidth() / 2;
-		int topY = getUiHeight() / 2 - 115;
-
-		// "Sagas" tab — current screen (inactive)
-		TexturedTextButton sagasTab = new TexturedTextButton.Builder()
-				.position(centerX - 40, topY)
-				.size(38, 14)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.story.sidequests.tab.sagas"))
-				.onPress(btn -> {})
-				.build();
-		sagasTab.active = false;
-		this.addRenderableWidget(sagasTab);
-
-		// "Side Quests" tab — switches to SideQuestsMenuScreen
-		TexturedTextButton sideQuestsTab = new TexturedTextButton.Builder()
-				.position(centerX + 2, topY)
-				.size(38, 14)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.story.sidequests.tab.sidequests"))
-				.onPress(btn -> switchMenu(new SideQuestsMenuScreen()))
-				.build();
-		this.addRenderableWidget(sideQuestsTab);
-	}
-
 	private void refreshButtons() {
 		this.clearWidgets();
 		initSagaNavigationButtons();
 		initNavigationButtons();
-		initTabButtons();
 		initActionButton();
 		initQuestDetailsNavigationButtons();
 	}

@@ -35,10 +35,6 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 	protected String masterName = null;
 
-    public String getMasterName() {
-        return masterName;
-    }
-
     protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setPersistenceRequired();

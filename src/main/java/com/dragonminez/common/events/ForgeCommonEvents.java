@@ -16,7 +16,6 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.quest.SagaManager;
-import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -220,7 +219,6 @@ public class ForgeCommonEvents {
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
 		SagaManager.loadSagas(event.getServer());
-		SideQuestManager.loadSideQuests(event.getServer());
 
 		WorldGuardCompat.init();
 
