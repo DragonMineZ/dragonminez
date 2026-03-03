@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * Objective that requires the player to talk to a specific quest NPC.
  * The npcId matches the QuestNPCEntity's synched npcId field, or a MastersEntity's masterName.
- * (Compatible con maestros)
+ * (Compatible con maestros) yay
  */
 @Getter
 public class TalkToObjective extends QuestObjective {
