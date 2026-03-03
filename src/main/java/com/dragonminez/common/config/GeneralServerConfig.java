@@ -10,7 +10,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = 2;
+	public static final int CURRENT_VERSION = 3;
 
 	@Setter
 	private int configVersion;
@@ -137,6 +137,7 @@ public class GeneralServerConfig {
 		private Boolean respectAttackCooldown = true;
 		private Boolean enableBlocking = true;
 		private Boolean enableParrying = true;
+		private double effectiveDefenseOnGuardBreak = 0.33;
 		private Boolean enableComboAttacks = true;
 		private Integer comboAttacksCooldownSeconds = 8;
 		private Boolean enablePerfectEvasion = true;

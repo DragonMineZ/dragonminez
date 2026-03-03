@@ -39,7 +39,6 @@ public class ReloadCommand {
 						new SyncServerConfigS2C(
 								ConfigManager.getServerConfig(),
 								ConfigManager.getSkillsConfig(),
-								ConfigManager.getSkillOfferingsConfig(),
 								ConfigManager.getAllForms(),
 								ConfigManager.getAllRaceStats(),
 								ConfigManager.getAllRaceCharacters()

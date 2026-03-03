@@ -361,7 +361,7 @@ public class CombatEvent {
 						if (!victimData.getStatus().isStunned() || victimData.getResources().getCurrentPoise() > 0) {
 							currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
 						} else {
-							currentDamage[0] = Math.max(1.0, currentDamage[0] - (defense * 0.75));
+							currentDamage[0] = Math.max(1.0, currentDamage[0] - (defense * ConfigManager.getServerConfig().getCombat().getEffectiveDefenseOnGuardBreak()));
 						}
 					}
 

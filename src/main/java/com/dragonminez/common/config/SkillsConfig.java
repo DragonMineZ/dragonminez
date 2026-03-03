@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Getter
 public class SkillsConfig {
-	public static final int CURRENT_VERSION = 2;
+	public static final int CURRENT_VERSION = 3;
 
 	@Setter
 	private int configVersion;
@@ -22,10 +22,13 @@ public class SkillsConfig {
 	private final List<String> stackSkills = new ArrayList<>();
 	private final List<String> androidBlacklistedForms = new ArrayList<>();
 	private final Map<String, SkillCosts> skills = new HashMap<>();
+	private final Map<String, List<String>> skillOfferings = new HashMap<>();
 
-    public SkillsConfig() { createDefaults(); }
+	public SkillsConfig() {
+		createDefaults();
+	}
 
-    private void createDefaults() {
+	private void createDefaults() {
 		formSkills.add("superform");
 		formSkills.add("legendaryforms");
 		formSkills.add("godform");
@@ -38,11 +41,11 @@ public class SkillsConfig {
 		androidBlacklistedForms.add("superform");
 		androidBlacklistedForms.add("legendaryforms");
 
-        List<Integer> jumpCosts = new ArrayList<>();
+		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(1000);
-        jumpCosts.add(2000);
-        jumpCosts.add(3000);
-        jumpCosts.add(4000);
+		jumpCosts.add(2000);
+		jumpCosts.add(3000);
+		jumpCosts.add(4000);
 		jumpCosts.add(5000);
 		jumpCosts.add(6000);
 		jumpCosts.add(7000);
@@ -158,16 +161,42 @@ public class SkillsConfig {
 		fusionCosts.add(50000);
 		fusionCosts.add(75000);
 		skills.put("fusion", new SkillCosts(fusionCosts));
-    }
 
-    public SkillCosts getSkillCosts(String skillName) {
-        return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>()));
-    }
+		// MASTER SKILLS OFFERINGS
+		List<String> roshiSkills = new ArrayList<>();
+		roshiSkills.add("jump");
+		roshiSkills.add("meditation");
+		roshiSkills.add("kicontrol");
+		skillOfferings.put("roshi", roshiSkills);
+
+		List<String> gokuSkills = new ArrayList<>();
+		gokuSkills.add("fly");
+		gokuSkills.add("kicontrol");
+		gokuSkills.add("kisense");
+		gokuSkills.add("fusion");
+		gokuSkills.add("potentialunlock");
+		skillOfferings.put("goku", gokuSkills);
+
+		List<String> kingKaiSkills = new ArrayList<>();
+		kingKaiSkills.add("kaioken");
+		kingKaiSkills.add("potentialunlock");
+		kingKaiSkills.add("kimanipulation");
+		kingKaiSkills.add("fusion");
+		skillOfferings.put("kingkai", kingKaiSkills);
+
+		List<String> defaultSkills = new ArrayList<>();
+		defaultSkills.add("jump");
+		skillOfferings.put("default", defaultSkills);
+	}
+
+	public SkillCosts getSkillCosts(String skillName) {
+		return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>()));
+	}
 
 	@Getter
 	@NoArgsConstructor
 	@AllArgsConstructor
-    public static class SkillCosts {
-        private List<Integer> costs;
-    }
+	public static class SkillCosts {
+		private List<Integer> costs;
+	}
 }

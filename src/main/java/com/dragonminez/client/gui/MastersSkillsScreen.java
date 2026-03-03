@@ -156,7 +156,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	}
 
 	private List<String> getMasterSkills() {
-		Map<String, List<String>> skillOfferings = ConfigManager.getSkillOfferingsConfig().getSkillOfferings();
+		Map<String, List<String>> skillOfferings = ConfigManager.getSkillsConfig().getSkillOfferings();
 		return skillOfferings.getOrDefault(
 				masterName.toLowerCase(),
 				skillOfferings.get("default")

@@ -23,49 +23,49 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StatsCapability {
-    public static final Capability<StatsData> INSTANCE = CapabilityManager.get(new CapabilityToken<>() {});
+	public static final Capability<StatsData> INSTANCE = CapabilityManager.get(new CapabilityToken<>() {
+	});
 
-    @SubscribeEvent
-    public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
-        event.register(StatsData.class);
-    }
+	@SubscribeEvent
+	public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
+		event.register(StatsData.class);
+	}
 
-    @SubscribeEvent
-    public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-        if (event.getObject() instanceof Player player) {
-            if (!player.getCapability(INSTANCE).isPresent()) {
-                event.addCapability(StatsProvider.ID, new StatsProvider(player));
-            }
-        }
-    }
+	@SubscribeEvent
+	public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
+		if (event.getObject() instanceof Player player) {
+			if (!player.getCapability(INSTANCE).isPresent()) {
+				event.addCapability(StatsProvider.ID, new StatsProvider(player));
+			}
+		}
+	}
 
-    @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.Clone event) {
-        Player player = event.getEntity();
-        Player original = event.getOriginal();
-        original.reviveCaps();
-        StatsProvider.get(INSTANCE, player).ifPresent(newData -> StatsProvider.get(INSTANCE, original).ifPresent(newData::copyFrom));
-        original.invalidateCaps();
-    }
+	@SubscribeEvent
+	public static void onPlayerClone(PlayerEvent.Clone event) {
+		Player player = event.getEntity();
+		Player original = event.getOriginal();
+		original.reviveCaps();
+		StatsProvider.get(INSTANCE, player).ifPresent(newData -> StatsProvider.get(INSTANCE, original).ifPresent(newData::copyFrom));
+		original.invalidateCaps();
+	}
 
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			NetworkHandler.sendToPlayer(
-                    new SyncServerConfigS2C(
-                            ConfigManager.getServerConfig(),
-                            ConfigManager.getSkillsConfig(),
-                            ConfigManager.getSkillOfferingsConfig(),
-                            ConfigManager.getAllForms(),
-                            ConfigManager.getAllRaceStats(),
-                            ConfigManager.getAllRaceCharacters()
-                    ), serverPlayer
-            );
+					new SyncServerConfigS2C(
+							ConfigManager.getServerConfig(),
+							ConfigManager.getSkillsConfig(),
+							ConfigManager.getAllForms(),
+							ConfigManager.getAllRaceStats(),
+							ConfigManager.getAllRaceCharacters()
+					), serverPlayer
+			);
 			NetworkHandler.sendToPlayer(
-                    new SyncSagasS2C(
-                            SagaManager.getAllSagas()
-                    ), serverPlayer
-            );
+					new SyncSagasS2C(
+							SagaManager.getAllSagas()
+					), serverPlayer
+			);
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				QuestData questData = data.getQuestData();
@@ -83,19 +83,19 @@ public class StatsCapability {
 		}
 	}
 
-    @SubscribeEvent
-    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        StatsProvider.get(INSTANCE, event.getEntity()).ifPresent(data -> {
+	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+		StatsProvider.get(INSTANCE, event.getEntity()).ifPresent(data -> {
 			event.getEntity().setHealth(data.getMaxHealth());
-            data.getResources().setCurrentEnergy(data.getMaxEnergy());
-            data.getResources().setCurrentStamina(data.getMaxStamina());
-        });
-    }
+			data.getResources().setCurrentEnergy(data.getMaxEnergy());
+			data.getResources().setCurrentStamina(data.getMaxStamina());
+		});
+	}
 
-    @SubscribeEvent
-    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer));
-        }
-    }
+	@SubscribeEvent
+	public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer));
+		}
+	}
 }

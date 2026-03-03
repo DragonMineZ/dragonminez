@@ -39,7 +39,6 @@ public class ConfigManager {
 
 	private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
 	private static SkillsConfig SERVER_SYNCED_SKILLS;
-	private static MasterSkillsOfferingConfig SERVER_SYNCED_SKILL_OFFERINGS;
 	private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
 	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
@@ -47,7 +46,6 @@ public class ConfigManager {
 	private static GeneralUserConfig userConfig;
 	private static GeneralServerConfig serverConfig;
 	private static SkillsConfig skillsConfig;
-	private static MasterSkillsOfferingConfig skillOfferingsConfig;
 	@Getter
 	private static EntitiesConfig entitiesConfig;
 
@@ -115,47 +113,68 @@ public class ConfigManager {
 		// General User
 		Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
 		boolean overwriteUser = false;
+		String reasonUser = "";
 		if (Files.exists(userConfigPath)) {
 			try {
 				userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
-				if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION || isMissingConfigVersion(userConfigPath)) {
+				if (isMissingConfigVersion(userConfigPath)) {
+					reasonUser = "Missing config version";
+					overwriteUser = true;
+				} else if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION) {
+					reasonUser = "Outdated version (" + userConfig.getConfigVersion() + " < " + GeneralUserConfig.CURRENT_VERSION + ")";
+					overwriteUser = true;
+				}
+				if (overwriteUser) {
 					backupOldConfig(userConfigPath);
 					userConfig = new GeneralUserConfig();
 					userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
-					overwriteUser = true;
 				}
 			} catch (Exception e) {
+				reasonUser = "Parsing error: " + e.toString();
 				backupOldConfig(userConfigPath);
 				userConfig = new GeneralUserConfig();
 				userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
 				overwriteUser = true;
 			}
 		} else {
+			reasonUser = "File not found";
 			userConfig = new GeneralUserConfig();
 			userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
 			overwriteUser = true;
 		}
-		if (overwriteUser) LOADER.saveConfig(userConfigPath, userConfig);
+		if (overwriteUser) {
+			LogUtil.warn(Env.COMMON, "Regenerating general-user.json. Reason: " + reasonUser);
+			LOADER.saveConfig(userConfigPath, userConfig);
+		}
 
 		// General Server
 		Path serverConfigPath = CONFIG_DIR.resolve("general-server.json");
 		boolean overwriteServer = false;
+		String reasonServer = "";
 		if (Files.exists(serverConfigPath)) {
 			try {
 				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION || isMissingConfigVersion(serverConfigPath)) {
+				if (isMissingConfigVersion(serverConfigPath)) {
+					reasonServer = "Missing config version";
+					overwriteServer = true;
+				} else if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
+					reasonServer = "Outdated version (" + serverConfig.getConfigVersion() + " < " + GeneralServerConfig.CURRENT_VERSION + ")";
+					overwriteServer = true;
+				}
+				if (overwriteServer) {
 					backupOldConfig(serverConfigPath);
 					serverConfig = new GeneralServerConfig();
 					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
-					overwriteServer = true;
 				}
 			} catch (Exception e) {
+				reasonServer = "Parsing error: " + e.toString();
 				backupOldConfig(serverConfigPath);
 				serverConfig = new GeneralServerConfig();
 				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 				overwriteServer = true;
 			}
 		} else {
+			reasonServer = "File not found";
 			try {
 				LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
 				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
@@ -164,32 +183,45 @@ public class ConfigManager {
 					overwriteServer = true;
 				}
 			} catch (Exception e) {
+				reasonServer = "Template loading failed: " + e.toString();
 				serverConfig = new GeneralServerConfig();
 				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 				overwriteServer = true;
 			}
 		}
-		if (overwriteServer) LOADER.saveConfig(serverConfigPath, serverConfig);
+		if (overwriteServer) {
+			LogUtil.warn(Env.COMMON, "Regenerating general-server.json. Reason: " + reasonServer);
+			LOADER.saveConfig(serverConfigPath, serverConfig);
+		}
 
 		// Skills
 		Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
 		boolean overwriteSkills = false;
+		String reasonSkills = "";
 		if (Files.exists(skillsConfigPath)) {
 			try {
 				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION || isMissingConfigVersion(skillsConfigPath)) {
+				if (isMissingConfigVersion(skillsConfigPath)) {
+					reasonSkills = "Missing config version";
+					overwriteSkills = true;
+				} else if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
+					reasonSkills = "Outdated version (" + skillsConfig.getConfigVersion() + " < " + SkillsConfig.CURRENT_VERSION + ")";
+					overwriteSkills = true;
+				}
+				if (overwriteSkills) {
 					backupOldConfig(skillsConfigPath);
 					skillsConfig = new SkillsConfig();
 					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
-					overwriteSkills = true;
 				}
 			} catch (Exception e) {
+				reasonSkills = "Parsing error: " + e.toString();
 				backupOldConfig(skillsConfigPath);
 				skillsConfig = new SkillsConfig();
 				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 				overwriteSkills = true;
 			}
 		} else {
+			reasonSkills = "File not found";
 			try {
 				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
 				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
@@ -198,71 +230,53 @@ public class ConfigManager {
 					overwriteSkills = true;
 				}
 			} catch (Exception e) {
+				reasonSkills = "Template loading failed: " + e.toString();
 				skillsConfig = new SkillsConfig();
 				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 				overwriteSkills = true;
 			}
 		}
-		if (overwriteSkills) LOADER.saveConfig(skillsConfigPath, skillsConfig);
-
-		// Skills
-		Path skillOfferingsConfigPath = CONFIG_DIR.resolve("skill-offerings.json");
-		boolean overwriteSkillOfferings = false;
-		if (Files.exists(skillsConfigPath)) {
-			try {
-				skillOfferingsConfig = LOADER.loadConfig(skillOfferingsConfigPath, MasterSkillsOfferingConfig.class);
-				if (skillOfferingsConfig.getConfigVersion() < MasterSkillsOfferingConfig.CURRENT_VERSION || isMissingConfigVersion(skillOfferingsConfigPath)) {
-					backupOldConfig(skillOfferingsConfigPath);
-					skillOfferingsConfig = new MasterSkillsOfferingConfig();
-					skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
-					overwriteSkillOfferings = true;
-				}
-			} catch (Exception e) {
-				backupOldConfig(skillOfferingsConfigPath);
-				skillOfferingsConfig = new MasterSkillsOfferingConfig();
-				skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
-				overwriteSkillOfferings = true;
-			}
-		} else {
-			try {
-				LOADER.saveDefaultFromTemplate(skillOfferingsConfigPath, "skill-offerings.json");
-				skillOfferingsConfig = LOADER.loadConfig(skillOfferingsConfigPath, MasterSkillsOfferingConfig.class);
-				if (skillOfferingsConfig.getConfigVersion() < MasterSkillsOfferingConfig.CURRENT_VERSION || isMissingConfigVersion(skillOfferingsConfigPath)) {
-					skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
-					overwriteSkillOfferings = true;
-				}
-			} catch (Exception e) {
-				skillOfferingsConfig = new MasterSkillsOfferingConfig();
-				skillOfferingsConfig.setConfigVersion(MasterSkillsOfferingConfig.CURRENT_VERSION);
-				overwriteSkillOfferings = true;
-			}
+		if (overwriteSkills) {
+			LogUtil.warn(Env.COMMON, "Regenerating skills.json. Reason: " + reasonSkills);
+			LOADER.saveConfig(skillsConfigPath, skillsConfig);
 		}
-		if (overwriteSkillOfferings) LOADER.saveConfig(skillOfferingsConfigPath, skillOfferingsConfig);
 
 		// Entities
 		Path entitiesConfigPath = CONFIG_DIR.resolve("entities.json");
 		boolean overwriteEntities = false;
+		String reasonEntities = "";
 		if (Files.exists(entitiesConfigPath)) {
 			try {
 				entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
-				if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION || isMissingConfigVersion(entitiesConfigPath)) {
+				if (isMissingConfigVersion(entitiesConfigPath)) {
+					reasonEntities = "Missing config version";
+					overwriteEntities = true;
+				} else if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION) {
+					reasonEntities = "Outdated version (" + entitiesConfig.getConfigVersion() + " < " + EntitiesConfig.CURRENT_VERSION + ")";
+					overwriteEntities = true;
+				}
+				if (overwriteEntities) {
 					backupOldConfig(entitiesConfigPath);
 					entitiesConfig = createDefaultEntitiesConfig();
 					entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
-					overwriteEntities = true;
 				}
 			} catch (Exception e) {
+				reasonEntities = "Parsing error: " + e.toString();
 				backupOldConfig(entitiesConfigPath);
 				entitiesConfig = createDefaultEntitiesConfig();
 				entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
 				overwriteEntities = true;
 			}
 		} else {
+			reasonEntities = "File not found";
 			entitiesConfig = createDefaultEntitiesConfig();
 			entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
 			overwriteEntities = true;
 		}
-		if (overwriteEntities) LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
+		if (overwriteEntities) {
+			LogUtil.warn(Env.COMMON, "Regenerating entities.json. Reason: " + reasonEntities);
+			LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
+		}
 	}
 
 	private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
@@ -277,71 +291,103 @@ public class ConfigManager {
 		// Character Config
 		RaceCharacterConfig characterConfig;
 		boolean overwriteCharacter = false;
+		String reasonCharacter = "";
 		if (Files.exists(characterPath)) {
 			try {
 				characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
-				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION || characterConfig.getConfigVersion() == 0 || isMissingConfigVersion(characterPath)) {
+				if (isMissingConfigVersion(characterPath)) {
+					reasonCharacter = "Missing config version";
+					overwriteCharacter = true;
+				} else if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION || characterConfig.getConfigVersion() == 0) {
+					reasonCharacter = "Outdated version (" + characterConfig.getConfigVersion() + " < " + RaceCharacterConfig.CURRENT_VERSION + ")";
+					overwriteCharacter = true;
+				}
+				if (overwriteCharacter) {
 					backupOldConfig(characterPath);
 					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
 					characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
-					overwriteCharacter = true;
 				}
 			} catch (Exception e) {
+				reasonCharacter = "Parsing error: " + e.toString();
 				backupOldConfig(characterPath);
 				characterConfig = createDefaultCharacterConfig(raceName, isDefault);
 				characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
 				overwriteCharacter = true;
 			}
 		} else {
+			reasonCharacter = "File not found";
 			characterConfig = createDefaultCharacterConfig(raceName, isDefault);
 			characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
 			overwriteCharacter = true;
 		}
-		if (overwriteCharacter) LOADER.saveConfig(characterPath, characterConfig);
+		if (overwriteCharacter) {
+			LogUtil.warn(Env.COMMON, "Regenerating character.json for race '" + raceName + "'. Reason: " + reasonCharacter);
+			LOADER.saveConfig(characterPath, characterConfig);
+		}
 
 		// Stats Config
 		RaceStatsConfig statsConfig;
 		boolean overwriteStats = false;
+		String reasonStats = "";
 		if (Files.exists(statsPath)) {
 			try {
 				statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
-				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION || statsConfig.getConfigVersion() == 0 || isMissingConfigVersion(statsPath)) {
+				if (isMissingConfigVersion(statsPath)) {
+					reasonStats = "Missing config version";
+					overwriteStats = true;
+				} else if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION || statsConfig.getConfigVersion() == 0) {
+					reasonStats = "Outdated version (" + statsConfig.getConfigVersion() + " < " + RaceStatsConfig.CURRENT_VERSION + ")";
+					overwriteStats = true;
+				}
+				if (overwriteStats) {
 					backupOldConfig(statsPath);
 					statsConfig = createDefaultStatsConfig();
 					statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
-					overwriteStats = true;
 				}
 			} catch (Exception e) {
+				reasonStats = "Parsing error: " + e.toString();
 				backupOldConfig(statsPath);
 				statsConfig = createDefaultStatsConfig();
 				statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
 				overwriteStats = true;
 			}
 		} else {
+			reasonStats = "File not found";
 			statsConfig = createDefaultStatsConfig();
 			statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
 			overwriteStats = true;
 		}
-		if (overwriteStats) LOADER.saveConfig(statsPath, statsConfig);
+		if (overwriteStats) {
+			LogUtil.warn(Env.COMMON, "Regenerating stats.json for race '" + raceName + "'. Reason: " + reasonStats);
+			LOADER.saveConfig(statsPath, statsConfig);
+		}
 
 		// Forms Config
 		Map<String, FormConfig> raceForms = LOADER.loadRaceForms(raceName, formsPath);
 		boolean recreateForms = false;
+		String reasonForms = "";
 
 		if (isDefault && !LOADER.hasExistingFiles(formsPath)) {
 			recreateForms = true;
+			reasonForms = "Default forms missing or folder is empty";
 		} else if (!raceForms.isEmpty()) {
 			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
 				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
 				FormConfig formGroup = entry.getValue();
-				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0 || isMissingConfigVersion(formFilePath)) {
+				if (isMissingConfigVersion(formFilePath)) {
 					recreateForms = true;
+					reasonForms = "Missing version in " + entry.getKey() + ".json";
+					break;
+				} else if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0) {
+					recreateForms = true;
+					reasonForms = "Outdated version in " + entry.getKey() + ".json (" + formGroup.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
 					break;
 				}
 			}
 		}
 
 		if (recreateForms && isDefault) {
+			LogUtil.warn(Env.COMMON, "Regenerating forms for race '" + raceName + "'. Reason: " + reasonForms);
 			try (var stream = Files.list(formsPath)) {
 				stream.filter(path -> path.toString().endsWith(".json")).forEach(ConfigManager::backupOldConfig);
 			}
@@ -371,21 +417,29 @@ public class ConfigManager {
 
 		Map<String, FormConfig> stackForms = LOADER.loadStackForms(STACK_FORMS_DIR);
 		boolean recreateForms = false;
+		String reasonForms = "";
 
 		if (isDefault && !LOADER.hasExistingFiles(STACK_FORMS_DIR)) {
 			recreateForms = true;
+			reasonForms = "Default stack forms missing or folder is empty";
 		} else if (!stackForms.isEmpty()) {
 			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
 				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
 				FormConfig formGroup = entry.getValue();
-				if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0 || isMissingConfigVersion(formFilePath)) {
+				if (isMissingConfigVersion(formFilePath)) {
 					recreateForms = true;
+					reasonForms = "Missing version in " + entry.getKey() + ".json";
+					break;
+				} else if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0) {
+					recreateForms = true;
+					reasonForms = "Outdated version in " + entry.getKey() + ".json (" + formGroup.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
 					break;
 				}
 			}
 		}
 
 		if (recreateForms && isDefault) {
+			LogUtil.warn(Env.COMMON, "Regenerating stack forms. Reason: " + reasonForms);
 			try (var stream = Files.list(STACK_FORMS_DIR)) {
 				stream.filter(path -> path.toString().endsWith(".json")).forEach(ConfigManager::backupOldConfig);
 			}
@@ -760,10 +814,9 @@ public class ConfigManager {
 		}
 	}
 
-	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, MasterSkillsOfferingConfig syncedSkillOfferingsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters) {
+	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters) {
 		SERVER_SYNCED_GENERAL_SERVER = syncedServerConfig;
 		SERVER_SYNCED_SKILLS = syncedSkillsConfig;
-		SERVER_SYNCED_SKILL_OFFERINGS = syncedSkillOfferingsConfig;
 		SERVER_SYNCED_FORMS = syncedForms;
 		SERVER_SYNCED_STATS = syncedStats;
 		SERVER_SYNCED_CHARACTER = syncedCharacters;
@@ -772,7 +825,6 @@ public class ConfigManager {
 	public static void clearServerSync() {
 		SERVER_SYNCED_GENERAL_SERVER = null;
 		SERVER_SYNCED_SKILLS = null;
-		SERVER_SYNCED_SKILL_OFFERINGS = null;
 		SERVER_SYNCED_FORMS = null;
 		SERVER_SYNCED_STATS = null;
 		SERVER_SYNCED_CHARACTER = null;
@@ -829,11 +881,6 @@ public class ConfigManager {
 	public static SkillsConfig getSkillsConfig() {
 		if (SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
 		return skillsConfig != null ? skillsConfig : new SkillsConfig();
-	}
-
-	public static MasterSkillsOfferingConfig getSkillOfferingsConfig() {
-		if (SERVER_SYNCED_SKILL_OFFERINGS != null) return SERVER_SYNCED_SKILL_OFFERINGS;
-		return skillOfferingsConfig != null ? skillOfferingsConfig : new MasterSkillsOfferingConfig();
 	}
 
 	public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
