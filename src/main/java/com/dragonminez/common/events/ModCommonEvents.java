@@ -46,6 +46,9 @@ public class ModCommonEvents {
         event.put(MainEntities.MASTER_GURU.get(), MastersEntity.createAttributes().build());
         event.put(MainEntities.MASTER_TORIBOT.get(), MastersEntity.createAttributes().build());
 
+        // Quest NPC — single entity type for all data-driven quest NPCs | Usa un solo tipo de entidad para todos los NPCs de misiones basados en datos
+        event.put(MainEntities.QUEST_NPC.get(), MastersEntity.createAttributes().build());
+
 		event.put(MainEntities.SHENRON.get(), ShenronEntity.createAttributes().build());
 		event.put(MainEntities.PORUNGA.get(), PorungaEntity.createAttributes().build());
 

@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.quest.QuestData;
+import com.dragonminez.common.quest.sidequest.SideQuestData;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -22,6 +23,7 @@ public class StatsData {
 	private final Skills skills;
 	private final Effects effects;
 	private final QuestData questData;
+	private final SideQuestData sideQuestData;
 	private final BonusStats bonusStats;
 	private final Training training;
 
@@ -39,6 +41,7 @@ public class StatsData {
 		this.skills = new Skills();
 		this.effects = new Effects();
 		this.questData = new QuestData();
+		this.sideQuestData = new SideQuestData();
 		this.bonusStats = new BonusStats();
 		this.training = new Training();
 	}
@@ -73,6 +76,10 @@ public class StatsData {
 
 	public QuestData getQuestData() {
 		return questData;
+	}
+
+	public SideQuestData getSideQuestData() {
+		return sideQuestData;
 	}
 
 	public BonusStats getBonusStats() {
@@ -603,6 +610,7 @@ public class StatsData {
 		nbt.put("Skills", skills.save());
 		nbt.put("Effects", effects.save());
 		nbt.put("QuestData", questData.serializeNBT());
+		nbt.put("SideQuestData", sideQuestData.serializeNBT());
 		nbt.put("BonusStats", bonusStats.save());
 		nbt.put("Training", training.save());
 		nbt.putBoolean("HasInitializedHealth", hasInitializedHealth);
@@ -634,6 +642,9 @@ public class StatsData {
 		if (nbt.contains("QuestData")) {
 			questData.deserializeNBT(nbt.getCompound("QuestData"));
 		}
+		if (nbt.contains("SideQuestData")) {
+			sideQuestData.deserializeNBT(nbt.getCompound("SideQuestData"));
+		}
 		if (nbt.contains("BonusStats")) {
 			bonusStats.load(nbt.getCompound("BonusStats"));
 		}
@@ -658,6 +669,7 @@ public class StatsData {
 		this.skills.copyFrom(other.skills);
 		this.effects.copyFrom(other.effects);
 		this.questData.deserializeNBT(other.questData.serializeNBT());
+		this.sideQuestData.deserializeNBT(other.sideQuestData.serializeNBT());
 		this.bonusStats.copyFrom(other.bonusStats);
 		this.training.copyFrom(other.training);
 		this.hasInitializedHealth = other.hasInitializedHealth;
