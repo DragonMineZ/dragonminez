@@ -99,7 +99,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		this.scrollOffset = SAVED_SCROLL_OFFSET;
 
 		initSagaNavigationButtons();
-		initTabButtons();
+		//initTabButtons();
 		updateQuestsList();
 
 		this.scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
@@ -307,6 +307,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		return visibleQuests;
 	}
 
+	/*
 	private void initTabButtons() {
 		int centerX = getUiWidth() / 2;
 		int topY = getUiHeight() / 2 - 115;
@@ -336,12 +337,13 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 				.build();
 		this.addRenderableWidget(sideQuestsTab);
 	}
+	 */
 
 	private void refreshButtons() {
 		this.clearWidgets();
 		initSagaNavigationButtons();
 		initNavigationButtons();
-		initTabButtons();
+		//initTabButtons();
 		initActionButton();
 		initQuestDetailsNavigationButtons();
 	}
