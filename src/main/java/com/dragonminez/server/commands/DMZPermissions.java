@@ -78,6 +78,16 @@ public class DMZPermissions {
     public static final PermissionNode<Boolean> STORY_RESET_SELF = register("dmzstory.reset.self", "Allows resetting your own quest progress.", (player, uuid, context) -> false);
     public static final PermissionNode<Boolean> STORY_RESET_OTHERS = register("dmzstory.reset.others", "Allows resetting other players' quest progress.", (player, uuid, context) -> false);
 
+    // Side Quests
+    public static final PermissionNode<Boolean> SIDEQUEST_LIST_SELF = register("dmzstory.sidequest.list.self", "Allows listing your own side-quest progress.", (player, uuid, context) -> true);
+    public static final PermissionNode<Boolean> SIDEQUEST_LIST_OTHERS = register("dmzstory.sidequest.list.others", "Allows listing other players' side-quest progress.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> SIDEQUEST_ACCEPT_SELF = register("dmzstory.sidequest.accept.self", "Allows force-accepting side-quests for yourself.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> SIDEQUEST_ACCEPT_OTHERS = register("dmzstory.sidequest.accept.others", "Allows force-accepting side-quests for other players.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> SIDEQUEST_FINISH_SELF = register("dmzstory.sidequest.finish.self", "Allows finishing side-quests for yourself.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> SIDEQUEST_FINISH_OTHERS = register("dmzstory.sidequest.finish.others", "Allows finishing side-quests for other players.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> SIDEQUEST_RESET_SELF = register("dmzstory.sidequest.reset.self", "Allows resetting your own side-quest progress.", (player, uuid, context) -> false);
+    public static final PermissionNode<Boolean> SIDEQUEST_RESET_OTHERS = register("dmzstory.sidequest.reset.others", "Allows resetting other players' side-quest progress.", (player, uuid, context) -> false);
+
     // Locate
     public static final PermissionNode<Boolean> LOCATE = register("dmzlocate", "Allows locating special structures.", (player, uuid, context) -> false);
 

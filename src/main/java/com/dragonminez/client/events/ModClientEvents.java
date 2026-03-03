@@ -147,6 +147,9 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.MASTER_GURU.get(), MasterEntityRenderer::new);
         event.registerEntityRenderer(MainEntities.MASTER_TORIBOT.get(), MasterEntityRenderer::new);
 
+        // Quest NPC — single renderer for all data-driven quest NPCs | usa un renderer genérico para los NPCs de misiones, después usa gráficos.json para asignar modelos/texturas específicos a cada npcId
+        event.registerEntityRenderer(MainEntities.QUEST_NPC.get(), QuestNPCRenderer::new);
+
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanRenderer::new);
         event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN3.get(), SagaSaibamanRenderer::new);
