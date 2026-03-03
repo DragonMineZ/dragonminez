@@ -146,7 +146,25 @@ public class NetworkHandler {
 				.encoder(TrainingRewardC2S::toBytes)
 				.consumerMainThread(TrainingRewardC2S::handle)
 				.add();
-		
+
+		net.messageBuilder(AcceptSideQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(AcceptSideQuestC2S::new)
+				.encoder(AcceptSideQuestC2S::encode)
+				.consumerMainThread(AcceptSideQuestC2S::handle)
+				.add();
+
+		net.messageBuilder(ClaimSideQuestRewardC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ClaimSideQuestRewardC2S::new)
+				.encoder(ClaimSideQuestRewardC2S::encode)
+				.consumerMainThread(ClaimSideQuestRewardC2S::handle)
+				.add();
+
+		net.messageBuilder(TurnInSideQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TurnInSideQuestC2S::new)
+				.encoder(TurnInSideQuestC2S::encode)
+				.consumerMainThread(TurnInSideQuestC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */
@@ -172,6 +190,18 @@ public class NetworkHandler {
 				.decoder(SyncSagasS2C::new)
 				.encoder(SyncSagasS2C::encode)
 				.consumerMainThread(SyncSagasS2C::handle)
+				.add();
+
+		net.messageBuilder(SyncSideQuestsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncSideQuestsS2C::new)
+				.encoder(SyncSideQuestsS2C::encode)
+				.consumerMainThread(SyncSideQuestsS2C::handle)
+				.add();
+
+		net.messageBuilder(OpenQuestNPCDialogueS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(OpenQuestNPCDialogueS2C::new)
+				.encoder(OpenQuestNPCDialogueS2C::encode)
+				.consumerMainThread(OpenQuestNPCDialogueS2C::handle)
 				.add();
 
 		net.messageBuilder(SyncWishesS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)

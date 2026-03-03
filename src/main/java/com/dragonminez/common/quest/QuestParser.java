@@ -51,7 +51,7 @@ public class QuestParser {
         return new Quest(id, title, description, objectives, rewards);
     }
 
-    private static QuestObjective parseObjective(JsonObject json) {
+    public static QuestObjective parseObjective(JsonObject json) {
         String type = json.get("type").getAsString();
         String description = json.get("description").getAsString();
 
@@ -92,12 +92,16 @@ public class QuestParser {
             case "STRUCTURE":
                 String structureId = json.get("structure").getAsString();
                 return new StructureObjective(description, structureId);
+
+            case "TALK_TO":
+                String npcId = json.get("npcId").getAsString();
+                return new TalkToObjective(description, npcId);
         }
 
         return null;
     }
 
-    private static QuestReward parseReward(JsonObject json) {
+    public static QuestReward parseReward(JsonObject json) {
         String type = json.get("type").getAsString();
 
         QuestReward.DifficultyType difficultyType = QuestReward.DifficultyType.ALL;

@@ -63,7 +63,8 @@ public abstract class QuestObjective {
         INTERACT,
         STRUCTURE,
         BIOME,
-        COORDS
+        COORDS,
+        TALK_TO
     }
 }
 

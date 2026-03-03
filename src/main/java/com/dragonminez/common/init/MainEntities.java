@@ -9,6 +9,7 @@ import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.masters.*;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
+import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
@@ -505,6 +506,13 @@ public class MainEntities {
                     .fireImmune()
                     .build("ki_barrier")
     );
+
+    // Single generic entity type for ALL data-driven quest NPCs
+    public static final RegistryObject<EntityType<QuestNPCEntity>> QUEST_NPC =
+            ENTITY_TYPES.register("quest_npc",
+                    () -> EntityType.Builder.of(QuestNPCEntity::new, MobCategory.CREATURE)
+                            .sized(0.8f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "quest_npc").toString()));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
