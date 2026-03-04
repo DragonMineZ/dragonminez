@@ -687,7 +687,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void finish() {
 		if (this.minecraft != null) {
 			NetworkHandler.sendToServer(new CreateCharacterC2S(character));
-			ForgeClientEvents.hasCreatedCharacterCache = true;
+			ForgeClientEvents.isHasCreatedCharacterCache = true;
 			this.minecraft.setScreen(null);
 			QuestsMenuScreen.SAVED_QUEST_ID = -1;
 			QuestsMenuScreen.SAVED_SAGA_INDEX = 0;

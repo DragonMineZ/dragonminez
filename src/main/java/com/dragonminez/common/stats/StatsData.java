@@ -476,7 +476,7 @@ public class StatsData {
 		character.setEye1Color(eye1Color);
 		character.setEye2Color(eye2Color);
 		character.setAuraColor(auraColor);
-		status.setCreatedCharacter(true);
+		status.setHasCreatedCharacter(true);
 
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);

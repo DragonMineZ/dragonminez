@@ -209,7 +209,7 @@ public class StatsCommand {
 				data.getBonusStats().clearAllStats();
 				data.getCharacter().clearActiveForm();
 				data.getCharacter().clearActiveStackForm();
-				data.getStatus().setCreatedCharacter(false);
+				data.getStatus().setHasCreatedCharacter(false);
 
 				player.refreshDimensions();
 				player.setHealth(20.0F);

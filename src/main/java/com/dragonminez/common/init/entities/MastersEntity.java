@@ -32,31 +32,31 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 
 public class MastersEntity extends PathfinderMob implements GeoEntity {
 
-    private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
+	private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 	protected String masterName = null;
 
-    public String getMasterName() {
-        return masterName;
-    }
+	public String getMasterName() {
+		return masterName;
+	}
 
-    protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel);
-        this.setPersistenceRequired();
-    }
+	protected MastersEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+		super(pEntityType, pLevel);
+		this.setPersistenceRequired();
+	}
 
-    @Override
-    protected void registerGoals() {
-        this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
-    }
+	@Override
+	protected void registerGoals() {
+		this.goalSelector.addGoal(0, new FloatGoal(this));
+		this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 8.0F));
+		this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
+	}
 
-    public static AttributeSupplier.Builder createAttributes() {
-        return PathfinderMob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 100.0D)
-                .add(Attributes.MOVEMENT_SPEED, 2.0D)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
-    }
+	public static AttributeSupplier.Builder createAttributes() {
+		return PathfinderMob.createMobAttributes()
+				.add(Attributes.MAX_HEALTH, 100.0D)
+				.add(Attributes.MOVEMENT_SPEED, 2.0D)
+				.add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
+	}
 
 
 	@Override
@@ -80,29 +80,30 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 		return false;
 	}
 
-    @Override
-    protected void doPush(Entity p_20971_) {}
+	@Override
+	protected void doPush(Entity p_20971_) {
+	}
 
-    @Override
-    public boolean hurt(DamageSource source, float amount) {
-        if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC) || source.is(DamageTypes.GENERIC_KILL)) {
-            return super.hurt(source, amount);
-        }
+	@Override
+	public boolean hurt(DamageSource source, float amount) {
+		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC) || source.is(DamageTypes.GENERIC_KILL)) {
+			return super.hurt(source, amount);
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 0, event -> {
-            return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
-        }));
-    }
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+		controllers.add(new AnimationController<>(this, "controller", 0, event -> {
+			return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
+		}));
+	}
 
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return geoCache;
-    }
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return geoCache;
+	}
 
 	@Override
 	public boolean isPersistenceRequired() {
@@ -110,14 +111,15 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	}
 
 	@Override
-	public void checkDespawn() {}
+	public void checkDespawn() {
+	}
 
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
 		if (this.level().isClientSide && masterName != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
+				if (data.getStatus().isHasCreatedCharacter()) {
 					Minecraft mc = Minecraft.getInstance();
 					mc.setScreen(new MastersSkillsScreen(masterName, this));
 					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());

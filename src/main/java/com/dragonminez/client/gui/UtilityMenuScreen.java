@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -25,8 +26,8 @@ public class UtilityMenuScreen extends Screen {
 	private static final List<IUtilityMenuSlot> ADDON_SLOTS = new ArrayList<>();
 	private static final int[][] POSITIONS = {
 			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1}, // Top Row (Index 0-4)
-			{-2,  0}, {-1,  0},          {1,  0}, {2,  0}, // Middle Row (Index 5-9)
-			{-2,  1}, {-1,  1}, {0,  1}, {1,  1}, {2,  1}  // Bottom Row (Index 10-14)
+			{-2, 0}, {-1, 0}, {1, 0}, {2, 0}, // Middle Row (Index 5-9)
+			{-2, 1}, {-1, 1}, {0, 1}, {1, 1}, {2, 1}  // Bottom Row (Index 10-14)
 	};
 
 	private static final long ANIMATION_DURATION = 100;
@@ -47,7 +48,8 @@ public class UtilityMenuScreen extends Screen {
 	protected void init() {
 		super.init();
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null) StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> this.statsData = data);
+		if (mc.player != null)
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> this.statsData = data);
 	}
 
 	@Override
@@ -108,9 +110,34 @@ public class UtilityMenuScreen extends Screen {
 				if (buttonInfo.isSelected()) buttonInfo.setColor(0x2BFF00);
 
 				if (!buttonInfo.getLine1().getString().isEmpty()) {
-					this.drawCenteredStringWithBorder(graphics, buttonInfo.getLine1(), x + BUTTON_WIDTH / 2, y + 12, 0xFFFFFF, 0x000000);
-					if (menuSlot instanceof KiManipulationMenuSlot) graphics.drawCenteredString(font, buttonInfo.getLine2(), x + BUTTON_WIDTH / 2, y + 30, statsData.getSkills().isSkillActive("kimanipulation") ? 0x2BFF00 : 0xFF1B00);
-					else graphics.drawCenteredString(font, buttonInfo.getLine2(), x + BUTTON_WIDTH / 2, y + 30, buttonInfo.isSelected() ? buttonInfo.getColor() : 0xFF1B00);
+					int maxWidth = BUTTON_WIDTH;
+					List<FormattedCharSequence> titleLines = font.split(buttonInfo.getLine1(), maxWidth);
+					int titleY = y + 10;
+
+					for (FormattedCharSequence line : titleLines) {
+						this.drawCenteredStringWithBorder(graphics, line, x + BUTTON_WIDTH / 2, titleY, 0xFFFFFF, 0x000000);
+						titleY += font.lineHeight;
+					}
+
+					List<FormattedCharSequence> descLines = font.split(buttonInfo.getLine2(), maxWidth);
+
+					int descY;
+					int descColor;
+
+					if (menuSlot instanceof KiManipulationMenuSlot) {
+						descY = y + 30;
+						if (titleLines.size() > 1) descY += (titleLines.size() - 1) * font.lineHeight;
+						descColor = statsData.getSkills().isSkillActive("kimanipulation") ? 0x2BFF00 : 0xFF1B00;
+					} else {
+						descY = y + 30;
+						if (titleLines.size() > 1) descY += (titleLines.size() - 1) * font.lineHeight;
+						descColor = buttonInfo.isSelected() ? buttonInfo.getColor() : 0xFF1B00;
+					}
+
+					for (FormattedCharSequence line : descLines) {
+						graphics.drawCenteredString(font, line, x + BUTTON_WIDTH / 2, descY, descColor);
+						descY += font.lineHeight;
+					}
 				}
 			}
 		}
@@ -154,11 +181,16 @@ public class UtilityMenuScreen extends Screen {
 	}
 
 	public void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int color, int borderColor) {
-		graphics.drawString(font, text, x - font.width(text) / 2 - 1, y, borderColor, false);
-		graphics.drawString(font, text, x - font.width(text) / 2 + 1, y, borderColor, false);
-		graphics.drawString(font, text, x - font.width(text) / 2, y - 1, borderColor, false);
-		graphics.drawString(font, text, x - font.width(text) / 2, y + 1, borderColor, false);
-		graphics.drawString(font, text, x - font.width(text) / 2, y, color, false);
+		drawCenteredStringWithBorder(graphics, text.getVisualOrderText(), x, y, color, borderColor);
+	}
+
+	public void drawCenteredStringWithBorder(GuiGraphics graphics, FormattedCharSequence text, int x, int y, int color, int borderColor) {
+		int width = font.width(text);
+		graphics.drawString(font, text, x - width / 2 - 1, y, borderColor, false);
+		graphics.drawString(font, text, x - width / 2 + 1, y, borderColor, false);
+		graphics.drawString(font, text, x - width / 2, y - 1, borderColor, false);
+		graphics.drawString(font, text, x - width / 2, y + 1, borderColor, false);
+		graphics.drawString(font, text, x - width / 2, y, color, false);
 	}
 
 	public static void initMenuSlots() {
@@ -172,7 +204,7 @@ public class UtilityMenuScreen extends Screen {
 
 			// Middle Row
 			MENU_SLOTS.set(6, new EmptyMenuSlot());
-			MENU_SLOTS.set(7, new JumpMenuSlot());
+			MENU_SLOTS.set(7, new SkillsMenuSlot());
 
 			// Bottom Row
 			MENU_SLOTS.set(10, new KiManipulationMenuSlot());

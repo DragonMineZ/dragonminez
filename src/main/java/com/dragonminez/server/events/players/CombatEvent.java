@@ -54,7 +54,7 @@ public class CombatEvent {
 			boolean isPunchMachine = event.getEntity() instanceof PunchMachineEntity;
 
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-				if (!attackerData.getStatus().hasCreatedCharacter()) return;
+				if (!attackerData.getStatus().isHasCreatedCharacter()) return;
 
 				double mcBaseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
@@ -209,7 +209,7 @@ public class CombatEvent {
 		// Victim Defense Event
 		if (event.getEntity() instanceof Player victim) {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
-				if (victimData.getStatus().hasCreatedCharacter()) {
+				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
 					boolean isPvP = source.getEntity() instanceof Player;
 					if (ConfigManager.getServerConfig().getCombat().getKillPlayersOnCombatLogout() && isPvP)
@@ -392,7 +392,7 @@ public class CombatEvent {
 
 	public static void handleDash(ServerPlayer player, float xInput, float zInput, boolean isDoubleDash) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 			if (player.hasEffect(MainEffects.STUN.get())) return;
 
 			if (ComboManager.canTeleport(player.getUUID())) {

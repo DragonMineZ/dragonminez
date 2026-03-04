@@ -19,12 +19,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class MasterEnmaEntity extends MastersEntity {
 
-    public MasterEnmaEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel);
-        this.setPersistenceRequired();
+	public MasterEnmaEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+		super(pEntityType, pLevel);
+		this.setPersistenceRequired();
 		this.lookControl = new LookControl(this) {
 			@Override
-			public void tick() {}
+			public void tick() {
+			}
 		};
 		this.masterName = "enma";
 	}
@@ -34,7 +35,7 @@ public class MasterEnmaEntity extends MastersEntity {
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
 		if (this.level().isClientSide && masterName != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
+				if (data.getStatus().isHasCreatedCharacter()) {
 					Minecraft mc = Minecraft.getInstance();
 					mc.setScreen(new MasterTextScreen(masterName));
 					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());

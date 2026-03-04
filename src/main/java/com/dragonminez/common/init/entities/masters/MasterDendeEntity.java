@@ -29,7 +29,7 @@ public class MasterDendeEntity extends MastersEntity {
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
 		if (this.level().isClientSide && masterName != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
+				if (data.getStatus().isHasCreatedCharacter()) {
 					Minecraft mc = Minecraft.getInstance();
 					mc.setScreen(new MasterTextScreen(masterName));
 					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());

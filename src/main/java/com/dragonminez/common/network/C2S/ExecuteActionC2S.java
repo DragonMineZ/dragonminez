@@ -24,7 +24,8 @@ public class ExecuteActionC2S {
 		CYCLE_STACK_FORM_GROUP,
 		INSTANT_TRANSFORM,
 		TOGGLE_TAIL,
-		TOGGLE_KI_WEAPON
+		TOGGLE_KI_WEAPON,
+		TOGGLE_AURA
 	}
 
 	private final ActionType action;
@@ -185,6 +186,12 @@ public class ExecuteActionC2S {
 										data.getStatus().setKiWeaponType("clawlance");
 									}
 								}
+								needsSync = true;
+							}
+						}
+						case TOGGLE_AURA -> {
+							if (data.getSkills().hasSkill("kicontrol")) {
+								data.getStatus().setPermanentAura(!data.getStatus().isPermanentAura());
 								needsSync = true;
 							}
 						}

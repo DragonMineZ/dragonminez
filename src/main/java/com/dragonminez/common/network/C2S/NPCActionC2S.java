@@ -116,7 +116,7 @@ public class NPCActionC2S {
 			data.getCharacter().clearActiveForm();
 			data.getCharacter().clearActiveStackForm();
 			data.getCharacter().setHasSaiyanTail(true);
-			data.getStatus().setCreatedCharacter(false);
+			data.getStatus().setHasCreatedCharacter(false);
 
 			player.refreshDimensions();
 			player.setHealth(20.0F);

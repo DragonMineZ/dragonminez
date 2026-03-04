@@ -119,12 +119,13 @@ public class ForgeCommonEvents {
 				endFusionIfNeeded(player);
 
 				if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
-					if (data.getStatus().isAlive()) data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
-					if (data.getStatus().hasCreatedCharacter()) data.getStatus().setAlive(false);
+					if (data.getStatus().isAlive())
+						data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
+					if (data.getStatus().isHasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
 					data.getEffects().removeAllEffects();
 					data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
-					} else {
+				} else {
 					data.getEffects().removeAllEffects();
 				}
 
@@ -162,18 +163,18 @@ public class ForgeCommonEvents {
 		}
 	}
 
-    @SubscribeEvent
-    public static void onPlayerAttack(AttackEntityEvent event) {
-        Entity target = event.getTarget();
-        Player attacker = event.getEntity();
-        Level level = attacker.level();
+	@SubscribeEvent
+	public static void onPlayerAttack(AttackEntityEvent event) {
+		Entity target = event.getTarget();
+		Player attacker = event.getEntity();
+		Level level = attacker.level();
 
-        if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-            double x = target.getX();
-            double y = target.getY() + (target.getBbHeight() * 0.65);
-            double z = target.getZ();
+		if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
+			double x = target.getX();
+			double y = target.getY() + (target.getBbHeight() * 0.65);
+			double z = target.getZ();
 
-            float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
+			float[] rgb = ColorUtils.rgbIntToFloat(0xFFFFFF);
 
 			if (target instanceof ServerPlayer targetPlayer) {
 				StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
@@ -185,17 +186,17 @@ public class ForgeCommonEvents {
 				serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0, rgb[0], rgb[1], rgb[2], 1.0);
 			}
 
-            RegistryObject<SoundEvent>[] sonidosGolpe = new RegistryObject[] {
-                    MainSounds.GOLPE1,
-                    MainSounds.GOLPE2,
-                    MainSounds.GOLPE3,
-                    MainSounds.GOLPE4,
-                    MainSounds.GOLPE5,
-                    MainSounds.GOLPE6
-            };
+			RegistryObject<SoundEvent>[] sonidosGolpe = new RegistryObject[]{
+					MainSounds.GOLPE1,
+					MainSounds.GOLPE2,
+					MainSounds.GOLPE3,
+					MainSounds.GOLPE4,
+					MainSounds.GOLPE5,
+					MainSounds.GOLPE6
+			};
 
-            int indiceRandom = level.random.nextInt(sonidosGolpe.length);
-            SoundEvent sonidoElegido = sonidosGolpe[indiceRandom].get();
+			int indiceRandom = level.random.nextInt(sonidosGolpe.length);
+			SoundEvent sonidoElegido = sonidosGolpe[indiceRandom].get();
 
 			if (ComboManager.getCombo(attacker.getUUID()) != 4) {
 				level.playSound(
@@ -205,8 +206,8 @@ public class ForgeCommonEvents {
 						1.0F
 				);
 			}
-        }
-    }
+		}
+	}
 
 	@SubscribeEvent
 	public static void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
@@ -300,61 +301,61 @@ public class ForgeCommonEvents {
 		}
 	}
 
-    @SubscribeEvent
-    public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
+	@SubscribeEvent
+	public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer player)) {
+			return;
+		}
 
-        if (event.getSlot() != EquipmentSlot.CHEST) {
-            return;
-        }
+		if (event.getSlot() != EquipmentSlot.CHEST) {
+			return;
+		}
 
-        ItemStack newStack = event.getTo();
+		ItemStack newStack = event.getTo();
 
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 
-            boolean shouldBeArmored = false;
+			boolean shouldBeArmored = false;
 
-            if (!newStack.isEmpty() && newStack.getItem() instanceof ArmorItem) {
-                boolean isVanilla = ForgeRegistries.ITEMS.getKey(newStack.getItem()).getNamespace().equals("minecraft");
-                boolean isDbzArmor = newStack.getItem() instanceof DbzArmorItem;
+			if (!newStack.isEmpty() && newStack.getItem() instanceof ArmorItem) {
+				boolean isVanilla = ForgeRegistries.ITEMS.getKey(newStack.getItem()).getNamespace().equals("minecraft");
+				boolean isDbzArmor = newStack.getItem() instanceof DbzArmorItem;
 
-                if (!isVanilla && !isDbzArmor) {
-                    shouldBeArmored = true;
-                }
-            }
-            if (stats.getCharacter().getArmored() != shouldBeArmored) {
-                stats.getCharacter().setArmored(shouldBeArmored);
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-            }
-        });
-    }
+				if (!isVanilla && !isDbzArmor) {
+					shouldBeArmored = true;
+				}
+			}
+			if (stats.getCharacter().getArmored() != shouldBeArmored) {
+				stats.getCharacter().setArmored(shouldBeArmored);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			}
+		});
+	}
 
-    @SubscribeEvent
-    public static void onLivingAttack(LivingAttackEvent event) {
-        LivingEntity victim = event.getEntity();
+	@SubscribeEvent
+	public static void onLivingAttack(LivingAttackEvent event) {
+		LivingEntity victim = event.getEntity();
 
-        if (event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-            return;
-        }
+		if (event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+			return;
+		}
 
-        AABB searchArea = victim.getBoundingBox().inflate(3.0D);
-        List<KiBarrierEntity> barriers = victim.level().getEntitiesOfClass(KiBarrierEntity.class, searchArea);
+		AABB searchArea = victim.getBoundingBox().inflate(3.0D);
+		List<KiBarrierEntity> barriers = victim.level().getEntitiesOfClass(KiBarrierEntity.class, searchArea);
 
-        for (KiBarrierEntity barrier : barriers) {
-            if (barrier.getOwner() == victim) {
+		for (KiBarrierEntity barrier : barriers) {
+			if (barrier.getOwner() == victim) {
 
 
-                event.setCanceled(true);
+				event.setCanceled(true);
 
-                victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-                        MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+				victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+						MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
-                return;
-            }
-        }
-    }
+				return;
+			}
+		}
+	}
 
 	public static void endFusionIfNeeded(ServerPlayer player) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {

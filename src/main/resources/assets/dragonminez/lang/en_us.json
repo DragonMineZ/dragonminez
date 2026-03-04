@@ -1346,6 +1346,7 @@
   "skill.dragonminez.racial_bioandroid.desc": "Bio-Androids can drain the life force of their enemies by selecting the skill on the X menu and pressing G, dealing %d%% of their max health as damage and healing themselves for the same amount. This has a %d seconds cooldown.",
   "skill.dragonminez.racial_majin": "Absorption",
   "skill.dragonminez.racial_majin.desc": "Majins can absorb other entities by selecting the skill on the X menu and pressing G. When absorbing, you will regen %d%% of your max health, and will also gain a permanent %d%% (of the target stats) boost to your stats.",
+  "skill.dragonminez.aurastatus": "Aura Status",
   "//": "ADVANCEMENTS",
   "advancements.dragonminez.root.title": "DragonMine Z",
   "advancements.dragonminez.root.description": "Thank you for downloading the Mod, hope you enjoy it!",

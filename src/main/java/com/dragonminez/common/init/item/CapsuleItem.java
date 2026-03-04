@@ -46,7 +46,7 @@ public class CapsuleItem extends Item {
 
 		if (!pLevel.isClientSide) {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
+				if (data.getStatus().isHasCreatedCharacter()) {
 					String statName = capsuleType.getStatName();
 					int maxStat = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
 					int currentStat = getCurrentStat(data, statName);

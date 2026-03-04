@@ -15,18 +15,19 @@ import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
-    public DMZAuraLayer(GeoRenderer<T> entityRendererIn) {
-        super(entityRendererIn);
-    }
+	public DMZAuraLayer(GeoRenderer<T> entityRendererIn) {
+		super(entityRendererIn);
+	}
 
-    @Override
-    public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        if (animatable.isSpectator()) return;
-        var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+	@Override
+	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		if (animatable.isSpectator()) return;
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 
-        if (stats == null || !stats.getStatus().isAuraActive()) return;
-		if (stats.getStatus().isAndroidUpgraded() && (!stats.getStatus().isActionCharging() || !stats.getStatus().getSelectedAction().equals(ActionMode.FORM))) return;
+		if (stats == null || (!stats.getStatus().isAuraActive() && !stats.getStatus().isPermanentAura())) return;
+		if (stats.getStatus().isAndroidUpgraded() && (!stats.getStatus().isActionCharging() || !stats.getStatus().getSelectedAction().equals(ActionMode.FORM)))
+			return;
 		AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
-        AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
-    }
+		AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
+	}
 }
