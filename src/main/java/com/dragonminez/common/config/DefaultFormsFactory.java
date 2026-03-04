@@ -360,7 +360,8 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fusedAndroid = new FormConfig.FormData();
 		fusedAndroid.setName(HumanForms.FUSED_ANDROID);
 		fusedAndroid.setUnlockOnSkillLevel(2);
-		fusedAndroid.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
+        fusedAndroid.setCustomModel("buffed");
+        fusedAndroid.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
 		fusedAndroid.setStrMultiplier(2.85);
 		fusedAndroid.setSkpMultiplier(2.65);
 		fusedAndroid.setDefMultiplier(2.15);
