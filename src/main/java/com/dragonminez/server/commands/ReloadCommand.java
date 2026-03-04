@@ -44,7 +44,8 @@ public class ReloadCommand {
 								ConfigManager.getSkillsConfig(),
 								ConfigManager.getAllForms(),
 								ConfigManager.getAllRaceStats(),
-								ConfigManager.getAllRaceCharacters()
+								ConfigManager.getAllRaceCharacters(),
+								ConfigManager.getAllStackForms()
 						), player
 				);
 				NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), player);

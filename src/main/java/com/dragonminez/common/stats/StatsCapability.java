@@ -6,10 +6,8 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncSagasS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
-import com.dragonminez.common.network.S2C.SyncSideQuestsS2C;
 import com.dragonminez.common.quest.QuestData;
 import com.dragonminez.common.quest.SagaManager;
-import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -60,7 +58,8 @@ public class StatsCapability {
 							ConfigManager.getSkillsConfig(),
 							ConfigManager.getAllForms(),
 							ConfigManager.getAllRaceStats(),
-							ConfigManager.getAllRaceCharacters()
+							ConfigManager.getAllRaceCharacters(),
+							ConfigManager.getAllStackForms()
 					), serverPlayer
 			);
 			NetworkHandler.sendToPlayer(

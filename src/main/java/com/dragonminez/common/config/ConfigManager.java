@@ -42,6 +42,7 @@ public class ConfigManager {
 	private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
 	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
+	private static Map<String, FormConfig> SERVER_SYNCED_STACK_FORMS;
 
 	private static GeneralUserConfig userConfig;
 	private static GeneralServerConfig serverConfig;
@@ -79,6 +80,7 @@ public class ConfigManager {
 
 			loadGeneralConfigs();
 			loadAllRaces();
+			createOrLoadStackForms(true);
 			LogUtil.info(Env.COMMON, "Configuration system reloaded successfully");
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Error reloading configuration system: {}", e.getMessage());
@@ -814,12 +816,13 @@ public class ConfigManager {
 		}
 	}
 
-	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters) {
+	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters, Map<String, FormConfig> syncedStackForms) {
 		SERVER_SYNCED_GENERAL_SERVER = syncedServerConfig;
 		SERVER_SYNCED_SKILLS = syncedSkillsConfig;
 		SERVER_SYNCED_FORMS = syncedForms;
 		SERVER_SYNCED_STATS = syncedStats;
 		SERVER_SYNCED_CHARACTER = syncedCharacters;
+		SERVER_SYNCED_STACK_FORMS = syncedStackForms;
 	}
 
 	public static void clearServerSync() {
@@ -828,6 +831,7 @@ public class ConfigManager {
 		SERVER_SYNCED_FORMS = null;
 		SERVER_SYNCED_STATS = null;
 		SERVER_SYNCED_CHARACTER = null;
+		SERVER_SYNCED_STACK_FORMS = null;
 	}
 
 	public static Map<String, RaceStatsConfig> getAllRaceStats() {
@@ -854,7 +858,9 @@ public class ConfigManager {
 
 	public static FormConfig getStackFormGroup(String groupName) {
 		Map<String, FormConfig> stackForms = getAllStackForms();
-		if (stackForms != null) return stackForms.get(groupName.toLowerCase());
+		if (stackForms != null) {
+			return stackForms.get(groupName.toLowerCase());
+		}
 		return null;
 	}
 
@@ -875,6 +881,7 @@ public class ConfigManager {
 	}
 
 	public static Map<String, FormConfig> getAllStackForms() {
+		if (SERVER_SYNCED_STACK_FORMS != null) return SERVER_SYNCED_STACK_FORMS;
 		return STACK_FORMS;
 	}
 

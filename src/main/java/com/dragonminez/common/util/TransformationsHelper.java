@@ -180,14 +180,9 @@ public class TransformationsHelper {
 				statsData.getCharacter().getActiveStackFormGroup() :
 				statsData.getCharacter().getSelectedStackFormGroup();
 
-		if (group == null || group.isEmpty()) {
-			return null;
-		}
-
+		if (group == null || group.isEmpty()) return null;
 		FormConfig config = ConfigManager.getStackFormGroup(group);
-		if (config == null) {
-			return null;
-		}
+		if (config == null) return null;
 
 		String currentFormName = statsData.getCharacter().getActiveStackForm();
 		String nextFormName;

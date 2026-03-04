@@ -46,7 +46,7 @@ public class MasterTextScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		int buttonX = this.width / 2 - 105;
+		int buttonX = this.width / 2 - 120;
 		int buttonY = this.height - 23;
 
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
@@ -83,7 +83,7 @@ public class MasterTextScreen extends Screen {
 
 		if (!stats.getCooldowns().hasCooldown(Cooldowns.SENZU_KARIN)) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -134,7 +134,7 @@ public class MasterTextScreen extends Screen {
 
 		if (ConfigManager.getRaceCharacter(stats.getCharacter().getRace()).getHasSaiyanTail()) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 75, y)
+					.position(x + 90, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -148,7 +148,7 @@ public class MasterTextScreen extends Screen {
 		}
 
 		this.addRenderableWidget(new TexturedTextButton.Builder()
-				.position(x + 150, y)
+				.position(x + 180, y)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -222,7 +222,7 @@ public class MasterTextScreen extends Screen {
 					})
 					.build());
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -272,7 +272,7 @@ public class MasterTextScreen extends Screen {
 	private void initGero(int x, int y, StatsData stats) {
 		if (thirdFunc) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -300,7 +300,7 @@ public class MasterTextScreen extends Screen {
 					.build());
 		} else if (secondFunc) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -328,7 +328,7 @@ public class MasterTextScreen extends Screen {
 					.build());
 		} else {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
