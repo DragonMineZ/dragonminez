@@ -38,6 +38,21 @@ public class FormModeHandler implements IActionModeHandler {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);
 		if (nextForm == null) return;
 
+		if (data.getCharacter().hasActiveStackForm()) {
+			FormConfig.FormData activeStackData = data.getCharacter().getActiveStackFormData();
+
+			if (activeStackData != null) {
+				boolean isFormStackable = nextForm.getFormStackable();
+				boolean isStackStackable = activeStackData.getFormStackable();
+
+				if (!isFormStackable || !isStackStackable) {
+					data.getCharacter().clearActiveStackForm();
+					player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
+					player.sendSystemMessage(Component.translatable("message.dragonminez.form.stack_removed"));
+				}
+			}
+		}
+
 		int energyCost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
 		int staminaCost = (int) (data.getMaxStamina() * nextForm.getStaminaDrain());
 		int healthCost = (int) (data.getMaxHealth() * nextForm.getHealthDrain());

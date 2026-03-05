@@ -338,6 +338,8 @@
   "message.dragonminez.form.no_stamina": "§cYou need at least %s §cStamina to transform.",
   "message.dragonminez.form.no_health_instant": "§cYou need at least %s §cHP to transform instantly.",
   "message.dragonminez.form.no_health": "§cYou need at least %s §cHP to transform.",
+  "message.dragonminez.form.stack_removed": "§cYour stack form has been removed, you cannot stack it with this form.",
+  "message.dragonminez.form.not_stackable": "§cThis form cannot be stacked with your current stack form.",
   "race.dragonminez.base": "Base",
   "race.dragonminez.human.group.superforms": "Super",
   "race.dragonminez.human.form.superforms.buffed": "Buffed",
