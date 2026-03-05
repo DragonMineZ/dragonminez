@@ -77,7 +77,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 		this.renderKiWeapon(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, HumanoidArm.RIGHT);
 
-		if (stats.getStatus().isAuraActive() && !stats.getStatus().isAndroidUpgraded())
+		if ((stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura()) && !stats.getStatus().isAndroidUpgraded())
 			queueFirstPersonAura(pPlayer, pPoseStack, pCombinedLight);
 	}
 
