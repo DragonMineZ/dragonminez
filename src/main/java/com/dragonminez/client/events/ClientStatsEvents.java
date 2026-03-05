@@ -20,6 +20,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
@@ -265,5 +266,10 @@ public class ClientStatsEvents {
 				}
 			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+		StatsCapability.clearClientCache();
 	}
 }

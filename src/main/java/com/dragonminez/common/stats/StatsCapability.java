@@ -26,6 +26,12 @@ public class StatsCapability {
 	public static final Capability<StatsData> INSTANCE = CapabilityManager.get(new CapabilityToken<>() {
 	});
 
+	private static StatsData CLIENT_CACHE;
+
+	public static void clearClientCache() {
+		CLIENT_CACHE = null;
+	}
+
 	@SubscribeEvent
 	public static void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
 		event.register(StatsData.class);
@@ -45,7 +51,21 @@ public class StatsCapability {
 		Player player = event.getEntity();
 		Player original = event.getOriginal();
 		original.reviveCaps();
-		StatsProvider.get(INSTANCE, player).ifPresent(newData -> StatsProvider.get(INSTANCE, original).ifPresent(newData::copyFrom));
+
+		StatsProvider.get(INSTANCE, player).ifPresent(newData -> {
+			StatsProvider.get(INSTANCE, original).ifPresent(oldData -> {
+				newData.copyFrom(oldData);
+
+				if (player.level().isClientSide) {
+					if (oldData.getStatus().isHasCreatedCharacter()) {
+						CLIENT_CACHE = oldData;
+					} else if (CLIENT_CACHE != null) {
+						newData.copyFrom(CLIENT_CACHE);
+					}
+				}
+			});
+		});
+
 		original.invalidateCaps();
 	}
 

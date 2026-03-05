@@ -6,6 +6,7 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.quest.QuestData;
 import com.dragonminez.common.quest.sidequest.SideQuestData;
 import com.dragonminez.common.util.TransformationsHelper;
+import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import java.util.Collection;
 import java.util.List;
 
+@Getter
 public class StatsData {
 	private final Player player;
 	private final Stats stats;
@@ -28,6 +30,7 @@ public class StatsData {
 	private final Training training;
 
 	private boolean hasInitializedHealth = false;
+	private boolean isDataLoaded = false;
 
 	public StatsData(Player player) {
 		this.player = player;
@@ -44,54 +47,6 @@ public class StatsData {
 		this.sideQuestData = new SideQuestData();
 		this.bonusStats = new BonusStats();
 		this.training = new Training();
-	}
-
-	public Stats getStats() {
-		return stats;
-	}
-
-	public Status getStatus() {
-		return status;
-	}
-
-	public Cooldowns getCooldowns() {
-		return cooldowns;
-	}
-
-	public Character getCharacter() {
-		return character;
-	}
-
-	public Resources getResources() {
-		return resources;
-	}
-
-	public Skills getSkills() {
-		return skills;
-	}
-
-	public Effects getEffects() {
-		return effects;
-	}
-
-	public QuestData getQuestData() {
-		return questData;
-	}
-
-	public SideQuestData getSideQuestData() {
-		return sideQuestData;
-	}
-
-	public BonusStats getBonusStats() {
-		return bonusStats;
-	}
-
-	public Training getTraining() {
-		return training;
-	}
-
-	public Player getPlayer() {
-		return player;
 	}
 
 	public boolean hasInitializedHealth() {
@@ -654,10 +609,10 @@ public class StatsData {
 		if (nbt.contains("HasInitializedHealth")) {
 			hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		}
-
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
 			updateTransformationSkillLimits(character.getRaceName());
 		}
+		this.isDataLoaded = true;
 	}
 
 	public void copyFrom(StatsData other) {
@@ -673,9 +628,8 @@ public class StatsData {
 		this.bonusStats.copyFrom(other.bonusStats);
 		this.training.copyFrom(other.training);
 		this.hasInitializedHealth = other.hasInitializedHealth;
-
-		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
 			updateTransformationSkillLimits(character.getRaceName());
-		}
+		this.isDataLoaded = true;
 	}
 }
