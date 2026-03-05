@@ -186,18 +186,6 @@ public class NetworkHandler {
                 .consumerMainThread(SyncServerConfigS2C::handle)
                 .add();
 
-		net.messageBuilder(SyncSagasS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-				.decoder(SyncSagasS2C::new)
-				.encoder(SyncSagasS2C::encode)
-				.consumerMainThread(SyncSagasS2C::handle)
-				.add();
-
-		net.messageBuilder(SyncSideQuestsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-				.decoder(SyncSideQuestsS2C::new)
-				.encoder(SyncSideQuestsS2C::encode)
-				.consumerMainThread(SyncSideQuestsS2C::handle)
-				.add();
-
 		net.messageBuilder(OpenQuestNPCDialogueS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(OpenQuestNPCDialogueS2C::new)
 				.encoder(OpenQuestNPCDialogueS2C::encode)
@@ -208,6 +196,12 @@ public class NetworkHandler {
 				.decoder(SyncWishesS2C::new)
 				.encoder(SyncWishesS2C::encode)
 				.consumerMainThread(SyncWishesS2C::handle)
+				.add();
+
+		net.messageBuilder(SyncQuestRegistryS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncQuestRegistryS2C::new)
+				.encoder(SyncQuestRegistryS2C::encode)
+				.consumerMainThread(SyncQuestRegistryS2C::handle)
 				.add();
 
 		net.messageBuilder(RadarSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)

@@ -3,10 +3,10 @@ package com.dragonminez.common.init.entities.questnpc;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
-import com.dragonminez.common.quest.sidequest.SideQuest;
-import com.dragonminez.common.quest.sidequest.SideQuestData;
-import com.dragonminez.common.quest.sidequest.SideQuestManager;
-import com.dragonminez.common.quest.sidequest.QuestAvailabilityChecker;
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestAvailabilityChecker;
+import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -160,19 +160,19 @@ public class QuestNPCEntity extends MastersEntity {
 	 */
 	private static void collectNPCQuests(String npcId, StatsData data,
 										 List<String> offerable, List<String> turnIn, List<String> inProgress) {
-		SideQuestData sqData = data.getSideQuestData();
-		Map<String, SideQuest> allQuests = SideQuestManager.getAllSideQuests();
+		PlayerQuestData pqd = data.getPlayerQuestData();
+		Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
 
-		List<String> giverQuestIds = SideQuestManager.getQuestIdsByGiver(npcId);
+		List<String> giverQuestIds = QuestRegistry.getQuestIdsByGiver(npcId);
 
 		// Quests this NPC gives
 		for (String questId : giverQuestIds) {
-			SideQuest quest = allQuests.get(questId);
+			Quest quest = allQuests.get(questId);
 			if (quest == null) continue;
 
-			if (sqData.isQuestCompleted(questId)) continue;
+			if (pqd.isQuestCompleted(questId)) continue;
 
-			if (sqData.isQuestAccepted(questId)) {
+			if (pqd.isQuestAccepted(questId)) {
 				inProgress.add(questId);
 			} else if (QuestAvailabilityChecker.isAvailable(quest, data)) {
 				offerable.add(questId);
@@ -180,20 +180,20 @@ public class QuestNPCEntity extends MastersEntity {
 		}
 
 		// Quests where this NPC is the turn-in target
-		List<String> turnInQuestIds = SideQuestManager.getQuestIdsByTurnIn(npcId);
+		List<String> turnInQuestIds = QuestRegistry.getQuestIdsByTurnIn(npcId);
 		for (String questId : turnInQuestIds) {
-			SideQuest quest = allQuests.get(questId);
+			Quest quest = allQuests.get(questId);
 			if (quest == null) continue;
 
-			if (!sqData.isQuestAccepted(questId)) continue;
-			if (sqData.isQuestCompleted(questId)) continue;
+			if (!pqd.isQuestAccepted(questId)) continue;
+			if (pqd.isQuestCompleted(questId)) continue;
 
 			// Check if all non-TALK_TO objectives are complete
 			boolean allNonTalkDone = true;
 			for (int i = 0; i < quest.getObjectives().size(); i++) {
 				var obj = quest.getObjectives().get(i);
 				if (obj.getType() == com.dragonminez.common.quest.QuestObjective.ObjectiveType.TALK_TO) continue;
-				int progress = sqData.getObjectiveProgress(questId, i);
+				int progress = pqd.getObjectiveProgress(questId, i);
 				if (progress < obj.getRequired()) {
 					allNonTalkDone = false;
 					break;
