@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
+import com.dragonminez.client.gui.TrainingScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
@@ -34,8 +35,10 @@ public class ClientStatsEvents {
 	private static FlightSoundInstance flightSound;
 
 	private static int transformDoubleTapTimer = 0;
+	private static int kiChargeDoubleTapTimer = 0;
 	private static int kiBlastTimer = 0;
 	private static boolean wasTransformKeyDown = false;
+	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
 	private static boolean wasDashKeyDown = false;
 	private static boolean wasRightClickDown = false;
@@ -124,11 +127,17 @@ public class ClientStatsEvents {
 				if (transformDoubleTapTimer > 0) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
 					transformDoubleTapTimer = 0;
-				} else {
-					transformDoubleTapTimer = 20;
-				}
+				} else transformDoubleTapTimer = 10;
 			}
 			wasTransformKeyDown = isActionKeyPressed;
+
+			if (isKiChargeKeyPressed && !wasKiChargeKeyDown) {
+				if (kiChargeDoubleTapTimer > 0) {
+					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_RELEASE));
+					kiChargeDoubleTapTimer = 0;
+				} else kiChargeDoubleTapTimer = 10;
+			}
+			wasKiChargeKeyDown = isKiChargeKeyPressed;
 
 			if (isKiChargeKeyPressed != data.getStatus().isChargingKi()) {
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.CHARGE_KI, isKiChargeKeyPressed));
@@ -175,6 +184,13 @@ public class ClientStatsEvents {
 			if (hasScouter) {
 				if (ScouterHUD.getScouterColor() != player.getItemBySlot(EquipmentSlot.HEAD).getItem())
 					ScouterHUD.setScouterColor(player.getItemBySlot(EquipmentSlot.HEAD).getItem());
+			}
+
+			if (!(mc.screen instanceof TrainingScreen)) {
+				if (!data.getTraining().getCurrentTrainingStat().isEmpty()) {
+					data.getTraining().setCurrentTrainingStat("");
+					NetworkHandler.sendToServer(new TrainingRewardC2S(TrainingRewardC2S.TrainStat.NONE, -1));
+				}
 			}
 		});
 	}

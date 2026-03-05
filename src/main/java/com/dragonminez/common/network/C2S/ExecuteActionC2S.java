@@ -25,7 +25,8 @@ public class ExecuteActionC2S {
 		INSTANT_TRANSFORM,
 		TOGGLE_TAIL,
 		TOGGLE_KI_WEAPON,
-		TOGGLE_AURA
+		TOGGLE_AURA,
+		INSTANT_RELEASE
 	}
 
 	private final ActionType action;
@@ -144,6 +145,23 @@ public class ExecuteActionC2S {
 							data.getStatus().setSelectedAction(ActionMode.STACK);
 							TransformationsHelper.cycleSelectedStackFormGroup(data, rightClick);
 							needsSync = true;
+						}
+						case INSTANT_RELEASE -> {
+							int potentialUnlockLevel = data.getSkills().hasSkill("potentialunlock") ? data.getSkills().getSkillLevel("potentialunlock") : 0;
+							int maxRelease = 50 + (potentialUnlockLevel * 5);
+							int currentRelease = data.getResources().getPowerRelease();
+
+							if (currentRelease < maxRelease) {
+								int amountToIncrease = maxRelease - currentRelease;
+								double percentageCost = (amountToIncrease / 5.0) * 0.01;
+								int energyCost = (int) (data.getMaxEnergy() * percentageCost);
+
+								if (data.getResources().getCurrentEnergy() >= energyCost) {
+									data.getResources().removeEnergy(energyCost);
+									data.getResources().setPowerRelease(maxRelease);
+									needsSync = true;
+								}
+							}
 						}
 						case INSTANT_TRANSFORM -> {
 							FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableForm(data);

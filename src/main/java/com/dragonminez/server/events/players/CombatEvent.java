@@ -164,19 +164,19 @@ public class CombatEvent {
 					int kiCost = 0;
 					switch (weaponType.toLowerCase()) {
 						case "blade" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
+							kiCost = (int) Math.round(ConfigManager.getServerConfig().getCombat().getBaselineFormDrain() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
 								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[0];
 							}
 						}
 						case "scythe" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
+							kiCost = (int) Math.round(ConfigManager.getServerConfig().getCombat().getBaselineFormDrain() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
 								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[0];
 							}
 						}
 						case "clawlance" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
+							kiCost = (int) Math.round(ConfigManager.getServerConfig().getCombat().getBaselineFormDrain() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
 								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[0];
 							}
@@ -456,16 +456,16 @@ public class CombatEvent {
 			double speedMultiplier = player.getAttributeValue(Attributes.MOVEMENT_SPEED) / 0.1;
 			double distance = baseDistance * speedMultiplier;
 
-			int maxEnergy = data.getMaxEnergy();
+			int baseDrain = ConfigManager.getServerConfig().getCombat().getBaselineFormDrain();
 			int kiCost;
 			DMZEvent.PlayerDashEvent.DashType dashType;
 
 			if (canDoubleDash) {
 				distance = distance * 1.5;
-				kiCost = (int) Math.ceil(maxEnergy * 0.25);
+				kiCost = (int) Math.ceil(baseDrain * 0.25);
 				dashType = DMZEvent.PlayerDashEvent.DashType.DOUBLE;
 			} else {
-				kiCost = (int) Math.ceil(maxEnergy * 0.12);
+				kiCost = (int) Math.ceil(baseDrain * 0.12);
 				dashType = DMZEvent.PlayerDashEvent.DashType.NORMAL;
 			}
 
