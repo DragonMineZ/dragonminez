@@ -671,11 +671,28 @@ public class AuraRenderHandler {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return;
 		var character = stats.getCharacter();
-		var formData = character.getActiveFormData();
-		if (!stats.getCharacter().hasActiveForm() || formData == null) return;
-		if (!formData.getHasLightnings()) return;
-		float[] color = ColorUtils.hexToRgb(formData.getLightningColor());
 
+		boolean hasLightning = false;
+		String lightningColor = "";
+
+		if (character.hasActiveStackForm()) {
+			var stackData = character.getActiveStackFormData();
+			if (stackData != null && stackData.getHasLightnings()) {
+				hasLightning = true;
+				lightningColor = stackData.getLightningColor();
+			}
+		}
+
+		if (!hasLightning && character.hasActiveForm()) {
+			var formData = character.getActiveFormData();
+			if (formData != null && formData.getHasLightnings()) {
+				hasLightning = true;
+				lightningColor = formData.getLightningColor();
+			}
+		}
+
+		if (!hasLightning) return;
+		float[] color = ColorUtils.hexToRgb(lightningColor);
 		float[] scales = getAuraScale(stats);
 
 		syncModelToPlayer(sparkModel, entry.playerModel());
