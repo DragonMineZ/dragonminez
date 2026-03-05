@@ -438,6 +438,7 @@ public class TickHandler {
 				data.getResources().removeEnergy(energyDrain);
 				data.getResources().removeStamina(staminaDrain);
 				if ((player.getHealth() - healthDrain) >= 1.0) {
+					System.out.println("[TICK HANDLER]: Draining " + healthDrain + " health for active form. Current health: " + player.getHealth());
 					player.setHealth((float) (player.getHealth() - healthDrain));
 				} else {
 					player.setHealth(1.0f);
