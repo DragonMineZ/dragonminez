@@ -513,8 +513,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			return;
 		}
 
-		renderCustomFace(model, poseStack, animatable, bufferSource, character, faceKey, eye1, eye2, skin, hair, pt, pl, po, alpha);
-
+		renderCustomFace(model, poseStack, animatable, bufferSource, character, race, eye1, eye2, skin, hair, pt, pl, po, alpha);
 
 		switch (race) {
 			case "human", "saiyan" ->
