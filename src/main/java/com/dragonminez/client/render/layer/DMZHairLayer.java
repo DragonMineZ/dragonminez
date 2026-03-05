@@ -65,13 +65,13 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		CustomHair hairFrom = character.getHairBase();
 		String colorFrom = character.getHairColor();
 
-		if (character.hasActiveForm()) {
+		if (character.hasActiveStackForm()) {
+			hairFrom = getHairForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm());
+			colorFrom = getColorForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm());
+		} else if (character.hasActiveForm()) {
 			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			colorFrom = getColorForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			if (character.getActiveForm().toLowerCase().contains("oozaru")) return;
-		} else if (character.hasActiveStackForm()) {
-			hairFrom = getHairForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm());
-			colorFrom = getColorForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm());
 		}
 
 		CustomHair hairTo = hairFrom;
@@ -88,19 +88,19 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			CustomHair targetHair = null;
 			String targetColor = null;
 
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				targetGroup = character.getSelectedFormGroup();
-				nextForm = TransformationsHelper.getNextAvailableForm(stats);
-				if (nextForm != null) {
-					targetHair = getHairForForm(character, targetGroup, nextForm.getName());
-					targetColor = getColorForForm(character, targetGroup, nextForm.getName());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+			if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 				targetGroup = character.getSelectedStackFormGroup();
 				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
 				if (nextForm != null) {
 					targetHair = getHairForStackForm(character, targetGroup, nextForm.getName());
 					targetColor = getColorForStackForm(character, targetGroup, nextForm.getName());
+				}
+			} else if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+				targetGroup = character.getSelectedFormGroup();
+				nextForm = TransformationsHelper.getNextAvailableForm(stats);
+				if (nextForm != null) {
+					targetHair = getHairForForm(character, targetGroup, nextForm.getName());
+					targetColor = getColorForForm(character, targetGroup, nextForm.getName());
 				}
 			}
 
