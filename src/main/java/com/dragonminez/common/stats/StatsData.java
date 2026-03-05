@@ -179,7 +179,7 @@ public class StatsData {
 		double bonusRes = bonusStats.calculateBonus("RES", stats.getResistance());
 		double armor = player.getArmorValue();
 		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
-		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.75 + toughness;
+		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.5 + toughness * 0.8;
 	}
 
 	public double getDefense() {
@@ -189,7 +189,7 @@ public class StatsData {
 		double bonusRes = bonusStats.calculateBonus("RES", stats.getResistance());
 		double armor = player.getArmorValue();
 		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
-		return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
+		return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.5) + toughness * 0.8) * releaseMultiplier;
 	}
 
 	public double getTotalMultiplier(String statName) {
