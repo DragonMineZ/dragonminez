@@ -73,8 +73,8 @@ public class StartQuestC2S {
 							for (int j = 0; j < remaining; j++) {
 								Entity entity = entityType.create(player.level());
 								if (entity != null) {
-									double offsetX = (Math.random() - 0.5) * 2.0;
-									double offsetZ = (Math.random() - 0.5) * 2.0;
+									double offsetX = (Math.random() - 0.5) * 8.0;
+									double offsetZ = (Math.random() - 0.5) * 8.0;
 									entity.setPos(player.getX() + offsetX, player.getY(), player.getZ() + offsetZ);
 
 									if (isHardMode) entity.getPersistentData().putBoolean("dmz_is_hardmode", true);
