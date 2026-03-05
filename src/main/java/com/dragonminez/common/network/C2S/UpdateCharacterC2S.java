@@ -47,11 +47,32 @@ public class UpdateCharacterC2S {
 		this.auraColor = character.getAuraColor();
 	}
 
+	public UpdateCharacterC2S(String className, int hairId, CustomHair customHair, int bodyType, int eyesType,
+							  int noseType, int mouthType, int tattooType, String hairColor, String bodyColor,
+							  String bodyColor2, String bodyColor3, String eye1Color, String eye2Color, String auraColor) {
+		this.className = className;
+		this.hairId = hairId;
+		this.customHair = customHair;
+		this.bodyType = bodyType;
+		this.eyesType = eyesType;
+		this.noseType = noseType;
+		this.mouthType = mouthType;
+		this.tattooType = tattooType;
+		this.hairColor = hairColor;
+		this.bodyColor = bodyColor;
+		this.bodyColor2 = bodyColor2;
+		this.bodyColor3 = bodyColor3;
+		this.eye1Color = eye1Color;
+		this.eye2Color = eye2Color;
+		this.auraColor = auraColor;
+	}
+
 	public static void encode(UpdateCharacterC2S msg, FriendlyByteBuf buf) {
 		buf.writeUtf(msg.className);
 		buf.writeInt(msg.hairId);
-		buf.writeBoolean(msg.customHair != null);
-		if (msg.customHair != null) msg.customHair.writeToBuffer(buf);
+		boolean hasCustomHair = msg.customHair != null;
+		buf.writeBoolean(hasCustomHair);
+		if (hasCustomHair) msg.customHair.writeToBuffer(buf);
 		buf.writeInt(msg.bodyType);
 		buf.writeInt(msg.eyesType);
 		buf.writeInt(msg.noseType);
@@ -69,10 +90,28 @@ public class UpdateCharacterC2S {
 	public static UpdateCharacterC2S decode(FriendlyByteBuf buf) {
 		String className = buf.readUtf();
 		int hairId = buf.readInt();
-		CustomHair customHair = buf.readBoolean() ? CustomHair.readFromBuffer(buf) : null;
-		return new UpdateCharacterC2S(className, hairId, customHair, buf.readInt(), buf.readInt(), buf.readInt(),
-				buf.readInt(), buf.readInt(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(),
-				buf.readUtf(), buf.readUtf(), buf.readUtf());
+		CustomHair customHair = null;
+		if (buf.readBoolean()) {
+			customHair = CustomHair.readFromBuffer(buf);
+		}
+
+		return new UpdateCharacterC2S(
+				className,
+				hairId,
+				customHair,
+				buf.readInt(),
+				buf.readInt(),
+				buf.readInt(),
+				buf.readInt(),
+				buf.readInt(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf()
+		);
 	}
 
 	public static void handle(UpdateCharacterC2S msg, Supplier<NetworkEvent.Context> ctx) {
@@ -97,7 +136,7 @@ public class UpdateCharacterC2S {
 				c.setEye1Color(msg.eye1Color);
 				c.setEye2Color(msg.eye2Color);
 				c.setAuraColor(msg.auraColor);
-
+				player.refreshDimensions();
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		});
