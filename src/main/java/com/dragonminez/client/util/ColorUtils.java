@@ -135,5 +135,22 @@ public class ColorUtils {
 
 		return (r << 16) | (g << 8) | b;
 	}
+
+    public static float[] lightenColor(float[] color, float whiteness) {
+        return new float[]{
+                color[0] + (1.0f - color[0]) * whiteness,
+                color[1] + (1.0f - color[1]) * whiteness,
+                color[2] + (1.0f - color[2]) * whiteness
+        };
+    }
+
+    public static float[] darkenColor(float[] color, float darkness) {
+        return new float[]{
+                color[0] * (1.0f - darkness),
+                color[1] * (1.0f - darkness),
+                color[2] * (1.0f - darkness)
+        };
+    }
+
 }
 

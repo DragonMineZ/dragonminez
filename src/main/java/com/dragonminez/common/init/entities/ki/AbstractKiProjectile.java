@@ -11,6 +11,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class AbstractKiProjectile extends Projectile {
 
     private static final EntityDataAccessor<Integer> COLOR_MAIN = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
@@ -18,6 +21,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final EntityDataAccessor<Float> DAMAGE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SIZE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SPEED = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
+
+    //0 = Small, 1 = Blast, 2 = Large Blast
+    private static final EntityDataAccessor<Integer> KI_BALL_RENDER_TYPE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
+
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -55,6 +62,8 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.entityData.define(DAMAGE, 5.0f);
         this.entityData.define(SIZE, 1.0f);
         this.entityData.define(SPEED, 1.0f);
+
+        this.entityData.define(KI_BALL_RENDER_TYPE, 1);
     }
     @Override
     public void tick() {
@@ -73,6 +82,7 @@ public abstract class AbstractKiProjectile extends Projectile {
                 this.onHit(hitResult);
             }
         }
+
 
         this.onKiTick();
 
@@ -96,6 +106,10 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public void setKiSpeed(float speed) { this.entityData.set(SPEED, speed); }
     public float getKiSpeed() { return this.entityData.get(SPEED); }
+
+    public void setKiRenderType(int type) {this.entityData.set(KI_BALL_RENDER_TYPE, type);}
+
+    public int getKiRenderType() {return this.entityData.get(KI_BALL_RENDER_TYPE);}
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {

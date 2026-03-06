@@ -44,6 +44,71 @@ public class KiBlastEntity extends AbstractKiProjectile {
 		);
 	}
 
+    public void setupKiSmall(LivingEntity owner, float damage, float speed, int color) {
+        this.setOwner(owner);
+        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setKiRenderType(0); //SmallBall
+        this.setSize(0.2F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(color, color);
+
+    }
+
+    public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupKiBlast(owner,damage, speed, color, color, size);
+    }
+
+    public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setOwner(owner);
+        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setKiRenderType(1); //Blast normal
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+    }
+
+    public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupKiLargeBlast(owner, damage, speed, color, color, size);
+    }
+
+    public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setOwner(owner);
+        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setKiRenderType(2); //Large Blast
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+    }
+
+    public void setupInvertedKiBlast(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupInvertedKiBlast(owner,damage, speed, color, color, size);
+    }
+
+    public void setupInvertedKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setOwner(owner);
+        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setKiRenderType(3); //Blast normal
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+    }
+
+    public void setupKiSouls(LivingEntity owner, float damage, float speed, int color) {
+        this.setOwner(owner);
+        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setKiRenderType(4); //Castigador de almas
+        this.setSize(0.4F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(color, color);
+    }
+
+
+
 	@Override
 	protected void onKiTick() {
 
@@ -63,41 +128,41 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
 			float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
 
-			for (int i = 0; i < 10; i++) {
-
-				double offsetX = (this.random.nextDouble() - 1.0D) * this.getBbWidth();
-				double offsetY = (this.random.nextDouble() - 1.0D) * this.getBbHeight();
-				double offsetZ = (this.random.nextDouble() - 1.0D) * this.getBbWidth();
-
-				this.level().addParticle(
-						MainParticles.KI_TRAIL.get(),
-						this.getX() + offsetX,
-						this.getY() + (this.getBbHeight() / 2.0) + offsetY,
-						this.getZ() + offsetZ,
-						rgb[0], rgb[1], rgb[2]
-				);
-			}
+//			for (int i = 0; i < 10; i++) {
+//
+//				double offsetX = (this.random.nextDouble() - 1.0D) * this.getBbWidth();
+//				double offsetY = (this.random.nextDouble() - 1.0D) * this.getBbHeight();
+//				double offsetZ = (this.random.nextDouble() - 1.0D) * this.getBbWidth();
+//
+//				this.level().addParticle(
+//						MainParticles.KI_TRAIL.get(),
+//						this.getX() + offsetX,
+//						this.getY() + (this.getBbHeight() / 2.0) + offsetY,
+//						this.getZ() + offsetZ,
+//						rgb[0], rgb[1], rgb[2]
+//				);
+//			}
 		}
 
 		if (this.level().isClientSide && !hasSpawnedSplash) {
 
 			float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
 
-			this.level().addParticle(
-					MainParticles.KI_SPLASH.get(),
-					this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(),
-					rgb[0], rgb[1], rgb[2]
-			);
+//			this.level().addParticle(
+//					MainParticles.KI_SPLASH.get(),
+//					this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(),
+//					rgb[0], rgb[1], rgb[2]
+//			);
 
 			this.hasSpawnedSplash = true;
 		}
 
 		if (this.level().isClientSide && !hasSpawnedFlash) {
-			this.level().addParticle(
-					MainParticles.KI_FLASH.get(),
-					this.getX(), this.getY(), this.getZ(),
-					(double) this.getId(), 0.0D, 0.0D
-			);
+//			this.level().addParticle(
+//					MainParticles.KI_FLASH.get(),
+//					this.getX(), this.getY(), this.getZ(),
+//					(double) this.getId(), 0.0D, 0.0D
+//			);
 			this.hasSpawnedFlash = true;
 		}
 

@@ -78,6 +78,25 @@ public class ModRenderTypes extends RenderType {
                         .createCompositeState(false));
     }
 
+    private static final Function<ResourceLocation, RenderType> KI_RENDERTYPE = Util.memoize((pLocation) ->
+            create("ki_rendertype", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, true, true))
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(false)));
+
+    private static final Function<ResourceLocation, RenderType> ENERGY2 = Util.memoize((pLocation) ->
+            create("energy2", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_EYES_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, true, true))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(false)));
 
     public static RenderType glow(ResourceLocation pLocation) {
         return GLOW.apply(pLocation);
@@ -88,11 +107,17 @@ public class ModRenderTypes extends RenderType {
     public static RenderType energy(ResourceLocation pLocation) {
         return ENERGY.apply(pLocation);
     }
+    public static RenderType energy2(ResourceLocation pLocation) {
+        return ENERGY2.apply(pLocation);
+    }
     public static RenderType lightning(ResourceLocation pLocation) {
         return LIGHTNING.apply(pLocation);
     }
     public static RenderType kiblast(ResourceLocation pLocation) {
         return KI_BLAST.apply(pLocation);
+    }
+    public static RenderType ki_rendertype(ResourceLocation pLocation) {
+        return KI_RENDERTYPE.apply(pLocation);
     }
 
 }
