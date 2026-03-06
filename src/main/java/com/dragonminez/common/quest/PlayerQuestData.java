@@ -1,5 +1,7 @@
 package com.dragonminez.common.quest;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -264,7 +266,7 @@ public class PlayerQuestData {
     // ========================================================================================
 
     private QuestProgress getOrCreateProgress(String questId) {
-        return quests.computeIfAbsent(questId, id -> new QuestProgress(id));
+        return quests.computeIfAbsent(questId, QuestProgress::new);
     }
 
     // ========================================================================================
@@ -417,8 +419,14 @@ public class PlayerQuestData {
      * Tracks progress for a single quest: status, per-objective progress, and reward claims.
      */
     public static class QuestProgress {
-        private final String questId;
-        private QuestStatus status;
+
+        @Getter
+		private final String questId;
+
+        @Setter
+		@Getter
+		private QuestStatus status;
+
         private final Map<Integer, Integer> objectiveProgress = new HashMap<>();
         private final Map<Integer, Boolean> rewardsClaimed = new HashMap<>();
 
@@ -427,19 +435,7 @@ public class PlayerQuestData {
             this.status = QuestStatus.NOT_STARTED;
         }
 
-        public String getQuestId() {
-            return questId;
-        }
-
-        public QuestStatus getStatus() {
-            return status;
-        }
-
-        public void setStatus(QuestStatus status) {
-            this.status = status;
-        }
-
-        public void setObjectiveProgress(int index, int progress) {
+		public void setObjectiveProgress(int index, int progress) {
             objectiveProgress.put(index, progress);
         }
 
