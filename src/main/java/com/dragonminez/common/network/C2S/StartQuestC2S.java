@@ -2,8 +2,9 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
+import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
-import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -46,17 +47,19 @@ public class StartQuestC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
-			Saga saga = SagaManager.getSaga(sagaId);
+			Saga saga = QuestRegistry.getSaga(sagaId);
 			if (saga == null) return;
 			Quest quest = saga.getQuestById(questId);
 			if (quest == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				PlayerQuestData pqd = data.getPlayerQuestData();
+				String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
 				for (int i = 0; i < quest.getObjectives().size(); i++) {
 					QuestObjective objective = quest.getObjectives().get(i);
 
 					if (objective instanceof KillObjective killObjective) {
-						int currentProgress = data.getQuestData().getQuestObjectiveProgress(sagaId, questId, i);
+						int currentProgress = pqd.getObjectiveProgress(questKey, i);
 						int required = killObjective.getRequired();
 						int remaining = Math.max(0, required - currentProgress);
 
