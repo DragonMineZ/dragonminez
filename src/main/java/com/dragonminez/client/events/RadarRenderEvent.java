@@ -51,8 +51,8 @@ public class RadarRenderEvent {
 		ItemStack mainHand = player.getMainHandItem();
 		ItemStack offHand = player.getOffhandItem();
 
-		var earthRadarItem = MainItems.DBALL_RADAR_ITEM.get();
-		var namekRadarItem = MainItems.NAMEKDBALL_RADAR_ITEM.get();
+		var earthRadarItem = MainItems.DRAGON_RADAR_ITEMS.get("earth_dball").get();
+		var namekRadarItem = MainItems.DRAGON_RADAR_ITEMS.get("namek_dball").get();
 
 		List<BlockPos> targets = null;
 		int range = 75;

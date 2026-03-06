@@ -1,5 +1,8 @@
 package com.dragonminez.common.init.block.custom;
 
+import lombok.Getter;
+
+@Getter
 public enum DragonBallType {
     ONE_STAR(1),
     TWO_STAR(2),
@@ -15,12 +18,17 @@ public enum DragonBallType {
         this.stars = stars;
     }
 
-    public int getStars() {
-        return stars;
-    }
-
     public String getName() {
         return this.name().toLowerCase();
+    }
+
+    public static DragonBallType getFromValue(int value) {
+        for (DragonBallType type : DragonBallType.values()) {
+            if (type.stars == value) {
+                return type;
+            }
+        }
+        return null;
     }
 }
 
