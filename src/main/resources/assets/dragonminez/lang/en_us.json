@@ -158,6 +158,7 @@
   "gui.dragonminez.quests.claim_rewards": "Claim Rewards",
   "gui.dragonminez.quests.start": "Start Quest",
   "gui.dragonminez.quest_tree.title": "Quest Tree",
+  "gui.dragonminez.quest_tree.description": "Description",
   "gui.dragonminez.quest_tree.tab.tree": "Tree",
   "gui.dragonminez.quest_tree.no_sagas": "No sagas available",
   "gui.dragonminez.quest_tree.select_quest": "Select a quest node",
