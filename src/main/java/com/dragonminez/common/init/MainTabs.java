@@ -20,7 +20,7 @@ public final class MainTabs {
 			DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Reference.MOD_ID);
 
 	public static final RegistryObject<CreativeModeTab> BLOQUES_TAB = CREATIVE_TABS_REGISTER.register("dragonminez_blocks_tab",
-			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainBlocks.DBALL4_BLOCK.get()))
+			() -> CreativeModeTab.builder().icon(() -> new ItemStack(MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball4").get()))
 
 					.title(Component.translatable("itemGroup.dragonminez.blocks"))
 					.displayItems((parameters, output) -> MainBlocks.BLOCK_REGISTER.getEntries().forEach((block) -> {

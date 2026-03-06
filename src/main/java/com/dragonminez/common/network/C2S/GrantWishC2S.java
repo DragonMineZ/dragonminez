@@ -1,7 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.events.DragonBallsHandler;
@@ -56,15 +55,13 @@ public class GrantWishC2S {
 			}
 
 			List<Entity> dragons = level.getEntities(player, player.getBoundingBox().inflate(50),
-					e -> e instanceof ShenronEntity || e instanceof PorungaEntity);
+					e -> e instanceof DragonWishEntity);
 
 			if (!dragons.isEmpty()) {
 				Entity dragon = dragons.get(0);
 
-				if (dragon instanceof ShenronEntity Shenron) {
-					Shenron.setGrantedWish(true);
-				} else if (dragon instanceof PorungaEntity porunga) {
-					porunga.setGrantedWish(true);
+				if (dragon instanceof DragonWishEntity dragonWishEntity) {
+					dragonWishEntity.setGrantedWish(true);
 				}
 			}
 

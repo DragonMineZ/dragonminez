@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainBlocks;
+import com.dragonminez.common.init.block.custom.DragonBallBlock;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.RadarSyncS2C;
 import com.dragonminez.server.world.data.DragonBallSavedData;
@@ -198,37 +199,33 @@ public class DragonBallsHandler {
 	private static BlockState getBallState(int star, boolean isNamek) {
 		if (isNamek) {
 			return switch (star) {
-				case 1 -> MainBlocks.DBALL1_NAMEK_BLOCK.get().defaultBlockState();
-				case 2 -> MainBlocks.DBALL2_NAMEK_BLOCK.get().defaultBlockState();
-				case 3 -> MainBlocks.DBALL3_NAMEK_BLOCK.get().defaultBlockState();
-				case 4 -> MainBlocks.DBALL4_NAMEK_BLOCK.get().defaultBlockState();
-				case 5 -> MainBlocks.DBALL5_NAMEK_BLOCK.get().defaultBlockState();
-				case 6 -> MainBlocks.DBALL6_NAMEK_BLOCK.get().defaultBlockState();
-				case 7 -> MainBlocks.DBALL7_NAMEK_BLOCK.get().defaultBlockState();
+				case 1 -> MainBlocks.DRAGON_BALL_BLOCKS.get("namek_dball1").get().defaultBlockState();
+				case 2 -> MainBlocks.DRAGON_BALL_BLOCKS.get("namek_dball2").get().defaultBlockState();
+				case 3 -> MainBlocks.DRAGON_BALL_BLOCKS.get("namek_dball3").get().defaultBlockState();
+				case 4 -> MainBlocks.DRAGON_BALL_BLOCKS.get("namek_dball4").get().defaultBlockState();
+				case 5 -> MainBlocks.DRAGON_BALL_BLOCKS.get("namek_dball5").get().defaultBlockState();
+				case 6 -> MainBlocks.DRAGON_BALL_BLOCKS.get("namek_dball6").get().defaultBlockState();
+				case 7 -> MainBlocks.DRAGON_BALL_BLOCKS.get("namek_dball7").get().defaultBlockState();
 				default -> null;
 			};
 		} else {
 			return switch (star) {
-				case 1 -> MainBlocks.DBALL1_BLOCK.get().defaultBlockState();
-				case 2 -> MainBlocks.DBALL2_BLOCK.get().defaultBlockState();
-				case 3 -> MainBlocks.DBALL3_BLOCK.get().defaultBlockState();
-				case 4 -> MainBlocks.DBALL4_BLOCK.get().defaultBlockState();
-				case 5 -> MainBlocks.DBALL5_BLOCK.get().defaultBlockState();
-				case 6 -> MainBlocks.DBALL6_BLOCK.get().defaultBlockState();
-				case 7 -> MainBlocks.DBALL7_BLOCK.get().defaultBlockState();
+				case 1 -> MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball1").get().defaultBlockState();
+				case 2 -> MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball2").get().defaultBlockState();
+				case 3 -> MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball3").get().defaultBlockState();
+				case 4 -> MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball4").get().defaultBlockState();
+				case 5 -> MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball5").get().defaultBlockState();
+				case 6 -> MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball6").get().defaultBlockState();
+				case 7 -> MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball7").get().defaultBlockState();
 				default -> null;
 			};
 		}
 	}
 
 	private static int getStarFromBlock(Block block) {
-		if (block == MainBlocks.DBALL1_BLOCK.get() || block == MainBlocks.DBALL1_NAMEK_BLOCK.get()) return 1;
-		if (block == MainBlocks.DBALL2_BLOCK.get() || block == MainBlocks.DBALL2_NAMEK_BLOCK.get()) return 2;
-		if (block == MainBlocks.DBALL3_BLOCK.get() || block == MainBlocks.DBALL3_NAMEK_BLOCK.get()) return 3;
-		if (block == MainBlocks.DBALL4_BLOCK.get() || block == MainBlocks.DBALL4_NAMEK_BLOCK.get()) return 4;
-		if (block == MainBlocks.DBALL5_BLOCK.get() || block == MainBlocks.DBALL5_NAMEK_BLOCK.get()) return 5;
-		if (block == MainBlocks.DBALL6_BLOCK.get() || block == MainBlocks.DBALL6_NAMEK_BLOCK.get()) return 6;
-		if (block == MainBlocks.DBALL7_BLOCK.get() || block == MainBlocks.DBALL7_NAMEK_BLOCK.get()) return 7;
+		if (block instanceof DragonBallBlock) {
+			return ((DragonBallBlock) block).getBallType().getStars();
+		}
 		return -1;
 	}
 

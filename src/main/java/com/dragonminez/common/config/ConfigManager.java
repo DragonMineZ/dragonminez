@@ -49,6 +49,7 @@ public class ConfigManager {
 	private static SkillsConfig skillsConfig;
 	@Getter
 	private static EntitiesConfig entitiesConfig;
+	private static DragonBallsConfig dragonBallsConfig;
 
 	public static void initialize() {
 		LogUtil.info(Env.COMMON, "Initializing DragonMineZ configuration system...");
@@ -132,7 +133,7 @@ public class ConfigManager {
 					userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
 				}
 			} catch (Exception e) {
-				reasonUser = "Parsing error: " + e.toString();
+				reasonUser = "Parsing error: " + e;
 				backupOldConfig(userConfigPath);
 				userConfig = new GeneralUserConfig();
 				userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
@@ -169,7 +170,7 @@ public class ConfigManager {
 					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 				}
 			} catch (Exception e) {
-				reasonServer = "Parsing error: " + e.toString();
+				reasonServer = "Parsing error: " + e;
 				backupOldConfig(serverConfigPath);
 				serverConfig = new GeneralServerConfig();
 				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
@@ -185,7 +186,7 @@ public class ConfigManager {
 					overwriteServer = true;
 				}
 			} catch (Exception e) {
-				reasonServer = "Template loading failed: " + e.toString();
+				reasonServer = "Template loading failed: " + e;
 				serverConfig = new GeneralServerConfig();
 				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 				overwriteServer = true;
@@ -216,7 +217,7 @@ public class ConfigManager {
 					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 				}
 			} catch (Exception e) {
-				reasonSkills = "Parsing error: " + e.toString();
+				reasonSkills = "Parsing error: " + e;
 				backupOldConfig(skillsConfigPath);
 				skillsConfig = new SkillsConfig();
 				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
@@ -232,7 +233,7 @@ public class ConfigManager {
 					overwriteSkills = true;
 				}
 			} catch (Exception e) {
-				reasonSkills = "Template loading failed: " + e.toString();
+				reasonSkills = "Template loading failed: " + e;
 				skillsConfig = new SkillsConfig();
 				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 				overwriteSkills = true;
@@ -263,7 +264,7 @@ public class ConfigManager {
 					entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
 				}
 			} catch (Exception e) {
-				reasonEntities = "Parsing error: " + e.toString();
+				reasonEntities = "Parsing error: " + e;
 				backupOldConfig(entitiesConfigPath);
 				entitiesConfig = createDefaultEntitiesConfig();
 				entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
@@ -279,6 +280,8 @@ public class ConfigManager {
 			LogUtil.warn(Env.COMMON, "Regenerating entities.json. Reason: " + reasonEntities);
 			LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
 		}
+
+		loadDragonBallsConfig();
 	}
 
 	private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
@@ -310,7 +313,7 @@ public class ConfigManager {
 					characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
 				}
 			} catch (Exception e) {
-				reasonCharacter = "Parsing error: " + e.toString();
+				reasonCharacter = "Parsing error: " + e;
 				backupOldConfig(characterPath);
 				characterConfig = createDefaultCharacterConfig(raceName, isDefault);
 				characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
@@ -347,7 +350,7 @@ public class ConfigManager {
 					statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
 				}
 			} catch (Exception e) {
-				reasonStats = "Parsing error: " + e.toString();
+				reasonStats = "Parsing error: " + e;
 				backupOldConfig(statsPath);
 				statsConfig = createDefaultStatsConfig();
 				statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
@@ -492,6 +495,53 @@ public class ConfigManager {
 		stats.setMeleeDamage(meleeDamage);
 		stats.setKiDamage(kiDamage);
 		map.put(entityType.getKey().location().toString(), stats);
+	}
+
+	private static DragonBallsConfig createDefaultDragonBallsConfig() {
+		DragonBallsConfig dragonBallsConfig = new DragonBallsConfig();
+		List<DragonBallsConfig.DragonBallData> dragonBalls = new ArrayList<>();
+
+		DragonBallsConfig.DragonBallData earthBalls = new DragonBallsConfig.DragonBallData();
+
+		DragonBallsConfig.DragonData shenron = new DragonBallsConfig.DragonData();
+		shenron.setName("shenron");
+		shenron.setWidth(3.0f);
+		shenron.setHeight(17.0f);
+		shenron.setWishAmount(1);
+		earthBalls.setDragon(shenron);
+
+		DragonBallsConfig.BallData shenronBalls = new DragonBallsConfig.BallData();
+		shenronBalls.setName("earth_dball");
+		shenronBalls.setAmount(7);
+		shenronBalls.setRange(1000);
+		shenronBalls.setDimensionKey("minecraft:overworld");
+		shenronBalls.setBaseShape(new Double[]{ 4.0D, 0.0D, 4.0D, 12.0D, 7.0D, 12.0D });
+		earthBalls.setBalls(shenronBalls);
+
+		dragonBalls.add(earthBalls);
+
+		DragonBallsConfig.DragonBallData namekBalls = new DragonBallsConfig.DragonBallData();
+
+		DragonBallsConfig.DragonData porunga = new DragonBallsConfig.DragonData();
+		porunga.setName("porunga");
+		porunga.setWidth(4.0f);
+		porunga.setHeight(20.0f);
+		porunga.setWishAmount(3);
+		namekBalls.setDragon(porunga);
+
+		DragonBallsConfig.BallData porungaBalls = new DragonBallsConfig.BallData();
+		porungaBalls.setName("namek_dball");
+		porungaBalls.setAmount(7);
+		porungaBalls.setRange(1000);
+		porungaBalls.setDimensionKey("dragonminez:namek");
+		porungaBalls.setBaseShape(new Double[]{ 2.0D, 0.0D, 2.0D, 14.0D, 12.0D, 14.0D });
+		namekBalls.setBalls(porungaBalls);
+
+		dragonBalls.add(namekBalls);
+
+		dragonBallsConfig.setDragonBalls(dragonBalls);
+
+		return dragonBallsConfig;
 	}
 
 	private static void loadAllRaces() throws IOException {
@@ -895,5 +945,59 @@ public class ConfigManager {
 			return entitiesConfig.getDefaultEntityStats().get(registryName);
 		}
 		return null;
+	}
+
+	public static DragonBallsConfig getDragonBallsConfig() {
+		if (dragonBallsConfig == null) {
+			try {
+				Files.createDirectories(CONFIG_DIR);
+
+				loadDragonBallsConfig();
+
+				LogUtil.info(Env.COMMON, "Dragon Balls config initialized successfully");
+			} catch (IOException e) {
+				LogUtil.error(Env.COMMON, "Error initializing Dragon Balls configuration system: {}", e.getMessage());
+			}
+		}
+		return dragonBallsConfig;
+	}
+
+	private static void loadDragonBallsConfig() throws IOException {
+		// Dragon and Dragon Balls
+		Path dragonBallsConfigPath = CONFIG_DIR.resolve("dragon-balls.json");
+		boolean overwriteDragons = false;
+		String reasonDragonBalls = "";
+		if (Files.exists(dragonBallsConfigPath)) {
+			try {
+				dragonBallsConfig = LOADER.loadConfig(dragonBallsConfigPath, DragonBallsConfig.class);
+				if (isMissingConfigVersion(dragonBallsConfigPath)) {
+					reasonDragonBalls = "Missing config version";
+					overwriteDragons = true;
+				} else if (dragonBallsConfig.getConfigVersion() < DragonBallsConfig.CURRENT_VERSION) {
+					reasonDragonBalls = "Outdated version (" + dragonBallsConfig.getConfigVersion() + " < " + DragonBallsConfig.CURRENT_VERSION + ")";
+					overwriteDragons = true;
+				}
+				if (overwriteDragons) {
+					backupOldConfig(dragonBallsConfigPath);
+					dragonBallsConfig = createDefaultDragonBallsConfig();
+					dragonBallsConfig.setConfigVersion(DragonBallsConfig.CURRENT_VERSION);
+				}
+			} catch (Exception e) {
+				reasonDragonBalls = "Parsing error: " + e;
+				backupOldConfig(dragonBallsConfigPath);
+				dragonBallsConfig = createDefaultDragonBallsConfig();
+				dragonBallsConfig.setConfigVersion(DragonBallsConfig.CURRENT_VERSION);
+				overwriteDragons = true;
+			}
+		} else {
+			reasonDragonBalls = "File not found";
+			dragonBallsConfig = createDefaultDragonBallsConfig();
+			dragonBallsConfig.setConfigVersion(DragonBallsConfig.CURRENT_VERSION);
+			overwriteDragons = true;
+		}
+		if (overwriteDragons) {
+			LogUtil.warn(Env.COMMON, "Regenerating dragon-balls.json. Reason: " + reasonDragonBalls);
+			LOADER.saveConfig(dragonBallsConfigPath, dragonBallsConfig);
+		}
 	}
 }

@@ -18,13 +18,15 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class RadarItem extends Item {
-
 	private static final int[] RANGES = {150, 300};
 	public static final String NBT_RANGE = "RadarRange";
 	private static final int COOLDOWN_TICKS = 20 * 16;
 
-	public RadarItem() {
+	private final String ballName;
+
+	public RadarItem(String ballName) {
 		super(new Properties().stacksTo(1));
+		this.ballName = ballName;
 	}
 
 	@Override
@@ -64,6 +66,6 @@ public class RadarItem extends Item {
 
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-		pTooltipComponents.add(Component.translatable("item.dragonminez.dball_radar.tooltip").withStyle(ChatFormatting.GRAY));
+		pTooltipComponents.add(Component.translatable("item.dragonminez." + this.ballName + "_radar.tooltip").withStyle(ChatFormatting.GRAY));
 	}
 }

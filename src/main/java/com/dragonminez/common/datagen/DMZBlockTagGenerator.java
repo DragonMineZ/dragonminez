@@ -109,20 +109,6 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.ROCKY_COBBLESTONE_SLAB.get())
 				.add(MainBlocks.ROCKY_COBBLESTONE_STAIRS.get())
 				.add(MainBlocks.ROCKY_COBBLESTONE_WALL.get())
-				.add(MainBlocks.DBALL1_BLOCK.get())
-				.add(MainBlocks.DBALL2_BLOCK.get())
-				.add(MainBlocks.DBALL3_BLOCK.get())
-				.add(MainBlocks.DBALL4_BLOCK.get())
-				.add(MainBlocks.DBALL5_BLOCK.get())
-				.add(MainBlocks.DBALL6_BLOCK.get())
-				.add(MainBlocks.DBALL7_BLOCK.get())
-				.add(MainBlocks.DBALL1_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL2_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL3_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL4_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL5_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL6_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL7_NAMEK_BLOCK.get())
 				.add(MainBlocks.NAMEK_COAL_ORE.get())
 				.add(MainBlocks.NAMEK_IRON_ORE.get())
 				.add(MainBlocks.NAMEK_COPPER_ORE.get())
@@ -143,6 +129,10 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.GETE_BLOCK.get())
 				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
 				.add(MainBlocks.KIKONO_BLOCK.get());
+
+		MainBlocks.DRAGON_BALL_BLOCKS.values().forEach(
+				registryObject -> this.tag(BlockTags.MINEABLE_WITH_PICKAXE).add(registryObject.get())
+		);
 
 		this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())

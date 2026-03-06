@@ -78,7 +78,12 @@ public class ModClientEvents {
 	public static void onClientSetup(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
 			//Bloques
-			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);
+            MainBlockEntities.DRAGON_BALL_ENTITIES.values().forEach(
+                    registryObject -> BlockEntityRenderers.register(
+                            registryObject.get(),
+                            DragonBallBlockRenderer::new
+                    )
+            );
 			BlockEntityRenderers.register(MainBlockEntities.ENERGY_CABLE_BE.get(), EnergyCableBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.KIKONO_STATION_BE.get(), KikonoStationBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.FUEL_GENERATOR_BE.get(), FuelGeneratorBlockRenderer::new);
@@ -220,8 +225,12 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
         event.registerEntityRenderer(MainEntities.PUNCH_MACHINE.get(), PunchMachineRenderer::new);
 
-		event.registerEntityRenderer(MainEntities.SHENRON.get(), DragonDBRenderer::new);
-		event.registerEntityRenderer(MainEntities.PORUNGA.get(), DragonDBRenderer::new);
+        MainEntities.DRAGON_ENTITIES.values().forEach(
+                registryObject -> event.registerEntityRenderer(
+                        registryObject.get(),
+                        DragonDBRenderer::new
+                )
+        );
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);

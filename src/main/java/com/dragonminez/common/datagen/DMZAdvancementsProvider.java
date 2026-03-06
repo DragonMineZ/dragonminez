@@ -42,7 +42,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 		public void generate(HolderLookup.Provider provider, Consumer<Advancement> consumer) {
 			Advancement root = Advancement.Builder.advancement()
 					.display(
-							MainItems.DBALL4_BLOCK_ITEM.get(), // Ítem de muestra
+							MainItems.DRAGON_BALL_ITEMS.get("earth_dball4").get(), // Ítem de muestra
 							Component.translatable("advancements.dragonminez.root.title"), // Título
 							Component.translatable("advancements.dragonminez.root.description"), // Descripción
 							ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/block/rocky_stone.png"), // Textura de fondo
@@ -111,7 +111,7 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 			Advancement gokuhouse = Advancement.Builder.advancement()
 					.parent(kamilookout)
 					.display(
-							MainBlocks.DBALL4_BLOCK.get(),
+							MainBlocks.DRAGON_BALL_BLOCKS.get("earth_dball4").get(),
 							Component.translatable("advancements.dragonminez.gokuhouse.title"),
 							Component.translatable("advancements.dragonminez.gokuhouse.description"),
 							null, FrameType.GOAL, true, true, false
@@ -163,41 +163,41 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 			Advancement radar = Advancement.Builder.advancement()
 					.parent(root)
 					.display(
-							MainItems.DBALL_RADAR_ITEM.get(),
+							MainItems.DRAGON_RADAR_ITEMS.get("earth_dball").get(),
 							Component.translatable("advancements.dragonminez.radar.title"),
 							Component.translatable("advancements.dragonminez.radar.description"),
 							null, FrameType.GOAL, true, true, false
 					).addCriterion("radar",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DBALL_RADAR_ITEM.get())
+							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DRAGON_RADAR_ITEMS.get("earth_dball").get())
 					).save(consumer, "dragonminez:radar");
 
 			Advancement dball1 = Advancement.Builder.advancement()
 					.parent(radar)
 					.display(
-							MainItems.DBALL1_BLOCK_ITEM.get(),
+							MainItems.DRAGON_BALL_ITEMS.get("earth_dball1").get(),
 							Component.translatable("advancements.dragonminez.dball1.title"),
 							Component.translatable("advancements.dragonminez.dball1.description"),
 							null, FrameType.TASK, true, true, false
 					).addCriterion("dball1",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DBALL1_BLOCK_ITEM.get())
+							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DRAGON_BALL_ITEMS.get("earth_dball1").get())
 					).save(consumer, "dragonminez:dball1");
 
 			Advancement dball7 = Advancement.Builder.advancement()
 					.parent(dball1)
 					.display(
-							MainItems.DBALL7_BLOCK_ITEM.get(),
+							MainItems.DRAGON_BALL_ITEMS.get("earth_dball7").get(),
 							Component.translatable("advancements.dragonminez.dball7.title"),
 							Component.translatable("advancements.dragonminez.dball7.description"),
 							null, FrameType.CHALLENGE, true, true, true
 					).addCriterion("dball7",
 							InventoryChangeTrigger.TriggerInstance.hasItems(
-									MainItems.DBALL1_BLOCK_ITEM.get(),
-									MainItems.DBALL2_BLOCK_ITEM.get(),
-									MainItems.DBALL3_BLOCK_ITEM.get(),
-									MainItems.DBALL4_BLOCK_ITEM.get(),
-									MainItems.DBALL5_BLOCK_ITEM.get(),
-									MainItems.DBALL6_BLOCK_ITEM.get(),
-									MainItems.DBALL7_BLOCK_ITEM.get())
+									MainItems.DRAGON_BALL_ITEMS.get("earth_dball1").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("earth_dball2").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("earth_dball3").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("earth_dball4").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("earth_dball5").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("earth_dball6").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("earth_dball7").get())
 					).save(consumer, "dragonminez:dball7");
 
 			Advancement namekdim = Advancement.Builder.advancement()
@@ -233,30 +233,30 @@ public class DMZAdvancementsProvider extends AdvancementProvider {
 			Advancement radarnamek = Advancement.Builder.advancement()
 					.parent(namekdim)
 					.display(
-							MainItems.NAMEKDBALL_RADAR_ITEM.get(),
+							MainItems.DRAGON_RADAR_ITEMS.get("namek_dball").get(),
 							Component.translatable("advancements.dragonminez.radarnamek.title"),
 							Component.translatable("advancements.dragonminez.radarnamek.description"),
 							null, FrameType.TASK, true, true, false
 					).addCriterion("radarnamek",
-							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.NAMEKDBALL_RADAR_ITEM.get())
+							InventoryChangeTrigger.TriggerInstance.hasItems(MainItems.DRAGON_RADAR_ITEMS.get("namek_dball").get())
 					).save(consumer, "dragonminez:radarnamek");
 
 			Advancement namekballs = Advancement.Builder.advancement()
 					.parent(radarnamek)
 					.display(
-							MainItems.DBALL1_NAMEK_BLOCK_ITEM.get(),
+							MainItems.DRAGON_BALL_ITEMS.get("namek_dball1").get(),
 							Component.translatable("advancements.dragonminez.namekballs.title"),
 							Component.translatable("advancements.dragonminez.namekballs.description"),
 							null, FrameType.CHALLENGE, true, true, true
 					).addCriterion("namekballs",
 							InventoryChangeTrigger.TriggerInstance.hasItems(
-									MainItems.DBALL1_NAMEK_BLOCK_ITEM.get(),
-									MainItems.DBALL2_NAMEK_BLOCK_ITEM.get(),
-									MainItems.DBALL3_NAMEK_BLOCK_ITEM.get(),
-									MainItems.DBALL4_NAMEK_BLOCK_ITEM.get(),
-									MainItems.DBALL5_NAMEK_BLOCK_ITEM.get(),
-									MainItems.DBALL6_NAMEK_BLOCK_ITEM.get(),
-									MainItems.DBALL7_NAMEK_BLOCK_ITEM.get())
+									MainItems.DRAGON_BALL_ITEMS.get("namek_dball1").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("namek_dball2").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("namek_dball3").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("namek_dball4").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("namek_dball5").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("namek_dball6").get(),
+									MainItems.DRAGON_BALL_ITEMS.get("namek_dball7").get())
 					).save(consumer, "dragonminez:namekballs");
 
 			Advancement kikono = Advancement.Builder.advancement()
