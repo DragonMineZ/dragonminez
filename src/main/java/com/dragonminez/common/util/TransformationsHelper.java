@@ -117,6 +117,27 @@ public class TransformationsHelper {
 		return firstForm.map(FormConfig.FormData::getName).orElse(null);
 	}
 
+	public static int getFirstAvailableFormLevel(StatsData statsData) {
+		String group = getGroupWithFirstAvailableForm(statsData);
+		if (group == null) {
+			return -1;
+		}
+
+		FormConfig config = ConfigManager.getFormGroup(statsData.getCharacter().getRaceName(), group);
+		if (config == null) {
+			return -1;
+		}
+
+		if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) {
+			return -1;
+		}
+
+		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
+
+		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
+	}
+
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {
 		String race = statsData.getCharacter().getRaceName();
 		String group = statsData.getCharacter().hasActiveForm() ?
