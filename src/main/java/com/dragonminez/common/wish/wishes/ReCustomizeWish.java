@@ -3,6 +3,7 @@ package com.dragonminez.common.wish.wishes;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.OpenRecustomizeS2C;
 import com.dragonminez.common.wish.Wish;
+import com.google.gson.GsonBuilder;
 import net.minecraft.server.level.ServerPlayer;
 
 public class ReCustomizeWish extends Wish {
@@ -18,6 +19,6 @@ public class ReCustomizeWish extends Wish {
 
 	@Override
 	public String toJson() {
-		return "";
+		return new GsonBuilder().setPrettyPrinting().create().toJson(this, ReCustomizeWish.class);
 	}
 }

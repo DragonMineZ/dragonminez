@@ -69,9 +69,11 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			colorFrom = getColorForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			if (character.getActiveForm().toLowerCase().contains("oozaru")) return;
-		} else if (character.hasActiveStackForm()) {
-			hairFrom = getHairForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm());
-			colorFrom = getColorForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm());
+		}
+
+		if (character.hasActiveStackForm()) {
+			hairFrom = getHairForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm(), hairFrom);
+			colorFrom = getColorForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm(), colorFrom);
 		}
 
 		CustomHair hairTo = hairFrom;
@@ -99,8 +101,8 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				targetGroup = character.getSelectedStackFormGroup();
 				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
 				if (nextForm != null) {
-					targetHair = getHairForStackForm(character, targetGroup, nextForm.getName());
-					targetColor = getColorForStackForm(character, targetGroup, nextForm.getName());
+					targetHair = getHairForStackForm(character, targetGroup, nextForm.getName(), hairFrom);
+					targetColor = getColorForStackForm(character, targetGroup, nextForm.getName(), colorFrom);
 				}
 			}
 
@@ -229,7 +231,34 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 	}
 
-	private String getColorForStackForm(Character character, String group, String formName) {
+	private CustomHair getHairForStackForm(Character character, String group, String formName, CustomHair fallback) {
+		FormConfig config = ConfigManager.getStackFormGroup(group);
+		if (config != null) {
+			var formData = config.getForm(formName);
+			if (formData != null && formData.hasHairCodeOverride()) {
+				CustomHair override = HairManager.fromCode(formData.getForcedHairCode());
+				if (override != null) return override;
+			} else if (formData != null && formData.hasDefinedHairType()) {
+				switch (formData.getHairType().toLowerCase()) {
+					case "base" -> {
+						return character.getHairBase();
+					}
+					case "ssj" -> {
+						return character.getHairSSJ();
+					}
+					case "ssj2" -> {
+						return character.getHairSSJ2();
+					}
+					case "ssj3" -> {
+						return character.getHairSSJ3();
+					}
+				}
+			}
+		}
+		return fallback;
+	}
+
+	private String getColorForStackForm(Character character, String group, String formName, String fallback) {
 		FormConfig config = ConfigManager.getStackFormGroup(group);
 		if (config != null) {
 			var formData = config.getForm(formName);
@@ -237,6 +266,6 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				return formData.getHairColor();
 			}
 		}
-		return character.getHairColor();
+		return fallback;
 	}
 }

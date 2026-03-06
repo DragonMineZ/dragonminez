@@ -24,12 +24,12 @@ import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.util.ComboManager;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.DMZServer;
-import com.dragonminez.server.commands.*;
+import com.dragonminez.server.commands.DMZPermissions;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
-import com.dragonminez.server.world.dimension.*;
+import com.dragonminez.server.world.dimension.HTCDimension;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import com.dragonminez.server.world.dimension.OtherworldRegionLoader;
@@ -131,6 +131,8 @@ public class ForgeCommonEvents {
 
 				if (data.getSkills().hasSkill("kaioken")) data.getSkills().setSkillActive("kaioken", false);
 				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
+				data.getCharacter().clearActiveForm();
+				data.getCharacter().clearActiveStackForm();
 			});
 		}
 	}
@@ -271,7 +273,7 @@ public class ForgeCommonEvents {
 	public static void onLevelLoad(LevelEvent.Load event) {
 		if (event.getLevel() instanceof ServerLevel serverLevel) {
 			if (serverLevel.dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
-				LogUtil.info(Env.SERVER, "LevelEvent.Load: Asegurando regiones del Otherworld...");
+				LogUtil.info(Env.SERVER, "LevelEvent.Load: Detected Otherworld dimension load, attempting to load regions.");
 				OtherworldRegionLoader.loadPreGeneratedRegions(serverLevel);
 			}
 		}
