@@ -63,7 +63,7 @@ public class TickHandler {
 		if (serverPlayer.getHealth() <= 0.25 && !serverPlayer.isDeadOrDying()) serverPlayer.kill();
 
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 
 			if (serverPlayer.hasEffect(MainEffects.STUN.get())) {
 				data.getStatus().setChargingKi(false);

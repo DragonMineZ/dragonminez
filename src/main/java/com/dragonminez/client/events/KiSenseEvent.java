@@ -41,7 +41,7 @@ public class KiSenseEvent {
 		Player player = mc.player;
 		if (player == null || entity == player) return;
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 			Skill kiSense = data.getSkills().getSkill("kisense");
 			if (kiSense == null) return;
 			if (!kiSense.isActive()) return;
@@ -85,7 +85,7 @@ public class KiSenseEvent {
 		float x = -width / 2.0f;
 		float y = 0;
 
-		drawTexture(poseStack, x, y, (int)width, 9, 0, 0);
+		drawTexture(poseStack, x, y, (int) width, 9, 0, 0);
 
 		int currentBarWidth = (int) (76 * healthPercent);
 
@@ -99,13 +99,13 @@ public class KiSenseEvent {
 		}
 
 		if (currentBarWidth > 0) {
-			drawTexture(poseStack, x + 2, y + 3, 7+ currentBarWidth, 5, 2, fillV);
+			drawTexture(poseStack, x + 2, y + 3, 7 + currentBarWidth, 5, 2, fillV);
 		}
 
 		poseStack.pushPose();
 		String text = "";
 		if (ConfigManager.getUserConfig().getHud().getAdvancedDescriptionPercentage()) {
-			text = String.format("%.0f", health/maxHealth * 100) + "%";
+			text = String.format("%.0f", health / maxHealth * 100) + "%";
 		} else {
 			text = numberFormat.format(health) + " / " + numberFormat.format(maxHealth);
 		}

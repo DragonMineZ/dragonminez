@@ -17,6 +17,16 @@ public class StackFormModeHandler implements IActionModeHandler {
 	public int handleActionCharge(ServerPlayer player, StatsData data) {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
 		if (nextForm != null) {
+			if (data.getCharacter().hasActiveForm()) {
+				FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
+				if (activeFormData != null) {
+					boolean isFormStackable = activeFormData.getFormStackable();
+					boolean isStackStackable = nextForm.getFormStackable();
+
+					if (!isFormStackable || !isStackStackable) return 0;
+				}
+			}
+
 			String group = data.getCharacter().hasActiveStackForm() ? data.getCharacter().getActiveStackFormGroup() : data.getCharacter().getSelectedStackFormGroup();
 
 			String type = ConfigManager.getStackFormGroup(group).getFormType();
@@ -35,6 +45,16 @@ public class StackFormModeHandler implements IActionModeHandler {
 	private static void attemptTransform(ServerPlayer player, StatsData data) {
 		FormConfig.FormData nextForm = TransformationsHelper.getNextAvailableStackForm(data);
 		if (nextForm == null) return;
+
+		if (data.getCharacter().hasActiveForm()) {
+			FormConfig.FormData activeFormData = data.getCharacter().getActiveFormData();
+			if (activeFormData != null) {
+				if (!activeFormData.getFormStackable() || !nextForm.getFormStackable()) {
+					player.displayClientMessage(Component.translatable("message.dragonminez.form.not_stackable"), true);
+					return;
+				}
+			}
+		}
 
 		int energyCost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
 		int staminaCost = (int) (data.getMaxStamina() * nextForm.getStaminaDrain());

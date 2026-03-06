@@ -22,13 +22,15 @@ public class SyncServerConfigS2C {
 	private final byte[] formsBytes;
 	private final byte[] raceStatsBytes;
 	private final byte[] raceCharacterBytes;
+	private final byte[] stackFormsBytes;
 
-	public SyncServerConfigS2C(GeneralServerConfig serverConfig, SkillsConfig skillsConfig, Map<String, Map<String, FormConfig>> formsConfigs, Map<String, RaceStatsConfig> statsConfigs, Map<String, RaceCharacterConfig> characterConfigs) {
+	public SyncServerConfigS2C(GeneralServerConfig serverConfig, SkillsConfig skillsConfig, Map<String, Map<String, FormConfig>> formsConfigs, Map<String, RaceStatsConfig> statsConfigs, Map<String, RaceCharacterConfig> characterConfigs, Map<String, FormConfig> stackFormsConfigs) {
 		this.generalServerBytes = CompressionUtil.compress(GSON.toJson(serverConfig));
 		this.skillsBytes = CompressionUtil.compress(GSON.toJson(skillsConfig));
 		this.formsBytes = CompressionUtil.compress(GSON.toJson(formsConfigs));
 		this.raceStatsBytes = CompressionUtil.compress(GSON.toJson(statsConfigs));
 		this.raceCharacterBytes = CompressionUtil.compress(GSON.toJson(characterConfigs));
+		this.stackFormsBytes = CompressionUtil.compress(GSON.toJson(stackFormsConfigs));
 	}
 
 	public SyncServerConfigS2C(FriendlyByteBuf buf) {
@@ -37,6 +39,7 @@ public class SyncServerConfigS2C {
 		this.formsBytes = buf.readByteArray();
 		this.raceStatsBytes = buf.readByteArray();
 		this.raceCharacterBytes = buf.readByteArray();
+		this.stackFormsBytes = buf.readByteArray();
 	}
 
 	public void encode(FriendlyByteBuf buf) {
@@ -45,6 +48,7 @@ public class SyncServerConfigS2C {
 		buf.writeByteArray(formsBytes);
 		buf.writeByteArray(raceStatsBytes);
 		buf.writeByteArray(raceCharacterBytes);
+		buf.writeByteArray(stackFormsBytes);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
@@ -54,6 +58,7 @@ public class SyncServerConfigS2C {
 			String formsJson = CompressionUtil.decompress(formsBytes);
 			String raceStatsJson = CompressionUtil.decompress(raceStatsBytes);
 			String raceCharacterJson = CompressionUtil.decompress(raceCharacterBytes);
+			String stackFormsJson = CompressionUtil.decompress(stackFormsBytes);
 
 			GeneralServerConfig serverConfig = GSON.fromJson(generalServerJson, GeneralServerConfig.class);
 			SkillsConfig skillsConfig = GSON.fromJson(skillsJson, SkillsConfig.class);
@@ -70,7 +75,11 @@ public class SyncServerConfigS2C {
 			}.getType();
 			Map<String, RaceCharacterConfig> characterConfigs = GSON.fromJson(raceCharacterJson, characterType);
 
-			ConfigManager.applySyncedServerConfig(serverConfig, skillsConfig, formsConfigs, statsConfigs, characterConfigs);
+			Type stackFormsType = new TypeToken<Map<String, FormConfig>>() {
+			}.getType();
+			Map<String, FormConfig> stackFormsConfigs = GSON.fromJson(stackFormsJson, stackFormsType);
+
+			ConfigManager.applySyncedServerConfig(serverConfig, skillsConfig, formsConfigs, statsConfigs, characterConfigs, stackFormsConfigs);
 		}));
 		ctx.get().setPacketHandled(true);
 	}

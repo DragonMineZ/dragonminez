@@ -6,16 +6,16 @@ import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
-import com.dragonminez.common.util.lists.MajinForms;
-import com.dragonminez.common.util.lists.SaiyanForms;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShieldItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
@@ -23,14 +23,13 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.dragonminez.client.animation.Animations.*;
 
 @Mixin(AbstractClientPlayer.class)
-public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayerAnimatable {
+public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayerAnimatable {
 
 	private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
 
@@ -148,7 +147,8 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 
 		if (isChargingKi.get() && !isMoving && !isBlocking.get()) return state.setAndContinue(KI_CHARGE);
 
-		if (isTransforming.get() && !isMoving && !isBlocking.get() && nextForm.get().contains("ozaru")) return state.setAndContinue(OOZARU_TRANSFORMATION);
+		if (isTransforming.get() && !isMoving && !isBlocking.get() && nextForm.get().contains("ozaru"))
+			return state.setAndContinue(OOZARU_TRANSFORMATION);
 		else if (isTransforming.get() && !isMoving && !isBlocking.get()) return state.setAndContinue(TRANSFORMATION);
 
 
@@ -190,22 +190,22 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 	}
 
 	@Unique
-    private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
-        AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+	private <T extends GeoAnimatable> PlayState tailpredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 
-        return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
-            var character = data.getCharacter();
-            String race = character.getRaceName().toLowerCase();
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
+			var character = data.getCharacter();
+			String race = character.getRaceName().toLowerCase();
 
-            if ((race.equals("bioandroid") && data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))) {
-                return PlayState.STOP;
-            }
+			if ((race.equals("bioandroid") && data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE))) {
+				return PlayState.STOP;
+			}
 
-            state.getController().setAnimation(TAIL);
-            return PlayState.CONTINUE;
+			state.getController().setAnimation(TAIL);
+			return PlayState.CONTINUE;
 
-        }).orElse(PlayState.STOP);
-    }
+		}).orElse(PlayState.STOP);
+	}
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState comboPredicate(AnimationState<T> state) {
@@ -522,8 +522,8 @@ public abstract class  PlayerGeoAnimatableMixin implements GeoAnimatable, IPlaye
 		this.dragonminez$comboAnimTicks = 10;
 	}
 
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
-    }
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return this.geoCache;
+	}
 }

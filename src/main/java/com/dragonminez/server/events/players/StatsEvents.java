@@ -48,84 +48,84 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
 
-    public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
-    public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
-    public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
+	public static final UUID DMZ_HEALTH_MODIFIER_UUID = UUID.fromString("b065b873-f4c8-4a0f-aa8c-6e778cd410e0");
+	public static final UUID FORM_SPEED_UUID = UUID.fromString("c8c07577-3365-4b1c-9917-26b237da6e08");
+	public static final UUID FORM_REACH_UUID = UUID.fromString("d8d18684-4476-5c2d-ba28-37c348eb521f");
 
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
-        Player player = event.player;
-        if (!(player instanceof ServerPlayer serverPlayer)) return;
+	@SubscribeEvent
+	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
+		Player player = event.player;
+		if (!(player instanceof ServerPlayer serverPlayer)) return;
 
-        StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 
-            applyHealthBonus(serverPlayer);
+			applyHealthBonus(serverPlayer);
 
-            if (data.getResources().getCurrentEnergy() > data.getMaxEnergy())
-                data.getResources().setCurrentEnergy(data.getMaxEnergy());
-            if (data.getResources().getCurrentStamina() > data.getMaxStamina())
-                data.getResources().setCurrentStamina(data.getMaxStamina());
-        });
-    }
+			if (data.getResources().getCurrentEnergy() > data.getMaxEnergy())
+				data.getResources().setCurrentEnergy(data.getMaxEnergy());
+			if (data.getResources().getCurrentStamina() > data.getMaxStamina())
+				data.getResources().setCurrentStamina(data.getMaxStamina());
+		});
+	}
 
-    public static void applyHealthBonus(ServerPlayer serverPlayer) {
-        StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-            AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
-            if (maxHealthAttr == null) return;
+	public static void applyHealthBonus(ServerPlayer serverPlayer) {
+		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+			AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
+			if (maxHealthAttr == null) return;
 
-            float dmzHealthBonus = data.getMaxHealth();
-            AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
+			float dmzHealthBonus = data.getMaxHealth();
+			AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
 
-            if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
-                maxHealthAttr.removeModifier(DMZ_HEALTH_MODIFIER_UUID);
+			if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
+				maxHealthAttr.removeModifier(DMZ_HEALTH_MODIFIER_UUID);
 
-                if (dmzHealthBonus > 0) {
-                    AttributeModifier healthModifier = new AttributeModifier(
-                            DMZ_HEALTH_MODIFIER_UUID,
-                            "DMZ Health Bonus",
-                            dmzHealthBonus,
-                            AttributeModifier.Operation.ADDITION
-                    );
-                    maxHealthAttr.addPermanentModifier(healthModifier);
-                }
+				if (dmzHealthBonus > 0) {
+					AttributeModifier healthModifier = new AttributeModifier(
+							DMZ_HEALTH_MODIFIER_UUID,
+							"DMZ Health Bonus",
+							dmzHealthBonus,
+							AttributeModifier.Operation.ADDITION
+					);
+					maxHealthAttr.addPermanentModifier(healthModifier);
+				}
 
-                if (serverPlayer.getHealth() > maxHealthAttr.getValue()) {
-                    serverPlayer.setHealth((float) maxHealthAttr.getValue());
-                }
-            }
+				if (serverPlayer.getHealth() > maxHealthAttr.getValue()) {
+					serverPlayer.setHealth((float) maxHealthAttr.getValue());
+				}
+			}
 
-            if (!data.hasInitializedHealth()) {
-                serverPlayer.setHealth((float) maxHealthAttr.getValue());
-                data.setInitializedHealth(true);
-            }
-        });
-    }
+			if (!data.hasInitializedHealth()) {
+				serverPlayer.setHealth((float) maxHealthAttr.getValue());
+				data.setInitializedHealth(true);
+			}
+		});
+	}
 
-    @SubscribeEvent
-    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            DragonBallsHandler.syncRadar(player.serverLevel());
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                applyHealthBonus(player);
-                player.setHealth(player.getMaxHealth());
-                data.getResources().setCurrentEnergy(data.getMaxEnergy());
-                data.getResources().setCurrentStamina(data.getMaxStamina());
-            });
-        }
-    }
+	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			DragonBallsHandler.syncRadar(player.serverLevel());
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				applyHealthBonus(player);
+				player.setHealth(player.getMaxHealth());
+				data.getResources().setCurrentEnergy(data.getMaxEnergy());
+				data.getResources().setCurrentStamina(data.getMaxStamina());
+			});
+		}
+	}
 
-    private static boolean dropTps(Entity entity) {
-        List<Class<?>> listaEnemigos = List.of(
-                Monster.class,
-                Animal.class,
-                Player.class,
-                FlyingMob.class,
-                Mob.class
-        );
-        return listaEnemigos.stream().anyMatch(clase -> clase.isInstance(entity));
-    }
+	private static boolean dropTps(Entity entity) {
+		List<Class<?>> listaEnemigos = List.of(
+				Monster.class,
+				Animal.class,
+				Player.class,
+				FlyingMob.class,
+				Mob.class
+		);
+		return listaEnemigos.stream().anyMatch(clase -> clase.isInstance(entity));
+	}
 
 	private static boolean addsAlignment(Entity entity) {
 		return entity instanceof RedRibbonSoldierEntity || entity instanceof SagaFriezaSoldier01Entity || entity instanceof SagaFriezaSoldier02Entity
@@ -137,18 +137,19 @@ public class StatsEvents {
 	}
 
 
-    @SubscribeEvent
-    public static void onEntityDeath(LivingDeathEvent event) {
-        if (event.getEntity().level().isClientSide) return;
-        if (!(event.getSource().getEntity() instanceof Player attacker)) return;
+	@SubscribeEvent
+	public static void onEntityDeath(LivingDeathEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
 		AtomicBoolean addAlignment = new AtomicBoolean(false);
 		AtomicBoolean removeAlignment = new AtomicBoolean(false);
 
-        if (event.getEntity() instanceof Player victim) {
+		if (event.getEntity() instanceof Player victim) {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
-				if (victimData.getResources().getAlignment() < 50 || !victimData.getStatus().hasCreatedCharacter()) addAlignment.set(true);
+				if (victimData.getResources().getAlignment() < 50 || !victimData.getStatus().isHasCreatedCharacter())
+					addAlignment.set(true);
 				else removeAlignment.set(true);
-				if (victimData.getStatus().hasCreatedCharacter()) {
+				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getEffects().removeAllEffects();
 					victimData.getStatus().setChargingKi(false);
 					victimData.getStatus().setActionCharging(false);
@@ -156,232 +157,234 @@ public class StatsEvents {
 					victimData.getCharacter().setActiveStackForm(null, null);
 				}
 			});
-        }
+		}
 
-        if (removesAlignment(event.getEntity())) removeAlignment.set(true);
-        if (addsAlignment(event.getEntity())) addAlignment.set(true);
+		if (removesAlignment(event.getEntity())) removeAlignment.set(true);
+		if (addsAlignment(event.getEntity())) addAlignment.set(true);
 
-        StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 
-            if (dropTps(event.getEntity())) {
+			if (dropTps(event.getEntity())) {
 				int tpsHealth;
-				if (event.getEntity() instanceof ShadowDummyEntity) tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
-				else tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
-                data.getResources().addTrainingPoints(tpsHealth);
-            }
+				if (event.getEntity() instanceof ShadowDummyEntity)
+					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
+				else
+					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
+				data.getResources().addTrainingPoints(tpsHealth);
+			}
 
-            if (removeAlignment.get()) {
-                data.getResources().removeAlignment(5);
-                removeAlignment.set(false);
-            }
+			if (removeAlignment.get()) {
+				data.getResources().removeAlignment(5);
+				removeAlignment.set(false);
+			}
 
-            if (addAlignment.get()) {
-                data.getResources().addAlignment(2);
-                addAlignment.set(false);
-            }
-        });
-    }
+			if (addAlignment.get()) {
+				data.getResources().addAlignment(2);
+				addAlignment.set(false);
+			}
+		});
+	}
 
-    @SubscribeEvent
-    public static void onEntityHit(LivingHurtEvent event) {
-        if (event.getEntity().level().isClientSide) return;
-        if (!(event.getSource().getEntity() instanceof Player attacker)) return;
+	@SubscribeEvent
+	public static void onEntityHit(LivingHurtEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
 
-        StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
-            if (!data.getStatus().hasCreatedCharacter()) return;
-            int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
-            data.getResources().addTrainingPoints(baseTps);
-        });
-    }
+		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
+			int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
+			data.getResources().addTrainingPoints(baseTps);
+		});
+	}
 
-    private static final double HEAL_PERCENTAGE = 0.08;
-    private static final int HEAL_TICKS = 3 * 20;
-    private static final Map<Player, Long> lastHealingTime = new WeakHashMap<>();
+	private static final double HEAL_PERCENTAGE = 0.08;
+	private static final int HEAL_TICKS = 3 * 20;
+	private static final Map<Player, Long> lastHealingTime = new WeakHashMap<>();
 
-    @SubscribeEvent
-    public static void onLivingTick(TickEvent.PlayerTickEvent event) {
-        Player player = event.player;
-        if (player.level().isClientSide || event.phase != TickEvent.Phase.END) return;
-        FluidState fluidState = player.level().getFluidState(player.blockPosition());
-        if (fluidState.isEmpty()) return;
+	@SubscribeEvent
+	public static void onLivingTick(TickEvent.PlayerTickEvent event) {
+		Player player = event.player;
+		if (player.level().isClientSide || event.phase != TickEvent.Phase.END) return;
+		FluidState fluidState = player.level().getFluidState(player.blockPosition());
+		if (fluidState.isEmpty()) return;
 
-        if (fluidState.is(MainFluids.SOURCE_HEALING.get()) || fluidState.is(MainFluids.FLOWING_HEALING.get())) {
-            long currentTime = player.level().getGameTime();
-            long lastHealTime = lastHealingTime.getOrDefault(player, 0L);
+		if (fluidState.is(MainFluids.SOURCE_HEALING.get()) || fluidState.is(MainFluids.FLOWING_HEALING.get())) {
+			long currentTime = player.level().getGameTime();
+			long lastHealTime = lastHealingTime.getOrDefault(player, 0L);
 
-            if (currentTime - lastHealTime >= HEAL_TICKS) {
-                funcHealingLiquid(player);
-                lastHealingTime.put(player, currentTime);
-            }
-        } else if (fluidState.is(MainFluids.SOURCE_NAMEK.get()) || fluidState.is(MainFluids.FLOWING_NAMEK.get())) {
-            funcNamekWater(player);
-        }
-    }
+			if (currentTime - lastHealTime >= HEAL_TICKS) {
+				funcHealingLiquid(player);
+				lastHealingTime.put(player, currentTime);
+			}
+		} else if (fluidState.is(MainFluids.SOURCE_NAMEK.get()) || fluidState.is(MainFluids.FLOWING_NAMEK.get())) {
+			funcNamekWater(player);
+		}
+	}
 
-    private static void funcHealingLiquid(Player player) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-                float maxHp = player.getMaxHealth();
-                float healHp = (int) (maxHp * HEAL_PERCENTAGE);
-                int maxKi = data.getMaxEnergy();
-                int healKi = (int) (maxKi * HEAL_PERCENTAGE);
-                int maxStamina = data.getMaxStamina();
-                int healStamina = (int) (maxStamina * HEAL_PERCENTAGE);
-                boolean hasCreatedChar = data.getStatus().hasCreatedCharacter();
+	private static void funcHealingLiquid(Player player) {
+		if (player instanceof ServerPlayer serverPlayer) {
+			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+				float maxHp = player.getMaxHealth();
+				float healHp = (int) (maxHp * HEAL_PERCENTAGE);
+				int maxKi = data.getMaxEnergy();
+				int healKi = (int) (maxKi * HEAL_PERCENTAGE);
+				int maxStamina = data.getMaxStamina();
+				int healStamina = (int) (maxStamina * HEAL_PERCENTAGE);
+				boolean hasCreatedChar = data.getStatus().isHasCreatedCharacter();
 
-                if (healHp > maxHp) healHp = maxHp;
-                if (healKi > maxKi) healKi = maxKi;
-                if (healStamina > maxStamina) healStamina = maxStamina;
+				if (healHp > maxHp) healHp = maxHp;
+				if (healKi > maxKi) healKi = maxKi;
+				if (healStamina > maxStamina) healStamina = maxStamina;
 
-                if (hasCreatedChar) {
-                    serverPlayer.setHealth(player.getHealth() + healHp);
-                    data.getResources().addEnergy(healKi);
-                    data.getResources().addStamina(healStamina);
-                }
+				if (hasCreatedChar) {
+					serverPlayer.setHealth(player.getHealth() + healHp);
+					data.getResources().addEnergy(healKi);
+					data.getResources().addStamina(healStamina);
+				}
 
-            });
-        }
-        if (player.isOnFire()) {
-            player.clearFire();
-        }
-    }
+			});
+		}
+		if (player.isOnFire()) {
+			player.clearFire();
+		}
+	}
 
-    private static void funcNamekWater(Player player) {
-        if (player.isOnFire()) {
-            player.clearFire();
-        }
-    }
+	private static void funcNamekWater(Player player) {
+		if (player.isOnFire()) {
+			player.clearFire();
+		}
+	}
 
-    @SubscribeEvent
-    public static void onItemRightClick(PlayerInteractEvent.RightClickItem event) {
-        if (event.getLevel().isClientSide) return;
+	@SubscribeEvent
+	public static void onItemRightClick(PlayerInteractEvent.RightClickItem event) {
+		if (event.getLevel().isClientSide) return;
 
-        Player player = event.getEntity();
-        ItemStack stack = event.getItemStack();
-        String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		Player player = event.getEntity();
+		ItemStack stack = event.getItemStack();
+		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
 
-        Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
-        if (regens != null && regens.length >= 3) {
-            player.startUsingItem(event.getHand());
-            event.setCancellationResult(InteractionResult.CONSUME);
-        }
-    }
+		Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+		if (regens != null && regens.length >= 3) {
+			player.startUsingItem(event.getHand());
+			event.setCancellationResult(InteractionResult.CONSUME);
+		}
+	}
 
-    @SubscribeEvent
-    public static void onItemUseFinish(LivingEntityUseItemEvent.Finish event) {
-        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
+	@SubscribeEvent
+	public static void onItemUseFinish(LivingEntityUseItemEvent.Finish event) {
+		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
-        ItemStack stack = event.getItem();
-        String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
-        Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+		ItemStack stack = event.getItem();
+		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
 
-        if (regens != null && regens.length >= 3) {
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
-                boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
+		if (regens != null && regens.length >= 3) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
+				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
 
-                if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
+				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
 
-                float maxHealth = player.getMaxHealth();
-                int maxEnergy = data.getMaxEnergy();
-                int maxStamina = data.getMaxStamina();
+				float maxHealth = player.getMaxHealth();
+				int maxEnergy = data.getMaxEnergy();
+				int maxStamina = data.getMaxStamina();
 
-                int currentEnergy = data.getResources().getCurrentEnergy();
-                int currentStamina = data.getResources().getCurrentStamina();
+				int currentEnergy = data.getResources().getCurrentEnergy();
+				int currentStamina = data.getResources().getCurrentStamina();
 
-                float healAmount = (maxHealth * regens[0]);
-                int energyAmount = (int) (maxEnergy * regens[1]);
-                int staminaAmount = (int) (maxStamina * regens[2]);
+				float healAmount = (maxHealth * regens[0]);
+				int energyAmount = (int) (maxEnergy * regens[1]);
+				int staminaAmount = (int) (maxStamina * regens[2]);
 
-                player.heal(healAmount);
+				player.heal(healAmount);
 
-                int newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
-                int newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
+				int newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
+				int newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
 
-                data.getResources().setCurrentEnergy(newEnergy);
-                data.getResources().setCurrentStamina(newStamina);
+				data.getResources().setCurrentEnergy(newEnergy);
+				data.getResources().setCurrentStamina(newStamina);
 
-                if (isSenzu || isHeartMedicine) {
-                    int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
-                    player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
-                }
-            });
-        }
-    }
+				if (isSenzu || isHeartMedicine) {
+					int cooldownTicks = ConfigManager.getServerConfig().getGameplay().getSenzuCooldownTicks();
+					player.getCooldowns().addCooldown(stack.getItem(), cooldownTicks);
+				}
+			});
+		}
+	}
 
-    @SubscribeEvent
-    public static void onItemUseStart(LivingEntityUseItemEvent.Start event) {
-        if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
+	@SubscribeEvent
+	public static void onItemUseStart(LivingEntityUseItemEvent.Start event) {
+		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
-        ItemStack stack = event.getItem();
-        String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		ItemStack stack = event.getItem();
+		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
 
-        if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
-            if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))
-                event.setCanceled(true);
-            else event.setDuration(1);
-        }
-    }
+		if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
+			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))
+				event.setCanceled(true);
+			else event.setDuration(1);
+		}
+	}
 
-    @SubscribeEvent
-    public static void onPlayerAttack(AttackEntityEvent event) {
-        if (event.getEntity().level().isClientSide) return;
-        if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
-    }
+	@SubscribeEvent
+	public static void onPlayerAttack(AttackEntityEvent event) {
+		if (event.getEntity().level().isClientSide) return;
+		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+	}
 
-    @SubscribeEvent
-    public static void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getLevel().isClientSide) return;
-        if (event.getEntity() == null) return;
-        if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
-    }
+	@SubscribeEvent
+	public static void onPlayerInteract(PlayerInteractEvent event) {
+		if (event.getLevel().isClientSide) return;
+		if (event.getEntity() == null) return;
+		if (event.getEntity().hasEffect(MainEffects.STUN.get())) event.setCanceled(true);
+	}
 
-    @SubscribeEvent
-    public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
-        if (event.getEntity().level().isClientSide) return;
+	@SubscribeEvent
+	public static void onLivingJump(LivingEvent.LivingJumpEvent event) {
+		if (event.getEntity().level().isClientSide) return;
 
-        if (event.getEntity().hasEffect(MainEffects.STUN.get()))
-            event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
-    }
+		if (event.getEntity().hasEffect(MainEffects.STUN.get()))
+			event.getEntity().setDeltaMovement(event.getEntity().getDeltaMovement().multiply(1, 0, 1));
+	}
 
-    @SubscribeEvent
-    public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
-        LivingEntity entity = event.getEntity();
-        if (entity.level().isClientSide) return;
+	@SubscribeEvent
+	public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
+		LivingEntity entity = event.getEntity();
+		if (entity.level().isClientSide) return;
 
-        if (entity.hasEffect(MainEffects.STUN.get())) {
-            entity.setDeltaMovement(0, entity.getDeltaMovement().y, 0);
-            entity.setJumping(false);
-            entity.setSprinting(false);
+		if (entity.hasEffect(MainEffects.STUN.get())) {
+			entity.setDeltaMovement(0, entity.getDeltaMovement().y, 0);
+			entity.setJumping(false);
+			entity.setSprinting(false);
 
-            if (entity.getPose() != Pose.CROUCHING) entity.setPose(Pose.CROUCHING);
+			if (entity.getPose() != Pose.CROUCHING) entity.setPose(Pose.CROUCHING);
 
-            if (entity instanceof Mob mob) {
-                mob.getNavigation().stop();
-                mob.setTarget(null);
-                mob.setAggressive(false);
-            }
-        }
+			if (entity instanceof Mob mob) {
+				mob.getNavigation().stop();
+				mob.setTarget(null);
+				mob.setAggressive(false);
+			}
+		}
 
-        if (entity instanceof ServerPlayer serverPlayer) {
-            StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-				if (!data.getStatus().hasCreatedCharacter()) return;
+		if (entity instanceof ServerPlayer serverPlayer) {
+			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+				if (!data.getStatus().isHasCreatedCharacter()) return;
 
-                AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
-                if (speedAttr != null) {
-                    if (speedAttr.getModifier(FORM_SPEED_UUID) != null) speedAttr.removeModifier(FORM_SPEED_UUID);
-                    if (data.getCharacter().hasActiveForm()) {
-                        FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-                        if (activeForm != null) {
-                            double multiplier = activeForm.getSpeedMultiplier();
-                            if (multiplier != 1.0) {
-                                double bonus = multiplier - 1.0;
-                                speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", bonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
-                            }
-                        }
-                    }
-                }
+				AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
+				if (speedAttr != null) {
+					if (speedAttr.getModifier(FORM_SPEED_UUID) != null) speedAttr.removeModifier(FORM_SPEED_UUID);
+					if (data.getCharacter().hasActiveForm()) {
+						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
+						if (activeForm != null) {
+							double multiplier = activeForm.getSpeedMultiplier();
+							if (multiplier != 1.0) {
+								double bonus = multiplier - 1.0;
+								speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", bonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
+							}
+						}
+					}
+				}
 
 				AttributeInstance reachAttr = serverPlayer.getAttribute(ForgeMod.BLOCK_REACH.get());
 				AttributeInstance entityReachAttr = serverPlayer.getAttribute(ForgeMod.ENTITY_REACH.get());
@@ -390,10 +393,11 @@ public class StatsEvents {
 					if (reachAttr.getModifier(FORM_REACH_UUID) != null) reachAttr.removeModifier(FORM_REACH_UUID);
 				}
 				if (entityReachAttr != null) {
-					if (entityReachAttr.getModifier(FORM_REACH_UUID) != null) entityReachAttr.removeModifier(FORM_REACH_UUID);
+					if (entityReachAttr.getModifier(FORM_REACH_UUID) != null)
+						entityReachAttr.removeModifier(FORM_REACH_UUID);
 				}
 
-                Float[] scaling = data.getCharacter().getModelScaling();
+				Float[] scaling = data.getCharacter().getModelScaling();
 				if (scaling == null || scaling.length < 2) scaling = new Float[]{0.9375f, 0.9375f, 0.9375f};
 
 				float currentScaleY = scaling[1];
@@ -401,7 +405,7 @@ public class StatsEvents {
 				if (data.getCharacter().hasActiveForm()) {
 					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
 					if (activeForm != null) {
-                        Float[] formMultiplier = activeForm.getModelScaling();
+						Float[] formMultiplier = activeForm.getModelScaling();
 						currentScaleY *= formMultiplier[1];
 					}
 				}
@@ -424,9 +428,9 @@ public class StatsEvents {
 						entityReachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", reachBonus, AttributeModifier.Operation.ADDITION));
 					}
 				}
-            });
-        }
-    }
+			});
+		}
+	}
 
 	@SubscribeEvent
 	public static void onFall(LivingFallEvent event) {
@@ -434,7 +438,7 @@ public class StatsEvents {
 
 		final int[] jumpLevel = {0};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 			if (!data.getSkills().hasSkill("jump") || !data.getSkills().isSkillActive("jump")) return;
 			jumpLevel[0] = data.getSkills().getSkillLevel("jump");
 		});
@@ -482,8 +486,10 @@ public class StatsEvents {
 
 	private static boolean hasPothala(ServerPlayer player, String side) {
 		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (side.equals("left") && (head.getItem() == MainItems.POTHALA_LEFT.get() || head.getItem() == MainItems.GREEN_POTHALA_LEFT.get())) return true;
-		else return side.equals("right") && (head.getItem() == MainItems.POTHALA_RIGHT.get() || head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
+		if (side.equals("left") && (head.getItem() == MainItems.POTHALA_LEFT.get() || head.getItem() == MainItems.GREEN_POTHALA_LEFT.get()))
+			return true;
+		else
+			return side.equals("right") && (head.getItem() == MainItems.POTHALA_RIGHT.get() || head.getItem() == MainItems.GREEN_POTHALA_RIGHT.get());
 	}
 
 	private static boolean checkPothalaColorMatch(ServerPlayer p1, ServerPlayer p2) {
@@ -499,84 +505,84 @@ public class StatsEvents {
 		return false;
 	}
 
-    @SubscribeEvent
-    public static void onEntitySize(EntityEvent.Size event) {
-        Entity entity = event.getEntity();
-        if (!(entity instanceof Player)) return;
+	@SubscribeEvent
+	public static void onEntitySize(EntityEvent.Size event) {
+		Entity entity = event.getEntity();
+		if (!(entity instanceof Player)) return;
 
-        StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
-            var character = data.getCharacter();
-            var activeForm = character.getActiveFormData();
-            String currentForm = character.getActiveForm();
-            String race = character.getRaceName().toLowerCase();
+		StatsProvider.get(StatsCapability.INSTANCE, entity).ifPresent(data -> {
+			var character = data.getCharacter();
+			var activeForm = character.getActiveFormData();
+			String currentForm = character.getActiveForm();
+			String race = character.getRaceName().toLowerCase();
 
-            var raceConfig = ConfigManager.getRaceCharacter(race);
-            String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-            String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-                    ? activeForm.getCustomModel().toLowerCase() : "";
+			var raceConfig = ConfigManager.getRaceCharacter(race);
+			String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+			String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
+					? activeForm.getCustomModel().toLowerCase() : "";
 
-            String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-            if (logicKey.isEmpty()) {
-                logicKey = race;
-            }
+			String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+			if (logicKey.isEmpty()) {
+				logicKey = race;
+			}
 
-            float configScaleX, configScaleY;
+			float configScaleX, configScaleY;
 
-            if (activeForm != null) {
-                configScaleX = activeForm.getModelScaling()[0];
-                configScaleY = activeForm.getModelScaling()[1];
-            } else {
-                configScaleX = character.getModelScaling()[0];
-                configScaleY = character.getModelScaling()[1];
-            }
+			if (activeForm != null) {
+				configScaleX = activeForm.getModelScaling()[0];
+				configScaleY = activeForm.getModelScaling()[1];
+			} else {
+				configScaleX = character.getModelScaling()[0];
+				configScaleY = character.getModelScaling()[1];
+			}
 
-            float scalingX = configScaleX;
-            float scalingY = configScaleY;
+			float scalingX = configScaleX;
+			float scalingY = configScaleY;
 
-            boolean isOozaru = logicKey.startsWith("oozaru") ||
-                    (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+			boolean isOozaru = logicKey.startsWith("oozaru") ||
+					(race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
 
-            if (isOozaru) {
-                float baseOozaruSize = 3.8f;
+			if (isOozaru) {
+				float baseOozaruSize = 3.8f;
 
-                float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
-                float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
+				float visualScaleX = Math.max(0.1f, configScaleX - 2.8f);
+				float visualScaleY = Math.max(0.1f, configScaleY - 2.8f);
 
-                scalingX = visualScaleX * baseOozaruSize;
-                scalingY = visualScaleY * baseOozaruSize;
-            } else {
-                scalingX = configScaleX;
-                scalingY = configScaleY;
-            }
+				scalingX = visualScaleX * baseOozaruSize;
+				scalingY = visualScaleY * baseOozaruSize;
+			} else {
+				scalingX = configScaleX;
+				scalingY = configScaleY;
+			}
 
-            // scalingX = Math.min(configScaleX, 5.0f);
+			// scalingX = Math.min(configScaleX, 5.0f);
 
-            float rawWidth = 0.6F * scalingX;
-            float rawHeight = 1.9F * scalingY;
+			float rawWidth = 0.6F * scalingX;
+			float rawHeight = 1.9F * scalingY;
 
-            float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
-            float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
+			float finalWidth = Math.round(rawWidth * 10.0F) / 10.0F;
+			float finalHeight = Math.round(rawHeight * 10.0F) / 10.0F;
 
-            Pose pose = event.getPose();
-            float poseHeightMultiplier = 1.0F;
-            float eyeHeightMultiplier = 1.0F;
+			Pose pose = event.getPose();
+			float poseHeightMultiplier = 1.0F;
+			float eyeHeightMultiplier = 1.0F;
 
-            if (pose == Pose.CROUCHING) {
-                poseHeightMultiplier = 1.5F / 1.8F;
-                eyeHeightMultiplier = 1.27F / 1.62F;
-            } else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
-                poseHeightMultiplier = 0.6F / 1.8F;
-                eyeHeightMultiplier = 0.4F / 1.62F;
-            }
+			if (pose == Pose.CROUCHING) {
+				poseHeightMultiplier = 1.5F / 1.8F;
+				eyeHeightMultiplier = 1.27F / 1.62F;
+			} else if (pose == Pose.SWIMMING || pose == Pose.FALL_FLYING || pose == Pose.SPIN_ATTACK) {
+				poseHeightMultiplier = 0.6F / 1.8F;
+				eyeHeightMultiplier = 0.4F / 1.62F;
+			}
 
-            EntityDimensions newDims = EntityDimensions.fixed(finalWidth, finalHeight * poseHeightMultiplier);
-            event.setNewSize(newDims);
+			EntityDimensions newDims = EntityDimensions.fixed(finalWidth, finalHeight * poseHeightMultiplier);
+			event.setNewSize(newDims);
 
-            float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
-            float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
+			float rawEyeHeight = 1.7F * scalingY * eyeHeightMultiplier;
+			float finalEyeHeight = Math.round(rawEyeHeight * 10.0F) / 10.0F;
 
-            event.setNewEyeHeight(finalEyeHeight);
-        });
-    }
+			event.setNewEyeHeight(finalEyeHeight);
+		});
+	}
 
 }

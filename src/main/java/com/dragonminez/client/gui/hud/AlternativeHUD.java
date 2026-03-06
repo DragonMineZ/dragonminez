@@ -39,7 +39,7 @@ public class AlternativeHUD {
 			Status status = data.getStatus();
 			Resources resources = data.getResources();
 
-			if (status.hasCreatedCharacter()) {
+			if (status.isHasCreatedCharacter()) {
 				float maxHP = Minecraft.getInstance().player.getMaxHealth();
 				int maxKi = data.getMaxEnergy();
 				int maxStm = data.getMaxStamina();
@@ -129,10 +129,10 @@ public class AlternativeHUD {
 
 				drawBarValues(guiGraphics, currentKi, maxKi, 24, -8);
 
-                guiGraphics.pose().scale(userScale - 0.3f, userScale - 0.3f, 1.0f);
+				guiGraphics.pose().scale(userScale - 0.3f, userScale - 0.3f, 1.0f);
 
 				drawRacialIcon(guiGraphics, raceName, Math.min(powerRelease, 100), -40, -8);
-                drawFormIcon(guiGraphics, formRelease, -40, -8);
+				drawFormIcon(guiGraphics, formRelease, -40, -8);
 
 				guiGraphics.pose().popPose();
 
@@ -146,7 +146,7 @@ public class AlternativeHUD {
 				guiGraphics.blit(hud, 65, -8, 77, 90, 4, 4, 128, 128);
 
 				drawBarValues(guiGraphics, currentStm, maxStm, 29, -8);
-                drawStringWithBorder(guiGraphics, powerRelease + "%", -115, 3, ColorUtils.hexToInt("#FACAF7"));
+				drawStringWithBorder(guiGraphics, powerRelease + "%", -115, 3, ColorUtils.hexToInt("#FACAF7"));
 
 				guiGraphics.pose().popPose();
 			}

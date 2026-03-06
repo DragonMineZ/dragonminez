@@ -19,18 +19,18 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class MasterKarinEntity extends MastersEntity {
 
-    public MasterKarinEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel);
-        this.setPersistenceRequired();
+	public MasterKarinEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
+		super(pEntityType, pLevel);
+		this.setPersistenceRequired();
 		this.masterName = "karin";
-    }
+	}
 
 	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
 		if (this.level().isClientSide && masterName != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
+				if (data.getStatus().isHasCreatedCharacter()) {
 					Minecraft mc = Minecraft.getInstance();
 					mc.setScreen(new MasterTextScreen(masterName));
 					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());

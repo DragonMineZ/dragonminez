@@ -105,6 +105,7 @@ public class StorageManager {
 		if (activeStorage == null) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			if (!stats.isDataLoaded() && !stats.getStatus().isHasCreatedCharacter()) return;
 			CompoundTag dataToSave = stats.save();
 
 			MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataSaveEvent(player, dataToSave));

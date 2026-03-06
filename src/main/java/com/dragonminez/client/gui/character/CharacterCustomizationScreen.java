@@ -16,6 +16,7 @@ import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
+import com.dragonminez.common.network.C2S.UpdateCharacterC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
@@ -131,6 +132,16 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	@Override
 	protected void init() {
 		super.init();
+
+		if (this.character != null && this.character.getCharacterClass() != null) {
+			RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
+			if (statsConfig != null) {
+				java.util.List<String> classes = new java.util.ArrayList<>(statsConfig.getAllClasses());
+				int idx = classes.indexOf(this.character.getCharacterClass());
+				if (idx != -1) this.currentClassIndex = idx;
+			}
+		}
+
 		clearWidgets();
 		initPage();
 	}
@@ -138,11 +149,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void initPage() {
 		int centerY = getUiHeight() / 2;
 
-		if (currentPage == 0) {
-			initPage0(centerY);
-		} else if (currentPage == 1) {
-			initPage1(centerY);
-		}
+		if (currentPage == 0) initPage0(centerY);
+		else if (currentPage == 1) initPage1(centerY);
 
 		initNavigationButtons();
 		initColorPickerSliders(centerY);
@@ -321,13 +329,18 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 					})
 					.build());
 
+			boolean isEditing = (this.previousScreen == null);
+			Component buttonText = isEditing ?
+					Component.translatable("gui.dragonminez.customization.update") :
+					Component.translatable("gui.dragonminez.customization.confirm");
+
 			addRenderableWidget(new TexturedTextButton.Builder()
 					.position(getUiWidth() - 85, getUiHeight() - 25)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.customization.confirm"))
+					.message(buttonText)
 					.onPress(btn -> finish())
 					.build());
 		}
@@ -686,12 +699,16 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void finish() {
 		if (this.minecraft != null) {
-			NetworkHandler.sendToServer(new CreateCharacterC2S(character));
-			ForgeClientEvents.hasCreatedCharacterCache = true;
+			if (this.previousScreen == null) {
+				NetworkHandler.sendToServer(new UpdateCharacterC2S(character));
+			} else {
+				NetworkHandler.sendToServer(new CreateCharacterC2S(character));
+				ForgeClientEvents.isHasCreatedCharacterCache = true;
+				QuestsMenuScreen.SAVED_QUEST_ID = -1;
+				QuestsMenuScreen.SAVED_SAGA_INDEX = 0;
+				QuestsMenuScreen.SAVED_SCROLL_OFFSET = 0;
+			}
 			this.minecraft.setScreen(null);
-			QuestsMenuScreen.SAVED_QUEST_ID = -1;
-			QuestsMenuScreen.SAVED_SAGA_INDEX = 0;
-			QuestsMenuScreen.SAVED_SCROLL_OFFSET = 0;
 		}
 	}
 
@@ -1179,8 +1196,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				return true;
 			}
 			if (this.minecraft != null) {
-				isSwitchingMenu = true;
-				this.minecraft.setScreen(previousScreen);
+				if (this.previousScreen != null) {
+					isSwitchingMenu = true;
+					this.minecraft.setScreen(previousScreen);
+				} else this.minecraft.setScreen(null);
 			}
 			return true;
 		}
@@ -1191,8 +1210,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	@Override
 	public void onClose() {
 		if (this.minecraft != null) {
-			isSwitchingMenu = true;
-			this.minecraft.setScreen(previousScreen);
+			if (this.previousScreen != null) {
+				isSwitchingMenu = true;
+				this.minecraft.setScreen(previousScreen);
+			} else {
+				super.onClose();
+			}
 		}
 	}
 

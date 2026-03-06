@@ -6,18 +6,14 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class CreateCharacterC2S {
-
-	private final String raceName;
+public class UpdateCharacterC2S {
 	private final String className;
-	private final String gender;
 	private final int hairId;
 	private final CustomHair customHair;
 	private final int bodyType;
@@ -33,10 +29,8 @@ public class CreateCharacterC2S {
 	private final String eye2Color;
 	private final String auraColor;
 
-	public CreateCharacterC2S(Character character) {
-		this.raceName = character.getRace();
+	public UpdateCharacterC2S(Character character) {
 		this.className = character.getCharacterClass();
-		this.gender = character.getGender();
 		this.hairId = character.getHairId();
 		this.customHair = character.getHairBase();
 		this.bodyType = character.getBodyType();
@@ -53,12 +47,10 @@ public class CreateCharacterC2S {
 		this.auraColor = character.getAuraColor();
 	}
 
-	private CreateCharacterC2S(String raceName, String className, String gender, int hairId, CustomHair customHair, int bodyType, int eyesType,
-							   int noseType, int mouthType, int tattooType, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
-							   String eye1Color, String eye2Color, String auraColor) {
-		this.raceName = raceName;
+	public UpdateCharacterC2S(String className, int hairId, CustomHair customHair, int bodyType, int eyesType,
+							  int noseType, int mouthType, int tattooType, String hairColor, String bodyColor,
+							  String bodyColor2, String bodyColor3, String eye1Color, String eye2Color, String auraColor) {
 		this.className = className;
-		this.gender = gender;
 		this.hairId = hairId;
 		this.customHair = customHair;
 		this.bodyType = bodyType;
@@ -75,16 +67,12 @@ public class CreateCharacterC2S {
 		this.auraColor = auraColor;
 	}
 
-	public static void encode(CreateCharacterC2S msg, FriendlyByteBuf buf) {
-		buf.writeUtf(msg.raceName);
+	public static void encode(UpdateCharacterC2S msg, FriendlyByteBuf buf) {
 		buf.writeUtf(msg.className);
-		buf.writeUtf(msg.gender);
 		buf.writeInt(msg.hairId);
 		boolean hasCustomHair = msg.customHair != null;
 		buf.writeBoolean(hasCustomHair);
-		if (hasCustomHair) {
-			msg.customHair.writeToBuffer(buf);
-		}
+		if (hasCustomHair) msg.customHair.writeToBuffer(buf);
 		buf.writeInt(msg.bodyType);
 		buf.writeInt(msg.eyesType);
 		buf.writeInt(msg.noseType);
@@ -99,55 +87,59 @@ public class CreateCharacterC2S {
 		buf.writeUtf(msg.auraColor);
 	}
 
-	public static CreateCharacterC2S decode(FriendlyByteBuf buf) {
-		String raceName = buf.readUtf();
+	public static UpdateCharacterC2S decode(FriendlyByteBuf buf) {
 		String className = buf.readUtf();
-		String gender = buf.readUtf();
 		int hairId = buf.readInt();
 		CustomHair customHair = null;
 		if (buf.readBoolean()) {
 			customHair = CustomHair.readFromBuffer(buf);
 		}
-		int bodyType = buf.readInt();
-		int eyesType = buf.readInt();
-		int noseType = buf.readInt();
-		int mouthType = buf.readInt();
-		int tattooType = buf.readInt();
-		String hairColor = buf.readUtf();
-		String bodyColor = buf.readUtf();
-		String bodyColor2 = buf.readUtf();
-		String bodyColor3 = buf.readUtf();
-		String eye1Color = buf.readUtf();
-		String eye2Color = buf.readUtf();
-		String auraColor = buf.readUtf();
 
-		return new CreateCharacterC2S(
-				raceName, className, gender, hairId, customHair, bodyType, eyesType,
-				noseType, mouthType, tattooType, hairColor, bodyColor, bodyColor2, bodyColor3,
-				eye1Color, eye2Color, auraColor
+		return new UpdateCharacterC2S(
+				className,
+				hairId,
+				customHair,
+				buf.readInt(),
+				buf.readInt(),
+				buf.readInt(),
+				buf.readInt(),
+				buf.readInt(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf(),
+				buf.readUtf()
 		);
 	}
 
-	public static void handle(CreateCharacterC2S msg, Supplier<NetworkEvent.Context> ctx) {
+	public static void handle(UpdateCharacterC2S msg, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> {
 			ServerPlayer player = ctx.get().getSender();
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (!data.getStatus().isHasCreatedCharacter()) {
-					data.initializeWithRaceAndClass(msg.raceName, msg.className, msg.gender,
-							msg.hairId, msg.customHair, msg.bodyType, msg.eyesType, msg.noseType, msg.mouthType, msg.tattooType,
-							msg.hairColor, msg.bodyColor, msg.bodyColor2, msg.bodyColor3,
-							msg.eye1Color, msg.eye2Color, msg.auraColor);
-					data.getCharacter().setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(data));
-					data.getCharacter().setSelectedForm(TransformationsHelper.getFirstAvailableForm(data));
-					player.refreshDimensions();
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-				}
+				Character c = data.getCharacter();
+				c.setCharacterClass(msg.className);
+				c.setHairId(msg.hairId);
+				if (msg.customHair != null) c.setHairBase(msg.customHair);
+				c.setBodyType(msg.bodyType);
+				c.setEyesType(msg.eyesType);
+				c.setNoseType(msg.noseType);
+				c.setMouthType(msg.mouthType);
+				c.setTattooType(msg.tattooType);
+				c.setHairColor(msg.hairColor);
+				c.setBodyColor(msg.bodyColor);
+				c.setBodyColor2(msg.bodyColor2);
+				c.setBodyColor3(msg.bodyColor3);
+				c.setEye1Color(msg.eye1Color);
+				c.setEye2Color(msg.eye2Color);
+				c.setAuraColor(msg.auraColor);
+				player.refreshDimensions();
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		});
 		ctx.get().setPacketHandled(true);
 	}
 }
-
-

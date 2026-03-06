@@ -5,6 +5,7 @@ import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.util.TransformationsHelper;
+import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import java.util.Collection;
 import java.util.List;
 
+@Getter
 public class StatsData {
 	private final Player player;
 	private final Stats stats;
@@ -26,6 +28,7 @@ public class StatsData {
 	private final Training training;
 
 	private boolean hasInitializedHealth = false;
+	private boolean isDataLoaded = false;
 
 	public StatsData(Player player) {
 		this.player = player;
@@ -220,7 +223,7 @@ public class StatsData {
 		double bonusRes = bonusStats.calculateBonus("RES", stats.getResistance());
 		double armor = player.getArmorValue();
 		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
-		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.75 + toughness;
+		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.5 + toughness * 0.8;
 	}
 
 	public double getDefense() {
@@ -230,7 +233,7 @@ public class StatsData {
 		double bonusRes = bonusStats.calculateBonus("RES", stats.getResistance());
 		double armor = player.getArmorValue();
 		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
-		return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
+		return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.5) + toughness * 0.8) * releaseMultiplier;
 	}
 
 	public double getTotalMultiplier(String statName) {
@@ -472,7 +475,7 @@ public class StatsData {
 		character.setEye1Color(eye1Color);
 		character.setEye2Color(eye2Color);
 		character.setAuraColor(auraColor);
-		status.setCreatedCharacter(true);
+		status.setHasCreatedCharacter(true);
 
 		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
 		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
@@ -650,10 +653,10 @@ public class StatsData {
 		if (nbt.contains("HasInitializedHealth")) {
 			hasInitializedHealth = nbt.getBoolean("HasInitializedHealth");
 		}
-
 		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
 			updateTransformationSkillLimits(character.getRaceName());
 		}
+		this.isDataLoaded = true;
 	}
 
 	public void copyFrom(StatsData other) {
@@ -668,9 +671,8 @@ public class StatsData {
 		this.bonusStats.copyFrom(other.bonusStats);
 		this.training.copyFrom(other.training);
 		this.hasInitializedHealth = other.hasInitializedHealth;
-
-		if (character.getRaceName() != null && !character.getRaceName().isEmpty()) {
+		if (character.getRaceName() != null && !character.getRaceName().isEmpty())
 			updateTransformationSkillLimits(character.getRaceName());
-		}
+		this.isDataLoaded = true;
 	}
 }

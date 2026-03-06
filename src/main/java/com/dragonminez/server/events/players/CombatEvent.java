@@ -54,7 +54,7 @@ public class CombatEvent {
 			boolean isPunchMachine = event.getEntity() instanceof PunchMachineEntity;
 
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
-				if (!attackerData.getStatus().hasCreatedCharacter()) return;
+				if (!attackerData.getStatus().isHasCreatedCharacter()) return;
 
 				double mcBaseDamage = currentDamage[0];
 				double dmzDamage = attackerData.getMeleeDamage();
@@ -164,19 +164,19 @@ public class CombatEvent {
 					int kiCost = 0;
 					switch (weaponType.toLowerCase()) {
 						case "blade" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
+							kiCost = (int) Math.round(ConfigManager.getServerConfig().getCombat().getBaselineFormDrain() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
 								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiBladeConfig()[0];
 							}
 						}
 						case "scythe" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
+							kiCost = (int) Math.round(ConfigManager.getServerConfig().getCombat().getBaselineFormDrain() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
 								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiScytheConfig()[0];
 							}
 						}
 						case "clawlance" -> {
-							kiCost = (int) Math.round(attackerData.getMaxEnergy() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
+							kiCost = (int) Math.round(ConfigManager.getServerConfig().getCombat().getBaselineFormDrain() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[1]);
 							if (attackerData.getResources().getCurrentEnergy() >= kiCost) {
 								currentDamage[0] = currentDamage[0] + attackerData.getKiDamage() * ConfigManager.getServerConfig().getCombat().getKiClawLanceConfig()[0];
 							}
@@ -209,7 +209,7 @@ public class CombatEvent {
 		// Victim Defense Event
 		if (event.getEntity() instanceof Player victim) {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
-				if (victimData.getStatus().hasCreatedCharacter()) {
+				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
 					boolean isPvP = source.getEntity() instanceof Player;
 					if (ConfigManager.getServerConfig().getCombat().getKillPlayersOnCombatLogout() && isPvP)
@@ -392,7 +392,7 @@ public class CombatEvent {
 
 	public static void handleDash(ServerPlayer player, float xInput, float zInput, boolean isDoubleDash) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().hasCreatedCharacter()) return;
+			if (!data.getStatus().isHasCreatedCharacter()) return;
 			if (player.hasEffect(MainEffects.STUN.get())) return;
 
 			if (ComboManager.canTeleport(player.getUUID())) {
@@ -456,16 +456,16 @@ public class CombatEvent {
 			double speedMultiplier = player.getAttributeValue(Attributes.MOVEMENT_SPEED) / 0.1;
 			double distance = baseDistance * speedMultiplier;
 
-			int maxEnergy = data.getMaxEnergy();
+			int baseDrain = ConfigManager.getServerConfig().getCombat().getBaselineFormDrain();
 			int kiCost;
 			DMZEvent.PlayerDashEvent.DashType dashType;
 
 			if (canDoubleDash) {
 				distance = distance * 1.5;
-				kiCost = (int) Math.ceil(maxEnergy * 0.25);
+				kiCost = (int) Math.ceil(baseDrain * 0.25);
 				dashType = DMZEvent.PlayerDashEvent.DashType.DOUBLE;
 			} else {
-				kiCost = (int) Math.ceil(maxEnergy * 0.12);
+				kiCost = (int) Math.ceil(baseDrain * 0.12);
 				dashType = DMZEvent.PlayerDashEvent.DashType.NORMAL;
 			}
 

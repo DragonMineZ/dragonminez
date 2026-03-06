@@ -129,7 +129,7 @@ public class QuestNPCEntity extends MastersEntity {
 			String npcId = getNpcId();
 
 			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-				if (!data.getStatus().hasCreatedCharacter()) {
+				if (!data.getStatus().isHasCreatedCharacter()) {
 					serverPlayer.displayClientMessage(
 							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
 					return;

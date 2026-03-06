@@ -46,7 +46,7 @@ public class MasterTextScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		int buttonX = this.width / 2 - 105;
+		int buttonX = this.width / 2 - 120;
 		int buttonY = this.height - 23;
 
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
@@ -83,7 +83,7 @@ public class MasterTextScreen extends Screen {
 
 		if (!stats.getCooldowns().hasCooldown(Cooldowns.SENZU_KARIN)) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -110,7 +110,7 @@ public class MasterTextScreen extends Screen {
 						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.evil");
 					} else if (stats.getSkills().getSkillLevel("potentialunlock") < 10) {
 						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.level");
-					} else if (stats.getSkills().getSkillLevel("potentialunlock") == 10){
+					} else if (stats.getSkills().getSkillLevel("potentialunlock") == 10) {
 						NetworkHandler.sendToServer(new NPCActionC2S("guru", 1));
 						this.onClose();
 					}
@@ -132,8 +132,23 @@ public class MasterTextScreen extends Screen {
 				})
 				.build());
 
+		if (ConfigManager.getRaceCharacter(stats.getCharacter().getRace()).getHasSaiyanTail()) {
+			this.addRenderableWidget(new TexturedTextButton.Builder()
+					.position(x + 90, y)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.translatable(stats.getCharacter().isHasSaiyanTail() ? "gui.dragonminez.button.dende.remove_tail" : "gui.dragonminez.button.dende.grow_tail"))
+					.onPress(b -> {
+						NetworkHandler.sendToServer(new NPCActionC2S("dende", 3));
+						this.onClose();
+					})
+					.build());
+		}
+
 		this.addRenderableWidget(new TexturedTextButton.Builder()
-				.position(x + 150, y)
+				.position(x + 180, y)
 				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -207,7 +222,7 @@ public class MasterTextScreen extends Screen {
 					})
 					.build());
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -257,7 +272,7 @@ public class MasterTextScreen extends Screen {
 	private void initGero(int x, int y, StatsData stats) {
 		if (thirdFunc) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -285,7 +300,7 @@ public class MasterTextScreen extends Screen {
 					.build());
 		} else if (secondFunc) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -313,7 +328,7 @@ public class MasterTextScreen extends Screen {
 					.build());
 		} else {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x + 150, y)
+					.position(x + 180, y)
 					.size(74, 20)
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
@@ -328,7 +343,8 @@ public class MasterTextScreen extends Screen {
 		}
 	}
 
-	private void initToribot(int x, int y, StatsData stats) {}
+	private void initToribot(int x, int y, StatsData stats) {
+	}
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

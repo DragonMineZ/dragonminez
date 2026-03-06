@@ -1,17 +1,21 @@
 package com.dragonminez.common.stats;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.UUID;
 
+@Getter
+@Setter
 public class Status {
-    private boolean isAlive;
-    private boolean hasCreatedCharacter;
-    private boolean isAuraActive;
-    private boolean isActionCharging;
-    private boolean isTailVisible;
-    private boolean isDescending;
-    private boolean isInKaioPlanet;
+	private boolean isAlive;
+	private boolean isHasCreatedCharacter;
+	private boolean isAuraActive;
+	private boolean isActionCharging;
+	private boolean isTailVisible;
+	private boolean isDescending;
+	private boolean isInKaioPlanet;
 	private boolean isChargingKi;
 	private boolean isBlocking;
 	private long lastBlockTime;
@@ -31,15 +35,16 @@ public class Status {
 	private String backWeapon;
 	private String scouterItem;
 	private String pothalaColor;
+	private boolean isPermanentAura;
 
-    public Status() {
-        this.isAlive = true;
-        this.hasCreatedCharacter = false;
-        this.isAuraActive = false;
-        this.isActionCharging = false;
-        this.isTailVisible = false;
-        this.isDescending = false;
-        this.isInKaioPlanet = false;
+	public Status() {
+		this.isAlive = true;
+		this.isHasCreatedCharacter = false;
+		this.isAuraActive = false;
+		this.isActionCharging = false;
+		this.isTailVisible = false;
+		this.isDescending = false;
+		this.isInKaioPlanet = false;
 		this.isChargingKi = false;
 		this.isBlocking = false;
 		this.lastBlockTime = 0;
@@ -59,71 +64,18 @@ public class Status {
 		this.backWeapon = "";
 		this.scouterItem = "";
 		this.pothalaColor = "";
-    }
+		this.isPermanentAura = false;
+	}
 
-    public boolean isAlive() { return isAlive; }
-    public boolean hasCreatedCharacter() { return hasCreatedCharacter; }
-    public boolean isAuraActive() { return isAuraActive; }
-    public boolean isActionCharging() { return isActionCharging; }
-    public boolean isTailVisible() { return isTailVisible; }
-    public boolean isDescending() { return isDescending; }
-    public boolean isInKaioPlanet() { return isInKaioPlanet; }
-	public boolean isChargingKi() { return isChargingKi; }
-	public boolean isBlocking() { return isBlocking; }
-	public long getLastBlockTime() { return lastBlockTime; }
-	public long getLastHurtTime() { return lastHurtTime; }
-	public boolean isStunned() { return isStunned; }
-	public ActionMode getSelectedAction() { return selectedAction; }
-	public String getKiWeaponType() { return kiWeaponType; }
-	public int getDrainingTargetId() { return drainingTargetId; }
-	public boolean isFused() { return isFused; }
-	public boolean isFusionLeader() { return isFusionLeader; }
-	public UUID getFusionPartnerUUID() { return fusionPartnerUUID; }
-	public int getFusionTimer() { return fusionTimer; }
-	public String getFusionType() { return fusionType; }
-	public CompoundTag getOriginalAppearance() { return originalAppearance; }
-	public boolean isAndroidUpgraded() { return androidUpgraded; }
-	public boolean isRenderKatana() { return renderKatana; }
-	public String getBackWeapon() { return backWeapon; }
-	public String getScouterItem() { return scouterItem; }
-	public String getPothalaColor() { return pothalaColor; }
-
-    public void setAlive(boolean alive) { this.isAlive = alive; }
-    public void setCreatedCharacter(boolean created) { this.hasCreatedCharacter = created; }
-    public void setAuraActive(boolean active) { this.isAuraActive = active; }
-    public void setActionCharging(boolean actionCharging) { this.isActionCharging = actionCharging; }
-    public void setTailVisible(boolean visible) { this.isTailVisible = visible; }
-    public void setDescending(boolean descending) { this.isDescending = descending; }
-    public void setInKaioPlanet(boolean inKaio) { this.isInKaioPlanet = inKaio; }
-	public void setChargingKi(boolean charging) { this.isChargingKi = charging; }
-	public void setBlocking(boolean blocking) { this.isBlocking = blocking; }
-	public void setLastBlockTime(long time) { this.lastBlockTime = time; }
-	public void setLastHurtTime(long time) { this.lastHurtTime = time; }
-	public void setStunned(boolean stunned) { this.isStunned = stunned; }
-	public void setSelectedAction(ActionMode action) { this.selectedAction = action; }
-	public void setKiWeaponType(String type) { this.kiWeaponType = type; }
-	public void setDrainingTargetId(int id) { this.drainingTargetId = id; }
-	public void setFused(boolean fused) { this.isFused = fused; }
-	public void setFusionLeader(boolean leader) { this.isFusionLeader = leader; }
-	public void setFusionPartnerUUID(UUID uuid) { this.fusionPartnerUUID = uuid; }
-	public void setFusionTimer(int timer) { this.fusionTimer = timer; }
-	public void setFusionType(String type) { this.fusionType = type; }
-	public void setOriginalAppearance(CompoundTag tag) { this.originalAppearance = tag; }
-	public void setAndroidUpgraded(boolean upgraded) { this.androidUpgraded = upgraded; }
-	public void setRenderKatana(boolean render) { this.renderKatana = render; }
-	public void setBackWeapon(String weapon) { this.backWeapon = weapon; }
-	public void setScouterItem(String item) { this.scouterItem = item; }
-	public void setPothalaColor(String color) { this.pothalaColor = color; }
-
-    public CompoundTag save() {
-        CompoundTag tag = new CompoundTag();
-        tag.putBoolean("IsAlive", isAlive);
-        tag.putBoolean("HasCreatedChar", hasCreatedCharacter);
-        tag.putBoolean("AuraActive", isAuraActive);
-        tag.putBoolean("Transforming", isActionCharging);
-        tag.putBoolean("TailVisible", isTailVisible);
-        tag.putBoolean("Descending", isDescending);
-        tag.putBoolean("InKaioPlanet", isInKaioPlanet);
+	public CompoundTag save() {
+		CompoundTag tag = new CompoundTag();
+		tag.putBoolean("IsAlive", isAlive);
+		tag.putBoolean("HasCreatedChar", isHasCreatedCharacter);
+		tag.putBoolean("AuraActive", isAuraActive);
+		tag.putBoolean("Transforming", isActionCharging);
+		tag.putBoolean("TailVisible", isTailVisible);
+		tag.putBoolean("Descending", isDescending);
+		tag.putBoolean("InKaioPlanet", isInKaioPlanet);
 		tag.putBoolean("IsChargingKi", isChargingKi);
 		tag.putBoolean("IsBlocking", isBlocking);
 		tag.putLong("LastBlockTime", lastBlockTime);
@@ -141,17 +93,20 @@ public class Status {
 		tag.putBoolean("AndroidUpgraded", androidUpgraded);
 		tag.putBoolean("RenderKatana", renderKatana);
 		tag.putString("BackWeapon", backWeapon);
-        return tag;
-    }
+		tag.putString("ScouterItem", scouterItem);
+		tag.putString("PothalaColor", pothalaColor);
+		tag.putBoolean("IsPermanentAura", isPermanentAura);
+		return tag;
+	}
 
-    public void load(CompoundTag tag) {
-        this.isAlive = tag.getBoolean("IsAlive");
-        this.hasCreatedCharacter = tag.getBoolean("HasCreatedChar");
-        this.isAuraActive = tag.getBoolean("AuraActive");
-        this.isActionCharging = tag.getBoolean("Transforming");
-        this.isTailVisible = tag.getBoolean("TailVisible");
-        this.isDescending = tag.getBoolean("Descending");
-        this.isInKaioPlanet = tag.getBoolean("InKaioPlanet");
+	public void load(CompoundTag tag) {
+		this.isAlive = tag.getBoolean("IsAlive");
+		this.isHasCreatedCharacter = tag.getBoolean("HasCreatedChar");
+		this.isAuraActive = tag.getBoolean("AuraActive");
+		this.isActionCharging = tag.getBoolean("Transforming");
+		this.isTailVisible = tag.getBoolean("TailVisible");
+		this.isDescending = tag.getBoolean("Descending");
+		this.isInKaioPlanet = tag.getBoolean("InKaioPlanet");
 		this.isChargingKi = tag.getBoolean("IsChargingKi");
 		this.isBlocking = tag.getBoolean("IsBlocking");
 		this.lastBlockTime = tag.getLong("LastBlockTime");
@@ -172,16 +127,19 @@ public class Status {
 		this.androidUpgraded = tag.getBoolean("AndroidUpgraded");
 		this.renderKatana = tag.getBoolean("RenderKatana");
 		this.backWeapon = tag.getString("BackWeapon");
-    }
+		this.scouterItem = tag.getString("ScouterItem");
+		this.pothalaColor = tag.getString("PothalaColor");
+		this.isPermanentAura = tag.getBoolean("IsPermanentAura");
+	}
 
-    public void copyFrom(Status other) {
-        this.isAlive = other.isAlive;
-        this.hasCreatedCharacter = other.hasCreatedCharacter;
-        this.isAuraActive = other.isAuraActive;
-        this.isActionCharging = other.isActionCharging;
-        this.isTailVisible = other.isTailVisible;
-        this.isDescending = other.isDescending;
-        this.isInKaioPlanet = other.isInKaioPlanet;
+	public void copyFrom(Status other) {
+		this.isAlive = other.isAlive;
+		this.isHasCreatedCharacter = other.isHasCreatedCharacter;
+		this.isAuraActive = other.isAuraActive;
+		this.isActionCharging = other.isActionCharging;
+		this.isTailVisible = other.isTailVisible;
+		this.isDescending = other.isDescending;
+		this.isInKaioPlanet = other.isInKaioPlanet;
 		this.isChargingKi = other.isChargingKi;
 		this.isBlocking = other.isBlocking;
 		this.lastBlockTime = other.lastBlockTime;
@@ -199,6 +157,9 @@ public class Status {
 		this.androidUpgraded = other.androidUpgraded;
 		this.renderKatana = other.renderKatana;
 		this.backWeapon = other.backWeapon;
-    }
+		this.pothalaColor = other.pothalaColor;
+		this.scouterItem = other.scouterItem;
+		this.isPermanentAura = other.isPermanentAura;
+	}
 }
 

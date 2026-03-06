@@ -116,12 +116,14 @@ public class NPCActionC2S {
 			data.getCharacter().clearActiveForm();
 			data.getCharacter().clearActiveStackForm();
 			data.getCharacter().setHasSaiyanTail(true);
-			data.getStatus().setCreatedCharacter(false);
+			data.getStatus().setHasCreatedCharacter(false);
 
 			player.refreshDimensions();
 			player.setHealth(20.0F);
 			player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(StatsEvents.DMZ_HEALTH_MODIFIER_UUID);
 			player.setHealth(20.0F);
+		} else if (action == 3) {
+			data.getCharacter().setHasSaiyanTail(!data.getCharacter().isHasSaiyanTail());
 		}
 	}
 

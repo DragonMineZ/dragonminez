@@ -22,13 +22,13 @@ public abstract class LocalPlayerMixin {
 		if (data.getCharacter().hasActiveForm() || data.getCharacter().hasActiveStackForm()) {
 			float currentHealth = self.getHealth();
 			float healthLoss = currentHealth - pHealth;
+			if (healthLoss <= 0) return;
 
-			if (healthLoss > 0) {
-				double expectedDrain = data.getAdjustedHealthDrain();
-				if (Math.abs(healthLoss - expectedDrain) < 1.0f) {
-					self.setHealth(pHealth);
-					ci.cancel();
-				}
+			double expectedDrain = Math.round(data.getAdjustedHealthDrain());
+
+			if (healthLoss <= (expectedDrain + 2.0f)) {
+				self.setHealth(pHealth);
+				ci.cancel();
 			}
 		}
 	}

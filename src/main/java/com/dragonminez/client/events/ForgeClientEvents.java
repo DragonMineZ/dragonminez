@@ -26,15 +26,16 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
-	public static boolean hasCreatedCharacterCache = false;
+	public static boolean isHasCreatedCharacterCache = false;
 	private static String lastLang = "";
 
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
 		if (Minecraft.getInstance().player != null) {
-			if (hasCreatedCharacterCache) {
+			if (isHasCreatedCharacterCache) {
 				if (VanillaGuiOverlay.PLAYER_HEALTH.type() == event.getOverlay()) {
-					event.setCanceled(true);}
+					event.setCanceled(true);
+				}
 			}
 		}
 	}
@@ -43,19 +44,19 @@ public class ForgeClientEvents {
 	public static void onPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
 		if (Minecraft.getInstance().player == null) return;
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
-			hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
+			isHasCreatedCharacterCache = data.getStatus().isHasCreatedCharacter();
 		});
 	}
 
-    @SubscribeEvent
-    public static void onKeyInput(InputEvent.Key event) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null) return;
+	@SubscribeEvent
+	public static void onKeyInput(InputEvent.Key event) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.screen != null) return;
 
 		if (KeyBinds.STATS_MENU.consumeClick()) {
 			if (mc.player == null || mc.screen != null) return;
 			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-				if (data.getStatus().hasCreatedCharacter()) {
+				if (data.getStatus().isHasCreatedCharacter()) {
 					mc.setScreen(new CharacterStatsScreen());
 				} else {
 					mc.setScreen(new RaceSelectionScreen(data.getCharacter()));
@@ -68,51 +69,51 @@ public class ForgeClientEvents {
 			mc.setScreen(new SpacePodScreen());
 			mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 		}
-    }
+	}
 
-    private static int tickCounter = 0;
-    private static final int UPDATE_INTERVAL = 10;
+	private static int tickCounter = 0;
+	private static final int UPDATE_INTERVAL = 10;
 
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+	@SubscribeEvent
+	public static void onClientTick(TickEvent.ClientTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) {
+			return;
+		}
 
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) {
-            return;
-        }
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || mc.level == null) {
+			return;
+		}
 
 		if (KeyBinds.UTILITY_MENU.isDown()) {
 			if (mc.screen == null) {
 				StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-					if (!data.getStatus().hasCreatedCharacter()) return;
+					if (!data.getStatus().isHasCreatedCharacter()) return;
 					mc.setScreen(new UtilityMenuScreen());
 					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 				});
 			}
 		}
 
-        tickCounter++;
-        if (tickCounter >= UPDATE_INTERVAL) {
-            tickCounter = 0;
-            StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-                if (hasCreatedCharacterCache != data.getStatus().hasCreatedCharacter()) {
-                    hasCreatedCharacterCache = data.getStatus().hasCreatedCharacter();
-                }
-            });
-        }
+		tickCounter++;
+		if (tickCounter >= UPDATE_INTERVAL) {
+			tickCounter = 0;
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+				if (isHasCreatedCharacterCache != data.getStatus().isHasCreatedCharacter()) {
+					isHasCreatedCharacterCache = data.getStatus().isHasCreatedCharacter();
+				}
+			});
+		}
 
 		String current = mc.options.languageCode;
 		if (!current.equals(lastLang)) {
 			lastLang = current;
 			CrowdinManager.fetchLanguage(current);
 		}
-    }
+	}
 
-    @SubscribeEvent
-    public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
-        ConfigManager.clearServerSync();
-    }
+	@SubscribeEvent
+	public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
+		ConfigManager.clearServerSync();
+	}
 }

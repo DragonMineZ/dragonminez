@@ -5,7 +5,6 @@
   "itemGroup.dragonminez.items": "DMZ Items",
   "itemGroup.dragonminez.armors": "DMZ Armors",
   "itemGroup.dragonminez.ores": "DMZ Ores",
-
   "//": "KEYS",
   "key.categories.dragonminez": "DragonMine Z",
   "key.dragonminez.stats_menu": "Stats Menu",
@@ -18,7 +17,6 @@
   "key.dragonminez.ki_sense": "Ki Sense",
   "key.dragonminez.fly_key": "Fly",
   "key.dragonminez.dash_key": "Dash",
-
   "//": "GUI",
   "gui.dragonminez.character_creation.title": "Create your character to begin your adventure",
   "gui.dragonminez.character_creation.race": "Race: %s",
@@ -117,6 +115,7 @@
   "gui.dragonminez.customization.hue": "Hue",
   "gui.dragonminez.customization.saturation": "Saturation",
   "gui.dragonminez.customization.value": "Value",
+  "gui.dragonminez.customization.update": "Update",
   "gui.dragonminez.hair_editor.title": "Hair Editor",
   "gui.dragonminez.hair_editor.edit_values": "EDIT VALUES",
   "gui.dragonminez.hair_editor.hair_strands": "HAIR STRANDS",
@@ -251,6 +250,8 @@
   "gui.dragonminez.lines.dende.main": "Hello %s, I am Dende, the Guardian of Earth. How can I assist you today?",
   "gui.dragonminez.button.dende.heal": "Heal",
   "gui.dragonminez.button.dende.reset": "Reset Stats",
+  "gui.dragonminez.button.dende.remove_tail": "Remove Tail",
+  "gui.dragonminez.button.dende.grow_tail": "Grow Tail",
   "gui.dragonminez.lines.enma.name": "King Yemma",
   "gui.dragonminez.lines.enma.main": "Welcome to the Otherworld, %s. I am King Yemma, the overseer of souls. Do you want to come back to Earth?",
   "gui.dragonminez.lines.enma.revive": "You need to talk to Fortuneteller Baba to be revived first!",
@@ -278,7 +279,6 @@
   "gui.dragonminez.lines.toribot.name": "Toribot",
   "gui.dragonminez.lines.toribot.main": "Beep boop! I am Toribot, thanks for visiting me! It's kinda lonely here with King Kai...",
   "gui.dragonminez.lines.generic.createcharacter": "You need to create your character first.",
-
   "//": "WISHES",
   "wish.shenron.senzu.name": "Senzu Beans",
   "wish.shenron.senzu.desc": "Receive some Senzu Beans.",
@@ -298,6 +298,8 @@
   "wish.shenron.saiyanship.desc": "Receive a Saiyan Spaceship.",
   "wish.shenron.racialskillreset.name": "Reset Passive",
   "wish.shenron.racialskillreset.desc": "Resets the player's Racial Passive Skill. This only applies to Saiyans, Namekians and Majin",
+  "wish.shenron.customization.name": "Re-Customize Character",
+  "wish.shenron.customization.desc": "Allows you to change your character's appearance and class but not Race. This will not reset your stats or skills.",
   "wish.porunga.senzu.name": "Senzu Beans",
   "wish.porunga.senzu.desc": "Receive some Senzu Beans.",
   "wish.porunga.tps.name": "Training Points",
@@ -316,7 +318,8 @@
   "wish.porunga.pothala_green.desc": "Receive a pair of Green Potara Earrings.",
   "wish.porunga.racialskillreset.name": "Reset Passive",
   "wish.porunga.racialskillreset.desc": "Resets the player's Racial Passive Skill. This only applies to Saiyans, Namekians and Majin",
-
+  "wish.porunga.customization.name": "Re-Customize Character",
+  "wish.porunga.customization.desc": "Allows you to change your character's appearance and class but not Race. This will not reset your stats or skills.",
   "//": "RACES, CLASSES, GENDERS",
   "race.dragonminez.human": "§bHuman",
   "race.dragonminez.human.desc": "They are a terrestrial race with highly versatile combat skills. While they lack the innate power of other races, they are incredibly resourceful and tenacious. They stand out for their perseverance and courage, able to overcome their limitations through training and discipline.",
@@ -336,7 +339,6 @@
   "gender.dragonminez.male": "Male",
   "gender.dragonminez.female": "Female",
   "forms.dragonminez.base": "Base",
-
   "//": "TRANSFORMATIONS",
   "message.dragonminez.form.no_ki_instant": "§cYou need at least %s §cKi to transform instantly.",
   "message.dragonminez.form.no_ki": "§cYou need at least %s §cKi to transform.",
@@ -344,6 +346,8 @@
   "message.dragonminez.form.no_stamina": "§cYou need at least %s §cStamina to transform.",
   "message.dragonminez.form.no_health_instant": "§cYou need at least %s §cHP to transform instantly.",
   "message.dragonminez.form.no_health": "§cYou need at least %s §cHP to transform.",
+  "message.dragonminez.form.stack_removed": "§cYour stack form has been removed, you cannot stack it with this form.",
+  "message.dragonminez.form.not_stackable": "§cThis form cannot be stacked with your current stack form.",
   "race.dragonminez.base": "Base",
   "race.dragonminez.human.group.superforms": "Super",
   "race.dragonminez.human.form.superforms.buffed": "Buffed",
@@ -419,7 +423,6 @@
   "race.dragonminez.stack.group.ultraego": "U. Ego",
   "race.dragonminez.stack.form.ultraego.sign": "Sign",
   "race.dragonminez.stack.form.ultraego.mastered": "Mastered",
-
   "//": "SKILLS",
   "message.dragonminez.racial.target_too_strong": "§cThe target is too strong to be absorbed or assimilated.",
   "message.dragonminez.racial.limit_reached": "§cYou have reached the limit of absorptions.",
@@ -437,7 +440,6 @@
   "message.dragonminez.gero.already_android": "§cDr. Gero§r: You have already been converted to an android.",
   "message.dragonminez.gero.upgrade_success": "§cDr. Gero: §rAndroid conversion complete! Now let your power run wild!",
   "message.dragonminez.transformation": "§cThis is %s§c!",
-
   "//": "EFFECTS",
   "effect.dragonminez.stun": "Stunned",
   "effect.dragonminez.stagger": "Staggered",
@@ -457,7 +459,6 @@
   "effect.dragonminez.poise_cd": "Poise CD",
   "effect.dragonminez.stack_transform": "Stacking Form",
   "effect.dragonminez.stack_transformed": "Stacked Form",
-
   "//": "ENTITIES",
   "entity.dragonminez.master_karin": "Master Korin",
   "entity.dragonminez.master_goku": "Master Goku",
@@ -544,7 +545,6 @@
   "entity.dragonminez.ki_volley": "Ki Volley",
   "entity.dragonminez.ki_laser": "Ki Laser",
   "entity.dragonminez.sp_blue_hurricane": "Blue Hurricane",
-
   "//": "BLOCKS",
   "block.dragonminez.time_chamber_block": "Hyperbolic Time Chamber Block",
   "block.dragonminez.invisible_ladder_block": "Invisible Ladder Block",
@@ -643,7 +643,6 @@
   "block.dragonminez.sacred_catharanthus_roseus_flower": "Sacred Catharanthus Roseus",
   "block.dragonminez.sacred_trillium_flower": "Sacred Trillium",
   "block.dragonminez.sacred_fern": "Sacred Fern",
-
   "//": "ITEMS",
   "item.dragonminez.red_capsule": "Capsule (STR)",
   "item.dragonminez.purple_capsule": "Capsule (RES)",
@@ -695,8 +694,6 @@
   "item.dragonminez.laser_merus": "§bMerus' Laser",
   "item.dragonminez.blaster_cannon": "§cBlaster Cannon",
   "item.dragonminez.punch_machine_item": "§ePunch Machine",
-
-
   "//": "ARMOR CRAFTING",
   "item.dragonminez.armor_crafting_kit": "Armor Crafting Kit",
   "item.dragonminez.kikono_string": "Kikono String",
@@ -742,7 +739,6 @@
   "item.dragonminez.pattern_majin_buu": "Majin Pattern (Buu)",
   "item.dragonminez.pattern_gamma1": "Red Ribbon Army Pattern (Gamma 1)",
   "item.dragonminez.pattern_gamma2": "Red Ribbon Army Pattern (Gamma 2)",
-
   "//": "Dragon Balls",
   "block.dragonminez.dball1": "§6Earth's §rDragon Ball (1 Star)",
   "block.dragonminez.dball2": "§6Earth's §rDragon Ball (2 Stars)",
@@ -758,7 +754,6 @@
   "block.dragonminez.dball5_namek": "§3Namek's §rDragon Ball (5 Stars)",
   "block.dragonminez.dball6_namek": "§3Namek's §rDragon Ball (6 Stars)",
   "block.dragonminez.dball7_namek": "§3Namek's §rDragon Ball (7 Stars)",
-
   "//": "Spawn Eggs",
   "item.dragonminez.dino1_spawn_egg": "Dinosaur Spawn Egg",
   "item.dragonminez.dino2_spawn_egg": "Large Dinosaur Spawn Egg",
@@ -776,7 +771,6 @@
   "item.dragonminez.bandit_spawn_egg": "Bandit Spawn Egg",
   "item.dragonminez.namek_frog_spawn_egg": "Namekian Frog Spawn Egg",
   "item.dragonminez.namek_frog_ginyu_spawn_egg": "Namekian Frog (Ginyu) Spawn Egg",
-
   "//": "ARMORS",
   "item.dragonminez.goku_kid_armor_chestplate": "Red Turtle Hermit School GI Chestplate (§6Goku§r - Kid)",
   "item.dragonminez.goku_kid_armor_leggings": "Red Turtle Hermit School GI Leggings (§6Goku§r - Kid)",
@@ -938,7 +932,6 @@
   "item.dragonminez.caulifla_armor_chestplate": "Caulifla Chestplate",
   "item.dragonminez.caulifla_armor_leggings": "Caulifla Leggings",
   "item.dragonminez.caulifla_armor_boots": "Caulifla Boots",
-
   "//": "COMMANDS",
   "command.dragonminez.stats.set.success": "§e[DMZ-Stats]§r Stat %s set to %s for %s",
   "command.dragonminez.stats.add.success.added": "§e[DMZ-Stats]§r Added %s points of %s to %s",
@@ -997,7 +990,9 @@
   "command.dragonminez.story.sidequest.turned_in": "§e[DMZ-Story]§r §aSuccessfully turned in side-quest '%s'!",
   "command.dragonminez.story.questnpc.spawned": "§e[DMZ-Story]§r §aSpawned quest NPC '%s' at your location.",
   "command.dragonminez.story.questnpc.error": "§e[DMZ-Story]§r §cFailed to spawn quest NPC: %s",
-
+  "command.dragonminez.racial.reset.success": "§e[DMZ-Racial]§r §aReset racial traits for %s",
+  "command.dragonminez.racial.reset.multiple": "§e[DMZ-Racial]§r §aReset racial traits for %d players.",
+  "//": "SIDEQUESTS",
   "entity.dragonminez.quest_npc": "Quest NPC",
   "entity.dragonminez.questnpc.generic_npc": "Villager",
   "entity.dragonminez.questnpc.roshi": "Master Roshi",
@@ -1017,14 +1012,12 @@
   "entity.dragonminez.questnpc.merchant_01": "Traveling Merchant",
   "entity.dragonminez.questnpc.scholar_01": "Scholar",
   "entity.dragonminez.questnpc.namek_elder": "Namekian Elder",
-
   "gui.dragonminez.close": "Close",
   "gui.dragonminez.sidequest.turn_in": "Turn In",
   "gui.dragonminez.sidequest.in_progress": "In Progress",
   "gui.dragonminez.sidequest.available_quests": "Quests",
   "gui.dragonminez.sidequest.no_quests": "No quests available.",
   "gui.dragonminez.sidequest.rewards": "Rewards:",
-
   "dialogue.dragonminez.story.sidequest.roshi.offer": "Ah, a new student! I have some training for you... Are you ready?",
   "dialogue.dragonminez.story.sidequest.roshi.in_progress": "Keep training, you're not done yet!",
   "dialogue.dragonminez.story.sidequest.roshi.complete": "Well done! You've completed the training. Here's your reward!",
@@ -1041,7 +1034,6 @@
   "dialogue.dragonminez.story.sidequest.generic_npc.in_progress": "How's it going with that task?",
   "dialogue.dragonminez.story.sidequest.generic_npc.complete": "Thank you so much for your help!",
   "dialogue.dragonminez.story.sidequest.generic_npc.idle": "Hello there, traveler.",
-
   "dmz.sidequest.roshi_basic.obj3": "Report back to Roshi",
   "dmz.sidequest.endurance.obj3": "Report back to Roshi",
   "dmz.sidequest.weighted.obj3": "Report back to Roshi",
@@ -1074,7 +1066,6 @@
   "command.dragonminez.reload.success": "§e[DMZ-Reload]§r Configuration & Sagas reload completed successfully!",
   "command.dragonminez.reload.sync": "§e[DMZ-Reload]§r %d players had their data synchronized.",
   "command.dragonminez.reload.error": "§e[DMZ-Reload]§r §cA critic error occurred during reload: %s",
-
   "//": "QUESTS § STORY",
   "dmz.saga.saiyan_saga": "Saiyan Saga",
   "dmz.quest.saiyan1.name": "A New Beginning",
@@ -1115,7 +1106,6 @@
   "dmz.quest.saiyan9.name": "A New Horizon",
   "dmz.quest.saiyan9.desc": "With the Earth safe, a new journey awaits. Travel to the Ajissa Plains to prepare for the next threat.",
   "dmz.quest.saiyan9.obj1": "Go to the Ajissa Plains",
-
   "dmz.saga.frieza_saga": "Frieza Saga",
   "dmz.quest.frieza1.name": "A New Enemy",
   "dmz.quest.frieza1.desc": "A new threat has emerged in the Ajissa Plains. Find and defeat Cui, one of Frieza's soldiers.",
@@ -1179,7 +1169,6 @@
   "dmz.quest.frieza16.name": "Return to Earth",
   "dmz.quest.frieza16.desc": "With Frieza defeated, it's time to return to Earth and prepare for future threats.",
   "dmz.quest.frieza16.obj1": "Go to the Rocky Biomes",
-
   "dmz.saga.android_saga": "Android Saga",
   "dmz.quest.android1.name": "Frieza's Return",
   "dmz.quest.android1.desc": "Frieza has returned with an army! Defeat his soldiers.",
@@ -1258,7 +1247,6 @@
   "dmz.quest.android19.name": "Peace Restored",
   "dmz.quest.android19.desc": "With Cell defeated, peace has returned. Visit Kami's Lookout to celebrate.",
   "dmz.quest.android19.obj1": "Go to Kami's Lookout",
-
   "//": "SIDE QUESTS § TRAINING",
   "dmz.sidequest.roshi_basic.name": "Roshi's Basic Training",
   "dmz.sidequest.roshi_basic.desc": "Master Roshi has agreed to train you, but first you must prove your worth. Find Kame House and show your combat skills.",
@@ -1277,7 +1265,6 @@
   "dmz.sidequest.gravity.obj1": "Defeat 5 Wither Skeletons",
   "dmz.sidequest.gravity.obj2": "Defeat 10 Blazes",
   "dmz.sidequest.gravity.obj3": "Collect 10 Blaze Rods",
-
   "//": "SIDE QUESTS § EXPLORATION",
   "dmz.sidequest.explorer.name": "World Explorer",
   "dmz.sidequest.explorer.desc": "A warrior must know the land they protect. Explore the different biomes of the world.",
@@ -1291,7 +1278,6 @@
   "dmz.sidequest.sacred_lands.name": "The Sacred Lands",
   "dmz.sidequest.sacred_lands.desc": "The Namekian elders speak of a sacred village hidden on this world. Find it and uncover its secrets.",
   "dmz.sidequest.sacred_lands.obj1": "Find the Sacred Village",
-
   "//": "SIDE QUESTS § COMBAT",
   "dmz.sidequest.monster_hunter.name": "Monster Hunter",
   "dmz.sidequest.monster_hunter.desc": "The world is filled with dangerous creatures. Prove yourself as a monster hunter by eliminating various threats.",
@@ -1504,7 +1490,6 @@
   "quest.dmz.party.left": "§e[DMZ-Party]§r You left the party",
   "quest.dmz.party.player.left": "§e[DMZ-Party]§r %s left the party",
   "quest.dmz.party.list.header": "§e[DMZ-Party]§r === Party Members ===",
-
   "//": "SKILLS",
   "skill.dragonminez.fly": "Fly",
   "skill.dragonminez.fly.desc": "Control your Ki to Fly! Jump and press the Fly Key mid-air to Fly, level up the skill to increase your speed.",
@@ -1551,7 +1536,7 @@
   "skill.dragonminez.racial_bioandroid.desc": "Bio-Androids can drain the life force of their enemies by selecting the skill on the X menu and pressing G, dealing %d%% of their max health as damage and healing themselves for the same amount. This has a %d seconds cooldown.",
   "skill.dragonminez.racial_majin": "Absorption",
   "skill.dragonminez.racial_majin.desc": "Majins can absorb other entities by selecting the skill on the X menu and pressing G. When absorbing, you will regen %d%% of your max health, and will also gain a permanent %d%% (of the target stats) boost to your stats.",
-
+  "skill.dragonminez.aurastatus": "Aura Status",
   "//": "ADVANCEMENTS",
   "advancements.dragonminez.root.title": "DragonMine Z",
   "advancements.dragonminez.root.description": "Thank you for downloading the Mod, hope you enjoy it!",
@@ -1643,7 +1628,6 @@
   "advancements.dragonminez.kaiosama.description": "Reach the King Kai's Planet in the Otherworld, crossing Snake Way.",
   "advancements.dragonminez.patriarca.title": "The Eldest Namek",
   "advancements.dragonminez.patriarca.description": "Reach the Grand Elder Guru's House in Namek.",
-
   "//": "MISC",
   "attribute.dragonminez.dmz_health": "DMZ Health",
   "error.dmz.createcharacter": "You must create your charactert first.",
@@ -1678,7 +1662,6 @@
   "item.dragonminez.blue_capsule.tooltip2": "§7This capsule is used to increase your energy.",
   "item.dragonminez.blue_capsule.ene.use": "Energy",
   "item.dragonminez.blue_capsule.ene.full": "You have reached the maximum amount of ENE.",
-
   "//": "SOUNDS",
   "sounds.dragonminez.punch1": "Punch",
   "sounds.dragonminez.punch2": "Punch",
