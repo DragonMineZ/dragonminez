@@ -53,9 +53,9 @@ public class FormModeHandler implements IActionModeHandler {
 			}
 		}
 
-		int energyCost = (int) (data.getMaxEnergy() * nextForm.getEnergyDrain());
-		int staminaCost = (int) (data.getMaxStamina() * nextForm.getStaminaDrain());
-		int healthCost = (int) (data.getMaxHealth() * nextForm.getHealthDrain());
+		int energyCost = (int) (data.getMaxEnergy() * 0.1 * nextForm.getEnergyDrain());
+		int staminaCost = (int) (data.getMaxStamina() * 0.1 * nextForm.getStaminaDrain());
+		int healthCost = (int) (data.getMaxHealth() * 0.1 * nextForm.getHealthDrain());
 
 		boolean hasEnoughEnergy = data.getResources().getCurrentEnergy() >= energyCost;
 		boolean hasEnoughStamina = data.getResources().getCurrentStamina() >= staminaCost;
