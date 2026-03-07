@@ -29,7 +29,7 @@ public class KiBallPlaneModel<T extends Entity> extends EntityModel<T> {
 
     @Override
     public void setupAnim(T t, float v, float v1, float v2, float v3, float v4) {
-        float rotationX = (v2 % 360) * 50;
+        float rotationX = (v2 % 360) * 70;
         this.kiball.zRot = (float) Math.toRadians(rotationX);
     }
 

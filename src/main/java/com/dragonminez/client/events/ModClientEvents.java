@@ -245,6 +245,8 @@ public class ModClientEvents {
         e.registerLayerDefinition(KiLaserExplosion2Model.LAYER_LOCATION, KiLaserExplosion2Model::createBodyLayer);
         e.registerLayerDefinition(KiWaveModel.LAYER_LOCATION, KiWaveModel::createBodyLayer);
 
+
+
         e.registerLayerDefinition(KiScytheModel.LAYER_LOCATION, KiScytheModel::createBodyLayer);
         e.registerLayerDefinition(KiBladeModel.LAYER_LOCATION, KiBladeModel::createBodyLayer);
         e.registerLayerDefinition(KiTridentModel.LAYER_LOCATION, KiTridentModel::createBodyLayer);

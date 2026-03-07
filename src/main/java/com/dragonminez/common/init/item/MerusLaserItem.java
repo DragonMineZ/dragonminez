@@ -21,7 +21,15 @@ public class MerusLaserItem extends Item {
         if (!pLevel.isClientSide) {
 
             KiBlastEntity kiBlast = new KiBlastEntity(pLevel, pPlayer);
-            kiBlast.setup(pPlayer, 7.2F, 0.5F, 0.85f,0xEBFDFF, 0x51EBFC);
+            //kiBlast.setup(pPlayer, 7.2F, 0.5F, 0.85f,0xEBFDFF, 0x51EBFC);
+            //kiBlast.setup(pPlayer, 7.2F, 1.2F, 0.2f,0x00FFFF, 0x00FFFF);
+            //kiBlast.setup(pPlayer, 7.2F, 0.2F, 0.2f,0x00FFFF, 0x0073FF);
+            //kiBlast.setupKiSmall(pPlayer,7.2f, 0.2f, 0x00FFFF);
+            //kiBlast.setupKiBlast(pPlayer,10,0.5f, 0x00FFFF, 1.5f);
+            //kiBlast.setupKiLargeBlast(pPlayer,10,0.5f, 0x00FFFF, 2.5f);
+            //kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f);
+            kiBlast.setupKiSouls(pPlayer,10,0.2f, 0xFFFFFF);
+
 
             kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.8F);
 
