@@ -97,61 +97,51 @@ public class AuraRenderHandler {
 		}
 	}
 
-	private static float[] getBodyScale(StatsData stats) {
-		float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
-		var character = stats.getCharacter();
+    private static float[] getBodyScale(StatsData stats) {
+        float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
+        var character = stats.getCharacter();
+        String race = character.getRaceName().toLowerCase();
 
-		String currentForm = "";
-		if (character.hasActiveForm()) {
-			currentForm = character.getActiveForm().toLowerCase();
-		}
+        if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            sX = character.getActiveFormData().getModelScaling()[0];
+            sY = character.getActiveFormData().getModelScaling()[1];
+            sZ = character.getActiveFormData().getModelScaling()[2];
+        } else {
+            sX = character.getModelScaling()[0];
+            sY = character.getModelScaling()[1];
+            sZ = character.getModelScaling()[2];
+        }
 
-		if (currentForm.contains("oozaru")) {
-			return new float[]{1.0f, 1.0f, 1.0f};
-		}
+        String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
+        boolean isOozaru = currentForm.contains("oozaru") ||
+                (race.equals("saiyan") && (currentForm.equals("oozaru") || currentForm.equals("golden_oozaru")));
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			sX *= character.getActiveFormData().getModelScaling()[0];
-			sY *= character.getActiveFormData().getModelScaling()[1];
-			sZ *= character.getActiveFormData().getModelScaling()[2];
-		}
+        if (isOozaru) {
+            sX = Math.max(0.1f, sX - 2.8f);
+            sY = Math.max(0.1f, sY - 2.8f);
+            sZ = Math.max(0.1f, sZ - 2.8f);
+        }
 
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			sX *= character.getActiveStackFormData().getModelScaling()[0];
-			sY *= character.getActiveStackFormData().getModelScaling()[1];
-			sZ *= character.getActiveStackFormData().getModelScaling()[2];
-		}
+        return new float[]{sX, sY, sZ};
+    }
 
-		if ((!character.hasActiveForm() || character.getActiveFormData() == null)
-				&& (!character.hasActiveStackForm() || character.getActiveStackFormData() == null)) {
-			sX *= character.getModelScaling()[0];
-			sY *= character.getModelScaling()[1];
-			sZ *= character.getModelScaling()[2];
-		}
+    private static float[] getAuraScale(StatsData stats) {
+        float scale = 1.05f;
 
-		return new float[]{sX, sY, sZ};
-	}
+        var character = stats.getCharacter();
+        String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
 
-	private static float[] getAuraScale(StatsData stats) {
-		float scale = 1.2f;
+        if (currentForm.contains("oozaru")) {
+            scale = 3.0f;
+        }
 
-		String formName = "";
-		var character = stats.getCharacter();
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			formName = character.getActiveForm().toLowerCase();
-		}
+        if (currentForm.contains("supersaiyan2") || currentForm.contains("supersaiyan3") ||
+                currentForm.contains("ultra") || currentForm.contains("superperfect")) {
+            scale += 0.2f;
+        }
 
-		if (formName.contains("oozaru") || formName.contains("golden_oozaru")) {
-			return new float[]{3.5f, 3.5f, 3.5f};
-		}
-
-		if (formName.contains("supersaiyan2") || formName.contains("supersaiyan3") || formName.contains("overdrive") ||
-				formName.contains("supernamekian") || formName.contains("ultra") || formName.contains("superperfect")) {
-			scale += 0.3f;
-		}
-
-		return new float[]{scale, scale, scale};
-	}
+        return new float[]{scale, scale, scale};
+    }
 
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
