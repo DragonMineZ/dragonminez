@@ -58,11 +58,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	// Textures
 	// ========================================================================================
 
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-			"textures/gui/menu/menubig.png");
-	// TODO: Replace with dedicated panel textures once added by art/UI pass:
-	//  - textures/gui/menu/quest_tree_panel_left.png  (no left border)
-	//  - textures/gui/menu/quest_tree_panel_right.png (no right border)
+	// Shared panel texture used on both sides (placeholder until final left/right assets are delivered).
+	private static final ResourceLocation QUEST_MENU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
+			"textures/gui/menu/questmenu.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation EXCLAMATION_MARK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
@@ -90,8 +88,18 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final int EXCLAMATION_TEX_WIDTH = 97;
 	private static final int EXCLAMATION_TEX_HEIGHT = 250;
 
-	/** X-position of the left detail panel. */
-	private static final int LEFT_PANEL_X = 12;
+	private static final int QUEST_MENU_TEX_WIDTH = 512;
+	private static final int QUEST_MENU_TEX_HEIGHT = 512;
+	// questmenu.png stores the panel inside the atlas; visible frame is not full 512x512.
+	private static final int QUEST_MENU_PANEL_U = 1;
+	private static final int QUEST_MENU_PANEL_V = 1;
+	private static final int QUEST_MENU_PANEL_WIDTH = 282;
+	private static final int QUEST_MENU_PANEL_HEIGHT = 426;
+	private static final int PANEL_BORDER_BLEED_PX = 3;
+
+	private static final long PANEL_INTRO_DURATION_MS = 700L;
+	private static final int PANEL_INTRO_EXTRA_TRAVEL_PX = 22;
+	private static final float PANEL_INTRO_BACK_OVERSHOOT = 1.35f;
 
 	// ========================================================================================
 	// Node Status Colors
@@ -183,6 +191,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private final Map<String, Long> sectionLastReveal = new HashMap<>();
 	private final Map<String, Long> sectionAnimationStart = new HashMap<>();
 
+	private long panelIntroStartMs = 0L;
+	private boolean panelIntroActive = false;
+
 	// ========================================================================================
 	// Constructor
 	// ========================================================================================
@@ -244,6 +255,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	@Override
 	protected void init() {
 		super.init();
+		startPanelIntroAnimation();
 		updateStatsData();
 		loadAvailableSagas();
 		rebuildLayout();
@@ -625,6 +637,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
+		syncActionButtonPosition();
 		rewardHitboxes.clear();
 
 		renderTreeCanvas(graphics, uiMouseX, uiMouseY);
@@ -1056,8 +1069,37 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void renderSidePanelBackground(GuiGraphics graphics, PanelRect panel, boolean flushLeft, boolean flushRight) {
 		graphics.fill(panel.x, panel.y, panel.right(), panel.bottom(), SIDE_PANEL_BG);
-		// Temporary placeholder until dedicated left/right panel textures are available.
-		graphics.blit(MENU_BIG, panel.x, panel.y, 0, 0, 141, 213, 256, 256);
+
+		int drawX = panel.x - (flushLeft ? PANEL_BORDER_BLEED_PX : 0);
+		int drawW = panel.width + (flushLeft ? PANEL_BORDER_BLEED_PX : 0) + (flushRight ? PANEL_BORDER_BLEED_PX : 0);
+
+		float srcPixelsPerDstPixel = panel.width <= 0 ? 1.0f : (QUEST_MENU_PANEL_WIDTH / (float) panel.width);
+		int srcBleed = Math.max(0, Math.round(PANEL_BORDER_BLEED_PX * srcPixelsPerDstPixel));
+		int srcU = QUEST_MENU_PANEL_U - (flushLeft ? srcBleed : 0);
+		int srcW = QUEST_MENU_PANEL_WIDTH + (flushLeft ? srcBleed : 0) + (flushRight ? srcBleed : 0);
+		int srcV = QUEST_MENU_PANEL_V;
+		int srcH = QUEST_MENU_PANEL_HEIGHT;
+
+		if (srcU < 0) {
+			srcW += srcU;
+			srcU = 0;
+		}
+		srcW = Math.max(1, Math.min(srcW, QUEST_MENU_TEX_WIDTH - srcU));
+		srcV = Math.max(0, Math.min(srcV, QUEST_MENU_TEX_HEIGHT - 1));
+		srcH = Math.max(1, Math.min(srcH, QUEST_MENU_TEX_HEIGHT - srcV));
+
+		graphics.blit(QUEST_MENU,
+				drawX,
+				panel.y,
+				drawW,
+				panel.height,
+				srcU,
+				srcV,
+				srcW,
+				srcH,
+				QUEST_MENU_TEX_WIDTH,
+				QUEST_MENU_TEX_HEIGHT);
+
 		graphics.fill(panel.x, panel.y, panel.right(), panel.y + 1, SIDE_PANEL_BORDER);
 		graphics.fill(panel.x, panel.bottom() - 1, panel.right(), panel.bottom(), SIDE_PANEL_BORDER);
 		if (!flushLeft) {
@@ -1768,23 +1810,69 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private PanelRect getLeftPanelRect() {
-		int third = getUiWidth() / 3;
-		int width = Math.max(140, (int) (third * SIDE_PANEL_WIDTH_RATIO));
-		int marginY = Math.max(4, (int) (getUiHeight() * 0.05f));
-		int height = Math.max(120, getUiHeight() - (marginY * 2));
-		int x = 0;
-		int y = marginY;
-		return new PanelRect(x, y, width, height);
+		PanelRect base = getBaseLeftPanelRect();
+		int xOffset = getPanelSlideOffsetX(true, base.width);
+		return new PanelRect(base.x + xOffset, base.y, base.width, base.height);
 	}
 
 	private PanelRect getRightPanelRect() {
+		PanelRect base = getBaseRightPanelRect();
+		int xOffset = getPanelSlideOffsetX(false, base.width);
+		return new PanelRect(base.x + xOffset, base.y, base.width, base.height);
+	}
+
+	private PanelRect getBaseLeftPanelRect() {
 		int third = getUiWidth() / 3;
 		int width = Math.max(140, (int) (third * SIDE_PANEL_WIDTH_RATIO));
-		int marginY = Math.max(4, (int) (getUiHeight() * 0.05f));
-		int height = Math.max(120, getUiHeight() - (marginY * 2));
-		int x = getUiWidth() - width;
-		int y = marginY;
+		int height = Math.min(getUiHeight(), Math.max(120, (int) (getUiHeight() * SIDE_PANEL_HEIGHT_RATIO)));
+		int x = 0;
+		int y = Math.max(0, (getUiHeight() - height) / 2);
 		return new PanelRect(x, y, width, height);
+	}
+
+	private PanelRect getBaseRightPanelRect() {
+		int third = getUiWidth() / 3;
+		int width = Math.max(140, (int) (third * SIDE_PANEL_WIDTH_RATIO));
+		int height = Math.min(getUiHeight(), Math.max(120, (int) (getUiHeight() * SIDE_PANEL_HEIGHT_RATIO)));
+		int x = getUiWidth() - width;
+		int y = Math.max(0, (getUiHeight() - height) / 2);
+		return new PanelRect(x, y, width, height);
+	}
+
+	private void startPanelIntroAnimation() {
+		panelIntroStartMs = System.currentTimeMillis();
+		panelIntroActive = true;
+	}
+
+	private float getPanelIntroProgress() {
+		if (!panelIntroActive) return 1.0f;
+		long elapsed = System.currentTimeMillis() - panelIntroStartMs;
+		if (elapsed >= PANEL_INTRO_DURATION_MS) {
+			panelIntroActive = false;
+			return 1.0f;
+		}
+		return Math.max(0.0f, Math.min(1.0f, elapsed / (float) PANEL_INTRO_DURATION_MS));
+	}
+
+	private int getPanelSlideOffsetX(boolean isLeftPanel, int panelWidth) {
+		float t = getPanelIntroProgress();
+		float eased = easeOutBack(t, PANEL_INTRO_BACK_OVERSHOOT);
+		float travel = (1.0f - eased) * (panelWidth + PANEL_INTRO_EXTRA_TRAVEL_PX);
+		int offset = Math.round(travel);
+		return isLeftPanel ? -offset : offset;
+	}
+
+	private float easeOutBack(float t, float overshoot) {
+		float shifted = t - 1.0f;
+		float c3 = overshoot + 1.0f;
+		return 1.0f + c3 * shifted * shifted * shifted + overshoot * shifted * shifted;
+	}
+
+	private void syncActionButtonPosition() {
+		if (actionButton == null) return;
+		PanelRect right = getRightPanelRect();
+		actionButton.setX(right.x + (right.width - 74) / 2);
+		actionButton.setY(right.bottom() - 28);
 	}
 
 	private PanelRect getTreePanelRect() {
