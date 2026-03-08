@@ -360,8 +360,8 @@ public class DefaultFormsFactory {
 		FormConfig.FormData fusedAndroid = new FormConfig.FormData();
 		fusedAndroid.setName(HumanForms.FUSED_ANDROID);
 		fusedAndroid.setUnlockOnSkillLevel(2);
-        fusedAndroid.setCustomModel("buffed");
-        fusedAndroid.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
+		fusedAndroid.setCustomModel("buffed");
+		fusedAndroid.setModelScaling(new Float[]{1.4f, 1.3f, 1.4f});
 		fusedAndroid.setStrMultiplier(2.85);
 		fusedAndroid.setSkpMultiplier(2.65);
 		fusedAndroid.setDefMultiplier(2.15);
@@ -907,9 +907,9 @@ public class DefaultFormsFactory {
 		superPerfect.setEye1Color("#F6A6FF");
 		superPerfect.setEye2Color("#FFFFFF");
 		superPerfect.setBodyColor1("");
-		superPerfect.setBodyColor2("FFFFFF");
+		superPerfect.setBodyColor2("#FFFFFF");
 		superPerfect.setBodyColor3("");
-		superPerfect.setAuraColor("FFFF69");
+		superPerfect.setAuraColor("#FFFF69");
 		superPerfect.setHasLightnings(true);
 		superPerfect.setLightningColor("#1AA1C7");
 		superPerfect.setHairType("base");
@@ -932,9 +932,9 @@ public class DefaultFormsFactory {
 		ultraperfect.setEye1Color("#F6A6FF");
 		ultraperfect.setEye2Color("#FFFFFF");
 		ultraperfect.setBodyColor1("");
-		ultraperfect.setBodyColor2("FFFFFF");
+		ultraperfect.setBodyColor2("#FFFFFF");
 		ultraperfect.setBodyColor3("");
-		ultraperfect.setAuraColor("FFFF69");
+		ultraperfect.setAuraColor("#FFFF69");
 		ultraperfect.setHasLightnings(true);
 		ultraperfect.setLightningColor("#1AA1C7");
 		ultraperfect.setHairType("base");
