@@ -303,7 +303,7 @@ public class CombatEvent {
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
 										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
 
-										finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
+										finalDmg = (float) (currentDamage[0] - defense - (currentDamage[0] * (1.0 - mitigationPct)));
 										int randomSound = victim.getRandom().nextInt(3);
 										SoundEvent soundToPlay;
 
