@@ -1,10 +1,7 @@
 package com.dragonminez.common.init.item;
 
 import com.dragonminez.common.init.item.weapons.render.PowerPoleRenderer;
-import com.dragonminez.common.init.item.weapons.render.ZSwordRenderer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.Tiers;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -15,34 +12,35 @@ import java.util.function.Consumer;
 
 public class PowerPoleItem extends WeaponItem implements GeoItem {
 
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+	private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public PowerPoleItem() {
-        super(48, -3f, 0, "power_pole");
-    }
+	public PowerPoleItem() {
+		super(48, -3f, 0, 18, "power_pole");
+	}
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {}
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+	}
 
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
+	@Override
+	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+		consumer.accept(new IClientItemExtensions() {
 
-            private PowerPoleRenderer renderer;
+			private PowerPoleRenderer renderer;
 
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                if (this.renderer == null)
-                    this.renderer = new PowerPoleRenderer();
+			@Override
+			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+				if (this.renderer == null)
+					this.renderer = new PowerPoleRenderer();
 
-                return this.renderer;
+				return this.renderer;
 
-            }
-        });
-    }
+			}
+		});
+	}
 
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return cache;
-    }
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return cache;
+	}
 }
