@@ -1,21 +1,15 @@
 package com.dragonminez.common.init.particles;
 
 import com.dragonminez.client.util.ModParticleRenderTypes;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.world.phys.AABB;
 
-import java.util.List;
-
-public class KiTrailParticle extends TextureSheetParticle {
+public class KiSheddingParticle extends TextureSheetParticle {
 
     private final SpriteSet spriteSet;
 
-    private AbstractKiProjectile parentEntity = null; // Guardamos la referencia a la esfera
-
-    protected KiTrailParticle(ClientLevel level, double x, double y, double z, double r, double g, double b, SpriteSet spriteSet) {
+    protected KiSheddingParticle(ClientLevel level, double x, double y, double z, double r, double g, double b, SpriteSet spriteSet) {
         super(level, x, y, z, 0, 0, 0);
 
         this.spriteSet = spriteSet;
@@ -24,21 +18,12 @@ public class KiTrailParticle extends TextureSheetParticle {
         this.gCol = (float) g;
         this.bCol = (float) b;
 
-        float entitySize = 0.05f; // Tamaño por defecto si no encuentra nada
-        AABB searchArea = new AABB(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
-        List<AbstractKiProjectile> entities = level.getEntitiesOfClass(AbstractKiProjectile.class, searchArea);
-
-        if (!entities.isEmpty()) {
-            entitySize = entities.get(0).getSize();
-        }
-
         this.xd = (Math.random() - 0.5) * 0.05D;
         this.yd = (Math.random() - 0.5) * 0.05D;
         this.zd = (Math.random() - 0.5) * 0.05D;
 
-        this.lifetime = 25 + (int)(Math.random() * 10);
-
-        this.quadSize = entitySize * (0.2F + (float)Math.random() * 0.15F);
+        this.lifetime = 8;
+        this.quadSize = 0.3F + (float)Math.random() * 0.2F;
         this.gravity = 0.0F;
         this.hasPhysics = false;
         this.alpha = 1.0F;
@@ -83,7 +68,7 @@ public class KiTrailParticle extends TextureSheetParticle {
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
-            return new KiTrailParticle(level, x, y, z, r, g, b, this.spriteSet);
+            return new KiSheddingParticle(level, x, y, z, r, g, b, this.spriteSet);
         }
     }
 }

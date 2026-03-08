@@ -1,5 +1,6 @@
 package com.dragonminez.client.util;
 
+import com.dragonminez.client.events.ModClientEvents;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
@@ -14,6 +15,25 @@ public class ModRenderTypes extends RenderType {
     public ModRenderTypes(String pName, VertexFormat pFormat, VertexFormat.Mode pMode, int pBufferSize, boolean pAffectsCrumbling, boolean pSortOnUpload, Runnable pSetupState, Runnable pClearState) {
         super(pName, pFormat, pMode, pBufferSize, pAffectsCrumbling, pSortOnUpload, pSetupState, pClearState);
     }
+
+    public static RenderType getEnergySphere(ResourceLocation texture) {
+        return RenderType.create("energy_sphere",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                256,
+                false, // Al ser 'false', evitamos que las capas se oculten entre sí por profundidad
+                true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(new RenderStateShard.ShaderStateShard(ModClientEvents::getEnergySphereShader))
+                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                        .setLightmapState(RenderStateShard.NO_LIGHTMAP) // Importante: Ignora la luz ambiental para brillar siempre
+                        .setOverlayState(RenderStateShard.NO_OVERLAY)
+                        .setCullState(RenderStateShard.NO_CULL) // Permite ver el plano por ambos lados
+                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                        .createCompositeState(false));
+    }
+
     private static final Function<ResourceLocation, RenderType> GLOW = Util.memoize((pLocation) ->
             create("glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeItemEntityTranslucentCullShader))
