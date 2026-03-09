@@ -108,7 +108,7 @@ public class ConfigManager {
 			JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
 			return !json.has("configVersion");
 		} catch (Exception e) {
-			return false;
+			return true;
 		}
 	}
 
@@ -368,47 +368,47 @@ public class ConfigManager {
 		}
 
 		// Forms Config
-		Map<String, FormConfig> raceForms = LOADER.loadRaceForms(raceName, formsPath);
-		boolean recreateForms = false;
-		String reasonForms = "";
+		Map<String, FormConfig> raceForms = new HashMap<>();
+		if (isDefault) FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
+		Map<String, FormConfig> userDiskForms = LOADER.loadRaceForms(raceName, formsPath);
 
-		if (isDefault && !LOADER.hasExistingFiles(formsPath)) {
-			recreateForms = true;
-			reasonForms = "Default forms missing or folder is empty";
-		} else if (!raceForms.isEmpty()) {
-			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
-				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
-				FormConfig formGroup = entry.getValue();
-				if (isMissingConfigVersion(formFilePath)) {
-					recreateForms = true;
-					reasonForms = "Missing version in " + entry.getKey() + ".json";
-					break;
-				} else if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0) {
-					recreateForms = true;
-					reasonForms = "Outdated version in " + entry.getKey() + ".json (" + formGroup.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
-					break;
+		if (!isDefault) raceForms.putAll(userDiskForms);
+		else {
+			for (Map.Entry<String, FormConfig> defaultEntry : raceForms.entrySet()) {
+				String groupKey = defaultEntry.getKey().toLowerCase();
+				FormConfig defaultFormConfig = defaultEntry.getValue();
+
+				if (userDiskForms.containsKey(groupKey)) {
+					FormConfig userConfig = userDiskForms.get(groupKey);
+					Path formFilePath = formsPath.resolve(defaultEntry.getKey() + ".json");
+
+					boolean isValid = true;
+					String invalidReason = "";
+
+					if (isMissingConfigVersion(formFilePath)) {
+						isValid = false;
+						invalidReason = "Missing config version or corrupt file";
+					} else if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+						isValid = false;
+						invalidReason = "Outdated version (" + userConfig.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
+					}
+
+					if (isValid) raceForms.put(groupKey, userConfig);
+					else {
+						LogUtil.warn(Env.COMMON, "Regenerating form '{}' for race '{}'. Reason: {}", defaultEntry.getKey(), raceName, invalidReason);
+						backupOldConfig(formFilePath);
+						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+					}
+				} else {
+					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+					LogUtil.info(Env.COMMON, "Creating missing form file: {}", defaultEntry.getKey());
 				}
 			}
 		}
 
-		if (recreateForms && isDefault) {
-			LogUtil.warn(Env.COMMON, "Regenerating forms for race '" + raceName + "'. Reason: " + reasonForms);
-			try (var stream = Files.list(formsPath)) {
-				stream.filter(path -> path.toString().endsWith(".json")).forEach(ConfigManager::backupOldConfig);
-			}
-			raceForms.clear();
-			FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
-
-			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
-				entry.getValue().setConfigVersion(FormConfig.CURRENT_VERSION);
-				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
-				LOADER.saveConfig(formFilePath, entry.getValue());
-			}
-		} else {
-			for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
-				Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
-				LOADER.saveConfig(formFilePath, entry.getValue());
-			}
+		for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
+			Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
+			LOADER.saveConfig(formFilePath, entry.getValue());
 		}
 
 		RACE_FORMS.put(raceName.toLowerCase(), raceForms);
@@ -419,52 +419,46 @@ public class ConfigManager {
 
 	private static void createOrLoadStackForms(boolean isDefault) throws IOException {
 		Files.createDirectories(STACK_FORMS_DIR);
+		Map<String, FormConfig> finalStackForms = new HashMap<>();
+		if (isDefault) FORMS_FACTORY.createDefaultStackForms(STACK_FORMS_DIR, finalStackForms);
+		Map<String, FormConfig> userDiskForms = LOADER.loadStackForms(STACK_FORMS_DIR);
 
-		Map<String, FormConfig> stackForms = LOADER.loadStackForms(STACK_FORMS_DIR);
-		boolean recreateForms = false;
-		String reasonForms = "";
+		if (isDefault) {
+			for (Map.Entry<String, FormConfig> defaultEntry : finalStackForms.entrySet()) {
+				String groupKey = defaultEntry.getKey().toLowerCase();
+				FormConfig defaultFormConfig = defaultEntry.getValue();
 
-		if (isDefault && !LOADER.hasExistingFiles(STACK_FORMS_DIR)) {
-			recreateForms = true;
-			reasonForms = "Default stack forms missing or folder is empty";
-		} else if (!stackForms.isEmpty()) {
-			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
-				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
-				FormConfig formGroup = entry.getValue();
-				if (isMissingConfigVersion(formFilePath)) {
-					recreateForms = true;
-					reasonForms = "Missing version in " + entry.getKey() + ".json";
-					break;
-				} else if (formGroup.getConfigVersion() < FormConfig.CURRENT_VERSION || formGroup.getConfigVersion() == 0) {
-					recreateForms = true;
-					reasonForms = "Outdated version in " + entry.getKey() + ".json (" + formGroup.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
-					break;
-				}
+				if (userDiskForms.containsKey(groupKey)) {
+					FormConfig userConfig = userDiskForms.get(groupKey);
+					Path formFilePath = STACK_FORMS_DIR.resolve(defaultEntry.getKey() + ".json");
+
+					boolean isValid = true;
+					String invalidReason = "";
+
+					if (isMissingConfigVersion(formFilePath)) {
+						isValid = false;
+						invalidReason = "Missing config version or corrupt file";
+					} else if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
+						isValid = false;
+						invalidReason = "Outdated version";
+					}
+
+					if (isValid) finalStackForms.put(groupKey, userConfig);
+					else {
+						LogUtil.warn(Env.COMMON, "Regenerating stack form '{}'. Reason: {}", defaultEntry.getKey(), invalidReason);
+						backupOldConfig(formFilePath);
+						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+					}
+				} else defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
 			}
+		} else finalStackForms.putAll(userDiskForms);
+
+		for (Map.Entry<String, FormConfig> entry : finalStackForms.entrySet()) {
+			Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
+			LOADER.saveConfig(formFilePath, entry.getValue());
 		}
 
-		if (recreateForms && isDefault) {
-			LogUtil.warn(Env.COMMON, "Regenerating stack forms. Reason: " + reasonForms);
-			try (var stream = Files.list(STACK_FORMS_DIR)) {
-				stream.filter(path -> path.toString().endsWith(".json")).forEach(ConfigManager::backupOldConfig);
-			}
-			stackForms.clear();
-			FORMS_FACTORY.createDefaultStackForms(STACK_FORMS_DIR, stackForms);
-
-			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
-				entry.getValue().setConfigVersion(FormConfig.CURRENT_VERSION);
-				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
-				LOADER.saveConfig(formFilePath, entry.getValue());
-			}
-		} else {
-			for (Map.Entry<String, FormConfig> entry : stackForms.entrySet()) {
-				entry.getValue().setConfigVersion(FormConfig.CURRENT_VERSION);
-				Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
-				LOADER.saveConfig(formFilePath, entry.getValue());
-			}
-		}
-
-		STACK_FORMS = stackForms;
+		STACK_FORMS = finalStackForms;
 	}
 
 	private static EntitiesConfig createDefaultEntitiesConfig() {

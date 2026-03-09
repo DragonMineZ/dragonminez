@@ -9,6 +9,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.FusionLogic;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
@@ -70,15 +71,17 @@ public class StatsCommand {
 				// reset [keepPercentage] [targets]
 				.then(Commands.literal("reset")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.STATS_RESET_SELF, DMZPermissions.STATS_RESET_OTHERS))
-						.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), null))
+						.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), null, false))
 						.then(Commands.argument("keepPercentage", StringArgumentType.word()).suggests(PERCENTAGE_SUGGESTIONS)
-								.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage")))
-								.then(Commands.argument("targets", EntityArgument.players())
-										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-										.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage")))))
+								.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage"), false))
+								.then(Commands.argument("keepSkills", BoolArgumentType.bool())
+										.executes(ctx -> resetStats(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills")))
+										.then(Commands.argument("targets", EntityArgument.players())
+												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
+												.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "keepPercentage"), BoolArgumentType.getBool(ctx, "keepSkills"))))))
 						.then(Commands.argument("targets", EntityArgument.players())
 								.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.STATS_RESET_OTHERS))
-								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null))))
+								.executes(ctx -> resetStats(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), null, false))))
 		);
 	}
 
@@ -148,7 +151,7 @@ public class StatsCommand {
 		}
 	}
 
-	private static int resetStats(CommandSourceStack source, Collection<ServerPlayer> targets, String keepPercentageStr) {
+	private static int resetStats(CommandSourceStack source, Collection<ServerPlayer> targets, String keepPercentageStr, boolean keepSkills) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
 		Integer keepPercentage = null;
 		if (keepPercentageStr != null && !keepPercentageStr.isEmpty()) {
@@ -203,8 +206,12 @@ public class StatsCommand {
 				data.getResources().setPowerRelease(0);
 				data.getStatus().setAndroidUpgraded(false);
 				data.getStatus().setInKaioPlanet(false);
-				data.getSkills().removeAllSkills();
-				data.getEffects().removeAllEffects();
+
+				if (!keepSkills) {
+					data.getSkills().removeAllSkills();
+					data.getEffects().removeAllEffects();
+				}
+
 				data.getCooldowns().clearCooldowns();
 				data.getBonusStats().clearAllStats();
 				data.getCharacter().clearActiveForm();
