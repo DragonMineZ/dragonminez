@@ -1,50 +1,47 @@
 package com.dragonminez.common.init.particles;
 
 import com.dragonminez.client.util.ModParticleRenderTypes;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.world.phys.AABB;
-
-import java.util.List;
 
 public class KiTrailParticle extends TextureSheetParticle {
 
     private final SpriteSet spriteSet;
 
-    private AbstractKiProjectile parentEntity = null; // Guardamos la referencia a la esfera
-
-    protected KiTrailParticle(ClientLevel level, double x, double y, double z, double r, double g, double b, SpriteSet spriteSet) {
+    protected KiTrailParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(level, x, y, z, 0, 0, 0);
 
         this.spriteSet = spriteSet;
 
-        this.rCol = (float) r;
-        this.gCol = (float) g;
-        this.bCol = (float) b;
+        this.xd = vx;
+        this.yd = vy;
+        this.zd = vz;
 
-        float entitySize = 0.05f; // Tamaño por defecto si no encuentra nada
-        AABB searchArea = new AABB(x - 1, y - 1, z - 1, x + 1, y + 1, z + 1);
-        List<AbstractKiProjectile> entities = level.getEntitiesOfClass(AbstractKiProjectile.class, searchArea);
-
-        if (!entities.isEmpty()) {
-            entitySize = entities.get(0).getSize();
-        }
-
-        this.xd = (Math.random() - 0.5) * 0.05D;
-        this.yd = (Math.random() - 0.5) * 0.05D;
-        this.zd = (Math.random() - 0.5) * 0.05D;
+        this.rCol = 1.0F;
+        this.gCol = 1.0F;
+        this.bCol = 1.0F;
+        this.quadSize = 0.1F;
 
         this.lifetime = 25 + (int)(Math.random() * 10);
-
-        this.quadSize = entitySize * (0.2F + (float)Math.random() * 0.15F);
         this.gravity = 0.0F;
         this.hasPhysics = false;
         this.alpha = 1.0F;
 
         this.setSpriteFromAge(spriteSet);
     }
+
+
+    public void setKiColor(float r, float g, float b) {
+        this.rCol = r;
+        this.gCol = g;
+        this.bCol = b;
+    }
+
+    public void setKiScale(float entityScale) {
+        this.quadSize = entityScale * (0.1F + (float)Math.random() * 0.3F);
+    }
+
 
     @Override
     public void tick() {
@@ -58,11 +55,12 @@ public class KiTrailParticle extends TextureSheetParticle {
             this.setSpriteFromAge(this.spriteSet);
             this.move(this.xd, this.yd, this.zd);
 
-            this.xd *= 0.95D;
-            this.yd *= 0.95D;
-            this.zd *= 0.95D;
+            this.xd *= 0.90D;
+            this.yd *= 0.90D;
+            this.zd *= 0.90D;
 
-            this.quadSize *= 0.94F;
+            this.quadSize *= 0.97F;
+
             float lifeRatio = 1.0F - ((float)this.age / (float)this.lifetime);
             this.alpha = lifeRatio;
         }
@@ -81,9 +79,10 @@ public class KiTrailParticle extends TextureSheetParticle {
     public static class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet spriteSet;
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
+
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
-            return new KiTrailParticle(level, x, y, z, r, g, b, this.spriteSet);
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double vx, double vy, double vz) {
+            return new KiTrailParticle(level, x, y, z, vx, vy, vz, this.spriteSet);
         }
     }
 }

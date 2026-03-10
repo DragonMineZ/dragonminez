@@ -6,6 +6,10 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.particles.KiSheddingParticle;
+import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
@@ -114,9 +118,18 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setSize(5.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
-        this.setColors(color, color);
+        this.setColors(color, 0x00F8FF);
     }
 
+    public void setupKiNova(LivingEntity owner, float damage, float speed, int color) {
+        this.setOwner(owner);
+        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setKiRenderType(6);
+        this.setSize(5.0F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(color, 0x960A00);
+    }
 
 	@Override
 	protected void onKiTick() {
@@ -157,45 +170,58 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
             //Partículas saliendo
             if (type >= 1) {
-                if (this.tickCount % 2 == 0) {
-                    for (int i = 0; i < 15; i++) {
-                        double dx = (this.random.nextDouble() - 0.5) * scale * 1.2;
-                        double dy = (this.random.nextDouble() - 0.5) * scale * 1.2;
-                        double dz = (this.random.nextDouble() - 0.5) * scale * 1.2;
+                for (int i = 0; i < 8; i++) {
 
-                        this.level().addParticle(MainParticles.KI_TRAIL.get(),
-                                this.getX() + dx, this.getY() + (this.getBbHeight()/2) + dy, this.getZ() + dz,
-                                (double) pr, (double) pg, (double) pb);
+                    double radius = scale * 1.2;
+
+                    double theta = this.random.nextDouble() * 2 * Math.PI;
+                    double phi = Math.acos(2 * this.random.nextDouble() - 1);
+
+                    double dx = radius * Math.sin(phi) * Math.cos(theta);
+                    double dy = radius * Math.sin(phi) * Math.sin(theta);
+                    double dz = radius * Math.cos(phi);
+
+                    double vx = dx * 0.15;
+                    double vy = dy * 0.15;
+                    double vz = dz * 0.15;
+
+                    net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+                            MainParticles.KI_TRAIL.get(),
+                            this.getX() + dx,
+                            this.getY() + (this.getBbHeight() / 2.0) + dy,
+                            this.getZ() + dz,
+                            vx, vy, vz
+                    );
+
+                    if (p instanceof KiTrailParticle trail) {
+                        trail.setKiColor(pr, pg, pb);
+
+                        trail.setKiScale((float) scale);
                     }
                 }
             }
 
-            //Absorción y Aros
-            if (type == 2 || type == 4 || type == 5 ) {
+            //Absorción
+            if (type == 2 || type == 4 || type == 5 || type == 6 ) {
 
-                float radius = scale;
-                double orbitSpeed = (double)this.tickCount * 2.15;
+                for (int i = 0; i < 10; i++) {
+                    double absDist = scale * 3;
 
-                for (int i = 0; i < 2; i++) {
-                    double angle = orbitSpeed + (i * Math.PI);
-                    double x1 = Math.cos(angle) * radius;
-                    double z1 = Math.sin(angle) * radius;
-
-                    this.level().addParticle(MainParticles.KI_TRAIL.get(),
-                            this.getX() + x1, this.getY() + (this.getBbHeight()/2), this.getZ() + z1,
-                            (double)pr, (double)pg, (double)pb);
-                }
-
-                if (this.tickCount % 2 == 0) {
-                    double absDist = scale;
                     double angle = this.random.nextDouble() * Math.PI * 2;
                     double sx = Math.cos(angle) * absDist;
                     double sz = Math.sin(angle) * absDist;
-                    double sy = (this.random.nextDouble() - 0.5) * absDist;
 
-                    this.level().addParticle(MainParticles.KI_SHEDDING.get(),
-                            this.getX() + sx, this.getY() + (this.getBbHeight()/2) + sy, this.getZ() + sz,
-                            -sx * 0.15, -sy * 0.15, -sz * 0.15);
+                    double sy = (this.random.nextDouble() - 0.5) * 2.0 * absDist;
+
+                    Particle p = Minecraft.getInstance().particleEngine.createParticle(
+                            MainParticles.KI_SHEDDING.get(),
+                            this.getX() + sx, this.getY() + (this.getBbHeight() / 2) + sy, this.getZ() + sz,
+                            -sx * 0.15, -sy * 0.15, -sz * 0.15
+                    );
+
+                    if (p instanceof KiSheddingParticle kiParticle) {
+                        kiParticle.setKiColor(borderColor[0], borderColor[1], borderColor[2]);
+                    }
                 }
             }
         }
@@ -276,8 +302,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private void explodeAndDie() {
         if (this.isRemoved()) return;
 
-        float explosionRadius = this.getSize() * 1.2F;
-        float visualParticleSize = explosionRadius * 1.4F;
+        float explosionRadius = this.getSize() * 1.4F;
+        float visualParticleSize = explosionRadius * 1.8F;
 
         AABB damageArea = this.getBoundingBox().inflate(explosionRadius);
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);

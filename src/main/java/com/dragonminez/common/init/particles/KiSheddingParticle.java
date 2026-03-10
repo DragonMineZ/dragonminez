@@ -9,18 +9,17 @@ public class KiSheddingParticle extends TextureSheetParticle {
 
     private final SpriteSet spriteSet;
 
-    protected KiSheddingParticle(ClientLevel level, double x, double y, double z, double r, double g, double b, SpriteSet spriteSet) {
+    protected KiSheddingParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(level, x, y, z, 0, 0, 0);
-
         this.spriteSet = spriteSet;
 
-        this.rCol = (float) r;
-        this.gCol = (float) g;
-        this.bCol = (float) b;
+        this.xd = vx;
+        this.yd = vy;
+        this.zd = vz;
 
-        this.xd = (Math.random() - 0.5) * 0.05D;
-        this.yd = (Math.random() - 0.5) * 0.05D;
-        this.zd = (Math.random() - 0.5) * 0.05D;
+        this.rCol = 1.0F;
+        this.gCol = 1.0F;
+        this.bCol = 1.0F;
 
         this.lifetime = 8;
         this.quadSize = 0.3F + (float)Math.random() * 0.2F;
@@ -63,12 +62,18 @@ public class KiSheddingParticle extends TextureSheetParticle {
         return 15728880;
     }
 
+    public void setKiColor(float r, float g, float b) {
+        this.rCol = r;
+        this.gCol = g;
+        this.bCol = b;
+    }
+
     public static class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet spriteSet;
         public Provider(SpriteSet spriteSet) { this.spriteSet = spriteSet; }
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double r, double g, double b) {
-            return new KiSheddingParticle(level, x, y, z, r, g, b, this.spriteSet);
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double vx, double vy, double vz) {
+            return new KiSheddingParticle(level, x, y, z, vx, vy, vz, this.spriteSet);
         }
     }
 }

@@ -29,7 +29,8 @@ public class MerusLaserItem extends Item {
             //kiBlast.setupKiLargeBlast(pPlayer,10,0.2f, 0x00FFFF, 4.0f);
             //kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f);
             //kiBlast.setupKiSouls(pPlayer,10,0.2f, 0xFFFFFF);
-            kiBlast.setupKiGenki(pPlayer,10,0.2f, 0x99FFFC);
+            kiBlast.setupKiGenki(pPlayer,10,0.2f, 0x9EFCFF);
+            //kiBlast.setupKiNova(pPlayer,10,0.4f, 0xA80F00);
 
 
             kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.8F);
