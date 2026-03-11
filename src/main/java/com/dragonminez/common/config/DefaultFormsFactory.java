@@ -16,11 +16,11 @@ public class DefaultFormsFactory {
 
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
-		form.setMasteryPerHit(0.001);
-		form.setMasteryPerDamageReceived(0.001);
+		form.setMasteryPerHit(0.025);
+		form.setMasteryPerDamageReceived(0.025);
 		form.setStatMultPerMasteryPoint(0.01);
 		form.setCostDecreasePerMasteryPoint(0.025);
-		form.setPassiveMasteryGainEveryFiveSeconds(0.001);
+		form.setPassiveMasteryGainEveryFiveSeconds(0.01);
 	}
 
 	public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
