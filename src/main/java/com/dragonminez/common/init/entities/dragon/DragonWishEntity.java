@@ -1,9 +1,20 @@
 package com.dragonminez.common.init.entities.dragon;
 
+import com.dragonminez.client.gui.WishesScreen;
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.server.events.DragonBallsHandler;
+import lombok.Getter;
+import lombok.Setter;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -16,6 +27,9 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jspecify.annotations.NonNull;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -24,7 +38,11 @@ import software.bernie.geckolib.core.animation.*;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class DragonWishEntity extends Mob implements GeoEntity {
+    protected String dragonName;
+    protected Integer wishAmount;
 
+    @Getter
+    @Setter
     private long invokingTime;
     private int despawnDelay = 20 * 5;
 
@@ -33,10 +51,12 @@ public class DragonWishEntity extends Mob implements GeoEntity {
     private static final EntityDataAccessor<String> OWNER_NAME = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> GRANTED_WISH = SynchedEntityData.defineId(DragonWishEntity.class, EntityDataSerializers.BOOLEAN);
 
-    protected DragonWishEntity(EntityType<? extends Mob> pEntityType, Level pLevel) {
+    public DragonWishEntity(EntityType<? extends Mob> pEntityType, Level pLevel, String dragonName, Integer wishAmount) {
         super(pEntityType, pLevel);
         this.entityData.define(OWNER_NAME, "");
         this.entityData.define(GRANTED_WISH, false);
+        this.dragonName = dragonName;
+        this.wishAmount = wishAmount;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -128,13 +148,6 @@ public class DragonWishEntity extends Mob implements GeoEntity {
         return this.entityData.get(GRANTED_WISH);
     }
 
-    public void setInvokingTime(long time) {
-        this.invokingTime = time;
-    }
-    public long getInvokingTime() {
-        return this.invokingTime;
-    }
-
 
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
@@ -161,5 +174,40 @@ public class DragonWishEntity extends Mob implements GeoEntity {
         if (compound.contains("GrantedWish")) {
             this.setGrantedWish(compound.getBoolean("GrantedWish"));
         }
+    }
+
+    @Override
+    public void remove(@NonNull RemovalReason reason) {
+        if (!this.level().isClientSide && reason == RemovalReason.DISCARDED) {
+            onDespawn();
+        }
+        super.remove(reason);
+    }
+
+    protected void onDespawn() {
+        if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.setWeatherParameters(6000, 0, false, false);
+            serverLevel.setDayTime(this.getInvokingTime());
+
+            if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
+                DragonBallsHandler.scatterDragonBalls(serverLevel, false);
+                ServerPlayer owner = serverLevel.getServer().getPlayerList().getPlayerByName(this.getOwnerName());
+                if (owner != null) {
+                    DragonBallsHandler.syncRadar(owner.serverLevel());
+                }
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public @NonNull InteractionResult mobInteract(@NonNull Player player, @NonNull InteractionHand hand) {
+        if (this.level().isClientSide && this.getOwnerName().equals(player.getName().getString())) {
+            if (!this.hasGrantedWish() && Minecraft.getInstance().player.equals(player)) {
+                Minecraft.getInstance().setScreen(new WishesScreen(dragonName, wishAmount));
+                Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());
+            }
+        }
+        return super.mobInteract(player, hand);
     }
 }

@@ -23,8 +23,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 	@Override
 	protected void registerModels() {
 		//Items (MainItems)
-		simpleItem(MainItems.DBALL_RADAR_ITEM);
-		simpleItem(MainItems.NAMEKDBALL_RADAR_ITEM);
+		MainItems.DRAGON_RADAR_ITEMS.values().forEach(
+				this::simpleItem
+		);
 		simpleItem(MainItems.MIGHT_TREE_FRUIT);
 		simpleItem(MainItems.NUBE_ITEM);
 		simpleItem(MainItems.NUBE_NEGRA_ITEM);
@@ -43,20 +44,9 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.HEART_MEDICINE);
 		simpleItem(MainItems.NAMEK_WATER_BUCKET);
 		simpleItem(MainItems.HEALING_BUCKET);
-		simpleItem(MainItems.DBALL1_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL2_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL3_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL4_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL5_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL6_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL7_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL1_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL2_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL3_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL4_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL5_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL6_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL7_NAMEK_BLOCK_ITEM);
+		MainItems.DRAGON_BALL_ITEMS.values().forEach(
+                this::simpleItem
+		);
 		simpleItem(MainItems.RADAR_PIECE);
 		simpleItem(MainItems.T1_RADAR_CHIP);
 		simpleItem(MainItems.T2_RADAR_CHIP);

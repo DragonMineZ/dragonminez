@@ -2,6 +2,7 @@ package com.dragonminez.common.init.block.entity;
 
 import com.dragonminez.common.init.MainBlockEntities;
 import com.dragonminez.common.init.block.custom.DragonBallType;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -16,21 +17,15 @@ import software.bernie.geckolib.util.RenderUtils;
 public class DragonBallBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
+    @Getter
     private final DragonBallType ballType;
-    private final boolean isNamekian;
+    @Getter
+    private final String ballName;
 
-    public DragonBallBlockEntity(BlockPos pPos, BlockState pBlockState, DragonBallType ballType, boolean isNamekian) {
-        super(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), pPos, pBlockState);
+    public DragonBallBlockEntity(BlockPos pPos, BlockState pBlockState, DragonBallType ballType, String ballName) {
+        super(MainBlockEntities.DRAGON_BALL_ENTITIES.get(ballName + ballType.getStars()).get(), pPos, pBlockState);
         this.ballType = ballType;
-        this.isNamekian = isNamekian;
-    }
-
-    public DragonBallType getBallType() {
-        return ballType;
-    }
-
-    public boolean isNamekian() {
-        return isNamekian;
+        this.ballName = ballName;
     }
 
     @Override

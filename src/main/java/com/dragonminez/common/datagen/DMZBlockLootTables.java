@@ -28,20 +28,10 @@ public class DMZBlockLootTables extends BlockLootSubProvider {
 	@Override
 	protected void generate() {
 		//Dragon Balls
-		this.dropSelf(MainBlocks.DBALL1_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL2_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL3_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL4_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL5_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL6_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL7_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL1_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL2_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL3_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL4_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL5_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL6_NAMEK_BLOCK.get());
-		this.dropSelf(MainBlocks.DBALL7_NAMEK_BLOCK.get());
+
+		MainBlocks.DRAGON_BALL_BLOCKS.values().forEach(
+				registryObject -> this.dropSelf(registryObject.get())
+		);
 
 		//Maderas + Bloques "dropSelf"
 		this.dropSelf(MainBlocks.NAMEK_AJISSA_LOG.get());

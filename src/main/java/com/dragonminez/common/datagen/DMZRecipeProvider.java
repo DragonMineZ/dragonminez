@@ -232,7 +232,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.T2_RADAR_CPU.get()), has(MainItems.T2_RADAR_CPU.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.DBALL_RADAR_ITEM.get(), 1)
+		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.DRAGON_RADAR_ITEMS.get("earth_dball").get(), 1)
 				.pattern("OPO")
 				.pattern("PGP")
 				.pattern("CPC")
@@ -255,7 +255,7 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.RADAR_PIECE.get()), has(MainItems.RADAR_PIECE.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.NAMEKDBALL_RADAR_ITEM.get(), 1)
+		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.DRAGON_RADAR_ITEMS.get("namek_dball").get(), 1)
 				.pattern("OCO")
 				.pattern("PGP")
 				.pattern("CPC")

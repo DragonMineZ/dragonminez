@@ -6,8 +6,7 @@ import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -49,8 +48,12 @@ public class ModCommonEvents {
         // Quest NPC — single entity type for all data-driven quest NPCs | Usa un solo tipo de entidad para todos los NPCs de misiones basados en datos
         event.put(MainEntities.QUEST_NPC.get(), MastersEntity.createAttributes().build());
 
-		event.put(MainEntities.SHENRON.get(), ShenronEntity.createAttributes().build());
-		event.put(MainEntities.PORUNGA.get(), PorungaEntity.createAttributes().build());
+        MainEntities.DRAGON_ENTITIES.values().forEach(
+                registryObject -> event.put(
+                        registryObject.get(),
+                        DragonWishEntity.createAttributes().build()
+                )
+        );
 
         event.put(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanEntity.createAttributes().build());
         event.put(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanEntity.createAttributes().build());
