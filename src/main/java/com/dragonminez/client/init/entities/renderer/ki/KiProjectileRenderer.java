@@ -20,8 +20,13 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
+
     private static final ResourceLocation TEXTURE_NOVA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_nova.png");
     private static final ResourceLocation TEXTURE_NOVA2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_nova_2.png");
+    private static final ResourceLocation TEXTURE_NOVA_FIRE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_novafire.png");
+    private static final ResourceLocation TEXTURE_NOVA_FIRE2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_novafire_2.png");
+    private static final ResourceLocation TEXTURE_NOVA_FIRE3 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_novafire_3.png");
+
     private static final ResourceLocation TEXTURE_KI_SPARKS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle1.png");
     private static final ResourceLocation TEXTURE_KI_SPARKS2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_sparkle2.png");
 
@@ -75,6 +80,11 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                 //invertedAuraColor = ColorUtils.rgbIntToFloat(0xFFC261);
                 invertedAuraColor = ColorUtils.darkenColor(coreColor, 0.4f);
                 renderKiNova(poseStack, entity, buffer, scale, ageInTicks, coreColor, invertedAuraColor, borderColor);
+                break;
+            case 7: // DeathBall
+                //invertedAuraColor = ColorUtils.rgbIntToFloat(0xFFC261);
+                invertedAuraColor = ColorUtils.darkenColor(coreColor, 0.4f);
+                renderKiDeathball(poseStack, entity, buffer, scale, ageInTicks, coreColor, invertedAuraColor, borderColor);
                 break;
             default:
                 renderKiBlast(poseStack, entity, buffer, scale, ageInTicks, coreColor, brightAuraColor, borderColor);
@@ -516,7 +526,7 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         poseStack.popPose();
     }
 
-    private void renderKiNova(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float scale, float ageInTicks, float[] coreColor, float[] brightAuraColor, float[] borderColor) {
+    private void renderKiDeathball(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float scale, float ageInTicks, float[] coreColor, float[] brightAuraColor, float[] borderColor) {
         poseStack.pushPose();
 
         float jitterSpeed = ageInTicks * 20.0F;
@@ -586,6 +596,141 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
         this.model.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F);
         poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0.25, 0.005f);
+        poseStack.scale(0.7f, 0.7f, 0.7f);
+        borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
+        this.model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.5F);
+        poseStack.popPose();
+
+        //Anim pulso 2
+        poseStack.pushPose();
+        poseStack.translate(0, 0.3, 0.006f);
+        float speedCore = 0.04f;
+        float pulseCore = (ageInTicks * speedCore) % 1.0f;
+
+        float dynamicScaleCore = 0.6f + (pulseCore * 0.2f);
+        poseStack.scale(dynamicScaleCore, dynamicScaleCore, dynamicScaleCore);
+
+        float dynamicAlphaCore = 1.0f * (1.0f - pulseCore);
+
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
+        this.model.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], dynamicAlphaCore);
+        poseStack.popPose();
+
+        //RAYOS
+        poseStack.pushPose();
+        this.model.setupAnim(entity, 0.0F, 0.0F, 0.0f, 0.0F, 0.0F);
+        poseStack.translate(0, 0.3, 0.006f);
+        poseStack.scale(0.7f, 0.7f, 0.7f);
+
+        int cycleLength = 20;
+        int currentStep = (int) ageInTicks % cycleLength;
+
+        ResourceLocation currentTexture = null;
+
+        if (currentStep < 5) {
+            // Primer segundo (0-19): NOVA 1
+            currentTexture = TEXTURE_KI_SPARKS;
+        } else if (currentStep < 10) {
+            // Segundo segundo (20-39): NOVA 2
+            currentTexture = TEXTURE_KI_SPARKS2;
+        }
+
+        if (currentTexture != null) {
+            borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentTexture));
+            this.model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 0.8F);
+        }
+        poseStack.popPose();
+
+        poseStack.popPose();
+
+    }
+
+    private void renderKiNova(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float scale, float ageInTicks, float[] coreColor, float[] brightAuraColor, float[] borderColor) {
+        poseStack.pushPose();
+
+        float jitterSpeed = ageInTicks * 20.0F;
+        float intensity = 0.03F;
+
+        float shakeX = (float) (Math.sin(jitterSpeed) * intensity);
+        float shakeY = (float) (Math.cos(jitterSpeed * 1.2) * intensity);
+        float shakeZ = (float) (Math.sin(jitterSpeed * 0.8) * intensity);
+
+        poseStack.scale(scale + shakeX, scale + shakeY, scale + shakeZ);
+
+        //poseStack.scale(scale, scale, scale);
+        poseStack.translate(0, -0.2, 0.0f);
+
+        this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+
+        VertexConsumer solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
+        VertexConsumer borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
+
+        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0.15, 0.000f);
+        poseStack.scale(1.0f, 1.0f, 1.0f);
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
+        this.model.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.2F);
+        poseStack.popPose();
+
+//        poseStack.pushPose();
+//        poseStack.translate(0, 0.2, 0.001f);
+//        poseStack.scale(0.85f, 0.85f, 0.85f);
+//        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
+//        this.model.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F);
+//        poseStack.popPose();
+
+        poseStack.pushPose();
+        this.model.setupAnim(entity, 0.0F, 0.0F, 0.0f, 0.0F, 0.0F);
+        poseStack.translate(0, 0.2, 0.001f);
+        poseStack.scale(0.85f, 0.85f, 0.85f);
+        int swapSpeed = 3;
+        ResourceLocation fastTexture = ((int)(ageInTicks / swapSpeed) % 2 == 0) ? TEXTURE_NOVA : TEXTURE_NOVA2;
+
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(fastTexture));
+        this.model.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F);
+        poseStack.popPose();
+
+        this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0.23, 0.002f);
+        poseStack.scale(0.75f, 0.75f, 0.75f);
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
+        this.model.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.6F);
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0.3, 0.003f);
+        poseStack.scale(0.6f, 0.6f, 0.6f);
+        borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
+        this.model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.8F);
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0.3, 0.004f);
+        poseStack.scale(0.6f, 0.6f, 0.6f);
+
+        swapSpeed = 3;
+        int frame = (int)(ageInTicks / swapSpeed) % 3;
+
+        ResourceLocation currentFireTexture = switch (frame) {
+            case 0 -> TEXTURE_NOVA_FIRE;
+            case 1 -> TEXTURE_NOVA_FIRE2;
+            default -> TEXTURE_NOVA_FIRE3;
+        };
+        this.model.setupAnim(entity, 0.0F, 0.0F, 0.0f, 0.0F, 0.0F);
+
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentFireTexture));
+        this.model.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 0.5F);
+        poseStack.popPose();
+
+        this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
         poseStack.pushPose();
         poseStack.translate(0, 0.25, 0.005f);

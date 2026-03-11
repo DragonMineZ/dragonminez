@@ -111,24 +111,33 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setColors(color, color);
     }
 
-    public void setupKiGenki(LivingEntity owner, float damage, float speed, int color) {
+    public void setupKiGenki(LivingEntity owner, float damage, float speed) {
         this.setOwner(owner);
         this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(5);
         this.setSize(5.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
-        this.setColors(color, 0x00F8FF);
+        this.setColors(0x30FFF1, 0x00F8FF);
     }
 
-    public void setupKiNova(LivingEntity owner, float damage, float speed, int color) {
+    public void setupKiNova(LivingEntity owner, float damage, float speed) {
         this.setOwner(owner);
         this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(6);
         this.setSize(5.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
-        this.setColors(color, 0x960A00);
+        this.setColors(0x9E0000, 0x9E0000);
+    }
+    public void setupKiDeathBall(LivingEntity owner, float damage, float speed) {
+        this.setOwner(owner);
+        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setKiRenderType(7);
+        this.setSize(2.5F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(0x9B1ADB, 0x5C018A);
     }
 
 	@Override
@@ -170,9 +179,9 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
             //Partículas saliendo
             if (type >= 1) {
-                for (int i = 0; i < 8; i++) {
+                for (int i = 0; i < 3; i++) {
 
-                    double radius = scale * 1.2;
+                    double radius = scale*1.2;
 
                     double theta = this.random.nextDouble() * 2 * Math.PI;
                     double phi = Math.acos(2 * this.random.nextDouble() - 1);
@@ -202,7 +211,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
             }
 
             //Absorción
-            if (type == 2 || type == 4 || type == 5 || type == 6 ) {
+            if (type == 2 || type == 5 || type == 6 ) {
 
                 for (int i = 0; i < 10; i++) {
                     double absDist = scale * 3;

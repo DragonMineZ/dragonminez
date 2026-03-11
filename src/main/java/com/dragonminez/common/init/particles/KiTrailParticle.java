@@ -21,7 +21,7 @@ public class KiTrailParticle extends TextureSheetParticle {
         this.rCol = 1.0F;
         this.gCol = 1.0F;
         this.bCol = 1.0F;
-        this.quadSize = 0.1F;
+        this.quadSize = 0.05F;
 
         this.lifetime = 25 + (int)(Math.random() * 10);
         this.gravity = 0.0F;
