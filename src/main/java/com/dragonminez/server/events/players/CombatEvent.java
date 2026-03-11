@@ -16,6 +16,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.ComboManager;
 import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -133,6 +134,8 @@ public class CombatEvent {
 				} else ComboManager.resetCombo(attacker.getUUID());
 
 				double finalDmzDamage;
+				if (!attackerData.getStatus().isAlive() && attacker.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY))
+					currentStamina = 0;
 				if (currentStamina >= staminaRequired) {
 					finalDmzDamage = dmzDamage;
 					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
