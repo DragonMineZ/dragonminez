@@ -92,9 +92,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (this.tickCount % 5 == 0) {
                 Vec3 tipPos = startPos.add(dir.scale(currentLen));
 
-                this.level().playSound(null, tipPos.x, tipPos.y, tipPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.5F, 1.0F);
+                this.level().playSound(null, tipPos.x, tipPos.y, tipPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.2F, 1.0F);
 
-                this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
+                this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.2F, 1.0F);
             }
 
             float targetLen = currentLen + this.getKiSpeed();
@@ -128,13 +128,13 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
             damageEntitiesInBeam(startPos, dir, targetLen);
 
-            if (this.tickCount > 100) {
+            if (this.tickCount > 200) {
                 this.discard();
             }
         }
         else {
             spawnWaveParticles();
-            spawnOriginSplash();
+            //spawnOriginSplash();
         }
 
 
