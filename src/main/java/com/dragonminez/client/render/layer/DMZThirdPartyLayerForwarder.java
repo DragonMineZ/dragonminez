@@ -60,17 +60,9 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 
 		if (layers == null || layers.isEmpty()) return;
 
-		boolean hasThirdParty = false;
-		for (RenderLayer<?, ?> layer : layers) {
-			if (!VANILLA_LAYER_CLASSES.contains(layer.getClass())) {
-				hasThirdParty = true;
-				break;
-			}
-		}
-		if (!hasThirdParty) return;
-
 		BakedGeoModel geoModel = this.getRenderer().getGeoModel().getBakedModel(this.getRenderer().getGeoModel().getModelResource(animatable));
 		PlayerModel<AbstractClientPlayer> vanillaModel = playerRenderer.getModel();
+
 		if (geoModel != null) VanillaModelSync.sync(geoModel, vanillaModel, animatable);
 		vanillaModel.attackTime = animatable.getAttackAnim(partialTick);
 		vanillaModel.riding = animatable.isPassenger();
@@ -89,15 +81,49 @@ public class DMZThirdPartyLayerForwarder<T extends AbstractClientPlayer & GeoAni
 		if (geoModel != null)
 			geoModel.getBone("waist").ifPresent(waistBone -> RenderUtils.translateToPivotPoint(poseStack, waistBone));
 
+		poseStack.scale(-1.0F, -1.0F, 1.0F);
+		poseStack.translate(0.0F, -0.75F, 0.0F);
+
+		float oldBodyX = vanillaModel.body.xRot;
+		float oldBodyY = vanillaModel.body.yRot;
+		float oldBodyZ = vanillaModel.body.zRot;
+		vanillaModel.body.xRot = 0.0F;
+		vanillaModel.body.yRot = 0.0F;
+		vanillaModel.body.zRot = 0.0F;
+
+		float oldHeadX = vanillaModel.head.xRot;
+		float oldHeadY = vanillaModel.head.yRot;
+		float oldHeadZ = vanillaModel.head.zRot;
+		vanillaModel.head.xRot = 0.0F;
+		vanillaModel.head.yRot = 0.0F;
+		vanillaModel.head.zRot = 0.0F;
+
 		for (RenderLayer layer : layers) {
-			if (VANILLA_LAYER_CLASSES.contains(layer.getClass())) continue;
+			Class<?> layerClass = layer.getClass();
+			if (VANILLA_LAYER_CLASSES.contains(layerClass)) continue;
+
+			String className = layerClass.getName().toLowerCase();
+			if (className.contains("cosmeticarmor") || className.contains("cosarmor")) continue;
+
+			poseStack.pushPose();
 			try {
-				layer.render(poseStack, bufferSource, packedLight, animatable,
+				RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> typedLayer =
+						(RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>>) layer;
+
+				typedLayer.render(poseStack, bufferSource, packedLight, animatable,
 						limbSwing, limbSwingAmount, partialTick, ageInTicks,
 						netHeadYaw, headPitch);
 			} catch (Exception ignore) {
 			}
+			poseStack.popPose();
 		}
+
+		vanillaModel.body.xRot = oldBodyX;
+		vanillaModel.body.yRot = oldBodyY;
+		vanillaModel.body.zRot = oldBodyZ;
+		vanillaModel.head.xRot = oldHeadX;
+		vanillaModel.head.yRot = oldHeadY;
+		vanillaModel.head.zRot = oldHeadZ;
 
 		poseStack.popPose();
 	}

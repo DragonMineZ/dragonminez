@@ -15,6 +15,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,6 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
 	@Override
 	protected @Nullable ItemStack getArmorItemForBone(GeoBone bone, T animatable) {
-
 		final String boneName = bone.getName().trim();
 
 		EquipmentSlot slot = switch (boneName) {
@@ -57,15 +57,17 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		};
 		if (slot == null) return null;
 
-		ItemStack stack;
+		ItemStack stack = null;
 		if (CosmeticArmorCompat.isLoaded()) {
 			ItemStack cosStack = CosmeticArmorCompat.getCosmeticStack(animatable, slot);
-			if (cosStack != null) stack = cosStack;
-			else stack = animatable.getItemBySlot(slot);
+			if (cosStack != null && !cosStack.isEmpty()) stack = cosStack;
+		}
 
-		} else stack = animatable.getItemBySlot(slot);
+		if (stack == null) stack = animatable.getInventory().armor.get(slot.getIndex());
 
 		if (stack == null || stack.isEmpty()) return null;
+		if (!(stack.getItem() instanceof ArmorItem) && !(stack.getItem() instanceof DbzArmorItem)) return null;
+		if (!stack.canEquip(slot, animatable) && !(stack.getItem() instanceof DbzArmorItem)) return null;
 
 		if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
 			final LazyOptional<StatsData> optStats = StatsProvider.get(StatsCapability.INSTANCE, animatable);
