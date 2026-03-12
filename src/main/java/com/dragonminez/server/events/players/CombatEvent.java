@@ -154,6 +154,15 @@ public class CombatEvent {
 					}
 				}
 
+				if (attackerData.getCharacter().hasActiveForm()) {
+					FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveFormData();
+					if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+						String formGroup = attackerData.getCharacter().getActiveStackFormGroup();
+						String formName = attackerData.getCharacter().getActiveStackForm();
+						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeStackForm.getMasteryPerHit(), activeStackForm.getMaxMastery());
+					}
+				}
+
 				if (isEmptyHandOrNoDamageItem(attacker)) {
 					currentDamage[0] = finalDmzDamage;
 				} else {
@@ -374,11 +383,20 @@ public class CombatEvent {
 							String formGroup = victimData.getCharacter().getActiveFormGroup();
 							String formName = victimData.getCharacter().getActiveForm();
 							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived(), activeForm.getMaxMastery());
-
-							if (victim instanceof ServerPlayer serverPlayer)
-								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 						}
 					}
+
+					if (victimData.getCharacter().hasActiveStackForm()) {
+						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
+						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
+							String formGroup = victimData.getCharacter().getActiveFormGroup();
+							String formName = victimData.getCharacter().getActiveForm();
+							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived(), activeForm.getMaxMastery());
+						}
+					}
+
+					if (victim instanceof ServerPlayer serverPlayer)
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				}
 			});
 		}
