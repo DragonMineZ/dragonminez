@@ -194,7 +194,7 @@ dependencies {
     //runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
     // "Layers" mods for testing compatibility
     //runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
-    runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
+    //runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
     //runtimeOnly(fg.deobf("curse.maven:curios-api-309927:6418456"))
     //runtimeOnly(fg.deobf("curse.maven:citadel-331936:7476570"))
     //runtimeOnly(fg.deobf("curse.maven:alex-caves-924854:5848216"))
