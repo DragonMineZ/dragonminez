@@ -1,10 +1,7 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
-import com.dragonminez.client.init.entities.model.ki.KiLaserModel;
-import com.dragonminez.client.init.entities.model.ki.KiWave2DModel;
-import com.dragonminez.client.init.entities.model.ki.KiWaveModel;
+import com.dragonminez.client.init.entities.model.ki.*;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
@@ -28,15 +25,22 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
     private static final ResourceLocation TEXTURE_BALL_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1.png");
     private static final ResourceLocation TEXTURE_BALL_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1_border.png");
 
+    private static final ResourceLocation TEXTURE_EXPLODE1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave_explode1.png");
+    private static final ResourceLocation TEXTURE_EXPLODE2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave_explode2.png");
+
+
     private final KiWaveModel waveModel;
     private final KiWave2DModel wave2Model;
     private final KiBallPlaneModel ballModel;
+    private final KiWaveExplodeModel explodeModel;
 
     public KiWaveRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
         this.waveModel = new KiWaveModel(pContext.bakeLayer(KiWaveModel.LAYER_LOCATION));
         this.wave2Model = new KiWave2DModel(pContext.bakeLayer(KiWave2DModel.LAYER_LOCATION));
         this.ballModel = new KiBallPlaneModel(pContext.bakeLayer(KiBallPlaneModel.LAYER_LOCATION));
+        this.explodeModel = new KiWaveExplodeModel(pContext.bakeLayer(KiWaveExplodeModel.LAYER_LOCATION));
+
     }
 
     @Override
@@ -67,19 +71,64 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float tubeLength = Math.max(length - 0.8F, 0.1F);
         renderKiWave2D(poseStack, buffer, entity, ageInTicks, width, tubeLength, auraColor, borderColor);
 
-        poseStack.pushPose();
-        this.waveModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
-        float shortenedLength = Math.max(length - 1.2F, 0.1F);
-        float shortenedVisualLength = shortenedLength * SCALE_MULTIPLIER;
-        poseStack.scale(1.5F, 1.5F, shortenedVisualLength);
-        poseStack.translate(0.0D, -1.0D, 0.0002D);
-        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
-        this.waveModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.2F);
-        poseStack.popPose();
+
+//        poseStack.pushPose();
+//        this.waveModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+//        float shortenedLength = Math.max(length - 1.2F, 0.1F);
+//        float shortenedVisualLength = shortenedLength * SCALE_MULTIPLIER;
+//        poseStack.scale(1.5F, 1.5F, shortenedVisualLength);
+//        poseStack.translate(0.0D, -1.0D, 0.0002D);
+//        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
+//        this.waveModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.2F);
+//        poseStack.popPose();
 
         //renderKiWave3D(poseStack, buffer, entity, ageInTicks, width, visualLength, auraColor, borderColor);
 
+        float explodePulse = (float) Math.sin(ageInTicks * 4.1F) * 0.1F;
 
+        // Temblor casi imperceptible para no verse "glitcheado"
+        float explodeJitter = (float) (Math.random() - 0.5) * 0.02F;
+
+        // PRIMERA BLANCO
+        poseStack.pushPose();
+        float scale1 = 1.5F * (1.0F + explodePulse + explodeJitter);
+        poseStack.scale(scale1, scale1, scale1);
+        poseStack.translate(0.0D, -1.7D, -0.2D);
+        boolean useFirstTexture = (entity.tickCount / 3) % 2 == 0;
+        ResourceLocation currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
+        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
+        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 0.6F);
+        poseStack.popPose();
+
+        // SEGUNDA BORDE
+        poseStack.pushPose();
+        float scale2 = 2.0F * (1.0F - explodePulse + explodeJitter);
+        poseStack.scale(scale2, scale2, scale2);
+        poseStack.translate(1.0D, -1.3D, -0.1D);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(35.0F));
+        useFirstTexture = (entity.tickCount / 3) % 2 == 0;
+        currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
+        laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
+        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F);
+        poseStack.popPose();
+
+        //ESFERA INICIO
+        poseStack.pushPose();
+
+        float startBallScale = width * 1.5F;
+        poseStack.scale(startBallScale, startBallScale, startBallScale);
+
+        poseStack.translate(0.0D, -0.3D, -0.1D);
+
+        poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
+        poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
+
+        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor);
+
+        poseStack.popPose();
+
+
+        //ESFERA FINAL
         poseStack.translate(0.0D, 0.0D, length);
 
         poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));

@@ -29,14 +29,14 @@ public class MerusLaserItem extends Item {
             //kiBlast.setup(pPlayer, 7.2F, 0.2F, 0.2f,0x00FFFF, 0x0073FF);
 
 
-            //kiBlast.setupKiSmall(pPlayer,7.2f, 0.2f, 0x00FFFF);
-            kiBlast.setupKiBlast(pPlayer,10,0.2f, 0x00FFFF, 2.5f);
-            //kiBlast.setupKiLargeBlast(pPlayer,10,0.2f, 0x00FFFF, 4.0f);
-            //kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f);
-            //kiBlast.setupKiSouls(pPlayer,10,0.2f, 0xFFFFFF);
-            //kiBlast.setupKiGenki(pPlayer,10,0.2f);
-            //kiBlast.setupKiNova(pPlayer,10,0.4f);
-            //kiBlast.setupKiDeathBall(pPlayer,10,1.0f);
+            //kiBlast.setupKiSmall(pPlayer,7.2f, 2.2f, 0x00FFFF);
+            //kiBlast.setupKiBlast(pPlayer,10,2.2f, 0x00FFFF, 2.5f);
+            //kiBlast.setupKiLargeBlast(pPlayer,10,2.2f, 0x00FFFF, 4.0f);
+            //kiBlast.setupInvertedKiBlast(pPlayer,10,2.5f, 0x362440, 0xFFFFFF, 1.5f);
+            //kiBlast.setupKiSouls(pPlayer,10,0.8f, 0xFFFFFF);
+            //kiBlast.setupKiGenki(pPlayer,10,0.8f);
+            kiBlast.setupKiNova(pPlayer,10,0.6f);
+            //kiBlast.setupKiDeathBall(pPlayer,10,2.0f);
 
 
             kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.8F);
@@ -44,9 +44,9 @@ public class MerusLaserItem extends Item {
             kiWave.setColors(0xFFFFFF, 0x00FFFF);
             kiWave.setSize(1.5f);
             kiWave.setKiDamage(15.0f);
-            kiWave.setKiSpeed(0.2f);
+            kiWave.setKiSpeed(1.5f);
 
-            pLevel.addFreshEntity(kiWave);
+            pLevel.addFreshEntity(kiBlast);
         }
 
 

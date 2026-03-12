@@ -5,6 +5,8 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.particles.KiSheddingParticle;
+import com.dragonminez.common.init.particles.KiTrailParticle;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -61,7 +63,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 owner.getZ(),
                 MainSounds.KI_KAME_FIRE.get(),
                 SoundSource.PLAYERS,
-                0.5F,
+                0.1F,
                 0.8F + (this.random.nextFloat() * 0.2F)
         );
     }
@@ -92,9 +94,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (this.tickCount % 5 == 0) {
                 Vec3 tipPos = startPos.add(dir.scale(currentLen));
 
-                this.level().playSound(null, tipPos.x, tipPos.y, tipPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.2F, 1.0F);
+                this.level().playSound(null, tipPos.x, tipPos.y, tipPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
 
-                this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.2F, 1.0F);
+                this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.1F, 1.0F);
             }
 
             float targetLen = currentLen + this.getKiSpeed();
@@ -163,29 +165,69 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private void spawnWaveParticles() {
+        float length = this.getBeamLength();
+        if (length <= 1.0F) return;
+
         float yaw = this.getFixedYaw();
         float pitch = this.getFixedPitch();
         Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
         Vec3 startPos = this.position();
-        float length = this.getBeamLength();
 
-        float[] rgbMain = ColorUtils.rgbIntToFloat(this.getColor());
+        Vec3 tipPos = startPos.add(dir.scale(length));
 
-        if (length > 1.0F) {
-            for(int i=0; i<2; i++) {
-                double dist = this.random.nextDouble() * length;
-                double spread = 0.5D;
-                Vec3 pos = startPos.add(dir.scale(dist)).add(
-                        (this.random.nextDouble() - 0.5) * spread,
-                        (this.random.nextDouble() - 0.5) * spread,
-                        (this.random.nextDouble() - 0.5) * spread
-                );
+        float scale = this.getSize();
+        float[] borderColor = ColorUtils.rgbIntToFloat(this.getColorBorde());
 
-                this.level().addParticle(MainParticles.KI_TRAIL.get(),
-                        pos.x, pos.y, pos.z,
-                        rgbMain[0], rgbMain[1], rgbMain[2]);
+        float pr = borderColor[0], pg = borderColor[1], pb = borderColor[2];
+
+        for (int i = 0; i < 4; i++) {
+            double radius = scale * 1.2;
+            double theta = this.random.nextDouble() * 2 * Math.PI;
+            double phi = Math.acos(2 * this.random.nextDouble() - 1);
+
+            double dx = radius * Math.sin(phi) * Math.cos(theta);
+            double dy = radius * Math.sin(phi) * Math.sin(theta);
+            double dz = radius * Math.cos(phi);
+
+            double vx = dx * 0.15;
+            double vy = dy * 0.15;
+            double vz = dz * 0.15;
+
+            net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+                    MainParticles.KI_TRAIL.get(),
+                    tipPos.x + dx,
+                    tipPos.y + dy,
+                    tipPos.z + dz,
+                    vx, vy, vz
+            );
+
+            if (p instanceof KiTrailParticle trail) {
+                trail.setKiColor(pr, pg, pb);
+                trail.setKiScale(scale);
             }
         }
+
+        for (int i = 0; i < 5; i++) {
+            double absDist = scale * 2.0;
+
+            double angle = this.random.nextDouble() * Math.PI * 2;
+            double sx = Math.cos(angle) * absDist;
+            double sz = Math.sin(angle) * absDist;
+            double sy = (this.random.nextDouble() - 0.5) * 2.0 * absDist;
+
+            net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+                    MainParticles.KI_SHEDDING.get(),
+                    startPos.x + sx,
+                    startPos.y + sy,
+                    startPos.z + sz,
+                    -sx * 0.15, -sy * 0.15, -sz * 0.15
+            );
+
+            if (p instanceof KiSheddingParticle kiParticle) {
+                kiParticle.setKiColor(borderColor[0], borderColor[1], borderColor[2]);
+            }
+        }
+
     }
 
 
