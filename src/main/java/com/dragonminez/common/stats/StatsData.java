@@ -519,32 +519,58 @@ public class StatsData {
 		return config.getClassStats(characterClass);
 	}
 
-	public int calculateRecursiveCost(int statsToAdd, int baseMultiplier, int maxStats, double multiplier) {
+	public double getRaceTpCostMultiplier() {
+		String raceName = character.getRaceName();
+		String characterClass = character.getCharacterClass();
+		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+		if (raceConfig == null) return 1.0;
+		RaceStatsConfig.ClassStats classStats = raceConfig.getClassStats(characterClass);
+		if (classStats == null) return 1.0;
+		Double classMult = classStats.getTpCostMultiplier();
+		return classMult != null ? classMult : 1.0;
+	}
+
+	public int getSingleStatCost(int simulatedTotalStats) {
+		double globalMult = ConfigManager.getServerConfig().getGameplay().getGlobalTpCostMultiplier();
+		double raceMult = getRaceTpCostMultiplier();
+		double totalMult = globalMult * raceMult;
+
+		int minCost = ConfigManager.getServerConfig().getGameplay().getMinTPCost();
+		int discountThreshold = ConfigManager.getServerConfig().getGameplay().getMaxTPDiscount();
+
+		double baseCost = minCost + (simulatedTotalStats * 1.25);
+
+		int earlyGameDiscount = 0;
+		if (simulatedTotalStats < discountThreshold) earlyGameDiscount = discountThreshold - simulatedTotalStats;
+
+		int finalCost = (int) (baseCost * totalMult) - earlyGameDiscount;
+		return Math.max(minCost, finalCost);
+	}
+
+	public int calculateRecursiveCost(int statsToAdd, int maxStats) {
 		int totalCost = 0;
 		int currentTotalStats = stats.getTotalStats();
 
 		for (int i = 0; i < statsToAdd; i++) {
 			if (currentTotalStats + i >= maxStats * 6) break;
-			int statLevel = (currentTotalStats + i) / 6;
-			totalCost += (int) Math.round(baseMultiplier + (multiplier * statLevel));
+			totalCost += getSingleStatCost(currentTotalStats + i);
 		}
-		return (int) Math.round(totalCost * 1.25);
+		return totalCost;
 	}
 
-	public int calculateStatIncrease(int baseMultiplier, int statsToAdd, int availableTPs, int maxStats, double multiplier) {
+	public int calculateStatIncrease(int maxStatsToAdd, int availableTPs, int maxStats) {
 		int statsIncreased = 0;
 		int costAccumulated = 0;
 		int currentTotalStats = stats.getTotalStats();
 
-		while (statsIncreased < statsToAdd) {
+		while (statsIncreased < maxStatsToAdd) {
 			if (currentTotalStats + statsIncreased >= maxStats * 6) break;
 
-			int statLevel = (currentTotalStats + statsIncreased) / 6;
-			int costForStat = (int) Math.round(baseMultiplier + (multiplier * statLevel));
+			int costForNext = getSingleStatCost(currentTotalStats + statsIncreased);
 
-			if (costAccumulated + costForStat > availableTPs) break;
+			if (costAccumulated + costForNext > availableTPs) break;
 
-			costAccumulated += costForStat;
+			costAccumulated += costForNext;
 			statsIncreased++;
 		}
 

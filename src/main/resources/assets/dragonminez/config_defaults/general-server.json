@@ -21,10 +21,25 @@
     "reviveCooldownSeconds": 300,
     // Multiplier to TP gain from ALL sources.
     "tpGainMultiplier": 1.0,
-    // TP Cost multiplier is not lineal, it increases exponentially.
-    // Formula: tpCost = (level * tpCostMultiplier) * tpCostMultiplier * 1.5
-    // In addition, leveling up a stat with a x10 does not cost 10 times more TP, it is recursive.
-    "tpCostMultiplier": 1.0,
+    // -----[ TP Cost Settings ]-----
+    // Please read and understand the TP Cost formula before changing these values, as they are
+    // all interconnected, changing one value may require changing others to maintain balance.
+    //
+    // - TotalStats : Sum of STR + SKP + RES + VIT + PWR + ENE
+    // - Multiplier : globalTPCostMultiplier * raceTpCostMultiplier
+    // - Discount : If TotalStats < maxTPDiscount, then maxTPDiscount - TotalStats, else 0
+    // - BaseCost : minTPCost + (TotalStats * 1.5)
+    //
+    //  Final Cost calculation:
+    //  FinalCost = (BaseCost * Multiplier) - Discount
+    //
+    // Global multiplier to TP Cost (only stats) for all races and classes.
+    "globalTPCostMultiplier": 1.0,
+    // Minimum TP cost for leveling up stats
+    "minTPCost": 16,
+    // If you have more total stats than this value, you will not have any
+    // TP Discount, this is only used for early game balancing
+    "maxTPDiscount": 140,
     // How much TP in percentage is gained by killing an entity, based on their max health
     "tpHealthRatio": 0.1,
     // How much TP is gained per hit landed on an entity

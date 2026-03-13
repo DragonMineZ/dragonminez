@@ -39,6 +39,7 @@ public class RaceStatsConfig {
 		private Double healthRegenRate = 0.0025;
 		private Double energyRegenRate = 0.01;
 		private Double staminaRegenRate = 0.01;
+		private Double tpCostMultiplier = 1.0;
 	}
 
 	@Setter

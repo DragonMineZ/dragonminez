@@ -40,7 +40,9 @@ public class GeneralServerConfig {
 		private Boolean commandOutputOnConsole = true;
 		private Integer reviveCooldownSeconds = 300;
 		private Double tpGainMultiplier = 1.0;
-		private Double tpCostMultiplier = 1.0;
+		private Double globalTPCostMultiplier = 1.0;
+		private Integer minTPCost = 16;
+		private Integer maxTPDiscount = 140;
 		private Double tpHealthRatio = 0.10;
 		private Integer tpPerHit = 2;
 		private Double HTCTpMultiplier = 2.5;
@@ -67,8 +69,8 @@ public class GeneralServerConfig {
 			return Math.max(0, Math.min(tpGainMultiplier, Double.MAX_VALUE));
 		}
 
-		public Double getTpCostMultiplier() {
-			return Math.max(0.01, Math.min(tpCostMultiplier, Double.MAX_VALUE));
+		public Double getGlobalTpCostMultiplier() {
+			return Math.max(0.01, Math.min(globalTPCostMultiplier, Double.MAX_VALUE));
 		}
 
 		public Double getTpHealthRatio() {
