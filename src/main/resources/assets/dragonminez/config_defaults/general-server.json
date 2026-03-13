@@ -12,7 +12,9 @@
     // the events to it, like SpacePod travel, death system, etc.
     "otherworldActive": true,
     // Dragon Ball spawn range from world origin (0,0)
-    "dbSpawnRange": 1000
+    "dbSpawnRange": 1000,
+    // How many Dragon Ball sets should be generated in the world? From 0 to 10.
+    "dragonBallSets": 1
   },
   "gameplay": {
     // Should console output be enabled? Players will always receive the output besides of this setting.

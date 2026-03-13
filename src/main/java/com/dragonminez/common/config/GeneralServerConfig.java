@@ -28,9 +28,14 @@ public class GeneralServerConfig {
 		private Boolean generateDragonBalls = true;
 		private Boolean otherworldActive = true;
 		private Integer dbSpawnRange = 1000;
+		private Integer dragonBallSets = 1;
 
 		public Integer getDBSpawnRange() {
 			return Math.max(100, Math.min(dbSpawnRange, 6000));
+		}
+
+		public Integer getDragonBallSets() {
+			return Math.max(0, Math.min(dragonBallSets, 10));
 		}
 	}
 
