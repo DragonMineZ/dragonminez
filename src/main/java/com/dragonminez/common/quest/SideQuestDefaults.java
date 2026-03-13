@@ -53,6 +53,16 @@ final class SideQuestDefaults {
 										String questGiver, String turnIn,
 										JsonObject prerequisites,
 										JsonObject[] objectives, JsonObject[] rewards) {
+		return sidequest(id, title, desc, category, parallelObjectives, questGiver, turnIn,
+				prerequisites, objectives, rewards, null, null);
+	}
+
+	private static JsonObject sidequest(String id, String title, String desc, String category,
+										boolean parallelObjectives,
+										String questGiver, String turnIn,
+										JsonObject prerequisites,
+										JsonObject[] objectives, JsonObject[] rewards,
+										String branchGroup, String branchPath) {
 		JsonObject q = new JsonObject();
 		q.addProperty("id", id);
 		q.addProperty("title", title);
@@ -64,6 +74,13 @@ final class SideQuestDefaults {
 		else q.add("quest_giver", JsonNull.INSTANCE);
 		if (turnIn != null) q.addProperty("turn_in", turnIn);
 		else q.add("turn_in", JsonNull.INSTANCE);
+
+		if (branchGroup != null && branchPath != null) {
+			JsonObject branch = new JsonObject();
+			branch.addProperty("group", branchGroup);
+			branch.addProperty("path", branchPath);
+			q.add("branch", branch);
+		}
 
 		if (prerequisites != null) q.add("prerequisites", prerequisites);
 
@@ -211,7 +228,9 @@ final class SideQuestDefaults {
 						objKill("dmz.sidequest.tien_mountain.obj2", "minecraft:iron_golem", 5),
 						objTalkTo("dmz.sidequest.tien_mountain.obj3", "tien")
 				},
-				new JsonObject[]{ rewTPS(700) }));
+				new JsonObject[]{ rewTPS(700) },
+				"saiyan_training_focus",
+				"tien_route"));
 
 		writeQuestFile(dir, "piccolo_wilderness_survival.json", sidequest(
 				"piccolo_wilderness_survival", "dmz.sidequest.piccolo_survival.name", "dmz.sidequest.piccolo_survival.desc",
@@ -223,7 +242,9 @@ final class SideQuestDefaults {
 						objKill("dmz.sidequest.piccolo_survival.obj3", "minecraft:skeleton", 10),
 						objKill("dmz.sidequest.piccolo_survival.obj4", "minecraft:creeper", 5)
 				},
-				new JsonObject[]{ rewTPS(900) }));
+				new JsonObject[]{ rewTPS(900) },
+				"saiyan_training_focus",
+				"piccolo_route"));
 
 		writeQuestFile(dir, "gohan_survival.json", sidequest(
 				"gohan_survival", "dmz.sidequest.gohan_survival.name", "dmz.sidequest.gohan_survival.desc",
@@ -627,5 +648,4 @@ final class SideQuestDefaults {
 				new JsonObject[]{ rewTPS(14000) }));
 	}
 }
-
 

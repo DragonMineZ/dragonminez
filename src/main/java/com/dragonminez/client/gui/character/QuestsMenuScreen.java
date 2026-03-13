@@ -105,6 +105,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		if (this.selectedQuest != null) refreshButtons();
 	}
 
+	private static final Map<String, Integer> SAGA_UI_ORDER = Map.of(
+			"saiyan_saga", 0,
+			"android_saga", 1,
+			"frieza_saga", 2
+	);
+
 	private void loadAvailableSagas() {
 		availableSagas.clear();
 		if (statsData == null) return;
@@ -119,16 +125,10 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		availableSagas.addAll(allSagas.values());
 
 		availableSagas.sort((s1, s2) -> {
-			if (s1.getRequirements() == null) return -1;
-			if (s2.getRequirements() == null) return 1;
-
-			String prev1 = s1.getRequirements().getPreviousSagaId();
-			String prev2 = s2.getRequirements().getPreviousSagaId();
-
-			if (prev1 == null || prev1.isEmpty()) return -1;
-			if (prev2 == null || prev2.isEmpty()) return 1;
-
-			return 0;
+			int o1 = SAGA_UI_ORDER.getOrDefault(s1.getId(), Integer.MAX_VALUE);
+			int o2 = SAGA_UI_ORDER.getOrDefault(s2.getId(), Integer.MAX_VALUE);
+			if (o1 != o2) return Integer.compare(o1, o2);
+			return s1.getId().compareToIgnoreCase(s2.getId());
 		});
 
 		if (currentSagaIndex >= availableSagas.size()) {

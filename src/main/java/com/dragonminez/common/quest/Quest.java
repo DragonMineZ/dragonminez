@@ -93,6 +93,12 @@ public class Quest {
     /** Prerequisites for accepting this quest. {@code null} = no prerequisites. */
     private final QuestPrerequisites prerequisites;
 
+    /** Optional branch group key. Quests in the same saga+group become mutually exclusive by selected path. */
+    private final String branchGroup;
+
+    /** Optional branch path key inside {@link #branchGroup} (e.g. "good", "bad"). */
+    private final String branchPath;
+
     // ========================================================================================
     // Chain Fields (saga chaining — works for both saga and side-quest types)
     // ========================================================================================
@@ -138,6 +144,8 @@ public class Quest {
         this.sagaId = null;
         this.chainOrder = -1;
         this.nextQuestId = null;
+        this.branchGroup = null;
+        this.branchPath = null;
     }
 
     /**
@@ -160,7 +168,7 @@ public class Quest {
                  QuestPrerequisites prerequisites, String questGiver, String turnIn) {
         this(-1, stringId, QuestType.SIDEQUEST, title, description, category,
                 parallelObjectives, objectives, rewards, prerequisites, questGiver, turnIn,
-                null, -1, null);
+                null, -1, null, null, null);
     }
 
     /**
@@ -172,6 +180,20 @@ public class Quest {
                  List<QuestObjective> objectives, List<QuestReward> rewards,
                  QuestPrerequisites prerequisites, String questGiver, String turnIn,
                  String sagaId, int chainOrder, String nextQuestId) {
+        this(id, stringId, type, title, description, category, parallelObjectives,
+                objectives, rewards, prerequisites, questGiver, turnIn,
+                sagaId, chainOrder, nextQuestId, null, null);
+    }
+
+    /**
+     * Universal constructor with optional branch metadata.
+     */
+    public Quest(int id, String stringId, QuestType type, String title, String description,
+                 String category, boolean parallelObjectives,
+                 List<QuestObjective> objectives, List<QuestReward> rewards,
+                 QuestPrerequisites prerequisites, String questGiver, String turnIn,
+                 String sagaId, int chainOrder, String nextQuestId,
+                 String branchGroup, String branchPath) {
         this.id = id;
         this.stringId = stringId;
         this.type = type != null ? type : QuestType.SAGA;
@@ -189,6 +211,8 @@ public class Quest {
         this.sagaId = sagaId;
         this.chainOrder = chainOrder;
         this.nextQuestId = nextQuestId;
+        this.branchGroup = branchGroup;
+        this.branchPath = branchPath;
     }
 
     /**
@@ -199,7 +223,7 @@ public class Quest {
                  List<QuestObjective> objectives, List<QuestReward> rewards,
                  QuestPrerequisites prerequisites, String questGiver, String turnIn) {
         this(id, stringId, type, title, description, category, parallelObjectives,
-                objectives, rewards, prerequisites, questGiver, turnIn, null, -1, null);
+                objectives, rewards, prerequisites, questGiver, turnIn, null, -1, null, null, null);
     }
 
     // ========================================================================================
@@ -250,6 +274,11 @@ public class Quest {
     /** Returns {@code true} if this quest is the last in its chain (no next quest). */
     public boolean isChainEnd() {
         return nextQuestId == null;
+    }
+
+    /** Returns {@code true} when this quest is part of a branch choice set. */
+    public boolean isBranchingQuest() {
+        return branchGroup != null && !branchGroup.isBlank() && branchPath != null && !branchPath.isBlank();
     }
 
     // ========================================================================================
