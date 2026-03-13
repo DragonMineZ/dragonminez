@@ -117,6 +117,14 @@ public class QuestParser {
 					? chain.get("next").getAsString() : null;
 		}
 
+		String branchGroup = null;
+		String branchPath = null;
+		if (json.has("branch") && json.get("branch").isJsonObject()) {
+			JsonObject branch = json.getAsJsonObject("branch");
+			branchGroup = getStr(branch, "group", "group");
+			branchPath = getStr(branch, "path", "path");
+		}
+
 		// Prerequisites (optional)
 		QuestPrerequisites prerequisites = null;
 		if (json.has("prerequisites")) {
@@ -128,7 +136,7 @@ public class QuestParser {
 
 		return new Quest(numericId, stringId, type, title, description, category, parallelObjectives,
 				objectives, rewards, prerequisites, questGiver, turnIn,
-				sagaId, chainOrder, nextQuestId);
+				sagaId, chainOrder, nextQuestId, branchGroup, branchPath);
 	}
 
 	/** Gets a boolean from JSON, trying snake_case key first, then camelCase key. */
@@ -174,7 +182,21 @@ public class QuestParser {
 		List<QuestObjective> objectives = parseObjectiveList(json);
 		List<QuestReward> rewards = parseRewardList(json);
 
-		return new Quest(id, title, description, objectives, rewards);
+		String branchGroup = null;
+		String branchPath = null;
+		if (json.has("branch") && json.get("branch").isJsonObject()) {
+			JsonObject branch = json.getAsJsonObject("branch");
+			if (branch.has("group") && !branch.get("group").isJsonNull()) {
+				branchGroup = branch.get("group").getAsString();
+			}
+			if (branch.has("path") && !branch.get("path").isJsonNull()) {
+				branchPath = branch.get("path").getAsString();
+			}
+		}
+
+		return new Quest(id, null, Quest.QuestType.SAGA, title, description,
+				"general", false, objectives, rewards,
+				null, null, null, null, -1, null, branchGroup, branchPath);
 	}
 
 	/**

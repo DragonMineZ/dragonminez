@@ -77,7 +77,7 @@ public class SyncQuestRegistryS2C {
 		// Then add standalone quests (sidequests)
 		JsonObject questsRoot = JsonParser.parseString(questsJson).getAsJsonObject();
 		for (Map.Entry<String, JsonElement> entry : questsRoot.entrySet()) {
-			Quest quest = QuestParser.parseSideQuest(entry.getValue().getAsJsonObject());
+			Quest quest = QuestParser.parseQuest(entry.getValue().getAsJsonObject());
 			allQuests.put(entry.getKey(), quest);
 		}
 
@@ -128,6 +128,12 @@ public class SyncQuestRegistryS2C {
 		obj.addProperty("id", quest.getId());
 		obj.addProperty("title", quest.getTitle());
 		obj.addProperty("description", quest.getDescription());
+		if (quest.isBranchingQuest()) {
+			JsonObject branch = new JsonObject();
+			branch.addProperty("group", quest.getBranchGroup());
+			branch.addProperty("path", quest.getBranchPath());
+			obj.add("branch", branch);
+		}
 		obj.add("objectives", serializeObjectives(quest.getObjectives()));
 		obj.add("rewards", serializeRewards(quest.getRewards()));
 		return obj;

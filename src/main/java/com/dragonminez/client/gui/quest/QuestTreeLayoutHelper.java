@@ -111,41 +111,50 @@ public class QuestTreeLayoutHelper {
 		// Map saga quest id -> its NodePosition for branch attachment
 		Map<Integer, NodePosition> sagaNodeMap = new HashMap<>();
 
-		// --- Layout main saga quests horizontally (row 0) ---
+		// --- Layout main saga quests horizontally on a single row ---
 		int maxPixelX = 0;
 		int maxPixelY = 0;
+		int minPixelY = 0;
 
 		for (int i = 0; i < sagaQuests.size(); i++) {
 			Quest quest = sagaQuests.get(i);
+			int row = 0;
 
 			int pixelX = i * NODE_SPACING_X;
-			int pixelY = 0; // row 0 = main saga line
+			int pixelY = row * NODE_SPACING_Y;
 
-			NodePosition node = new NodePosition(quest, i, 0, pixelX, pixelY, false);
+			NodePosition node = new NodePosition(quest, i, row, pixelX, pixelY, false);
 			nodes.add(node);
 			sagaNodeMap.put(quest.getId(), node);
 
 			maxPixelX = Math.max(maxPixelX, pixelX);
+			maxPixelY = Math.max(maxPixelY, pixelY);
+			minPixelY = Math.min(minPixelY, pixelY);
 		}
 
-		// Build connections between consecutive saga quests
-		for (int i = 0; i < sagaQuests.size() - 1; i++) {
-			NodePosition from = sagaNodeMap.get(sagaQuests.get(i).getId());
-			NodePosition to = sagaNodeMap.get(sagaQuests.get(i + 1).getId());
-			if (from != null && to != null) {
+		// Build saga connections based on prerequisites first, then fallback to previous quest in file order
+		for (int i = 0; i < sagaQuests.size(); i++) {
+			Quest child = sagaQuests.get(i);
+			NodePosition to = sagaNodeMap.get(child.getId());
+			if (to == null) continue;
+
+			NodePosition from = findSagaParentNode(child, saga.getId(), sagaNodeMap, sagaQuests, i);
+			if (from != null) {
 				connections.add(new NodeConnection(from, to));
 			}
 		}
 
-		// --- Attach side-quests as branches ---
+		// --- Attach side-quests as up/down diagonal branches ---
 		Map<String, Quest> allQuests = QuestRegistry.getClientQuests();
-		if (allQuests != null && !allQuests.isEmpty()) {
-			// Track how many sidequests branch from each saga quest column
-			Map<Integer, Integer> branchCount = new HashMap<>();
-			// Track sidequest chains (sidequest stringId -> its NodePosition)
+		if (!allQuests.isEmpty()) {
 			Map<String, NodePosition> sideNodeMap = new HashMap<>();
+			Map<String, Integer> sideDirectionByQuestKey = new HashMap<>();
+			Map<String, Integer> nextAnchorDirection = new HashMap<>();
+			Set<String> occupied = new HashSet<>();
+			for (NodePosition n : nodes) {
+				occupied.add(n.getGridCol() + ":" + n.getGridRow());
+			}
 
-			// Filter to only sidequests that belong to THIS saga (prereq references this saga)
 			List<Quest> sortedSide = new ArrayList<>();
 			for (Quest q : allQuests.values()) {
 				if (q.isSideQuest() && belongsToSaga(q, saga.getId())) {
@@ -155,30 +164,51 @@ public class QuestTreeLayoutHelper {
 			sortedSide.sort(Comparator.comparing(q -> q.getStringId() != null ? q.getStringId() : ""));
 
 			for (Quest sq : sortedSide) {
-				// Find which saga quest this sidequest is attached to
+				NodePosition parent = findParentNode(sq, saga.getId(), sagaNodeMap, sideNodeMap);
 				int attachCol = findAttachColumn(sq, saga.getId(), sagaNodeMap, sideNodeMap);
 				if (attachCol < 0) {
-					// No direct link — float near the first node
 					attachCol = 0;
 				}
 
-				int branchIdx = branchCount.getOrDefault(attachCol, 0) + 1;
-				branchCount.put(attachCol, branchIdx);
+				String anchorKey = parent != null ? questKey(parent.getQuest()) : "saga:" + attachCol;
+				int direction;
+				if (parent != null && parent.isSidequest()) {
+					direction = sideDirectionByQuestKey.getOrDefault(anchorKey, 1);
+				} else {
+					direction = nextAnchorDirection.getOrDefault(anchorKey, 1);
+					nextAnchorDirection.put(anchorKey, -direction);
+				}
 
-				int pixelX = attachCol * NODE_SPACING_X;
-				int pixelY = branchIdx * NODE_SPACING_Y;
+				int col;
+				int row;
+				if (parent != null) {
+					col = parent.getGridCol() + 1;
+					row = parent.getGridRow() + direction;
+				} else {
+					NodePosition sagaAnchor = findSagaNodeByColumn(sagaNodeMap, attachCol);
+					int baseRow = sagaAnchor != null ? sagaAnchor.getGridRow() : 0;
+					col = attachCol + 1;
+					row = baseRow + direction;
+				}
 
-				NodePosition sideNode = new NodePosition(sq, attachCol, branchIdx, pixelX, pixelY, true);
+				row = reserveClosestFreeRow(occupied, col, row, direction);
+
+				int pixelX = col * NODE_SPACING_X;
+				int pixelY = row * NODE_SPACING_Y;
+				NodePosition sideNode = new NodePosition(sq, col, row, pixelX, pixelY, true);
 				nodes.add(sideNode);
-				if (sq.getStringId() != null) {
-					sideNodeMap.put(sq.getStringId(), sideNode);
+				occupied.add(col + ":" + row);
+
+				String key = questKey(sq);
+				if (key != null) {
+					sideNodeMap.put(key, sideNode);
+					sideDirectionByQuestKey.put(key, direction);
 				}
 
 				maxPixelX = Math.max(maxPixelX, pixelX);
 				maxPixelY = Math.max(maxPixelY, pixelY);
+				minPixelY = Math.min(minPixelY, pixelY);
 
-				// Connect to parent: either a saga node or another sidequest
-				NodePosition parent = findParentNode(sq, saga.getId(), sagaNodeMap, sideNodeMap);
 				if (parent != null) {
 					connections.add(new NodeConnection(parent, sideNode));
 				}
@@ -186,9 +216,58 @@ public class QuestTreeLayoutHelper {
 		}
 
 		int totalWidth = maxPixelX + NODE_SPACING_X;
-		int totalHeight = maxPixelY + NODE_SPACING_Y;
+		int totalHeight = (maxPixelY - minPixelY) + NODE_SPACING_Y;
+
+		if (minPixelY < 0) {
+			int shift = -minPixelY;
+			List<NodePosition> shiftedNodes = new ArrayList<>(nodes.size());
+			for (NodePosition node : nodes) {
+				shiftedNodes.add(new NodePosition(node.getQuest(), node.getGridCol(), node.getGridRow(),
+						node.getPixelX(), node.getPixelY() + shift, node.isSidequest()));
+			}
+			List<NodeConnection> shiftedConnections = new ArrayList<>(connections.size());
+			for (NodeConnection connection : connections) {
+				NodePosition shiftedFrom = findShiftedNode(shiftedNodes, connection.getFrom());
+				NodePosition shiftedTo = findShiftedNode(shiftedNodes, connection.getTo());
+				if (shiftedFrom != null && shiftedTo != null) {
+					shiftedConnections.add(new NodeConnection(shiftedFrom, shiftedTo));
+				}
+			}
+			return new TreeLayout(shiftedNodes, shiftedConnections, totalWidth, totalHeight);
+		}
 
 		return new TreeLayout(nodes, connections, totalWidth, totalHeight);
+	}
+
+	private static NodePosition findShiftedNode(List<NodePosition> nodes, NodePosition original) {
+		for (NodePosition node : nodes) {
+			if (node.getQuest() == original.getQuest()) {
+				return node;
+			}
+		}
+		return null;
+	}
+
+	private static NodePosition findSagaParentNode(Quest child, String sagaId,
+									   Map<Integer, NodePosition> sagaNodeMap,
+									   List<Quest> sagaQuests,
+									   int childIndex) {
+		if (child.getPrerequisites() != null && child.getPrerequisites().getConditions() != null) {
+			for (var cond : child.getPrerequisites().getConditions()) {
+				if (cond.getType() == QuestPrerequisites.ConditionType.SAGA_QUEST
+						&& sagaId.equals(cond.getSagaId())
+						&& cond.getQuestId() != null) {
+					NodePosition parent = sagaNodeMap.get(cond.getQuestId());
+					if (parent != null) return parent;
+				}
+			}
+		}
+
+		if (childIndex > 0) {
+			Quest previous = sagaQuests.get(childIndex - 1);
+			return sagaNodeMap.get(previous.getId());
+		}
+		return null;
 	}
 
 	/**
@@ -286,5 +365,29 @@ public class QuestTreeLayoutHelper {
 			}
 		}
 		return false;
+	}
+
+	private static NodePosition findSagaNodeByColumn(Map<Integer, NodePosition> sagaNodeMap, int column) {
+		for (NodePosition node : sagaNodeMap.values()) {
+			if (node.getGridCol() == column) {
+				return node;
+			}
+		}
+		return null;
+	}
+
+	private static int reserveClosestFreeRow(Set<String> occupied, int col, int startRow, int direction) {
+		int row = startRow;
+		while (occupied.contains(col + ":" + row)) {
+			row += direction;
+		}
+		return row;
+	}
+
+	private static String questKey(Quest quest) {
+		if (quest == null) return null;
+		if (quest.getStringId() != null) return quest.getStringId();
+		if (quest.getId() >= 0) return String.valueOf(quest.getId());
+		return null;
 	}
 }

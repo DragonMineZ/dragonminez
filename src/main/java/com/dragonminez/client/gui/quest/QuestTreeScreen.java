@@ -13,14 +13,15 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
-import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.SagaBranchingHelper;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -263,22 +264,25 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		refreshButtons();
 	}
 
+	private static final Map<String, Integer> SAGA_UI_ORDER = Map.of(
+			"saiyan_saga", 0,
+			"android_saga", 1,
+			"frieza_saga", 2
+	);
+
 	private void loadAvailableSagas() {
 		availableSagas.clear();
 		if (statsData == null) return;
 
 		Map<String, Saga> allSagas = QuestRegistry.getClientSagas();
-		if (allSagas == null || allSagas.isEmpty()) return;
+		if (allSagas.isEmpty()) return;
 
 		availableSagas.addAll(allSagas.values());
 		availableSagas.sort((s1, s2) -> {
-			if (s1.getRequirements() == null) return -1;
-			if (s2.getRequirements() == null) return 1;
-			String prev1 = s1.getRequirements().getPreviousSagaId();
-			String prev2 = s2.getRequirements().getPreviousSagaId();
-			if (prev1 == null || prev1.isEmpty()) return -1;
-			if (prev2 == null || prev2.isEmpty()) return 1;
-			return 0;
+			int o1 = SAGA_UI_ORDER.getOrDefault(s1.getId(), Integer.MAX_VALUE);
+			int o2 = SAGA_UI_ORDER.getOrDefault(s2.getId(), Integer.MAX_VALUE);
+			if (o1 != o2) return Integer.compare(o1, o2);
+			return s1.getId().compareToIgnoreCase(s2.getId());
 		});
 
 		if (currentSagaIndex >= availableSagas.size()) {
@@ -317,7 +321,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 			// Walk through saga quests, find the last completed or the first incomplete
 			for (Quest q : sagaQuests) {
-				boolean completed = pqd.isQuestCompleted(saga.getId(), q.getId());
+				boolean completed = pqd.isQuestCompleted(PlayerQuestData.sagaQuestKey(saga.getId(), q.getId()));
 
 				// Find the matching node in the layout
 				for (QuestTreeLayoutHelper.NodePosition node : currentLayout.getNodes()) {
@@ -380,7 +384,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 			Map<String, List<Quest>> sideBranches = buildSideBranchesForSaga(currentSaga);
 			for (Quest mainQuest : currentSaga.getQuests()) {
-				if (getNodeVisibility(mainQuest) != NodeVisibility.VISIBLE) {
+				NodeVisibility visibility = getNodeVisibility(mainQuest);
+				if (visibility == NodeVisibility.HIDDEN) {
 					continue;
 				}
 				navigatorEntries.add(new NavigatorEntry(NavEntryType.MAIN_QUEST, 1, currentSaga, mainQuest));
@@ -447,7 +452,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		PlayerQuestData pqd = statsData.getPlayerQuestData();
 		for (Quest q : previousSaga.getQuests()) {
-			if (!pqd.isQuestCompleted(previousSaga.getId(), q.getId())) {
+			if (!pqd.isQuestCompleted(PlayerQuestData.sagaQuestKey(previousSaga.getId(), q.getId()))) {
 				return false;
 			}
 		}
@@ -472,7 +477,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
 		String selectedKey = questProgressKey(currentSaga, selectedQuest);
 		boolean isCompleted = isQuestCompleted(questData, currentSaga, selectedQuest);
-		boolean canStart = canStartQuest(selectedQuest, currentSaga.getId());
+		boolean canStart = canStartQuest(selectedQuest);
 
 		Component buttonText;
 		boolean buttonActive = true;
@@ -545,26 +550,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		this.addRenderableWidget(actionButton);
 	}
 
-	private boolean canStartQuest(Quest quest, String sagaId) {
-		if (statsData == null || availableSagas.isEmpty()) return false;
-		PlayerQuestData questData = statsData.getPlayerQuestData();
+	private boolean canStartQuest(Quest quest) {
+		if (statsData == null || availableSagas.isEmpty() || quest == null) return false;
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
+		PlayerQuestData questData = statsData.getPlayerQuestData();
 		String questKey = questProgressKey(currentSaga, quest);
 		if (questData.isQuestCompleted(questKey)) return false;
-
-		List<QuestObjective> objectives = quest.getObjectives();
-		for (int i = 0; i < objectives.size(); i++) {
-			QuestObjective objective = objectives.get(i);
-			if (objective.getType() == QuestObjective.ObjectiveType.KILL) {
-				for (int j = 0; j < i; j++) {
-					if (questData.getObjectiveProgress(questKey, j) < objectives.get(j).getRequired()) {
-						return false;
-					}
-				}
-				return true;
-			}
-		}
-		return false;
+		if (questData.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) return false;
+		return getNodeStatus(quest) == QuestNodeStatus.AVAILABLE;
 	}
 
 	// ========================================================================================
@@ -1150,7 +1143,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		NodeVisibility fromVis = getNodeVisibility(conn.getFrom().getQuest());
 		NodeVisibility toVis = getNodeVisibility(conn.getTo().getQuest());
-		if (fromVis == NodeVisibility.HIDDEN && toVis == NodeVisibility.HIDDEN) return;
+		if (fromVis == NodeVisibility.HIDDEN || toVis == NodeVisibility.HIDDEN) return;
 
 		int x1 = (int) (conn.getFrom().getPixelX() + zPanX) + HALF_NODE;
 		int y1 = (int) (conn.getFrom().getPixelY() + zPanY) + HALF_NODE;
@@ -1168,30 +1161,24 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 		}
 
-		if (toVis == NodeVisibility.BLURRED) color = LINE_COLOR_FADED;
+		if (fromVis == NodeVisibility.BLURRED || toVis == NodeVisibility.BLURRED) {
+			color = LINE_COLOR_FADED;
+		}
 
-		boolean sameRow = conn.getFrom().getGridRow() == conn.getTo().getGridRow() && conn.getFrom().getPixelY() == conn.getTo().getPixelY();
-		if (sameRow) {
-			int lineY = y1 - LINE_THICKNESS / 2;
-			if (toVis == NodeVisibility.HIDDEN) {
-				int midX = (x1 + x2) / 2;
-				graphics.fill(Math.min(x1, midX), lineY, Math.max(x1, midX), lineY + LINE_THICKNESS, LINE_COLOR_FADED);
-			} else {
-				graphics.fill(Math.min(x1, x2), lineY, Math.max(x1, x2), lineY + LINE_THICKNESS, color);
-			}
-		} else {
-			if (toVis == NodeVisibility.HIDDEN) {
-				int midY = (y1 + y2) / 2;
-				int vLineX = x1 - LINE_THICKNESS / 2;
-				graphics.fill(vLineX, Math.min(y1, midY), vLineX + LINE_THICKNESS, Math.max(y1, midY), LINE_COLOR_FADED);
-			} else {
-				int vLineX = x1 - LINE_THICKNESS / 2;
-				graphics.fill(vLineX, Math.min(y1, y2), vLineX + LINE_THICKNESS, Math.max(y1, y2), color);
-				if (x1 != x2) {
-					int hLineY = y2 - LINE_THICKNESS / 2;
-					graphics.fill(Math.min(x1, x2), hLineY, Math.max(x1, x2), hLineY + LINE_THICKNESS, color);
-				}
-			}
+		drawThickLine(graphics, x1, y1, x2, y2, LINE_THICKNESS, color);
+	}
+
+	private void drawThickLine(GuiGraphics graphics, int x1, int y1, int x2, int y2, int thickness, int color) {
+		int dx = Math.abs(x2 - x1);
+		int dy = Math.abs(y2 - y1);
+		int steps = Math.max(1, Math.max(dx, dy));
+		int half = Math.max(0, thickness / 2);
+
+		for (int i = 0; i <= steps; i++) {
+			float t = i / (float) steps;
+			int x = Math.round(x1 + (x2 - x1) * t);
+			int y = Math.round(y1 + (y2 - y1) * t);
+			graphics.fill(x - half, y - half, x + half + 1, y + half + 1, color);
 		}
 	}
 
@@ -1549,37 +1536,48 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		if (isQuestCompleted(pqd, saga, quest)) return NodeVisibility.VISIBLE;
 
-		List<Quest> sagaQuests = saga.getQuests();
-		int currentAvailableIndex = -1;
-		for (int i = 0; i < sagaQuests.size(); i++) {
-			if (!pqd.isQuestCompleted(saga.getId(), sagaQuests.get(i).getId())) {
-				currentAvailableIndex = i;
-				break;
-			}
+		String questKey = questProgressKey(saga, quest);
+		if (pqd.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) {
+			return NodeVisibility.VISIBLE;
 		}
 
-		for (int i = 0; i < sagaQuests.size(); i++) {
-			if (sagaQuests.get(i).getId() == quest.getId()) {
-				if (i == currentAvailableIndex) return NodeVisibility.VISIBLE;
-				if (i == currentAvailableIndex + 1) return NodeVisibility.BLURRED;
-				return NodeVisibility.HIDDEN;
+		if (quest.isSagaQuest()) {
+			int questIndex = findSagaQuestIndex(saga, quest);
+			if (questIndex >= 0 && SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, statsData)) {
+				return NodeVisibility.VISIBLE;
 			}
+
+			return isImmediateLockedSagaQuest(saga, quest, pqd) ? NodeVisibility.BLURRED : NodeVisibility.HIDDEN;
 		}
 
-		if (quest.isSideQuest() && quest.hasPrerequisites()) {
-			var conditions = quest.getPrerequisites().getConditions();
-			for (var cond : conditions) {
-				if (cond.getType() == QuestPrerequisites.ConditionType.SAGA_QUEST && saga.getId().equals(cond.getSagaId())) {
-					Integer reqId = cond.getQuestId();
-					if (reqId != null && pqd.isQuestCompleted(saga.getId(), reqId)) return NodeVisibility.VISIBLE;
-					if (reqId != null && currentAvailableIndex >= 0 && sagaQuests.get(currentAvailableIndex).getId() == reqId) {
-						return NodeVisibility.BLURRED;
-					}
-				}
-			}
+		if (quest.isSideQuest()) {
+			return QuestAvailabilityChecker.isAvailable(quest, statsData)
+					? NodeVisibility.VISIBLE
+					: NodeVisibility.HIDDEN;
 		}
 
 		return NodeVisibility.HIDDEN;
+	}
+
+	private boolean isImmediateLockedSagaQuest(Saga saga, Quest quest, PlayerQuestData pqd) {
+		int questIndex = findSagaQuestIndex(saga, quest);
+		if (questIndex < 0) return false;
+		return findFirstLockedSagaQuestIndex(saga, pqd) == questIndex;
+	}
+
+	private int findFirstLockedSagaQuestIndex(Saga saga, PlayerQuestData pqd) {
+		List<Quest> sagaQuests = saga.getQuests();
+		for (int i = 0; i < sagaQuests.size(); i++) {
+			Quest q = sagaQuests.get(i);
+			if (isQuestCompleted(pqd, saga, q)) continue;
+
+			String qKey = questProgressKey(saga, q);
+			if (pqd.getQuestStatus(qKey) == PlayerQuestData.QuestStatus.ACCEPTED) continue;
+			if (SagaBranchingHelper.isSagaQuestAvailable(q, saga, i, statsData)) continue;
+
+			return i;
+		}
+		return -1;
 	}
 
 	private QuestNodeStatus getNodeStatus(Quest quest) {
@@ -1597,25 +1595,27 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return QuestNodeStatus.COMPLETED;
 		}
 
-		if (quest.isSideQuest() && quest.hasPrerequisites()) {
-			boolean allMet = true;
-			for (var cond : quest.getPrerequisites().getConditions()) {
-				if (cond.getType() == QuestPrerequisites.ConditionType.SAGA_QUEST) {
-					Integer reqId = cond.getQuestId();
-					String reqSaga = cond.getSagaId();
-					if (reqId != null && reqSaga != null && !pqd.isQuestCompleted(reqSaga, reqId)) {
-						allMet = false;
-						break;
-					}
-				}
-			}
-			return allMet ? QuestNodeStatus.AVAILABLE : QuestNodeStatus.LOCKED;
+		if (SagaBranchingHelper.isQuestLockedByBranch(pqd, saga.getId(), quest)) {
+			return QuestNodeStatus.LOCKED;
 		}
 
-		for (Quest q : saga.getQuests()) {
-			if (!pqd.isQuestCompleted(saga.getId(), q.getId())) {
-				return q.getId() == quest.getId() ? QuestNodeStatus.AVAILABLE : QuestNodeStatus.LOCKED;
+		String questKey = questProgressKey(saga, quest);
+		if (pqd.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) {
+			return QuestNodeStatus.ACTIVE;
+		}
+
+		if (quest.isSagaQuest()) {
+			int questIndex = findSagaQuestIndex(saga, quest);
+			if (questIndex >= 0 && SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, statsData)) {
+				return QuestNodeStatus.AVAILABLE;
 			}
+			return QuestNodeStatus.LOCKED;
+		}
+
+		if (quest.isSideQuest()) {
+			return QuestAvailabilityChecker.isAvailable(quest, statsData)
+					? QuestNodeStatus.AVAILABLE
+					: QuestNodeStatus.LOCKED;
 		}
 
 		return QuestNodeStatus.LOCKED;
@@ -1663,11 +1663,22 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return pqd.isRewardClaimed(questProgressKey(saga, quest), rewardIndex);
 	}
 
+	private int findSagaQuestIndex(Saga saga, Quest quest) {
+		if (saga == null || quest == null) return -1;
+		List<Quest> sagaQuests = saga.getQuests();
+		for (int i = 0; i < sagaQuests.size(); i++) {
+			if (sameQuestIdentity(sagaQuests.get(i), quest)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	private boolean sameQuestIdentity(Quest a, Quest b) {
 		if (a == null || b == null) return false;
 		if (a.isSideQuest() || b.isSideQuest()) {
 			return a.isSideQuest() == b.isSideQuest() && a.getStringId() != null && a.getStringId().equals(b.getStringId());
-		}
+					}
 		return a.getId() == b.getId();
 	}
 

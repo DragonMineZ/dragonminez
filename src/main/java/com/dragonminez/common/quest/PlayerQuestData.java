@@ -52,6 +52,9 @@ public class PlayerQuestData {
     /** Tracks which sagas the player has unlocked (legacy saga-unlock support). */
     private final Map<String, Boolean> sagaUnlockState = new HashMap<>();
 
+    /** Tracks selected branch path by key "sagaId|branchGroup". */
+    private final Map<String, String> branchSelections = new HashMap<>();
+
     // ========================================================================================
     // Quest Progress — Accept / Complete / Reset
     // ========================================================================================
@@ -111,6 +114,7 @@ public class PlayerQuestData {
     public void resetAll() {
         quests.clear();
         sagaUnlockState.clear();
+        branchSelections.clear();
     }
 
     /**
@@ -119,6 +123,8 @@ public class PlayerQuestData {
     public void resetSaga(String sagaId) {
         String prefix = sagaId + ":";
         quests.keySet().removeIf(key -> key.startsWith(prefix));
+        String branchPrefix = sagaId + "|";
+        branchSelections.keySet().removeIf(key -> key.startsWith(branchPrefix));
     }
 
     /**
@@ -219,6 +225,25 @@ public class PlayerQuestData {
         return sagaId + ":" + questId;
     }
 
+    public static String branchSelectionKey(String sagaId, String branchGroup) {
+        return sagaId + "|" + branchGroup;
+    }
+
+    public void setBranchSelection(String sagaId, String branchGroup, String branchPath) {
+        if (sagaId == null || branchGroup == null || branchGroup.isBlank()) return;
+        String key = branchSelectionKey(sagaId, branchGroup);
+        if (branchPath == null || branchPath.isBlank()) {
+            branchSelections.remove(key);
+        } else {
+            branchSelections.put(key, branchPath);
+        }
+    }
+
+    public String getBranchSelection(String sagaId, String branchGroup) {
+        if (sagaId == null || branchGroup == null || branchGroup.isBlank()) return null;
+        return branchSelections.get(branchSelectionKey(sagaId, branchGroup));
+    }
+
     // ---- Saga convenience overloads (auto-build composite key) ----
 
     /** Checks if a saga quest is completed. Builds composite key from saga + numeric quest ID. */
@@ -293,6 +318,13 @@ public class PlayerQuestData {
         }
         tag.put("sagaUnlocks", sagaUnlocks);
 
+        // Branch selections
+        CompoundTag branchTag = new CompoundTag();
+        for (Map.Entry<String, String> entry : branchSelections.entrySet()) {
+            branchTag.putString(entry.getKey(), entry.getValue());
+        }
+        tag.put("branchSelections", branchTag);
+
         return tag;
     }
 
@@ -302,6 +334,7 @@ public class PlayerQuestData {
     public void deserializeNBT(CompoundTag tag) {
         quests.clear();
         sagaUnlockState.clear();
+        branchSelections.clear();
 
         // Quest progress
         ListTag questList = tag.getList("quests", Tag.TAG_COMPOUND);
@@ -316,6 +349,17 @@ public class PlayerQuestData {
             CompoundTag sagaUnlocks = tag.getCompound("sagaUnlocks");
             for (String key : sagaUnlocks.getAllKeys()) {
                 sagaUnlockState.put(key, sagaUnlocks.getBoolean(key));
+            }
+        }
+
+        // Branch selections
+        if (tag.contains("branchSelections")) {
+            CompoundTag branchTag = tag.getCompound("branchSelections");
+            for (String key : branchTag.getAllKeys()) {
+                String path = branchTag.getString(key);
+                if (!path.isBlank()) {
+                    branchSelections.put(key, path);
+                }
             }
         }
     }
