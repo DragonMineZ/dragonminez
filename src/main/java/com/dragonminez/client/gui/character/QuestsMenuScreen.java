@@ -99,37 +99,36 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		this.scrollOffset = SAVED_SCROLL_OFFSET;
 
 		initSagaNavigationButtons();
-		//initTabButtons();
 		updateQuestsList();
 
 		this.scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
 		if (this.selectedQuest != null) refreshButtons();
 	}
 
+	private static final Map<String, Integer> SAGA_UI_ORDER = Map.of(
+			"saiyan_saga", 0,
+			"android_saga", 1,
+			"frieza_saga", 2
+	);
+
 	private void loadAvailableSagas() {
 		availableSagas.clear();
 		if (statsData == null) return;
 
-		Map<String, Saga> allSagas = SagaManager.getClientSagas();
+		Map<String, Saga> allSagas = QuestRegistry.getClientSagas();
 
 		if (allSagas == null || allSagas.isEmpty()) {
-			LogUtil.warn(Env.CLIENT, "No sagas loaded from SagaManager");
+			LogUtil.warn(Env.CLIENT, "No sagas loaded from QuestRegistry");
 			return;
 		}
 
 		availableSagas.addAll(allSagas.values());
 
 		availableSagas.sort((s1, s2) -> {
-			if (s1.getRequirements() == null) return -1;
-			if (s2.getRequirements() == null) return 1;
-
-			String prev1 = s1.getRequirements().getPreviousSagaId();
-			String prev2 = s2.getRequirements().getPreviousSagaId();
-
-			if (prev1 == null || prev1.isEmpty()) return -1;
-			if (prev2 == null || prev2.isEmpty()) return 1;
-
-			return 0;
+			int o1 = SAGA_UI_ORDER.getOrDefault(s1.getId(), Integer.MAX_VALUE);
+			int o2 = SAGA_UI_ORDER.getOrDefault(s2.getId(), Integer.MAX_VALUE);
+			if (o1 != o2) return Integer.compare(o1, o2);
+			return s1.getId().compareToIgnoreCase(s2.getId());
 		});
 
 		if (currentSagaIndex >= availableSagas.size()) {
@@ -164,13 +163,13 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			Saga currentSaga = availableSagas.get(currentSagaIndex);
 			Saga nextSaga = availableSagas.get(currentSagaIndex + 1);
 
-			boolean canAdvance = statsData.getQuestData().isSagaUnlocked(nextSaga.getId())
+			boolean canAdvance = statsData.getPlayerQuestData().isSagaUnlocked(nextSaga.getId())
 					|| isSagaCompleted(currentSaga);
 
 			if (canAdvance) {
 				CustomTextureButton rightArrow = createArrowButton(leftPanelX + 122, bottomPanelY - 25, false, btn -> {
 					currentSagaIndex++;
-					if (!statsData.getQuestData().isSagaUnlocked(nextSaga.getId()))
+					if (!statsData.getPlayerQuestData().isSagaUnlocked(nextSaga.getId()))
 						NetworkHandler.sendToServer(new UnlockSagaC2S(nextSaga.getId()));
 					SAVED_SAGA_INDEX = currentSagaIndex;
 					SAVED_QUEST_ID = -1;
@@ -214,7 +213,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 	private boolean isSagaCompleted(Saga saga) {
 		if (statsData == null || saga == null) return false;
-		QuestData data = statsData.getQuestData();
+		PlayerQuestData data = statsData.getPlayerQuestData();
 
 		for (Quest quest : saga.getQuests()) {
 			if (!data.isQuestCompleted(saga.getId(), quest.getId())) {
@@ -254,7 +253,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				this.statsData = data;
 
-				Map<String, Saga> clientSagas = SagaManager.getClientSagas();
+				Map<String, Saga> clientSagas = QuestRegistry.getClientSagas();
 				int newSize = (clientSagas != null) ? clientSagas.size() : 0;
 
 				if (newSize != availableSagas.size()) {
@@ -287,7 +286,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 		if (statsData == null) return allQuests;
 
-		QuestData questData = statsData.getQuestData();
+		PlayerQuestData questData = statsData.getPlayerQuestData();
 
 		for (int i = 0; i < allQuests.size(); i++) {
 			Quest quest = allQuests.get(i);
@@ -307,43 +306,11 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		return visibleQuests;
 	}
 
-	/*
-	private void initTabButtons() {
-		int centerX = getUiWidth() / 2;
-		int topY = getUiHeight() / 2 - 115;
-
-		// "Sagas" tab — current screen (inactive)
-		TexturedTextButton sagasTab = new TexturedTextButton.Builder()
-				.position(centerX - 40, topY)
-				.size(38, 14)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.story.sidequests.tab.sagas"))
-				.onPress(btn -> {})
-				.build();
-		sagasTab.active = false;
-		this.addRenderableWidget(sagasTab);
-
-		// "Side Quests" tab — switches to SideQuestsMenuScreen
-		TexturedTextButton sideQuestsTab = new TexturedTextButton.Builder()
-				.position(centerX + 2, topY)
-				.size(38, 14)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.story.sidequests.tab.sidequests"))
-				.onPress(btn -> switchMenu(new SideQuestsMenuScreen()))
-				.build();
-		this.addRenderableWidget(sideQuestsTab);
-	}
-	 */
 
 	private void refreshButtons() {
 		this.clearWidgets();
 		initSagaNavigationButtons();
 		initNavigationButtons();
-		//initTabButtons();
 		initActionButton();
 		initQuestDetailsNavigationButtons();
 	}
@@ -355,7 +322,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
-		QuestData questData = statsData.getQuestData();
+		PlayerQuestData questData = statsData.getPlayerQuestData();
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
 		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
 		boolean canStart = canStartQuest(selectedQuest, currentSaga.getId());
@@ -433,7 +400,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 	private boolean canStartQuest(Quest quest, String sagaId) {
 		if (statsData == null) return false;
 
-		QuestData questData = statsData.getQuestData();
+		PlayerQuestData questData = statsData.getPlayerQuestData();
 		if (questData.isQuestCompleted(sagaId, quest.getId())) return false;
 
 		List<QuestObjective> objectives = quest.getObjectives();
@@ -489,7 +456,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
 		String sagaName = Component.translatable("dmz.saga." + currentSaga.getId()).withStyle(ChatFormatting.BOLD).getString();
 
-		boolean sagaUnlocked = statsData != null && statsData.getQuestData().isSagaUnlocked(currentSaga.getId());
+		boolean sagaUnlocked = statsData != null && statsData.getPlayerQuestData().isSagaUnlocked(currentSaga.getId());
 		int sagaColor = sagaUnlocked ? 0xFFFFFFFF : 0xFF888888;
 
 		drawCenteredStringWithBorder(graphics, Component.literal(sagaName),
@@ -533,7 +500,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 			if (statsData != null) {
 				Saga currentSaga = availableSagas.get(currentSagaIndex);
-				if (statsData.getQuestData().isQuestCompleted(currentSaga.getId(), quest.getId())) {
+				if (statsData.getPlayerQuestData().isQuestCompleted(currentSaga.getId(), quest.getId())) {
 					String checkMark = "✓";
 					int checkX = panelX + 130 - this.font.width(checkMark);
 					drawStringWithBorder(graphics, Component.literal(checkMark),
@@ -585,7 +552,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		if (selectedQuest == null) return;
 
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
-		QuestData questData = statsData.getQuestData();
+		PlayerQuestData questData = statsData.getPlayerQuestData();
 		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
 
 		String displayName = Component.translatable(selectedQuest.getTitle()).getString();
@@ -712,7 +679,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		if (selectedQuest == null) return;
 
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
-		QuestData questData = statsData.getQuestData();
+		PlayerQuestData questData = statsData.getPlayerQuestData();
 		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
 
 		String displayName = Component.translatable(selectedQuest.getTitle()).getString();

@@ -92,7 +92,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
 			boolean isOozaru = race.equals("saiyan") && SaiyanForms.OOZARU.equalsIgnoreCase(currentForm) || logicKey.startsWith("oozaru");
 			boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
-					|| logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra");
+					|| logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra") || logicKey.startsWith("frostdemon_second") || logicKey.startsWith("frostdemon_third") || logicKey.startsWith("frostdemon_fifth") || logicKey.startsWith("bioandroid_semi");
 			boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
 
 			if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
@@ -131,6 +131,4 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			default -> super.getModelPartForBone(bone, slot, stack, animatable, baseModel);
 		};
 	}
-
-
 }

@@ -30,7 +30,7 @@ public class KiWaveModel<T extends Entity> extends EntityModel<T> {
 
 	@Override
 	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        float speed = 15.5F;
+        float speed = 2.2F;
         this.kiball.zRot = ageInTicks * speed;
 	}
 

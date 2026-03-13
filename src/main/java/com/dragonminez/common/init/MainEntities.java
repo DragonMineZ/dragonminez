@@ -507,6 +507,17 @@ public class MainEntities {
                     .build("ki_barrier")
     );
 
+    public static final RegistryObject<EntityType<KiExplosionVisualEntity>> KI_EXPLOSION_VISUAL =
+            ENTITY_TYPES.register("ki_explosion_visual",
+                    () -> EntityType.Builder.<KiExplosionVisualEntity>of(KiExplosionVisualEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(10)
+                            .updateInterval(1)
+                            .fireImmune()
+                            .noSave()
+                            .build("ki_explosion_visual")
+            );
+
     // Single generic entity type for ALL data-driven quest NPCs
     public static final RegistryObject<EntityType<QuestNPCEntity>> QUEST_NPC =
             ENTITY_TYPES.register("quest_npc",
