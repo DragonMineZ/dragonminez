@@ -201,6 +201,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 					logicKey.equals("frostdemon_fifth") ||
 					logicKey.equals("frostdemon_third") ||
 					logicKey.equals("frostdemon_final") ||
+                    logicKey.equals("frostdemon_fp") ||
 					currentForm.contains("fifth");
 
 			if (isSpecialForm) {

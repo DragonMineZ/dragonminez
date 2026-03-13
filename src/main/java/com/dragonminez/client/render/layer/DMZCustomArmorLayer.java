@@ -86,7 +86,8 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			shouldRender = true;
 			isOozaruTarget = true;
         } else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
-                || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra")) {
+                || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("frostdemon_second")
+                || logicKey.contains("frostdemon_third") || logicKey.contains("frostdemon_fifth") || logicKey.contains("bioandroid_semi")) {
             if (isDbzArmor) {
                 shouldRender = true;
             }

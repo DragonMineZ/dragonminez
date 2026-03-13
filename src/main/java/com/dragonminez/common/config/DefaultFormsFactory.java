@@ -683,7 +683,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData second = new FormConfig.FormData();
 		second.setName(FrostDemonForms.SECOND_FORM);
 		second.setUnlockOnSkillLevel(1);
-		second.setCustomModel("");
+		second.setCustomModel("frostdemon_second");
 		second.setModelScaling(new Float[]{1.3f, 1.3f, 1.3f});
 		second.setStrMultiplier(1.5);
 		second.setSkpMultiplier(1.5);

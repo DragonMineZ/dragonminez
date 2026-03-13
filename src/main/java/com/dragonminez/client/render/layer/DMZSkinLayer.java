@@ -176,7 +176,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			case "namekian", "namekian_orange" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
 			case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid" ->
 					resolveBodyMajin(character, logicKey, b1, consumer);
-			case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" ->
+			case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" ->
 					resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
 			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" ->
 					resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
@@ -243,7 +243,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		boolean isSecondForm = Objects.equals(currentForm, FrostDemonForms.SECOND_FORM);
 		boolean isBase = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
-		boolean isBulky = (key.equals("frostdemon") && (isBase || isSecondForm)) || key.equals("frostdemon_third");
+		boolean isBulky = (key.equals("frostdemon") && (isBase || isSecondForm) || key.equals("frostdemon_second")) || key.equals("frostdemon_third");
 
 		if (isBulky) {
 			prefix = key.equals("frostdemon_third") ? folder + "thirdform_bodytype_" + bodyType + "_" : folder + "bodytype_" + bodyType + "_";
@@ -586,7 +586,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		boolean isPrimitiveForm = !character.hasActiveForm() || currentForm.equals("second") || currentForm.equals("third");
-		float[] finalDetailColor = (isPrimitiveForm && (faceKey.equals("frostdemon") || faceKey.equals("frostdemon_third"))) ? b2 : (bodyType == 1 ? b2 : skin);
+		float[] finalDetailColor = (isPrimitiveForm && (faceKey.equals("frostdemon") || faceKey.equals("frostdemon_third") ||faceKey.equals("frostdemon_second") )) ? b2 : (bodyType == 1 ? b2 : skin);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "frostdemon_nose_" + character.getNoseType() + ".png", finalDetailColor, pt, pl, po, alpha);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "frostdemon_mouth_" + character.getMouthType() + ".png", finalDetailColor, pt, pl, po, alpha);
 	}
