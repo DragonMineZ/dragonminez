@@ -32,6 +32,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -379,6 +380,8 @@ public class CombatEvent {
 						}
 					}
 
+					victim.getPersistentData().putDouble("dmz_exact_damage", currentDamage[0]);
+
 					if (victimData.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
 						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
@@ -406,6 +409,17 @@ public class CombatEvent {
 		}
 
 		event.setAmount((float) currentDamage[0]);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void overrideVanillaArmorReduction(LivingDamageEvent event) {
+		if (event.getEntity() instanceof Player victim) {
+			if (victim.getPersistentData().contains("dmz_exact_damage")) {
+				double exactDamage = victim.getPersistentData().getDouble("dmz_exact_damage");
+				event.setAmount((float) exactDamage);
+				victim.getPersistentData().remove("dmz_exact_damage");
+			}
+		}
 	}
 
 	private static boolean isEmptyHandOrNoDamageItem(Player player) {
