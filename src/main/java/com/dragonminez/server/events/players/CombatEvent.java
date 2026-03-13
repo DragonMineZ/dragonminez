@@ -150,7 +150,8 @@ public class CombatEvent {
 					if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 						String formGroup = attackerData.getCharacter().getActiveFormGroup();
 						String formName = attackerData.getCharacter().getActiveForm();
-						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
+						double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit() * bonus, activeForm.getMaxMastery() * bonus);
 					}
 				}
 
@@ -159,7 +160,8 @@ public class CombatEvent {
 					if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 						String formGroup = attackerData.getCharacter().getActiveStackFormGroup();
 						String formName = attackerData.getCharacter().getActiveStackForm();
-						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeStackForm.getMasteryPerHit(), activeStackForm.getMaxMastery());
+						double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeStackForm.getMasteryPerHit() * bonus, activeStackForm.getMaxMastery() * bonus);
 					}
 				}
 
@@ -382,7 +384,8 @@ public class CombatEvent {
 						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
 							String formGroup = victimData.getCharacter().getActiveFormGroup();
 							String formName = victimData.getCharacter().getActiveForm();
-							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived(), activeForm.getMaxMastery());
+							double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived() * bonus, activeForm.getMaxMastery() * bonus);
 						}
 					}
 
@@ -391,7 +394,8 @@ public class CombatEvent {
 						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
 							String formGroup = victimData.getCharacter().getActiveFormGroup();
 							String formName = victimData.getCharacter().getActiveForm();
-							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived(), activeForm.getMaxMastery());
+							double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived() * bonus, activeForm.getMaxMastery() * bonus);
 						}
 					}
 

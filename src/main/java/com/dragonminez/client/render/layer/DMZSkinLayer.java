@@ -65,7 +65,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
 	}
 
-	public static void gatherBodyLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
+	public void gatherBodyLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		var character = stats.getCharacter();
 		String raceName = character.getRaceName().toLowerCase();
 		int bodyType = character.getBodyType();
@@ -188,7 +188,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 	}
 
-	public static void gatherAndroidLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
+	public void gatherAndroidLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		var character = stats.getCharacter();
 		String raceName = character.getRace().toLowerCase();
 		boolean canBeUpgraded = ConfigManager.getRaceCharacter(raceName) != null && ConfigManager.getRaceCharacter(raceName).getFormSkillTpCosts("androidforms").length > 0;
@@ -198,7 +198,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, androidPath)), new float[]{1.0f, 1.0f, 1.0f});
 	}
 
-	public static void gatherTattooLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
+	public void gatherTattooLayers(AbstractClientPlayer player, StatsData stats, float partialTick, BiConsumer<ResourceLocation, float[]> consumer) {
 		if (stats.getEffects() != null && stats.getEffects().hasEffect("majin")) {
 			consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/majinm.png")), new float[]{1.0f, 1.0f, 1.0f});
 		}
@@ -208,7 +208,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/tattoos/tattoo_" + tattooType + ".png")), new float[]{1.0f, 1.0f, 1.0f});
 	}
 
-	private static void resolveBodyHumanSaiyan(Character character, float[] bodyColor, BiConsumer<ResourceLocation, float[]> consumer) {
+	private void resolveBodyHumanSaiyan(Character character, float[] bodyColor, BiConsumer<ResourceLocation, float[]> consumer) {
 		int bodyType = character.getBodyType();
 		String gender = character.getGender().toLowerCase().trim();
 		String genderPart = (gender.equals("female") || gender.equals("mujer")) ? "_female" : "_male";
@@ -217,14 +217,14 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPath)), bodyColor);
 	}
 
-	private static void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
+	private void resolveBodyOozaru(float[] bodyColor, float[] bodyColor2, BiConsumer<ResourceLocation, float[]> consumer) {
 		String basePath = "textures/entity/races/humansaiyan/oozaru_";
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer1.png")), bodyColor2);
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer2.png")), bodyColor);
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer3.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer3.png")), new float[]{1f, 1f, 1f});
 	}
 
-	private static void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
+	private void resolveBodyNamekian(Character character, float[] c1, float[] c2, float[] c3, BiConsumer<ResourceLocation, float[]> consumer) {
 		int bodyType = character.getBodyType();
 		String basePath = "textures/entity/races/namekian/bodytype_" + bodyType + "_";
 		String fallbackPath = "textures/entity/races/namekian/bodytype_0_";
@@ -234,7 +234,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, basePath + "layer3.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPath + "layer3.png")), c3);
 	}
 
-	private static void resolveBodyFrostDemon(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
+	private void resolveBodyFrostDemon(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
 		String currentForm = character.getActiveForm();
 		int bodyType = character.getBodyType();
 		float[] orangeColor = ColorUtils.hexToRgb("#e67d40");
@@ -270,7 +270,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 	}
 
-	private static void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
+	private void resolveBodyBioAndroid(Character character, String key, float[] b1, float[] b2, float[] b3, float[] hair, BiConsumer<ResourceLocation, float[]> consumer) {
 		String phase = switch (key) {
 			case "bioandroid_semi" -> "semiperfect";
 			case "bioandroid_perfect", "bioandroid_ultra" -> "perfect";
@@ -293,7 +293,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		consumer.accept(getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + "layer5.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fallbackPrefix + "layer5.png")), stinger);
 	}
 
-	private static void resolveBodyMajin(Character character, String key, float[] b1, BiConsumer<ResourceLocation, float[]> consumer) {
+	private void resolveBodyMajin(Character character, String key, float[] b1, BiConsumer<ResourceLocation, float[]> consumer) {
 		String currentForm = character.getActiveForm();
 		String gender = character.getGender().toLowerCase().trim();
 		String genderSuffix = (gender.equals("female") || gender.equals("mujer")) ? "female" : "male";
