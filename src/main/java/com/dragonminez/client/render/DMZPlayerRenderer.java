@@ -20,7 +20,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
@@ -29,90 +28,92 @@ import java.util.Objects;
 
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
-    protected GeoRenderLayer<T> caller = null;
-
-    public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
-        super(renderManager, model);
-
-            this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
-            this.addRenderLayer(new DMZPlayerArmorLayer<>(this));
-            this.addRenderLayer(new DMZCustomArmorLayer(this));
-            this.addRenderLayer(new DMZSkinLayer<>(this));
-            this.addRenderLayer(new DMZHairLayer<>(this));
-            this.addRenderLayer(new DMZRacePartsLayer(this));
-            this.addRenderLayer(new DMZWeaponsLayer<>(this));
-            this.addRenderLayer(new DMZAuraLayer<>(this));
-    }
-
-  public void reRender(GeoRenderLayer<T> calledFrom, BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
-      T animatable, RenderType renderType, VertexConsumer buffer, float partialTick,
-      int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-      this.caller = calledFrom;
-    super.reRender(model, poseStack, bufferSource, animatable, renderType, buffer, partialTick,
-        packedLight, packedOverlay, red, green, blue, alpha);
-    this.caller = null;
-  }
-
-  @Override
-    public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        float finalAlpha = animatable.isSpectator() ? 0.15f : alpha;
-        super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-        BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
-    }
-
-    @Override
-    public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        if (entity == null) {
-            super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-            return;
-        }
-
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
-        var stats = statsCap.orElse(new StatsData(entity));
-        var character = stats.getCharacter();
-        var activeForm = character.getActiveFormData();
-        String race = character.getRaceName().toLowerCase();
-        String currentForm = character.getActiveForm();
+	protected GeoRenderLayer<T> caller = null;
 
 
-        var raceConfig = ConfigManager.getRaceCharacter(race);
-        String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-        String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-                ? activeForm.getCustomModel().toLowerCase() : "";
+	public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
+		super(renderManager, model);
 
-        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-        if (logicKey.isEmpty()) {
-            logicKey = race;
-        }
+		this.addRenderLayer(new DMZPlayerItemInHandLayer(this));
+		this.addRenderLayer(new DMZPlayerArmorLayer<>(this));
+		this.addRenderLayer(new DMZCustomArmorLayer(this));
+		this.addRenderLayer(new DMZSkinLayer<>(this));
+		this.addRenderLayer(new DMZHairLayer<>(this));
+		this.addRenderLayer(new DMZRacePartsLayer(this));
+		this.addRenderLayer(new DMZWeaponsLayer<>(this));
+		this.addRenderLayer(new DMZAuraLayer<>(this));
+		this.addRenderLayer(new DMZThirdPartyLayerForwarder<>(this));
+	}
 
-        float configScaleX, configScaleY, configScaleZ;
-        if (activeForm != null) {
-            configScaleX = activeForm.getModelScaling()[0];
-            configScaleY = activeForm.getModelScaling()[1];
-            configScaleZ = activeForm.getModelScaling()[2];
-        } else {
-            configScaleX = character.getModelScaling()[0];
-            configScaleY = character.getModelScaling()[1];
-            configScaleZ = character.getModelScaling()[2];
-        }
+	public void reRender(GeoRenderLayer<T> calledFrom, BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
+						 T animatable, RenderType renderType, VertexConsumer buffer, float partialTick,
+						 int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+		this.caller = calledFrom;
+		super.reRender(model, poseStack, bufferSource, animatable, renderType, buffer, partialTick,
+				packedLight, packedOverlay, red, green, blue, alpha);
+		this.caller = null;
+	}
 
-        float scalingX, scalingY, scalingZ;
+	@Override
+	public void preRender(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+		float finalAlpha = animatable.isSpectator() ? 0.15f : alpha;
+		super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, finalAlpha);
+		BoneVisibilityHandler.updateVisibility(model, animatable, this.caller);
+	}
 
-        boolean isOozaru = logicKey.startsWith("oozaru") ||
-                (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) ||
-                        Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+	@Override
+	public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+		if (entity == null) {
+			super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+			return;
+		}
 
-        if (isOozaru) {
-            scalingX = Math.max(0.1f, configScaleX - 2.8f);
-            scalingY = Math.max(0.1f, configScaleY - 2.8f);
-            scalingZ = Math.max(0.1f, configScaleZ - 2.8f);
-        } else {
-            scalingX = configScaleX;
-            scalingY = configScaleY;
-            scalingZ = configScaleZ;
-        }
+		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, entity);
+		var stats = statsCap.orElse(new StatsData(entity));
+		var character = stats.getCharacter();
+		var activeForm = character.getActiveFormData();
+		String race = character.getRaceName().toLowerCase();
+		String currentForm = character.getActiveForm();
 
-        poseStack.pushPose();
+
+		var raceConfig = ConfigManager.getRaceCharacter(race);
+		String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+		String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
+				? activeForm.getCustomModel().toLowerCase() : "";
+
+		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (logicKey.isEmpty()) {
+			logicKey = race;
+		}
+
+		float configScaleX, configScaleY, configScaleZ;
+		if (activeForm != null) {
+			configScaleX = activeForm.getModelScaling()[0];
+			configScaleY = activeForm.getModelScaling()[1];
+			configScaleZ = activeForm.getModelScaling()[2];
+		} else {
+			configScaleX = character.getModelScaling()[0];
+			configScaleY = character.getModelScaling()[1];
+			configScaleZ = character.getModelScaling()[2];
+		}
+
+		float scalingX, scalingY, scalingZ;
+
+		boolean isOozaru = logicKey.startsWith("oozaru") ||
+				(race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) ||
+						Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+
+		if (isOozaru) {
+			scalingX = Math.max(0.1f, configScaleX - 2.8f);
+			scalingY = Math.max(0.1f, configScaleY - 2.8f);
+			scalingZ = Math.max(0.1f, configScaleZ - 2.8f);
+		} else {
+			scalingX = configScaleX;
+			scalingY = configScaleY;
+			scalingZ = configScaleZ;
+		}
+
+		poseStack.pushPose();
 
 		if (FlySkillEvent.isFlyingFast()) {
 			float roll = FlightRollHandler.getRoll(partialTick);
@@ -126,24 +127,24 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			poseStack.translate(0, -pivotY, 0);
 		}
 
-        poseStack.scale(scalingX, scalingY, scalingZ);
+		poseStack.scale(scalingX, scalingY, scalingZ);
 
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 
-        this.shadowRadius = 0.4f * ((scalingX + scalingZ) / 2.0f);
+		this.shadowRadius = 0.4f * ((scalingX + scalingZ) / 2.0f);
 
-        poseStack.popPose();
-    }
+		poseStack.popPose();
+	}
 
-    @Override
-    public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
-                renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-        }
-    }
+	@Override
+	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
+			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+		}
+	}
 
-    @Override
-    public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-        return super.getRenderType(animatable, texture, bufferSource, partialTick);
-    }
+	@Override
+	public RenderType getRenderType(T animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
+		return super.getRenderType(animatable, texture, bufferSource, partialTick);
+	}
 }

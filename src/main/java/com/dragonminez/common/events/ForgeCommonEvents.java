@@ -237,18 +237,16 @@ public class ForgeCommonEvents {
 		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 			if (overworld != null) {
 				DragonBallSavedData data = DragonBallSavedData.get(overworld);
-				if (!data.hasFirstSpawnHappened(false)) {
+				if (!data.isFirstSpawnEarth()) {
 					DragonBallsHandler.scatterDragonBalls(overworld, false);
-					data.setFirstSpawnHappened(false);
 					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for Earth.");
 				}
 			}
 
 			if (namek != null) {
 				DragonBallSavedData data = DragonBallSavedData.get(namek);
-				if (!data.hasFirstSpawnHappened(true)) {
+				if (!data.isFirstSpawnNamek()) {
 					DragonBallsHandler.scatterDragonBalls(namek, true);
-					data.setFirstSpawnHappened(true);
 					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for Namek.");
 				}
 			}

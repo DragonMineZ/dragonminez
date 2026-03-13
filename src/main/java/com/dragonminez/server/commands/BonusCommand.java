@@ -64,7 +64,7 @@ public class BonusCommand {
 				.then(Commands.literal("add")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.BONUS_ADD_SELF, DMZPermissions.BONUS_ADD_OTHERS))
 						.then(Commands.argument("stat", StringArgumentType.word()).suggests(STAT_SUGGESTIONS)
-								.then(Commands.argument("operation", StringArgumentType.word()).suggests(OPERATOR_SUGGESTIONS)
+								.then(Commands.argument("operation", StringArgumentType.string()).suggests(OPERATOR_SUGGESTIONS)
 										.then(Commands.argument("value", DoubleArgumentType.doubleArg())
 												.then(Commands.argument("bonusName", StringArgumentType.word())
 														.executes(ctx -> addBonus(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "operation"), DoubleArgumentType.getDouble(ctx, "value"), StringArgumentType.getString(ctx, "bonusName"), List.of(ctx.getSource().getPlayerOrException())))
@@ -82,7 +82,7 @@ public class BonusCommand {
 												.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.BONUS_CLEAR_OTHERS))
 												.executes(ctx -> removeBonus(ctx.getSource(), StringArgumentType.getString(ctx, "stat"), StringArgumentType.getString(ctx, "bonusName"), EntityArgument.getPlayers(ctx, "targets")))))))
 
-				// clear <stat> [targets] (Elimina TODOS los bonus de la stat)
+				// clear <stat> [targets]
 				.then(Commands.literal("clear")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.BONUS_CLEAR_SELF, DMZPermissions.BONUS_CLEAR_OTHERS))
 						.then(Commands.argument("stat", StringArgumentType.word()).suggests(STAT_SUGGESTIONS)

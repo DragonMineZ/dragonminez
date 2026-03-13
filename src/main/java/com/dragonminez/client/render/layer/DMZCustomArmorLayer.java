@@ -2,6 +2,7 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZPlayerRenderer;
+import com.dragonminez.client.render.compat.CosmeticArmorCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.stats.StatsCapability;
@@ -50,14 +51,17 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		if (animatable.isSpectator()) return;
 
 		ItemStack stack = animatable.getItemBySlot(EquipmentSlot.CHEST);
+		if (CosmeticArmorCompat.isLoaded()) {
+			ItemStack cosmeticStack = CosmeticArmorCompat.getCosmeticStack(animatable, EquipmentSlot.CHEST);
+			if (cosmeticStack != null) stack = cosmeticStack;
+		}
 		if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem armorItem)) return;
 
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
 		if (stats == null) return;
 
-		if (stats.getCharacter().getArmored()) {
-			return;
-		}
+		if (stats.getCharacter().getArmored()) return;
+
 		var character = stats.getCharacter();
 		String raceName = character.getRaceName().toLowerCase();
 		String gender = stats.getCharacter().getGender().toLowerCase();
@@ -80,7 +84,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		boolean shouldRender = false;
 		boolean isSlimTarget = false;
 		boolean isOozaruTarget = false;
-        boolean isBuffedTarget = false;
+		boolean isBuffedTarget = false;
 
 		if (logicKey.equals("oozaru") || (raceName.equals("saiyan") && ("oozaru".equalsIgnoreCase(currentForm) || "golden_oozaru".equalsIgnoreCase(currentForm)))) {
 			shouldRender = true;
@@ -88,9 +92,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
         } else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
                 || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("frostdemon_second")
                 || logicKey.contains("frostdemon_third") || logicKey.contains("frostdemon_fifth") || logicKey.contains("bioandroid_semi")) {
-            if (isDbzArmor) {
-                shouldRender = true;
-            }
+            if (isDbzArmor) shouldRender = true;
             isBuffedTarget = true;
 		} else if ((logicKey.equals("majin") && gender.equals("male") || gender.equals("hombre"))|| (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
 			shouldRender = true;
@@ -294,7 +296,7 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
 	private void renderModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, ResourceLocation texture, float r, float g, float b, float partialTick, int packedLight) {
 		RenderType armorRenderType = RenderType.armorCutoutNoCull(texture);
-		if(getRenderer() instanceof DMZPlayerRenderer<T> playerRenderer) {
+		if (getRenderer() instanceof DMZPlayerRenderer<T> playerRenderer) {
 			playerRenderer.reRender(this, model, poseStack, bufferSource, animatable, armorRenderType,
 					bufferSource.getBuffer(armorRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
 					r, g, b, 1.0f);

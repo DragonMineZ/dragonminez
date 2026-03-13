@@ -37,9 +37,9 @@ import java.util.Set;
 
 public class DragonBallBlock extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    private final DragonBallType ballType;
-    private final boolean isNamekian;
+	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+	private final DragonBallType ballType;
+	private final boolean isNamekian;
 
 	private static final Map<Direction, VoxelShape> EARTH_SHAPES = new EnumMap<>(Direction.class);
 	private static final Map<Direction, VoxelShape> NAMEK_SHAPES = new EnumMap<>(Direction.class);
@@ -54,7 +54,7 @@ public class DragonBallBlock extends BaseEntityBlock {
 	}
 
 	private static VoxelShape calculateShape(Direction to, VoxelShape shape) {
-		VoxelShape[] buffer = new VoxelShape[]{ shape, Shapes.empty() };
+		VoxelShape[] buffer = new VoxelShape[]{shape, Shapes.empty()};
 		int times = (to.get2DDataValue() - Direction.NORTH.get2DDataValue() + 4) % 4;
 		for (int i = 0; i < times; i++) {
 			buffer[0].forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> buffer[1] = Shapes.or(buffer[1],
@@ -64,57 +64,58 @@ public class DragonBallBlock extends BaseEntityBlock {
 		}
 		return buffer[0];
 	}
-    public DragonBallBlock(Properties properties, DragonBallType ballType, boolean isNamekian) {
-        super(properties);
-        this.ballType = ballType;
-        this.isNamekian = isNamekian;
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
 
-    public DragonBallType getBallType() {
-        return ballType;
-    }
+	public DragonBallBlock(Properties properties, DragonBallType ballType, boolean isNamekian) {
+		super(properties);
+		this.ballType = ballType;
+		this.isNamekian = isNamekian;
+		this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+	}
 
-    public boolean isNamekian() {
-        return isNamekian;
-    }
+	public DragonBallType getBallType() {
+		return ballType;
+	}
 
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return new DragonBallBlockEntity(blockPos, blockState, ballType, isNamekian);
-    }
+	public boolean isNamekian() {
+		return isNamekian;
+	}
 
-    @Override
-    public RenderShape getRenderShape(BlockState pState) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
-    }
+	@Nullable
+	@Override
+	public BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
+		return new DragonBallBlockEntity(blockPos, blockState, ballType, isNamekian);
+	}
 
-    @Override
+	@Override
+	public RenderShape getRenderShape(BlockState pState) {
+		return RenderShape.ENTITYBLOCK_ANIMATED;
+	}
+
+	@Override
 	public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
 		Direction direction = pState.getValue(FACING);
 		return isNamekian ? NAMEK_SHAPES.get(direction) : EARTH_SHAPES.get(direction);
 	}
 
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext pContext) {
-        return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite());
-    }
+	@Override
+	public BlockState getStateForPlacement(BlockPlaceContext pContext) {
+		return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite());
+	}
 
-    @Override
-    public BlockState rotate(BlockState pState, Rotation pRotation) {
-        return pState.setValue(FACING, pRotation.rotate(pState.getValue(FACING)));
-    }
+	@Override
+	public BlockState rotate(BlockState pState, Rotation pRotation) {
+		return pState.setValue(FACING, pRotation.rotate(pState.getValue(FACING)));
+	}
 
-    @Override
-    public BlockState mirror(BlockState pState, Mirror pMirror) {
-        return pState.rotate(pMirror.getRotation(pState.getValue(FACING)));
-    }
+	@Override
+	public BlockState mirror(BlockState pState, Mirror pMirror) {
+		return pState.rotate(pMirror.getRotation(pState.getValue(FACING)));
+	}
 
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING);
-    }
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
+		pBuilder.add(FACING);
+	}
 
 	@Override
 	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
@@ -163,22 +164,27 @@ public class DragonBallBlock extends BaseEntityBlock {
 	}
 
 	private void removeAllDragonBalls(Level world, BlockPos pos) {
+		Set<DragonBallType> removedBalls = new HashSet<>();
 		for (BlockPos nearbyPos : BlockPos.betweenClosed(pos.offset(-2, -2, -2), pos.offset(2, 2, 2))) {
 			Block block = world.getBlockState(nearbyPos).getBlock();
 			if (block instanceof DragonBallBlock dragonBall && dragonBall.isNamekian() == this.isNamekian) {
-				world.removeBlock(nearbyPos, false);
+				if (!removedBalls.contains(dragonBall.getBallType())) {
+					world.removeBlock(nearbyPos, false);
+					removedBalls.add(dragonBall.getBallType());
+				}
+				if (removedBalls.size() == 7) break;
 			}
 		}
 	}
 
-    @Override
-    public boolean addLandingEffects(BlockState state1, ServerLevel level, BlockPos pos, BlockState state2, LivingEntity entity, int numberOfParticles) {
-        return true;
-    }
+	@Override
+	public boolean addLandingEffects(BlockState state1, ServerLevel level, BlockPos pos, BlockState state2, LivingEntity entity, int numberOfParticles) {
+		return true;
+	}
 
-    @Override
-    public boolean addRunningEffects(BlockState state, Level level, BlockPos pos, Entity entity) {
-        return true;
-    }
+	@Override
+	public boolean addRunningEffects(BlockState state, Level level, BlockPos pos, Entity entity) {
+		return true;
+	}
 }
 

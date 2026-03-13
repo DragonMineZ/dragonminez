@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZPlayerRenderer;
+import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
@@ -23,7 +24,6 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
-import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -97,51 +97,51 @@ public class AuraRenderHandler {
 		}
 	}
 
-    private static float[] getBodyScale(StatsData stats) {
-        float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
-        var character = stats.getCharacter();
-        String race = character.getRaceName().toLowerCase();
+	private static float[] getBodyScale(StatsData stats) {
+		float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
+		var character = stats.getCharacter();
+		String race = character.getRaceName().toLowerCase();
 
-        if (character.hasActiveForm() && character.getActiveFormData() != null) {
-            sX = character.getActiveFormData().getModelScaling()[0];
-            sY = character.getActiveFormData().getModelScaling()[1];
-            sZ = character.getActiveFormData().getModelScaling()[2];
-        } else {
-            sX = character.getModelScaling()[0];
-            sY = character.getModelScaling()[1];
-            sZ = character.getModelScaling()[2];
-        }
+		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+			sX = character.getActiveFormData().getModelScaling()[0];
+			sY = character.getActiveFormData().getModelScaling()[1];
+			sZ = character.getActiveFormData().getModelScaling()[2];
+		} else {
+			sX = character.getModelScaling()[0];
+			sY = character.getModelScaling()[1];
+			sZ = character.getModelScaling()[2];
+		}
 
-        String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-        boolean isOozaru = currentForm.contains("oozaru") ||
-                (race.equals("saiyan") && (currentForm.equals("oozaru") || currentForm.equals("golden_oozaru")));
+		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
+		boolean isOozaru = currentForm.contains("oozaru") ||
+				(race.equals("saiyan") && (currentForm.equals("oozaru") || currentForm.equals("golden_oozaru")));
 
-        if (isOozaru) {
-            sX = Math.max(0.1f, sX - 2.8f);
-            sY = Math.max(0.1f, sY - 2.8f);
-            sZ = Math.max(0.1f, sZ - 2.8f);
-        }
+		if (isOozaru) {
+			sX = Math.max(0.1f, sX - 2.8f);
+			sY = Math.max(0.1f, sY - 2.8f);
+			sZ = Math.max(0.1f, sZ - 2.8f);
+		}
 
-        return new float[]{sX, sY, sZ};
-    }
+		return new float[]{sX, sY, sZ};
+	}
 
-    private static float[] getAuraScale(StatsData stats) {
-        float scale = 1.05f;
+	private static float[] getAuraScale(StatsData stats) {
+		float scale = 1.05f;
 
-        var character = stats.getCharacter();
-        String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
+		var character = stats.getCharacter();
+		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
 
-        if (currentForm.contains("oozaru")) {
-            scale = 3.0f;
-        }
+		if (currentForm.contains("oozaru")) {
+			scale = 3.0f;
+		}
 
-        if (currentForm.contains("supersaiyan2") || currentForm.contains("supersaiyan3") ||
-                currentForm.contains("ultra") || currentForm.contains("superperfect")) {
-            scale += 0.2f;
-        }
+		if (currentForm.contains("supersaiyan2") || currentForm.contains("supersaiyan3") ||
+				currentForm.contains("ultra") || currentForm.contains("superperfect")) {
+			scale += 0.2f;
+		}
 
-        return new float[]{scale, scale, scale};
-    }
+		return new float[]{scale, scale, scale};
+	}
 
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
@@ -245,9 +245,9 @@ public class AuraRenderHandler {
 				if (entry == null) continue;
 				var player = entry.player();
 				if (player == null) continue;
-				EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
+				DMZPlayerRenderer renderer = DMZRendererCache.getTPRenderer(player);
 
-				if (genericRenderer instanceof DMZPlayerRenderer renderer) {
+				if (renderer != null) {
 					BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
 					if (weaponModel == null) continue;
 
@@ -399,11 +399,12 @@ public class AuraRenderHandler {
 		return new float[]{r, g, b};
 	}
 
+	@SuppressWarnings("rawtypes")
 	private static void renderAuraEntry(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, boolean isActive) {
 		var player = entry.player();
 		if (!(player instanceof GeoAnimatable animatable)) return;
-		EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-		if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+		DMZPlayerRenderer renderer = DMZRendererCache.getTPRenderer(player);
+		if (renderer == null) return;
 		BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
 		if (auraModel == null) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -464,10 +465,11 @@ public class AuraRenderHandler {
 		poseStack.popPose();
 	}
 
+	@SuppressWarnings("rawtypes")
 	private static boolean renderGhostAura(Player player, CachedAuraData data, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc, float partialTick) {
 		if (!(player instanceof GeoAnimatable animatable)) return false;
-		EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-		if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return false;
+		DMZPlayerRenderer renderer = DMZRendererCache.getTPRenderer(player);
+		if (renderer == null) return false;
 
 		if (data.alphaProgress > 0.0f) {
 			data.alphaProgress -= FADE_SPEED;
@@ -511,11 +513,12 @@ public class AuraRenderHandler {
 		return true;
 	}
 
+	@SuppressWarnings("rawtypes")
 	private static void renderPulseAura(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
 		var player = entry.player();
 		if (!(player instanceof GeoAnimatable animatable)) return;
-		EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-		if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+		DMZPlayerRenderer renderer = DMZRendererCache.getTPRenderer(player);
+		if (renderer == null) return;
 		BakedGeoModel slowModel = renderer.getGeoModel().getBakedModel(AURA_SLOW_MODEL);
 		if (slowModel == null) slowModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
 		if (slowModel == null) return;
@@ -573,12 +576,13 @@ public class AuraRenderHandler {
 		poseStack.popPose();
 	}
 
+	@SuppressWarnings("rawtypes")
 	private static void renderFirstPersonAura(AuraRenderQueue.FirstPersonAuraEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
 		Player player = entry.player();
 		float partialTick = entry.partialTick();
 		if (!(player instanceof GeoAnimatable animatable)) return;
-		EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-		if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+		DMZPlayerRenderer renderer = DMZRendererCache.getTPRenderer(player);
+		if (renderer == null) return;
 		BakedGeoModel auraModel = renderer.getGeoModel().getBakedModel(AURA_MODEL);
 		if (auraModel == null) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
@@ -651,11 +655,12 @@ public class AuraRenderHandler {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
 	private static void renderSparkEntry(AuraRenderQueue.SparkRenderEntry entry, PoseStack poseStack, MultiBufferSource.BufferSource buffers, EntityRenderDispatcher dispatcher, Minecraft mc) {
 		var player = entry.player();
 		if (!(player instanceof GeoAnimatable animatable)) return;
-		EntityRenderer<? super Player> genericRenderer = dispatcher.getRenderer(player);
-		if (!(genericRenderer instanceof @SuppressWarnings("rawtypes")DMZPlayerRenderer renderer)) return;
+		DMZPlayerRenderer renderer = DMZRendererCache.getTPRenderer(player);
+		if (renderer == null) return;
 		BakedGeoModel sparkModel = renderer.getGeoModel().getBakedModel(SPARK_MODEL);
 		if (sparkModel == null) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);

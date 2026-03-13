@@ -5,7 +5,6 @@ import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.ModArmorMaterials;
 import com.dragonminez.common.init.item.*;
-import com.dragonminez.common.init.item.weapons.BraveSwordItem;
 import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -50,141 +49,141 @@ public final class MainItems {
 
 	//POTHALAS
 	public static final RegistryObject<Item> POTHALA_LEFT =
-			ITEM_REGISTER.register("pothala_left", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_left", false));
+			ITEM_REGISTER.register("pothala_left", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_left", false));
 	public static final RegistryObject<Item> POTHALA_RIGHT =
-			ITEM_REGISTER.register("pothala_right", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_right", false));
+			ITEM_REGISTER.register("pothala_right", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "pothala_right", false));
 	public static final RegistryObject<Item> GREEN_POTHALA_LEFT =
-			ITEM_REGISTER.register("green_pothala_left", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_left", false));
+			ITEM_REGISTER.register("green_pothala_left", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_left", false));
 	public static final RegistryObject<Item> GREEN_POTHALA_RIGHT =
-			ITEM_REGISTER.register("green_pothala_right", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_right", false));
+			ITEM_REGISTER.register("green_pothala_right", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), "green_pothala_right", false));
 
-    public static final RegistryObject<Item> RED_SCOUTER =
-            ITEM_REGISTER.register("red_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "red_scouter", false));
-    public static final RegistryObject<Item> BLUE_SCOUTER =
-            ITEM_REGISTER.register("blue_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "blue_scouter", false));
-    public static final RegistryObject<Item> GREEN_SCOUTER =
-            ITEM_REGISTER.register("green_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "green_scouter", false));
-    public static final RegistryObject<Item> PURPLE_SCOUTER =
-            ITEM_REGISTER.register("purple_scouter", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "purple_scouter", false));
-    public static final RegistryObject<Item> MERUS_LASER =
-            ITEM_REGISTER.register("laser_merus", () -> new MerusLaserItem());
-    public static final RegistryObject<Item> BLASTER_CANNON =
-            ITEM_REGISTER.register("blaster_cannon", () -> new BlasterCannonItem());
-    //ARMAS
+	public static final RegistryObject<Item> RED_SCOUTER =
+			ITEM_REGISTER.register("red_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "red_scouter", false));
+	public static final RegistryObject<Item> BLUE_SCOUTER =
+			ITEM_REGISTER.register("blue_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "blue_scouter", false));
+	public static final RegistryObject<Item> GREEN_SCOUTER =
+			ITEM_REGISTER.register("green_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "green_scouter", false));
+	public static final RegistryObject<Item> PURPLE_SCOUTER =
+			ITEM_REGISTER.register("purple_scouter", () -> new DbzArmorItem(ModArmorMaterials.BASIC, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1).fireResistant(), "purple_scouter", false));
+	public static final RegistryObject<Item> MERUS_LASER =
+			ITEM_REGISTER.register("laser_merus", () -> new MerusLaserItem());
+	public static final RegistryObject<Item> BLASTER_CANNON =
+			ITEM_REGISTER.register("blaster_cannon", () -> new BlasterCannonItem());
+	//ARMAS
 	// 0 + X = Daño | 4 +/- X = Velocidad de ataque | 0 + X = Durabilidad (0 = Irrompible)
 	public static final RegistryObject<SwordItem> KATANA_YAJIROBE =
 			ITEM_REGISTER.register("yajirobe_katana", () -> new YajirobeKatanaItem());
-    public static final RegistryObject<SwordItem> Z_SWORD =
-            ITEM_REGISTER.register("z_sword", () -> new ZSwordItem());
-    public static final RegistryObject<SwordItem> BRAVE_SWORD =
-            ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem());
-    public static final RegistryObject<SwordItem> POWER_POLE =
-            ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
+	public static final RegistryObject<SwordItem> Z_SWORD =
+			ITEM_REGISTER.register("z_sword", () -> new ZSwordItem());
+	public static final RegistryObject<SwordItem> BRAVE_SWORD =
+			ITEM_REGISTER.register("brave_sword", () -> new BraveSwordItem());
+	public static final RegistryObject<SwordItem> POWER_POLE =
+			ITEM_REGISTER.register("power_pole", () -> new PowerPoleItem());
 
 	//ARMADURAS
-    // GOKU NIÑO
+	// GOKU NIÑO
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOKU_KID_ARMOR = fullArmorNoHelmetSet("goku_kid_armor", "goku_kid", false);
-    //GOKU GI
+	//GOKU GI
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOKU_ARMOR = fullArmorNoHelmetSet("goku_armor", "goku_gi", false);
-    //Goku Super
+	//Goku Super
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOKU_SUPER_ARMOR = fullArmorNoHelmetSet("goku_super_armor", "goku_super", false);
-    // GOKU GT
+	// GOKU GT
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOKU_GT_ARMOR = fullArmorNoHelmetSet("goku_gt_armor", "goku_gt", false);
-    // YARDRAT
+	// YARDRAT
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> YARDRAT_ARMOR = fullArmorNoHelmetSet("yardrat_armor", "yardrat_gi", false);
-    // GOTEN Z
+	// GOTEN Z
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOTEN_ARMOR = fullArmorNoHelmetSet("goten_armor", "goten_gi", false);
-    // GOTEN TEEN (SUPER)
+	// GOTEN TEEN (SUPER)
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOTEN_SUPER_ARMOR = fullArmorNoHelmetSet("goten_super_armor", "goten_dbs", false);
-    // GOHAN GI (SUPER)
+	// GOHAN GI (SUPER)
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOHAN_SUPER_ARMOR = fullArmorNoHelmetSet("gohan_super_armor", "gohan_dbs", false);
-    // GOHAN GREAT SAIYAMAN
-	public static final Map<ArmorItem.Type, RegistryObject<Item>>  GREAT_SAIYAMAN_ARMOR = fullArmorCapeSet("great_saiyaman_armor", "saiyaman_gi", false);
-    // FUTURE GOHAN
+	// GOHAN GREAT SAIYAMAN
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> GREAT_SAIYAMAN_ARMOR = fullArmorCapeSet("great_saiyaman_armor", "saiyaman_gi", false);
+	// FUTURE GOHAN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> FUTURE_GOHAN_ARMOR = fullArmorNoHelmetSet("future_gohan_armor", "future_gohan", false);
-    // VEGETA SAGA SAIYAJIN (Cambiar luego a saiyanArmor para hombreras)
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_SAIYAN_ARMOR = fullArmorNoHelmetSet("vegeta_saiyan_armor", "vegeta_saiyan_armor", false);
-    // VEGETA SAGA NAMEK
+	// VEGETA SAGA SAIYAJIN (Cambiar luego a saiyanArmor para hombreras)
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_SAIYAN_ARMOR = fullArmorNoHelmetSet("vegeta_saiyan_armor", "vegeta_saiyan_armor", false);
+	// VEGETA SAGA NAMEK
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_NAMEK_ARMOR = fullArmorNoHelmetSet("vegeta_namek_armor", "vegetanamek_armor", false);
-    // VEGETA SAGA CELL
+	// VEGETA SAGA CELL
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_Z_ARMOR = fullArmorNoHelmetSet("vegeta_z_armor", "vegetaz_armor", false);
-    // VEGETA SAGA BUU
+	// VEGETA SAGA BUU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_BUU_ARMOR = fullArmorNoHelmetSet("vegeta_buu_armor", "vegetabuu", false);
-    // VEGETA ARMADURA DE SUPER
+	// VEGETA ARMADURA DE SUPER
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETA_SUPER_ARMOR = fullArmorNoHelmetSet("vegeta_super_armor", "vegetasuper", false);
-    // VEGETTO
+	// VEGETTO
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> VEGETTO_ARMOR = fullArmorNoHelmetSet("vegetto_armor", "vegetto", false);
-    // GOGETA
+	// GOGETA
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GOGETA_ARMOR = fullArmorNoHelmetSet("gogeta_armor", "gogeta", false);
-    // PICCOLO
+	// PICCOLO
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> PICCOLO_ARMOR = fullArmorCapeSet("piccolo_armor", "piccolo_gi", false);
-    // DEMON GI (AZUL)
+	// DEMON GI (AZUL)
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> DEMON_GI_BLUE_ARMOR = fullArmorNoHelmetSet("demon_gi_blue_armor", "demon_gi_gohan", false);
-    // BARDOCK DBZ
+	// BARDOCK DBZ
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BARDOCK_DBZ_ARMOR = fullArmorNoHelmetSet("bardock_dbz_armor", "bardock_armor", false);
-    // BARDOCK SUPER
+	// BARDOCK SUPER
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BARDOCK_SUPER_ARMOR = fullArmorNoHelmetSet("bardock_super_armor", "bardockdbs_armor", false);
-    // TURLES
+	// TURLES
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TURLES_ARMOR = fullArmorNoHelmetSet("turles_armor", "turles_armor", false);
-    //TIEN
+	//TIEN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TIEN_ARMOR = fullArmorNoHelmetSet("tien_armor", "tenshinhan_armor", false);
-    //TRUNKS Z
+	//TRUNKS Z
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_Z_ARMOR = fullArmorNoHelmetSet("trunks_z_armor", "trunks_armor", false);
-    //TRUNKS SUPER
+	//TRUNKS SUPER
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_SUPER_ARMOR = fullArmorNoHelmetSet("trunks_super_armor", "trunks_dbs", false);
-    //TRUNKS KID DBZ
+	//TRUNKS KID DBZ
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> TRUNKS_KID_ARMOR = fullArmorNoHelmetSet("trunks_kid_armor", "trunks_gi", false);
-    // BROLY Z
+	// BROLY Z
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BROLY_Z_ARMOR = fullArmorNoHelmetSet("broly_z_armor", "broly_dbz", false);
-    // BROLY SUPER
+	// BROLY SUPER
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BROLY_SUPER_ARMOR = fullArmorNoHelmetSet("broly_super_armor", "broly_dbs", false);
-    // SHIN
+	// SHIN
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> SHIN_ARMOR = fullArmorNoHelmetSet("shin_armor", "kaioshin", false);
-    // BLACK GOKU
+	// BLACK GOKU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> BLACKGOKU_ARMOR = fullArmorNoHelmetSet("blackgoku_armor", "blackgoku", false);
-    // ZAMASU
+	// ZAMASU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> ZAMASU_ARMOR = fullArmorNoHelmetSet("zamasu_armor", "zamasu_gi", false);
-    // FUSED ZAMASU
+	// FUSED ZAMASU
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> FUSION_ZAMASU_ARMOR = fullArmorNoHelmetSet("fusion_zamasu_armor", "fzamasu_gi", false);
-    // TROPAS DEL ORGULLO
+	// TROPAS DEL ORGULLO
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> PRIDE_TROOPS_ARMOR = fullArmorNoHelmetSet("pride_troops_armor", "pride_troper", false);
-    // HIT
+	// HIT
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> HIT_ARMOR = fullArmorNoHelmetSet("hit_armor", "hit", false);
-    // GAS DBS
+	// GAS DBS
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> GAS_ARMOR = fullArmorNoHelmetSet("gas_armor", "gas", false);
-    // MAJIN BUU
-    public static final Map<ArmorItem.Type, RegistryObject<Item>>  MAJIN_BUU_ARMOR = fullArmorCapeNoHelmetSet("majin_buu_armor", "majinbuu_gi", false);
-    // GAMMA 1
-    public static final Map<ArmorItem.Type, RegistryObject<Item>>  GAMMA1_ARMOR = fullArmorCapeNoHelmetSet("gamma1_armor", "gamma1", false);
-    // GAMMA 2
-    public static final Map<ArmorItem.Type, RegistryObject<Item>>  GAMMA2_ARMOR = fullArmorCapeNoHelmetSet("gamma2_armor", "gamma2", false);
-    // NARUKE ARMOR
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> NARUKE_ARMOR = fullArmorNoHelmetSet("naruke_armor", "naruke", false);
-    // THE STRONGEST
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> STRONGEST_ARMOR = fullArmorNoHelmetSet("strongest_armor", "strongest", false);
-    // A17
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> A17_ARMOR = fullArmorNoHelmetSet("a17_armor", "a17", false);
-    // A18
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> A18_ARMOR = fullArmorNoHelmetSet("a18_armor", "a18", false);
-    // A16
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> A16_ARMOR = fullArmorNoHelmetSet("a16_armor", "a16", false);
-    // ORANGE STAR HIGH SCHOOL UNIFORM
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> ORANGE_HIGH_ARMOR = fullArmorNoHelmetSet("orange_high_armor", "orange_high", false);
-    // GRANOLA
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> GRANOLA_ARMOR = fullArmorNoHelmetSet("granola_armor", "granola", false);
-    // KEEP1000
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> AGE1000_ARMOR = fullArmorNoHelmetSet("age1000_armor", "age1000", false);
-    // GINE
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> GINE_ARMOR = fullArmorNoHelmetSet("gine_armor", "gine", false);
-    // KALE
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> KALE_ARMOR = fullArmorNoHelmetSet("kale_armor", "kale", false);
-    // CAULIFLA
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> CAULIFLA_ARMOR = fullArmorNoHelmetSet("caulifla_armor", "caulifla", false);
+	// MAJIN BUU
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> MAJIN_BUU_ARMOR = fullArmorCapeNoHelmetSet("majin_buu_armor", "majinbuu_gi", false);
+	// GAMMA 1
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> GAMMA1_ARMOR = fullArmorCapeNoHelmetSet("gamma1_armor", "gamma1", false);
+	// GAMMA 2
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> GAMMA2_ARMOR = fullArmorCapeNoHelmetSet("gamma2_armor", "gamma2", false);
+	// NARUKE ARMOR
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> NARUKE_ARMOR = fullArmorNoHelmetSet("naruke_armor", "naruke", false);
+	// THE STRONGEST
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> STRONGEST_ARMOR = fullArmorNoHelmetSet("strongest_armor", "strongest", false);
+	// A17
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> A17_ARMOR = fullArmorNoHelmetSet("a17_armor", "a17", false);
+	// A18
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> A18_ARMOR = fullArmorNoHelmetSet("a18_armor", "a18", false);
+	// A16
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> A16_ARMOR = fullArmorNoHelmetSet("a16_armor", "a16", false);
+	// ORANGE STAR HIGH SCHOOL UNIFORM
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> ORANGE_HIGH_ARMOR = fullArmorNoHelmetSet("orange_high_armor", "orange_high", false);
+	// GRANOLA
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> GRANOLA_ARMOR = fullArmorNoHelmetSet("granola_armor", "granola", false);
+	// KEEP1000
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> AGE1000_ARMOR = fullArmorNoHelmetSet("age1000_armor", "age1000", false);
+	// GINE
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> GINE_ARMOR = fullArmorNoHelmetSet("gine_armor", "gine", false);
+	// KALE
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> KALE_ARMOR = fullArmorNoHelmetSet("kale_armor", "kale", false);
+	// CAULIFLA
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> CAULIFLA_ARMOR = fullArmorNoHelmetSet("caulifla_armor", "caulifla", false);
 
 
-    //INVENCIBLE
+	//INVENCIBLE
 	public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_ARMOR = fullArmorSet("invencible_armor", "invencible", false);
-    public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_BLUE_ARMOR = fullArmorSet("invencible_blue_armor", "invencible_blue", false);
+	public static final Map<ArmorItem.Type, RegistryObject<Item>> INVENCIBLE_BLUE_ARMOR = fullArmorSet("invencible_blue_armor", "invencible_blue", false);
 
 	//LÍQUIDOS
 	public static final RegistryObject<Item> HEALING_BUCKET = ITEM_REGISTER.register("healing_liquid_bucket",
@@ -217,7 +216,7 @@ public final class MainItems {
 	public static final RegistryObject<Item> NUBE_ITEM = ITEM_REGISTER.register("flying_nimbus", FlyingNimbusItem::new);
 	public static final RegistryObject<Item> NUBE_NEGRA_ITEM = ITEM_REGISTER.register("black_nimbus", BlackNimbusItem::new);
 	public static final RegistryObject<Item> NAVE_SAIYAN_ITEM = ITEM_REGISTER.register("saiyan_ship", SaiyanShipItem::new);
-    public static final RegistryObject<Item> PUNCH_MACHINE_ITEM = ITEM_REGISTER.register("punch_machine_item", PunchMachineItem::new);
+	public static final RegistryObject<Item> PUNCH_MACHINE_ITEM = ITEM_REGISTER.register("punch_machine_item", PunchMachineItem::new);
 
 	//KIKONO STATION/ARMOR CRAFTING PATTERNS
 	public static final RegistryObject<Item> ARMOR_CRAFTING_KIT = ITEM_REGISTER.register("armor_crafting_kit",
@@ -357,16 +356,17 @@ public final class MainItems {
 		armorPieces.put(ArmorItem.Type.BOOTS, ITEM_REGISTER.register(name + "_boots", () -> new DbzArmorItem(ModArmorMaterials.KIKONO, ArmorItem.Type.BOOTS, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
 		return armorPieces;
 	}
-    private static Map<ArmorItem.Type, RegistryObject<Item>> registerArmorSetCape(String name, String texture, boolean hasHelmet, boolean isDamageOn) {
-        Map<ArmorItem.Type, RegistryObject<Item>> armorPieces = new HashMap<>();
-        if (hasHelmet) {
-            armorPieces.put(ArmorItem.Type.HELMET, ITEM_REGISTER.register(name + "_helmet", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
-        }
-        armorPieces.put(ArmorItem.Type.CHESTPLATE, ITEM_REGISTER.register(name + "_chestplate", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.CHESTPLATE, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
-        armorPieces.put(ArmorItem.Type.LEGGINGS, ITEM_REGISTER.register(name + "_leggings", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.LEGGINGS, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
-        armorPieces.put(ArmorItem.Type.BOOTS, ITEM_REGISTER.register(name + "_boots", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.BOOTS, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
-        return armorPieces;
-    }
+
+	private static Map<ArmorItem.Type, RegistryObject<Item>> registerArmorSetCape(String name, String texture, boolean hasHelmet, boolean isDamageOn) {
+		Map<ArmorItem.Type, RegistryObject<Item>> armorPieces = new HashMap<>();
+		if (hasHelmet) {
+			armorPieces.put(ArmorItem.Type.HELMET, ITEM_REGISTER.register(name + "_helmet", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.HELMET, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
+		}
+		armorPieces.put(ArmorItem.Type.CHESTPLATE, ITEM_REGISTER.register(name + "_chestplate", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.CHESTPLATE, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
+		armorPieces.put(ArmorItem.Type.LEGGINGS, ITEM_REGISTER.register(name + "_leggings", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.LEGGINGS, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
+		armorPieces.put(ArmorItem.Type.BOOTS, ITEM_REGISTER.register(name + "_boots", () -> new DbzArmorCapeItem(ModArmorMaterials.KIKONO, ArmorItem.Type.BOOTS, new Item.Properties().fireResistant().stacksTo(1), texture, isDamageOn)));
+		return armorPieces;
+	}
 
 	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorSet(String itemId, String textureId, boolean isDamageOn) {
 		return registerArmorSet(itemId, textureId, true, isDamageOn);
@@ -376,13 +376,13 @@ public final class MainItems {
 		return registerArmorSet(itemId, textureId, false, isDamageOn);
 	}
 
-    public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorCapeSet(String itemId, String textureId, boolean isDamageOn) {
-        return registerArmorSetCape(itemId, textureId, true, isDamageOn);
-    }
+	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorCapeSet(String itemId, String textureId, boolean isDamageOn) {
+		return registerArmorSetCape(itemId, textureId, true, isDamageOn);
+	}
 
-    public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorCapeNoHelmetSet(String itemId, String textureId, boolean isDamageOn) {
-        return registerArmorSetCape(itemId, textureId, false, isDamageOn);
-    }
+	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorCapeNoHelmetSet(String itemId, String textureId, boolean isDamageOn) {
+		return registerArmorSetCape(itemId, textureId, false, isDamageOn);
+	}
 
 	public static void register(IEventBus bus) {
 		ITEM_REGISTER.register(bus);

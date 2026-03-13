@@ -4,10 +4,10 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
 import com.dragonminez.client.model.KiTridentModel;
-import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.client.util.AuraRenderQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.armor.DbzArmorCapeItem;
@@ -136,9 +136,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), skinTint);
 		} else {
 			float pt = Minecraft.getInstance().getFrameTime();
-			DMZSkinLayer.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
-			DMZSkinLayer.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
-			DMZSkinLayer.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
+			SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
+			SkinGathererProvider.INSTANCE.gatherAndroidLayers(pPlayer, stats, pt, layerConsumer);
+			SkinGathererProvider.INSTANCE.gatherTattooLayers(pPlayer, stats, pt, layerConsumer);
 		}
 
 		renderDbzArmor(pPoseStack, pBuffer, pCombinedLight, pPlayer, pRendererArm);

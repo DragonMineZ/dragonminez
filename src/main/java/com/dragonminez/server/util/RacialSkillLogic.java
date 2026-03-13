@@ -34,7 +34,8 @@ public class RacialSkillLogic {
 			RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 
 			if (target == null) return;
-			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative() && !(target instanceof MastersEntity) && !(target instanceof PunchMachineEntity)) {
+			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative()
+					&& !(target instanceof MastersEntity) && !(target instanceof PunchMachineEntity)) {
 				player.displayClientMessage(Component.translatable("message.dragonminez.racial.target_too_strong"), true);
 				return;
 			}
@@ -43,7 +44,8 @@ public class RacialSkillLogic {
 				case "namekian" -> handleNamekianAssimilation(player, data, target);
 				case "majin" -> handleMajinAbsorption(player, data, target);
 				case "bioandroid" -> handleBioAndroidDrain(player, data, target);
-				default -> {}
+				default -> {
+				}
 			}
 
 		});

@@ -16,6 +16,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.ComboManager;
 import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -31,6 +32,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -133,6 +135,8 @@ public class CombatEvent {
 				} else ComboManager.resetCombo(attacker.getUUID());
 
 				double finalDmzDamage;
+				if (!attackerData.getStatus().isAlive() && attacker.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY))
+					currentStamina = 0;
 				if (currentStamina >= staminaRequired) {
 					finalDmzDamage = dmzDamage;
 					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
@@ -147,7 +151,18 @@ public class CombatEvent {
 					if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
 						String formGroup = attackerData.getCharacter().getActiveFormGroup();
 						String formName = attackerData.getCharacter().getActiveForm();
-						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit(), activeForm.getMaxMastery());
+						double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit() * bonus, activeForm.getMaxMastery() * bonus);
+					}
+				}
+
+				if (attackerData.getCharacter().hasActiveForm()) {
+					FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveFormData();
+					if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+						String formGroup = attackerData.getCharacter().getActiveStackFormGroup();
+						String formName = attackerData.getCharacter().getActiveStackForm();
+						double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeStackForm.getMasteryPerHit() * bonus, activeStackForm.getMaxMastery() * bonus);
 					}
 				}
 
@@ -303,7 +318,7 @@ public class CombatEvent {
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
 										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
 
-										finalDmg = (float) (currentDamage[0] * (1.0 - mitigationPct));
+										finalDmg = (float) (currentDamage[0] - defense - (currentDamage[0] * (1.0 - mitigationPct)));
 										int randomSound = victim.getRandom().nextInt(3);
 										SoundEvent soundToPlay;
 
@@ -365,22 +380,46 @@ public class CombatEvent {
 						}
 					}
 
+					victim.getPersistentData().putDouble("dmz_exact_damage", currentDamage[0]);
+
 					if (victimData.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
 						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
 							String formGroup = victimData.getCharacter().getActiveFormGroup();
 							String formName = victimData.getCharacter().getActiveForm();
-							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived(), activeForm.getMaxMastery());
-
-							if (victim instanceof ServerPlayer serverPlayer)
-								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+							double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived() * bonus, activeForm.getMaxMastery() * bonus);
 						}
 					}
+
+					if (victimData.getCharacter().hasActiveStackForm()) {
+						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
+						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
+							String formGroup = victimData.getCharacter().getActiveFormGroup();
+							String formName = victimData.getCharacter().getActiveForm();
+							double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived() * bonus, activeForm.getMaxMastery() * bonus);
+						}
+					}
+
+					if (victim instanceof ServerPlayer serverPlayer)
+						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				}
 			});
 		}
 
 		event.setAmount((float) currentDamage[0]);
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public static void overrideVanillaArmorReduction(LivingDamageEvent event) {
+		if (event.getEntity() instanceof Player victim) {
+			if (victim.getPersistentData().contains("dmz_exact_damage")) {
+				double exactDamage = victim.getPersistentData().getDouble("dmz_exact_damage");
+				event.setAmount((float) exactDamage);
+				victim.getPersistentData().remove("dmz_exact_damage");
+			}
+		}
 	}
 
 	private static boolean isEmptyHandOrNoDamageItem(Player player) {

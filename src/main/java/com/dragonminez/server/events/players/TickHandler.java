@@ -425,6 +425,11 @@ public class TickHandler {
 			player.refreshDimensions();
 		}
 
+		if (!data.getStatus().isAlive() && player.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
+			if (player.getFoodData().getFoodLevel() <= 20) player.getFoodData().setFoodLevel(20);
+			return;
+		}
+
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
 			int energyDrain = (int) Math.round(data.getAdjustedEnergyDrain());
 			int staminaDrain = (int) Math.round(data.getAdjustedStaminaDrain());

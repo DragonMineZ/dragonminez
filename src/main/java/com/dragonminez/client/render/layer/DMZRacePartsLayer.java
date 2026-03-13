@@ -247,13 +247,19 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	}
 
 
-	private void setupMajinParts(BakedGeoModel partsModel, String gender, int hairType) {
-		String earName = (gender.contains("female") || gender.contains("mujer")) ? "orejas3" :
-				(hairType == 0 ? "orejas3" : (hairType == 1 ? "orejas1" : "orejas2"));
+    private void setupMajinParts(BakedGeoModel partsModel, String gender, int hairType) {
+        String genderLower = gender.toLowerCase();
+        boolean isFemale = genderLower.contains("female") || genderLower.contains("mujer");
 
-		partsModel.getBone("colamajin").ifPresent(this::showBoneChain);
-		partsModel.getBone(earName).ifPresent(this::showBoneChain);
-	}
+        if (!isFemale) {
+            partsModel.getBone("colamajin").ifPresent(this::showBoneChain);
+        }
+
+        String earName = isFemale ? "orejas3" :
+                (hairType == 0 ? "orejas3" : (hairType == 1 ? "orejas1" : "orejas2"));
+
+        partsModel.getBone(earName).ifPresent(this::showBoneChain);
+    }
 
 	private void syncModelToPlayer(BakedGeoModel partsModel, BakedGeoModel playerModel) {
 		for (GeoBone partBone : partsModel.topLevelBones()) {

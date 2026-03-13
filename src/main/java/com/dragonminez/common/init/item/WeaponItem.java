@@ -13,10 +13,22 @@ import java.util.List;
 
 public class WeaponItem extends SwordItem {
 	private final String tag;
+	private final int enchantability;
 
-	public WeaponItem(int damageBase, float attackSpeed, int durability, String tag) {
+	public WeaponItem(int damageBase, float attackSpeed, int durability, int enchantability, String tag) {
 		super(ToolTiers.BLANK_WEAPON_TIER, damageBase, attackSpeed, new Properties().durability(durability).fireResistant());
 		this.tag = tag;
+		this.enchantability = enchantability;
+	}
+
+	@Override
+	public int getEnchantmentValue() {
+		return this.enchantability;
+	}
+
+	@Override
+	public boolean isEnchantable(@NotNull ItemStack pStack) {
+		return true;
 	}
 
 	@Override

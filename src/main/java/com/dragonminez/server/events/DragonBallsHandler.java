@@ -37,28 +37,35 @@ public class DragonBallsHandler {
 		int range = ConfigManager.getServerConfig().getWorldGen().getDBSpawnRange();
 		BlockPos spawnPos = level.getSharedSpawnPos();
 
-		Map<Integer, BlockPos> activeBalls = data.getActiveBallsCopy(isNamek);
+		Map<Integer, List<BlockPos>> active = data.getActiveBalls(isNamek);
+		Map<Integer, List<BlockPos>> pending = data.getPendingBalls(isNamek);
 
-		activeBalls.forEach((star, pos) -> {
-			if (level.isLoaded(pos)) {
-				BlockState state = level.getBlockState(pos);
-				if (getStarFromBlock(state.getBlock()) != -1) level.removeBlock(pos, false);
-			}
-		});
+		boolean isFirstSpawn = isNamek ? !data.isFirstSpawnNamek() : !data.isFirstSpawnEarth();
 
-		data.clearPending(isNamek);
+		int maxSets = ConfigManager.getServerConfig().getWorldGen().getDragonBallSets();
+		int setsToSpawn = isFirstSpawn ? maxSets : 1;
 
 		for (int star = 1; star <= 7; star++) {
+			int currentCount = active.get(star).size() + pending.get(star).size();
+			int actualToSpawn = Math.min(setsToSpawn, maxSets - currentCount);
 
-			int x = spawnPos.getX() + random.nextInt(range * 2) - range;
-			int z = spawnPos.getZ() + random.nextInt(range * 2) - range;
+			for (int i = 0; i < actualToSpawn; i++) {
+				int x = spawnPos.getX() + random.nextInt(range * 2) - range;
+				int z = spawnPos.getZ() + random.nextInt(range * 2) - range;
 
-			BlockPos targetPos = new BlockPos(x, 0, z);
+				BlockPos targetPos = new BlockPos(x, 0, z);
 
-			data.addPendingBall(star, targetPos, isNamek);
-			LogUtil.debug(Env.SERVER, "Dragon Ball (pending) [" + star + "] assigned to " + targetPos + " on " + (isNamek ? "Namek" : "Earth") + " (Y is a dummy value)");
+				pending.get(star).add(targetPos);
+				LogUtil.debug(Env.SERVER, "Dragon Ball (pending) [" + star + "] assigned to " + targetPos + " on " + (isNamek ? "Namek" : "Earth") + " (Y is a dummy value)");
+			}
 		}
 
+		if (isFirstSpawn) {
+			if (isNamek) data.setFirstSpawnNamek(true);
+			else data.setFirstSpawnEarth(true);
+		}
+
+		data.setDirty();
 		syncRadar(level);
 	}
 
@@ -70,18 +77,15 @@ public class DragonBallsHandler {
 		if (!level.dimension().equals(Level.OVERWORLD) && !isNamek) return;
 
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		Map<Integer, BlockPos> pending = data.getPendingBalls(isNamek);
-
-		if (pending.isEmpty()) return;
+		Map<Integer, List<BlockPos>> pending = data.getPendingBalls(isNamek);
 
 		ChunkPos chunkPos = event.getChunk().getPos();
 
-		new ArrayList<>(pending.entrySet()).forEach(entry -> {
-			int star = entry.getKey();
-			BlockPos target = entry.getValue();
-
-			if (chunkPos.x == (target.getX() >> 4) && chunkPos.z == (target.getZ() >> 4)) {
-				generationQueue.add(() -> generateBallSafely(level, star, target, isNamek));
+		pending.forEach((star, targets) -> {
+			for (BlockPos target : new ArrayList<>(targets)) {
+				if (chunkPos.x == (target.getX() >> 4) && chunkPos.z == (target.getZ() >> 4)) {
+					generationQueue.add(() -> generateBallSafely(level, star, target, isNamek));
+				}
 			}
 		});
 	}
@@ -92,9 +96,7 @@ public class DragonBallsHandler {
 
 		while (!generationQueue.isEmpty()) {
 			Runnable task = generationQueue.poll();
-			if (task != null) {
-				task.run();
-			}
+			if (task != null) task.run();
 		}
 	}
 
@@ -108,9 +110,7 @@ public class DragonBallsHandler {
 		if (!level.isLoaded(realPos)) return;
 
 		BlockPos.MutableBlockPos mutable = realPos.mutable();
-		while (mutable.getY() > -60 && level.getBlockState(mutable.below()).isAir()) {
-			mutable.move(0, -1, 0);
-		}
+		while (mutable.getY() > -60 && level.getBlockState(mutable.below()).isAir()) mutable.move(0, -1, 0);
 		realPos = mutable.immutable();
 
 		BlockState below = level.getBlockState(realPos.below());
@@ -124,7 +124,11 @@ public class DragonBallsHandler {
 
 			if (success) {
 				DragonBallSavedData data = DragonBallSavedData.get(level);
-				data.addActiveBall(star, realPos, isNamek);
+
+				data.getPendingBalls(isNamek).get(star).remove(targetXZ);
+				data.getActiveBalls(isNamek).get(star).add(realPos);
+				data.setDirty();
+
 				LogUtil.info(Env.SERVER, "Dragon Ball [" + star + "] physically generated at " + realPos + " on " + (isNamek ? "Namek" : "Earth"));
 				syncRadar(level);
 			}
@@ -143,18 +147,9 @@ public class DragonBallsHandler {
 		boolean isNamek = isNamekBall(block);
 
 		DragonBallSavedData data = DragonBallSavedData.get(level);
-		Map<Integer, BlockPos> active = data.getActiveBalls(isNamek);
 
-		if (active.containsKey(star)) {
-			BlockPos oldPos = active.get(star);
-			if (level.isLoaded(oldPos)) {
-				level.setBlock(oldPos, Blocks.AIR.defaultBlockState(), 3);
-				level.levelEvent(2001, oldPos, Block.getId(event.getPlacedBlock()));
-			}
-			LogUtil.info(Env.SERVER, "Removed duplicate Dragon Ball [" + star + "] at " + oldPos);
-		}
-
-		data.addActiveBall(star, event.getPos(), isNamek);
+		data.getActiveBalls(isNamek).get(star).add(event.getPos());
+		data.setDirty();
 		syncRadar(level);
 	}
 
@@ -171,7 +166,8 @@ public class DragonBallsHandler {
 
 		DragonBallSavedData data = DragonBallSavedData.get(level);
 
-		data.removeActiveBall(event.getPos(), isNamek);
+		data.getActiveBalls(isNamek).get(star).remove(event.getPos());
+		data.setDirty();
 		syncRadar(level);
 	}
 
@@ -184,12 +180,12 @@ public class DragonBallsHandler {
 
 		if (overworld != null) {
 			DragonBallSavedData data = DragonBallSavedData.get(overworld);
-			earthList.addAll(data.getAllPositionsForRadar(false).values());
+			earthList.addAll(data.getAllPositionsForRadar(false));
 		}
 
 		if (namek != null) {
 			DragonBallSavedData data = DragonBallSavedData.get(namek);
-			namekList.addAll(data.getAllPositionsForRadar(true).values());
+			namekList.addAll(data.getAllPositionsForRadar(true));
 		}
 
 		NetworkHandler.sendToAllPlayers(new RadarSyncS2C(earthList, namekList));
