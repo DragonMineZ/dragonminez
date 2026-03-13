@@ -376,6 +376,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 );
                 serverLevel.playSound(null, this.getX(), centerY, this.getZ(),
                         SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 5.0F, 0.6F);
+
+                KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
+                explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
+                explosionVisual.setupExplosion(this.getColorBorde(), this.getSize() * 3.5F);
+                this.level().addFreshEntity(explosionVisual);
             }
             return;
         }
@@ -418,8 +423,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
                         this.getX(), centerY, this.getZ(),
                         0, (double) visualParticleSize, 0.0D, 0.0D, 1.0D
                 );
-                serverLevel.playSound(null, this.getX(), centerY, this.getZ(),
+                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
                         SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 5.0F, 0.6F);
+
+                KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
+                explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
+                explosionVisual.setupExplosion(this.getColorBorde(), this.getSize() * 2);
+                this.level().addFreshEntity(explosionVisual);
             }
         }
         this.discard();
@@ -498,6 +508,17 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 }
             }
         }
+
+
+        if (hitSomething && !this.level().isClientSide) {
+            KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
+            explosionVisual.setPos(this.getX(), this.getY(), this.getZ());
+
+            explosionVisual.setupExplosion(this.getColorBorde(), this.getSize() * 2.0F);
+
+            this.level().addFreshEntity(explosionVisual);
+        }
+
         return hitSomething;
     }
 

@@ -35,8 +35,8 @@ public class MerusLaserItem extends Item {
             //kiBlast.setupInvertedKiBlast(pPlayer,10,2.5f, 0x362440, 0xFFFFFF, 1.5f);
             //kiBlast.setupKiSouls(pPlayer,10,0.8f, 0xFFFFFF);
             //kiBlast.setupKiGenki(pPlayer,10,0.8f);
-            kiBlast.setupKiNova(pPlayer,10,0.6f);
-            //kiBlast.setupKiDeathBall(pPlayer,10,2.0f);
+            //kiBlast.setupKiNova(pPlayer,10,0.6f);
+            //kiBlast.setupKiDeathBall(pPlayer,10,2.0f, 0xA927F5);
 
 
             kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, kiBlast.getKiSpeed(), 0.8F);
@@ -46,7 +46,7 @@ public class MerusLaserItem extends Item {
             kiWave.setKiDamage(15.0f);
             kiWave.setKiSpeed(1.5f);
 
-            pLevel.addFreshEntity(kiBlast);
+            pLevel.addFreshEntity(kiWave);
         }
 
 

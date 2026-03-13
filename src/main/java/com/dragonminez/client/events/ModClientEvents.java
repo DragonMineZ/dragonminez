@@ -240,6 +240,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.MAJIN_SKILL.get(), MajinSkillRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_DISC.get(), KiDiscRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_BARRIER.get(), KiBarrierRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_EXPLOSION_VISUAL.get(), KiExplosionVisualRenderer::new);
 
     }
 
@@ -253,6 +254,7 @@ public class ModClientEvents {
         e.registerLayerDefinition(KiWaveModel.LAYER_LOCATION, KiWaveModel::createBodyLayer);
         e.registerLayerDefinition(KiWave2DModel.LAYER_LOCATION, KiWave2DModel::createBodyLayer);
         e.registerLayerDefinition(KiWaveExplodeModel.LAYER_LOCATION, KiWaveExplodeModel::createBodyLayer);
+        e.registerLayerDefinition(KiBallModel.LAYER_LOCATION, KiBallModel::createBodyLayer);
 
 
         e.registerLayerDefinition(KiScytheModel.LAYER_LOCATION, KiScytheModel::createBodyLayer);
