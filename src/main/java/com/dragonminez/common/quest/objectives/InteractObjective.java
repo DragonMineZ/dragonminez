@@ -1,13 +1,11 @@
 package com.dragonminez.common.quest.objectives;
 
 import com.dragonminez.common.quest.QuestObjective;
-import lombok.Getter;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 
-@Getter
 public class InteractObjective extends QuestObjective {
     private final String entityTypeId;
     private final String entityName;
@@ -18,7 +16,15 @@ public class InteractObjective extends QuestObjective {
         this.entityName = entityName;
     }
 
-	@Override
+    public String getEntityTypeId() {
+        return entityTypeId;
+    }
+
+    public String getEntityName() {
+        return entityName;
+    }
+
+    @Override
     public boolean checkProgress(Object... params) {
         if (params.length > 0 && params[0] instanceof Entity entity) {
             EntityType<?> requiredType = entityTypeId != null ? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(entityTypeId)) : null;

@@ -1,13 +1,11 @@
 package com.dragonminez.common.quest.objectives;
 
 import com.dragonminez.common.quest.QuestObjective;
-import lombok.Getter;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 
-@Getter
 public class KillObjective extends QuestObjective {
 	private final String entityId;
 	private final int count;
@@ -22,6 +20,26 @@ public class KillObjective extends QuestObjective {
 		this.health = health;
 		this.meleeDamage = meleeDamage;
 		this.kiDamage = kiDamage;
+	}
+
+	public String getEntityId() {
+		return entityId;
+	}
+
+	public int getCount() {
+		return count;
+	}
+
+	public double getHealth() {
+		return health;
+	}
+
+	public double getMeleeDamage() {
+		return meleeDamage;
+	}
+
+	public double getKiDamage() {
+		return kiDamage;
 	}
 
 	@Override

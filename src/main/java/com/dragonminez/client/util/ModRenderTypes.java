@@ -1,6 +1,5 @@
 package com.dragonminez.client.util;
 
-import com.dragonminez.client.events.ModClientEvents;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
@@ -15,25 +14,6 @@ public class ModRenderTypes extends RenderType {
     public ModRenderTypes(String pName, VertexFormat pFormat, VertexFormat.Mode pMode, int pBufferSize, boolean pAffectsCrumbling, boolean pSortOnUpload, Runnable pSetupState, Runnable pClearState) {
         super(pName, pFormat, pMode, pBufferSize, pAffectsCrumbling, pSortOnUpload, pSetupState, pClearState);
     }
-
-    public static RenderType getEnergySphere(ResourceLocation texture) {
-        return RenderType.create("energy_sphere",
-                DefaultVertexFormat.NEW_ENTITY,
-                VertexFormat.Mode.QUADS,
-                256,
-                false, // Al ser 'false', evitamos que las capas se oculten entre sí por profundidad
-                true,
-                RenderType.CompositeState.builder()
-                        .setShaderState(new RenderStateShard.ShaderStateShard(ModClientEvents::getEnergySphereShader))
-                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                        .setLightmapState(RenderStateShard.NO_LIGHTMAP) // Importante: Ignora la luz ambiental para brillar siempre
-                        .setOverlayState(RenderStateShard.NO_OVERLAY)
-                        .setCullState(RenderStateShard.NO_CULL) // Permite ver el plano por ambos lados
-                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
-                        .createCompositeState(false));
-    }
-
     private static final Function<ResourceLocation, RenderType> GLOW = Util.memoize((pLocation) ->
             create("glow", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeItemEntityTranslucentCullShader))
@@ -98,25 +78,6 @@ public class ModRenderTypes extends RenderType {
                         .createCompositeState(false));
     }
 
-    private static final Function<ResourceLocation, RenderType> KI_RENDERTYPE = Util.memoize((pLocation) ->
-            create("ki_rendertype", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
-                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
-                    .setTextureState(new TextureStateShard(pLocation, true, true))
-                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
-                    .setCullState(NO_CULL)
-                    .setWriteMaskState(COLOR_DEPTH_WRITE)
-                    .setOverlayState(OVERLAY)
-                    .createCompositeState(false)));
-
-    private static final Function<ResourceLocation, RenderType> ENERGY2 = Util.memoize((pLocation) ->
-            create("energy2", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
-                    .setShaderState(RENDERTYPE_EYES_SHADER)
-                    .setTextureState(new TextureStateShard(pLocation, true, true))
-                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-                    .setCullState(NO_CULL)
-                    .setWriteMaskState(COLOR_DEPTH_WRITE)
-                    .setOverlayState(OVERLAY)
-                    .createCompositeState(false)));
 
     public static RenderType glow(ResourceLocation pLocation) {
         return GLOW.apply(pLocation);
@@ -127,17 +88,11 @@ public class ModRenderTypes extends RenderType {
     public static RenderType energy(ResourceLocation pLocation) {
         return ENERGY.apply(pLocation);
     }
-    public static RenderType energy2(ResourceLocation pLocation) {
-        return ENERGY2.apply(pLocation);
-    }
     public static RenderType lightning(ResourceLocation pLocation) {
         return LIGHTNING.apply(pLocation);
     }
     public static RenderType kiblast(ResourceLocation pLocation) {
         return KI_BLAST.apply(pLocation);
-    }
-    public static RenderType ki_rendertype(ResourceLocation pLocation) {
-        return KI_RENDERTYPE.apply(pLocation);
     }
 
 }

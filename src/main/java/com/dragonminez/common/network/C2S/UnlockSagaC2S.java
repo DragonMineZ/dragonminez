@@ -2,9 +2,8 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -34,13 +33,14 @@ public class UnlockSagaC2S {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
 
-			Saga saga = QuestRegistry.getSaga(sagaId);
+			Saga saga = SagaManager.getSaga(sagaId);
 			if (saga == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-				PlayerQuestData pqd = stats.getPlayerQuestData();
-				if (!pqd.isSagaUnlocked(sagaId)) {
-					pqd.setSagaUnlocked(sagaId, true);
+				if (!stats.getQuestData().isSagaUnlocked(sagaId)) {
+
+					stats.getQuestData().unlockSaga(sagaId);
+
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				}
 			});

@@ -89,12 +89,11 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		if (logicKey.equals("oozaru") || (raceName.equals("saiyan") && ("oozaru".equalsIgnoreCase(currentForm) || "golden_oozaru".equalsIgnoreCase(currentForm)))) {
 			shouldRender = true;
 			isOozaruTarget = true;
-        } else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
-                || logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("frostdemon_second")
-                || logicKey.contains("frostdemon_third") || logicKey.contains("frostdemon_fifth") || logicKey.contains("bioandroid_semi")) {
-            if (isDbzArmor) shouldRender = true;
-            isBuffedTarget = true;
-		} else if ((logicKey.equals("majin") && gender.equals("male") || gender.equals("hombre"))|| (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
+		} else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
+				|| logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra")) {
+			if (isDbzArmor) shouldRender = true;
+			isBuffedTarget = true;
+		} else if ((logicKey.equals("majin") && gender.equals("male") || gender.equals("hombre")) || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
 			shouldRender = true;
 			isSlimTarget = false;
 		} else if (gender.equals("female") || gender.equals("mujer") || gender.equals("fem")) {

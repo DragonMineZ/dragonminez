@@ -4,10 +4,10 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
+import com.dragonminez.common.network.S2C.SyncSagasS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
-import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestData;
+import com.dragonminez.common.quest.SagaManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -82,16 +82,15 @@ public class StatsCapability {
 							ConfigManager.getAllStackForms()
 					), serverPlayer
 			);
-
-			// Sync quest registry (sagas + sidequests) to the client
 			NetworkHandler.sendToPlayer(
-					new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()),
-					serverPlayer
+					new SyncSagasS2C(
+							SagaManager.getAllSagas()
+					), serverPlayer
 			);
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-				PlayerQuestData pqd = data.getPlayerQuestData();
-				if (!pqd.isSagaUnlocked("saiyan_saga")) pqd.setSagaUnlocked("saiyan_saga", true);
+				QuestData questData = data.getQuestData();
+				if (!questData.isSagaUnlocked("saiyan_saga")) questData.unlockSaga("saiyan_saga");
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}

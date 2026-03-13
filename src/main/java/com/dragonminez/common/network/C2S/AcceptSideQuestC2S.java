@@ -4,10 +4,9 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
-import com.dragonminez.common.quest.QuestAvailabilityChecker;
-import com.dragonminez.common.quest.Quest;
-import com.dragonminez.common.quest.QuestRegistry;
-import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.sidequest.QuestAvailabilityChecker;
+import com.dragonminez.common.quest.sidequest.SideQuest;
+import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -46,20 +45,25 @@ public class AcceptSideQuestC2S {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
 
-			Quest sideQuest = QuestRegistry.getQuest(sideQuestId);
+			SideQuest sideQuest = SideQuestManager.getSideQuest(sideQuestId);
 			if (sideQuest == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				PlayerQuestData pqd = data.getPlayerQuestData();
-				if (pqd.isQuestAccepted(sideQuestId)) return;
-				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) return;
-				pqd.acceptQuest(sideQuestId);
+				// Already accepted or completed
+				if (data.getSideQuestData().isQuestAccepted(sideQuestId)) return;
 
+				// Validate prerequisites
+				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) return;
+
+				// Mark as accepted
+				data.getSideQuestData().acceptQuest(sideQuestId);
+
+				// Spawn kill-objective entities (same pattern as StartQuestC2S)
 				for (int i = 0; i < sideQuest.getObjectives().size(); i++) {
 					QuestObjective objective = sideQuest.getObjectives().get(i);
 
 					if (objective instanceof KillObjective killObjective) {
-						int currentProgress = pqd.getObjectiveProgress(sideQuestId, i);
+						int currentProgress = data.getSideQuestData().getObjectiveProgress(sideQuestId, i);
 						int required = killObjective.getRequired();
 						int remaining = Math.max(0, required - currentProgress);
 

@@ -92,8 +92,8 @@ public class StorageManager {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 			stats.load(loadedData);
 
-			if (!stats.getPlayerQuestData().isSagaUnlocked("saiyan_saga")) {
-				stats.getPlayerQuestData().setSagaUnlocked("saiyan_saga", true);
+			if (!stats.getQuestData().isSagaUnlocked("saiyan_saga")) {
+				stats.getQuestData().unlockSaga("saiyan_saga");
 			}
 
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

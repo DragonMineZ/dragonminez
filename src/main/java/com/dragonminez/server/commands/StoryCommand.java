@@ -6,6 +6,9 @@ import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.*;
+import com.dragonminez.common.quest.sidequest.SideQuest;
+import com.dragonminez.common.quest.sidequest.SideQuestData;
+import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
@@ -27,12 +30,12 @@ import java.util.Map;
 public class StoryCommand {
 
     private static final SuggestionProvider<CommandSourceStack> SAGA_SUGGESTIONS = (context, builder) -> {
-        List<String> sagaIds = new ArrayList<>(QuestRegistry.getAllSagas().keySet());
+        List<String> sagaIds = new ArrayList<>(SagaManager.getAllSagas().keySet());
         return SharedSuggestionProvider.suggest(sagaIds, builder);
     };
 
     private static final SuggestionProvider<CommandSourceStack> RESET_SUGGESTIONS = (context, builder) -> {
-        List<String> sagaIds = new ArrayList<>(QuestRegistry.getAllSagas().keySet());
+        List<String> sagaIds = new ArrayList<>(SagaManager.getAllSagas().keySet());
         sagaIds.add("all");
         return SharedSuggestionProvider.suggest(sagaIds, builder);
     };
@@ -40,7 +43,7 @@ public class StoryCommand {
     private static final SuggestionProvider<CommandSourceStack> QUEST_SUGGESTIONS = (context, builder) -> {
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
-            Saga saga = QuestRegistry.getSaga(sagaId);
+            Saga saga = SagaManager.getSaga(sagaId);
             if (saga != null) {
                 List<String> suggestions = new ArrayList<>();
                 suggestions.add("all");
@@ -55,12 +58,12 @@ public class StoryCommand {
     };
 
     private static final SuggestionProvider<CommandSourceStack> SIDEQUEST_SUGGESTIONS = (context, builder) -> {
-        Map<String, Quest> all = QuestRegistry.getAllQuests();
+        Map<String, SideQuest> all = SideQuestManager.getAllSideQuests();
         return SharedSuggestionProvider.suggest(new ArrayList<>(all.keySet()), builder);
     };
 
     private static final SuggestionProvider<CommandSourceStack> SIDEQUEST_RESET_SUGGESTIONS = (context, builder) -> {
-        List<String> ids = new ArrayList<>(QuestRegistry.getAllQuests().keySet());
+        List<String> ids = new ArrayList<>(SideQuestManager.getAllSideQuests().keySet());
         ids.add("all");
         return SharedSuggestionProvider.suggest(ids, builder);
     };
@@ -191,9 +194,9 @@ public class StoryCommand {
         boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
-            String questArg = StringArgumentType.getString(context, "sidequest"); // Leemos como String
+            String questArg = StringArgumentType.getString(context, "quest"); // Leemos como String
 
-            Saga saga = QuestRegistry.getSaga(sagaId);
+            Saga saga = SagaManager.getSaga(sagaId);
             if (saga == null) {
                 context.getSource().sendFailure(Component.translatable("command.dragonminez.story.saga_not_found", sagaId));
                 return 0;
@@ -213,7 +216,7 @@ public class StoryCommand {
                     StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
                         boolean changed = false;
                         for (Quest quest : saga.getQuests()) {
-                            performQuestCompletion(stats.getPlayerQuestData(), saga, quest, player);
+                            performQuestCompletion(stats.getQuestData(), saga, quest, player);
                             changed = true;
                         }
                         if (changed) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
@@ -238,7 +241,7 @@ public class StoryCommand {
 
                     for (ServerPlayer player : targetPlayers) {
                         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                            performQuestCompletion(stats.getPlayerQuestData(), saga, quest, player);
+                            performQuestCompletion(stats.getQuestData(), saga, quest, player);
                             NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
                         });
                         successCount++;
@@ -267,15 +270,19 @@ public class StoryCommand {
         }
     }
 
-    private static void performQuestCompletion(PlayerQuestData pqd, Saga saga, Quest quest, ServerPlayer player) {
+    private static void performQuestCompletion(QuestData questData, Saga saga, Quest quest, ServerPlayer player) {
         List<QuestObjective> objectives = quest.getObjectives();
         for (int i = 0; i < objectives.size(); i++) {
             QuestObjective objective = objectives.get(i);
             int required = objective.getRequired();
-            pqd.setObjectiveProgress(saga.getId(), quest.getId(), i, required);
+            questData.setQuestObjectiveProgress(saga.getId(), quest.getId(), i, required);
         }
 
-        pqd.completeQuest(saga.getId(), quest.getId());
+        questData.completeQuest(saga.getId(), quest.getId());
+
+        QuestData.SagaProgress sagaProgress = questData.getSagaProgress(saga.getId());
+        QuestData.QuestProgress questProgress = sagaProgress.getQuestProgress(quest.getId());
+        questProgress.setCompleted(true);
 
         player.sendSystemMessage(Component.translatable("command.dragonminez.story.quest_completed", quest.getTitle()));
     }
@@ -286,7 +293,7 @@ public class StoryCommand {
             String sagaId = StringArgumentType.getString(context, "saga");
             int questId = IntegerArgumentType.getInteger(context, "quest");
 
-            Saga saga = QuestRegistry.getSaga(sagaId);
+            Saga saga = SagaManager.getSaga(sagaId);
             if (saga == null) {
                 context.getSource().sendFailure(Component.translatable("command.dragonminez.story.saga_not_found", sagaId));
                 return 0;
@@ -302,11 +309,11 @@ public class StoryCommand {
             int successCount = 0;
             for (ServerPlayer player : targetPlayers) {
                 StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                    PlayerQuestData pqd = stats.getPlayerQuestData();
-                    String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
+                    QuestData questData = stats.getQuestData();
+                    QuestData.SagaProgress sagaProgress = questData.getSagaProgress(sagaId);
+                    QuestData.QuestProgress questProgress = sagaProgress.getQuestProgress(questId);
 
-                    // Reset completion status
-                    pqd.resetQuest(questKey);
+                    questProgress.setCompleted(false);
 
                     Quest questObj = saga.getQuests().stream()
                             .filter(q -> q.getId() == questId)
@@ -315,7 +322,7 @@ public class StoryCommand {
 
                     if (questObj != null) {
                         for (int i = 0; i < questObj.getObjectives().size(); i++) {
-                            pqd.setObjectiveProgress(questKey, i, 0);
+                            questData.setQuestObjectiveProgress(sagaId, questId, i, 0);
                         }
                     }
 
@@ -354,10 +361,10 @@ public class StoryCommand {
             int successCount = 0;
             for (ServerPlayer player : targetPlayers) {
                 StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-                    PlayerQuestData pqd = stats.getPlayerQuestData();
+                    QuestData questData = stats.getQuestData();
 
-                    if (sagaId.equalsIgnoreCase("all")) pqd.resetAll();
-                    else pqd.resetSaga(sagaId);
+                    if (sagaId.equalsIgnoreCase("all")) questData.resetAllSagas();
+                    else questData.resetSaga(sagaId);
                     NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
                 });
                 successCount++;
@@ -401,8 +408,8 @@ public class StoryCommand {
             ServerPlayer player = targetPlayer != null ? targetPlayer : context.getSource().getPlayerOrException();
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                PlayerQuestData pqd = data.getPlayerQuestData();
-                Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
+                SideQuestData sqData = data.getSideQuestData();
+                Map<String, SideQuest> allQuests = SideQuestManager.getAllSideQuests();
 
                 if (allQuests.isEmpty()) {
                     context.getSource().sendSystemMessage(Component.translatable("command.dragonminez.story.sidequest.no_quests"));
@@ -411,32 +418,32 @@ public class StoryCommand {
 
                 context.getSource().sendSystemMessage(Component.translatable("command.dragonminez.story.sidequest.list_header", player.getName()));
 
-                for (Map.Entry<String, Quest> entry : allQuests.entrySet()) {
+                for (Map.Entry<String, SideQuest> entry : allQuests.entrySet()) {
                     String id = entry.getKey();
-                    Quest sideQuest = entry.getValue();
+                    SideQuest quest = entry.getValue();
                     String status;
 
-                    if (pqd.isQuestCompleted(id)) {
-                        status = "\u00A7a[COMPLETED]";
-                    } else if (pqd.isQuestAccepted(id)) {
-                        status = "\u00A7e[IN PROGRESS]";
+                    if (sqData.isQuestCompleted(id)) {
+                        status = "§a[COMPLETED]";
+                    } else if (sqData.isQuestAccepted(id)) {
+                        status = "§e[IN PROGRESS]";
                     } else {
-                        status = "\u00A77[NOT STARTED]";
+                        status = "§7[NOT STARTED]";
                     }
 
                     context.getSource().sendSystemMessage(
-                            Component.literal(status + " \u00A7r" + id + " - " + sideQuest.getName())
+                            Component.literal(status + " §r" + id + " - " + quest.getName())
                     );
 
-                    if (pqd.isQuestAccepted(id)) {
-                        List<QuestObjective> objectives = sideQuest.getObjectives();
+                    if (sqData.isQuestAccepted(id)) {
+                        List<QuestObjective> objectives = quest.getObjectives();
                         for (int i = 0; i < objectives.size(); i++) {
                             QuestObjective obj = objectives.get(i);
-                            int progress = pqd.getObjectiveProgress(id, i);
+                            int progress = sqData.getObjectiveProgress(id, i);
                             int required = obj.getRequired();
-                            String objStatus = progress >= required ? "\u00A7a\u2714" : "\u00A7e" + progress + "/" + required;
+                            String objStatus = progress >= required ? "§a✔" : "§e" + progress + "/" + required;
                             context.getSource().sendSystemMessage(
-                                    Component.literal("  " + objStatus + " \u00A7r" + obj.getDescription())
+                                    Component.literal("  " + objStatus + " §r" + obj.getDescription())
                             );
                         }
                     }
@@ -456,21 +463,21 @@ public class StoryCommand {
             String questId = StringArgumentType.getString(context, "sidequest");
             ServerPlayer player = targetPlayer != null ? targetPlayer : context.getSource().getPlayerOrException();
 
-            Quest sideQuest = QuestRegistry.getQuest(questId);
+            SideQuest sideQuest = SideQuestManager.getSideQuest(questId);
             if (sideQuest == null) {
                 context.getSource().sendFailure(Component.translatable("command.dragonminez.story.sidequest.not_found", questId));
                 return 0;
             }
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                PlayerQuestData pqd = data.getPlayerQuestData();
+                SideQuestData sqData = data.getSideQuestData();
 
-                if (pqd.isQuestAccepted(questId)) {
+                if (sqData.isQuestAccepted(questId)) {
                     context.getSource().sendFailure(Component.translatable("command.dragonminez.story.sidequest.already_accepted", questId));
                     return;
                 }
 
-                pqd.acceptQuest(questId);
+                sqData.acceptQuest(questId);
                 NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 
                 context.getSource().sendSuccess(() ->
@@ -491,22 +498,22 @@ public class StoryCommand {
             ServerPlayer player = targetPlayer != null ? targetPlayer : context.getSource().getPlayerOrException();
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                PlayerQuestData pqd = data.getPlayerQuestData();
+                SideQuestData sqData = data.getSideQuestData();
 
                 if (questId.equalsIgnoreCase("all")) {
-                    Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
-                    for (Map.Entry<String, Quest> entry : allQuests.entrySet()) {
-                        performSideQuestCompletion(pqd, entry.getKey(), entry.getValue());
+                    Map<String, SideQuest> allQuests = SideQuestManager.getAllSideQuests();
+                    for (Map.Entry<String, SideQuest> entry : allQuests.entrySet()) {
+                        performSideQuestCompletion(sqData, entry.getKey(), entry.getValue());
                     }
                     context.getSource().sendSuccess(() ->
                             Component.translatable("command.dragonminez.story.sidequest.finished_all", player.getName()), log);
                 } else {
-                    Quest sideQuest = QuestRegistry.getQuest(questId);
+                    SideQuest sideQuest = SideQuestManager.getSideQuest(questId);
                     if (sideQuest == null) {
                         context.getSource().sendFailure(Component.translatable("command.dragonminez.story.sidequest.not_found", questId));
                         return;
                     }
-                    performSideQuestCompletion(pqd, questId, sideQuest);
+                    performSideQuestCompletion(sqData, questId, sideQuest);
                     context.getSource().sendSuccess(() ->
                             Component.translatable("command.dragonminez.story.sidequest.finished", questId, player.getName()), log);
                 }
@@ -521,17 +528,17 @@ public class StoryCommand {
         }
     }
 
-    private static void performSideQuestCompletion(PlayerQuestData pqd, String questId, Quest sideQuest) {
-        if (!pqd.isQuestAccepted(questId)) {
-            pqd.acceptQuest(questId);
+    private static void performSideQuestCompletion(SideQuestData sqData, String questId, SideQuest sideQuest) {
+        if (!sqData.isQuestAccepted(questId)) {
+            sqData.acceptQuest(questId);
         }
 
         List<QuestObjective> objectives = sideQuest.getObjectives();
         for (int i = 0; i < objectives.size(); i++) {
-            pqd.setObjectiveProgress(questId, i, objectives.get(i).getRequired());
+            sqData.setObjectiveProgress(questId, i, objectives.get(i).getRequired());
         }
 
-        pqd.completeQuest(questId);
+        sqData.completeQuest(questId);
     }
 
     private static int sideQuestReset(CommandContext<CommandSourceStack> context, ServerPlayer targetPlayer) {
@@ -541,14 +548,14 @@ public class StoryCommand {
             ServerPlayer player = targetPlayer != null ? targetPlayer : context.getSource().getPlayerOrException();
 
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                PlayerQuestData pqd = data.getPlayerQuestData();
+                SideQuestData sqData = data.getSideQuestData();
 
                 if (questId.equalsIgnoreCase("all")) {
-                    pqd.resetAll();
+                    sqData.resetAll();
                     context.getSource().sendSuccess(() ->
                             Component.translatable("command.dragonminez.story.sidequest.reset_all", player.getName()), log);
                 } else {
-                    pqd.resetQuest(questId);
+                    sqData.resetQuest(questId);
                     context.getSource().sendSuccess(() ->
                             Component.translatable("command.dragonminez.story.sidequest.reset", questId, player.getName()), log);
                 }

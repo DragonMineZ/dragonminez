@@ -1,0 +1,42 @@
+{
+  "id": "namek_elder_chain_1",
+  "name": "The Elder's Request",
+  "description": "A Namekian elder has asked you to help gather rare herbs from dangerous territory. This is the first step in a long journey.",
+  "category": "namek_lore",
+  "parallelObjectives": true,
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "RACE",
+        "race": "namekian"
+      },
+      {
+        "type": "STAT",
+        "stat": "STR",
+        "minValue": 100
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "ITEM",
+      "description": "dmz.sidequest.namek_elder_1.obj1",
+      "item": "minecraft:fern",
+      "count": 10
+    },
+    {
+      "type": "ITEM",
+      "description": "dmz.sidequest.namek_elder_1.obj2",
+      "item": "minecraft:blue_orchid",
+      "count": 5
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 200
+    }
+  ]
+}
+

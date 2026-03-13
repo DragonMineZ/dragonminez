@@ -9,8 +9,8 @@ import com.dragonminez.common.network.C2S.TurnInSideQuestC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestReward;
-import com.dragonminez.common.quest.Quest;
-import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.sidequest.SideQuest;
+import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -67,15 +67,15 @@ public class QuestNPCDialogueScreen extends Screen {
 		questEntries.clear();
 
 		for (String id : offerableQuestIds) {
-			Quest sq = QuestRegistry.getClientQuest(id);
+			SideQuest sq = SideQuestManager.getClientSideQuest(id);
 			if (sq != null) questEntries.add(new QuestEntry(id, sq, EntryType.OFFER));
 		}
 		for (String id : turnInQuestIds) {
-			Quest sq = QuestRegistry.getClientQuest(id);
+			SideQuest sq = SideQuestManager.getClientSideQuest(id);
 			if (sq != null) questEntries.add(new QuestEntry(id, sq, EntryType.TURN_IN));
 		}
 		for (String id : inProgressQuestIds) {
-			Quest sq = QuestRegistry.getClientQuest(id);
+			SideQuest sq = SideQuestManager.getClientSideQuest(id);
 			if (sq != null) questEntries.add(new QuestEntry(id, sq, EntryType.IN_PROGRESS));
 		}
 
@@ -309,7 +309,7 @@ public class QuestNPCDialogueScreen extends Screen {
 		OFFER, TURN_IN, IN_PROGRESS
 	}
 
-	private record QuestEntry(String questId, Quest quest, EntryType type) {}
+	private record QuestEntry(String questId, SideQuest quest, EntryType type) {}
 }
 
 

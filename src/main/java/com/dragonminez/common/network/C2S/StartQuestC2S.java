@@ -1,13 +1,9 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
-import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
-import com.dragonminez.common.quest.SagaBranchingHelper;
+import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -50,28 +46,17 @@ public class StartQuestC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
-			Saga saga = QuestRegistry.getSaga(sagaId);
+			Saga saga = SagaManager.getSaga(sagaId);
 			if (saga == null) return;
 			Quest quest = saga.getQuestById(questId);
 			if (quest == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				PlayerQuestData pqd = data.getPlayerQuestData();
-				String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
-				if (pqd.isQuestCompleted(questKey)) return;
-
-				int questIndex = saga.getQuests().indexOf(quest);
-				if (questIndex < 0) return;
-				if (!SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, data)) return;
-
-				SagaBranchingHelper.selectBranchIfNeeded(pqd, sagaId, quest);
-				pqd.acceptQuest(questKey);
-
 				for (int i = 0; i < quest.getObjectives().size(); i++) {
 					QuestObjective objective = quest.getObjectives().get(i);
 
 					if (objective instanceof KillObjective killObjective) {
-						int currentProgress = pqd.getObjectiveProgress(questKey, i);
+						int currentProgress = data.getQuestData().getQuestObjectiveProgress(sagaId, questId, i);
 						int required = killObjective.getRequired();
 						int remaining = Math.max(0, required - currentProgress);
 
@@ -108,8 +93,6 @@ public class StartQuestC2S {
 						}
 					}
 				}
-
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			});
 		});
 		context.setPacketHandled(true);

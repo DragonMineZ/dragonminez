@@ -15,7 +15,8 @@ import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
-import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.SagaManager;
+import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import com.dragonminez.common.stats.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -221,7 +222,8 @@ public class ForgeCommonEvents {
 		BetaWhitelist.reload();
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
-		QuestRegistry.loadAll(event.getServer());
+		SagaManager.loadSagas(event.getServer());
+		SideQuestManager.loadSideQuests(event.getServer());
 
 		WorldGuardCompat.init();
 

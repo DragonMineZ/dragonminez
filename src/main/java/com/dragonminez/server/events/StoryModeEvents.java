@@ -7,7 +7,6 @@ import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.stats.StatsData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,12 +31,9 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Handles saga quest progression events (tick, kill, interact).
- * Uses {@link QuestRegistry} for saga/quest lookups and {@link PlayerQuestData} for progress.
- */
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StoryModeEvents {
+
 
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -46,55 +42,59 @@ public class StoryModeEvents {
 		if (!(event.player instanceof ServerPlayer player)) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			PlayerQuestData pqd = data.getPlayerQuestData();
-			Map<String, Saga> allSagas = QuestRegistry.getAllSagas();
+			QuestData questData = data.getQuestData();
+			Map<String, Saga> activeSagas = questData.getActiveSagas();
 
-			for (Map.Entry<String, Saga> entry : allSagas.entrySet()) {
+			for (Map.Entry<String, Saga> entry : activeSagas.entrySet()) {
 				String sagaId = entry.getKey();
 				Saga saga = entry.getValue();
-				if (!pqd.isSagaUnlocked(sagaId)) continue;
 
-				List<Quest> sagaQuests = saga.getQuests();
-				for (int questIndex = 0; questIndex < sagaQuests.size(); questIndex++) {
-					Quest activeQuest = sagaQuests.get(questIndex);
-					if (!shouldTrackSagaQuest(data, pqd, saga, activeQuest, questIndex)) continue;
+				Quest activeQuest = null;
+				for (Quest quest : saga.getQuests()) {
+					if (!questData.isQuestCompleted(sagaId, quest.getId())) {
+						activeQuest = quest;
+						break;
+					}
+				}
 
-					int questId = activeQuest.getId();
-					String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
-					int currentObjIndex = -1;
-					QuestObjective objective = null;
+				if (activeQuest == null) continue;
 
-					for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
-						QuestObjective tempObj = activeQuest.getObjectives().get(i);
-						int currentProgress = pqd.getObjectiveProgress(questKey, i);
-						if (currentProgress < tempObj.getRequired()) {
-							currentObjIndex = i;
-							objective = tempObj;
+				int questId = activeQuest.getId();
+				int currentObjIndex = -1;
+				QuestObjective objective = null;
+
+				for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
+					QuestObjective tempObj = activeQuest.getObjectives().get(i);
+					int currentProgress = questData.getQuestObjectiveProgress(sagaId, questId, i);
+					if (currentProgress < tempObj.getRequired()) {
+						currentObjIndex = i;
+						objective = tempObj;
+						break;
+					}
+				}
+
+				if (objective == null || currentObjIndex == -1) continue;
+				boolean isLocationObjective = (objective instanceof BiomeObjective) || (objective instanceof StructureObjective) || (objective instanceof CoordsObjective);
+
+				if (isLocationObjective) {
+					List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(player);
+
+					boolean anyMemberInZone = false;
+					for (ServerPlayer member : partyMembers) {
+						boolean memberCheck = checkLocationCondition(member, objective);
+						if (memberCheck) {
+							anyMemberInZone = true;
 							break;
 						}
 					}
-
-					if (objective == null || currentObjIndex == -1) continue;
-					boolean isLocationObjective = (objective instanceof BiomeObjective) || (objective instanceof StructureObjective) || (objective instanceof CoordsObjective);
-
-					if (isLocationObjective) {
-						List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(player);
-						boolean anyMemberInZone = false;
-						for (ServerPlayer member : partyMembers) {
-							if (checkLocationCondition(member, objective)) {
-								anyMemberInZone = true;
-								break;
-							}
-						}
-						int targetProgress = anyMemberInZone ? 1 : 0;
-						updatePartyState(partyMembers, sagaId, questId, currentObjIndex, targetProgress);
-					} else if (objective instanceof ItemObjective itemObjective) {
-						int itemCount = countItems(player, itemObjective.getItemId());
-						int savedProgress = pqd.getObjectiveProgress(questKey, currentObjIndex);
-						if (itemCount != savedProgress) {
-							int progressToSet = Math.min(itemCount, itemObjective.getRequired());
-							updateIndividualProgress(player, sagaId, questId, currentObjIndex, progressToSet);
-						}
+					int targetProgress = anyMemberInZone ? 1 : 0;
+					updatePartyState(partyMembers, sagaId, questId, currentObjIndex, targetProgress);
+				} else if (objective instanceof ItemObjective itemObjective) {
+					int itemCount = countItems(player, itemObjective.getItemId());
+					int savedProgress = questData.getQuestObjectiveProgress(sagaId, questId, currentObjIndex);
+					if (itemCount != savedProgress) {
+						int progressToSet = Math.min(itemCount, itemObjective.getRequired());
+						updateIndividualProgress(player, sagaId, questId, currentObjIndex, progressToSet);
 					}
 				}
 			}
@@ -108,32 +108,33 @@ public class StoryModeEvents {
 		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(killer);
 		for (ServerPlayer member : partyMembers) {
 			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data -> {
-				PlayerQuestData pqd = data.getPlayerQuestData();
-				Map<String, Saga> allSagas = QuestRegistry.getAllSagas();
+				QuestData qd = data.getQuestData();
+				Map<String, Saga> activeSagas = qd.getActiveSagas();
 
-				for (Map.Entry<String, Saga> entry : allSagas.entrySet()) {
+				for (Map.Entry<String, Saga> entry : activeSagas.entrySet()) {
 					String sagaId = entry.getKey();
 					Saga saga = entry.getValue();
-					if (!pqd.isSagaUnlocked(sagaId)) continue;
 
-					List<Quest> sagaQuests = saga.getQuests();
-					for (int questIndex = 0; questIndex < sagaQuests.size(); questIndex++) {
-						Quest activeQuest = sagaQuests.get(questIndex);
-						if (!shouldTrackSagaQuest(data, pqd, saga, activeQuest, questIndex)) continue;
+					Quest activeQuest = null;
+					for (Quest quest : saga.getQuests()) {
+						if (!qd.isQuestCompleted(sagaId, quest.getId())) {
+							activeQuest = quest;
+							break;
+						}
+					}
 
-						int questId = activeQuest.getId();
-						String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
+					if (activeQuest == null) continue;
+					int questId = activeQuest.getId();
 
-						for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
-							QuestObjective objective = activeQuest.getObjectives().get(i);
-							int currentProgress = pqd.getObjectiveProgress(questKey, i);
-							if (currentProgress >= objective.getRequired()) continue;
+					for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
+						QuestObjective objective = activeQuest.getObjectives().get(i);
+						int currentProgress = qd.getQuestObjectiveProgress(sagaId, questId, i);
+						if (currentProgress >= objective.getRequired()) continue;
 
-							if (objective instanceof KillObjective killObjective) {
-								ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
-								EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
-								if (killedEntity.getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
-							}
+						if (objective instanceof KillObjective killObjective) {
+							ResourceLocation targetId = ResourceLocation.parse(killObjective.getEntityId());
+							EntityType<?> requiredType = BuiltInRegistries.ENTITY_TYPE.get(targetId);
+							if (killedEntity.getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
 						}
 					}
 				}
@@ -149,31 +150,33 @@ public class StoryModeEvents {
 
 		for (ServerPlayer member : partyMembers) {
 			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data -> {
-				PlayerQuestData pqd = data.getPlayerQuestData();
-				Map<String, Saga> allSagas = QuestRegistry.getAllSagas();
+				QuestData qd = data.getQuestData();
+				Map<String, Saga> activeSagas = qd.getActiveSagas();
 
-				for (Map.Entry<String, Saga> entry : allSagas.entrySet()) {
+				for (Map.Entry<String, Saga> entry : activeSagas.entrySet()) {
 					String sagaId = entry.getKey();
 					Saga saga = entry.getValue();
-					if (!pqd.isSagaUnlocked(sagaId)) continue;
 
-					List<Quest> sagaQuests = saga.getQuests();
-					for (int questIndex = 0; questIndex < sagaQuests.size(); questIndex++) {
-						Quest activeQuest = sagaQuests.get(questIndex);
-						if (!shouldTrackSagaQuest(data, pqd, saga, activeQuest, questIndex)) continue;
+					Quest activeQuest = null;
+					for (Quest quest : saga.getQuests()) {
+						if (!qd.isQuestCompleted(sagaId, quest.getId())) {
+							activeQuest = quest;
+							break;
+						}
+					}
 
-						int questId = activeQuest.getId();
-						String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
+					if (activeQuest == null) continue;
 
-						for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
-							QuestObjective objective = activeQuest.getObjectives().get(i);
-							int currentProgress = pqd.getObjectiveProgress(questKey, i);
-							if (currentProgress >= objective.getRequired()) continue;
-							if (objective instanceof InteractObjective interactObjective) {
-								String targetStr = interactObjective.getEntityTypeId();
-								EntityType<?> requiredType = targetStr != null ? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(targetStr)) : null;
-								if (requiredType == null || event.getTarget().getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
-							}
+					int questId = activeQuest.getId();
+
+					for (int i = 0; i < activeQuest.getObjectives().size(); i++) {
+						QuestObjective objective = activeQuest.getObjectives().get(i);
+						int currentProgress = qd.getQuestObjectiveProgress(sagaId, questId, i);
+						if (currentProgress >= objective.getRequired()) continue;
+						if (objective instanceof InteractObjective interactObjective) {
+							String targetStr = interactObjective.getEntityTypeId();
+							EntityType<?> requiredType = targetStr != null ? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(targetStr)) : null;
+							if (requiredType == null || event.getTarget().getType().equals(requiredType)) updateIndividualProgress(member, sagaId, questId, i, currentProgress + 1);
 						}
 					}
 				}
@@ -246,19 +249,17 @@ public class StoryModeEvents {
 
 	private static void updateIndividualProgress(ServerPlayer player, String sagaId, int questId, int objIndex, int newProgress) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			PlayerQuestData pqd = data.getPlayerQuestData();
-			String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
-			int current = pqd.getObjectiveProgress(questKey, objIndex);
+			int current = data.getQuestData().getQuestObjectiveProgress(sagaId, questId, objIndex);
 			if (current != newProgress) {
-				pqd.setObjectiveProgress(questKey, objIndex, newProgress);
-				checkAndCompleteQuest(pqd, sagaId, questId);
+				data.getQuestData().setQuestObjectiveProgress(sagaId, questId, objIndex, newProgress);
+				checkAndCompleteQuest(data.getQuestData(), sagaId, questId);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			}
 		});
 	}
 
-	private static void checkAndCompleteQuest(PlayerQuestData pqd, String sagaId, int questId) {
-		Saga saga = QuestRegistry.getSaga(sagaId);
+	private static void checkAndCompleteQuest(QuestData questData, String sagaId, int questId) {
+		Saga saga = SagaManager.getSaga(sagaId);
 		if (saga == null) return;
 
 		Quest quest = null;
@@ -270,25 +271,16 @@ public class StoryModeEvents {
 		}
 		if (quest == null) return;
 
-		String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
 		boolean allObjectivesComplete = true;
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
 			QuestObjective objective = quest.getObjectives().get(i);
-			int progress = pqd.getObjectiveProgress(questKey, i);
+			int progress = questData.getQuestObjectiveProgress(sagaId, questId, i);
 			if (progress < objective.getRequired()) {
 				allObjectivesComplete = false;
 				break;
 			}
 		}
 
-		if (allObjectivesComplete && !pqd.isQuestCompleted(questKey)) pqd.completeQuest(questKey);
-	}
-
-	private static boolean shouldTrackSagaQuest(StatsData data, PlayerQuestData pqd, Saga saga, Quest quest, int questIndex) {
-		String sagaId = saga.getId();
-		String questKey = PlayerQuestData.sagaQuestKey(sagaId, quest.getId());
-		if (pqd.isQuestCompleted(questKey)) return false;
-		return SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, data);
+		if (allObjectivesComplete && !questData.isQuestCompleted(sagaId, questId)) questData.completeQuest(sagaId, questId);
 	}
 }
-

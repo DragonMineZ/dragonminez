@@ -9,9 +9,9 @@ import com.dragonminez.common.network.C2S.ClaimSideQuestRewardC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestReward;
-import com.dragonminez.common.quest.Quest;
-import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.sidequest.SideQuest;
+import com.dragonminez.common.quest.sidequest.SideQuestData;
+import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -48,8 +48,8 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 	private StatsData statsData;
 	private int tickCount = 0;
 
-	private final List<Quest> availableQuests = new ArrayList<>();
-	private Quest selectedQuest = null;
+	private final List<SideQuest> availableQuests = new ArrayList<>();
+	private SideQuest selectedQuest = null;
 	private int scrollOffset = 0;
 	private int maxScroll = 0;
 
@@ -93,18 +93,18 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 		categories.clear();
 		if (statsData == null) return;
 
-		Map<String, Quest> allQuests = QuestRegistry.getClientQuests();
+		Map<String, SideQuest> allQuests = SideQuestManager.getClientSideQuests();
 
 		if (allQuests == null || allQuests.isEmpty()) {
 			return;
 		}
 
-		PlayerQuestData pqd = statsData.getPlayerQuestData();
+		SideQuestData sqData = statsData.getSideQuestData();
 
 		// Build category list and filter: only show accepted (in-progress) or completed quests
 		categories.add("all");
-		for (Quest quest : allQuests.values()) {
-			boolean isAccepted = pqd.isQuestAccepted(quest.getStringId());
+		for (SideQuest quest : allQuests.values()) {
+			boolean isAccepted = sqData.isQuestAccepted(quest.getId());
 			if (!isAccepted) continue; // Skip quests that haven't been accepted
 
 			String cat = quest.getCategory();
@@ -115,8 +115,8 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 
 		// Filter by current category, only including accepted quests
 		String selectedCategory = getCurrentCategory();
-		for (Quest quest : allQuests.values()) {
-			boolean isAccepted = pqd.isQuestAccepted(quest.getStringId());
+		for (SideQuest quest : allQuests.values()) {
+			boolean isAccepted = sqData.isQuestAccepted(quest.getId());
 			if (!isAccepted) continue; // Skip quests that haven't been accepted
 
 			if (selectedCategory.equals("all") || quest.getCategory().equals(selectedCategory)) {
@@ -126,16 +126,16 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 
 		// Sort: in-progress first, then completed
 		availableQuests.sort((a, b) -> {
-			int orderA = getSortOrder(a, pqd);
-			int orderB = getSortOrder(b, pqd);
+			int orderA = getSortOrder(a, sqData);
+			int orderB = getSortOrder(b, sqData);
 			if (orderA != orderB) return Integer.compare(orderA, orderB);
 			return a.getName().compareTo(b.getName());
 		});
 	}
 
-	private int getSortOrder(Quest quest, PlayerQuestData pqd) {
-		if (pqd.isQuestAccepted(quest.getStringId()) && !pqd.isQuestCompleted(quest.getStringId())) return 0; // In progress
-		if (pqd.isQuestCompleted(quest.getStringId())) return 1; // Completed
+	private int getSortOrder(SideQuest quest, SideQuestData sqData) {
+		if (sqData.isQuestAccepted(quest.getId()) && !sqData.isQuestCompleted(quest.getId())) return 0; // In progress
+		if (sqData.isQuestCompleted(quest.getId())) return 1; // Completed
 		return 2; // Fallback
 	}
 
@@ -210,7 +210,7 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 
 		// "Sagas" tab — switches back to QuestsMenuScreen
 		TexturedTextButton sagasTab = new TexturedTextButton.Builder()
-				.position(centerX - 60, topY)
+				.position(centerX - 40, topY)
 				.size(38, 14)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -220,21 +220,9 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 				.build();
 		this.addRenderableWidget(sagasTab);
 
-		// "Tree" tab — switches to QuestTreeScreen
-		TexturedTextButton treeTab = new TexturedTextButton.Builder()
-				.position(centerX - 18, topY)
-				.size(38, 14)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.quest_tree.tab.tree"))
-				.onPress(btn -> switchMenu(new com.dragonminez.client.gui.quest.QuestTreeScreen()))
-				.build();
-		this.addRenderableWidget(treeTab);
-
 		// "Side Quests" tab — current screen (inactive look)
 		TexturedTextButton sideQuestsTab = new TexturedTextButton.Builder()
-				.position(centerX + 24, topY)
+				.position(centerX + 2, topY)
 				.size(38, 14)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
@@ -253,9 +241,9 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 		int centerY = getUiHeight() / 2;
 		int rightPanelY = centerY - 105;
 
-		PlayerQuestData pqd = statsData.getPlayerQuestData();
-		boolean isAccepted = pqd.isQuestAccepted(selectedQuest.getStringId());
-		boolean isCompleted = pqd.isQuestCompleted(selectedQuest.getStringId());
+		SideQuestData sqData = statsData.getSideQuestData();
+		boolean isAccepted = sqData.isQuestAccepted(selectedQuest.getId());
+		boolean isCompleted = sqData.isQuestCompleted(selectedQuest.getId());
 
 		Component buttonText;
 		boolean buttonActive = true;
@@ -265,7 +253,7 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 			// Check for unclaimed rewards
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
-				if (!pqd.isRewardClaimed(selectedQuest.getStringId(), i)) {
+				if (!sqData.isRewardClaimed(selectedQuest.getId(), i)) {
 					hasUnclaimedRewards = true;
 					break;
 				}
@@ -300,12 +288,12 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 				.message(buttonText)
 				.onPress(btn -> {
 					if (finalIsClaimAction) {
-						NetworkHandler.sendToServer(new ClaimSideQuestRewardC2S(selectedQuest.getStringId()));
+						NetworkHandler.sendToServer(new ClaimSideQuestRewardC2S(selectedQuest.getId()));
 						this.onClose();
 					} else {
 						// Start quest (spawn kill entities) — reuse accept packet since it handles spawning
 						boolean isHard = ConfigManager.getUserConfig().getHud().getStoryHardDifficulty();
-						NetworkHandler.sendToServer(new AcceptSideQuestC2S(selectedQuest.getStringId(), isHard));
+						NetworkHandler.sendToServer(new AcceptSideQuestC2S(selectedQuest.getId(), isHard));
 						this.onClose();
 					}
 					refreshButtons();
@@ -344,14 +332,14 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				this.statsData = data;
 
-				Map<String, Quest> clientQuests = QuestRegistry.getClientQuests();
+				Map<String, SideQuest> clientQuests = SideQuestManager.getClientSideQuests();
 				int newSize = (clientQuests != null) ? clientQuests.size() : 0;
 
 				if (newSize != availableQuests.size()) {
 					loadAvailableQuests();
 					if (selectedQuest != null) {
 						// Re-find selected quest after reload
-						selectedQuest = QuestRegistry.getClientQuest(selectedQuest.getStringId());
+						selectedQuest = SideQuestManager.getClientSideQuest(selectedQuest.getId());
 					}
 					refreshButtons();
 				}
@@ -433,18 +421,18 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 				toScreenCoord(startY + (MAX_VISIBLE_QUESTS * QUEST_ITEM_HEIGHT))
 		);
 
-		PlayerQuestData pqd = statsData != null ? statsData.getPlayerQuestData() : null;
+		SideQuestData sqData = statsData != null ? statsData.getSideQuestData() : null;
 
 		for (int i = visibleStart; i < visibleEnd; i++) {
-			Quest quest = availableQuests.get(i);
+			SideQuest quest = availableQuests.get(i);
 			int itemY = startY + ((i - visibleStart) * QUEST_ITEM_HEIGHT);
 
-			boolean isSelected = selectedQuest != null && selectedQuest.getStringId().equals(quest.getStringId());
+			boolean isSelected = selectedQuest != null && selectedQuest.getId().equals(quest.getId());
 			boolean isHovered = mouseX >= panelX + 10 && mouseX <= panelX + 110 &&
 					mouseY >= itemY && mouseY <= itemY + QUEST_ITEM_HEIGHT - 5;
 
 			int color;
-			if (pqd != null && pqd.isQuestCompleted(quest.getStringId())) {
+			if (sqData != null && sqData.isQuestCompleted(quest.getId())) {
 				color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFF88CC88 : 0xFF66AA66);
 			} else {
 				// In progress
@@ -455,11 +443,11 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 					panelX + 15, itemY + 5, color);
 
 			// Status marker
-			if (pqd != null) {
-				if (pqd.isQuestCompleted(quest.getStringId())) {
+			if (sqData != null) {
+				if (sqData.isQuestCompleted(quest.getId())) {
 					drawStringWithBorder(graphics, Component.literal("✓"),
 							panelX + 130 - this.font.width("✓"), itemY + 5, 0xFF00FF00);
-				} else if (pqd.isQuestAccepted(quest.getStringId())) {
+				} else if (sqData.isQuestAccepted(quest.getId())) {
 					drawStringWithBorder(graphics, Component.literal("●"),
 							panelX + 130 - this.font.width("●"), itemY + 5, 0xFFFFFF00);
 				}
@@ -508,9 +496,9 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 	private void renderQuestDetails(GuiGraphics graphics, int panelX, int panelY) {
 		if (selectedQuest == null) return;
 
-		PlayerQuestData pqd = statsData.getPlayerQuestData();
-		boolean isCompleted = pqd.isQuestCompleted(selectedQuest.getStringId());
-		boolean isAccepted = pqd.isQuestAccepted(selectedQuest.getStringId());
+		SideQuestData sqData = statsData.getSideQuestData();
+		boolean isCompleted = sqData.isQuestCompleted(selectedQuest.getId());
+		boolean isAccepted = sqData.isQuestAccepted(selectedQuest.getId());
 
 		int startY = panelY + 35;
 
@@ -582,7 +570,7 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 
 		int totalContentHeight = 0;
 		for (QuestObjective objective : objectives) {
-			int progress = pqd.getObjectiveProgress(selectedQuest.getStringId(), objectives.indexOf(objective));
+			int progress = sqData.getObjectiveProgress(selectedQuest.getId(), objectives.indexOf(objective));
 			String objText = getObjectiveText(objective, progress);
 			List<String> wrappedObj = wrapText(objText, 100);
 			totalContentHeight += (wrappedObj.size() * 10) + 2;
@@ -601,7 +589,7 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 
 		for (int i = 0; i < objectives.size(); i++) {
 			QuestObjective objective = objectives.get(i);
-			int progress = pqd.getObjectiveProgress(selectedQuest.getStringId(), i);
+			int progress = sqData.getObjectiveProgress(selectedQuest.getId(), i);
 			boolean objCompleted = progress >= objective.getRequired();
 
 			String objText = getObjectiveText(objective, progress);
@@ -633,8 +621,8 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 	private void renderQuestRewards(GuiGraphics graphics, int panelX, int panelY) {
 		if (selectedQuest == null) return;
 
-		PlayerQuestData pqd = statsData.getPlayerQuestData();
-		boolean isCompleted = pqd.isQuestCompleted(selectedQuest.getStringId());
+		SideQuestData sqData = statsData.getSideQuestData();
+		boolean isCompleted = sqData.isQuestCompleted(selectedQuest.getId());
 
 		int startY = panelY + 35;
 
@@ -681,7 +669,7 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 
 		for (int i = 0; i < rewards.size(); i++) {
 			QuestReward reward = rewards.get(i);
-			boolean rewardClaimed = pqd.isRewardClaimed(selectedQuest.getStringId(), i);
+			boolean rewardClaimed = sqData.isRewardClaimed(selectedQuest.getId(), i);
 
 			String rewardText = reward.getDescription().getString();
 			String marker = rewardClaimed ? "✓" : "✕";
@@ -804,7 +792,7 @@ public class SideQuestsMenuScreen extends BaseMenuScreen {
 			int itemY = startY + ((i - visibleStart) * QUEST_ITEM_HEIGHT);
 
 			if (uiMouseX >= leftPanelX + 10 && uiMouseX <= leftPanelX + 110 && uiMouseY >= itemY && uiMouseY <= itemY + QUEST_ITEM_HEIGHT) {
-				Quest quest = availableQuests.get(i);
+				SideQuest quest = availableQuests.get(i);
 				selectedQuest = quest;
 				descriptionScrollOffset = 0;
 				objectivesScrollOffset = 0;

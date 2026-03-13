@@ -107,8 +107,7 @@ public class BoneVisibilityHandler {
             setHiddenRecursive(bone, !showNormalTail);
         });
 
-		setBonesHidden(model, true, "armorHead", "armorBody", "armorBody2", "armorLeggingsBody", "armorRightArm", "armorLeftArm",
-                "armorLeftLeg", "armorLeftBoot", "armorRightLeg", "armorRightBoot");
+		setBonesHidden(model, true, "armorHead", "armorBody", "armorBody2", "armorLeggingsBody", "armorRightArm", "armorLeftArm");
 	}
 
 	private static boolean shouldShowBodyOnly(GeoRenderLayer<?> renderLayer, AbstractClientPlayer player) {

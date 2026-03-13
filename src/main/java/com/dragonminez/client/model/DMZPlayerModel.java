@@ -28,10 +28,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
     private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
     private static final ResourceLocation FROST_DEMON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
-    private static final ResourceLocation FROST_DEMON_SECOND = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_second.geo.json");
     private static final ResourceLocation FROST_DEMON_THIRD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_third.geo.json");
     private static final ResourceLocation FROST_DEMON_FIFTH = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fifth.geo.json");
-    private static final ResourceLocation FROSTDEMON_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fp.geo.json");
     private static final ResourceLocation BIO_ANDROID = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid.geo.json");
     private static final ResourceLocation BIO_ANDROID_SEMI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_semi.geo.json");
     private static final ResourceLocation BIO_ANDROID_PERFECT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/bioandroid_perfect.geo.json");
@@ -39,6 +37,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem_fp.geo.json");
+    private static final ResourceLocation FROSTDEMON_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_fp.geo.json");
 
     private final ResourceLocation textureLocation;
     private final ResourceLocation animationLocation;
@@ -129,8 +128,6 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 return isMale ? BASE_SLIM : MAJIN_SLIM;
             case "frostdemon","frostdemon_final":
                 return FROST_DEMON;
-            case "frostdemon_second":
-                return FROST_DEMON_SECOND;
             case "frostdemon_fifth":
                 return FROST_DEMON_FIFTH;
             case "frostdemon_fp":
