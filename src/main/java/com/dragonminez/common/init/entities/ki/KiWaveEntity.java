@@ -193,7 +193,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
             spawnLightningParticles();
         }
 
-
         this.onKiTick();
     }
 
@@ -205,7 +204,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
         float pitch = this.getFixedPitch();
         Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
 
-        // Calculamos las dos posiciones clave
         Vec3 startPos = this.position();
         Vec3 endPos = startPos.add(dir.scale(length));
 
@@ -215,7 +213,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
         int rayosPorTick = 8;
 
         for (int i = 0; i < rayosPorTick; i++) {
-
             if (this.random.nextFloat() < 1.00F) {
                 spawnLightningAt(startPos, scale * 2.5F, borderColor);
                 spawnLightningAt(startPos, scale * 2.5F, ColorUtils.darkenColor(borderColor, 0.5F));
@@ -293,7 +290,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private void spawnOriginSplash() {
         if (this.tickCount % 5 == 0) {
-
             double colorInt = (double) this.getColorBorde();
             double mySize = (double) this.getSize();
 
@@ -397,9 +393,10 @@ public class KiWaveEntity extends AbstractKiProjectile {
             boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);
 
             if (intersects) {
-                boolean wasHurt = target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
 
-                if (wasHurt) {
+                if (wasHit) {
+                    this.onSuccessfulHit(target);
                     target.invulnerableTime = hitInterval;
 
                     this.setKiSpeed(this.getKiSpeed() * 0.75F);
@@ -429,7 +426,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-                target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage() * 1.5F);
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage() * 1.5F);
+                if (wasHit) this.onSuccessfulHit(target);
             }
         }
 
@@ -470,6 +468,4 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
         this.discard();
     }
-
-
 }
