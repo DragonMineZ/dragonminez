@@ -343,11 +343,10 @@ public class ConfigManager {
 			for (Map.Entry<String, FormConfig> defaultEntry : raceForms.entrySet()) {
 				String groupKey = defaultEntry.getKey().toLowerCase();
 				FormConfig defaultFormConfig = defaultEntry.getValue();
+				Path formFilePath = formsPath.resolve(defaultEntry.getKey() + ".json");
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					Path formFilePath = formsPath.resolve(defaultEntry.getKey() + ".json");
-
 					boolean isValid = true;
 					String invalidReason = "";
 
@@ -361,17 +360,14 @@ public class ConfigManager {
 						LogUtil.warn(Env.COMMON, "Regenerating form '{}' for race '{}'. Reason: {}", defaultEntry.getKey(), raceName, invalidReason);
 						backupOldConfig(formFilePath);
 						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+						LOADER.saveConfig(formFilePath, defaultFormConfig);
 					}
 				} else {
 					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
 					LogUtil.info(Env.COMMON, "Creating missing form file: {}", defaultEntry.getKey());
+					LOADER.saveConfig(formFilePath, defaultFormConfig);
 				}
 			}
-		}
-
-		for (Map.Entry<String, FormConfig> entry : raceForms.entrySet()) {
-			Path formFilePath = formsPath.resolve(entry.getKey() + ".json");
-			LOADER.saveConfig(formFilePath, entry.getValue());
 		}
 
 		RACE_FORMS.put(raceName.toLowerCase(), raceForms);
@@ -390,11 +386,10 @@ public class ConfigManager {
 			for (Map.Entry<String, FormConfig> defaultEntry : finalStackForms.entrySet()) {
 				String groupKey = defaultEntry.getKey().toLowerCase();
 				FormConfig defaultFormConfig = defaultEntry.getValue();
+				Path formFilePath = STACK_FORMS_DIR.resolve(defaultEntry.getKey() + ".json");
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					Path formFilePath = STACK_FORMS_DIR.resolve(defaultEntry.getKey() + ".json");
-
 					boolean isValid = true;
 					String invalidReason = "";
 
@@ -403,19 +398,22 @@ public class ConfigManager {
 						invalidReason = userConfig.getConfigVersion() == 0 ? "Missing config version or corrupt file" : "Outdated version";
 					}
 
-					if (isValid) finalStackForms.put(groupKey, userConfig);
-					else {
+					if (isValid) {
+						finalStackForms.put(groupKey, userConfig);
+					} else {
 						LogUtil.warn(Env.COMMON, "Regenerating stack form '{}'. Reason: {}", defaultEntry.getKey(), invalidReason);
 						backupOldConfig(formFilePath);
 						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+						LOADER.saveConfig(formFilePath, defaultFormConfig);
 					}
-				} else defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+				} else {
+					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
+					LogUtil.info(Env.COMMON, "Creating missing stack form file: {}", defaultEntry.getKey());
+					LOADER.saveConfig(formFilePath, defaultFormConfig);
+				}
 			}
-		} else finalStackForms.putAll(userDiskForms);
-
-		for (Map.Entry<String, FormConfig> entry : finalStackForms.entrySet()) {
-			Path formFilePath = STACK_FORMS_DIR.resolve(entry.getKey() + ".json");
-			LOADER.saveConfig(formFilePath, entry.getValue());
+		} else {
+			finalStackForms.putAll(userDiskForms);
 		}
 
 		STACK_FORMS = finalStackForms;
