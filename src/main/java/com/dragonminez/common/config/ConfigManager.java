@@ -5,15 +5,12 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import lombok.Getter;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -101,16 +98,6 @@ public class ConfigManager {
 		}
 	}
 
-	private static boolean isMissingConfigVersion(Path path) {
-		if (!Files.exists(path)) return false;
-		try (Reader reader = Files.newBufferedReader(path)) {
-			JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-			return !json.has("configVersion");
-		} catch (Exception e) {
-			return true;
-		}
-	}
-
 	private static void loadGeneralConfigs() throws IOException {
 		// General User
 		Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
@@ -119,11 +106,8 @@ public class ConfigManager {
 		if (Files.exists(userConfigPath)) {
 			try {
 				userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
-				if (isMissingConfigVersion(userConfigPath)) {
-					reasonUser = "Missing config version";
-					overwriteUser = true;
-				} else if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION) {
-					reasonUser = "Outdated version (" + userConfig.getConfigVersion() + " < " + GeneralUserConfig.CURRENT_VERSION + ")";
+				if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION) {
+					reasonUser = userConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + userConfig.getConfigVersion() + " < " + GeneralUserConfig.CURRENT_VERSION + ")";
 					overwriteUser = true;
 				}
 				if (overwriteUser) {
@@ -156,11 +140,8 @@ public class ConfigManager {
 		if (Files.exists(serverConfigPath)) {
 			try {
 				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-				if (isMissingConfigVersion(serverConfigPath)) {
-					reasonServer = "Missing config version";
-					overwriteServer = true;
-				} else if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
-					reasonServer = "Outdated version (" + serverConfig.getConfigVersion() + " < " + GeneralServerConfig.CURRENT_VERSION + ")";
+				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
+					reasonServer = serverConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + serverConfig.getConfigVersion() + " < " + GeneralServerConfig.CURRENT_VERSION + ")";
 					overwriteServer = true;
 				}
 				if (overwriteServer) {
@@ -180,7 +161,7 @@ public class ConfigManager {
 			try {
 				LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
 				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION || isMissingConfigVersion(serverConfigPath)) {
+				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
 					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
 					overwriteServer = true;
 				}
@@ -203,11 +184,8 @@ public class ConfigManager {
 		if (Files.exists(skillsConfigPath)) {
 			try {
 				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-				if (isMissingConfigVersion(skillsConfigPath)) {
-					reasonSkills = "Missing config version";
-					overwriteSkills = true;
-				} else if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
-					reasonSkills = "Outdated version (" + skillsConfig.getConfigVersion() + " < " + SkillsConfig.CURRENT_VERSION + ")";
+				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
+					reasonSkills = skillsConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + skillsConfig.getConfigVersion() + " < " + SkillsConfig.CURRENT_VERSION + ")";
 					overwriteSkills = true;
 				}
 				if (overwriteSkills) {
@@ -227,7 +205,7 @@ public class ConfigManager {
 			try {
 				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
 				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION || isMissingConfigVersion(skillsConfigPath)) {
+				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
 					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
 					overwriteSkills = true;
 				}
@@ -250,11 +228,8 @@ public class ConfigManager {
 		if (Files.exists(entitiesConfigPath)) {
 			try {
 				entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
-				if (isMissingConfigVersion(entitiesConfigPath)) {
-					reasonEntities = "Missing config version";
-					overwriteEntities = true;
-				} else if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION) {
-					reasonEntities = "Outdated version (" + entitiesConfig.getConfigVersion() + " < " + EntitiesConfig.CURRENT_VERSION + ")";
+				if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION) {
+					reasonEntities = entitiesConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + entitiesConfig.getConfigVersion() + " < " + EntitiesConfig.CURRENT_VERSION + ")";
 					overwriteEntities = true;
 				}
 				if (overwriteEntities) {
@@ -297,11 +272,8 @@ public class ConfigManager {
 		if (Files.exists(characterPath)) {
 			try {
 				characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
-				if (isMissingConfigVersion(characterPath)) {
-					reasonCharacter = "Missing config version";
-					overwriteCharacter = true;
-				} else if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION || characterConfig.getConfigVersion() == 0) {
-					reasonCharacter = "Outdated version (" + characterConfig.getConfigVersion() + " < " + RaceCharacterConfig.CURRENT_VERSION + ")";
+				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION) {
+					reasonCharacter = characterConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + characterConfig.getConfigVersion() + " < " + RaceCharacterConfig.CURRENT_VERSION + ")";
 					overwriteCharacter = true;
 				}
 				if (overwriteCharacter) {
@@ -334,11 +306,8 @@ public class ConfigManager {
 		if (Files.exists(statsPath)) {
 			try {
 				statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
-				if (isMissingConfigVersion(statsPath)) {
-					reasonStats = "Missing config version";
-					overwriteStats = true;
-				} else if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION || statsConfig.getConfigVersion() == 0) {
-					reasonStats = "Outdated version (" + statsConfig.getConfigVersion() + " < " + RaceStatsConfig.CURRENT_VERSION + ")";
+				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION) {
+					reasonStats = statsConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + statsConfig.getConfigVersion() + " < " + RaceStatsConfig.CURRENT_VERSION + ")";
 					overwriteStats = true;
 				}
 				if (overwriteStats) {
@@ -382,12 +351,9 @@ public class ConfigManager {
 					boolean isValid = true;
 					String invalidReason = "";
 
-					if (isMissingConfigVersion(formFilePath)) {
+					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
 						isValid = false;
-						invalidReason = "Missing config version or corrupt file";
-					} else if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						isValid = false;
-						invalidReason = "Outdated version (" + userConfig.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
+						invalidReason = userConfig.getConfigVersion() == 0 ? "Missing config version or corrupt file" : "Outdated version (" + userConfig.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
 					}
 
 					if (isValid) raceForms.put(groupKey, userConfig);
@@ -432,12 +398,9 @@ public class ConfigManager {
 					boolean isValid = true;
 					String invalidReason = "";
 
-					if (isMissingConfigVersion(formFilePath)) {
+					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
 						isValid = false;
-						invalidReason = "Missing config version or corrupt file";
-					} else if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						isValid = false;
-						invalidReason = "Outdated version";
+						invalidReason = userConfig.getConfigVersion() == 0 ? "Missing config version or corrupt file" : "Outdated version";
 					}
 
 					if (isValid) finalStackForms.put(groupKey, userConfig);
