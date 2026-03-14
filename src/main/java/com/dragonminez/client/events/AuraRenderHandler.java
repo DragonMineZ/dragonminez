@@ -10,7 +10,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.particles.AuraParticle;
 import com.dragonminez.common.init.particles.DivineParticle;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;

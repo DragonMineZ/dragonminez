@@ -10,6 +10,8 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
+import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;

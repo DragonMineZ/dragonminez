@@ -6,7 +6,7 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.stats.Cooldowns;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;

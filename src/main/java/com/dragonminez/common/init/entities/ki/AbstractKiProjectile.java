@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -11,9 +13,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public abstract class AbstractKiProjectile extends Projectile {
 
     private static final EntityDataAccessor<Integer> COLOR_MAIN = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
@@ -21,10 +20,11 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final EntityDataAccessor<Float> DAMAGE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SIZE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SPEED = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
-
     //0 = Small, 1 = Blast, 2 = Large Blast
     private static final EntityDataAccessor<Integer> KI_BALL_RENDER_TYPE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
-
+    private static final EntityDataAccessor<String> TECHNIQUE_ID = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> ARMOR_PENETRATION = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_HEAL = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.BOOLEAN);
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -40,20 +40,47 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
     }
 
-	public boolean shouldDamage(Entity target) {
-		if (target == this) return false;
-		if (this.getOwner() != null && target == this.getOwner()) return false;
-		if (this.getOwner() != null && target.is(this.getOwner())) return false;
-		if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == this.getOwner()) return false;
+    public boolean shouldDamage(Entity target) {
+        if (target == this) return false;
+        if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == this.getOwner()) return false;
 
+        if (this.getOwner() instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
+            if (this.isHeal()) {
+                return ownerLiving.isAlliedTo(targetLiving) || targetLiving == ownerLiving;
+            } else {
+                if (target == this.getOwner() || target.is(this.getOwner())) return false;
+                return !ownerLiving.isAlliedTo(targetLiving);
+            }
+        }
 
-		// Esto maybe puede ser util para futuras misiones ejemplo "Equipo Ginyu completo" xd
-		if (this.getOwner() instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
-			return !ownerLiving.isAlliedTo(targetLiving);
-		}
+        return !this.isHeal();
+    }
 
-		return true;
-	}
+    public boolean applyDamageOrHeal(Entity target, float amount) {
+        if (target instanceof LivingEntity livingTarget) {
+            if (this.isHeal()) {
+                if (livingTarget.getHealth() < livingTarget.getMaxHealth()) {
+                    livingTarget.heal(amount);
+                    return true;
+                }
+                return false;
+            } else {
+                return livingTarget.hurt(com.dragonminez.common.init.MainDamageTypes.kiblast(this.level(), this, this.getOwner()), amount);
+            }
+        }
+        return false;
+    }
+
+    public void onSuccessfulHit(Entity target) {
+        if (!this.level().isClientSide && this.getOwner() instanceof net.minecraft.world.entity.player.Player player) {
+            String techId = this.getTechniqueId();
+            if (techId != null && !techId.isEmpty()) {
+                StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+                    stats.getTechniques().addExperienceToTechnique(techId, 1);
+                });
+            }
+        }
+    }
 
     @Override
     protected void defineSynchedData() {
@@ -62,9 +89,12 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.entityData.define(DAMAGE, 5.0f);
         this.entityData.define(SIZE, 1.0f);
         this.entityData.define(SPEED, 1.0f);
-
         this.entityData.define(KI_BALL_RENDER_TYPE, 1);
+        this.entityData.define(TECHNIQUE_ID, "");
+        this.entityData.define(ARMOR_PENETRATION, 0);
+        this.entityData.define(IS_HEAL, false);
     }
+
     @Override
     public void tick() {
         super.tick();
@@ -82,7 +112,6 @@ public abstract class AbstractKiProjectile extends Projectile {
                 this.onHit(hitResult);
             }
         }
-
 
         this.onKiTick();
 
@@ -107,9 +136,17 @@ public abstract class AbstractKiProjectile extends Projectile {
     public void setKiSpeed(float speed) { this.entityData.set(SPEED, speed); }
     public float getKiSpeed() { return this.entityData.get(SPEED); }
 
-    public void setKiRenderType(int type) {this.entityData.set(KI_BALL_RENDER_TYPE, type);}
+    public void setKiRenderType(int type) { this.entityData.set(KI_BALL_RENDER_TYPE, type); }
+    public int getKiRenderType() { return this.entityData.get(KI_BALL_RENDER_TYPE); }
 
-    public int getKiRenderType() {return this.entityData.get(KI_BALL_RENDER_TYPE);}
+    public String getTechniqueId() { return this.entityData.get(TECHNIQUE_ID); }
+    public void setTechniqueId(String id) { this.entityData.set(TECHNIQUE_ID, id); }
+
+    public int getArmorPenetration() { return this.entityData.get(ARMOR_PENETRATION); }
+    public void setArmorPenetration(int pen) { this.entityData.set(ARMOR_PENETRATION, pen); }
+
+    public boolean isHeal() { return this.entityData.get(IS_HEAL); }
+    public void setHeal(boolean heal) { this.entityData.set(IS_HEAL, heal); }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {
@@ -119,6 +156,9 @@ public abstract class AbstractKiProjectile extends Projectile {
         pCompound.putFloat("Damage", getKiDamage());
         pCompound.putFloat("Size", getSize());
         pCompound.putFloat("Speed", getKiSpeed());
+        pCompound.putString("TechniqueId", getTechniqueId());
+        pCompound.putInt("ArmorPenetration", getArmorPenetration());
+        pCompound.putBoolean("IsHeal", isHeal());
     }
 
     @Override
@@ -128,6 +168,9 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (pCompound.contains("Damage")) setKiDamage(pCompound.getFloat("Damage"));
         if (pCompound.contains("Size")) setSize(pCompound.getFloat("Size"));
         if (pCompound.contains("Speed")) setKiSpeed(pCompound.getFloat("Speed"));
+        if (pCompound.contains("TechniqueId")) setTechniqueId(pCompound.getString("TechniqueId"));
+        if (pCompound.contains("ArmorPenetration")) setArmorPenetration(pCompound.getInt("ArmorPenetration"));
+        if (pCompound.contains("IsHeal")) setHeal(pCompound.getBoolean("IsHeal"));
     }
 
     @Override

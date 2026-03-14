@@ -66,11 +66,8 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
         if (owner != null && owner.isAlive()) {
             double ownerCenterY = owner.getY() + owner.getBbHeight() * 0.5D;
-
             double barrierHalfHeight = this.getBbHeight() * 0.5D;
-
             this.setPos(owner.getX(), ownerCenterY - barrierHalfHeight, owner.getZ());
-
             this.setDeltaMovement(0, 0, 0);
         } else {
             if (!this.level().isClientSide) this.discard();
@@ -111,7 +108,6 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
         for (Entity target : targets) {
             if (target.is(this.getOwner())) continue;
-
             if (!(target instanceof LivingEntity) && !(target instanceof Projectile)) continue;
 
             double dx = target.getX() - this.getX();
@@ -125,6 +121,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
             if (target instanceof Projectile) {
                 target.remove(RemovalReason.DISCARDED);
+                this.onSuccessfulHit(target);
             }
         }
     }
@@ -138,9 +135,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         for (int i = 0; i < 4; i++) {
             double theta = this.random.nextDouble() * Math.PI * 2;
             double phi = this.random.nextDouble() * Math.PI;
-
             double r = size / 2.0;
-
             double x = r * Math.sin(phi) * Math.cos(theta);
             double y = r * Math.cos(phi);
             double z = r * Math.sin(phi) * Math.sin(theta);

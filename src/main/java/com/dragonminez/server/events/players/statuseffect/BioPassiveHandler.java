@@ -1,7 +1,7 @@
 package com.dragonminez.server.events.players.statuseffect;
 
 import com.dragonminez.common.init.MainEffects;
-import com.dragonminez.common.stats.Cooldowns;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.server.level.ServerPlayer;

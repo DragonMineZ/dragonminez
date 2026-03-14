@@ -1,4 +1,4 @@
-package com.dragonminez.common.stats;
+package com.dragonminez.common.stats.skills;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;

@@ -1,4 +1,4 @@
-package com.dragonminez.common.stats;
+package com.dragonminez.common.stats.skills;
 
 import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.nbt.CompoundTag;

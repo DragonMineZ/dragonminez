@@ -1,6 +1,6 @@
 package com.dragonminez.common.quest;
 
-import com.dragonminez.common.stats.Stats;
+import com.dragonminez.common.stats.character.Stats;
 import com.dragonminez.common.stats.StatsData;
 
 /**

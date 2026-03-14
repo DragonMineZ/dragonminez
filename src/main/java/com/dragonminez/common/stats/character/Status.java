@@ -1,5 +1,6 @@
-package com.dragonminez.common.stats;
+package com.dragonminez.common.stats.character;
 
+import com.dragonminez.common.stats.extras.ActionMode;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;

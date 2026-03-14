@@ -1,7 +1,7 @@
 package com.dragonminez.client.flight;
 
 import com.dragonminez.client.events.FlySkillEvent;
-import com.dragonminez.common.stats.Skill;
+import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;

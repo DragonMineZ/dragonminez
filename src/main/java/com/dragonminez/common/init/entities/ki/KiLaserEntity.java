@@ -1,17 +1,12 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -32,14 +27,11 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private static final EntityDataAccessor<Float> FIXED_PITCH = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
 
     private static final float MAX_RANGE = 250.0F;
-    private boolean hasSpawnedFlash = false;
 
     public KiLaserEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
-
-
     }
 
     public KiLaserEntity(Level level, LivingEntity owner) {
@@ -50,7 +42,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
         this.entityData.set(FIXED_YAW, owner.getYRot());
         this.entityData.set(FIXED_PITCH, owner.getXRot());
-
         this.setYRot(owner.getYRot());
         this.setXRot(owner.getXRot());
 
@@ -61,16 +52,8 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setKiSpeed(1.5F);
         this.setSize(1.5F);
 
-        level.playSound(
-                null,
-                owner.getX(),
-                owner.getY(),
-                owner.getZ(),
-                MainSounds.KI_LASER.get(),
-                SoundSource.PLAYERS,
-                0.4F,
-                1.0F + (this.random.nextFloat() * 0.2F)
-        );
+        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+                MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
     }
 
     @Override
@@ -95,28 +78,18 @@ public class KiLaserEntity extends AbstractKiProjectile{
             Vec3 startPos = this.position();
             Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
             float currentLen = this.getBeamLength();
-
             float targetLen = currentLen + this.getKiSpeed();
             Vec3 endPosRay = startPos.add(dir.scale(MAX_RANGE));
 
-            HitResult hitResult = this.level().clip(new ClipContext(
-                    startPos,
-                    endPosRay,
-                    ClipContext.Block.COLLIDER,
-                    ClipContext.Fluid.NONE,
-                    this
-            ));
-
+            HitResult hitResult = this.level().clip(new ClipContext(startPos, endPosRay, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
             double distToWall = MAX_RANGE;
 
             if (hitResult.getType() != HitResult.Type.MISS) {
                 distToWall = hitResult.getLocation().distanceTo(startPos);
-
                 if (hitResult.getType() == HitResult.Type.BLOCK && targetLen >= distToWall) {
                     explodeAndDie(hitResult.getLocation());
                     return;
                 }
-
                 distToWall += 0.1D;
             }
 
@@ -125,14 +98,12 @@ public class KiLaserEntity extends AbstractKiProjectile{
             }
 
             this.setBeamLength(targetLen);
-
             damageEntitiesInBeam(startPos, dir, targetLen);
 
             if (this.tickCount > 100) {
                 this.discard();
             }
-        }
-        else {
+        } else {
             spawnLaserParticles();
         }
 
@@ -143,7 +114,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
         float yaw = this.getFixedYaw();
         float pitch = this.getFixedPitch();
         Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
-
         Vec3 startPos = this.position();
         float length = this.getBeamLength();
 
@@ -166,12 +136,10 @@ public class KiLaserEntity extends AbstractKiProjectile{
         }
     }
 
-
     private void damageEntitiesInBeam(Vec3 start, Vec3 dir, float length) {
         Vec3 end = start.add(dir.scale(length));
         double searchRadius = this.getSize() * 0.5;
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
-
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
 
         int hitInterval = 10;
@@ -179,34 +147,26 @@ public class KiLaserEntity extends AbstractKiProjectile{
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
-
             if (target.invulnerableTime > 0) continue;
 
             float hitPrecision = this.getSize() / 3.0F;
             AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
-
             var hit = targetBox.clip(start, end);
 
             if (hit.isPresent() || targetBox.contains(start)) {
-				boolean wasHurt = target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
 
-                if (wasHurt) {
+                if (wasHit) {
+                    this.onSuccessfulHit(target);
                     target.invulnerableTime = hitInterval;
 
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                         double colorData = (double) this.getColor();
                         double sizeData = (double) this.getSize();
-
                         serverLevel.sendParticles(
                                 MainParticles.KI_SPLASH_WAVE.get(),
-                                target.getX(),
-                                target.getY() + (target.getBbHeight() / 2.0),
-                                target.getZ(),
-                                0,
-                                colorData,
-                                sizeData,
-                                0.0D,
-                                1.0D
+                                target.getX(), target.getY() + (target.getBbHeight() / 2.0), target.getZ(),
+                                0, colorData, sizeData, 0.0D, 1.0D
                         );
                     }
                 }
@@ -217,7 +177,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private void explodeAndDie(Vec3 pos) {
         boolean shouldDestroyBlocks = true;
         float radius = this.getSize();
-
         AABB area = new AABB(pos, pos).inflate(radius);
         List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
 
@@ -225,28 +184,16 @@ public class KiLaserEntity extends AbstractKiProjectile{
             if (this.shouldDamage(target)) {
                 double dist = target.distanceToSqr(pos);
                 if (dist <= radius * radius) {
-					target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
+                    if (wasHit) this.onSuccessfulHit(target);
                 }
             }
         }
 
         this.level().addParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
-        this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.HOSTILE, 4.0F, (1.0F + (this.level().random.nextFloat() - this.level().random.nextFloat()) * 0.2F) * 0.7F);
-
+        this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0F, 0.7F);
         Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
-
-        this.level().explode(
-                this,
-                this.damageSources().explosion(this, this.getOwner()),
-                null,
-                pos.x, pos.y, pos.z,
-                radius,
-                false,
-                interaction,
-                false
-        );
-
+        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, pos.x, pos.y, pos.z, radius, false, interaction, false);
         this.discard();
     }
-
 }

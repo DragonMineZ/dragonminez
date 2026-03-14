@@ -19,7 +19,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-public class KiVolleyEntity extends AbstractKiProjectile {
+public class KiBarrageEntity extends AbstractKiProjectile {
 
     private Vec3 focalPoint = null;
     private Vec3 finalForward = null;
@@ -36,12 +36,12 @@ public class KiVolleyEntity extends AbstractKiProjectile {
             {-1.2, 3.5}
     };
 
-    public KiVolleyEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
+    public KiBarrageEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
     }
 
-    public KiVolleyEntity(Level level, LivingEntity owner) {
+    public KiBarrageEntity(Level level, LivingEntity owner) {
         this(MainEntities.KI_VOLLEY.get(), level);
         this.setOwner(owner);
         level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
@@ -50,7 +50,6 @@ public class KiVolleyEntity extends AbstractKiProjectile {
 
     public static void shootVolley(LivingEntity attacker, LivingEntity target, float speed, float damage, int colorMain, int colorBorder) {
         Level level = attacker.level();
-
         Vec3 origin = attacker.getEyePosition();
         Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.6, 0);
 
@@ -60,20 +59,15 @@ public class KiVolleyEntity extends AbstractKiProjectile {
         Vec3 upVector = rightVector.cross(viewVector).normalize();
 
         for (double[] offset : VOLLEY_OFFSETS) {
-            KiVolleyEntity volley = new KiVolleyEntity(level, attacker);
-
+            KiBarrageEntity volley = new KiBarrageEntity(level, attacker);
             volley.setup(attacker, damage, 0.4F, 0.0f, colorMain, colorBorder);
 
-            Vec3 spawnPos = origin
-                    .add(rightVector.scale(offset[0]))
-                    .add(upVector.scale(offset[1]));
+            Vec3 spawnPos = origin.add(rightVector.scale(offset[0])).add(upVector.scale(offset[1]));
             volley.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
 
             Vec3 direction = targetPos.subtract(spawnPos).normalize();
             volley.setDeltaMovement(direction.scale(speed));
-
             volley.setConvergeTarget(targetPos, viewVector, 0);
-
             level.addFreshEntity(volley);
         }
     }
@@ -92,17 +86,14 @@ public class KiVolleyEntity extends AbstractKiProjectile {
         }
         if (this.level().isClientSide) {
             float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
-
             if (!hasSpawnedSplash) {
                 this.level().addParticle(MainParticles.KI_SPLASH.get(), this.getX(), this.getY(), this.getZ(), rgb[0], rgb[1], rgb[2]);
                 this.hasSpawnedSplash = true;
             }
-
             if (!hasSpawnedFlash) {
                 this.level().addParticle(MainParticles.KI_FLASH.get(), this.getX(), this.getY(), this.getZ(), (double) this.getId(), 0.0D, 0.0D);
                 this.hasSpawnedFlash = true;
             }
-
             for (int i = 0; i < 2; i++) {
                 this.level().addParticle(MainParticles.KI_TRAIL.get(),
                         this.getX() + (this.random.nextDouble() - 0.5) * 0.3,
@@ -114,10 +105,7 @@ public class KiVolleyEntity extends AbstractKiProjectile {
 
         if (!this.level().isClientSide) {
             if (this.tickCount > 100) this.discard();
-
-            if (this.tickCount % 30 == 0) {
-                pulseAreaDamage();
-            }
+            if (this.tickCount % 30 == 0) pulseAreaDamage();
 
             if (this.focalPoint != null && this.finalForward != null && this.tickCount >= this.curveDelay) {
                 double distSqr = this.position().distanceToSqr(this.focalPoint);
@@ -132,8 +120,7 @@ public class KiVolleyEntity extends AbstractKiProjectile {
                 }
 
                 Vec3 directionToFocus = this.focalPoint.subtract(this.position()).normalize();
-                double turnSpeed = 0.5;
-                Vec3 newVelocity = currentVel.normalize().lerp(directionToFocus, turnSpeed).normalize().scale(speed);
+                Vec3 newVelocity = currentVel.normalize().lerp(directionToFocus, 0.5).normalize().scale(speed);
                 this.setDeltaMovement(newVelocity);
                 this.hasImpulse = true;
             }
@@ -147,100 +134,77 @@ public class KiVolleyEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : nearby) {
             if (this.shouldDamage(target)) {
-                target.hurt(this.damageSources().indirectMagic(this, this.getOwner()), this.getKiDamage() * 0.2F);
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage() * 0.2F);
+                if (wasHit) this.onSuccessfulHit(target);
             }
         }
     }
 
     @Override
     public boolean isPushable() { return false; }
-
     @Override
     public boolean hurt(DamageSource source, float amount) { return false; }
-
     @Override
     protected boolean canHitEntity(Entity entity) {
-        if (entity instanceof KiVolleyEntity) return false;
+        if (entity instanceof KiBarrageEntity) return false;
         return super.canHitEntity(entity);
     }
 
     @Override
     protected void onHitEntity(EntityHitResult pResult) {
-        if (pResult.getEntity() instanceof KiVolleyEntity) return;
+        if (pResult.getEntity() instanceof KiBarrageEntity) return;
         super.onHitEntity(pResult);
 
         if (!this.level().isClientSide) {
             Entity targetEntity = pResult.getEntity();
-
             if (this.shouldDamage(targetEntity)) {
-				boolean wasHurt = targetEntity.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getKiDamage());
 
-                if (wasHurt && this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-
-                    double colorData = (double) this.getColorBorde();
-                    double sizeData = (double) this.getSize();
-
-                    double pX = targetEntity.getX();
-                    double pY = targetEntity.getY() + (targetEntity.getBbHeight() / 2.0);
-                    double pZ = targetEntity.getZ();
-
-                    // Enviamos paquete de partícula
-                    serverLevel.sendParticles(
-                            MainParticles.KI_SPLASH_WAVE.get(),
-                            pX, pY, pZ,
-                            0,
-                            colorData,
-                            sizeData,
-                            0.0D,
-                            1.0D
-                    );
+                if (wasHit) {
+                    this.onSuccessfulHit(targetEntity);
+                    if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                        double colorData = (double) this.getColorBorde();
+                        double sizeData = (double) this.getSize();
+                        serverLevel.sendParticles(
+                                MainParticles.KI_SPLASH_WAVE.get(),
+                                targetEntity.getX(), targetEntity.getY() + (targetEntity.getBbHeight() / 2.0), targetEntity.getZ(),
+                                0, colorData, sizeData, 0.0D, 1.0D
+                        );
+                    }
                 }
             }
             explodeAndDie();
         }
     }
 
-	@Override
-	protected void onHitBlock(BlockHitResult pResult) {
-		super.onHitBlock(pResult);
-		if (!this.level().isClientSide) {
-			explodeAndDie();
-		}
-	}
+    @Override
+    protected void onHitBlock(BlockHitResult pResult) {
+        super.onHitBlock(pResult);
+        if (!this.level().isClientSide) explodeAndDie();
+    }
 
-	private void explodeAndDie() {
-		boolean shouldDestroyBlocks = MainGameRules.canKiGrief(this.level(), this.blockPosition(), this.getOwner());
-		float radius = 2.0F;
+    private void explodeAndDie() {
+        boolean shouldDestroyBlocks = MainGameRules.canKiGrief(this.level(), this.blockPosition(), this.getOwner());
+        float radius = 2.0F;
 
-		AABB area = this.getBoundingBox().inflate(radius);
-		List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
+        AABB area = this.getBoundingBox().inflate(radius);
+        List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
 
-		for (LivingEntity target : entities) {
-			if (this.shouldDamage(target)) {
-				if (this.distanceToSqr(target) <= radius * radius) {
-					target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
-				}
-			}
-		}
+        for (LivingEntity target : entities) {
+            if (this.shouldDamage(target)) {
+                if (this.distanceToSqr(target) <= radius * radius) {
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
+                    if (wasHit) this.onSuccessfulHit(target);
+                }
+            }
+        }
 
-		this.level().addParticle(ParticleTypes.EXPLOSION, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
-		this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.0F, 1.5F);
-
-		Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
-
-		this.level().explode(
-				this,
-				this.damageSources().explosion(this, this.getOwner()),
-				null,
-				this.getX(), this.getY(), this.getZ(),
-				radius,
-				false,
-				interaction,
-				false
-		);
-
-		this.discard();
-	}
+        this.level().addParticle(ParticleTypes.EXPLOSION, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.0F, 1.5F);
+        Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
+        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, this.getX(), this.getY(), this.getZ(), radius, false, interaction, false);
+        this.discard();
+    }
 
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {

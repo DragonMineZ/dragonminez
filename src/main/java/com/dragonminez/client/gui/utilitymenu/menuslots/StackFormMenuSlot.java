@@ -7,7 +7,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ExecuteActionC2S;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.TransformationsHelper;
 import net.minecraft.ChatFormatting;

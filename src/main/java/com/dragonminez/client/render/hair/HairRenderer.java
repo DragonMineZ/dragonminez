@@ -6,7 +6,7 @@ import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.hair.HairStrand;
-import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

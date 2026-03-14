@@ -9,7 +9,7 @@ import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;

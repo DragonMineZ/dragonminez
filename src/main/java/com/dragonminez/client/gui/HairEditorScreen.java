@@ -16,7 +16,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.C2S.UpdateCustomHairC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.character.Character;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;

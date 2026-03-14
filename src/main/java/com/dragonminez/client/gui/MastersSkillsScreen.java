@@ -7,7 +7,7 @@ import com.dragonminez.client.gui.character.BaseMenuScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.Skill;
+import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;

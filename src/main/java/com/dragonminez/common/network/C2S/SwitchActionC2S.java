@@ -1,7 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
