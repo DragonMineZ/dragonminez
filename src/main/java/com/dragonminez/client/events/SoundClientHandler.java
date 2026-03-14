@@ -35,6 +35,8 @@ public class SoundClientHandler {
             return;
         }
 
+        if (mc.isPaused()) return;
+
         for (Player player : mc.level.players()) {
             updatePlayerAuraSound(player, mc);
         }
@@ -54,6 +56,8 @@ public class SoundClientHandler {
 
         if (stats == null) return;
 
+        var character = stats.getCharacter();
+
         boolean hasAura = stats.getStatus().isAuraActive();
         boolean isPlaying = ACTIVE_AURA_SOUNDS.containsKey(playerId) && !ACTIVE_AURA_SOUNDS.get(playerId).isStopped();
 
@@ -63,28 +67,36 @@ public class SoundClientHandler {
                 mc.getSoundManager().play(sound);
                 ACTIVE_AURA_SOUNDS.put(playerId, sound);
             }
+        }
 
-            var character = stats.getCharacter();
+        boolean hasLightnings = false;
 
-            if (character.hasActiveForm() && character.getActiveFormData() != null) {
-                if (character.getActiveFormData().getHasLightnings()) {
+        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+            if (character.getActiveStackFormData().getHasLightnings()) {
+                hasLightnings = true;
+            }
+        }
+        else if (character.hasActiveForm() && character.getActiveFormData() != null) {
+            if (character.getActiveFormData().getHasLightnings()) {
+                hasLightnings = true;
+            }
+        }
 
-                    long currentTime = System.currentTimeMillis();
-                    long nextPlayTime = LIGHTNING_TIMERS.getOrDefault(playerId, 0L);
+        if (hasLightnings) {
+            long currentTime = mc.level.getGameTime();
+            long nextPlayTime = LIGHTNING_TIMERS.getOrDefault(playerId, 0L);
 
-                    if (currentTime >= nextPlayTime) {
-                        float volume = 0.3F;
-                        float pitch = 0.9F + player.getRandom().nextFloat() * 0.2F;
+            if (currentTime >= nextPlayTime) {
+                float volume = 0.3F;
+                float pitch = 0.9F + player.getRandom().nextFloat() * 0.2F;
 
-                        mc.level.playSound(mc.player, player.getX(), player.getY(), player.getZ(),
-                                MainSounds.KI_SPARKS.get(),
-                                SoundSource.PLAYERS,
-                                volume,
-                                pitch);
+                mc.level.playSound(mc.player, player.getX(), player.getY(), player.getZ(),
+                        MainSounds.KI_SPARKS.get(),
+                        SoundSource.PLAYERS,
+                        volume,
+                        pitch);
 
-                        LIGHTNING_TIMERS.put(playerId, currentTime + 3000L);
-                    }
-                }
+                LIGHTNING_TIMERS.put(playerId, currentTime + 60L);
             }
         } else {
             LIGHTNING_TIMERS.remove(playerId);

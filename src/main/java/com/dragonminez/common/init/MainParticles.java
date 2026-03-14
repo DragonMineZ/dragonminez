@@ -29,6 +29,9 @@ public class MainParticles {
             PARTICLE_TYPES.register("ki_explosion", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> KI_SHEDDING =
             PARTICLE_TYPES.register("ki_shedding", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> KI_LIGHTNING =
+            PARTICLE_TYPES.register("ki_lightning", () -> new SimpleParticleType(true));
+
     public static final RegistryObject<SimpleParticleType> KINTON =
             PARTICLE_TYPES.register("kinton", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> DUST =

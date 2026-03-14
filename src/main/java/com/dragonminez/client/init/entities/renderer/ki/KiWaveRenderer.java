@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
@@ -45,6 +46,33 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     @Override
     public void render(KiWaveEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
+        float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
+
+        float exactAge = entity.tickCount + partialTick;
+        float fadeAlpha = 1.0F;
+
+        if (exactAge > 180.0F) { //Desde el tick 180 empieza a desvanecerse
+            fadeAlpha = 1.0F - ((exactAge - 180.0F) / 20.0F);
+            fadeAlpha = Math.max(0.0F, Math.min(1.0F, fadeAlpha));
+        }
+
+        int renderType = entity.getKiRenderType();
+
+        switch (renderType) {
+            case 1: // Kamehameha
+                KiRenderWaveBrightness(entity, partialTick, poseStack, buffer, auraColor, borderColor, fadeAlpha);
+                break;
+            case 2: // Galick Gun
+                KiRenderWaveBrightness(entity, partialTick, poseStack, buffer, auraColor, borderColor, fadeAlpha);
+                break;
+            default: // Rayo Genérico
+                KiRenderWave(entity, partialTick, poseStack, buffer, auraColor, borderColor, fadeAlpha);
+                break;
+        }
+    }
+
+    private void KiRenderWave(KiWaveEntity entity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, float[] auraColor, float[] borderColor, float fadeAlpha) {
         float ageInTicks = entity.tickCount + partialTick;
 
         float SCALE_MULTIPLIER = 16.0F;
@@ -58,38 +86,26 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float yaw = entity.getFixedYaw();
         float pitch = entity.getFixedPitch();
 
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
-        float[] brightAuraColor = ColorUtils.lightenColor(auraColor, 0.5f);
+        float[] brightAuraColor = ColorUtils.lightenColor(auraColor, 0.45f);
+
+        poseStack.pushPose();
+        poseStack.translate(0.0D, 0.5D, 0.0D);
+
+        Vec3 dir = net.minecraft.world.phys.Vec3.directionFromRotation(pitch, yaw);
 
         poseStack.pushPose();
 
+        poseStack.translate(0.0D, -0.5D, 0.0D);
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        poseStack.translate(0.0D, 0.0D, 0.5D);
 
-        poseStack.translate(0.0D, -0.5D, 0.5D);
         float tubeLength = Math.max(length - 0.8F, 0.1F);
-        renderKiWave2D(poseStack, buffer, entity, ageInTicks, width, tubeLength, auraColor, borderColor);
-
-
-//        poseStack.pushPose();
-//        this.waveModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
-//        float shortenedLength = Math.max(length - 1.2F, 0.1F);
-//        float shortenedVisualLength = shortenedLength * SCALE_MULTIPLIER;
-//        poseStack.scale(1.5F, 1.5F, shortenedVisualLength);
-//        poseStack.translate(0.0D, -1.0D, 0.0002D);
-//        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
-//        this.waveModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.2F);
-//        poseStack.popPose();
-
-        //renderKiWave3D(poseStack, buffer, entity, ageInTicks, width, visualLength, auraColor, borderColor);
+        renderKiWave2DFullColor(poseStack, buffer, entity, ageInTicks, width, tubeLength, auraColor, borderColor, fadeAlpha);
 
         float explodePulse = (float) Math.sin(ageInTicks * 4.1F) * 0.1F;
-
-        // Temblor casi imperceptible para no verse "glitcheado"
         float explodeJitter = (float) (Math.random() - 0.5) * 0.02F;
 
-        // PRIMERA BLANCO
         poseStack.pushPose();
         float scale1 = 1.5F * (1.0F + explodePulse + explodeJitter);
         poseStack.scale(scale1, scale1, scale1);
@@ -97,10 +113,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         boolean useFirstTexture = (entity.tickCount / 3) % 2 == 0;
         ResourceLocation currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
         VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
-        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 0.6F);
+        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 0.6F * fadeAlpha);
         poseStack.popPose();
 
-        // SEGUNDA BORDE
         poseStack.pushPose();
         float scale2 = 2.0F * (1.0F - explodePulse + explodeJitter);
         poseStack.scale(scale2, scale2, scale2);
@@ -109,118 +124,186 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         useFirstTexture = (entity.tickCount / 3) % 2 == 0;
         currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
         laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
-        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F);
+        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F * fadeAlpha);
         poseStack.popPose();
 
-        //ESFERA INICIO
+        poseStack.popPose();
+
+        // ESFERA INICIO
+
         poseStack.pushPose();
+
+        net.minecraft.world.phys.Vec3 startPos = dir.scale(0.2D);
+        poseStack.translate(startPos.x, -0.5D, startPos.z);
 
         float startBallScale = width * 1.5F;
         poseStack.scale(startBallScale, startBallScale, startBallScale);
+        poseStack.translate(0.0D, -0.35D, 0.0D);
 
-        poseStack.translate(0.0D, -0.3D, -0.1D);
-
-        poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
-        poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
-
-        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor);
+        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
 
         poseStack.popPose();
 
+        // ESFERA FINAL
 
-        //ESFERA FINAL
-        poseStack.translate(0.0D, 0.0D, length);
+        poseStack.pushPose();
 
-        poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
-        poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
+        Vec3 endPos = dir.scale(0.5D + length);
+        poseStack.translate(endPos.x, endPos.y - 0.5D, endPos.z);
 
-        width = entity.getSize();
         float endBallScale = width * 2F;
+
         poseStack.scale(endBallScale, endBallScale, endBallScale);
-        poseStack.translate(0.0D, -0.3D, 0.0D);
-        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor);
+        poseStack.translate(0.0D, -0.35D, 0.0D);
+
+        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+
+        poseStack.popPose();
 
         poseStack.popPose();
     }
 
-    private void renderKiWave2D(PoseStack poseStack, MultiBufferSource buffer, KiWaveEntity entity, float ageInTicks, float width, float visualLength, float[] auraColor, float[] borderColor) {
+    private void KiRenderWaveBrightness(KiWaveEntity entity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, float[] auraColor, float[] borderColor, float fadeAlpha) {
+        float ageInTicks = entity.tickCount + partialTick;
+
+        float SCALE_MULTIPLIER = 16.0F;
+        float length = Math.max(entity.getBeamLength(), 0.1F);
+        float visualLength = length * SCALE_MULTIPLIER;
+
+        float basePulse = 1.0F + (float) Math.sin(ageInTicks * 1.5F) * 0.15F;
+        float jitter = (float) (Math.random() - 0.5) * 0.05F;
+        float width = entity.getSize() * (basePulse + jitter);
+
+        float yaw = entity.getFixedYaw();
+        float pitch = entity.getFixedPitch();
+
+        float[] brightAuraColor = ColorUtils.lightenColor(auraColor, 0.85f);
+
         poseStack.pushPose();
+        poseStack.translate(0.0D, 0.5D, 0.0D);
+
+        Vec3 dir = net.minecraft.world.phys.Vec3.directionFromRotation(pitch, yaw);
+
+        poseStack.pushPose();
+
+        poseStack.translate(0.0D, -0.5D, 0.0D);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
+        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        poseStack.translate(0.0D, 0.0D, 0.5D);
+
+        float tubeLength = Math.max(length - 0.8F, 0.1F);
+        renderKiWave2D(poseStack, buffer, entity, ageInTicks, width, tubeLength, auraColor, borderColor, fadeAlpha);
+
+        float explodePulse = (float) Math.sin(ageInTicks * 4.1F) * 0.1F;
+        float explodeJitter = (float) (Math.random() - 0.5) * 0.02F;
+
+        poseStack.pushPose();
+        float scale1 = 2.0F * (1.0F + explodePulse + explodeJitter);
+        poseStack.scale(scale1, scale1, scale1);
+        poseStack.translate(0.0D, -1.7D, -0.2D);
+        boolean useFirstTexture = (entity.tickCount / 3) % 2 == 0;
+        ResourceLocation currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
+        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
+        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 0.6F * fadeAlpha);
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        float scale2 = 2.5F * (1.0F - explodePulse + explodeJitter);
+        poseStack.scale(scale2, scale2, scale2);
+        poseStack.translate(1.0D, -1.3D, -0.1D);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(35.0F));
+        useFirstTexture = (entity.tickCount / 3) % 2 == 0;
+        currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
+        laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
+        this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.6F* fadeAlpha);
+        poseStack.popPose();
+
+        poseStack.popPose();
+
+        // ESFERA INICIO
+        poseStack.pushPose();
+
+        net.minecraft.world.phys.Vec3 startPos = dir.scale(-0.2D);
+        poseStack.translate(startPos.x, -0.5D, startPos.z);
+
+        float startBallScale = width * 1.5F;
+        poseStack.scale(startBallScale, startBallScale, startBallScale);
+        poseStack.translate(0.0D, -0.35D, 0.0D);
+
+        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+
+        poseStack.popPose();
+        // ESFERA FINAL
+        poseStack.pushPose();
+
+        Vec3 endPos = dir.scale(0.5D + length);
+        poseStack.translate(endPos.x, endPos.y - 0.5D, endPos.z);
+
+        float endBallScale = width * 2F;
+
+        poseStack.scale(endBallScale, endBallScale, endBallScale);
+        poseStack.translate(0.0D, -0.35D, 0.0D);
+
+        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+
+        poseStack.popPose();
+
+        poseStack.popPose();
+
+    }
+
+
+    private void renderKiWave2DFullColor(PoseStack poseStack, MultiBufferSource buffer, KiWaveEntity entity, float ageInTicks, float width, float visualLength, float[] auraColor, float[] borderColor, float fadeAlpha) {
+        poseStack.pushPose();
+        float[] brightAuraColor = ColorUtils.lightenColor(auraColor, 0.45f);
 
         poseStack.scale(width, width, visualLength);
 
         this.wave2Model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
         poseStack.pushPose();
-        poseStack.scale(1.15F, 1.15F, 1.0F); // Un poco más gordo para envolver
+        poseStack.scale(1.15F, 1.15F, 1.0F);
         poseStack.translate(0.0D, -1.5D, -0.001D);
         VertexConsumer borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
-        this.wave2Model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F);
+        this.wave2Model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.scale(1.2F, 1.0F, 1.0F);
+        poseStack.scale(1.3F, 1.0F, 1.0F);
         poseStack.translate(0.0D, -1.5D, -0.001D);
         borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
-        this.wave2Model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 1.0F);
+        this.wave2Model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F * fadeAlpha);
         poseStack.popPose();
-
-        poseStack.pushPose();
-        poseStack.scale(1.2F, 1.0F, 1.0F); // Un poco más gordo para envolver
-        poseStack.translate(-0.05D, -1.5D, -0.001D);
-        borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
-        this.wave2Model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 1.0F);
-        poseStack.popPose();
-
-
 
         poseStack.popPose();
     }
 
-    private void renderKiWave3D(PoseStack poseStack, MultiBufferSource buffer, KiWaveEntity entity, float ageInTicks, float width, float visualLength, float[] auraColor, float[] borderColor) {
+    private void renderKiWave2D(PoseStack poseStack, MultiBufferSource buffer, KiWaveEntity entity, float ageInTicks, float width, float visualLength, float[] auraColor, float[] borderColor, float fadeAlpha) {
         poseStack.pushPose();
+        float[] brightAuraColor = ColorUtils.lightenColor(auraColor, 0.85f);
+
         poseStack.scale(width, width, visualLength);
-        poseStack.translate(0.0D, -0.05D, 0.0D);
 
-        this.waveModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+        this.wave2Model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
         poseStack.pushPose();
-        poseStack.scale(1.05F, 1.05F, 1.0F);
-        poseStack.translate(0.0D, -0.5D, -0.001D);
-        VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
-        this.waveModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F);
+        poseStack.scale(1.15F, 1.15F, 1.0F);
+        poseStack.translate(0.0D, -1.5D, -0.001D);
+        VertexConsumer borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
+        this.wave2Model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F * fadeAlpha);
         poseStack.popPose();
 
-        float coreScale = 0.9F;
-        float[][] coreOffsets = {
-                {0.05F, -0.5F}, {-0.067F, -0.39F}, {0.08F, -0.35F}, {-0.05F, -0.32F}
-        };
-        VertexConsumer coreBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
-
-        for (float[] offset : coreOffsets) {
-            poseStack.pushPose();
-            poseStack.scale(coreScale, coreScale, 1.0F);
-            poseStack.translate(offset[0], offset[1], 0.0D);
-            this.waveModel.renderToBuffer(poseStack, coreBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 1.0F);
-            poseStack.popPose();
-        }
+        poseStack.pushPose();
+        poseStack.scale(1.3F, 1.0F, 1.0F);
+        poseStack.translate(0.0D, -1.5D, -0.001D);
+        borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_WAVE_CORE));
+        this.wave2Model.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F * fadeAlpha);
+        poseStack.popPose();
 
         poseStack.popPose();
     }
 
-    private void renderBall(KiWaveEntity entity, PoseStack poseStack, MultiBufferSource buffer, float ageInTicks, float[] auraColor, float[] borderColor, float alpha) {
-        this.ballModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
-
-        VertexConsumer ballCoreBuffer = buffer.getBuffer(ModRenderTypes.energy(TEXTURE_BALL_CORE));
-        this.ballModel.renderToBuffer(poseStack, ballCoreBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 1.0F);
-
-        poseStack.pushPose();
-        poseStack.translate(0, 0, -0.01F);
-        VertexConsumer ballBorderBuffer = buffer.getBuffer(ModRenderTypes.kiblast(TEXTURE_BALL_BORDER));
-        this.ballModel.renderToBuffer(poseStack, ballBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F);
-        poseStack.popPose();
-    }
-
-    private void renderKiBlast(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float scale, float ageInTicks, float[] coreColor, float[] brightAuraColor, float[] borderColor) {
+    private void renderKiBlast(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float scale, float ageInTicks, float[] coreColor, float[] brightAuraColor, float[] borderColor, float fadeAlpha) {
         poseStack.pushPose();
 
         float jitterSpeed = ageInTicks * 20.0F;
@@ -232,9 +315,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
         poseStack.scale(scale + shakeX, scale + shakeY, scale + shakeZ);
 
-        //poseStack.scale(scale, scale, scale);
-        poseStack.translate(0, -0.2, 0.0f);
-
         this.ballModel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
         VertexConsumer solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
@@ -243,48 +323,48 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
 
-        poseStack.translate(0.0F, -0.07F, 0.0F);
+        poseStack.translate(0.0F, -0.27F, 0.0F);
 
         poseStack.pushPose();
         poseStack.translate(0, 0.15, 0.000f);
         poseStack.scale(1.0f, 1.0f, 1.0f);
         solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
-        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.2F);
+        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.2F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
         poseStack.translate(0, 0.2, 0.001f);
         poseStack.scale(0.85f, 0.85f, 0.85f);
         solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
-        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.8F);
+        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.8F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
         poseStack.translate(0, 0.23, 0.002f);
         poseStack.scale(0.75f, 0.75f, 0.75f);
         solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
-        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.6F);
+        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.6F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
         poseStack.translate(0, 0.3, 0.003f);
         poseStack.scale(0.6f, 0.6f, 0.6f);
         borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
-        this.ballModel.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.8F);
+        this.ballModel.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.8F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.translate(0, 0.35, 0.004f); // 4 milímetros hacia la cámara
+        poseStack.translate(0, 0.35, 0.004f);
         poseStack.scale(0.5f, 0.5f, 0.5f);
         solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
-        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F);
+        this.ballModel.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
         poseStack.translate(0, 0.37, 0.005f);
         poseStack.scale(0.45f, 0.45f, 0.45f);
         borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
-        this.ballModel.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.3F);
+        this.ballModel.renderToBuffer(poseStack, borderBuffer, 15728880, OverlayTexture.NO_OVERLAY, coreColor[0], coreColor[1], coreColor[2], 0.3F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.popPose();

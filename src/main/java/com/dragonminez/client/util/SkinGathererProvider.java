@@ -133,7 +133,7 @@ public class SkinGathererProvider {
 			case "namekian", "namekian_orange" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
 			case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid" ->
 					resolveBodyMajin(character, logicKey, b1, consumer);
-			case "frostdemon", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" ->
+			case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" ->
 					resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
 			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" ->
 					resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
@@ -200,7 +200,8 @@ public class SkinGathererProvider {
 
 		boolean isSecondForm = Objects.equals(currentForm, FrostDemonForms.SECOND_FORM);
 		boolean isBase = currentForm == null || currentForm.isEmpty() || currentForm.equalsIgnoreCase("base");
-		boolean isBulky = (key.equals("frostdemon") && (isBase || isSecondForm)) || key.equals("frostdemon_third");
+		boolean isBulky = (key.equals("frostdemon") && (isBase || isSecondForm) || key.equals("frostdemon_second"))
+                || key.equals("frostdemon_third");
 
 		if (isBulky) {
 			prefix = key.equals("frostdemon_third") ? folder + "thirdform_bodytype_" + bodyType + "_" : folder + "bodytype_" + bodyType + "_";

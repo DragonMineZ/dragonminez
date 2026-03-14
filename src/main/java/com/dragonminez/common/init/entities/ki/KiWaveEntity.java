@@ -1,23 +1,27 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.init.MainDamageTypes;
-import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.MainParticles;
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.*;
+import com.dragonminez.common.init.particles.KiLightningParticle;
 import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -68,6 +72,59 @@ public class KiWaveEntity extends AbstractKiProjectile {
         );
     }
 
+    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setKiRenderType(0);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+        this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupKiWave(owner, damage, speed, color, color, size);
+    }
+
+    public void setupKiHame(LivingEntity owner, float damage, float speed, float size) {
+        this.setKiRenderType(1);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0x4FF7FF, 0x4FF7FF);
+        this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size) {
+        this.setKiRenderType(2);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xCE10E3, 0xAE10E3);
+        this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    private void playInitialSound(SoundEvent sound) {
+        this.level().playSound(
+                null,
+                this.getX(),
+                this.getY(),
+                this.getZ(),
+                sound,
+                SoundSource.PLAYERS,
+                0.1F,
+                0.8F + (this.random.nextFloat() * 0.2F)
+        );
+    }
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
@@ -90,59 +147,149 @@ public class KiWaveEntity extends AbstractKiProjectile {
             Vec3 startPos = this.position();
             Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
             float currentLen = this.getBeamLength();
+            float currentSpeed = this.getKiSpeed();
 
             if (this.tickCount % 5 == 0) {
-                Vec3 tipPos = startPos.add(dir.scale(currentLen));
-
-                this.level().playSound(null, tipPos.x, tipPos.y, tipPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
-
+                Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
+                this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
                 this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.1F, 1.0F);
             }
 
-            float targetLen = currentLen + this.getKiSpeed();
-            Vec3 endPosRay = startPos.add(dir.scale(MAX_RANGE));
+            float targetLen = currentLen + currentSpeed;
+            Vec3 tipPos = startPos.add(dir.scale(targetLen));
+
+            this.destroyBlocksAtTip(tipPos);
+
 
             HitResult hitResult = this.level().clip(new ClipContext(
-                    startPos,
-                    endPosRay,
+                    startPos.add(dir.scale(currentLen)),
+                    tipPos,
                     ClipContext.Block.COLLIDER,
                     ClipContext.Fluid.NONE,
                     this
             ));
 
-            double distToWall = MAX_RANGE;
-
-            if (hitResult.getType() != HitResult.Type.MISS) {
-                distToWall = hitResult.getLocation().distanceTo(startPos);
-
-                if (hitResult.getType() == HitResult.Type.BLOCK && targetLen >= distToWall) {
-                    explodeAndDie(hitResult.getLocation());
-                    return;
+            if (hitResult.getType() == HitResult.Type.BLOCK) {
+                BlockPos hitPos = ((BlockHitResult)hitResult).getBlockPos();
+                if (this.level().getBlockState(hitPos).getExplosionResistance(this.level(), hitPos, null) >= 1000) {
+                    targetLen = (float) hitResult.getLocation().distanceTo(startPos);
+                    currentSpeed = 0.0F;
+                    this.setKiSpeed(currentSpeed);
                 }
-                distToWall += 0.1D;
-            }
-
-            if (targetLen > distToWall) {
-                targetLen = (float) distToWall;
             }
 
             this.setBeamLength(targetLen);
 
             damageEntitiesInBeam(startPos, dir, targetLen);
 
-            if (this.tickCount > 200) {
-                this.discard();
+            if (currentSpeed < 0.05F || this.tickCount > 200) {
+                explodeAndDie(startPos.add(dir.scale(targetLen)));
+                return;
             }
         }
         else {
             spawnWaveParticles();
-            //spawnOriginSplash();
+            spawnOriginSplash();
+            spawnLightningParticles();
         }
 
 
         this.onKiTick();
     }
 
+    private void spawnLightningParticles() {
+        if (this.getKiRenderType() != 2) return;
+
+        float length = this.getBeamLength();
+        float yaw = this.getFixedYaw();
+        float pitch = this.getFixedPitch();
+        Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
+
+        // Calculamos las dos posiciones clave
+        Vec3 startPos = this.position();
+        Vec3 endPos = startPos.add(dir.scale(length));
+
+        float scale = this.getSize();
+        float[] borderColor = ColorUtils.rgbIntToFloat(this.getColorBorde());
+
+        int rayosPorTick = 8;
+
+        for (int i = 0; i < rayosPorTick; i++) {
+
+            if (this.random.nextFloat() < 1.00F) {
+                spawnLightningAt(startPos, scale * 2.5F, borderColor);
+                spawnLightningAt(startPos, scale * 2.5F, ColorUtils.darkenColor(borderColor, 0.5F));
+            }
+
+            if (length > 1.0F && this.random.nextFloat() < 1.00F) {
+                spawnLightningAt(endPos, scale * 3.0F, borderColor);
+                spawnLightningAt(endPos, scale * 3.0F, ColorUtils.darkenColor(borderColor, 0.5F));
+            }
+        }
+    }
+
+    private void spawnLightningAt(Vec3 pos, float scaleRadius, float[] rgb) {
+        double offsetX = (this.random.nextDouble() - 0.5D) * scaleRadius * 1.8D;
+        double offsetY = (this.random.nextDouble() - 0.5D) * scaleRadius * 1.8D;
+        double offsetZ = (this.random.nextDouble() - 0.5D) * scaleRadius * 1.8D;
+
+        double vx = offsetX * 0.1D;
+        double vy = offsetY * 0.1D;
+        double vz = offsetZ * 0.1D;
+
+        net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+                MainParticles.KI_LIGHTNING.get(),
+                pos.x + offsetX,
+                pos.y + offsetY,
+                pos.z + offsetZ,
+                vx, vy, vz
+        );
+
+        if (p instanceof KiLightningParticle lightning) {
+            lightning.setLightningColor(rgb[0], rgb[1], rgb[2]);
+
+            float randomScale = scaleRadius * 0.8F + (this.random.nextFloat() * scaleRadius * 0.5F);
+            lightning.setLightningScale(randomScale);
+        }
+    }
+
+    private boolean destroyBlocksAtTip(Vec3 tipPos) {
+        if (!MainGameRules.canKiGrief(this.level(), BlockPos.containing(tipPos), this.getOwner())) {
+            return false;
+        }
+
+        boolean hitSomething = false;
+        float eatRadius = this.getSize() * 1.5F;
+        int bRad = Math.round(eatRadius);
+        BlockPos center = BlockPos.containing(tipPos);
+        Level level = this.level();
+
+        for (int x = -bRad; x <= bRad; x++) {
+            for (int y = -bRad; y <= bRad; y++) {
+                for (int z = -bRad; z <= bRad; z++) {
+                    if (x * x + y * y + z * z <= eatRadius * eatRadius) {
+                        BlockPos targetPos = center.offset(x, y, z);
+
+                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000) {
+                            level.destroyBlock(targetPos, false);
+                            hitSomething = true;
+
+                            if (level instanceof ServerLevel serverLevel) {
+                                if (this.random.nextFloat() < 0.25F) {
+                                    serverLevel.sendParticles(
+                                            ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                                            targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
+                                            1, 0.5D, 0.5D, 0.5D, 0.05D
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return hitSomething;
+    }
 
     private void spawnOriginSplash() {
         if (this.tickCount % 5 == 0) {
@@ -237,13 +384,11 @@ public class KiWaveEntity extends AbstractKiProjectile {
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
 
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
-
         int hitInterval = 20;
 
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
-
             if (target.invulnerableTime > 0) continue;
 
             float hitPrecision = this.getSize() / 2.0F;
@@ -252,10 +397,12 @@ public class KiWaveEntity extends AbstractKiProjectile {
             boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);
 
             if (intersects) {
-				boolean wasHurt = target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                boolean wasHurt = target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
 
                 if (wasHurt) {
                     target.invulnerableTime = hitInterval;
+
+                    this.setKiSpeed(this.getKiSpeed() * 0.75F);
 
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                         double colorData = (double) this.getColorBorde();
@@ -266,11 +413,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
                                 target.getX(),
                                 target.getY() + (target.getBbHeight() / 2.0),
                                 target.getZ(),
-                                0,
-                                colorData,
-                                sizeData,
-                                0.0D,
-                                1.0D
+                                0, colorData, sizeData, 0.0D, 1.0D
                         );
                     }
                 }
@@ -278,27 +421,55 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
     }
 
+
     private void explodeAndDie(Vec3 pos) {
-        boolean shouldDestroyBlocks = true;
-        float radius = this.getSize() * 1.5F;
+        float explosionRadius = this.getSize() * 2.5F;
 
-        AABB area = new AABB(pos, pos).inflate(radius);
-        List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
-
-        for (LivingEntity target : entities) {
+        AABB damageArea = new AABB(pos, pos).inflate(explosionRadius);
+        List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, damageArea);
+        for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-                double dist = target.distanceToSqr(pos);
-                if (dist <= radius * radius) {
-					target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
-                }
+                target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage() * 1.5F);
             }
         }
 
-        this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
-        this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0F, 1.0F);
+        if (!this.level().isClientSide) {
+            BlockPos center = BlockPos.containing(pos);
 
-        Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
-        this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, pos.x, pos.y, pos.z, radius, false, interaction, false);
+            if (MainGameRules.canKiGrief(this.level(), center, this.getOwner())) {
+                int blockRadius = Math.round(explosionRadius);
+                for (int x = -blockRadius; x <= blockRadius; x++) {
+                    for (int y = -blockRadius; y <= blockRadius; y++) {
+                        for (int z = -blockRadius; z <= blockRadius; z++) {
+                            if (x * x + y * y + z * z <= explosionRadius * explosionRadius) {
+                                BlockPos targetPos = center.offset(x, y, z);
+                                if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
+                                    this.level().setBlock(targetPos, Blocks.AIR.defaultBlockState(), 2);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            float visualParticleSize = explosionRadius * 1.8F;
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(
+                        MainParticles.KI_EXPLOSION.get(),
+                        pos.x, pos.y, pos.z,
+                        0, (double) visualParticleSize, 0.0D, 0.0D, 1.0D
+                );
+                serverLevel.playSound(null, pos.x, pos.y, pos.z,
+                        SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 5.0F, 0.6F);
+
+                KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
+                explosionVisual.setPos(pos.x, pos.y - 0.5, pos.z);
+                explosionVisual.setupExplosion(this.getColorBorde(), this.getSize() * 2.5F);
+                this.level().addFreshEntity(explosionVisual);
+            }
+        }
         this.discard();
     }
+
+
 }

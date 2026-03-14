@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
@@ -62,7 +63,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);
-
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, float size) {
@@ -77,6 +78,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, float size) {
@@ -91,6 +93,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupInvertedKiBlast(LivingEntity owner, float damage, float speed, int color, float size) {
@@ -105,6 +108,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupKiSouls(LivingEntity owner, float damage, float speed, int color) {
@@ -115,6 +119,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupKiGenki(LivingEntity owner, float damage, float speed) {
@@ -125,6 +130,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0x30FFF1, 0x00F8FF);
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupKiNova(LivingEntity owner, float damage, float speed) {
@@ -135,6 +141,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0x9E0000, 0x9E0000);
+        finalizeSetupAndShoot(owner, speed);
     }
     public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color, int colorborder) {
         this.setOwner(owner);
@@ -144,9 +151,24 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, colorborder);
+        finalizeSetupAndShoot(owner, speed);
     }
     public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color) {
         setupKiDeathBall(owner, damage, speed, color, color);
+    }
+
+    private void finalizeSetupAndShoot(LivingEntity owner, float speed) {
+        this.setOwner(owner);
+
+        Vec3 lookDir = owner.getLookAngle();
+        Vec3 spawnPos = owner.getEyePosition().add(lookDir.scale(0.5D));
+        this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
+
+        this.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, speed, 0.0F);
+
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
     }
 
 	@Override
