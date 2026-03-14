@@ -19,7 +19,7 @@ import java.util.*;
 public class ConfigManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
 	private static final ConfigLoader LOADER = new ConfigLoader(GSON);
-	private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory(LOADER);
+	private static final DefaultFormsFactory FORMS_FACTORY = new DefaultFormsFactory();
 
 	private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
 	private static final Path STACK_FORMS_DIR = CONFIG_DIR.resolve("forms");

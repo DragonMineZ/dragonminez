@@ -12,8 +12,6 @@ import java.util.Map;
 
 @AllArgsConstructor
 public class DefaultFormsFactory {
-	private final ConfigLoader loader;
-
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
 		form.setMasteryPerHit(0.025);
@@ -148,9 +146,6 @@ public class DefaultFormsFactory {
 		kaiokenForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_KAIOKEN, kaiokenForms);
-
-		Path kaiokenPath = formsPath.resolve(StackForms.GROUP_KAIOKEN + ".json");
-		loader.saveConfig(kaiokenPath, kaiokenForms);
 		LogUtil.info(Env.COMMON, "Default Kaioken forms created");
 	}
 
@@ -197,9 +192,6 @@ public class DefaultFormsFactory {
 		ultraInstinctForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_ULTRAINSTINCT, ultraInstinctForms);
-
-		Path ultraInstinctPath = formsPath.resolve(StackForms.GROUP_ULTRAINSTINCT + ".json");
-		loader.saveConfig(ultraInstinctPath, ultraInstinctForms);
 		LogUtil.info(Env.COMMON, "Default Ultra Instict forms created");
 	}
 
@@ -246,9 +238,6 @@ public class DefaultFormsFactory {
 		ultraEgoForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_ULTRAEGO, ultraEgoForms);
-
-		Path ultraEgoPath = formsPath.resolve(StackForms.GROUP_ULTRAEGO + ".json");
-		loader.saveConfig(ultraEgoPath, ultraEgoForms);
 		LogUtil.info(Env.COMMON, "Default Ultra Ego forms created");
 	}
 
@@ -323,9 +312,6 @@ public class DefaultFormsFactory {
 		humanForms.setForms(humanFormData);
 
 		forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
-
-		Path humanPath = formsPath.resolve(HumanForms.GROUP_SUPERFORMS + ".json");
-		loader.saveConfig(humanPath, humanForms);
 		LogUtil.info(Env.COMMON, "Default Human forms created");
 
 		createAndroidForms(formsPath, forms);
@@ -391,9 +377,6 @@ public class DefaultFormsFactory {
 		androidForms.setForms(androidFormData);
 
 		forms.put(HumanForms.GROUP_ANDROIDFORMS, androidForms);
-
-		Path androidPath = formsPath.resolve(HumanForms.GROUP_ANDROIDFORMS + ".json");
-		loader.saveConfig(androidPath, androidForms);
 		LogUtil.info(Env.COMMON, "Default Android forms created for Humans");
 	}
 
@@ -611,13 +594,6 @@ public class DefaultFormsFactory {
 		forms.put(SaiyanForms.OOZARU, oozaruForms);
 		forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
 		forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
-
-		Path oozaruPath = formsPath.resolve(SaiyanForms.OOZARU + ".json");
-		loader.saveConfig(oozaruPath, oozaruForms);
-		Path ssGradesPath = formsPath.resolve(SaiyanForms.GROUP_SSGRADES + ".json");
-		loader.saveConfig(ssGradesPath, ssGrades);
-		Path superSaiyanPath = formsPath.resolve(SaiyanForms.SUPER_SAIYAN + ".json");
-		loader.saveConfig(superSaiyanPath, superSaiyan);
 		LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
 	}
 
@@ -678,9 +654,6 @@ public class DefaultFormsFactory {
 		namekianForms.setForms(namekianFormData);
 
 		forms.put(NamekianForms.GROUP_SUPERFORMS, namekianForms);
-
-		Path namekianPath = formsPath.resolve(NamekianForms.GROUP_SUPERFORMS + ".json");
-		loader.saveConfig(namekianPath, namekianForms);
 		LogUtil.info(Env.COMMON, "Default Namekian forms created");
 	}
 
@@ -773,9 +746,6 @@ public class DefaultFormsFactory {
 		frostForms.setForms(frostFormData);
 
 		forms.put(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostForms);
-
-		Path frostPath = formsPath.resolve(FrostDemonForms.GROUP_EVOLUTIONFORMS + ".json");
-		loader.saveConfig(frostPath, frostForms);
 		LogUtil.info(Env.COMMON, "Default Frost Demon forms created");
 	}
 
@@ -855,9 +825,6 @@ public class DefaultFormsFactory {
 		majinForms.setForms(majinFormData);
 
 		forms.put(MajinForms.GROUP_PUREFORMS, majinForms);
-
-		Path majinPath = formsPath.resolve(MajinForms.GROUP_PUREFORMS + ".json");
-		loader.saveConfig(majinPath, majinForms);
 		LogUtil.info(Env.COMMON, "Default Majin forms created");
 	}
 
@@ -961,9 +928,6 @@ public class DefaultFormsFactory {
 		bioForms.setForms(bioFormData);
 
 		forms.put(BioAndroidForms.GROUP_BIOEVOLUTION, bioForms);
-
-		Path bioAndroidPath = formsPath.resolve(BioAndroidForms.GROUP_BIOEVOLUTION + ".json");
-		loader.saveConfig(bioAndroidPath, bioForms);
 		LogUtil.info(Env.COMMON, "Default Bio Android forms created");
 	}
 }
