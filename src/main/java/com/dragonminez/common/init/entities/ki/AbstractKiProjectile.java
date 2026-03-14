@@ -31,6 +31,12 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.noCulling = true;
     }
 
+    public abstract int getMaxHits();
+
+    public float getDamagePerHit() {
+        return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
+    }
+
     public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
         this.setOwner(owner);
         this.setKiDamage(damage);

@@ -57,6 +57,11 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     @Override
+    public int getMaxHits() {
+        return 10;
+    }
+
+    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(BEAM_LENGTH, 0.0F);
@@ -154,7 +159,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
             var hit = targetBox.clip(start, end);
 
             if (hit.isPresent() || targetBox.contains(start)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
 
                 if (wasHit) {
                     this.onSuccessfulHit(target);
@@ -184,7 +189,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
             if (this.shouldDamage(target)) {
                 double dist = target.distanceToSqr(pos);
                 if (dist <= radius * radius) {
-                    boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
                     if (wasHit) this.onSuccessfulHit(target);
                 }
             }

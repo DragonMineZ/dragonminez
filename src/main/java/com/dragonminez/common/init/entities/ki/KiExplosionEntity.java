@@ -1,6 +1,5 @@
 package com.dragonminez.common.init.entities.ki;
 
-import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -37,6 +36,11 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         this.setOwner(owner);
         this.setNoGravity(true);
         this.noPhysics = true;
+    }
+
+    @Override
+    public int getMaxHits() {
+        return 7;
     }
 
     public void setupExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder) {
@@ -136,7 +140,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
 
                 if (wasHit && !this.isHeal()) {
                     this.onSuccessfulHit(target);
@@ -152,8 +156,6 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
     @Override
     public boolean shouldDamage(Entity target) {
-        // Llamamos al super para mantener la nueva regla de si es un heal o es daño
-        // (A diferencia de sobreescribirlo crudo como antes)
         return super.shouldDamage(target);
     }
 

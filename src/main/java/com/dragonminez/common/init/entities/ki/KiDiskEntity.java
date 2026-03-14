@@ -36,6 +36,11 @@ public class KiDiskEntity extends AbstractKiProjectile {
     }
 
     @Override
+    public int getMaxHits() {
+        return 5;
+    }
+
+    @Override
     public EntityDimensions getDimensions(Pose pPose) {
         float scale = this.getSize();
         float width = 1.0F * scale;
@@ -98,7 +103,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : nearby) {
             if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage() * 0.1F);
+                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
                 if (wasHit) this.onSuccessfulHit(target);
             }
         }
@@ -111,7 +116,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             Entity targetEntity = pResult.getEntity();
             if (this.shouldDamage(targetEntity)) {
-                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getDamagePerHit());
 
                 if (wasHit) {
                     this.onSuccessfulHit(targetEntity);

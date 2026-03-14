@@ -29,11 +29,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
     private boolean hasSpawnedSplash = false;
 
     private static final double[][] VOLLEY_OFFSETS = {
-            {0.0, 0.0},
-            {5.0, 0.0},
-            {-5.0, 0.0},
-            {1.2, 3.5},
-            {-1.2, 3.5}
+            {0.0, 0.0}, {5.0, 0.0}, {-5.0, 0.0}, {1.2, 3.5}, {-1.2, 3.5}
     };
 
     public KiBarrageEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
@@ -46,6 +42,11 @@ public class KiBarrageEntity extends AbstractKiProjectile {
         this.setOwner(owner);
         level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
                 MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.5F);
+    }
+
+    @Override
+    public int getMaxHits() {
+        return 1;
     }
 
     public static void shootVolley(LivingEntity attacker, LivingEntity target, float speed, float damage, int colorMain, int colorBorder) {
@@ -134,7 +135,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : nearby) {
             if (this.shouldDamage(target)) {
-                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage() * 0.2F);
+                boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
                 if (wasHit) this.onSuccessfulHit(target);
             }
         }
@@ -158,7 +159,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             Entity targetEntity = pResult.getEntity();
             if (this.shouldDamage(targetEntity)) {
-                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(targetEntity, this.getDamagePerHit());
 
                 if (wasHit) {
                     this.onSuccessfulHit(targetEntity);
@@ -193,7 +194,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
         for (LivingEntity target : entities) {
             if (this.shouldDamage(target)) {
                 if (this.distanceToSqr(target) <= radius * radius) {
-                    boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getDamagePerHit());
                     if (wasHit) this.onSuccessfulHit(target);
                 }
             }

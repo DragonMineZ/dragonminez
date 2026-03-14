@@ -45,6 +45,11 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     }
 
     @Override
+    public int getMaxHits() {
+        return 1;
+    }
+
+    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CURRENT_SIZE, 0.1F);
@@ -121,7 +126,6 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
             if (target instanceof Projectile) {
                 target.remove(RemovalReason.DISCARDED);
-                this.onSuccessfulHit(target);
             }
         }
     }
