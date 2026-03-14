@@ -5,7 +5,7 @@ import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.stats.Cooldowns;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.network.chat.Component;

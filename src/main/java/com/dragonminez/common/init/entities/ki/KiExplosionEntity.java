@@ -41,11 +41,8 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
     public void setupExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder) {
         this.setup(owner, damage, 0.1F, 0.0f, colorMain, colorBorder);
-
         this.setMaxRadius(7.0f);
-
         this.entityData.set(OWNER_ID, owner.getId());
-
         this.updatePositionToOwner(owner);
     }
 
@@ -53,7 +50,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(MAX_RADIUS, 15.0f);
-        this.entityData.define(OWNER_ID, -1); // -1 = Sin dueño
+        this.entityData.define(OWNER_ID, -1);
     }
 
     @Override
@@ -104,31 +101,20 @@ public class KiExplosionEntity extends AbstractKiProjectile {
             currentRadius = maxRad;
         }
         this.setSize(currentRadius * 2.0F);
+
         if (!this.level().isClientSide) {
             spawnParticles(currentRadius);
 
             if (this.tickCount == 1) {
-                this.level().playSound(
-                        null,
-                        this.getX(), this.getY(), this.getZ(),
-                        MainSounds.KI_EXPLOSION_CHARGE.get(),
-                        SoundSource.HOSTILE,
-                        1.0F, 1.0F
-                );
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                        MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
             }
 
             if (this.tickCount >= GROW_TIME) {
                 int activeTicks = this.tickCount - GROW_TIME;
-
                 if (activeTicks % 70 == 0) {
-                    this.level().playSound(
-                            null,
-                            this.getX(), this.getY(), this.getZ(),
-                            MainSounds.KI_EXPLOSION_IMPACT.get(),
-                            SoundSource.HOSTILE,
-                            1.0F,
-                            1.2F
-                    );
+                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                            MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 1.0F, 1.2F);
                 }
 
                 if (this.tickCount % 20 == 0) {
@@ -150,30 +136,25 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
         for (LivingEntity target : targets) {
             if (this.shouldDamage(target)) {
-				target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
 
-                double dx = target.getX() - this.getX();
-                double dz = target.getZ() - this.getZ();
-                target.knockback(0.2D, -dx, -dz);
+                if (wasHit && !this.isHeal()) {
+                    this.onSuccessfulHit(target);
+                    double dx = target.getX() - this.getX();
+                    double dz = target.getZ() - this.getZ();
+                    target.knockback(0.2D, -dx, -dz);
+                } else if (wasHit && this.isHeal()) {
+                    this.onSuccessfulHit(target);
+                }
             }
         }
     }
 
     @Override
     public boolean shouldDamage(Entity target) {
-        Entity owner = this.getOwner();
-
-        if (target == owner) return false;
-
-        if (owner instanceof LivingEntity livingOwner) {
-            if (livingOwner.isAlliedTo(target)) {
-                return false;
-            }
-            if (target.getType() == livingOwner.getType()) {
-                return false;
-            }
-        }
-        return true;
+        // Llamamos al super para mantener la nueva regla de si es un heal o es daño
+        // (A diferencia de sobreescribirlo crudo como antes)
+        return super.shouldDamage(target);
     }
 
     private void spawnParticles(float radius) {
@@ -182,11 +163,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
             if (this.tickCount % 10 == 0) {
                 serverLevel.sendParticles((SimpleParticleType) MainParticles.KI_EXPLOSION_SPLASH.get(),
                         this.getX(), this.getY(), this.getZ(),
-                        0,
-                        (double) radius,
-                        (double) this.getColorBorde(),
-                        0.0,
-                        1.0);
+                        0, (double) radius, (double) this.getColorBorde(), 0.0, 1.0);
             }
 
             serverLevel.sendParticles((SimpleParticleType) MainParticles.KI_EXPLOSION_FLASH.get(),

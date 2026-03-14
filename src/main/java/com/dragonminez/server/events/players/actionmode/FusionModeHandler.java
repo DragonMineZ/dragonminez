@@ -2,6 +2,8 @@ package com.dragonminez.server.events.players.actionmode;
 
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.*;
+import com.dragonminez.common.stats.character.Cooldowns;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.server.events.players.IActionModeHandler;
 import com.dragonminez.server.util.FusionLogic;
 import net.minecraft.server.level.ServerPlayer;

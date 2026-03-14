@@ -745,7 +745,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 	public void shootGenericKiVolley(LivingEntity target, float speed, int colorCore, int colorBorder) {
 		if (target == null) return;
 
-		KiVolleyEntity.shootVolley(
+		KiBarrageEntity.shootVolley(
 				this,
 				target,
 				speed,
@@ -794,7 +794,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 	public void shootGenericKiDisc(float size, int color, float speed) {
 		if (this.level().isClientSide) return;
 
-		KiDiscEntity disc = new KiDiscEntity(this.level(), this);
+		KiDiskEntity disc = new KiDiskEntity(this.level(), this);
 
 		disc.setKiDamage(this.getKiBlastDamage());
 		disc.setSize(size);

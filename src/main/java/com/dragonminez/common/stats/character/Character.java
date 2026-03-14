@@ -1,10 +1,12 @@
-package com.dragonminez.common.stats;
+package com.dragonminez.common.stats.character;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.stats.extras.FormMasteries;
+import com.dragonminez.common.stats.extras.UsedForms;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -18,6 +20,7 @@ public class Character {
     private String gender;
     private String characterClass;
 
+	private String selectedMaster = "";
     private String selectedFormGroup = "";
     private String activeFormGroup = "";
 	private String selectedForm = "";
@@ -168,6 +171,7 @@ public class Character {
         tag.putString("Eye1Color", eye1Color);
         tag.putString("Eye2Color", eye2Color);
         tag.putString("AuraColor", auraColor);
+		tag.putString("SelectedMaster",  selectedMaster);
         tag.putString("SelectedFormGroup", selectedFormGroup);
         tag.putString("CurrentFormGroup", activeFormGroup);
 		tag.putString("SelectedForm", selectedForm);
@@ -214,6 +218,7 @@ public class Character {
         this.eye1Color = tag.getString("Eye1Color");
         this.eye2Color = tag.getString("Eye2Color");
         this.auraColor = tag.getString("AuraColor");
+		if (tag.contains("SelectedMaster")) this.selectedMaster = tag.getString("SelectedMaster");
         this.selectedFormGroup = tag.getString("SelectedFormGroup");
         this.activeFormGroup = tag.getString("CurrentFormGroup");
 		this.selectedForm = tag.getString("SelectedForm");
@@ -323,6 +328,7 @@ public class Character {
         this.eye1Color = other.eye1Color;
         this.eye2Color = other.eye2Color;
         this.auraColor = other.auraColor;
+		this.selectedMaster = other.selectedMaster;
         this.selectedFormGroup = other.selectedFormGroup;
         this.activeFormGroup = other.activeFormGroup;
         this.activeForm = other.activeForm;

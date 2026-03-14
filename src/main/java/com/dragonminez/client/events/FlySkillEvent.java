@@ -6,7 +6,7 @@ import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.network.C2S.FlyToggleC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.Skill;
+import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;

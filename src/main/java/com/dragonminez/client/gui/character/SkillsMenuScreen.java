@@ -8,6 +8,8 @@ import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
+import com.dragonminez.common.stats.skills.Skill;
+import com.dragonminez.common.stats.skills.Skills;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;

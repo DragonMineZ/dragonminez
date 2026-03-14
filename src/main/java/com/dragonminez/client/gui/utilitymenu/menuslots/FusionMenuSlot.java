@@ -5,7 +5,7 @@ import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.client.gui.utilitymenu.IUtilityMenuSlot;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;

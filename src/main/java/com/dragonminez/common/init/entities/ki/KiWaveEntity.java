@@ -1,7 +1,6 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -45,7 +44,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         this.entityData.set(FIXED_YAW, owner.getYRot());
         this.entityData.set(FIXED_PITCH, owner.getXRot());
-
         this.setYRot(owner.getYRot());
         this.setXRot(owner.getXRot());
 
@@ -56,16 +54,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(1.2F);
         this.setSize(1.0F);
 
-        level.playSound(
-                null,
-                owner.getX(),
-                owner.getY(),
-                owner.getZ(),
-                MainSounds.KI_KAME_FIRE.get(),
-                SoundSource.PLAYERS,
-                0.1F,
-                0.8F + (this.random.nextFloat() * 0.2F)
-        );
+        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+                MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.1F, 0.8F + (this.random.nextFloat() * 0.2F));
     }
 
     @Override
@@ -93,28 +83,18 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
             if (this.tickCount % 5 == 0) {
                 Vec3 tipPos = startPos.add(dir.scale(currentLen));
-
                 this.level().playSound(null, tipPos.x, tipPos.y, tipPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
-
                 this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.1F, 1.0F);
             }
 
             float targetLen = currentLen + this.getKiSpeed();
             Vec3 endPosRay = startPos.add(dir.scale(MAX_RANGE));
 
-            HitResult hitResult = this.level().clip(new ClipContext(
-                    startPos,
-                    endPosRay,
-                    ClipContext.Block.COLLIDER,
-                    ClipContext.Fluid.NONE,
-                    this
-            ));
-
+            HitResult hitResult = this.level().clip(new ClipContext(startPos, endPosRay, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
             double distToWall = MAX_RANGE;
 
             if (hitResult.getType() != HitResult.Type.MISS) {
                 distToWall = hitResult.getLocation().distanceTo(startPos);
-
                 if (hitResult.getType() == HitResult.Type.BLOCK && targetLen >= distToWall) {
                     explodeAndDie(hitResult.getLocation());
                     return;
@@ -127,41 +107,16 @@ public class KiWaveEntity extends AbstractKiProjectile {
             }
 
             this.setBeamLength(targetLen);
-
             damageEntitiesInBeam(startPos, dir, targetLen);
 
             if (this.tickCount > 200) {
                 this.discard();
             }
-        }
-        else {
+        } else {
             spawnWaveParticles();
-            //spawnOriginSplash();
         }
-
 
         this.onKiTick();
-    }
-
-
-    private void spawnOriginSplash() {
-        if (this.tickCount % 5 == 0) {
-
-            double colorInt = (double) this.getColorBorde();
-            double mySize = (double) this.getSize();
-
-            double x = this.getX();
-            double y = this.getY();
-            double z = this.getZ();
-
-            this.level().addParticle(
-                    MainParticles.KI_SPLASH_WAVE.get(),
-                    x, y, z,
-                    colorInt,
-                    mySize,
-                    0.0D
-            );
-        }
     }
 
     private void spawnWaveParticles() {
@@ -172,32 +127,26 @@ public class KiWaveEntity extends AbstractKiProjectile {
         float pitch = this.getFixedPitch();
         Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
         Vec3 startPos = this.position();
-
         Vec3 tipPos = startPos.add(dir.scale(length));
 
         float scale = this.getSize();
         float[] borderColor = ColorUtils.rgbIntToFloat(this.getColorBorde());
-
         float pr = borderColor[0], pg = borderColor[1], pb = borderColor[2];
 
         for (int i = 0; i < 4; i++) {
             double radius = scale * 1.2;
             double theta = this.random.nextDouble() * 2 * Math.PI;
             double phi = Math.acos(2 * this.random.nextDouble() - 1);
-
             double dx = radius * Math.sin(phi) * Math.cos(theta);
             double dy = radius * Math.sin(phi) * Math.sin(theta);
             double dz = radius * Math.cos(phi);
-
             double vx = dx * 0.15;
             double vy = dy * 0.15;
             double vz = dz * 0.15;
 
             net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_TRAIL.get(),
-                    tipPos.x + dx,
-                    tipPos.y + dy,
-                    tipPos.z + dz,
+                    tipPos.x + dx, tipPos.y + dy, tipPos.z + dz,
                     vx, vy, vz
             );
 
@@ -209,7 +158,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         for (int i = 0; i < 5; i++) {
             double absDist = scale * 2.0;
-
             double angle = this.random.nextDouble() * Math.PI * 2;
             double sx = Math.cos(angle) * absDist;
             double sz = Math.sin(angle) * absDist;
@@ -217,9 +165,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
             net.minecraft.client.particle.Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_SHEDDING.get(),
-                    startPos.x + sx,
-                    startPos.y + sy,
-                    startPos.z + sz,
+                    startPos.x + sx, startPos.y + sy, startPos.z + sz,
                     -sx * 0.15, -sy * 0.15, -sz * 0.15
             );
 
@@ -227,15 +173,12 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 kiParticle.setKiColor(borderColor[0], borderColor[1], borderColor[2]);
             }
         }
-
     }
-
 
     private void damageEntitiesInBeam(Vec3 start, Vec3 dir, float length) {
         Vec3 end = start.add(dir.scale(length));
         double searchRadius = this.getSize() * 1.0;
         AABB searchBox = new AABB(start, end).inflate(searchRadius);
-
         List<LivingEntity> targets = this.level().getEntitiesOfClass(LivingEntity.class, searchBox);
 
         int hitInterval = 20;
@@ -243,34 +186,26 @@ public class KiWaveEntity extends AbstractKiProjectile {
         for (LivingEntity target : targets) {
             if (!this.shouldDamage(target)) continue;
             if (target.is(this.getOwner())) continue;
-
             if (target.invulnerableTime > 0) continue;
 
             float hitPrecision = this.getSize() / 2.0F;
             AABB targetBox = target.getBoundingBox().inflate(hitPrecision);
-
             boolean intersects = targetBox.clip(start, end).isPresent() || targetBox.contains(start);
 
             if (intersects) {
-				boolean wasHurt = target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
 
-                if (wasHurt) {
+                if (wasHit) {
+                    this.onSuccessfulHit(target);
                     target.invulnerableTime = hitInterval;
 
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                         double colorData = (double) this.getColorBorde();
                         double sizeData = (double) this.getSize();
-
                         serverLevel.sendParticles(
                                 MainParticles.KI_SPLASH_WAVE.get(),
-                                target.getX(),
-                                target.getY() + (target.getBbHeight() / 2.0),
-                                target.getZ(),
-                                0,
-                                colorData,
-                                sizeData,
-                                0.0D,
-                                1.0D
+                                target.getX(), target.getY() + (target.getBbHeight() / 2.0), target.getZ(),
+                                0, colorData, sizeData, 0.0D, 1.0D
                         );
                     }
                 }
@@ -281,7 +216,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
     private void explodeAndDie(Vec3 pos) {
         boolean shouldDestroyBlocks = true;
         float radius = this.getSize() * 1.5F;
-
         AABB area = new AABB(pos, pos).inflate(radius);
         List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
 
@@ -289,14 +223,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (this.shouldDamage(target)) {
                 double dist = target.distanceToSqr(pos);
                 if (dist <= radius * radius) {
-					target.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), this.getKiDamage());
+                    boolean wasHit = this.applyDamageOrHeal(target, this.getKiDamage());
+                    if (wasHit) this.onSuccessfulHit(target);
                 }
             }
         }
 
         this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
         this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0F, 1.0F);
-
         Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
         this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, pos.x, pos.y, pos.z, radius, false, interaction, false);
         this.discard();

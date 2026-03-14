@@ -1,4 +1,4 @@
-package com.dragonminez.common.stats;
+package com.dragonminez.common.stats.character;
 
 import com.dragonminez.common.events.DMZEvent;
 import net.minecraft.nbt.CompoundTag;

@@ -467,8 +467,8 @@ public class MainEntities {
                     .updateInterval(10)
                     .fireImmune()
                     .build("sp_blue_hurricane"));
-    public static final RegistryObject<EntityType<KiVolleyEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
-            () -> EntityType.Builder.<KiVolleyEntity>of(KiVolleyEntity::new, MobCategory.MISC)
+    public static final RegistryObject<EntityType<KiBarrageEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
+            () -> EntityType.Builder.<KiBarrageEntity>of(KiBarrageEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.5f)
                     .clientTrackingRange(4)
                     .updateInterval(10)
@@ -490,8 +490,8 @@ public class MainEntities {
                     .fireImmune()
                     .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ki_wave").toString())
     );
-    public static final RegistryObject<EntityType<KiDiscEntity>> KI_DISC = ENTITY_TYPES.register("ki_disc",
-            () -> EntityType.Builder.<KiDiscEntity>of(KiDiscEntity::new, MobCategory.MISC)
+    public static final RegistryObject<EntityType<KiDiskEntity>> KI_DISC = ENTITY_TYPES.register("ki_disc",
+            () -> EntityType.Builder.<KiDiskEntity>of(KiDiskEntity::new, MobCategory.MISC)
                     .sized(1.0F, 0.1F)
                     .clientTrackingRange(64)
                     .updateInterval(1)

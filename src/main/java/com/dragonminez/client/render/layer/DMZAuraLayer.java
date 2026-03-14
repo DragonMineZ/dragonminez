@@ -1,7 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.util.AuraRenderQueue;
-import com.dragonminez.common.stats.ActionMode;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.vertex.PoseStack;

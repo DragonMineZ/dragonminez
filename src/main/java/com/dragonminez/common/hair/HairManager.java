@@ -4,7 +4,7 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
-import com.dragonminez.common.stats.Character;
+import com.dragonminez.common.stats.character.Character;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 
