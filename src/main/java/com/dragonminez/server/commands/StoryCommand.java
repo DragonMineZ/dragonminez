@@ -191,7 +191,7 @@ public class StoryCommand {
         boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
         try {
             String sagaId = StringArgumentType.getString(context, "saga");
-            String questArg = StringArgumentType.getString(context, "sidequest"); // Leemos como String
+            String questArg = StringArgumentType.getString(context, "quest");
 
             Saga saga = QuestRegistry.getSaga(sagaId);
             if (saga == null) {
@@ -221,7 +221,8 @@ public class StoryCommand {
                     successCount++;
                 }
 
-                context.getSource().sendSuccess(() -> Component.translatable("command.dragonminez.story.complete_all" + saga.getName()), log);
+                context.getSource().sendSuccess(() ->
+                        Component.translatable("command.dragonminez.story.complete_all", saga.getName()), log);
 
             } else {
                 try {
