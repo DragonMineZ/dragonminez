@@ -42,6 +42,7 @@ public class DefaultFormsFactory {
 
 	public void createDefaultKaiokenForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig kaiokenForms = new FormConfig();
+		kaiokenForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		kaiokenForms.setGroupName(StackForms.GROUP_KAIOKEN);
 		kaiokenForms.setFormType(StackForms.GROUP_KAIOKEN);
 
@@ -155,6 +156,7 @@ public class DefaultFormsFactory {
 
 	public void createDefaultUltraInstinctForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig ultraInstinctForms = new FormConfig();
+		ultraInstinctForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		ultraInstinctForms.setGroupName(StackForms.GROUP_ULTRAINSTINCT);
 		ultraInstinctForms.setFormType(StackForms.GROUP_ULTRAINSTINCT);
 
@@ -203,6 +205,7 @@ public class DefaultFormsFactory {
 
 	public void createDefaultUltraEgoForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig ultraEgoForms = new FormConfig();
+		ultraEgoForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		ultraEgoForms.setGroupName(StackForms.GROUP_ULTRAEGO);
 		ultraEgoForms.setFormType(StackForms.GROUP_ULTRAEGO);
 
@@ -251,6 +254,7 @@ public class DefaultFormsFactory {
 
 	private void createDefaultHumanForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig humanForms = new FormConfig();
+		humanForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		humanForms.setGroupName(HumanForms.GROUP_SUPERFORMS);
 		humanForms.setFormType("super");
 
@@ -329,6 +333,7 @@ public class DefaultFormsFactory {
 
 	private void createAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig androidForms = new FormConfig();
+		androidForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		androidForms.setGroupName(HumanForms.GROUP_ANDROIDFORMS);
 		androidForms.setFormType("android");
 
@@ -394,6 +399,7 @@ public class DefaultFormsFactory {
 
 	private void createSaiyanForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig oozaruForms = new FormConfig();
+		oozaruForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		oozaruForms.setGroupName(SaiyanForms.GROUP_OOZARU);
 		oozaruForms.setFormType("super");
 
@@ -460,6 +466,7 @@ public class DefaultFormsFactory {
 		oozaruForms.setForms(oozaruFormData);
 
 		FormConfig ssGrades = new FormConfig();
+		ssGrades.setConfigVersion(FormConfig.CURRENT_VERSION);
 		ssGrades.setGroupName(SaiyanForms.GROUP_SSGRADES);
 		ssGrades.setFormType("super");
 
@@ -532,6 +539,7 @@ public class DefaultFormsFactory {
 		ssGrades.setForms(ssGradeForms);
 
 		FormConfig superSaiyan = new FormConfig();
+		superSaiyan.setConfigVersion(FormConfig.CURRENT_VERSION);
 		superSaiyan.setGroupName(SaiyanForms.GROUP_SUPERSAIYAN);
 		superSaiyan.setFormType("super");
 
@@ -615,6 +623,7 @@ public class DefaultFormsFactory {
 
 	private void createNamekianForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig namekianForms = new FormConfig();
+		namekianForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		namekianForms.setGroupName(NamekianForms.GROUP_SUPERFORMS);
 		namekianForms.setFormType("super");
 
@@ -677,6 +686,7 @@ public class DefaultFormsFactory {
 
 	private void createFrostDemonForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig frostForms = new FormConfig();
+		frostForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		frostForms.setGroupName(FrostDemonForms.GROUP_EVOLUTIONFORMS);
 		frostForms.setFormType("super");
 
@@ -771,6 +781,7 @@ public class DefaultFormsFactory {
 
 	private void createMajinForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig majinForms = new FormConfig();
+		majinForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		majinForms.setGroupName(MajinForms.GROUP_PUREFORMS);
 		majinForms.setFormType("super");
 
@@ -852,6 +863,7 @@ public class DefaultFormsFactory {
 
 	private void createBioAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig bioForms = new FormConfig();
+		bioForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		bioForms.setGroupName(BioAndroidForms.GROUP_BIOEVOLUTION);
 		bioForms.setFormType("super");
 
