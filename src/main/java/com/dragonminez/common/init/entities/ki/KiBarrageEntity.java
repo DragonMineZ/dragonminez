@@ -46,7 +46,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return 1;
+        return this.getMaxLife() / 20;
     }
 
     public static void shootVolley(LivingEntity attacker, LivingEntity target, float speed, float damage, int colorMain, int colorBorder) {

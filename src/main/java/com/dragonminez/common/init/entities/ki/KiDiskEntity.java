@@ -37,7 +37,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return 5;
+        return this.getMaxLife() / 20;
     }
 
     @Override

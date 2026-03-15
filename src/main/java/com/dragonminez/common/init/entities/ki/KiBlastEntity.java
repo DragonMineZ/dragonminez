@@ -52,11 +52,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        int type = this.getKiRenderType();
-        if (type == 5 || type == 6) {
-            return 5;
-        }
-        return 1;
+        return this.getMaxLife() / 20;
     }
 
     public void setupKiSmall(LivingEntity owner, float damage, float speed, int color) {

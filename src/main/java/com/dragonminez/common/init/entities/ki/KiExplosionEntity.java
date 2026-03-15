@@ -40,7 +40,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return 7;
+        return this.getMaxLife() / 20;
     }
 
     public void setupExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder) {

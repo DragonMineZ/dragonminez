@@ -33,7 +33,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
 
     @Override
     public int getMaxHits() {
-        return 0;
+        return this.getMaxLife() / 20;
     }
 
     public SPBlueHurricaneEntity(Level level, LivingEntity owner) {

@@ -68,7 +68,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     @Override
     public int getMaxHits() {
-        return 10;
+        return this.getMaxLife() / 20;
     }
 
     public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {

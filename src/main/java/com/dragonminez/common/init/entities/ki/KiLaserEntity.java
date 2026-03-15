@@ -104,7 +104,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
     @Override
     public int getMaxHits() {
-        return 10;
+        return this.getMaxLife() / 20;
     }
 
     @Override
