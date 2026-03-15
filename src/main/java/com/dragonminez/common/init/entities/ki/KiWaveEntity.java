@@ -77,6 +77,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
+        this.setMaxLife(160);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
@@ -93,6 +94,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0x4FF7FF, 0x4FF7FF);
+        this.setMaxLife(200);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
@@ -105,14 +107,11 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xCE10E3, 0xAE10E3);
+        this.setMaxLife(200);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
-    }
-
-    private void playInitialSound(SoundEvent sound) {
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 0.1F, 0.8F + (this.random.nextFloat() * 0.2F));
     }
 
     @Override
@@ -166,7 +165,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
             this.setBeamLength(targetLen);
             damageEntitiesInBeam(startPos, dir, targetLen);
 
-            if (currentSpeed < 0.05F || this.tickCount > 200) {
+            if (currentSpeed < 0.05F || this.tickCount > this.getMaxLife()) {
                 explodeAndDie(startPos.add(dir.scale(targetLen)));
                 return;
             }

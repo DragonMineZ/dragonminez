@@ -4,6 +4,9 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.particles.KiLightningParticle;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -56,6 +59,49 @@ public class KiLaserEntity extends AbstractKiProjectile{
                 MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
     }
 
+    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int colorBorder){
+        this.setKiRenderType(0);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+        this.setMaxLife(60);
+        this.playInitialSound(MainSounds.KI_LASER.get());
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color){
+        this.setupKiLaser(owner, damage, speed, color, color);
+    }
+    public void setupKiDodonpa(LivingEntity owner, float damage, float speed){
+        this.setKiRenderType(0);
+        this.setSize(0.5f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFEB7A, 0xFFE657);
+        this.setMaxLife(60);
+        this.playInitialSound(MainSounds.KI_LASER.get());
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public void setupKiMakkankosanpo(LivingEntity owner, float damage, float speed){
+        this.setKiRenderType(1);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFE657, 0xFFE657);
+        this.setMaxLife(100);
+        this.playInitialSound(MainSounds.KI_LASER.get());
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+
     @Override
     public int getMaxHits() {
         return 10;
@@ -105,7 +151,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
             this.setBeamLength(targetLen);
             damageEntitiesInBeam(startPos, dir, targetLen);
 
-            if (this.tickCount > 100) {
+            if (this.tickCount > this.getMaxLife()) {
                 this.discard();
             }
         } else {
@@ -121,6 +167,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
         Vec3 startPos = this.position();
         float length = this.getBeamLength();
+        float scale = this.getSize();
 
         float[] rgbMain = ColorUtils.rgbIntToFloat(this.getColor());
         float[] rgbBorder = ColorUtils.rgbIntToFloat(this.getColorBorde());
@@ -129,15 +176,106 @@ public class KiLaserEntity extends AbstractKiProjectile{
             this.level().addParticle(MainParticles.KI_SPLASH.get(),
                     startPos.x, startPos.y, startPos.z,
                     rgbBorder[0], rgbBorder[1], rgbBorder[2]);
+
+
+            if (this.getKiRenderType() == 1) { //rayos makkankosanpo
+                this.spawnInitialLightning();
+            }
+
         }
 
-        double trailDist = Math.max(0, length - 1.2D);
-        Vec3 posTrail = startPos.add(dir.scale(trailDist));
+        for (int i = 0; i < 3; i++) {
+            double absDist = scale * 2.0;
+
+            double theta = this.random.nextDouble() * Math.PI * 2;
+            double phi = Math.acos(2 * this.random.nextDouble() - 1);
+
+            double sx = absDist * Math.sin(phi) * Math.cos(theta);
+            double sy = absDist * Math.sin(phi) * Math.sin(theta);
+            double sz = absDist * Math.cos(phi);
+
+            double vx = -sx * 0.15;
+            double vy = -sy * 0.15;
+            double vz = -sz * 0.15;
+
+            Particle p = Minecraft.getInstance().particleEngine.createParticle(
+                    MainParticles.KI_SHEDDING.get(),
+                    startPos.x + sx,
+                    startPos.y + sy,
+                    startPos.z + sz,
+                    vx, vy, vz
+            );
+
+            if (p instanceof com.dragonminez.common.init.particles.KiSheddingParticle kiParticle) {
+                kiParticle.setKiColor(rgbBorder[0], rgbBorder[1], rgbBorder[2]);
+            }
+        }
 
         if (length > 0.5F) {
-            this.level().addParticle(MainParticles.KI_TRAIL.get(),
-                    posTrail.x, posTrail.y, posTrail.z,
-                    rgbMain[0], rgbMain[1], rgbMain[2]);
+            Vec3 tipPos = startPos.add(dir.scale(length));
+
+            for (int i = 0; i < 3; i++) {
+                double radius = scale * 0.8;
+
+                double theta = this.random.nextDouble() * 2 * Math.PI;
+                double phi = Math.acos(2 * this.random.nextDouble() - 1);
+
+                double dx = radius * Math.sin(phi) * Math.cos(theta);
+                double dy = radius * Math.sin(phi) * Math.sin(theta);
+                double dz = radius * Math.cos(phi);
+
+                double vx = dx * 0.25;
+                double vy = dy * 0.25;
+                double vz = dz * 0.25;
+
+                Particle p = Minecraft.getInstance().particleEngine.createParticle(
+                        MainParticles.KI_TRAIL.get(),
+                        tipPos.x + dx,
+                        tipPos.y + dy,
+                        tipPos.z + dz,
+                        vx, vy, vz
+                );
+
+                if (p instanceof com.dragonminez.common.init.particles.KiTrailParticle trail) {
+                    trail.setKiColor(rgbBorder[0], rgbBorder[1], rgbBorder[2]);
+                    trail.setKiScale(scale * 0.6F);
+                }
+            }
+        }
+    }
+
+    private void spawnInitialLightning() {
+        float scale = this.getSize();
+        float[] rgbMain = ColorUtils.rgbIntToFloat(this.getColor());
+        float[] rgbBorder = ColorUtils.rgbIntToFloat(0xEF00FF);
+        Vec3 startPos = this.position();
+
+        int lightningCount = 25;
+        for (int i = 0; i < lightningCount; i++) {
+            float[] chosenColor = (i % 2 == 0) ? rgbMain : rgbBorder;
+            spawnLightningAt(startPos, scale * 2.5F, chosenColor);
+        }
+    }
+
+    private void spawnLightningAt(Vec3 pos, float scaleRadius, float[] rgb) {
+        double offsetX = (this.random.nextDouble() - 0.5D) * scaleRadius * 2.0D;
+        double offsetY = (this.random.nextDouble() - 0.5D) * scaleRadius * 2.0D;
+        double offsetZ = (this.random.nextDouble() - 0.5D) * scaleRadius * 2.0D;
+
+        double vx = offsetX * 0.1D;
+        double vy = offsetY * 0.1D;
+        double vz = offsetZ * 0.1D;
+
+        Particle p = Minecraft.getInstance().particleEngine.createParticle(
+                MainParticles.KI_LIGHTNING.get(),
+                pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ,
+                vx, vy, vz
+        );
+
+        if (p instanceof KiLightningParticle lightning) {
+            lightning.setLightningColor(rgb[0], rgb[1], rgb[2]);
+            float randomScale = scaleRadius * 0.8F + (this.random.nextFloat() * scaleRadius * 0.5F);
+            lightning.setLightningScale(randomScale);
         }
     }
 

@@ -6,6 +6,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
@@ -25,6 +27,8 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final EntityDataAccessor<String> TECHNIQUE_ID = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> ARMOR_PENETRATION = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_HEAL = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.BOOLEAN);
+
+    private static final EntityDataAccessor<Integer> MAX_LIFE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -60,6 +64,10 @@ public abstract class AbstractKiProjectile extends Projectile {
         }
 
         return !this.isHeal();
+    }
+
+    public void playInitialSound(SoundEvent sound) {
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), sound, SoundSource.PLAYERS, 0.1F, 0.8F + (this.random.nextFloat() * 0.2F));
     }
 
     public boolean applyDamageOrHeal(Entity target, float amount) {
@@ -98,6 +106,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.entityData.define(KI_BALL_RENDER_TYPE, 1);
         this.entityData.define(TECHNIQUE_ID, "");
         this.entityData.define(ARMOR_PENETRATION, 0);
+        this.entityData.define(MAX_LIFE, 100);
         this.entityData.define(IS_HEAL, false);
     }
 
@@ -153,6 +162,9 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public boolean isHeal() { return this.entityData.get(IS_HEAL); }
     public void setHeal(boolean heal) { this.entityData.set(IS_HEAL, heal); }
+
+    public void setMaxLife(int lifeInTicks) {this.entityData.set(MAX_LIFE, lifeInTicks);}
+    public int getMaxLife() {return this.entityData.get(MAX_LIFE);}
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {

@@ -67,6 +67,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);
+        this.setMaxLife(100);
         finalizeSetupAndShoot(owner, speed);
     }
 
@@ -82,6 +83,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
+        this.setMaxLife(100);
         finalizeSetupAndShoot(owner, speed);
     }
 
@@ -97,6 +99,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
+        this.setMaxLife(160);
         finalizeSetupAndShoot(owner, speed);
     }
 
@@ -112,6 +115,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
+        this.setMaxLife(100);
         finalizeSetupAndShoot(owner, speed);
     }
 
@@ -123,6 +127,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);
+        this.setMaxLife(160);
         finalizeSetupAndShoot(owner, speed);
     }
 
@@ -134,6 +139,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0x30FFF1, 0x00F8FF);
+        this.setMaxLife(160);
         finalizeSetupAndShoot(owner, speed);
     }
 
@@ -145,6 +151,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0x9E0000, 0x9E0000);
+        this.setMaxLife(160);
         finalizeSetupAndShoot(owner, speed);
     }
     public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color, int colorborder) {
@@ -155,6 +162,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, colorborder);
+        this.setMaxLife(160);
         finalizeSetupAndShoot(owner, speed);
     }
     public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color) {
@@ -202,7 +210,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 }
             }
 
-            if (this.tickCount >= 100) {
+            if (this.tickCount >= this.getMaxLife()) {
                 this.explodeAndDie();
                 return;
             }

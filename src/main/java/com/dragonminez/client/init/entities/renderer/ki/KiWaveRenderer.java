@@ -19,16 +19,15 @@ import net.minecraft.world.phys.Vec3;
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     private static final ResourceLocation TEXTURE_WAVE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave.png");
-    private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
     private static final ResourceLocation TEXTURE_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1_border.png");
-    private static final ResourceLocation TEXTURE_BALL_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1.png");
-    private static final ResourceLocation TEXTURE_BALL_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiball1_border.png");
 
     private static final ResourceLocation TEXTURE_EXPLODE1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave_explode1.png");
     private static final ResourceLocation TEXTURE_EXPLODE2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave_explode2.png");
 
+    private static final ResourceLocation TEXTURE_LASER_EXPLODE1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser_explode1.png");
+    private static final ResourceLocation TEXTURE_LASER_EXPLODE2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser_explode2.png");
 
     private final KiWaveModel waveModel;
     private final KiWave2DModel wave2Model;
@@ -52,9 +51,12 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float exactAge = entity.tickCount + partialTick;
         float fadeAlpha = 1.0F;
 
-        if (exactAge > 180.0F) { //Desde el tick 180 empieza a desvanecerse
-            fadeAlpha = 1.0F - ((exactAge - 180.0F) / 20.0F);
-            fadeAlpha = Math.max(0.0F, Math.min(1.0F, fadeAlpha));
+        int maxLife = entity.getMaxLife();
+        int fadeTicks = 20;
+
+        if (entity.tickCount >= maxLife - fadeTicks) {
+            fadeAlpha = (maxLife - exactAge) / (float) fadeTicks;
+            fadeAlpha = Math.max(0.0F, fadeAlpha);
         }
 
         int renderType = entity.getKiRenderType();
@@ -197,20 +199,45 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         float explodePulse = (float) Math.sin(ageInTicks * 4.1F) * 0.1F;
         float explodeJitter = (float) (Math.random() - 0.5) * 0.02F;
 
+
+        // KI CIRCULAR EXPLOSIVO
         poseStack.pushPose();
-        float scale1 = 2.0F * (1.0F + explodePulse + explodeJitter);
+        float scale1 = 4.5F * (1.0F + explodePulse + explodeJitter);
         poseStack.scale(scale1, scale1, scale1);
-        poseStack.translate(0.0D, -1.7D, -0.2D);
+        poseStack.translate(0.0D, -0.5d, -0.05D);
         boolean useFirstTexture = (entity.tickCount / 3) % 2 == 0;
-        ResourceLocation currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
+        ResourceLocation currentExplodeTexture = useFirstTexture ? TEXTURE_LASER_EXPLODE1 : TEXTURE_LASER_EXPLODE2;
         VertexConsumer laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
+        this.ballModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 0.9F * fadeAlpha);
+        poseStack.popPose();
+
+        // KI CIRCULAR EXPLOSIVO CLARO
+        poseStack.pushPose();
+        scale1 = 3.0F * (1.0F + explodePulse + explodeJitter);
+        poseStack.scale(scale1, scale1, scale1);
+        poseStack.translate(0.0D, -0.5d, -0.15D);
+        useFirstTexture = (entity.tickCount / 3) % 2 == 0;
+        currentExplodeTexture = useFirstTexture ? TEXTURE_LASER_EXPLODE1 : TEXTURE_LASER_EXPLODE2;
+        laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
+        this.ballModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 0.7F * fadeAlpha);
+        poseStack.popPose();
+
+        // MODELO DE AURA
+        // AURA DE KI EXPLOTANDO
+        poseStack.pushPose();
+        scale1 = 3.5F * (1.0F + explodePulse + explodeJitter);
+        poseStack.scale(scale1, scale1, scale1);
+        poseStack.translate(0.0D, -1.7D, -0.35D);
+        useFirstTexture = (entity.tickCount / 3) % 2 == 0;
+        currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
+        laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
         this.explodeModel.renderToBuffer(poseStack, laserBorderBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 0.6F * fadeAlpha);
         poseStack.popPose();
 
         poseStack.pushPose();
-        float scale2 = 2.5F * (1.0F - explodePulse + explodeJitter);
+        float scale2 = 4.5F * (1.0F - explodePulse + explodeJitter);
         poseStack.scale(scale2, scale2, scale2);
-        poseStack.translate(1.0D, -1.3D, -0.1D);
+        poseStack.translate(1.0D, -1.3D, -0.3D);
         poseStack.mulPose(Axis.ZP.rotationDegrees(35.0F));
         useFirstTexture = (entity.tickCount / 3) % 2 == 0;
         currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
@@ -221,18 +248,20 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.popPose();
 
         // ESFERA INICIO
-        poseStack.pushPose();
+//        poseStack.pushPose();
+//
+//        net.minecraft.world.phys.Vec3 startPos = dir.scale(-0.2D);
+//        poseStack.translate(startPos.x, -0.5D, startPos.z);
+//
+//        float startBallScale = width * 1.5F;
+//        poseStack.scale(startBallScale, startBallScale, startBallScale);
+//        poseStack.translate(0.0D, -0.35D, 0.0D);
+//
+//        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+//
+//        poseStack.popPose();
 
-        net.minecraft.world.phys.Vec3 startPos = dir.scale(-0.2D);
-        poseStack.translate(startPos.x, -0.5D, startPos.z);
 
-        float startBallScale = width * 1.5F;
-        poseStack.scale(startBallScale, startBallScale, startBallScale);
-        poseStack.translate(0.0D, -0.35D, 0.0D);
-
-        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
-
-        poseStack.popPose();
         // ESFERA FINAL
         poseStack.pushPose();
 

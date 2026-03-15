@@ -31,6 +31,11 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
         this.setNoGravity(true);
     }
 
+    @Override
+    public int getMaxHits() {
+        return 0;
+    }
+
     public SPBlueHurricaneEntity(Level level, LivingEntity owner) {
         super(MainEntities.SP_BLUE_HURRICANE.get(), level);
         this.setOwner(owner);
