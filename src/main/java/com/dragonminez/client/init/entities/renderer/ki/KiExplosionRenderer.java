@@ -1,6 +1,7 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.init.entities.model.ki.KiBallModel;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
@@ -20,52 +21,90 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
     private static final ResourceLocation TEXTURE_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1_border.png");
     private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1.png");
+    private static final ResourceLocation TEXTURE_EXPLOSION = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
     private final KiBallPlaneModel model;
+    private final KiBallModel modelexp;
 
     public KiExplosionRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
 
         this.model = new KiBallPlaneModel(pContext.bakeLayer(KiBallPlaneModel.LAYER_LOCATION));
+        this.modelexp = new KiBallModel(pContext.bakeLayer(KiBallModel.LAYER_LOCATION));
+
     }
 
     @Override
     public void render(KiExplosionEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        poseStack.pushPose();
-
-        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
-        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-
-        poseStack.translate(0.0D, 0.5D, 0.0D);
-
-        float growTime = (float) KiExplosionEntity.GROW_TIME;
         float ageInTicks = entity.tickCount + partialTick;
-        float progress = Mth.clamp(ageInTicks / growTime, 0.0F, 1.0F);
+
+        float fadeAlpha = 1.0F;
+        int maxLife = entity.getMaxLife();
+        int fadeTicks = 10;
+
+        if (entity.tickCount >= maxLife - fadeTicks) {
+            fadeAlpha = (maxLife - ageInTicks) / (float) fadeTicks;
+            fadeAlpha = Math.max(0.0F, fadeAlpha);
+        }
+
+        renderExplosionCore(entity, partialTick, poseStack, buffer, fadeAlpha);
+    }
+
+    private void renderExplosionCore(KiExplosionEntity entity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, float fadealpha) {
+        float ageInTicks = entity.tickCount + partialTick;
+        float castTime = (float) entity.getCastExplosion();
+        float halfCastTime = castTime / 2.0F;
+        float expansionTime = 10.0F;
+
         float maxRadius = entity.getMaxRadius();
-        float currentScale = maxRadius * 2.0F * progress;
+        float baseScale = entity.getSize(); // LEE TU TAMAÑO ORIGINAL SIN MODIFICARLO
 
-        poseStack.scale(currentScale, currentScale, currentScale);
+        float currentScale;
 
-        poseStack.translate(0.0D, -0.5D, 0.0D);
+        if (ageInTicks <= halfCastTime) {
+            // Empieza en 0 y crece hasta getSize() en la mitad del tiempo
+            float progress = ageInTicks / halfCastTime;
+            currentScale = baseScale * progress;
+        }
+        else if (ageInTicks <= castTime) {
+            // Se mantiene en getSize() hasta terminar el casteo
+            currentScale = baseScale;
+        }
+        else if (ageInTicks <= castTime + expansionTime) {
+            // Crece hasta getMaxRadius()
+            float progress = (ageInTicks - castTime) / expansionTime;
+            currentScale = baseScale + ((maxRadius - baseScale) * progress);
+        }
+        else {
+            // Se mantiene en el tamaño máximo
+            currentScale = maxRadius;
+        }
 
-        this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
-
-        // RENDER CORE
         float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
-        this.model.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
-                auraColor[0], auraColor[1], auraColor[2], 1.0F);
+        float[] brightnessColor = ColorUtils.lightenColor(auraColor,  0.5f);
 
         poseStack.pushPose();
-        poseStack.translate(0, 0, -0.05F);
-        float[] coreColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
-        VertexConsumer coreBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_BORDER));
-        this.model.renderToBuffer(poseStack, coreBuffer, 15728880, OverlayTexture.NO_OVERLAY,
-                coreColor[0], coreColor[1], coreColor[2], 1.0F);
-        poseStack.popPose();
+        poseStack.translate(0.0D, 0.0D, 0.0D);
+        poseStack.scale(currentScale, currentScale, currentScale);
+        poseStack.translate(0.0D, -1.3D, 0.0D);
+
+        this.modelexp.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_EXPLOSION));
+
+        this.modelexp.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
+                brightnessColor[0], brightnessColor[1], brightnessColor[2], 0.5F * fadealpha);
+
+        poseStack.scale(1.1f, 1.1f, 1.1f);
+        poseStack.translate(0.0D, -0.1D, 0.0D);
+        this.modelexp.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
+                auraColor[0], auraColor[1], auraColor[2], 0.3F * fadealpha);
+
+        poseStack.scale(1.3f, 1.3f, 1.3f);
+        poseStack.translate(0.0D, -0.1D, 0.0D);
+        this.modelexp.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
+                auraColor[0], auraColor[1], auraColor[2], 0.1F * fadealpha);
 
         poseStack.popPose();
-        //super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
     @Override

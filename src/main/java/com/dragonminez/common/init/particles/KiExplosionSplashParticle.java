@@ -6,29 +6,41 @@ import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
 
 public class KiExplosionSplashParticle extends TextureSheetParticle {
-
     private final SpriteSet spriteSet;
+    private float baseScale;
 
-    protected KiExplosionSplashParticle(ClientLevel level, double x, double y, double z, double sizeData, double colorData, double ignored, SpriteSet spriteSet) {
-        super(level, x, y, z, 0, 0, 0);
-
+    protected KiExplosionSplashParticle(ClientLevel level, double x, double y, double z, double dx, double dy, double dz, SpriteSet spriteSet) {
+        super(level, x, y, z, dx, dy, dz);
         this.spriteSet = spriteSet;
 
-        this.lifetime = 10;
+        this.xd = 0.0D;
+        this.yd = 0.0D;
+        this.zd = 0.0D;
+
+        this.lifetime = 20;
         this.gravity = 0.0F;
         this.hasPhysics = false;
-        this.quadSize = (float) sizeData * 2.0F;
 
-        int colorHex = (int) colorData;
-        float[] rgb = ColorUtils.rgbIntToFloat(colorHex);
-        this.rCol = rgb[0];
-        this.gCol = rgb[1];
-        this.bCol = rgb[2];
+        this.baseScale = 1.0F;
+        this.quadSize = this.baseScale;
+        this.rCol = 1.0F;
+        this.gCol = 1.0F;
+        this.bCol = 1.0F;
         this.alpha = 0.7F;
 
         this.setSpriteFromAge(spriteSet);
     }
 
+    public void setSplashScale(float scale) {
+        this.baseScale = scale;
+        this.quadSize = this.baseScale;
+    }
+
+    public void setSplashColor(float r, float g, float b) {
+        this.rCol = r;
+        this.gCol = g;
+        this.bCol = b;
+    }
 
     @Override
     public void tick() {
@@ -40,6 +52,7 @@ public class KiExplosionSplashParticle extends TextureSheetParticle {
             this.remove();
         } else {
             this.setSpriteFromAge(this.spriteSet);
+            this.quadSize = this.baseScale + (this.baseScale * ((float)this.age / this.lifetime));
         }
     }
 

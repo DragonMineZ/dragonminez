@@ -44,9 +44,9 @@ public class KiBallModel<T extends Entity> extends EntityModel<T> {
 
 	@Override
 	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        float speedX = 1.7F;
-        float speedY = 1.9F;
-        float speedZ = 1.8F;
+        float speedX = 2.7F;
+        float speedY = 2.9F;
+        float speedZ = 2.8F;
 
         this.ball.xRot = ageInTicks * speedX;
         this.ball.yRot = ageInTicks * speedY;

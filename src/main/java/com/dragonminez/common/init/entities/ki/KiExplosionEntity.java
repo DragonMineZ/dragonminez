@@ -1,8 +1,11 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -21,6 +24,7 @@ import java.util.List;
 public class KiExplosionEntity extends AbstractKiProjectile {
 
     private static final EntityDataAccessor<Float> MAX_RADIUS = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> CAST_EXPLOSION = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
     public static final int DURATION = 240;
     public static final int GROW_TIME = 100;
@@ -50,11 +54,26 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         this.updatePositionToOwner(owner);
     }
 
+    public void setupKiExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder) {
+        this.setSize(2.0F);
+        this.setMaxRadius(5.0f);
+        this.setColors(colorMain, colorBorder);
+        this.setKiDamage(damage);
+        this.entityData.set(OWNER_ID, owner.getId());
+        this.setMaxLife(200);
+        this.setCastExplosion(100);
+        this.updatePositionToOwner(owner);
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(MAX_RADIUS, 15.0f);
         this.entityData.define(OWNER_ID, -1);
+        this.entityData.define(CAST_EXPLOSION, 100);
     }
 
     @Override
@@ -75,7 +94,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
             if (!this.level().isClientSide) this.discard();
         }
 
-        if (this.tickCount >= DURATION) {
+        if (this.tickCount >= this.getMaxLife()) {
             this.discard();
             return;
         }
@@ -97,26 +116,31 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     @Override
     protected void onKiTick() {
         float maxRad = this.getMaxRadius();
+        float baseSize = this.getSize();
+        int castTime = this.getCastExplosion();
+        float expansionTime = 10.0F;
+
         float currentRadius;
-        if (this.tickCount <= GROW_TIME) {
-            float progress = (float) this.tickCount / (float) GROW_TIME;
-            currentRadius = maxRad * progress;
+
+        if (this.tickCount <= castTime) {
+            currentRadius = baseSize / 2.0F;
+        } else if (this.tickCount <= castTime + expansionTime) {
+            float progress = (this.tickCount - castTime) / expansionTime;
+            currentRadius = (baseSize / 2.0F) + ((maxRad - (baseSize / 2.0F)) * progress);
         } else {
             currentRadius = maxRad;
         }
-        this.setSize(currentRadius * 2.0F);
 
         if (!this.level().isClientSide) {
-            spawnParticles(currentRadius);
-
             if (this.tickCount == 1) {
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                         MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
             }
 
-            if (this.tickCount >= GROW_TIME) {
-                int activeTicks = this.tickCount - GROW_TIME;
-                if (activeTicks % 70 == 0) {
+            if (this.tickCount >= castTime) {
+                int activeTicks = this.tickCount - castTime;
+
+                if (activeTicks == 0 || activeTicks % 70 == 0) {
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                             MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 1.0F, 1.2F);
                 }
@@ -125,11 +149,13 @@ public class KiExplosionEntity extends AbstractKiProjectile {
                     pulseDamage(currentRadius);
                 }
             }
+        } else {
+            spawnParticles(currentRadius);
         }
     }
 
     private void pulseDamage(float radius) {
-        float damageRadius = radius * 1.8F;
+        float damageRadius = radius * 1.2F;
 
         AABB area = new AABB(
                 this.getX() - damageRadius, this.getY() - damageRadius, this.getZ() - damageRadius,
@@ -160,31 +186,47 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     }
 
     private void spawnParticles(float radius) {
-        if (this.level() instanceof ServerLevel serverLevel) {
-            int color = this.getColor();
-            if (this.tickCount % 10 == 0) {
-                serverLevel.sendParticles((SimpleParticleType) MainParticles.KI_EXPLOSION_SPLASH.get(),
-                        this.getX(), this.getY(), this.getZ(),
-                        0, (double) radius, (double) this.getColorBorde(), 0.0, 1.0);
-            }
+        float[] rgbBorder = ColorUtils.rgbIntToFloat(this.getColorBorde());
+        float[] rgbCore = ColorUtils.rgbIntToFloat(this.getColor());
 
-            serverLevel.sendParticles((SimpleParticleType) MainParticles.KI_EXPLOSION_FLASH.get(),
-                    this.getX(), this.getY(), this.getZ(), 0, (double) this.getId(), (double) color, (double) radius, 1.0);
+        double floorY = this.getY() + 0.1D;
+
+        if (this.tickCount % 10 == 0) {
+            float massiveScale = radius * 1.4F;
+
+            spawnSplashRingAt(this.getX(), floorY, this.getZ(), massiveScale, rgbCore);
+        }
+    }
+
+    private void spawnSplashRingAt(double x, double y, double z, float scale, float[] rgb) {
+        Particle p = Minecraft.getInstance().particleEngine.createParticle(
+                MainParticles.KI_EXPLOSION_SPLASH.get(),
+                x, y, z,
+                0.0D, 0.0D, 0.0D
+        );
+
+        if (p instanceof com.dragonminez.common.init.particles.KiExplosionSplashParticle splash) {
+            splash.setSplashColor(rgb[0], rgb[1], rgb[2]);
+            splash.setSplashScale(scale);
         }
     }
 
     public void setMaxRadius(float radius) { this.entityData.set(MAX_RADIUS, radius); }
     public float getMaxRadius() { return this.entityData.get(MAX_RADIUS); }
+    public void setCastExplosion(int ticks) { this.entityData.set(CAST_EXPLOSION, ticks); }
+    public int getCastExplosion() { return this.entityData.get(CAST_EXPLOSION); }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
         pCompound.putFloat("MaxRadius", getMaxRadius());
+        pCompound.putInt("CastExplosion", getCastExplosion());
     }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
         if (pCompound.contains("MaxRadius")) setMaxRadius(pCompound.getFloat("MaxRadius"));
+        if (pCompound.contains("CastExplosion")) setCastExplosion(pCompound.getInt("CastExplosion"));
     }
 }

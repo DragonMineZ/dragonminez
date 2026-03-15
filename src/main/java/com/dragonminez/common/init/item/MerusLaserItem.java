@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.item;
 
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import net.minecraft.sounds.SoundEvents;
@@ -26,6 +27,7 @@ public class MerusLaserItem extends Item {
             KiBlastEntity kiBlast = new KiBlastEntity(pLevel, pPlayer);
             KiWaveEntity kiWave = new KiWaveEntity(pLevel, pPlayer);
             KiLaserEntity kilaser = new KiLaserEntity(pLevel, pPlayer);
+            KiExplosionEntity kiexp = new KiExplosionEntity(pLevel, pPlayer);
 
             //kiBlast.setupKiSmall(pPlayer,7.2f, 2.2f, 0x00FFFF);
             //kiBlast.setupKiBlast(pPlayer,10,2.2f, 0x00FFFF, 2.5f);
@@ -41,8 +43,8 @@ public class MerusLaserItem extends Item {
             //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 2.0f);
 
             //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 0xBF2828);
-            kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f);
-
+//            kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f);
+            kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFEB63, 0xFFE633);
 //            pLevel.addFreshEntity(kiWave);
         }
 
