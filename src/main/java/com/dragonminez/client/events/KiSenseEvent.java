@@ -11,7 +11,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,6 +30,7 @@ import java.util.Locale;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class KiSenseEvent {
 	private static final ResourceLocation HUD_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	static {
@@ -141,7 +146,9 @@ public class KiSenseEvent {
 	}
 
 	private static void drawBorderedText(PoseStack poseStack, MultiBufferSource buffer, Font font, String text, float x, float y) {
-		float textWidth = font.width(text);
+		MutableComponent dmzText = txt(text);
+		FormattedCharSequence visual = dmzText.getVisualOrderText();
+		float textWidth = font.width(visual);
 		float centeredX = x - (textWidth / 2.0f);
 
 		int black = 0x000000;
@@ -150,19 +157,23 @@ public class KiSenseEvent {
 
 		poseStack.pushPose();
 		poseStack.translate(0.0f, 0.0f, 0.025f);
-		drawTextRaw(poseStack, buffer, font, text, centeredX - 1, y, black, packedLight);
-		drawTextRaw(poseStack, buffer, font, text, centeredX + 1, y, black, packedLight);
-		drawTextRaw(poseStack, buffer, font, text, centeredX, y - 1, black, packedLight);
-		drawTextRaw(poseStack, buffer, font, text, centeredX, y + 1, black, packedLight);
+		drawTextRaw(poseStack, buffer, font, visual, centeredX - 1, y, black, packedLight);
+		drawTextRaw(poseStack, buffer, font, visual, centeredX + 1, y, black, packedLight);
+		drawTextRaw(poseStack, buffer, font, visual, centeredX, y - 1, black, packedLight);
+		drawTextRaw(poseStack, buffer, font, visual, centeredX, y + 1, black, packedLight);
 		poseStack.popPose();
 
 		poseStack.pushPose();
 		poseStack.translate(0.0f, 0.0f, -0.15f);
-		drawTextRaw(poseStack, buffer, font, text, centeredX, y, white, packedLight);
+		drawTextRaw(poseStack, buffer, font, visual, centeredX, y, white, packedLight);
 		poseStack.popPose();
 	}
 
-	private static void drawTextRaw(PoseStack poseStack, MultiBufferSource buffer, Font font, String text, float x, float y, int color, int packedLight) {
+	private static void drawTextRaw(PoseStack poseStack, MultiBufferSource buffer, Font font, FormattedCharSequence text, float x, float y, int color, int packedLight) {
 		font.drawInBatch(text, x, y, color, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, packedLight);
+	}
+
+	private static MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

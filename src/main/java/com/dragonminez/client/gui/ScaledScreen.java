@@ -1,10 +1,14 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -14,6 +18,8 @@ public abstract class ScaledScreen extends Screen {
 	private static final int MIN_GUI_HEIGHT = 240;
 	private static final float MIN_MENU_SCALE_MULTIPLIER = 0.25f;
 	private static final float MAX_MENU_SCALE_MULTIPLIER = 3.0f;
+
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private float uiScale = 1.0f;
 	private int uiWidth;
@@ -143,5 +149,13 @@ public abstract class ScaledScreen extends Screen {
 	@Override
 	public void mouseMoved(double mouseX, double mouseY) {
 		super.mouseMoved(toUiX(mouseX), toUiY(mouseY));
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

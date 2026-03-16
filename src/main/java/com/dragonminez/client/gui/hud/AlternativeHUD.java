@@ -12,6 +12,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
@@ -23,6 +26,7 @@ public class AlternativeHUD {
 	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png"),
 			xvhud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png"),
 			racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
@@ -213,10 +217,15 @@ public class AlternativeHUD {
 	}
 
 	private static void drawStringWithBorder(GuiGraphics guiGraphics, String text, int x, int y, int color) {
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x - 1, y, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x + 1, y, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x, y - 1, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x, y + 1, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, text, x, y, color);
+		MutableComponent dmzText = txt(text);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x - 1, y, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x + 1, y, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y - 1, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y + 1, 0x000000);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y, color);
+	}
+
+	private static MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

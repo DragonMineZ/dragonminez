@@ -94,7 +94,7 @@ public class RaceSelectionScreen extends ScaledScreen {
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(32, 0, 32, 14)
                 .textureSize(8, 14)
-                .message(Component.literal("<"))
+                .message(txt("<"))
                 .onPress(btn -> {
 					previousRace();
 					clearWidgets();
@@ -108,7 +108,7 @@ public class RaceSelectionScreen extends ScaledScreen {
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(20, 0, 20, 14)
                 .textureSize(8, 14)
-                .message(Component.literal(">"))
+                .message(txt(">"))
                 .onPress(btn -> {
 					nextRace();
 					clearWidgets();
@@ -122,7 +122,7 @@ public class RaceSelectionScreen extends ScaledScreen {
                 .texture(BUTTONS_TEXTURE)
                 .textureCoords(0, 28, 0, 48)
                 .textureSize(74, 20)
-                .message(Component.translatable("gui.dragonminez.customization.select"))
+                .message(tr("gui.dragonminez.customization.select"))
                 .onPress(btn -> selectRace())
                 .build();
 
@@ -208,10 +208,10 @@ public class RaceSelectionScreen extends ScaledScreen {
         int centerX = getUiWidth() / 2;
         int centerY = getUiHeight() / 2;
 
-        Component raceName = Component.translatable("race." + Reference.MOD_ID + "." + currentRace);
+        Component raceName = tr("race." + Reference.MOD_ID + "." + currentRace);
 		drawCenteredStringWithBorder(graphics, raceName, centerX + 3, centerY + 92, 0x7CFDD6);
 
-        Component description = Component.translatable("race." + Reference.MOD_ID + "." + currentRace + ".desc");
+        Component description = tr("race." + Reference.MOD_ID + "." + currentRace + ".desc");
 
         int descX = 68;
         int descStartY = centerY - 50;
@@ -238,40 +238,40 @@ public class RaceSelectionScreen extends ScaledScreen {
 		String titleKey = "skill.dragonminez.racial_" + racialSkill;
 		String descKey = "skill.dragonminez.racial_" + racialSkill + ".desc";
 
-		Component titleComp = Component.translatable(titleKey);
+    Component titleComp = tr(titleKey);
 		String description = "";
 
 		switch (racialSkill) {
 			case "human" -> {
 				int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-				description = Component.translatable(descKey, regen).getString();
+        description = tr(descKey, regen).getString();
 			}
 			case "saiyan" -> {
 				int zenkaiHealth = (int) Math.round(config.getSaiyanZenkaiHealthRegen() * 100);
 				int zenkaiStat = (int) Math.round(config.getSaiyanZenkaiStatBoost() * 100);
 				int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-				description = Component.translatable(descKey, zenkaiHealth, zenkaiStat, cooldown).getString();
+        description = tr(descKey, zenkaiHealth, zenkaiStat, cooldown).getString();
 			}
 			case "namekian" -> {
 				int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
 				int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-				description = Component.translatable(descKey, assimHealth, assimStat).getString();
+        description = tr(descKey, assimHealth, assimStat).getString();
 			}
 			case "frostdemon" -> {
 				int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-				description = Component.translatable(descKey, tpBoost).getString();
+        description = tr(descKey, tpBoost).getString();
 			}
 			case "bioandroid" -> {
 				int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
 				int cooldown = config.getBioAndroidCooldownSeconds();
-				description = Component.translatable(descKey, drainRatio, cooldown).getString();
+        description = tr(descKey, drainRatio, cooldown).getString();
 			}
 			case "majin" -> {
 				int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
 				int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-				description = Component.translatable(descKey, absHealth, absStat).getString();
+        description = tr(descKey, absHealth, absStat).getString();
 			}
-			default -> description = Component.translatable(descKey).getString();
+      default -> description = tr(descKey).getString();
 		}
 
 		int uiWidth = getUiWidth();
@@ -287,7 +287,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 		int textY = startY;
 
 		for (String line : wrappedDesc) {
-			drawCenteredStringWithBorder(graphics, Component.literal(line), centerX + 60, textY, 0xFFCCCCCC);
+      drawCenteredStringWithBorder(graphics, txt(line), centerX + 60, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
 	}
@@ -300,7 +300,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
     private void drawStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int color) {
 		String stripped = ChatFormatting.stripFormatting(text.getString());
-		Component borderComponent = Component.literal(stripped != null ? stripped : text.getString());
+    Component borderComponent = txt(stripped != null ? stripped : text.getString());
 
 		if (text.getStyle().isBold()) {
 			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));

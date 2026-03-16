@@ -17,6 +17,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -31,11 +33,11 @@ import java.util.List;
  */
 @OnlyIn(Dist.CLIENT)
 public class QuestNPCDialogueScreen extends Screen {
-
 	private static final ResourceLocation DIALOGUE_BG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/menusmall.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private final String npcId;
 	private final List<String> offerableQuestIds;
@@ -54,7 +56,7 @@ public class QuestNPCDialogueScreen extends Screen {
 
 	public QuestNPCDialogueScreen(String npcId, List<String> offerableQuestIds,
 								  List<String> turnInQuestIds, List<String> inProgressQuestIds) {
-		super(Component.translatable("entity.dragonminez.questnpc." + npcId));
+		super(Component.translatable("entity.dragonminez.questnpc." + npcId).withStyle(Style.EMPTY.withFont(DMZ_FONT)));
 		this.npcId = npcId;
 		this.offerableQuestIds = offerableQuestIds;
 		this.turnInQuestIds = turnInQuestIds;
@@ -101,7 +103,7 @@ public class QuestNPCDialogueScreen extends Screen {
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(50, 16)
-				.message(Component.translatable("gui.dragonminez.close"))
+				.message(tr("gui.dragonminez.close"))
 				.onPress(btn -> this.onClose())
 				.build());
 
@@ -112,13 +114,13 @@ public class QuestNPCDialogueScreen extends Screen {
 			boolean showAction = false;
 
 			if (entry.type == EntryType.OFFER) {
-				buttonText = Component.translatable("gui.dragonminez.story.sidequests.accept");
+				buttonText = tr("gui.dragonminez.story.sidequests.accept");
 				showAction = true;
 			} else if (entry.type == EntryType.TURN_IN) {
-				buttonText = Component.translatable("gui.dragonminez.sidequest.turn_in");
+				buttonText = tr("gui.dragonminez.sidequest.turn_in");
 				showAction = true;
 			} else {
-				buttonText = Component.translatable("gui.dragonminez.sidequest.in_progress");
+				buttonText = tr("gui.dragonminez.sidequest.in_progress");
 			}
 
 			if (showAction) {
@@ -162,13 +164,12 @@ public class QuestNPCDialogueScreen extends Screen {
 		guiGraphics.blit(DIALOGUE_BG, panelX, panelY, 0, 0, panelW, panelH, panelW, panelH);
 
 		// Draw NPC name at top
-		Component npcName = Component.translatable("entity.dragonminez.questnpc." + npcId);
-		guiGraphics.drawCenteredString(this.font, npcName.copy().withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
-				panelX + panelW / 2, panelY + 8, 0xFFFFFF);
+		Component npcName = tr("entity.dragonminez.questnpc." + npcId).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD);
+		guiGraphics.drawCenteredString(this.font, npcName, panelX + panelW / 2, panelY + 8, 0xFFFFFF);
 
 		// Draw dialogue line
 		String dialogueStage = getDialogueStage();
-		Component dialogue = Component.translatable("dialogue.dragonminez.story.sidequest." + npcId + "." + dialogueStage);
+		Component dialogue = tr("dialogue.dragonminez.story.sidequest." + npcId + "." + dialogueStage);
 		int dialogueY = panelY + 22;
 		List<net.minecraft.util.FormattedCharSequence> lines = this.font.split(dialogue, panelW - 20);
 		for (net.minecraft.util.FormattedCharSequence line : lines) {
@@ -181,14 +182,10 @@ public class QuestNPCDialogueScreen extends Screen {
 		int listX = panelX + 10;
 		int listW = panelW - 20;
 
-		guiGraphics.drawString(this.font,
-				Component.translatable("gui.dragonminez.sidequest.available_quests").withStyle(ChatFormatting.YELLOW),
-				listX, listY - 12, 0xFFFFFF);
+		guiGraphics.drawString(this.font, tr("gui.dragonminez.sidequest.available_quests").withStyle(ChatFormatting.YELLOW), listX, listY - 12, 0xFFFFFF);
 
 		if (questEntries.isEmpty()) {
-			guiGraphics.drawString(this.font,
-					Component.translatable("gui.dragonminez.sidequest.no_quests").withStyle(ChatFormatting.GRAY),
-					listX + 4, listY + 4, 0x888888);
+			guiGraphics.drawString(this.font, tr("gui.dragonminez.sidequest.no_quests").withStyle(ChatFormatting.GRAY), listX + 4, listY + 4, 0x888888);
 		} else {
 			for (int i = 0; i < MAX_VISIBLE && (i + scrollOffset) < questEntries.size(); i++) {
 				int idx = i + scrollOffset;
@@ -213,9 +210,7 @@ public class QuestNPCDialogueScreen extends Screen {
 					case IN_PROGRESS -> "[...] ";
 				};
 
-				Component questName = Component.literal(statusPrefix)
-						.withStyle(statusColor)
-						.append(Component.translatable(entry.quest.getName()).withStyle(ChatFormatting.WHITE));
+				Component questName = txt(statusPrefix).withStyle(statusColor).append(tr(entry.quest.getName()).withStyle(ChatFormatting.WHITE));
 
 				guiGraphics.drawString(this.font, questName, listX + 4, entryY + 4, 0xFFFFFF);
 			}
@@ -226,35 +221,25 @@ public class QuestNPCDialogueScreen extends Screen {
 			QuestEntry selected = questEntries.get(selectedIndex);
 			int detailY = listY + MAX_VISIBLE * ENTRY_HEIGHT + 8;
 
-			guiGraphics.drawString(this.font,
-					Component.translatable(selected.quest.getName()).withStyle(ChatFormatting.GOLD),
-					listX, detailY, 0xFFFFFF);
+			guiGraphics.drawString(this.font, tr(selected.quest.getName()).withStyle(ChatFormatting.GOLD), listX, detailY, 0xFFFFFF);
 			detailY += 12;
 
-			guiGraphics.drawString(this.font,
-					Component.translatable(selected.quest.getDescription()).withStyle(ChatFormatting.GRAY),
-					listX, detailY, 0xBBBBBB);
+			guiGraphics.drawString(this.font, tr(selected.quest.getDescription()).withStyle(ChatFormatting.GRAY), listX, detailY, 0xBBBBBB);
 			detailY += 12;
 
 			// Show objectives
 			for (QuestObjective obj : selected.quest.getObjectives()) {
-				guiGraphics.drawString(this.font,
-						Component.literal("• ").append(Component.translatable(obj.getDescription())).withStyle(ChatFormatting.WHITE),
-						listX + 4, detailY, 0xCCCCCC);
+				guiGraphics.drawString(this.font, txt("• ").withStyle(ChatFormatting.GRAY).append(tr(obj.getDescription()).withStyle(ChatFormatting.WHITE)), listX + 4, detailY, 0xCCCCCC);
 				detailY += 10;
 			}
 
 			// Show rewards
 			if (!selected.quest.getRewards().isEmpty()) {
 				detailY += 4;
-				guiGraphics.drawString(this.font,
-						Component.translatable("gui.dragonminez.sidequest.rewards").withStyle(ChatFormatting.GOLD),
-						listX, detailY, 0xFFFFFF);
+				guiGraphics.drawString(this.font, tr("gui.dragonminez.sidequest.rewards").withStyle(ChatFormatting.GOLD), listX, detailY, 0xFFFFFF);
 				detailY += 10;
 				for (QuestReward reward : selected.quest.getRewards()) {
-					guiGraphics.drawString(this.font,
-							Component.literal("  ").append(reward.getDescription()).withStyle(ChatFormatting.GREEN),
-							listX + 4, detailY, 0xAAFFAA);
+					guiGraphics.drawString(this.font, txt("  " + reward.getDescription()).withStyle(ChatFormatting.GREEN), listX + 4, detailY, 0xAAFFAA);
 					detailY += 10;
 				}
 			}
@@ -310,6 +295,12 @@ public class QuestNPCDialogueScreen extends Screen {
 	}
 
 	private record QuestEntry(String questId, Quest quest, EntryType type) {}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
 }
-
-

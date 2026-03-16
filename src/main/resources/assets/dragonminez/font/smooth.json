@@ -2,7 +2,7 @@
   "providers": [
     {
             "type": "bitmap",
-            "file": "dragonminez:font/ten.png",
+            "file": "dragonminez:font/ascii.png",
             "ascent": 7,
             "chars": [
                 "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",

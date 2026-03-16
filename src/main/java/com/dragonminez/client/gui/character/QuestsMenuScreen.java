@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ClaimRewardC2S;
+import com.dragonminez.common.network.C2S.SetTrackedQuestC2S;
 import com.dragonminez.common.network.C2S.StartQuestC2S;
 import com.dragonminez.common.network.C2S.UnlockSagaC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -311,8 +312,43 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		this.clearWidgets();
 		initSagaNavigationButtons();
 		initNavigationButtons();
+		initTrackButton();
 		initActionButton();
 		initQuestDetailsNavigationButtons();
+	}
+
+	private void initTrackButton() {
+		if (selectedQuest == null || statsData == null || availableSagas.isEmpty()) return;
+
+		Saga currentSaga = availableSagas.get(currentSagaIndex);
+		String questKey = PlayerQuestData.sagaQuestKey(currentSaga.getId(), selectedQuest.getId());
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+
+		boolean isActive = questData.isQuestAccepted(questKey) && !questData.isQuestCompleted(questKey);
+		if (!isActive) return;
+
+		boolean isTracked = questKey.equals(questData.getTrackedQuestId());
+
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
+		int rightPanelY = centerY - 105;
+
+		TexturedTextButton trackButton = new TexturedTextButton.Builder()
+				.position(rightPanelX + 35, rightPanelY + 188)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(Component.translatable(isTracked
+						? "gui.dragonminez.quests.untrack"
+						: "gui.dragonminez.quests.track"))
+				.onPress(btn -> {
+					NetworkHandler.sendToServer(new SetTrackedQuestC2S(isTracked ? "" : questKey));
+					refreshButtons();
+				})
+				.build();
+
+		this.addRenderableWidget(trackButton);
 	}
 
 	private void initActionButton() {
@@ -343,13 +379,13 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			}
 
 			if (hasUnclaimedRewards) {
-				buttonText = Component.translatable("gui.dragonminez.quests.claim_rewards");
+				buttonText = tr("gui.dragonminez.quests.claim_rewards");
 				isClaimAction = true;
 			} else {
 				return;
 			}
 		} else if (canStart) {
-			buttonText = Component.translatable("gui.dragonminez.quests.start");
+			buttonText = tr("gui.dragonminez.quests.start");
 
 			long now = System.currentTimeMillis();
 			long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
@@ -454,12 +490,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 		int titleY = panelY + 10;
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
-		String sagaName = Component.translatable("dmz.saga." + currentSaga.getId()).withStyle(ChatFormatting.BOLD).getString();
+		String sagaName = tr("dmz.saga." + currentSaga.getId()).withStyle(ChatFormatting.BOLD).getString();
 
 		boolean sagaUnlocked = statsData != null && statsData.getPlayerQuestData().isSagaUnlocked(currentSaga.getId());
 		int sagaColor = sagaUnlocked ? 0xFFFFFFFF : 0xFF888888;
 
-		drawCenteredStringWithBorder(graphics, Component.literal(sagaName),
+		drawCenteredStringWithBorder(graphics, txt(sagaName),
 				panelX + 70, titleY + 6, sagaColor);
 	}
 
@@ -482,7 +518,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			int itemY = startY + ((i - visibleStart) * QUEST_ITEM_HEIGHT);
 
 			if (quest == null) {
-				drawStringWithBorder(graphics, Component.literal("???"),
+				drawStringWithBorder(graphics, txt("???"),
 						panelX + 15, itemY + 5, 0xFF888888);
 				continue;
 			}
@@ -493,9 +529,9 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 			int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
-			String displayName = Component.translatable(quest.getTitle()).getString();
+			String displayName = tr(quest.getTitle()).getString();
 
-			drawStringWithBorder(graphics, Component.literal(displayName),
+			drawStringWithBorder(graphics, txt(displayName),
 					panelX + 15, itemY + 5, color);
 
 			if (statsData != null) {
@@ -503,7 +539,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 				if (statsData.getPlayerQuestData().isQuestCompleted(currentSaga.getId(), quest.getId())) {
 					String checkMark = "✓";
 					int checkX = panelX + 130 - this.font.width(checkMark);
-					drawStringWithBorder(graphics, Component.literal(checkMark),
+					drawStringWithBorder(graphics, txt(checkMark),
 							checkX, itemY + 5, 0xFF00FF00);
 				}
 			}
@@ -537,7 +573,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info").withStyle(ChatFormatting.BOLD),
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info").withStyle(ChatFormatting.BOLD),
 				rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedQuest != null && statsData != null) {
@@ -555,19 +591,19 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		PlayerQuestData questData = statsData.getPlayerQuestData();
 		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
 
-		String displayName = Component.translatable(selectedQuest.getTitle()).getString();
-		String description = Component.translatable(selectedQuest.getDescription()).getString();
+		String displayName = tr(selectedQuest.getTitle()).getString();
+		String description = tr(selectedQuest.getDescription()).getString();
 
 		int startY = panelY + 35;
 
-		drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
+		drawCenteredStringWithBorder(graphics, txt(displayName).withStyle(ChatFormatting.BOLD),
 				panelX + 70, startY, 0xFFFFFFFF);
 
 		String statusKey = isCompleted ? "gui.dragonminez.quests.status.complete" : "gui.dragonminez.quests.status.incomplete";
-		String statusText = Component.translatable(statusKey).getString();
+		String statusText = tr(statusKey).getString();
 		int statusColor = isCompleted ? 0xFF00FF00 : 0xFFFFFF00;
 
-		drawCenteredStringWithBorder(graphics, Component.literal(statusText),
+		drawCenteredStringWithBorder(graphics, txt(statusText),
 				panelX + 70, startY + 15, statusColor);
 
 		int descY = startY + 32;
@@ -591,7 +627,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 		int currentDescY = descY - descriptionScrollOffset;
 		for (String line : wrappedDesc) {
-			drawStringWithBorder(graphics, Component.literal(line), panelX + 15, currentDescY, 0xFFCCCCCC);
+			drawStringWithBorder(graphics, txt(line), panelX + 15, currentDescY, 0xFFCCCCCC);
 			currentDescY += 10;
 		}
 
@@ -608,7 +644,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 		int objTitleY = descY + descVisibleHeight + 5;
 
-		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.quests.objectives").withStyle(ChatFormatting.BOLD),
+		drawStringWithBorder(graphics, tr("gui.dragonminez.quests.objectives").withStyle(ChatFormatting.BOLD),
 				panelX + 15, objTitleY, 0xFFFFD700);
 
 		int objStartY = objTitleY + 15;
@@ -650,12 +686,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			String marker = objCompleted ? "✓" : "✕";
 			int markerColor = objCompleted ? 0xFF00FF00 : 0xFFFF0000;
 
-			drawStringWithBorder(graphics, Component.literal(marker),
+			drawStringWithBorder(graphics, txt(marker),
 					panelX + 15, currentRenderY, markerColor);
 
 			List<String> wrappedObj = wrapText(objText, 105);
 			for (String line : wrappedObj) {
-				drawStringWithBorder(graphics, Component.literal(line),
+				drawStringWithBorder(graphics, txt(line),
 						panelX + 30, currentRenderY, 0xFFCCCCCC);
 				currentRenderY += 10;
 			}
@@ -682,23 +718,23 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		PlayerQuestData questData = statsData.getPlayerQuestData();
 		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
 
-		String displayName = Component.translatable(selectedQuest.getTitle()).getString();
+		String displayName = tr(selectedQuest.getTitle()).getString();
 
 		int startY = panelY + 35;
 
-		drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
+		drawCenteredStringWithBorder(graphics, txt(displayName).withStyle(ChatFormatting.BOLD),
 				panelX + 70, startY, 0xFFFFFFFF);
 
 		String statusKey = isCompleted ? "gui.dragonminez.quests.status.complete" : "gui.dragonminez.quests.status.incomplete";
-		String statusText = Component.translatable(statusKey).getString();
+		String statusText = tr(statusKey).getString();
 		int statusColor = isCompleted ? 0xFF00FF00 : 0xFFFFFF00;
 
-		drawCenteredStringWithBorder(graphics, Component.literal(statusText),
+		drawCenteredStringWithBorder(graphics, txt(statusText),
 				panelX + 70, startY + 15, statusColor);
 
 		int rewardsTitleY = startY + 32;
 
-		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.quests.rewards").withStyle(ChatFormatting.BOLD),
+		drawStringWithBorder(graphics, tr("gui.dragonminez.quests.rewards").withStyle(ChatFormatting.BOLD),
 				panelX + 15, rewardsTitleY, 0xFFFFD700);
 
 		int rewardsStartY = rewardsTitleY + 15;
@@ -738,12 +774,12 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 			String marker = rewardClaimed ? "✓" : "✕";
 			int markerColor = rewardClaimed ? 0xFF00FF00 : 0xFFFF0000;
 
-			drawStringWithBorder(graphics, Component.literal(marker),
+			drawStringWithBorder(graphics, txt(marker),
 					panelX + 15, currentRenderY, markerColor);
 
 			List<String> wrappedReward = wrapText(rewardText, 105);
 			for (String line : wrappedReward) {
-				drawStringWithBorder(graphics, Component.literal(line),
+				drawStringWithBorder(graphics, txt(line),
 						panelX + 30, currentRenderY, 0xFFCCCCCC);
 				currentRenderY += 10;
 			}
@@ -764,7 +800,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 	}
 
 	private String getObjectiveText(QuestObjective objective, int currentProgress) {
-		String description = Component.translatable(objective.getDescription()).getString();
+		String description = tr(objective.getDescription()).getString();
 		int required = objective.getRequired();
 
 		if (objective.getType() == QuestObjective.ObjectiveType.KILL ||
@@ -990,7 +1026,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		int borderColor = 0xFF000000;
 
 		String stripped = ChatFormatting.stripFormatting(text.getString());
-		Component borderComponent = Component.literal(stripped != null ? stripped : text.getString());
+		Component borderComponent = txt(stripped != null ? stripped : text.getString());
 
 		if (text.getStyle().isBold()) {
 			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));

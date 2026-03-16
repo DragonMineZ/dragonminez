@@ -13,6 +13,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
@@ -27,6 +29,7 @@ import java.util.Random;
 public class TrainingScreen extends Screen {
 	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/menubuttons.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
@@ -53,7 +56,7 @@ public class TrainingScreen extends Screen {
 	private final Random random = new Random();
 
 	public TrainingScreen() {
-		super(Component.translatable("gui.dragonminez.training.title"));
+		super(Component.translatable("gui.dragonminez.training.title").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 	}
 
 	@Override
@@ -81,11 +84,11 @@ public class TrainingScreen extends Screen {
 				int limitPoints = 20;
 				boolean canTrain = data.getTraining().canTrain(statKey);
 
-				Component statName = Component.translatable("gui.dragonminez.character_stats." + statKey);
+				Component statName = tr("gui.dragonminez.character_stats." + statKey);
 				Component btnText;
 
-				if (canTrain) btnText = Component.translatable("gui.dragonminez.training.stats_format", statName, currentPoints, limitPoints);
-				else btnText = Component.translatable("gui.dragonminez.training.wait", statName);
+				if (canTrain) btnText = tr("gui.dragonminez.training.stats_format", statName, currentPoints, limitPoints);
+				else btnText = tr("gui.dragonminez.training.wait", statName);
 
 				TexturedTextButton btn = new TexturedTextButton.Builder()
 						.position(guiLeft + (PANEL_WIDTH - 105) / 2, startY + (i * 25))
@@ -96,8 +99,6 @@ public class TrainingScreen extends Screen {
 						.message(btnText)
 						.onPress(b -> startGame(statKey))
 						.build();
-
-				System.out.println("Texture coords for " + statKey + ": X = " + (0) + ", Y = " + (50 + (i * 21)) + ", Width = " + 80 + ", Height = " + 20);
 
 				btn.active = canTrain;
 				this.addRenderableWidget(btn);
@@ -126,16 +127,16 @@ public class TrainingScreen extends Screen {
 
 		if (inGame) renderGame(graphics, partialTick);
 		else {
-			drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.training.select"), this.width / 2, guiTop + 18, 0xFFFFD700);
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.select"), this.width / 2, guiTop + 18, 0xFFFFD700);
 			super.render(graphics, mouseX, mouseY, partialTick);
 		}
 	}
 
 	private void renderGame(GuiGraphics graphics, float partialTick) {
-		Component statName = Component.translatable("gui.dragonminez.character_stats." + selectedStat);
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.training.ingame_title", statName), this.width / 2, guiTop + 14, 0xFFFFD700);
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.training.progress", score, GOAL_PER_ROUND), guiLeft +70, guiTop + 27, 0x00FF00);
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.training.misses", totalMisses, MAX_TOTAL_MISSES), guiLeft + 70, guiTop + 192, 0xFF5555);
+		Component statName = tr("gui.dragonminez.character_stats." + selectedStat);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.ingame_title", statName), this.width / 2, guiTop + 14, 0xFFFFD700);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.progress", score, GOAL_PER_ROUND), guiLeft +70, guiTop + 27, 0x00FF00);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.misses", totalMisses, MAX_TOTAL_MISSES), guiLeft + 70, guiTop + 192, 0xFF5555);
 
 		int gameAreaLeft = guiLeft + 20;
 		int gameAreaTop = guiTop + 40;
@@ -189,7 +190,7 @@ public class TrainingScreen extends Screen {
 		graphics.fill(-radius, -radius, radius, radius, color);
 		graphics.renderOutline(-radius, -radius, radius*2, radius*2, 0xFF000000);
 		graphics.pose().popPose();
-		drawCenteredStringWithBorder(graphics, Component.literal(letter), 0, -4, textColor);
+		drawCenteredStringWithBorder(graphics, txt(letter), 0, -4, textColor);
 		graphics.pose().popPose();
 	}
 
@@ -406,8 +407,8 @@ public class TrainingScreen extends Screen {
 		this.inGame = false;
 		this.init();
 		Component msg = success ?
-				Component.translatable("gui.dragonminez.training.complete") :
-				Component.translatable("gui.dragonminez.training.failed");
+				tr("gui.dragonminez.training.complete") :
+				tr("gui.dragonminez.training.failed");
 		Minecraft.getInstance().player.displayClientMessage(msg, true);
 		TrainingRewardC2S.TrainStat statEnum = TrainingRewardC2S.TrainStat.valueOf(selectedStat.toUpperCase());
 		NetworkHandler.sendToServer(new TrainingRewardC2S(statEnum,  -1));
@@ -447,6 +448,14 @@ public class TrainingScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 
 	private static class FallingArrow {

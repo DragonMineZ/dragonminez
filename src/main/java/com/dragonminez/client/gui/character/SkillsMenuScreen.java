@@ -270,7 +270,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.skills.upgrade"))
+					.message(tr("gui.dragonminez.skills.upgrade"))
 					.onPress(btn -> {
 						if (canUpgrade) {
 							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.UPGRADE, selectedSkill, cost));
@@ -392,14 +392,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
 			Skill skill = statsData.getSkills().getSkill(skillName);
-			String displayName = Component.translatable("skill.dragonminez." + skillName).getString();
+			String displayName = tr("skill.dragonminez." + skillName).getString();
 
-			drawStringWithBorder(graphics, Component.literal(displayName), panelX + 15, itemY + 5, color);
+			drawStringWithBorder(graphics, txt(displayName), panelX + 15, itemY + 5, color);
 
 			if (skill != null) {
 				String levelText = String.valueOf(skill.getLevel());
 				int levelX = panelX + 130 - this.font.width(levelText);
-				drawStringWithBorder(graphics, Component.literal(levelText),
+				drawStringWithBorder(graphics, txt(levelText),
 						levelX, itemY + 5, color);
 			}
 		}
@@ -430,7 +430,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case STACKS -> title = "gui.dragonminez.skills.tab.stacks";
 		}
 
-		drawCenteredStringWithBorder(graphics, Component.translatable(title)
+		drawCenteredStringWithBorder(graphics, tr(title)
 				.withStyle(style -> style.withBold(true)), 80, getUiHeight() / 2 - 88, 0xFBC51C);
 	}
 
@@ -445,7 +445,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
 		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info")
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info")
 				.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedSkill != null && statsData != null) {
@@ -457,55 +457,55 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
 		if (skill == null && !selectedSkill.startsWith("racial_")) return;
 		GeneralServerConfig.RacialSkillsConfig config = ConfigManager.getServerConfig().getRacialSkills();
-		String displayName = Component.translatable("skill.dragonminez." + selectedSkill).getString();
+		String displayName = tr("skill.dragonminez." + selectedSkill).getString();
 
 		String description = "";
 		if (selectedSkill.startsWith("racial_")) {
 			switch (selectedSkill) {
 				case "racial_human" -> {
 					int regen = (int) Math.round((config.getHumanKiRegenBoost() - 1.0) * 100);
-					description = Component.translatable("skill.dragonminez.racial_human.desc", regen).getString();
+					description = tr("skill.dragonminez.racial_human.desc", regen).getString();
 				}
 				case "racial_saiyan" -> {
 					int zenkaiHealth = (int) Math.round((config.getSaiyanZenkaiHealthRegen() * 100));
 					int zenkaiStat = (int) Math.round((config.getSaiyanZenkaiStatBoost() * 100));
 					int cooldown = config.getSaiyanZenkaiCooldownSeconds();
-					description = Component.translatable("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown).getString();
+					description = tr("skill.dragonminez.racial_saiyan.desc", zenkaiHealth, zenkaiStat, cooldown).getString();
 				}
 				case "racial_namekian" -> {
 					int assimHealth = (int) Math.round(config.getNamekianAssimilationHealthRegen() * 100);
 					int assimStat = (int) Math.round(config.getNamekianAssimilationStatBoost() * 100);
-					description = Component.translatable("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat).getString();
+					description = tr("skill.dragonminez.racial_namekian.desc", assimHealth, assimStat).getString();
 				}
 				case "racial_frostdemon" -> {
 					int tpBoost = (int) Math.round((config.getFrostDemonTPBoost() - 1.0) * 100);
-					description = Component.translatable("skill.dragonminez.racial_frostdemon.desc", tpBoost).getString();
+					description = tr("skill.dragonminez.racial_frostdemon.desc", tpBoost).getString();
 				}
 				case "racial_bioandroid" -> {
 					int drainRatio = (int) Math.round(config.getBioAndroidDrainRatio() * 100);
 					int cooldown = config.getBioAndroidCooldownSeconds();
-					description = Component.translatable("skill.dragonminez.racial_bioandroid.desc", drainRatio, cooldown).getString();
+					description = tr("skill.dragonminez.racial_bioandroid.desc", drainRatio, cooldown).getString();
 				}
 				case "racial_majin" -> {
 					int absHealth = (int) Math.round(config.getMajinAbsorptionHealthRegen() * 100);
 					int absStat = (int) Math.round(config.getMajinAbsorptionStatCopy() * 100);
-					description = Component.translatable("skill.dragonminez.racial_majin.desc", absHealth, absStat).getString();
+					description = tr("skill.dragonminez.racial_majin.desc", absHealth, absStat).getString();
 				}
 			}
-		} else description = Component.translatable("skill.dragonminez." + selectedSkill + ".desc").getString();
+		} else description = tr("skill.dragonminez." + selectedSkill + ".desc").getString();
 
 		int startY = panelY + 40;
 
-		drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD), panelX + 72, startY, 0xFFFFFFFF);
+		drawCenteredStringWithBorder(graphics, txt(displayName).withStyle(ChatFormatting.BOLD), panelX + 72, startY, 0xFFFFFFFF);
 
 		if (skill != null) {
-			drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()), panelX + 72, startY + 12, 0xFFAAAAAA);
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel()), panelX + 72, startY + 12, 0xFFAAAAAA);
 			int upgradeCost = getUpgradeCost(selectedSkill, skill.getLevel());
 			if (upgradeCost != Integer.MAX_VALUE && upgradeCost > 0) {
-				drawCenteredStringWithBorder(graphics, Component.literal("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))), panelX + 72, startY + 24, 0xFFAAAAAA);
+				drawCenteredStringWithBorder(graphics, txt("%d TPS".formatted(getUpgradeCost(selectedSkill, skill.getLevel()))), panelX + 72, startY + 24, 0xFFAAAAAA);
 			}
 		} else {
-			drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.skills.racial"), panelX + 72, startY + 12, 0xFF55FF55);
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.racial"), panelX + 72, startY + 12, 0xFF55FF55);
 		}
 
 		List<String> wrappedDesc = wrapText(description, 120);
@@ -525,7 +525,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		for (int i = descScrollOffset; i < visibleEnd; i++) {
 			String line = wrappedDesc.get(i);
 			int lineY = descY + ((i - descScrollOffset) * 12);
-			drawStringWithBorder(graphics, Component.literal(line), panelX + 13, lineY, 0xFFCCCCCC);
+			drawStringWithBorder(graphics, txt(line), panelX + 13, lineY, 0xFFCCCCCC);
 		}
 
 		graphics.disableScissor();

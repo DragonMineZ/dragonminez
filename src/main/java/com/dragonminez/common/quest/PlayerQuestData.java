@@ -55,6 +55,12 @@ public class PlayerQuestData {
     /** Tracks selected branch path by key "sagaId|branchGroup". */
     private final Map<String, String> branchSelections = new HashMap<>();
 
+    /** Current tracked quest key (saga:questId or sidequestId) shown in client HUD. */
+    private String trackedQuestId = null;
+
+    /** True once the player has seen the first-time "Press V" story prompt. */
+    private boolean introPromptShown = false;
+
     // ========================================================================================
     // Quest Progress — Accept / Complete / Reset
     // ========================================================================================
@@ -115,6 +121,8 @@ public class PlayerQuestData {
         quests.clear();
         sagaUnlockState.clear();
         branchSelections.clear();
+        trackedQuestId = null;
+        introPromptShown = false;
     }
 
     /**
@@ -123,8 +131,29 @@ public class PlayerQuestData {
     public void resetSaga(String sagaId) {
         String prefix = sagaId + ":";
         quests.keySet().removeIf(key -> key.startsWith(prefix));
+        if (trackedQuestId != null && trackedQuestId.startsWith(prefix)) trackedQuestId = null;
         String branchPrefix = sagaId + "|";
         branchSelections.keySet().removeIf(key -> key.startsWith(branchPrefix));
+    }
+
+    public String getTrackedQuestId() {
+        return trackedQuestId;
+    }
+
+    public void setTrackedQuestId(String trackedQuestId) {
+        if (trackedQuestId == null || trackedQuestId.isBlank()) {
+            this.trackedQuestId = null;
+            return;
+        }
+        this.trackedQuestId = trackedQuestId;
+    }
+
+    public boolean isIntroPromptShown() {
+        return introPromptShown;
+    }
+
+    public void setIntroPromptShown(boolean introPromptShown) {
+        this.introPromptShown = introPromptShown;
     }
 
     /**
@@ -325,6 +354,11 @@ public class PlayerQuestData {
         }
         tag.put("branchSelections", branchTag);
 
+        if (trackedQuestId != null && !trackedQuestId.isBlank()) {
+            tag.putString("trackedQuestId", trackedQuestId);
+        }
+        tag.putBoolean("introPromptShown", introPromptShown);
+
         return tag;
     }
 
@@ -335,6 +369,8 @@ public class PlayerQuestData {
         quests.clear();
         sagaUnlockState.clear();
         branchSelections.clear();
+        trackedQuestId = null;
+        introPromptShown = false;
 
         // Quest progress
         ListTag questList = tag.getList("quests", Tag.TAG_COMPOUND);
@@ -361,6 +397,15 @@ public class PlayerQuestData {
                     branchSelections.put(key, path);
                 }
             }
+        }
+
+        if (tag.contains("trackedQuestId", Tag.TAG_STRING)) {
+            String tracked = tag.getString("trackedQuestId");
+            if (!tracked.isBlank()) trackedQuestId = tracked;
+        }
+
+        if (tag.contains("introPromptShown", Tag.TAG_BYTE)) {
+            introPromptShown = tag.getBoolean("introPromptShown");
         }
     }
 

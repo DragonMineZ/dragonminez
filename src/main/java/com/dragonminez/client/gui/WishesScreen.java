@@ -11,6 +11,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -24,6 +26,7 @@ public class WishesScreen extends Screen {
 
 	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
@@ -43,7 +46,7 @@ public class WishesScreen extends Screen {
 	private TexturedTextButton confirmButton;
 
 	public WishesScreen(String dragonType, int wishCount) {
-		super(Component.literal("Wishes"));
+		super(Component.literal("Wishes").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.dragonType = dragonType;
 		this.maxWishesToSelect = wishCount;
 		this.availableWishes = WishManager.getClientWishes(dragonType);
@@ -63,7 +66,7 @@ public class WishesScreen extends Screen {
 				.texture(BUTTON_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.customization.select"))
+				.message(tr("gui.dragonminez.customization.select"))
 				.onPress(btn -> confirmWishes())
 				.build();
 
@@ -84,7 +87,7 @@ public class WishesScreen extends Screen {
 		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
 		drawCenteredStringWithBorder(graphics,
-				Component.translatable("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
+				tr("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
 				this.width / 2, guiTop + 18, 0xFFFFD700);
 
 		renderWishesList(graphics, mouseX, mouseY);
@@ -119,7 +122,7 @@ public class WishesScreen extends Screen {
 
 			graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
 
-			drawStringWithBorder(graphics, Component.translatable(wish.getName()), listLeft + 5, itemY + 6, 0xFFFFFF);
+			drawStringWithBorder(graphics, tr(wish.getName()), listLeft + 5, itemY + 6, 0xFFFFFF);
 
 			if (isSelected) {
 				graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
@@ -158,7 +161,7 @@ public class WishesScreen extends Screen {
 
 			if (index >= 0 && index < availableWishes.size()) {
 				Wish wish = availableWishes.get(index);
-				graphics.renderTooltip(this.font, Component.translatable(wish.getDescription()), mouseX, mouseY);
+				graphics.renderTooltip(this.font, tr(wish.getDescription()), mouseX, mouseY);
 			}
 		}
 	}
@@ -255,5 +258,13 @@ public class WishesScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }
