@@ -368,6 +368,11 @@ public class ConfigManager {
 					LOADER.saveConfig(formFilePath, defaultFormConfig);
 				}
 			}
+			for (Map.Entry<String, FormConfig> userEntry : userDiskForms.entrySet()) {
+				if (!raceForms.containsKey(userEntry.getKey())) {
+					raceForms.put(userEntry.getKey(), userEntry.getValue());
+				}
+			}
 		}
 
 		RACE_FORMS.put(raceName.toLowerCase(), raceForms);
@@ -410,6 +415,12 @@ public class ConfigManager {
 					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
 					LogUtil.info(Env.COMMON, "Creating missing stack form file: {}", defaultEntry.getKey());
 					LOADER.saveConfig(formFilePath, defaultFormConfig);
+				}
+			}
+
+			for (Map.Entry<String, FormConfig> userEntry : userDiskForms.entrySet()) {
+				if (!finalStackForms.containsKey(userEntry.getKey())) {
+					finalStackForms.put(userEntry.getKey(), userEntry.getValue());
 				}
 			}
 		} else {
