@@ -46,6 +46,8 @@ public class FormConfig {
 		private String hairColor = "";
 		private String eye1Color = "";
 		private String eye2Color = "";
+		private String auraType = "smooth";
+		private Integer auraLayer = 0;
 		private String auraColor = "";
 		private Boolean hasLightnings = false;
 		private String lightningColor = "";

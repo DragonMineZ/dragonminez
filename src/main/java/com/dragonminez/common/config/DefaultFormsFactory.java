@@ -12,7 +12,6 @@ import java.util.Map;
 
 @AllArgsConstructor
 public class DefaultFormsFactory {
-	private final ConfigLoader loader;
 
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
@@ -21,6 +20,8 @@ public class DefaultFormsFactory {
 		form.setStatMultPerMasteryPoint(0.01);
 		form.setCostDecreasePerMasteryPoint(0.025);
 		form.setPassiveMasteryGainEveryFiveSeconds(0.01);
+		form.setAuraType("smooth");
+		form.setAuraLayer(0);
 	}
 
 	public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -55,6 +56,7 @@ public class DefaultFormsFactory {
 		x2.setSpeedMultiplier(1.1);
 		x2.setHealthDrain(0.03);
 		x2.setAttackSpeed(1.1);
+		x2.setAuraLayer(1);
 		x2.setAuraColor("#DB182C");
 		x2.setHasLightnings(false);
 		x2.setHairType("base");
@@ -72,6 +74,7 @@ public class DefaultFormsFactory {
 		x3.setSpeedMultiplier(1.2);
 		x3.setAttackSpeed(1.2);
 		x3.setHealthDrain(0.06);
+		x3.setAuraLayer(1);
 		x3.setAuraColor("#DB182C");
 		x3.setHairType("base");
 		setDefaultMasteryValues(x3);
@@ -87,6 +90,7 @@ public class DefaultFormsFactory {
 		x4.setSpeedMultiplier(1.35);
 		x4.setAttackSpeed(1.35);
 		x4.setHealthDrain(0.095);
+		x4.setAuraLayer(1);
 		x4.setAuraColor("#DB182C");
 		x4.setHairType("base");
 		setDefaultMasteryValues(x4);
@@ -102,6 +106,7 @@ public class DefaultFormsFactory {
 		x10.setSpeedMultiplier(1.5);
 		x10.setHealthDrain(0.11);
 		x10.setAttackSpeed(1.5);
+		x10.setAuraLayer(1);
 		x10.setAuraColor("#DB182C");
 		x10.setHairType("base");
 		setDefaultMasteryValues(x10);
@@ -117,6 +122,7 @@ public class DefaultFormsFactory {
 		x20.setSpeedMultiplier(1.65);
 		x20.setHealthDrain(0.15);
 		x20.setAttackSpeed(1.65);
+		x20.setAuraLayer(1);
 		x20.setAuraColor("#DB182C");
 		x20.setHairType("base");
 		setDefaultMasteryValues(x20);
@@ -132,6 +138,7 @@ public class DefaultFormsFactory {
 		x100.setSpeedMultiplier(2.0);
 		x100.setHealthDrain(0.20);
 		x100.setAttackSpeed(2.0);
+		x100.setAuraLayer(1);
 		x100.setAuraColor("#DB182C");
 		x100.setHairType("base");
 		setDefaultMasteryValues(x100);
@@ -147,9 +154,6 @@ public class DefaultFormsFactory {
 		kaiokenForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_KAIOKEN, kaiokenForms);
-
-		Path kaiokenPath = formsPath.resolve(StackForms.GROUP_KAIOKEN + ".json");
-		loader.saveConfig(kaiokenPath, kaiokenForms);
 		LogUtil.info(Env.COMMON, "Default Kaioken forms created");
 	}
 
@@ -166,6 +170,7 @@ public class DefaultFormsFactory {
 		sign.setDefMultiplier(1.5);
 		sign.setPwrMultiplier(1.5);
 		sign.setStaminaDrain(0.03);
+		sign.setAuraLayer(1);
 		sign.setAuraColor("#E0E0E0");
 		sign.setHasLightnings(false);
 		sign.setHairType("base");
@@ -181,6 +186,7 @@ public class DefaultFormsFactory {
 		mastered.setDefMultiplier(2.0);
 		mastered.setPwrMultiplier(2.0);
 		mastered.setStaminaDrain(0.06);
+		mastered.setAuraLayer(1);
 		mastered.setAuraColor("#E0E0E0");
 		mastered.setHairColor("#E0E0E0");
 		mastered.setBodyColor2("#E0E0E0");
@@ -195,9 +201,6 @@ public class DefaultFormsFactory {
 		ultraInstinctForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_ULTRAINSTINCT, ultraInstinctForms);
-
-		Path ultraInstinctPath = formsPath.resolve(StackForms.GROUP_ULTRAINSTINCT + ".json");
-		loader.saveConfig(ultraInstinctPath, ultraInstinctForms);
 		LogUtil.info(Env.COMMON, "Default Ultra Instict forms created");
 	}
 
@@ -214,6 +217,7 @@ public class DefaultFormsFactory {
 		sign.setDefMultiplier(1.5);
 		sign.setPwrMultiplier(1.5);
 		sign.setStaminaDrain(0.03);
+		sign.setAuraLayer(1);
 		sign.setAuraColor("#66023C");
 		sign.setHasLightnings(false);
 		sign.setHairType("base");
@@ -229,6 +233,7 @@ public class DefaultFormsFactory {
 		mastered.setDefMultiplier(2.0);
 		mastered.setPwrMultiplier(2.0);
 		mastered.setStaminaDrain(0.06);
+		mastered.setAuraLayer(1);
 		mastered.setAuraColor("#66023C");
 		mastered.setHairColor("#66023C");
 		mastered.setBodyColor2("#66023C");
@@ -243,9 +248,6 @@ public class DefaultFormsFactory {
 		ultraEgoForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_ULTRAEGO, ultraEgoForms);
-
-		Path ultraEgoPath = formsPath.resolve(StackForms.GROUP_ULTRAEGO + ".json");
-		loader.saveConfig(ultraEgoPath, ultraEgoForms);
 		LogUtil.info(Env.COMMON, "Default Ultra Ego forms created");
 	}
 
@@ -319,9 +321,6 @@ public class DefaultFormsFactory {
 		humanForms.setForms(humanFormData);
 
 		forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
-
-		Path humanPath = formsPath.resolve(HumanForms.GROUP_SUPERFORMS + ".json");
-		loader.saveConfig(humanPath, humanForms);
 		LogUtil.info(Env.COMMON, "Default Human forms created");
 
 		createAndroidForms(formsPath, forms);
@@ -386,9 +385,6 @@ public class DefaultFormsFactory {
 		androidForms.setForms(androidFormData);
 
 		forms.put(HumanForms.GROUP_ANDROIDFORMS, androidForms);
-
-		Path androidPath = formsPath.resolve(HumanForms.GROUP_ANDROIDFORMS + ".json");
-		loader.saveConfig(androidPath, androidForms);
 		LogUtil.info(Env.COMMON, "Default Android forms created for Humans");
 	}
 
@@ -603,13 +599,6 @@ public class DefaultFormsFactory {
 		forms.put(SaiyanForms.OOZARU, oozaruForms);
 		forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
 		forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
-
-		Path oozaruPath = formsPath.resolve(SaiyanForms.OOZARU + ".json");
-		loader.saveConfig(oozaruPath, oozaruForms);
-		Path ssGradesPath = formsPath.resolve(SaiyanForms.GROUP_SSGRADES + ".json");
-		loader.saveConfig(ssGradesPath, ssGrades);
-		Path superSaiyanPath = formsPath.resolve(SaiyanForms.SUPER_SAIYAN + ".json");
-		loader.saveConfig(superSaiyanPath, superSaiyan);
 		LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
 	}
 
@@ -669,9 +658,6 @@ public class DefaultFormsFactory {
 		namekianForms.setForms(namekianFormData);
 
 		forms.put(NamekianForms.GROUP_SUPERFORMS, namekianForms);
-
-		Path namekianPath = formsPath.resolve(NamekianForms.GROUP_SUPERFORMS + ".json");
-		loader.saveConfig(namekianPath, namekianForms);
 		LogUtil.info(Env.COMMON, "Default Namekian forms created");
 	}
 
@@ -763,9 +749,6 @@ public class DefaultFormsFactory {
 		frostForms.setForms(frostFormData);
 
 		forms.put(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostForms);
-
-		Path frostPath = formsPath.resolve(FrostDemonForms.GROUP_EVOLUTIONFORMS + ".json");
-		loader.saveConfig(frostPath, frostForms);
 		LogUtil.info(Env.COMMON, "Default Frost Demon forms created");
 	}
 
@@ -844,9 +827,6 @@ public class DefaultFormsFactory {
 		majinForms.setForms(majinFormData);
 
 		forms.put(MajinForms.GROUP_PUREFORMS, majinForms);
-
-		Path majinPath = formsPath.resolve(MajinForms.GROUP_PUREFORMS + ".json");
-		loader.saveConfig(majinPath, majinForms);
 		LogUtil.info(Env.COMMON, "Default Majin forms created");
 	}
 
@@ -949,9 +929,6 @@ public class DefaultFormsFactory {
 		bioForms.setForms(bioFormData);
 
 		forms.put(BioAndroidForms.GROUP_BIOEVOLUTION, bioForms);
-
-		Path bioAndroidPath = formsPath.resolve(BioAndroidForms.GROUP_BIOEVOLUTION + ".json");
-		loader.saveConfig(bioAndroidPath, bioForms);
 		LogUtil.info(Env.COMMON, "Default Bio Android forms created");
 	}
 }

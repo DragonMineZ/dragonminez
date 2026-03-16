@@ -13,18 +13,28 @@ import java.io.IOException;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class DMZShaders {
-	public static ShaderInstance auraShader;
+	public static ShaderInstance auraSmoothShader;
+	public static ShaderInstance auraSharpShader;
+	public static ShaderInstance auraSparkingShader;
 	public static ShaderInstance lightningShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
-		// Registra el shader del Aura usando POSITION_COLOR_NORMAL tal como lo pide el aura.json
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
-						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura"),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_smooth"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
-				shaderInstance -> auraShader = shaderInstance);
+				shaderInstance -> auraSmoothShader = shaderInstance);
 
-		// Registra el shader de los Relámpagos
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_sharp"),
+						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+				shaderInstance -> auraSharpShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "aura_sparking"),
+						DefaultVertexFormat.POSITION_COLOR_NORMAL),
+				shaderInstance -> auraSparkingShader = shaderInstance);
+
 		event.registerShader(new ShaderInstance(event.getResourceProvider(),
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),

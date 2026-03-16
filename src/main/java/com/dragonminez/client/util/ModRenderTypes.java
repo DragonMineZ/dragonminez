@@ -23,13 +23,13 @@ public class ModRenderTypes extends RenderType {
                 VertexFormat.Mode.QUADS,
                 256,
                 false,
-                false, // sortOnUpload en false, mejora el rendimiento de mallas estáticas
+                false,
                 RenderType.CompositeState.builder()
-                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.auraShader))
+                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.auraSmoothShader))
                         .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                        .setCullState(RenderStateShard.NO_CULL) // Desactiva culling para ver el aura por dentro y por fuera
-                        .setWriteMaskState(RenderStateShard.COLOR_WRITE) // Ignora el depth buffer para que no corte texturas detrás
+                        .setCullState(RenderStateShard.NO_CULL)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                         .createCompositeState(false));
     }
 
@@ -72,11 +72,11 @@ public class ModRenderTypes extends RenderType {
                     .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getRendertypeItemEntityTranslucentCullShader))
                     .setTextureState(new TextureStateShard(pLocation, false, false))
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-					.setCullState(NO_CULL)
-					.setLightmapState(LIGHTMAP)
-					.setOverlayState(OVERLAY)
-					.setWriteMaskState(COLOR_WRITE)
-					.createCompositeState(true)));
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .setOverlayState(OVERLAY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(true)));
     private static final Function<ResourceLocation, RenderType> GLOW_KI = Util.memoize((pLocation) ->
             create("glow_ki", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, false, CompositeState.builder()
                     .setShaderState(RENDERTYPE_ENERGY_SWIRL_SHADER)
@@ -172,5 +172,4 @@ public class ModRenderTypes extends RenderType {
     public static RenderType ki_rendertype(ResourceLocation pLocation) {
         return KI_RENDERTYPE.apply(pLocation);
     }
-
 }

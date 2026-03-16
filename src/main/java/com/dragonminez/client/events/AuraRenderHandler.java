@@ -18,6 +18,8 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -56,7 +58,7 @@ import java.util.*;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class AuraRenderHandler {
-	private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_0.png");
+	private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 	private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
 	private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 	private static final ResourceLocation SPARK_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
@@ -73,10 +75,21 @@ public class AuraRenderHandler {
 
 	private static VertexBuffer cachedLightningMesh;
 
+	public static class AuraLayer {
+		public String type;
+		public int layerId;
+		public float[] color;
+
+		public AuraLayer(String type, int layerId, float[] color) {
+			this.type = type;
+			this.layerId = layerId;
+			this.color = color;
+		}
+	}
+
 	private static class CachedAuraData {
 		float auraScaleX, auraScaleY, auraScaleZ;
 		float bodyScaleX, bodyScaleY, bodyScaleZ;
-		float[] color;
 		float alphaProgress;
 		BakedGeoModel playerModel;
 	}
@@ -178,11 +191,14 @@ public class AuraRenderHandler {
 					long timeSinceStart = gameTime - FUSION_START_TIME.get(playerId);
 
 					if (timeSinceStart < 60) {
-						float[] color = getInterpolatedKiColor(player, stats, partialTick);
-						int r = (int) (color[0] * 255);
-						int g = (int) (color[1] * 255);
-						int b = (int) (color[2] * 255);
-						renderFusionFlash(player, timeSinceStart + partialTick, poseStack, buffers, r, g, b);
+						List<AuraLayer> layers = getAuraLayers(player, stats, partialTick);
+						if (!layers.isEmpty()) {
+							float[] color = layers.get(layers.size() - 1).color;
+							int r = (int) (color[0] * 255);
+							int g = (int) (color[1] * 255);
+							int b = (int) (color[2] * 255);
+							renderFusionFlash(player, timeSinceStart + partialTick, poseStack, buffers, r, g, b);
+						}
 					} else {
 						if (timeSinceStart > 80) FUSION_START_TIME.remove(playerId);
 					}
@@ -238,7 +254,12 @@ public class AuraRenderHandler {
 				int playerId = player.getId();
 				CachedAuraData data = AURA_CACHE.computeIfAbsent(playerId, k -> new CachedAuraData());
 				updateCachedAuraData(player, data, partialTick);
-				renderShaderPulseAura(player, data, poseStack, mc, projectionMatrix, partialTick);
+
+				List<AuraLayer> activeLayers = getAuraLayers(player, StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null), partialTick);
+				if (!activeLayers.isEmpty()) {
+					AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
+					renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick);
+				}
 			}
 		}
 
@@ -344,7 +365,100 @@ public class AuraRenderHandler {
 
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
 		data.auraScaleX = auraScale[0]; data.auraScaleY = auraScale[1]; data.auraScaleZ = auraScale[2];
-		data.color = getInterpolatedKiColor(player, stats, partialTick);
+	}
+
+	private static List<AuraLayer> getAuraLayers(Player player, StatsData stats, float partialTick) {
+		List<AuraLayer> activeLayers = new ArrayList<>();
+		var character = stats.getCharacter();
+		int entityId = player.getId();
+
+		FormConfig.FormData nextForm = null;
+		boolean chargingNormal = false;
+		boolean chargingStack = false;
+
+		if (stats.getStatus().isActionCharging()) {
+			if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				chargingStack = nextForm != null;
+			} else if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+				if (!character.hasActiveStackForm()) {
+					nextForm = TransformationsHelper.getNextAvailableForm(stats);
+					chargingNormal = nextForm != null;
+				}
+			}
+		}
+
+		float chargeProgress = 0.0f;
+		if (chargingNormal || chargingStack) {
+			float lastProgress = COLOR_PROGRESS_MAP.getOrDefault(entityId, 0.0f);
+			long lastTick = COLOR_TICK_MAP.getOrDefault(entityId, 0L);
+			float targetProgress = stats.getResources().getActionCharge() / 100.0f;
+			long currentTick = player.tickCount;
+			float interpolationSpeed = 0.15f;
+
+			if (currentTick != lastTick) {
+				lastProgress = lastProgress + (targetProgress - lastProgress) * interpolationSpeed;
+				COLOR_TICK_MAP.put(entityId, currentTick);
+				COLOR_PROGRESS_MAP.put(entityId, lastProgress);
+			}
+			float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastProgress, targetProgress);
+			chargeProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
+		} else {
+			COLOR_PROGRESS_MAP.put(entityId, 0.0f);
+		}
+
+		String normalHex = character.getAuraColor();
+		String normalType = "smooth";
+		int normalLayerId = 0;
+
+		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+			var fd = character.getActiveFormData();
+			if (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) normalHex = fd.getAuraColor();
+			if (fd.getAuraType() != null && !fd.getAuraType().isEmpty()) normalType = fd.getAuraType();
+			normalLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 0;
+		}
+
+		float[] normalColor = ColorUtils.hexToRgb(normalHex);
+		if (chargingNormal && nextForm != null) {
+			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : normalHex;
+			normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
+		}
+		activeLayers.add(new AuraLayer(normalType, normalLayerId, normalColor));
+
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+			var fd = character.getActiveStackFormData();
+			String stackHex = fd.getAuraColor() != null && !fd.getAuraColor().isEmpty() ? fd.getAuraColor() : "#FFFFFF";
+			String stackType = fd.getAuraType() != null && !fd.getAuraType().isEmpty() ? fd.getAuraType() : "smooth";
+			int stackLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 1;
+
+			float[] stackColor = ColorUtils.hexToRgb(stackHex);
+			if (chargingStack && nextForm != null) {
+				String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : stackHex;
+				stackColor = interpolateColor(stackHex, targetHex, chargeProgress);
+			}
+			activeLayers.add(new AuraLayer(stackType, stackLayerId, stackColor));
+		} else if (chargingStack && nextForm != null) {
+			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : "#FFFFFF";
+			String stackType = nextForm.getAuraType() != null && !nextForm.getAuraType().isEmpty() ? nextForm.getAuraType() : "smooth";
+			int stackLayerId = nextForm.getAuraLayer() != null ? nextForm.getAuraLayer() : 1;
+
+			float[] stackColor = interpolateColor(normalHex, targetHex, chargeProgress);
+			activeLayers.add(new AuraLayer(stackType, stackLayerId, stackColor));
+		}
+
+		activeLayers.sort(Comparator.comparingInt(l -> l.layerId));
+		return activeLayers;
+	}
+
+	private static float[] interpolateColor(String hexFrom, String hexTo, float factor) {
+		float[] rgbFrom = ColorUtils.hexToRgb(hexFrom);
+		float[] rgbTo = ColorUtils.hexToRgb(hexTo);
+
+		float r = Mth.lerp(factor, rgbFrom[0], rgbTo[0]);
+		float g = Mth.lerp(factor, rgbFrom[1], rgbTo[1]);
+		float b = Mth.lerp(factor, rgbFrom[2], rgbTo[2]);
+
+		return new float[]{r, g, b};
 	}
 
 	private static void renderShaderAura(AuraRenderQueue.AuraRenderEntry entry, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix) {
@@ -371,26 +485,33 @@ public class AuraRenderHandler {
 
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
 		data.auraScaleX = auraScale[0]; data.auraScaleY = auraScale[1]; data.auraScaleZ = auraScale[2];
-		data.color = getInterpolatedKiColor(player, stats, entry.partialTick());
 		data.playerModel = entry.playerModel();
+
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, entry.partialTick());
+		if (activeLayers.isEmpty()) return;
 
 		if (player.onGround()) {
 			spawnGroundDust(player, body[0] * auraScale[0]);
 			spawnFloatingRubble(player, body[0] * auraScale[0]);
-			renderShaderPulseAura(player, data, poseStack, mc, projectionMatrix, entry.partialTick());
+
+			AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
+			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, entry.partialTick());
 		}
 
-		poseStack.pushPose();
-		poseStack.last().pose().set(entry.poseMatrix());
+		for (AuraLayer layer : activeLayers) {
+			poseStack.pushPose();
+			poseStack.last().pose().set(entry.poseMatrix());
+			poseStack.translate(0.0, 1.375, 0.0);
 
-		poseStack.translate(0.0, 1.375, 0.0);
-		poseStack.scale(auraScale[0] * 1.5f, auraScale[1] * 2.2f, auraScale[2] * 1.5f);
+			float layerScaleBoost = 1.0f + (layer.layerId * 0.15f);
+			poseStack.scale(auraScale[0] * 1.5f * layerScaleBoost, auraScale[1] * 2.2f * layerScaleBoost, auraScale[2] * 1.5f * layerScaleBoost);
 
-		executeAuraShaderDraw(player, data, poseStack, mc, projectionMatrix, entry.partialTick(), data.alphaProgress, false);
-		poseStack.popPose();
+			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, entry.partialTick(), data.alphaProgress, false);
+			poseStack.popPose();
+		}
 	}
 
-	private static void renderShaderPulseAura(Player player, CachedAuraData data, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick) {
+	private static void renderShaderPulseAura(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick) {
 		int playerId = player.getId();
 		long gameTime = player.level().getGameTime();
 
@@ -420,10 +541,11 @@ public class AuraRenderHandler {
 		float rotationAngle = (gameTime + partialTick) * 2.5f;
 		poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotationAngle));
 
+		float layerScaleBoost = 1.0f + (topLayer.layerId * 0.15f);
 		poseStack.scale(data.bodyScaleX, data.bodyScaleY, data.bodyScaleZ);
-		poseStack.scale(data.auraScaleX * expansion, data.auraScaleY * 0.2f, data.auraScaleZ * expansion);
+		poseStack.scale(data.auraScaleX * expansion * layerScaleBoost, data.auraScaleY * 0.2f, data.auraScaleZ * expansion * layerScaleBoost);
 
-		executeAuraShaderDraw(player, data, poseStack, mc, projectionMatrix, partialTick, alphaCurve * 0.5f, false);
+		executeAuraShaderDraw(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, alphaCurve * 0.5f, false);
 		poseStack.popPose();
 	}
 
@@ -445,7 +567,9 @@ public class AuraRenderHandler {
 
 		float[] body = getBodyScale(stats);
 		float[] auraScale = getAuraScale(stats);
-		data.color = getInterpolatedKiColor(player, stats, partialTick);
+
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
+		if (activeLayers.isEmpty()) return;
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
@@ -459,18 +583,22 @@ public class AuraRenderHandler {
 			lerpY += player.getEyeHeight() * 0.25f;
 		}
 
-		poseStack.pushPose();
-		poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
-		float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
-		poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-bodyRot + 180f));
-		poseStack.scale(-1.0F, 1.0F, 1.0F);
+		for (AuraLayer layer : activeLayers) {
+			poseStack.pushPose();
+			poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
+			float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
+			poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-bodyRot + 180f));
+			poseStack.scale(-1.0F, 1.0F, 1.0F);
 
-		poseStack.scale(data.bodyScaleX, data.bodyScaleY, data.bodyScaleZ);
-		poseStack.translate(0.0, 1.375, 0.0);
-		poseStack.scale(auraScale[0] * 1.5f, auraScale[1] * 2.2f, auraScale[2] * 1.5f);
+			poseStack.scale(body[0], body[1], body[2]);
+			poseStack.translate(0.0, 1.375, 0.0);
 
-		executeAuraShaderDraw(player, data, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, true);
-		poseStack.popPose();
+			float layerScaleBoost = 1.0f + (layer.layerId * 0.15f);
+			poseStack.scale(auraScale[0] * 1.5f * layerScaleBoost, auraScale[1] * 2.2f * layerScaleBoost, auraScale[2] * 1.5f * layerScaleBoost);
+
+			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, true);
+			poseStack.popPose();
+		}
 
 		if (player.onGround()) {
 			spawnGroundDust(player, body[0] * auraScale[0]);
@@ -485,31 +613,59 @@ public class AuraRenderHandler {
 		}
 		if (data.alphaProgress <= 0.001f) return false;
 
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		if (stats == null) return false;
+
+		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
+		if (activeLayers.isEmpty()) return false;
+
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
 		double lerpY = Mth.lerp(partialTick, player.yo, player.getY());
 		double lerpZ = Mth.lerp(partialTick, player.zo, player.getZ());
 
-		poseStack.pushPose();
-		poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
-		float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
-		poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-bodyRot + 180f));
-		poseStack.scale(-1.0F, 1.0F, 1.0F);
-
-		poseStack.scale(data.bodyScaleX, data.bodyScaleY, data.bodyScaleZ);
-		poseStack.translate(0.0, 1.375, 0.0);
-		poseStack.scale(data.auraScaleX * 1.5f, data.auraScaleY * 2.2f, data.auraScaleZ * 1.5f);
-
 		boolean isLocalPlayer = player == mc.player;
 		boolean isFirstPerson = isLocalPlayer && mc.options.getCameraType().isFirstPerson();
 
-		executeAuraShaderDraw(player, data, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, isFirstPerson);
-		poseStack.popPose();
+		for (AuraLayer layer : activeLayers) {
+			poseStack.pushPose();
+			poseStack.translate(lerpX - cameraPos.x, lerpY - cameraPos.y, lerpZ - cameraPos.z);
+			float bodyRot = Mth.lerp(partialTick, player.yBodyRotO, player.yBodyRot);
+			poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-bodyRot + 180f));
+			poseStack.scale(-1.0F, 1.0F, 1.0F);
+
+			poseStack.scale(data.bodyScaleX, data.bodyScaleY, data.bodyScaleZ);
+			poseStack.translate(0.0, 1.375, 0.0);
+
+			float layerScaleBoost = 1.0f + (layer.layerId * 0.15f);
+			poseStack.scale(data.auraScaleX * 1.5f * layerScaleBoost, data.auraScaleY * 2.2f * layerScaleBoost, data.auraScaleZ * 1.5f * layerScaleBoost);
+
+			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, isFirstPerson);
+			poseStack.popPose();
+		}
 		return true;
 	}
 
-	private static void executeAuraShaderDraw(Player player, CachedAuraData data, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, boolean isFirstPerson) {
-		ShaderInstance shader = DMZShaders.auraShader;
+	private static void executeAuraShaderDraw(Player player, CachedAuraData data, AuraLayer layer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier, boolean isFirstPerson) {
+		ShaderInstance shader;
+		VertexBuffer mesh;
+
+		switch (layer.type.toLowerCase()) {
+			case "sharp":
+				shader = DMZShaders.auraSharpShader;
+				mesh = AuraMeshFactory.getSharpAuraMesh();
+				break;
+			case "sparking":
+				shader = DMZShaders.auraSparkingShader;
+				mesh = AuraMeshFactory.getSparkingAuraMesh();
+				break;
+			case "smooth":
+			default:
+				shader = DMZShaders.auraSmoothShader;
+				mesh = AuraMeshFactory.getSmoothAuraMesh();
+				break;
+		}
+
 		if (shader == null || alphaMultiplier <= 0.001f) return;
 
 		float time = (player.tickCount + partialTick) / 20.0f;
@@ -522,16 +678,16 @@ public class AuraRenderHandler {
 
 		float coreIntensity = 0.35f;
 		shader.safeGetUniform("color1").set(
-				Mth.lerp(coreIntensity, data.color[0], 1.0f),
-				Mth.lerp(coreIntensity, data.color[1], 1.0f),
-				Mth.lerp(coreIntensity, data.color[2], 1.0f)
+				Mth.lerp(coreIntensity, layer.color[0], 1.0f),
+				Mth.lerp(coreIntensity, layer.color[1], 1.0f),
+				Mth.lerp(coreIntensity, layer.color[2], 1.0f)
 		);
 
 		float borderIntensity = 1.5f;
 		shader.safeGetUniform("color2").set(
-				data.color[0] * borderIntensity,
-				data.color[1] * borderIntensity,
-				data.color[2] * borderIntensity
+				layer.color[0] * borderIntensity,
+				layer.color[1] * borderIntensity,
+				layer.color[2] * borderIntensity
 		);
 
 		boolean isLocalPlayer = player == mc.player;
@@ -547,7 +703,6 @@ public class AuraRenderHandler {
 		auraRenderType.setupRenderState();
 
 		shader.apply();
-		VertexBuffer mesh = AuraMeshFactory.getAuraMesh();
 		mesh.bind();
 		mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
 		VertexBuffer.unbind();
@@ -734,78 +889,6 @@ public class AuraRenderHandler {
 		for (GeoBone child : destBone.getChildBones()) syncBoneRecursively(child, sourceModel);
 	}
 
-	private static String getBaseKiColorHex(StatsData stats) {
-		var character = stats.getCharacter();
-		String kiHex = character.getAuraColor();
-
-		if (character.hasActiveStackForm()
-				&& character.getActiveStackFormData() != null
-				&& character.getActiveStackFormData().getAuraColor() != null
-				&& !character.getActiveStackFormData().getAuraColor().isEmpty()) {
-			kiHex = character.getActiveStackFormData().getAuraColor();
-		} else if (character.hasActiveForm()
-				&& character.getActiveFormData() != null
-				&& character.getActiveFormData().getAuraColor() != null
-				&& !character.getActiveFormData().getAuraColor().isEmpty()) {
-			kiHex = character.getActiveFormData().getAuraColor();
-		}
-
-		return kiHex;
-	}
-
-	private static float[] getInterpolatedKiColor(Player player, StatsData stats, float partialTick) {
-		int entityId = player.getId();
-		String baseHex = getBaseKiColorHex(stats);
-
-		if (stats.getStatus().isActionCharging()) {
-			String targetHex = baseHex;
-			FormConfig.FormData nextForm = null;
-
-			boolean hasStackForm = stats.getCharacter().hasActiveStackForm();
-
-			if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				if (!hasStackForm) nextForm = TransformationsHelper.getNextAvailableForm(stats);
-			}
-
-			if (nextForm != null && nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty()) {
-				targetHex = nextForm.getAuraColor();
-			}
-
-			float lastProgress = COLOR_PROGRESS_MAP.getOrDefault(entityId, 0.0f);
-			long lastTick = COLOR_TICK_MAP.getOrDefault(entityId, 0L);
-			float targetProgress = stats.getResources().getActionCharge() / 100.0f;
-			long currentTick = player.tickCount;
-			float interpolationSpeed = 0.15f;
-
-			if (currentTick != lastTick) {
-				lastProgress = lastProgress + (targetProgress - lastProgress) * interpolationSpeed;
-				COLOR_TICK_MAP.put(entityId, currentTick);
-				COLOR_PROGRESS_MAP.put(entityId, lastProgress);
-			}
-
-			float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastProgress, targetProgress);
-			smoothProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
-
-			return interpolateColor(baseHex, targetHex, smoothProgress);
-		} else {
-			COLOR_PROGRESS_MAP.put(entityId, 0.0f);
-			return ColorUtils.hexToRgb(baseHex);
-		}
-	}
-
-	private static float[] interpolateColor(String hexFrom, String hexTo, float factor) {
-		float[] rgbFrom = ColorUtils.hexToRgb(hexFrom);
-		float[] rgbTo = ColorUtils.hexToRgb(hexTo);
-
-		float r = Mth.lerp(factor, rgbFrom[0], rgbTo[0]);
-		float g = Mth.lerp(factor, rgbFrom[1], rgbTo[1]);
-		float b = Mth.lerp(factor, rgbFrom[2], rgbTo[2]);
-
-		return new float[]{r, g, b};
-	}
-
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
 		if (event.phase != TickEvent.Phase.END || event.side != LogicalSide.CLIENT) return;
@@ -833,13 +916,16 @@ public class AuraRenderHandler {
 		if (!stats.getStatus().isHasCreatedCharacter()) return;
 		if (!stats.getStatus().isAuraActive() && !stats.getStatus().isPermanentAura()) return;
 
-		float[] rgbColor = getInterpolatedKiColor(player, stats, 1.0f);
-		int r = (int) Math.max(0, Math.min(255, rgbColor[0] * 255));
-		int g = (int) Math.max(0, Math.min(255, rgbColor[1] * 255));
-		int b = (int) Math.max(0, Math.min(255, rgbColor[2] * 255));
-		int particleColor = (r << 16) | (g << 8) | b;
+		List<AuraLayer> layers = getAuraLayers(player, stats, 1.0f);
+		if (!layers.isEmpty()) {
+			float[] rgbColor = layers.get(layers.size() - 1).color;
+			int r = (int) Math.max(0, Math.min(255, rgbColor[0] * 255));
+			int g = (int) Math.max(0, Math.min(255, rgbColor[1] * 255));
+			int b = (int) Math.max(0, Math.min(255, rgbColor[2] * 255));
+			int particleColor = (r << 16) | (g << 8) | b;
 
-		for (int i = 0; i < 1; i++) spawnCalmAuraParticle(player, scale, particleColor);
+			for (int i = 0; i < 1; i++) spawnCalmAuraParticle(player, scale, particleColor);
+		}
 
 		if (player.getRandom().nextInt(20) == 0) {
 			int divineCount = 5 + player.getRandom().nextInt(10);

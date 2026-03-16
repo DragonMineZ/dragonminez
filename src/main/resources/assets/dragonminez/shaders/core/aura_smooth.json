@@ -1,6 +1,6 @@
 {
-  "vertex": "dragonminez:aura",
-  "fragment": "dragonminez:aura",
+  "vertex": "dragonminez:aura_smooth",
+  "fragment": "dragonminez:aura_smooth",
   "attributes": [
     "Position",
     "Color",
