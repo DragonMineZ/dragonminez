@@ -247,23 +247,13 @@ public class AuraRenderHandler {
 		var auras = AuraRenderQueue.getAndClearAuras();
 		for (var entry : auras) {
 			Player player = entry.player();
-			currentFramePlayers.add(player.getId());
+			boolean isLocalPlayer = player == mc.player;
 
-			if (!isFirstPerson || isCameraColliding) {
+			// EVITA procesar la primera persona aquí para que el modelo de GeckoLib no obstruya.
+			// Solo renderiza el aura en 3era persona si NO estamos en cámara de 1era persona del localPlayer.
+			if (!isFirstPerson || isCameraColliding || !isLocalPlayer) {
+				currentFramePlayers.add(player.getId());
 				renderShaderAura(entry, poseStack, mc, projectionMatrix);
-			} else {
-				int playerId = player.getId();
-				CachedAuraData data = AURA_CACHE.computeIfAbsent(playerId, k -> new CachedAuraData());
-				updateCachedAuraData(player, data, partialTick);
-
-				List<AuraLayer> activeLayers = getAuraLayers(player, StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null), partialTick);
-				if (!activeLayers.isEmpty()) {
-					data.lastLayers = activeLayers;
-					AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
-					if (player.onGround()) {
-						renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress);
-					}
-				}
 			}
 		}
 
@@ -577,6 +567,14 @@ public class AuraRenderHandler {
 		if (activeLayers.isEmpty()) return;
 		data.lastLayers = activeLayers;
 
+		if (player.onGround()) {
+			AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
+			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress);
+
+			spawnGroundDust(player, body[0] * auraScale[0]);
+			spawnFloatingRubble(player, body[0] * auraScale[0]);
+		}
+
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
 		double lerpY = Mth.lerp(partialTick, player.yo, player.getY());
@@ -604,11 +602,6 @@ public class AuraRenderHandler {
 
 			executeAuraShaderDraw(player, data, layer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress, true);
 			poseStack.popPose();
-		}
-
-		if (player.onGround()) {
-			spawnGroundDust(player, body[0] * auraScale[0]);
-			spawnFloatingRubble(player, body[0] * auraScale[0]);
 		}
 	}
 
@@ -694,7 +687,7 @@ public class AuraRenderHandler {
 				Mth.lerp(coreIntensity, layer.color[2], 1.0f)
 		);
 
-		float borderIntensity = 0.85f;
+		float borderIntensity = 1.25f;
 		shader.safeGetUniform("color2").set(
 				layer.color[0] * borderIntensity,
 				layer.color[1] * borderIntensity,
@@ -704,9 +697,10 @@ public class AuraRenderHandler {
 		boolean isLocalPlayer = player == mc.player;
 		float maxAlpha = (isLocalPlayer && isFirstPerson) ? 0.15f : 1.0f;
 		float finalAlpha = maxAlpha * alphaMultiplier;
+		float borderFade = maxAlpha * (float) Math.pow(alphaMultiplier, 0.35);
 
 		shader.safeGetUniform("alp1").set(0.45f * finalAlpha);
-		shader.safeGetUniform("alp2").set(0.85f * finalAlpha);
+		shader.safeGetUniform("alp2").set(0.85f * borderFade);
 		shader.safeGetUniform("power").set(6.0f);
 		shader.safeGetUniform("divis").set(0.02f);
 
@@ -792,7 +786,7 @@ public class AuraRenderHandler {
 
 		boolean isLocalPlayer = player == Minecraft.getInstance().player;
 		boolean isFirstPerson = isLocalPlayer && Minecraft.getInstance().options.getCameraType().isFirstPerson();
-		float cameraAlpha = (isLocalPlayer && isFirstPerson) ? 0.15f : 1.0f;
+		float cameraAlpha = (isLocalPlayer && isFirstPerson) ? 0.25f : 1.0f;
 
 		shader.safeGetUniform("color1").set(
 				Mth.lerp(0.8f, colorRgb[0], 1.0f),
