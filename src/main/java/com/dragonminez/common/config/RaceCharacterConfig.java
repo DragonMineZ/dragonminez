@@ -18,6 +18,11 @@ public class RaceCharacterConfig {
 	private Boolean hasGender = true;
 	private Boolean useVanillaSkin = false;
 	private String customModel = "";
+	private Boolean isLayered = false;
+	private Integer layerAmount = 3;
+	private String[] extraLayersColor = new String[0];
+	private String[] racialAccessories = new String[0];
+	private String[] accessoriesColors = new String[0];
 	private String racialSkill = "human";
 	private Boolean hasSaiyanTail = false;
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
@@ -52,5 +57,17 @@ public class RaceCharacterConfig {
 
 	public Boolean hasCustomModel() {
 		return this.customModel != null && !this.customModel.isEmpty();
+	}
+
+	public String getAccessoryColor(int index) {
+		if (accessoriesColors == null || accessoriesColors.length == 0) return "#FFFFFF";
+		if (index < accessoriesColors.length) return accessoriesColors[index];
+		return accessoriesColors[accessoriesColors.length - 1];
+	}
+
+	public String getExtraLayerColor(int index) {
+		if (extraLayersColor == null || extraLayersColor.length == 0) return "#FFFFFF";
+		if (index < extraLayersColor.length) return extraLayersColor[index];
+		return extraLayersColor[extraLayersColor.length - 1];
 	}
 }

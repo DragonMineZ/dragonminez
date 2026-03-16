@@ -38,6 +38,11 @@ public class FormConfig {
 		private String name = "";
 		private Integer unlockOnSkillLevel = 0;
 		private String customModel = "";
+		private Boolean isLayered = false;
+		private Integer layerAmount = 3;
+		private String[] extraLayersColor = new String[0];
+		private String[] racialAccessories = new String[0];
+		private String[] accessoriesColors = new String[0];
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";
@@ -155,6 +160,18 @@ public class FormConfig {
 
 		public Boolean hasCustomModel() {
 			return customModel != null && !customModel.isEmpty();
+		}
+
+		public String getAccessoryColor(int index) {
+			if (accessoriesColors == null || accessoriesColors.length == 0) return "#FFFFFF";
+			if (index < accessoriesColors.length) return accessoriesColors[index];
+			return accessoriesColors[accessoriesColors.length - 1];
+		}
+
+		public String getExtraLayerColor(int index) {
+			if (extraLayersColor == null || extraLayersColor.length == 0) return "#FFFFFF";
+			if (index < extraLayersColor.length) return extraLayersColor[index];
+			return extraLayersColor[extraLayersColor.length - 1];
 		}
 
 		public Boolean hasBodyColorOverride() {
