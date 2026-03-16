@@ -7,7 +7,7 @@ public class PredefinedTechniques {
 
 	public static final Map<String, KiAttackData> REGISTRY = new HashMap<>();
 
-	public static void init() {
+	public void init() {
 		// Giant Ball
 		registerKi("spiritbomb", "technique.dragonminez.spiritbomb", KiAttackData.KiType.GIANT_BALL, 3.00F, 0x30FFF1, 0x00F8FF, 5.0F, 0.5F);
 		registerKi("supernova", "technique.dragonminez.supernova", KiAttackData.KiType.GIANT_BALL, 3.00F, 0xFF9900, 0xFF4400, 5.0F, 0.5F);

@@ -41,6 +41,38 @@ public class SkillsConfig {
 		androidBlacklistedForms.add("superform");
 		androidBlacklistedForms.add("legendaryforms");
 
+		kiSkills.add("spiritbomb");
+		kiSkills.add("supernova");
+		kiSkills.add("supernova_cooler");
+		kiSkills.add("big_bang");
+		kiSkills.add("burning_attack");
+		kiSkills.add("final_flash");
+		kiSkills.add("kamehameha");
+		kiSkills.add("galick_gun");
+		kiSkills.add("masenko");
+		kiSkills.add("kienzan");
+		kiSkills.add("kienzan_doble");
+		kiSkills.add("death_beam");
+		kiSkills.add("emperor_death_beam");
+		kiSkills.add("ki_barrage");
+		kiSkills.add("final_explosion");
+
+		skills.put("kamehameha", new SkillCosts(List.of(2000)));
+		skills.put("galick_gun", new SkillCosts(List.of(2000)));
+		skills.put("masenko", new SkillCosts(List.of(1500)));
+		skills.put("kienzan", new SkillCosts(List.of(3000)));
+		skills.put("kienzan_doble", new SkillCosts(List.of(4000)));
+		skills.put("death_beam", new SkillCosts(List.of(2500)));
+		skills.put("emperor_death_beam", new SkillCosts(List.of(5000)));
+		skills.put("big_bang", new SkillCosts(List.of(4000)));
+		skills.put("burning_attack", new SkillCosts(List.of(3500)));
+		skills.put("ki_barrage", new SkillCosts(List.of(1000)));
+		skills.put("spiritbomb", new SkillCosts(List.of(10000)));
+		skills.put("supernova", new SkillCosts(List.of(12000)));
+		skills.put("supernova_cooler", new SkillCosts(List.of(15000)));
+		skills.put("final_explosion", new SkillCosts(List.of(20000)));
+		skills.put("final_flash", new SkillCosts(List.of(5000)));
+
 		List<Integer> jumpCosts = new ArrayList<>();
 		jumpCosts.add(1000);
 		jumpCosts.add(2000);
@@ -167,6 +199,7 @@ public class SkillsConfig {
 		roshiSkills.add("jump");
 		roshiSkills.add("meditation");
 		roshiSkills.add("kicontrol");
+		roshiSkills.add("kamehameha");
 		skillOfferings.put("roshi", roshiSkills);
 
 		List<String> gokuSkills = new ArrayList<>();
@@ -175,6 +208,8 @@ public class SkillsConfig {
 		gokuSkills.add("kisense");
 		gokuSkills.add("fusion");
 		gokuSkills.add("potentialunlock");
+		gokuSkills.add("kamehameha");
+		gokuSkills.add("spiritbomb");
 		skillOfferings.put("goku", gokuSkills);
 
 		List<String> kingKaiSkills = new ArrayList<>();
@@ -182,7 +217,43 @@ public class SkillsConfig {
 		kingKaiSkills.add("potentialunlock");
 		kingKaiSkills.add("kimanipulation");
 		kingKaiSkills.add("fusion");
+		kingKaiSkills.add("spiritbomb");
 		skillOfferings.put("kingkai", kingKaiSkills);
+
+		List<String> vegetaSkills = new ArrayList<>();
+		vegetaSkills.add("galick_gun");
+		vegetaSkills.add("big_bang");
+		vegetaSkills.add("final_flash");
+		vegetaSkills.add("final_explosion");
+		skillOfferings.put("vegeta", vegetaSkills);
+
+		List<String> piccoloSkills = new ArrayList<>();
+		piccoloSkills.add("masenko");
+		skillOfferings.put("piccolo", piccoloSkills);
+
+		List<String> krillinSkills = new ArrayList<>();
+		krillinSkills.add("kamehameha");
+		krillinSkills.add("kienzan");
+		krillinSkills.add("kibarrage");
+		skillOfferings.put("krillin", krillinSkills);
+
+		List<String> friezaSkills = new ArrayList<>();
+		friezaSkills.add("death_beam");
+		friezaSkills.add("emperor_death_beam");
+		friezaSkills.add("kienzan_doble");
+		friezaSkills.add("supernova");
+		skillOfferings.put("frieza", friezaSkills);
+
+		List<String> coolerSkills = new ArrayList<>();
+		coolerSkills.add("supernova_cooler");
+		coolerSkills.add("death_beam");
+		skillOfferings.put("cooler", coolerSkills);
+
+		List<String> trunksSkills = new ArrayList<>();
+		trunksSkills.add("burning_attack");
+		trunksSkills.add("galick_gun");
+		trunksSkills.add("kibarrage");
+		skillOfferings.put("trunks", trunksSkills);
 
 		List<String> defaultSkills = new ArrayList<>();
 		defaultSkills.add("jump");

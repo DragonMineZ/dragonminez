@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.ClippableTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.BaseMenuScreen;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.SkillsConfig;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.skills.Skill;
@@ -135,7 +136,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 				.build();
 
 		// Botón de KI
-        /*
+
         kiButton = new ClippableTextureButton.Builder()
                 .position(hiddenX, buttonY + 32)
                 .size(26, 32)
@@ -150,10 +151,10 @@ public class MastersSkillsScreen extends BaseMenuScreen {
                     refreshButtons();
                 })
                 .build();
-         */
+
 
 		this.addRenderableWidget(skillsButton);
-		// this.addRenderableWidget(kiButton);
+		this.addRenderableWidget(kiButton);
 	}
 
 	private List<String> getMasterSkills() {
@@ -173,17 +174,23 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (statsData == null) return new ArrayList<>();
 		List<String> masterOfferings = getMasterSkills();
 		List<String> visibleSkills = new ArrayList<>();
+		SkillsConfig skillsConfig = ConfigManager.getSkillsConfig();
 
 		switch (currentCategory) {
 			case SKILLS:
 				for (String skillId : masterOfferings) {
-					if (!skillId.equals("superform") && !skillId.equals("godform")) {
+					if (!skillsConfig.getKiSkills().contains(skillId) && !skillsConfig.getFormSkills().contains(skillId) &&
+							!skillsConfig.getStackSkills().contains(skillId)) {
 						visibleSkills.add(skillId);
 					}
 				}
 				break;
 			case KI:
-				// pa futuro w
+				for (String skillId : masterOfferings) {
+					if (skillsConfig.getKiSkills().contains(skillId)) {
+						visibleSkills.add(skillId);
+					}
+				}
 				break;
 		}
 
@@ -286,6 +293,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
 		skillsButton.setX(newX);
+		if (kiButton != null) kiButton.setX(newX);
 		if (kiButton != null) kiButton.setX(newX);
 	}
 
