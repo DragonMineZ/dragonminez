@@ -20,16 +20,13 @@ import net.minecraft.util.Mth;
 public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
     private static final ResourceLocation TEXTURE_BORDER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1_border.png");
-    private static final ResourceLocation TEXTURE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1.png");
     private static final ResourceLocation TEXTURE_EXPLOSION = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
-    private final KiBallPlaneModel model;
     private final KiBallModel modelexp;
 
     public KiExplosionRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
 
-        this.model = new KiBallPlaneModel(pContext.bakeLayer(KiBallPlaneModel.LAYER_LOCATION));
         this.modelexp = new KiBallModel(pContext.bakeLayer(KiBallModel.LAYER_LOCATION));
 
     }
@@ -57,26 +54,22 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
         float expansionTime = 10.0F;
 
         float maxRadius = entity.getMaxRadius();
-        float baseScale = entity.getSize(); // LEE TU TAMAÑO ORIGINAL SIN MODIFICARLO
+        float baseScale = entity.getSize();
 
         float currentScale;
 
         if (ageInTicks <= halfCastTime) {
-            // Empieza en 0 y crece hasta getSize() en la mitad del tiempo
             float progress = ageInTicks / halfCastTime;
             currentScale = baseScale * progress;
         }
         else if (ageInTicks <= castTime) {
-            // Se mantiene en getSize() hasta terminar el casteo
             currentScale = baseScale;
         }
         else if (ageInTicks <= castTime + expansionTime) {
-            // Crece hasta getMaxRadius()
             float progress = (ageInTicks - castTime) / expansionTime;
             currentScale = baseScale + ((maxRadius - baseScale) * progress);
         }
         else {
-            // Se mantiene en el tamaño máximo
             currentScale = maxRadius;
         }
 

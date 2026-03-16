@@ -112,6 +112,20 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
 
         VertexConsumer expBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_EXP_COLOR));
 
+        float explodePulse = (float) Math.sin(ageInTicks * 4.1F) * 0.1F;
+        float explodeJitter = (float) (Math.random() - 0.5) * 0.02F;
+
+        poseStack.pushPose();
+        float scale1 = 0.5F * (1.0F + explodePulse + explodeJitter);
+        poseStack.scale(scale1, scale1, scale1);
+        poseStack.translate(0.0D, 1.2D, -0.35D);
+        boolean useFirstTexture = (entity.tickCount / 3) % 2 == 0;
+        ResourceLocation currentExplodeTexture = useFirstTexture ? TEXTURE_EXPLODE1 : TEXTURE_EXPLODE2;
+        expBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));
+        this.explodeModel.renderToBuffer(poseStack, expBuffer, 15728880, OverlayTexture.NO_OVERLAY, auraColor[0], auraColor[1], auraColor[2], 0.6F * alphaMultiplier);
+        poseStack.popPose();
+
+
         poseStack.pushPose();
         poseStack.translate(-0.03D, 1.08D, 0.15D);
         poseStack.scale(0.3F, 0.3F, 0.3F);

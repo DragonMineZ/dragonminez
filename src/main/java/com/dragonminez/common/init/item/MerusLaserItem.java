@@ -1,9 +1,6 @@
 package com.dragonminez.common.init.item;
 
-import com.dragonminez.common.init.entities.ki.KiBlastEntity;
-import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
-import com.dragonminez.common.init.entities.ki.KiLaserEntity;
-import com.dragonminez.common.init.entities.ki.KiWaveEntity;
+import com.dragonminez.common.init.entities.ki.*;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -28,6 +25,9 @@ public class MerusLaserItem extends Item {
             KiWaveEntity kiWave = new KiWaveEntity(pLevel, pPlayer);
             KiLaserEntity kilaser = new KiLaserEntity(pLevel, pPlayer);
             KiExplosionEntity kiexp = new KiExplosionEntity(pLevel, pPlayer);
+            KiDiskEntity kidisc = new KiDiskEntity(pLevel, pPlayer);
+            KiBarrierEntity kibarrier = new KiBarrierEntity(pLevel, pPlayer);
+
 
             //kiBlast.setupKiSmall(pPlayer,7.2f, 0.2f, 0x00FFFF);
             //kiBlast.setupKiBlast(pPlayer,10,2.2f, 0x00FFFF, 2.5f, 100);
@@ -41,12 +41,12 @@ public class MerusLaserItem extends Item {
 
             //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 1.0f, 100);
             //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 3.0f, 100);
-            //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 2.0f, 100);
-
+            kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 2.0f, 100);
+            //kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
             //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);
-            kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
+            //kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
             //kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
-//            pLevel.addFreshEntity(kiWave);
+            //kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
         }
 
 
