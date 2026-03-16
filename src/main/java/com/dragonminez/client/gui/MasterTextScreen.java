@@ -23,6 +23,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
@@ -32,15 +34,17 @@ public class MasterTextScreen extends Screen {
 			"textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation MENU_TEXT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/textmenu.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+
 	private final String masterName;
 	private Component currentDialogue;
 	private boolean secondFunc = false;
 	private boolean thirdFunc = false;
 
 	public MasterTextScreen(String masterName) {
-		super(Component.literal(masterName));
+		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.masterName = masterName;
-		this.currentDialogue = Component.translatable("gui.dragonminez.lines." + masterName + ".main", Minecraft.getInstance().player.getName());
+		this.currentDialogue = tr("gui.dragonminez.lines." + masterName + ".main", Minecraft.getInstance().player.getName());
 	}
 
 	@Override
@@ -73,7 +77,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.karin.nimbus"))
+					.message(tr("gui.dragonminez.button.karin.nimbus"))
 					.onPress(b -> {
 						NetworkHandler.sendToServer(new NPCActionC2S("karin", 1));
 						this.onClose();
@@ -88,7 +92,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.karin.senzu"))
+					.message(tr("gui.dragonminez.button.karin.senzu"))
 					.onPress(b -> {
 						NetworkHandler.sendToServer(new NPCActionC2S("karin", 2));
 						this.onClose();
@@ -104,12 +108,12 @@ public class MasterTextScreen extends Screen {
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.button.guru.unlock_potential"))
+				.message(tr("gui.dragonminez.button.guru.unlock_potential"))
 				.onPress(b -> {
 					if (stats.getResources().getAlignment() <= 50) {
-						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.evil");
+						this.currentDialogue = tr("gui.dragonminez.lines.guru.evil");
 					} else if (stats.getSkills().getSkillLevel("potentialunlock") < 10) {
-						this.currentDialogue = Component.translatable("gui.dragonminez.lines.guru.level");
+						this.currentDialogue = tr("gui.dragonminez.lines.guru.level");
 					} else if (stats.getSkills().getSkillLevel("potentialunlock") == 10) {
 						NetworkHandler.sendToServer(new NPCActionC2S("guru", 1));
 						this.onClose();
@@ -125,7 +129,7 @@ public class MasterTextScreen extends Screen {
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.button.dende.heal"))
+				.message(tr("gui.dragonminez.button.dende.heal"))
 				.onPress(b -> {
 					NetworkHandler.sendToServer(new NPCActionC2S("dende", 1));
 					this.onClose();
@@ -139,7 +143,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable(stats.getCharacter().isHasSaiyanTail() ? "gui.dragonminez.button.dende.remove_tail" : "gui.dragonminez.button.dende.grow_tail"))
+					.message(tr(stats.getCharacter().isHasSaiyanTail() ? "gui.dragonminez.button.dende.remove_tail" : "gui.dragonminez.button.dende.grow_tail"))
 					.onPress(b -> {
 						NetworkHandler.sendToServer(new NPCActionC2S("dende", 3));
 						this.onClose();
@@ -153,7 +157,7 @@ public class MasterTextScreen extends Screen {
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.button.dende.reset"))
+				.message(tr("gui.dragonminez.button.dende.reset"))
 				.onPress(b -> {
 					NetworkHandler.sendToServer(new NPCActionC2S("dende", 2));
 					this.onClose();
@@ -163,7 +167,7 @@ public class MasterTextScreen extends Screen {
 
 	private void initEnma(int x, int y, StatsData stats) {
 		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
-		this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.main", Minecraft.getInstance().player.getName());
+		this.currentDialogue = tr("gui.dragonminez.lines.enma.main", Minecraft.getInstance().player.getName());
 
 		this.addRenderableWidget(new TexturedTextButton.Builder()
 				.position(x, y)
@@ -171,10 +175,10 @@ public class MasterTextScreen extends Screen {
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.button.enma.earth"))
+				.message(tr("gui.dragonminez.button.enma.earth"))
 				.onPress(b -> {
 					if (hasCd) {
-						this.currentDialogue = Component.translatable("gui.dragonminez.lines.enma.revive", Minecraft.getInstance().player.getName());
+						this.currentDialogue = tr("gui.dragonminez.lines.enma.revive", Minecraft.getInstance().player.getName());
 					} else {
 						NetworkHandler.sendToServer(new NPCActionC2S("enma", 1));
 						this.onClose();
@@ -186,7 +190,7 @@ public class MasterTextScreen extends Screen {
 	private void initBaba(int x, int y, StatsData stats) {
 		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
 		int cdTime = hasCd ? (int) stats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20 : 0;
-		this.currentDialogue = Component.translatable("gui.dragonminez.lines.baba.main", Minecraft.getInstance().player.getName(), cdTime);
+		this.currentDialogue = tr("gui.dragonminez.lines.baba.main", Minecraft.getInstance().player.getName(), cdTime);
 
 		if (!hasCd) {
 			this.addRenderableWidget(new TexturedTextButton.Builder()
@@ -195,7 +199,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.baba.revive"))
+					.message(tr("gui.dragonminez.button.baba.revive"))
 					.onPress(b -> {
 						NetworkHandler.sendToServer(new NPCActionC2S("baba", 1));
 						this.onClose();
@@ -214,7 +218,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.popo.shadow"))
+					.message(tr("gui.dragonminez.button.popo.shadow"))
 					.onPress(btn -> {
 						NetworkHandler.sendToServer(new NPCActionC2S("popo", 1));
 						secondFunc = false;
@@ -227,7 +231,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.popo.rythm"))
+					.message(tr("gui.dragonminez.button.popo.rythm"))
 					.onPress(btn -> {
 						if (Minecraft.getInstance().player.level().isClientSide()) {
 							Minecraft.getInstance().setScreen(new TrainingScreen());
@@ -242,10 +246,10 @@ public class MasterTextScreen extends Screen {
 						.texture(BUTTONS_TEXTURE)
 						.textureCoords(0, 28, 0, 48)
 						.textureSize(74, 20)
-						.message(Component.translatable("gui.dragonminez.button.popo.train"))
+						.message(tr("gui.dragonminez.button.popo.train"))
 						.onPress(btn -> {
 							secondFunc = true;
-							this.currentDialogue = Component.translatable("gui.dragonminez.lines.popo.training", Minecraft.getInstance().player.getName());
+							this.currentDialogue = tr("gui.dragonminez.lines.popo.training", Minecraft.getInstance().player.getName());
 							refreshButtons();
 						})
 						.build());
@@ -257,7 +261,7 @@ public class MasterTextScreen extends Screen {
 							.texture(BUTTONS_TEXTURE)
 							.textureCoords(0, 28, 0, 48)
 							.textureSize(74, 20)
-							.message(Component.translatable("gui.dragonminez.button.popo.haircut"))
+							.message(tr("gui.dragonminez.button.popo.haircut"))
 							.onPress(btn -> {
 								if (Minecraft.getInstance().player.level().isClientSide()) {
 									Minecraft.getInstance().setScreen(new HairEditorScreen(null, stats.getCharacter()));
@@ -277,7 +281,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.gero.cancel"))
+					.message(tr("gui.dragonminez.button.gero.cancel"))
 					.onPress(btn -> {
 						thirdFunc = false;
 						secondFunc = false;
@@ -290,7 +294,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.gero.confirm"))
+					.message(tr("gui.dragonminez.button.gero.confirm"))
 					.onPress(btn -> {
 						NetworkHandler.sendToServer(new NPCActionC2S("gero", 1));
 						thirdFunc = false;
@@ -305,7 +309,7 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.gero.not_interested"))
+					.message(tr("gui.dragonminez.button.gero.not_interested"))
 					.onPress(btn -> {
 						thirdFunc = false;
 						secondFunc = false;
@@ -318,11 +322,11 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.gero.interest"))
+					.message(tr("gui.dragonminez.button.gero.interest"))
 					.onPress(btn -> {
 						thirdFunc = true;
 						secondFunc = false;
-						this.currentDialogue = Component.translatable("gui.dragonminez.lines.gero.confirm", Minecraft.getInstance().player.getName());
+						this.currentDialogue = tr("gui.dragonminez.lines.gero.confirm", Minecraft.getInstance().player.getName());
 						refreshButtons();
 					})
 					.build());
@@ -333,10 +337,10 @@ public class MasterTextScreen extends Screen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.button.gero.accept"))
+					.message(tr("gui.dragonminez.button.gero.accept"))
 					.onPress(btn -> {
 						secondFunc = true;
-						this.currentDialogue = Component.translatable("gui.dragonminez.lines.gero.offer", Minecraft.getInstance().player.getName());
+						this.currentDialogue = tr("gui.dragonminez.lines.gero.offer", Minecraft.getInstance().player.getName());
 						refreshButtons();
 					})
 					.build());
@@ -358,7 +362,6 @@ public class MasterTextScreen extends Screen {
 		RenderSystem.setShader(GameRenderer::getPositionTexShader);
 		RenderSystem.setShaderTexture(0, MENU_TEXT);
 
-
 		BufferBuilder buffer = Tesselator.getInstance().getBuilder();
 		buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
@@ -370,7 +373,7 @@ public class MasterTextScreen extends Screen {
 
 		RenderSystem.disableBlend();
 
-		drawStringWithBorder(graphics, Component.translatable("gui.dragonminez.lines." + masterName + ".name").withStyle(ChatFormatting.BOLD), centerX - 120, centerY - 87, 0xFFFFFF);
+		drawStringWithBorder(graphics, tr("gui.dragonminez.lines." + masterName + ".name").withStyle(ChatFormatting.BOLD), centerX - 120, centerY - 87, 0xFFFFFF);
 
 		int maxTextWidth = 230;
 		int textY = centerY - 74;
@@ -408,5 +411,13 @@ public class MasterTextScreen extends Screen {
 		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
 		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
 		graphics.drawString(this.font, text, x, y, textColor, false);
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

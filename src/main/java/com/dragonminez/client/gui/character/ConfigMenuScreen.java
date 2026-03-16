@@ -233,7 +233,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.config.options").withStyle(ChatFormatting.BOLD),
 				leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
 
 		renderConfigsList(graphics, leftPanelX, leftPanelY, mouseX, mouseY);
@@ -258,9 +258,9 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 			ConfigOption option = configOptions.get(i);
 			int itemY = startY + ((i - visibleStart) * CONFIG_ITEM_HEIGHT);
 
-			String displayName = Component.translatable("gui.dragonminez." + option.key).getString();
+			String displayName = tr("gui.dragonminez." + option.key).getString();
 
-			drawStringWithBorder(graphics, Component.literal(displayName),
+			drawStringWithBorder(graphics, txt(displayName),
 					(int) ((panelX + 15) / 0.75f), (int) (itemY / 0.75f) + 6, 0xFFFFFFFF);
 		}
 
@@ -292,7 +292,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
 		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.config.values").withStyle(ChatFormatting.BOLD),
 				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
 
 		renderConfigValues(graphics, rightPanelX, rightPanelY);
@@ -317,7 +317,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 				graphics.pose().pushPose();
 				graphics.pose().scale(0.75f, 0.75f, 0.75f);
-				drawCenteredStringWithBorder(graphics, Component.literal(valueText),
+				drawCenteredStringWithBorder(graphics, txt(valueText),
 						(int) ((panelX + 69) / 0.75f), (int) ((itemY + 5) / 0.75f), 0xFFFFFFFF);
 				graphics.pose().popPose();
 			}

@@ -1,5 +1,6 @@
 package com.dragonminez.client.gui;
 
+import com.dragonminez.Reference;
 import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.client.gui.utilitymenu.IUtilityMenuSlot;
 import com.dragonminez.client.gui.utilitymenu.menuslots.*;
@@ -13,6 +14,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -25,22 +29,23 @@ public class UtilityMenuScreen extends Screen {
 	private static final List<IUtilityMenuSlot> MENU_SLOTS = new ArrayList<>();
 	private static final List<IUtilityMenuSlot> ADDON_SLOTS = new ArrayList<>();
 	private static final int[][] POSITIONS = {
-			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1}, // Top Row (Index 0-4)
-			{-2, 0}, {-1, 0}, {1, 0}, {2, 0}, // Middle Row (Index 5-9)
-			{-2, 1}, {-1, 1}, {0, 1}, {1, 1}, {2, 1}  // Bottom Row (Index 10-14)
+			{-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {2, -1},
+			{-2, 0}, {-1, 0}, {1, 0}, {2, 0},
+			{-2, 1}, {-1, 1}, {0, 1}, {1, 1}, {2, 1}
 	};
 
 	private static final long ANIMATION_DURATION = 100;
 	private static final int BUTTON_WIDTH = 90;
 	private static final int BUTTON_HEIGHT = 70;
 	private static final int GAP = 5;
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private final long openTime;
 	private StatsData statsData;
 
 
 	public UtilityMenuScreen() {
-		super(Component.literal("Menu"));
+		super(Component.literal("Menu").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.openTime = System.currentTimeMillis();
 	}
 
@@ -225,5 +230,13 @@ public class UtilityMenuScreen extends Screen {
 
 	public static void addMenuSlot(IUtilityMenuSlot menuSlot) {
 		ADDON_SLOTS.add(menuSlot);
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

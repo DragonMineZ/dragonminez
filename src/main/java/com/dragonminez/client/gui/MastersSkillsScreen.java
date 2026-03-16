@@ -18,6 +18,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -38,6 +40,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			"textures/gui/menu/menusmall.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
@@ -65,7 +68,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 	private final LivingEntity masterEntity;
 
 	public MastersSkillsScreen(String masterName, LivingEntity masterEntity) {
-		super(Component.literal(masterName));
+		super(Component.literal(masterName).withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 		this.masterName = masterName;
 		this.masterEntity = masterEntity;
 	}
@@ -135,22 +138,20 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 				})
 				.build();
 
-		// Botón de KI
-
-        kiButton = new ClippableTextureButton.Builder()
-                .position(hiddenX, buttonY + 32)
-                .size(26, 32)
-                .texture(MENU_BIG)
-                .textureCoords(170, 44, 170, 44)
-                .clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
-                .onPress(btn -> {
-                    currentCategory = SkillCategory.KI;
-                    selectedSkill = null;
-                    scrollOffset = 0;
-                    updateSkillsList();
-                    refreshButtons();
-                })
-                .build();
+		kiButton = new ClippableTextureButton.Builder()
+				.position(hiddenX, buttonY + 32)
+				.size(26, 32)
+				.texture(MENU_BIG)
+				.textureCoords(170, 44, 170, 44)
+				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
+				.onPress(btn -> {
+					currentCategory = SkillCategory.KI;
+					selectedSkill = null;
+					scrollOffset = 0;
+					updateSkillsList();
+					refreshButtons();
+				})
+				.build();
 
 
 		this.addRenderableWidget(skillsButton);
@@ -227,7 +228,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 					.texture(BUTTONS_TEXTURE)
 					.textureCoords(0, 28, 0, 48)
 					.textureSize(74, 20)
-					.message(Component.translatable("gui.dragonminez.skills.purchase"))
+					.message(tr("gui.dragonminez.skills.purchase"))
 					.onPress(btn -> {
 						if (canAfford) {
 							NetworkHandler.INSTANCE.sendToServer(new UpdateSkillC2S(UpdateSkillC2S.SkillAction.PURCHASE, selectedSkill, cost));
@@ -294,7 +295,6 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
 		skillsButton.setX(newX);
 		if (kiButton != null) kiButton.setX(newX);
-		if (kiButton != null) kiButton.setX(newX);
 	}
 
 	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -336,7 +336,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			Skill skill = statsData.getSkills().getSkill(skillName);
 			String displayName = Component.translatable("skill.dragonminez." + skillName).getString();
 
-			drawStringWithBorder(graphics, Component.literal(displayName),
+			drawStringWithBorder(graphics, txt(displayName),
 					panelX + 15, itemY + 5, color);
 
 			String levelText;
@@ -347,7 +347,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			}
 
 			int levelX = panelX + 130 - this.font.width(levelText);
-			drawStringWithBorder(graphics, Component.literal(levelText),
+			drawStringWithBorder(graphics, txt(levelText),
 					levelX, itemY + 5, color);
 		}
 
@@ -375,7 +375,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
 		}
 
-		drawStringWithBorder(graphics, Component.translatable(title)
+		drawStringWithBorder(graphics, tr(title)
 				.withStyle(style -> style.withBold(true)), 65, getUiHeight() / 2 - 88, 0xFBC51C);
 	}
 
@@ -390,7 +390,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
 		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, Component.translatable("gui.dragonminez.character_stats.info")
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info")
 				.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedSkill != null && statsData != null) {
@@ -407,14 +407,14 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 		int startY = panelY + 40;
 
-		drawCenteredStringWithBorder(graphics, Component.literal(displayName).withStyle(ChatFormatting.BOLD),
+		drawCenteredStringWithBorder(graphics, txt(displayName).withStyle(ChatFormatting.BOLD),
 				panelX + 72, startY, 0xFFFFFFFF);
 
 		Component levelComp;
 		if (skill.getLevel() > 0) {
-			levelComp = Component.translatable("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel());
+			levelComp = tr("gui.dragonminez.skills.level", skill.getLevel(), skill.getMaxLevel());
 		} else {
-			levelComp = Component.translatable("gui.dragonminez.skills.not_learned");
+			levelComp = tr("gui.dragonminez.skills.not_learned");
 		}
 
 		drawCenteredStringWithBorder(graphics, levelComp, panelX + 72, startY + 12, 0xFFAAAAAA);
@@ -422,18 +422,18 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		if (skill.getLevel() == 0) {
 			int cost = getUpgradeCost(selectedSkill, 0);
 			if (cost != Integer.MAX_VALUE && cost != -1) {
-				drawCenteredStringWithBorder(graphics, Component.literal("%d TPS".formatted(cost)), panelX + 72, startY + 24, 0xFFAAAAAA);
+				drawCenteredStringWithBorder(graphics, txt("%d TPS".formatted(cost)), panelX + 72, startY + 24, 0xFFAAAAAA);
 			}
 		} else {
 			drawCenteredStringWithBorder(graphics,
-					Component.translatable("gui.dragonminez.skills.already_learned"),
+					tr("gui.dragonminez.skills.already_learned"),
 					panelX + 72, startY + 24, 0xFF55AA55);
 		}
 
 		List<String> wrappedDesc = wrapText(description);
 		int descY = startY + 70;
 		for (String line : wrappedDesc) {
-			drawStringWithBorder(graphics, Component.literal(line), panelX + 13, descY, 0xFFCCCCCC);
+			drawStringWithBorder(graphics, txt(line), panelX + 13, descY, 0xFFCCCCCC);
 			descY += 12;
 		}
 	}
@@ -588,5 +588,13 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int textWidth = this.font.width(text);
 		int x = centerX - (textWidth / 2);
 		drawStringWithBorder(graphics, text, x, y, textColor);
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 }

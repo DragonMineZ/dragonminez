@@ -494,13 +494,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				}
 			}
 			if (hasUnclaimedRewards) {
-				buttonText = Component.translatable("gui.dragonminez.quests.claim_rewards");
+				buttonText = tr("gui.dragonminez.quests.claim_rewards");
 				isClaimAction = true;
 			} else {
 				return;
 			}
 		} else if (canStart) {
-			buttonText = Component.translatable("gui.dragonminez.quests.start");
+			buttonText = tr("gui.dragonminez.quests.start");
 			long now = System.currentTimeMillis();
 			long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
 			buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
@@ -654,7 +654,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void renderTreeCanvas(GuiGraphics graphics, int mouseX, int mouseY) {
 		if (currentLayout == null || availableSagas.isEmpty()) {
 			drawCenteredStringWithBorder(graphics,
-					Component.translatable("gui.dragonminez.quest_tree.no_sagas"),
+					tr("gui.dragonminez.quest_tree.no_sagas"),
 					getUiWidth() / 2, getUiHeight() / 2, 0xFFAAAAAA);
 			return;
 		}
@@ -665,7 +665,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
 		drawCenteredStringWithBorder(graphics,
-				Component.translatable(currentSaga.getName()).copy().withStyle(ChatFormatting.BOLD),
+				tr(currentSaga.getName()).copy().withStyle(ChatFormatting.BOLD),
 				tree.x + tree.width / 2,
 				tree.y + 8,
 				0xFFFFD700);
@@ -698,7 +698,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		// Zoom indicator in bottom-left of canvas
 		String zoomText = (int) (zoom * 100) + "%";
-		drawStringWithBorder(graphics, Component.literal(zoomText), 6, tree.bottom() - 12, 0xFF888888);
+		drawStringWithBorder(graphics, txt(zoomText), 6, tree.bottom() - 12, 0xFF888888);
 
 		graphics.disableScissor();
 	}
@@ -725,7 +725,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		renderSidePanelBackground(graphics, panel, true, false);
 
 		drawCenteredStringWithBorder(graphics,
-				Component.translatable("gui.dragonminez.quest_tree.title").copy().withStyle(ChatFormatting.BOLD),
+				tr("gui.dragonminez.quest_tree.title").copy().withStyle(ChatFormatting.BOLD),
 				panel.x + panel.width / 2,
 				panel.y + 10,
 				0xFFFFD700);
@@ -771,18 +771,18 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			color = selectedSaga ? 0xFFFFCC55 : (unlocked ? 0xFFFFFFFF : 0xFF888888);
 			if (hovered && unlocked) color = 0xFFFFE08A;
 			String prefix = selectedSaga ? "v " : (unlocked ? "> " : "[L] ");
-			String raw = prefix + Component.translatable(entry.saga().getName()).getString();
+			String raw = prefix + tr(entry.saga().getName()).getString();
 			String clipped = fitSingleLineEllipsis(raw, Math.max(24, rowWidth - 8));
-			text = Component.literal(clipped).withStyle(ChatFormatting.BOLD);
+			text = txt(clipped).withStyle(ChatFormatting.BOLD);
 		} else {
 			Quest q = entry.quest();
 			String label = q.isSideQuest()
-					? "- " + Component.translatable(q.getTitle()).getString()
-					: q.getId() + ". " + Component.translatable(q.getTitle()).getString();
+					? "- " + tr(q.getTitle()).getString()
+					: q.getId() + ". " + tr(q.getTitle()).getString();
 
 			int indent = entry.depth() * 10;
 			String clipped = fitSingleLineEllipsis(label, Math.max(24, rowWidth - indent - 8));
-			text = Component.literal(clipped);
+			text = txt(clipped);
 
 			QuestNodeStatus status = getNodeStatus(q);
 			color = getStatusColor(status);
@@ -804,7 +804,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		if (selectedQuest == null || statsData == null || availableSagas.isEmpty()) {
 			drawCenteredStringWithBorder(graphics,
-					Component.translatable("gui.dragonminez.quest_tree.select_quest"),
+					tr("gui.dragonminez.quest_tree.select_quest"),
 					panel.x + panel.width / 2,
 					panel.y + panel.height / 2,
 					0xFFAAAAAA);
@@ -866,7 +866,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private int estimateTitleSectionHeight(int width) {
-		String title = Component.translatable(selectedQuest.getTitle()).getString();
+		String title = tr(selectedQuest.getTitle()).getString();
 		List<String> lines = limitLinesWithEllipsis(wrapText(title, width - 10), 2, width - 10);
 		return Math.max(32, 18 + (lines.size() * 10) + 10);
 	}
@@ -890,19 +890,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
 		List<String> wrappedTitle = limitLinesWithEllipsis(
-				wrapText(Component.translatable(selectedQuest.getTitle()).getString(), width - 10),
+				wrapText(tr(selectedQuest.getTitle()).getString(), width - 10),
 				2,
 				width - 10
 		);
 
 		int titleStartY = y + 6;
 		for (String line : wrappedTitle) {
-			drawCenteredStringWithBorder(graphics, Component.literal(line).withStyle(ChatFormatting.BOLD), x + width / 2, titleStartY, 0xFFFFFFFF);
+			drawCenteredStringWithBorder(graphics, txt(line).withStyle(ChatFormatting.BOLD), x + width / 2, titleStartY, 0xFFFFFFFF);
 			titleStartY += 10;
 		}
 
 		drawCenteredStringWithBorder(graphics,
-				Component.literal(fitSingleLineEllipsis(getStatusText(status), width - 12)),
+				txt(fitSingleLineEllipsis(getStatusText(status), width - 12)),
 				x + width / 2,
 				height >= 40 ? y + height - 14 : y + 20,
 				getStatusColor(status));
@@ -913,14 +913,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
 		drawStringWithBorder(graphics,
-				Component.translatable("gui.dragonminez.quests.rewards").copy().withStyle(ChatFormatting.BOLD),
+				tr("gui.dragonminez.quests.rewards").copy().withStyle(ChatFormatting.BOLD),
 				x + 6,
 				y + 4,
 				0xFFFFD700);
 
 		List<QuestReward> rewards = selectedQuest.getRewards();
 		if (rewards.isEmpty()) {
-			drawStringWithBorder(graphics, Component.literal("-"), x + 8, y + 18, 0xFF999999);
+			drawStringWithBorder(graphics, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
 		}
 
@@ -954,7 +954,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			rewardHitboxes.add(new RewardHitbox(iconX, iconY, iconSize, stack, tooltip));
 
 			String line = wrappedIdx < wrapped.size() ? wrapped.get(wrappedIdx++) : "";
-			drawStringWithBorder(graphics, Component.literal(line), x + 28, iconY + 4, 0xFFCCCCCC);
+			drawStringWithBorder(graphics, txt(line), x + 28, iconY + 4, 0xFFCCCCCC);
 		}
 	}
 
@@ -963,12 +963,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
 		drawStringWithBorder(graphics,
-				Component.translatable("gui.dragonminez.quest_tree.description").copy().withStyle(ChatFormatting.BOLD),
+				tr("gui.dragonminez.quest_tree.description").copy().withStyle(ChatFormatting.BOLD),
 				x + 6,
 				y + 4,
 				0xFFFFD700);
 
-		String fullDescription = Component.translatable(selectedQuest.getDescription()).getString();
+		String fullDescription = tr(selectedQuest.getDescription()).getString();
 		String visibleDescription = resolveTypewriterText(questKey, SECTION_DESC, fullDescription);
 		List<String> lines = wrapText(visibleDescription, width - 14);
 
@@ -982,14 +982,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
 		drawStringWithBorder(graphics,
-				Component.translatable("gui.dragonminez.quests.objectives").copy().withStyle(ChatFormatting.BOLD),
+				tr("gui.dragonminez.quests.objectives").copy().withStyle(ChatFormatting.BOLD),
 				x + 6,
 				y + 4,
 				0xFFFFD700);
 
 		List<QuestObjective> objectives = selectedQuest.getObjectives();
 		if (objectives.isEmpty()) {
-			drawStringWithBorder(graphics, Component.literal("-"), x + 8, y + 18, 0xFF999999);
+			drawStringWithBorder(graphics, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
 		}
 
@@ -997,7 +997,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int maxLines = Math.max(1, (height - 24) / 10);
 		int drawY = y + 18;
 		for (int i = 0; i < Math.min(maxLines, lines.size()); i++) {
-			drawStringWithBorder(graphics, Component.literal(lines.get(i)), x + 8, drawY, 0xFFCCCCCC);
+			drawStringWithBorder(graphics, txt(lines.get(i)), x + 8, drawY, 0xFFCCCCCC);
 			drawY += 10;
 		}
 	}
@@ -1031,7 +1031,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private String getObjectiveText(QuestObjective objective, int currentProgress) {
-		String description = Component.translatable(objective.getDescription()).getString();
+		String description = tr(objective.getDescription()).getString();
 		int required = objective.getRequired();
 		if (objective.getType() == QuestObjective.ObjectiveType.KILL || objective.getType() == QuestObjective.ObjectiveType.ITEM) {
 			return description + " (" + currentProgress + "/" + required + ")";
@@ -1273,13 +1273,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				// Saga quest number below node
 				String questNum = String.valueOf(node.getQuest().getId());
 				int numX = x + (NODE_SIZE - this.font.width(questNum)) / 2;
-				drawStringWithBorder(graphics, Component.literal(questNum), numX, y + NODE_SIZE + 2, 0xFFCCCCCC);
+				drawStringWithBorder(graphics, txt(questNum), numX, y + NODE_SIZE + 2, 0xFFCCCCCC);
 			}
 		} else {
 			// Blurred: show "???"
 			String hiddenLabel = "???";
 			int numX = x + (NODE_SIZE - this.font.width(hiddenLabel)) / 2;
-			drawStringWithBorder(graphics, Component.literal(hiddenLabel), numX, y + NODE_SIZE + 2, 0x55888888);
+			drawStringWithBorder(graphics, txt(hiddenLabel), numX, y + NODE_SIZE + 2, 0x55888888);
 		}
 
 		// Exclamation mark icon on top-right for claimable quests
@@ -1308,9 +1308,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		String statusText;
 		if (vis == NodeVisibility.BLURRED) {
 			title = "§kUnknown Quest§r";
-			statusText = Component.translatable("gui.dragonminez.quest_tree.status.locked").getString();
+			statusText = tr("gui.dragonminez.quest_tree.status.locked").getString();
 		} else {
-			title = Component.translatable(quest.getTitle()).getString();
+			title = tr(quest.getTitle()).getString();
 			statusText = getStatusText(getNodeStatus(quest));
 		}
 
@@ -1623,11 +1623,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private String getStatusText(QuestNodeStatus status) {
 		return switch (status) {
-			case COMPLETED -> Component.translatable("gui.dragonminez.quests.status.complete").getString();
-			case CLAIMABLE -> Component.translatable("gui.dragonminez.quests.claim_rewards").getString();
-			case ACTIVE -> Component.translatable("gui.dragonminez.quest_tree.status.active").getString();
-			case AVAILABLE -> Component.translatable("gui.dragonminez.quest_tree.status.available").getString();
-			case LOCKED -> Component.translatable("gui.dragonminez.quest_tree.status.locked").getString();
+			case COMPLETED -> tr("gui.dragonminez.quests.status.complete").getString();
+			case CLAIMABLE -> tr("gui.dragonminez.quests.claim_rewards").getString();
+			case ACTIVE -> tr("gui.dragonminez.quest_tree.status.active").getString();
+			case AVAILABLE -> tr("gui.dragonminez.quest_tree.status.available").getString();
+			case LOCKED -> tr("gui.dragonminez.quest_tree.status.locked").getString();
 		};
 	}
 
@@ -1786,13 +1786,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void drawJustifiedLine(GuiGraphics graphics, String line, int x, int y, int width, int color, boolean isLastLine) {
 		String trimmed = line == null ? "" : line.trim();
 		if (trimmed.isEmpty() || isLastLine) {
-			drawStringWithBorder(graphics, Component.literal(trimmed), x, y, color);
+			drawStringWithBorder(graphics, txt(trimmed), x, y, color);
 			return;
 		}
 
 		String[] words = trimmed.split(" ");
 		if (words.length <= 1) {
-			drawStringWithBorder(graphics, Component.literal(trimmed), x, y, color);
+			drawStringWithBorder(graphics, txt(trimmed), x, y, color);
 			return;
 		}
 
@@ -1802,7 +1802,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int baseSpace = this.font.width(" ");
 		int totalBase = wordsWidth + (spaces * baseSpace);
 		if (totalBase >= width || totalBase < (int) (width * 0.75f)) {
-			drawStringWithBorder(graphics, Component.literal(trimmed), x, y, color);
+			drawStringWithBorder(graphics, txt(trimmed), x, y, color);
 			return;
 		}
 
@@ -1812,7 +1812,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		int cursorX = x;
 		for (int i = 0; i < words.length; i++) {
-			drawStringWithBorder(graphics, Component.literal(words[i]), cursorX, y, color);
+			drawStringWithBorder(graphics, txt(words[i]), cursorX, y, color);
 			cursorX += this.font.width(words[i]);
 			if (i < spaces) {
 				cursorX += baseSpace + extraPerSpace + (i < remainder ? 1 : 0);
@@ -1893,7 +1893,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
 		int borderColor = 0xFF000000;
 		String stripped = ChatFormatting.stripFormatting(text.getString());
-		Component borderComponent = Component.literal(stripped != null ? stripped : text.getString());
+		Component borderComponent = txt(stripped != null ? stripped : text.getString());
 		if (text.getStyle().isBold()) {
 			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
 		}

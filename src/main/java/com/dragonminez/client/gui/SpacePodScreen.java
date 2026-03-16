@@ -17,6 +17,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -34,6 +36,7 @@ public class SpacePodScreen extends Screen {
 	private static final ResourceLocation MENU_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation ICONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/spaceshipicons.png");
+	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static final int PANEL_WIDTH = 141;
 	private static final int PANEL_HEIGHT = 213;
@@ -57,7 +60,7 @@ public class SpacePodScreen extends Screen {
 	private TexturedTextButton travelButton;
 
 	public SpacePodScreen() {
-		super(Component.literal("Space Pod"));
+		super(Component.literal("Space Pod").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
 	}
 
 	@Override
@@ -75,7 +78,7 @@ public class SpacePodScreen extends Screen {
 				.texture(BUTTON_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(Component.translatable("gui.dragonminez.travel"))
+				.message(tr("gui.dragonminez.travel"))
 				.onPress(btn -> initiateTravel())
 				.build();
 
@@ -121,7 +124,7 @@ public class SpacePodScreen extends Screen {
 		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
 		drawCenteredStringWithBorder(graphics,
-				Component.translatable("gui.dragonminez.spacepod.title"),
+				tr("gui.dragonminez.spacepod.title"),
 				this.width / 2, guiTop + 18, 0xFFFFD700);
 
 		renderPlanetList(graphics, mouseX, mouseY);
@@ -173,10 +176,10 @@ public class SpacePodScreen extends Screen {
 			int textColor;
 
 			if (dest.unlocked) {
-				textToDraw = Component.translatable(dest.nameKey).withStyle(ChatFormatting.BOLD);
+				textToDraw = tr(dest.nameKey).withStyle(ChatFormatting.BOLD);
 				textColor = 0x20E0FF;
 			} else {
-				textToDraw = Component.literal("???").withStyle(ChatFormatting.BOLD);
+				textToDraw = txt("???").withStyle(ChatFormatting.BOLD);
 				textColor = 0x747678;
 			}
 
@@ -290,6 +293,14 @@ public class SpacePodScreen extends Screen {
 	@Override
 	public boolean isPauseScreen() {
 		return false;
+	}
+
+	public MutableComponent tr(String key, Object... args) {
+		return Component.translatable(key, args).withStyle(Style.EMPTY.withFont(DMZ_FONT));
+	}
+
+	public MutableComponent txt(String text) {
+		return Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
 	}
 
 	private static class PlanetDestination {
