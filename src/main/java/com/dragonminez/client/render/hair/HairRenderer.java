@@ -30,7 +30,7 @@ public class HairRenderer {
 	public static void render(PoseStack poseStack, MultiBufferSource bufferSource,
 							  CustomHair hairFrom, CustomHair hairTo, float transitionFactor,
 							  Character character, StatsData stats, AbstractClientPlayer player,
-							  String colorFrom, String colorTo, float partialTick, int packedLight, int packedOverlay, float alpha) {
+							  String colorFrom, String colorTo, boolean forceColorFrom, boolean forceColorTo, float partialTick, int packedLight, int packedOverlay, float alpha) {
 
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
@@ -66,7 +66,7 @@ public class HairRenderer {
 				if (!v1) s1 = createZeroScaleStrand(s2);
 				if (!v2) s2 = createZeroScaleStrand(s1);
 
-				String color = getColor(s1, s2, transitionFactor, colorFrom, colorTo);
+				String color = getColor(s1, s2, transitionFactor, colorFrom, colorTo, forceColorFrom, forceColorTo);
 
 				float lerpRotX = Mth.lerp(transitionFactor, s1.getRotationX(), s2.getRotationX());
 				float lerpRotY = Mth.lerp(transitionFactor, s1.getRotationY(), s2.getRotationY());
@@ -107,13 +107,13 @@ public class HairRenderer {
 		return empty;
 	}
 
-	private static String getColor(HairStrand s1, HairStrand s2, float factor, String globalColorFrom, String globalColorTo) {
+	private static String getColor(HairStrand s1, HairStrand s2, float factor, String globalColorFrom, String globalColorTo, boolean forceColorFrom, boolean forceColorTo) {
 		String effectiveFrom = globalColorFrom;
-		if (s1 != null && s1.hasCustomColor()) effectiveFrom = s1.getColor();
+		if (!forceColorFrom && s1 != null && s1.hasCustomColor()) effectiveFrom = s1.getColor();
 
 		String effectiveTo = globalColorTo;
-		if (s2 != null && s2.hasCustomColor()) effectiveTo = s2.getColor();
-		
+		if (!forceColorTo && s2 != null && s2.hasCustomColor()) effectiveTo = s2.getColor();
+
 		if (factor <= 0.0f) return effectiveFrom;
 		if (factor >= 1.0f) return effectiveTo;
 		if (effectiveFrom.equals(effectiveTo)) return effectiveTo;
