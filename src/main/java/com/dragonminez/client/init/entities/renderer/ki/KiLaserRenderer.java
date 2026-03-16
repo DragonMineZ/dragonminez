@@ -48,6 +48,17 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
 
         float alphaMultiplier = 1.0F;
         float ageInTicks = entity.tickCount + partialTick;
+        float width = entity.getSize();
+
+        float castTime = (float) entity.getCastTime();
+        boolean isCasting = castTime > 0 && ageInTicks <= castTime;
+
+        if (isCasting) {
+            float halfCast = castTime / 2.0F;
+            if (ageInTicks <= halfCast) {
+                width *= (ageInTicks / halfCast);
+            }
+        }
 
         int maxLife = entity.getMaxLife();
         int fadeTicks = 10;
@@ -435,9 +446,9 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
 
-        float endBallScale = width * 0.2F;
+        float endBallScale = width * 0.35F;
         poseStack.scale(endBallScale, endBallScale, endBallScale);
-        poseStack.translate(0.1D, 0.25D, 0.0D);
+        poseStack.translate(0.1D, 0.0D, 0.0D);
 
         renderBall(entity, poseStack, buffer, ageInTicks, auraColor, borderColor, 1.0F * alphaMultiplier);
         poseStack.popPose();
@@ -447,7 +458,7 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float explodeJitter = (float) (Math.random() - 0.5) * 0.02F;
 
         poseStack.pushPose();
-        float scale1 = 1.2F * (1.0F + explodePulse + explodeJitter);
+        float scale1 = 0.8F * (1.0F + explodePulse + explodeJitter);
         poseStack.scale(scale1, scale1, scale1);
         poseStack.translate(0.0D, -1.5D, -0.35D);
         boolean useFirstTexture = (entity.tickCount / 3) % 2 == 0;
@@ -458,7 +469,7 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
 
         // KI CIRCULAR EXPLOSIVO
         poseStack.pushPose();
-        scale1 = 0.8F * (1.0F + explodePulse + explodeJitter);
+        scale1 = 0.6F * (1.0F + explodePulse + explodeJitter);
         poseStack.scale(scale1, scale1, scale1);
         poseStack.translate(0.0D, -0.3d, -0.15D);
         useFirstTexture = (entity.tickCount / 3) % 2 == 0;
@@ -469,9 +480,9 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
 
         // KI CIRCULAR EXPLOSIVO CLARO
         poseStack.pushPose();
-        scale1 = 0.6F * (1.0F + explodePulse + explodeJitter);
+        scale1 = 0.4F * (1.0F + explodePulse + explodeJitter);
         poseStack.scale(scale1, scale1, scale1);
-        poseStack.translate(0.0D, -0.3d, -0.22D);
+        poseStack.translate(0.0D, -0.3d, -0.25D);
         useFirstTexture = (entity.tickCount / 3) % 2 == 0;
         currentExplodeTexture = useFirstTexture ? TEXTURE_LASER_EXPLODE1 : TEXTURE_LASER_EXPLODE2;
         laserBorderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(currentExplodeTexture));

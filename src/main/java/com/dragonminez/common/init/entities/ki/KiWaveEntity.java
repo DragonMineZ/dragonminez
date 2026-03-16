@@ -7,6 +7,7 @@ import com.dragonminez.common.init.particles.KiSheddingParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -33,7 +34,16 @@ public class KiWaveEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Float> FIXED_YAW = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> FIXED_PITCH = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
 
-    private static final float MAX_RANGE = 300.0F;
+    private static final EntityDataAccessor<Integer> CAST_WAVE = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> CAST_SIZE = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final EntityDataAccessor<Float> OFFSET_X = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> OFFSET_Y = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final EntityDataAccessor<Boolean> CONTINUOUS_FOLLOW = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.BOOLEAN);
+
+    private static final float MAX_RANGE = 300.0F; // uff
 
     public KiWaveEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -71,47 +81,102 @@ public class KiWaveEntity extends AbstractKiProjectile {
         return this.getMaxLife() / 20;
     }
 
-    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
         this.setKiRenderType(0);
+
         this.setSize(size);
+        this.setCastSize(size / 2);
+
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
-        this.setMaxLife(160);
+
+        this.setMaxLife(castTime*2);
+        this.setCastWave(castTime);
+
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+
+        this.setCastOffsets(0.4F, 0.6F, 0.0F);
+        updatePositionRelativeToOwner(owner, true);
+
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, float size) {
-        this.setupKiWave(owner, damage, speed, color, color, size);
+    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+        this.setupKiWave(owner, damage, speed, color, color, size, castTime);
     }
 
-    public void setupKiHame(LivingEntity owner, float damage, float speed, float size) {
+    public void setupKiHame(LivingEntity owner, float damage, float speed, float size, int castTime) {
         this.setKiRenderType(1);
+
         this.setSize(size);
+        this.setCastSize(size / 2);
+
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0x4FF7FF, 0x4FF7FF);
-        this.setMaxLife(200);
+
+        this.setMaxLife(castTime*2);
+        this.setCastWave(castTime);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+
+        this.setCastOffsets(0.4F, 0.6F, 0.0F);
+        updatePositionRelativeToOwner(owner, true);
+
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size) {
+    public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size, int castTime) {
         this.setKiRenderType(2);
+
         this.setSize(size);
+        this.setCastSize(size / 2);
+
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xCE10E3, 0xAE10E3);
-        this.setMaxLife(200);
+
+        this.setMaxLife(castTime*2);
+        this.setCastWave(castTime);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+
+        this.setCastOffsets(0.4F, 0.6F, 0.0F);
+        updatePositionRelativeToOwner(owner, true);
+
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
+    }
+
+    private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
+        Vec3 look = owner.getLookAngle();
+        Vec3 newPos;
+
+        if (isCasting) {
+            Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
+            Vec3 up = right.cross(look).normalize();
+
+            Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
+                    .add(up.scale(this.entityData.get(OFFSET_Y)))
+                    .add(look.scale(this.entityData.get(OFFSET_Z)));
+
+            newPos = owner.getEyePosition().add(offset);
+        } else {
+            double chestY = owner.getY() + (owner.getBbHeight() / 2.0F);
+
+            newPos = new Vec3(owner.getX(), chestY, owner.getZ()).add(look.scale(0.8D));
+        }
+
+        this.setPos(newPos.x, newPos.y, newPos.z);
+
+        this.entityData.set(FIXED_YAW, owner.getYRot());
+        this.entityData.set(FIXED_PITCH, owner.getXRot());
+        this.setYRot(owner.getYRot());
+        this.setXRot(owner.getXRot());
     }
 
     @Override
@@ -120,65 +185,118 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.entityData.define(BEAM_LENGTH, 0.0F);
         this.entityData.define(FIXED_YAW, 0.0F);
         this.entityData.define(FIXED_PITCH, 0.0F);
+        this.entityData.define(CAST_WAVE, 100);
+        this.entityData.define(CAST_SIZE, 1.0F);
+        this.entityData.define(OFFSET_X, 0.0F);
+        this.entityData.define(OFFSET_Y, 0.0F);
+        this.entityData.define(OFFSET_Z, 0.0F);
+
+        this.entityData.define(CONTINUOUS_FOLLOW, false);
     }
 
     public float getBeamLength() { return this.entityData.get(BEAM_LENGTH); }
     private void setBeamLength(float len) { this.entityData.set(BEAM_LENGTH, len); }
     public float getFixedYaw() { return this.entityData.get(FIXED_YAW); }
     public float getFixedPitch() { return this.entityData.get(FIXED_PITCH); }
+    public int getCastWave() { return this.entityData.get(CAST_WAVE); }
+    public void setCastWave(int ticks) { this.entityData.set(CAST_WAVE, ticks); }
+    public float getCastSize() { return this.entityData.get(CAST_SIZE); }
+    public void setCastSize(float size) { this.entityData.set(CAST_SIZE, size); }
+    public void setCastOffsets(float offsetX, float offsetY, float offsetZ) {
+        this.entityData.set(OFFSET_X, offsetX);
+        this.entityData.set(OFFSET_Y, offsetY);
+        this.entityData.set(OFFSET_Z, offsetZ);
+    }
+    public boolean isContinuousFollow() { return this.entityData.get(CONTINUOUS_FOLLOW); }
+    public void setContinuousFollow(boolean follow) { this.entityData.set(CONTINUOUS_FOLLOW, follow); }
 
     @Override
     public void tick() {
         this.baseTick();
         this.setDeltaMovement(0, 0, 0);
 
-        if (!this.level().isClientSide) {
-            Vec3 startPos = this.position();
-            Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
-            float currentLen = this.getBeamLength();
-            float currentSpeed = this.getKiSpeed();
+        int castTime = this.getCastWave();
+        boolean isCasting = this.tickCount <= castTime;
 
-            if (this.tickCount % 5 == 0) {
-                Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
-                this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
-                this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 0.1F, 1.0F);
-            }
-
-            float targetLen = currentLen + currentSpeed;
-            Vec3 tipPos = startPos.add(dir.scale(targetLen));
-
-            this.destroyBlocksAtTip(tipPos);
-
-            HitResult hitResult = this.level().clip(new ClipContext(
-                    startPos.add(dir.scale(currentLen)), tipPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this
-            ));
-
-            if (hitResult.getType() == HitResult.Type.BLOCK) {
-                BlockPos hitPos = ((BlockHitResult)hitResult).getBlockPos();
-                if (this.level().getBlockState(hitPos).getExplosionResistance(this.level(), hitPos, null) >= 1000) {
-                    targetLen = (float) hitResult.getLocation().distanceTo(startPos);
-                    currentSpeed = 0.0F;
-                    this.setKiSpeed(currentSpeed);
+        var owner = this.getOwner();
+        if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
+            if (isCasting) {
+                updatePositionRelativeToOwner(livingOwner, true);
+            } else {
+                if (this.isContinuousFollow()) {
+                    updatePositionRelativeToOwner(livingOwner, false);
+                } else {
+                    if (this.tickCount == castTime + 1) {
+                        updatePositionRelativeToOwner(livingOwner, false);
+                    }
                 }
             }
+        } else if (!this.level().isClientSide) {
+            this.discard();
+            return;
+        }
 
-            this.setBeamLength(targetLen);
-            damageEntitiesInBeam(startPos, dir, targetLen);
+        if (!this.level().isClientSide) {
 
-            if (currentSpeed < 0.05F || this.tickCount > this.getMaxLife()) {
-                explodeAndDie(startPos.add(dir.scale(targetLen)));
-                return;
+            if (isCasting) {
+                if (this.tickCount == 1) {
+                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
+                }
+            } else {
+                Vec3 startPos = this.position();
+                Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
+                float currentLen = this.getBeamLength();
+                float currentSpeed = this.getKiSpeed();
+
+                if (this.tickCount == castTime + 1) {
+                    this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+                }
+
+                if ((this.tickCount - castTime) % 5 == 0) {
+                    Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
+                    this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
+                }
+
+                float targetLen = currentLen + currentSpeed;
+                Vec3 tipPos = startPos.add(dir.scale(targetLen));
+
+                this.destroyBlocksAtTip(tipPos);
+
+                HitResult hitResult = this.level().clip(new ClipContext(
+                        startPos.add(dir.scale(currentLen)), tipPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this
+                ));
+
+                if (hitResult.getType() == HitResult.Type.BLOCK) {
+                    BlockPos hitPos = ((BlockHitResult)hitResult).getBlockPos();
+                    if (this.level().getBlockState(hitPos).getExplosionResistance(this.level(), hitPos, null) >= 1000) {
+                        targetLen = (float) hitResult.getLocation().distanceTo(startPos);
+                        currentSpeed = 0.0F;
+                        this.setKiSpeed(currentSpeed);
+                    }
+                }
+
+                this.setBeamLength(targetLen);
+                damageEntitiesInBeam(startPos, dir, targetLen);
+
+                if (currentSpeed < 0.05F || this.tickCount > this.getMaxLife()) {
+                    explodeAndDie(startPos.add(dir.scale(targetLen)));
+                    return;
+                }
             }
         } else {
-            spawnWaveParticles();
-            spawnOriginSplash();
-            spawnLightningParticles();
+            if (!isCasting) {
+                spawnWaveParticles();
+                spawnOriginSplash();
+                spawnLightningParticles(false);
+            } else {
+                spawnLightningParticles(true);
+            }
         }
 
         this.onKiTick();
     }
 
-    private void spawnLightningParticles() {
+    private void spawnLightningParticles(boolean isCasting) {
         if (this.getKiRenderType() != 2) return;
 
         float length = this.getBeamLength();
@@ -195,14 +313,16 @@ public class KiWaveEntity extends AbstractKiProjectile {
         int rayosPorTick = 8;
 
         for (int i = 0; i < rayosPorTick; i++) {
-            if (this.random.nextFloat() < 1.00F) {
-                spawnLightningAt(startPos, scale * 2.5F, borderColor);
-                spawnLightningAt(startPos, scale * 2.5F, ColorUtils.darkenColor(borderColor, 0.5F));
-            }
-
-            if (length > 1.0F && this.random.nextFloat() < 1.00F) {
-                spawnLightningAt(endPos, scale * 3.0F, borderColor);
-                spawnLightningAt(endPos, scale * 3.0F, ColorUtils.darkenColor(borderColor, 0.5F));
+            if (isCasting) {
+                if (this.random.nextFloat() < 1.00F) {
+                    spawnLightningAt(startPos, scale * 1.5F, borderColor);
+                    spawnLightningAt(startPos, scale * 1.5F, ColorUtils.darkenColor(borderColor, 0.5F));
+                }
+            } else {
+                if (length > 1.0F && this.random.nextFloat() < 1.00F) {
+                    spawnLightningAt(endPos, scale * 3.0F, borderColor);
+                    spawnLightningAt(endPos, scale * 3.0F, ColorUtils.darkenColor(borderColor, 0.5F));
+                }
             }
         }
     }
@@ -416,5 +536,27 @@ public class KiWaveEntity extends AbstractKiProjectile {
             }
         }
         this.discard();
+    }
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putInt("CastWave", getCastWave());
+        pCompound.putFloat("CastSize", getCastSize());
+        pCompound.putFloat("OffsetX", this.entityData.get(OFFSET_X));
+        pCompound.putFloat("OffsetY", this.entityData.get(OFFSET_Y));
+        pCompound.putFloat("OffsetZ", this.entityData.get(OFFSET_Z));
+        pCompound.putBoolean("ContinuousFollow", isContinuousFollow());
+    }
+
+    @Override
+    protected void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        if (pCompound.contains("CastWave")) setCastWave(pCompound.getInt("CastWave"));
+        if (pCompound.contains("CastSize")) setCastSize(pCompound.getFloat("CastSize"));
+        if (pCompound.contains("OffsetX")) this.entityData.set(OFFSET_X, pCompound.getFloat("OffsetX"));
+        if (pCompound.contains("OffsetY")) this.entityData.set(OFFSET_Y, pCompound.getFloat("OffsetY"));
+        if (pCompound.contains("OffsetZ")) this.entityData.set(OFFSET_Z, pCompound.getFloat("OffsetZ"));
+        if (pCompound.contains("ContinuousFollow")) setContinuousFollow(pCompound.getBoolean("ContinuousFollow"));
     }
 }

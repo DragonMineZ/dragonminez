@@ -31,12 +31,12 @@ public class TechniqueDispatcher {
 				break;
 			case MEDIUM_BALL:
 				KiBlastEntity medBall = new KiBlastEntity(level, owner);
-				medBall.setupKiBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+				medBall.setupKiBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), 40);
 				projectile = medBall;
 				break;
 			case GIANT_BALL:
 				KiBlastEntity giantBall = new KiBlastEntity(level, owner);
-				giantBall.setupKiLargeBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+				giantBall.setupKiLargeBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), 40);
 				projectile = giantBall;
 				break;
 			case WAVE:
@@ -106,7 +106,7 @@ public class TechniqueDispatcher {
 				return;
 			default:
 				KiBlastEntity defaultBlast = new KiBlastEntity(level, owner);
-				defaultBlast.setupKiBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+				defaultBlast.setupKiBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), 40);
 				projectile = defaultBlast;
 				break;
 		}

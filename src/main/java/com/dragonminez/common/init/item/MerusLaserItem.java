@@ -29,22 +29,23 @@ public class MerusLaserItem extends Item {
             KiLaserEntity kilaser = new KiLaserEntity(pLevel, pPlayer);
             KiExplosionEntity kiexp = new KiExplosionEntity(pLevel, pPlayer);
 
-            //kiBlast.setupKiSmall(pPlayer,7.2f, 2.2f, 0x00FFFF);
-            //kiBlast.setupKiBlast(pPlayer,10,2.2f, 0x00FFFF, 2.5f);
-            //kiBlast.setupKiLargeBlast(pPlayer,10,2.2f, 0x00FFFF, 4.0f);
-            //kiBlast.setupInvertedKiBlast(pPlayer,10,2.5f, 0x362440, 0xFFFFFF, 1.5f);
-            //kiBlast.setupKiSouls(pPlayer,10,0.8f, 0xFFFFFF);
-            //kiBlast.setupKiGenki(pPlayer,10,0.8f);
-            //kiBlast.setupKiNova(pPlayer,10,0.6f);
-            //kiBlast.setupKiDeathBall(pPlayer,10,2.0f, 0xA927F5);
+            //kiBlast.setupKiSmall(pPlayer,7.2f, 0.2f, 0x00FFFF);
+            //kiBlast.setupKiBlast(pPlayer,10,2.2f, 0x00FFFF, 2.5f, 100);
+            //kiBlast.setupKiLargeBlast(pPlayer,10,2.2f, 0x00FFFF, 4.0f, 100);
+            //kiBlast.setupInvertedKiBlast(pPlayer,10,2.5f, 0x362440, 0xFFFFFF, 1.5f, 100);
+            //kiBlast.setupKiSouls(pPlayer,10,1.2f, 0xFFFFFF, 100);
+            //kiBlast.setupKiGenki(pPlayer,10,0.8f, 100);
+            //kiBlast.setupKiNova(pPlayer,10,0.6f, 100);
+            //kiBlast.setupKiDeathBall(pPlayer,10,2.0f, 0xA927F5, 100);
+            //kiBlast.setupSokidan(pPlayer,10,0.5f, 0xFFEF26, 1.0f, 100);
 
-            //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 5.0f);
-            //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 3.0f);
-            //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 2.0f);
+            //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 1.0f, 100);
+            //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 3.0f, 100);
+            //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 2.0f, 100);
 
-            //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 0xBF2828);
-//            kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f);
-            kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFEB63, 0xFFE633);
+            //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);
+            kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
+            //kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
 //            pLevel.addFreshEntity(kiWave);
         }
 

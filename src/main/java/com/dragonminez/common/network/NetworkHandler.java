@@ -171,6 +171,12 @@ public class NetworkHandler {
 				.consumerMainThread(UpdateCharacterC2S::handle)
 				.add();
 
+        net.messageBuilder(SokidanControlC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+                .decoder(SokidanControlC2S::new)
+                .encoder(SokidanControlC2S::toBytes)
+                .consumerMainThread(SokidanControlC2S::handle)
+                .add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

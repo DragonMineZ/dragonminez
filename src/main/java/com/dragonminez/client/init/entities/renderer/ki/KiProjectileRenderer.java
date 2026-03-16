@@ -5,6 +5,7 @@ import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -50,9 +51,22 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
         float[] invertedAuraColor = ColorUtils.darkenColor(coreColor, 0.8f);
         float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
         float scale = entity.getSize();
+
+
+        if (entity instanceof KiBlastEntity blastEntity) {
+            float castTime = (float) blastEntity.getCastTime();
+            if (castTime > 0) {
+                if (ageInTicks <= castTime) {
+                    scale = scale * (ageInTicks / castTime);
+                }
+            }
+        }
+
         int renderType = entity.getKiRenderType();
         poseStack.scale(scale, scale, scale);
         poseStack.translate(0, -0.2, 0.0f);
+
+
 
         switch (renderType) {
             case 0: // Small

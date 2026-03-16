@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.particles;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.ModParticleRenderTypes;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -58,7 +59,7 @@ public class KiExplosionSplashParticle extends TextureSheetParticle {
 
     @Override
     public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+        return ModParticleRenderTypes.ADDITIVE_LIT;
     }
 
     @Override

@@ -12,6 +12,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -36,6 +40,15 @@ public class KiBlastEntity extends AbstractKiProjectile {
     private float currentDetonationRadius = 0.0F;
     private float maxDetonationRadius = 0.0F;
 
+    private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> OFFSET_X = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> OFFSET_Y = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final EntityDataAccessor<Boolean> IS_CONTROLLABLE = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_PARKED = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> PARKED_DISTANCE = SynchedEntityData.defineId(KiBlastEntity.class, EntityDataSerializers.FLOAT);
+
     public KiBlastEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
@@ -57,125 +70,236 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     public void setupKiSmall(LivingEntity owner, float damage, float speed, int color) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(0);
         this.setSize(0.6F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);
+
         this.setMaxLife(100);
+        this.setCastTime(0);
+        this.setCastOffsets(0.0f, -0.5F, 0.5F);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
 
-    public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, float size) {
-        this.setupKiBlast(owner,damage, speed, color, color, size);
+    public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+        this.setupKiBlast(owner,damage, speed, color, color, size, castTime);
     }
 
-    public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+    public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(1);
+
         this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
-        this.setMaxLife(100);
+
+        this.setMaxLife(castTime*2);
+        this.setCastTime(castTime);
+        this.setCastOffsets(0.0f, -0.5F, 0.5F);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
 
-    public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, float size) {
-        this.setupKiLargeBlast(owner, damage, speed, color, color, size);
+    public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+        this.setupKiLargeBlast(owner, damage, speed, color, color, size, castTime);
     }
 
-    public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+    public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(2);
+
         this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
-        this.setMaxLife(160);
+
+        this.setMaxLife(castTime*2);
+        this.setCastTime(castTime);
+        this.setCastOffsets(0.0f, 5.2F, 0.2F);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
 
-    public void setupInvertedKiBlast(LivingEntity owner, float damage, float speed, int color, float size) {
-        this.setupInvertedKiBlast(owner,damage, speed, color, color, size);
+    public void setupInvertedKiBlast(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+        this.setupInvertedKiBlast(owner,damage, speed, color, color, size, castTime);
     }
 
-    public void setupInvertedKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+    public void setupInvertedKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(3);
+
         this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
-        this.setMaxLife(100);
+        this.setCastOffsets(0.0f, -0.5F, 0.5F);
+
+        this.setMaxLife(castTime*2);
+        this.setCastTime(castTime);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
 
-    public void setupKiSouls(LivingEntity owner, float damage, float speed, int color) {
+    public void setupKiSouls(LivingEntity owner, float damage, float speed, int color, int castTime) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(4);
+
         this.setSize(0.6F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);
-        this.setMaxLife(160);
+        this.setCastOffsets(0.0f, -0.5F, 0.5F);
+
+        this.setMaxLife(castTime*2);
+        this.setCastTime(castTime);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
 
-    public void setupKiGenki(LivingEntity owner, float damage, float speed) {
+    public void setupKiGenki(LivingEntity owner, float damage, float speed, int castTime) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(5);
+
         this.setSize(5.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0x30FFF1, 0x00F8FF);
-        this.setMaxLife(160);
+        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime*2);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
 
-    public void setupKiNova(LivingEntity owner, float damage, float speed) {
+    public void setupKiNova(LivingEntity owner, float damage, float speed, int castTime) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(6);
+
         this.setSize(5.0F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(0x9E0000, 0x9E0000);
-        this.setMaxLife(160);
+        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime*2);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
-    public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color, int colorborder) {
+    public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color, int colorborder, int castTime) {
         this.setOwner(owner);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         this.setKiRenderType(7);
+
         this.setSize(2.5F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
-        this.setColors(color, colorborder);
-        this.setMaxLife(160);
+        this.setColors(color, ColorUtils.darkenColor(colorborder, 0.5f));
+        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime*2);
+
+        //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
         finalizeSetupAndShoot(owner, speed);
     }
-    public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color) {
-        setupKiDeathBall(owner, damage, speed, color, color);
+    public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color, int castTime) {
+        setupKiDeathBall(owner, damage, speed, color, color, castTime);
+    }
+
+    public void setupSokidan(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+        this.setOwner(owner);
+        this.setKiRenderType(8);
+
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, color);
+
+        this.setControllable(true);
+
+        this.setMaxLife(400);
+        this.setCastTime(castTime);
+        this.setCastOffsets(0.0F, 0.5F, 0.5F);
+
+        finalizeSetupAndShoot(owner, speed);
+    }
+
+    public void toggleSokidanControl() {
+        if (this.isControllable()) {
+            boolean currentMode = this.isParked();
+            this.setParked(!currentMode);
+
+            if (this.isParked()) {
+                if (this.getOwner() instanceof LivingEntity owner) {
+                    float dist = (float) this.position().distanceTo(owner.getEyePosition());
+                    this.setParkedDistance(dist);
+                }
+                this.setDeltaMovement(0, 0, 0);
+            } else {
+                if (this.getOwner() instanceof LivingEntity owner) {
+                    Vec3 look = owner.getLookAngle();
+                    this.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
+                }
+            }
+            //this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 2.0F);
+        }
     }
 
     private void finalizeSetupAndShoot(LivingEntity owner, float speed) {
         this.setOwner(owner);
 
-        Vec3 lookDir = owner.getLookAngle();
-        Vec3 spawnPos = owner.getEyePosition().add(lookDir.scale(0.5D));
-        this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
+        if (this.getCastTime() <= 0) {
+            Vec3 lookDir = owner.getLookAngle();
+            Vec3 spawnPos = owner.getEyePosition().add(lookDir.scale(0.5D));
+            this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
+            this.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, speed, 0.0F);
 
-        this.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, speed, 0.0F);
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.0F + (this.random.nextFloat() * 0.2F));
+        } else {
+            updatePositionRelativeToOwner(owner);
+        }
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        int castTime = this.getCastTime();
+        boolean isCasting = castTime > 0 && this.tickCount <= castTime;
+
+        if (isCasting) {
+            var owner = this.getOwner();
+            if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
+                updatePositionRelativeToOwner(livingOwner);
+                this.setDeltaMovement(0, 0, 0);
+            } else if (!this.level().isClientSide) {
+                this.discard();
+            }
+        } else if (castTime > 0 && this.tickCount == castTime + 1) {
+            var owner = this.getOwner();
+            if (owner instanceof LivingEntity livingOwner) {
+                Vec3 lookDir = livingOwner.getLookAngle();
+                Vec3 spawnPos = livingOwner.getEyePosition().add(lookDir.scale(0.5D));
+                this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
+                this.shootFromRotation(livingOwner, livingOwner.getXRot(), livingOwner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
+
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (this.random.nextFloat() * 0.2F));
+            }
         }
     }
 
@@ -186,33 +310,57 @@ public class KiBlastEntity extends AbstractKiProjectile {
             return;
         }
 
+        int castTime = this.getCastTime();
+        boolean isCasting = castTime > 0 && this.tickCount <= castTime;
+
+        if (!isCasting && this.isParked() && this.getOwner() instanceof LivingEntity owner) {
+            Vec3 eyePos = owner.getEyePosition();
+            Vec3 look = owner.getLookAngle();
+
+            Vec3 targetPos = eyePos.add(look.scale(this.getParkedDistance()));
+            Vec3 diff = targetPos.subtract(this.position());
+
+            if (diff.lengthSqr() > 0.02) {
+                double followSpeed = this.getKiSpeed() * 1.5;
+                this.setDeltaMovement(diff.normalize().scale(Math.min(diff.length(), followSpeed)));
+            } else {
+                this.setDeltaMovement(0, 0, 0);
+                this.setPos(targetPos.x, targetPos.y, targetPos.z);
+            }
+
+            this.setYRot(owner.getYRot());
+            this.setXRot(owner.getXRot());
+        }
+
         if (!this.level().isClientSide) {
             int type = this.getKiRenderType();
 
-            if (this.isDetonating) {
-                this.processDetonation();
-                return;
-            }
+            if (!isCasting) {
+                if (this.isDetonating) {
+                    this.processDetonation();
+                    return;
+                }
 
-            if (type == 5 || type == 6) {
-                if (this.tickCount % 20 == 0) {
-                    if (this.destroyBlocksInPath()) {
-                        this.setDeltaMovement(this.getDeltaMovement().scale(0.95D));
+                if (type == 5 || type == 6) {
+                    if (this.tickCount % 20 == 0) {
+                        if (this.destroyBlocksInPath()) {
+                            this.setDeltaMovement(this.getDeltaMovement().scale(0.95D));
+                        }
+                        if (this.getDeltaMovement().lengthSqr() < 0.01D) {
+                            this.explodeAndDie();
+                            return;
+                        }
                     }
-                    if (this.getDeltaMovement().lengthSqr() < 0.01D) {
-                        this.explodeAndDie();
-                        return;
-                    }
+                }
+
+                if (this.tickCount % 10 == 0) {
+                    pulseAreaDamage();
                 }
             }
 
             if (this.tickCount >= this.getMaxLife()) {
                 this.explodeAndDie();
                 return;
-            }
-
-            if (this.tickCount % 10 == 0) {
-                pulseAreaDamage();
             }
         }
 
@@ -229,7 +377,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 pb = (float)(Math.sin(speed + 4.1888) * 0.5 + 0.5);
             }
 
-            if (type >= 1) {
+            if (type >= 1 && !isCasting) {
                 for (int i = 0; i < 3; i++) {
                     double radius = scale*1.2;
                     double theta = this.random.nextDouble() * 2 * Math.PI;
@@ -286,6 +434,49 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
     }
 
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(CAST_TIME, 0);
+        this.entityData.define(OFFSET_X, 0.0F);
+        this.entityData.define(OFFSET_Y, 0.0F);
+        this.entityData.define(OFFSET_Z, 0.0F);
+
+        this.entityData.define(IS_CONTROLLABLE, false);
+        this.entityData.define(IS_PARKED, false);
+        this.entityData.define(PARKED_DISTANCE, 0.0F);
+    }
+
+    public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }
+    public int getCastTime() { return this.entityData.get(CAST_TIME); }
+    public void setCastOffsets(float offsetX, float offsetY, float offsetZ) {
+        this.entityData.set(OFFSET_X, offsetX);
+        this.entityData.set(OFFSET_Y, offsetY);
+        this.entityData.set(OFFSET_Z, offsetZ);
+    }
+    public void setControllable(boolean controllable) { this.entityData.set(IS_CONTROLLABLE, controllable); }
+    public boolean isControllable() { return this.entityData.get(IS_CONTROLLABLE); }
+    public void setParked(boolean parked) { this.entityData.set(IS_PARKED, parked); }
+    public boolean isParked() { return this.entityData.get(IS_PARKED); }
+    public void setParkedDistance(float dist) { this.entityData.set(PARKED_DISTANCE, dist); }
+    public float getParkedDistance() { return this.entityData.get(PARKED_DISTANCE); }
+
+    private void updatePositionRelativeToOwner(LivingEntity owner) {
+        Vec3 look = owner.getLookAngle();
+        Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
+        Vec3 up = right.cross(look).normalize();
+
+        Vec3 offset = right.scale(this.entityData.get(OFFSET_X))
+                .add(up.scale(this.entityData.get(OFFSET_Y)))
+                .add(look.scale(this.entityData.get(OFFSET_Z)));
+
+        Vec3 newPos = owner.getEyePosition().add(offset);
+        this.setPos(newPos.x, newPos.y, newPos.z);
+
+        this.setYRot(owner.getYRot());
+        this.setXRot(owner.getXRot());
+    }
+
     private void pulseAreaDamage() {
         double radius = this.getSize();
         AABB area = this.getBoundingBox().inflate(radius);
@@ -301,6 +492,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     protected void onHitEntity(EntityHitResult pResult) {
+        int castTime = this.getCastTime();
+        boolean isCasting = castTime > 0 && this.tickCount <= castTime;
+
+        if (isCasting) {
+            return;
+        }
+
         super.onHitEntity(pResult);
 
         if (!this.level().isClientSide) {
@@ -327,6 +525,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 }
             }
 
+            if (this.isControllable()) {
+                return;
+            }
+
+
             int type = this.getKiRenderType();
             if (type == 5 || type == 6) {
                 this.setDeltaMovement(this.getDeltaMovement().scale(0.85D));
@@ -341,6 +544,13 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     @Override
     protected void onHitBlock(BlockHitResult pResult) {
+        int castTime = this.getCastTime();
+        boolean isCasting = castTime > 0 && this.tickCount <= castTime;
+
+        if (isCasting) {
+            return;
+        }
+
         int type = this.getKiRenderType();
         if (type == 5 || type == 6) {
         } else {
@@ -519,6 +729,32 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         return hitSomething;
+    }
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag pCompound) {
+        super.addAdditionalSaveData(pCompound);
+        pCompound.putInt("CastTime", getCastTime());
+        pCompound.putFloat("OffsetX", this.entityData.get(OFFSET_X));
+        pCompound.putFloat("OffsetY", this.entityData.get(OFFSET_Y));
+        pCompound.putFloat("OffsetZ", this.entityData.get(OFFSET_Z));
+
+        pCompound.putBoolean("IsControllable", this.isControllable());
+        pCompound.putBoolean("IsParked", this.isParked());
+        pCompound.putFloat("ParkedDistance", this.getParkedDistance());
+    }
+
+    @Override
+    protected void readAdditionalSaveData(CompoundTag pCompound) {
+        super.readAdditionalSaveData(pCompound);
+        if (pCompound.contains("CastTime")) setCastTime(pCompound.getInt("CastTime"));
+        if (pCompound.contains("OffsetX")) this.entityData.set(OFFSET_X, pCompound.getFloat("OffsetX"));
+        if (pCompound.contains("OffsetY")) this.entityData.set(OFFSET_Y, pCompound.getFloat("OffsetY"));
+        if (pCompound.contains("OffsetZ")) this.entityData.set(OFFSET_Z, pCompound.getFloat("OffsetZ"));
+
+        if (pCompound.contains("IsControllable")) setControllable(pCompound.getBoolean("IsControllable"));
+        if (pCompound.contains("IsParked")) setParked(pCompound.getBoolean("IsParked"));
+        if (pCompound.contains("ParkedDistance")) setParkedDistance(pCompound.getFloat("ParkedDistance"));
     }
 
     private double getVisualCenterY() {

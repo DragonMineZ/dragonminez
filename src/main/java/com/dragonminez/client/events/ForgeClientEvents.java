@@ -12,6 +12,8 @@ import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
+import com.dragonminez.common.network.C2S.SokidanControlC2S;
+import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -69,6 +71,10 @@ public class ForgeClientEvents {
 			mc.setScreen(new SpacePodScreen());
 			mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 		}
+
+        while (KeyBinds.SECOND_FUNCTION_KEY.consumeClick()) {
+            NetworkHandler.sendToServer(new SokidanControlC2S());
+        }
 	}
 
 	private static int tickCounter = 0;
