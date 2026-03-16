@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.shader;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.util.ModRenderTypes;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
@@ -17,6 +18,7 @@ public class DMZShaders {
 	public static ShaderInstance auraSharpShader;
 	public static ShaderInstance auraSparkingShader;
 	public static ShaderInstance lightningShader;
+	public static ShaderInstance outlineShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -39,5 +41,10 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "lightning"),
 						DefaultVertexFormat.POSITION_COLOR_NORMAL),
 				shaderInstance -> lightningShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),
+						DefaultVertexFormat.NEW_ENTITY),
+				shaderInstance -> outlineShader = shaderInstance);
 	}
 }

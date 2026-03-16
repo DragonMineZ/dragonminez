@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
+import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
@@ -20,6 +21,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -82,14 +84,11 @@ public class ForgeClientEvents {
 
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
-		if (event.phase != TickEvent.Phase.END) {
-			return;
-		}
+		if (event.phase != TickEvent.Phase.END) return;
 
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player == null || mc.level == null) {
-			return;
-		}
+		TransformationPostShaderManager.tick();
+		if (mc.player == null || mc.level == null) return;
 
 		if (KeyBinds.UTILITY_MENU.isDown()) {
 			if (mc.screen == null) {
@@ -115,6 +114,13 @@ public class ForgeClientEvents {
 		if (!current.equals(lastLang)) {
 			lastLang = current;
 			CrowdinManager.fetchLanguage(current);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onRenderLevelStage(RenderLevelStageEvent event) {
+		if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+			TransformationPostShaderManager.flushMaskAndApplyUniforms(event.getPartialTick(), event.getPoseStack(), event.getCamera(), event.getFrustum());
 		}
 	}
 

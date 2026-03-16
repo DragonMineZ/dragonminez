@@ -75,6 +75,7 @@ public class FormConfig {
 		private Double stackDrainMultiplier = 2.0;
 		private Boolean canAlwaysTransform = false;
 		private Boolean directTransformation = false;
+		private TransformationPostShaderConfig transformationPostShader = new TransformationPostShaderConfig();
 
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
@@ -178,6 +179,41 @@ public class FormConfig {
 
 		public Boolean hasAuraColorOverride() {
 			return auraColor != null && !auraColor.isEmpty();
+		}
+
+		public TransformationPostShaderConfig getTransformationPostShader() {
+			return transformationPostShader != null ? transformationPostShader : new TransformationPostShaderConfig();
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class TransformationPostShaderConfig {
+			private Boolean enabled = false;
+			private String primaryColor = "#7FFFFF";
+			private String secondaryColor = "#FFD970";
+			private Double noiseScale = 4.0;
+			private Double colorMixSpeed = 0.7;
+
+			public boolean isEnabled() {
+				return Boolean.TRUE.equals(enabled);
+			}
+
+			public String getPrimaryColor() {
+				return primaryColor != null && !primaryColor.isEmpty() ? primaryColor : "#7FFFFF";
+			}
+
+			public String getSecondaryColor() {
+				return secondaryColor != null && !secondaryColor.isEmpty() ? secondaryColor : "#FFD970";
+			}
+
+			public double getNoiseScale() {
+				return Math.max(0.01, noiseScale != null ? noiseScale : 4.0);
+			}
+
+			public double getColorMixSpeed() {
+				return Math.max(0.0, colorMixSpeed != null ? colorMixSpeed : 0.7);
+			}
 		}
 	}
 }

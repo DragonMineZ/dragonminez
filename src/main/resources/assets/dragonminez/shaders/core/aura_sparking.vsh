@@ -100,6 +100,9 @@ void main() {
 
     pos.xz *= (auravar * auravar * (3.0 - 2.0 * auravar));
     pos.xyz += finalDir * (displacement * amp * falloff) * pow(auravar, 6.0);
+    pos.y *= 0.85;
+    pos.x *= 0.75;
+    pos.z *= 0.75;
 
     vec4 worldPos = modelMatrix * vec4(Position, 1.0);
     vec4 viewPos = modelMatrix * vec4(pos.xyz, 1.0);

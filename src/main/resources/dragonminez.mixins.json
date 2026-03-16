@@ -22,6 +22,7 @@
     "client.MouseHandlerMixin",
     "client.PlayerGeoAnimatableMixin",
     "client.PlayerRendererMixin",
+    "client.PostChainAccessor",
     "client.PrimaryLevelDataMixin",
     "client.SoundManagerMixin",
     "client.TitleScreenMixin",
