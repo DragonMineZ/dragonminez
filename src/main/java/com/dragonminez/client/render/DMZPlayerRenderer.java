@@ -42,7 +42,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		this.addRenderLayer(new DMZRacePartsLayer(this));
 		this.addRenderLayer(new DMZWeaponsLayer<>(this));
 		this.addRenderLayer(new DMZAuraLayer<>(this));
-		this.addRenderLayer(new DMZThirdPartyLayerForwarder<>(this));
+		//this.addRenderLayer(new DMZThirdPartyLayerForwarder<>(this));
 	}
 
 	public void reRender(GeoRenderLayer<T> calledFrom, BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource,
