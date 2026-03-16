@@ -173,9 +173,6 @@ public class ClientStatsEvents {
 				flightSound = null;
 			}
 
-            //Rayos SSJ2
-            handleTransformationSparks(player, character, mc);
-
 			boolean hasScouter = player.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				if (!hasScouter) {
@@ -291,54 +288,6 @@ public class ClientStatsEvents {
 			}
 		}
 	}
-
-    private static void handleTransformationSparks(LocalPlayer player, Character character, Minecraft mc) {
-        if (mc.level == null) return;
-
-        boolean hasSparks = false;
-        String sparkHexColor = "#FFFFFF";
-
-        if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getHasLightnings()) {
-            hasSparks = true;
-            sparkHexColor = character.getActiveStackFormData().getLightningColor();
-        }
-        else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getHasLightnings()) {
-            hasSparks = true;
-            sparkHexColor = character.getActiveFormData().getLightningColor();
-        }
-
-        if (hasSparks) {
-            net.minecraft.util.RandomSource random = player.getRandom();
-
-            if (random.nextFloat() < 0.60F) {
-
-                double offsetX = (random.nextDouble() - 0.5D) * player.getBbWidth() * 2.5D;
-                double offsetY = random.nextDouble() * player.getBbHeight() * 1.2D;
-                double offsetZ = (random.nextDouble() - 0.5D) * player.getBbWidth() * 2.5D;
-
-                double vx = offsetX * 0.05D;
-                double vy = (random.nextDouble() - 0.5D) * 0.05D;
-                double vz = offsetZ * 0.05D;
-
-                net.minecraft.client.particle.Particle p = mc.particleEngine.createParticle(
-                        MainParticles.KI_LIGHTNING.get(),
-                        player.getX() + offsetX,
-                        player.getY() + offsetY,
-                        player.getZ() + offsetZ,
-                        vx, vy, vz
-                );
-
-                if (p instanceof KiLightningParticle lightning) {
-                    float[] rgb = ColorUtils.rgbIntToFloat(ColorUtils.hexToInt(sparkHexColor));
-                    lightning.setLightningColor(rgb[0], rgb[1], rgb[2]);
-
-                    float baseScale = player.getBbHeight() * 0.8F;
-                    float randomScale = baseScale + (random.nextFloat() * baseScale * 0.5F);
-                    lightning.setLightningScale(randomScale);
-                }
-            }
-        }
-    }
 
 	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {

@@ -23,11 +23,26 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (animatable.isSpectator()) return;
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+		if (stats == null) return;
 
-		if (stats == null || (!stats.getStatus().isAuraActive() && !stats.getStatus().isPermanentAura())) return;
-		if (stats.getStatus().isAndroidUpgraded() && (!stats.getStatus().isActionCharging() || !stats.getStatus().getSelectedAction().equals(ActionMode.FORM)))
-			return;
-		AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
-		AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
+		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		boolean isAndroidChargingForm = stats.getStatus().isAndroidUpgraded() && stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction().equals(ActionMode.FORM);
+
+		var character = stats.getCharacter();
+		boolean hasLightning = false;
+
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+			hasLightning = character.getActiveStackFormData().getHasLightnings();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
+			hasLightning = character.getActiveFormData().getHasLightnings();
+		}
+
+		if (stats.getStatus().isAndroidUpgraded() && !isAndroidChargingForm && !hasLightning) return;
+
+		if (isAuraActive && !isAndroidChargingForm) AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
+
+		if (isAuraActive || hasLightning) {
+			AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
+		}
 	}
 }

@@ -1,6 +1,7 @@
 package com.dragonminez.client.util;
 
 import com.dragonminez.client.events.ModClientEvents;
+import com.dragonminez.client.render.shader.DMZShaders;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
@@ -14,6 +15,38 @@ import java.util.function.Function;
 public class ModRenderTypes extends RenderType {
     public ModRenderTypes(String pName, VertexFormat pFormat, VertexFormat.Mode pMode, int pBufferSize, boolean pAffectsCrumbling, boolean pSortOnUpload, Runnable pSetupState, Runnable pClearState) {
         super(pName, pFormat, pMode, pBufferSize, pAffectsCrumbling, pSortOnUpload, pSetupState, pClearState);
+    }
+
+    public static RenderType getCustomAura(ResourceLocation texture) {
+        return RenderType.create("dragonminez_custom_aura",
+                DefaultVertexFormat.POSITION_COLOR_NORMAL,
+                VertexFormat.Mode.QUADS,
+                256,
+                false,
+                false, // sortOnUpload en false, mejora el rendimiento de mallas estáticas
+                RenderType.CompositeState.builder()
+                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.auraShader))
+                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                        .setCullState(RenderStateShard.NO_CULL) // Desactiva culling para ver el aura por dentro y por fuera
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE) // Ignora el depth buffer para que no corte texturas detrás
+                        .createCompositeState(false));
+    }
+
+    public static RenderType getCustomLightning(ResourceLocation texture) {
+        return RenderType.create("dragonminez_custom_lightning",
+                DefaultVertexFormat.POSITION_COLOR_NORMAL,
+                VertexFormat.Mode.QUADS,
+                256,
+                false,
+                false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.lightningShader))
+                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                        .setCullState(RenderStateShard.NO_CULL)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .createCompositeState(false));
     }
 
     public static RenderType getEnergySphere(ResourceLocation texture) {
