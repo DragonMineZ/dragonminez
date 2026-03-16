@@ -56,7 +56,7 @@ public class DefaultFormsFactory {
 		x2.setAttackSpeed(1.1);
 		x2.setAuraColor("#DB182C");
 		x2.setHasLightnings(false);
-		x2.setHairType("base");
+		x2.setHairType("");
 		setDefaultMasteryValues(x2);
 		x2.setStackDrainMultiplier(1.0);
 		x2.setCanAlwaysTransform(true);
@@ -72,7 +72,7 @@ public class DefaultFormsFactory {
 		x3.setAttackSpeed(1.2);
 		x3.setHealthDrain(0.06);
 		x3.setAuraColor("#DB182C");
-		x3.setHairType("base");
+		x3.setHairType("");
 		setDefaultMasteryValues(x3);
 		x3.setStackDrainMultiplier(1.0);
 
@@ -87,7 +87,7 @@ public class DefaultFormsFactory {
 		x4.setAttackSpeed(1.35);
 		x4.setHealthDrain(0.095);
 		x4.setAuraColor("#DB182C");
-		x4.setHairType("base");
+		x4.setHairType("");
 		setDefaultMasteryValues(x4);
 		x4.setStackDrainMultiplier(1.0);
 
@@ -102,7 +102,7 @@ public class DefaultFormsFactory {
 		x10.setHealthDrain(0.11);
 		x10.setAttackSpeed(1.5);
 		x10.setAuraColor("#DB182C");
-		x10.setHairType("base");
+		x10.setHairType("");
 		setDefaultMasteryValues(x10);
 		x10.setStackDrainMultiplier(1.0);
 
@@ -117,7 +117,7 @@ public class DefaultFormsFactory {
 		x20.setHealthDrain(0.15);
 		x20.setAttackSpeed(1.65);
 		x20.setAuraColor("#DB182C");
-		x20.setHairType("base");
+		x20.setHairType("");
 		setDefaultMasteryValues(x20);
 		x20.setStackDrainMultiplier(1.0);
 
@@ -132,7 +132,7 @@ public class DefaultFormsFactory {
 		x100.setHealthDrain(0.20);
 		x100.setAttackSpeed(2.0);
 		x100.setAuraColor("#DB182C");
-		x100.setHairType("base");
+		x100.setHairType("");
 		setDefaultMasteryValues(x100);
 		x100.setStackDrainMultiplier(1.0);
 
@@ -165,7 +165,7 @@ public class DefaultFormsFactory {
 		sign.setStaminaDrain(0.03);
 		sign.setAuraColor("#E0E0E0");
 		sign.setHasLightnings(false);
-		sign.setHairType("base");
+		sign.setHairType("");
 		setDefaultMasteryValues(sign);
 		sign.setStackDrainMultiplier(1.0);
 		sign.setCanAlwaysTransform(true);
@@ -181,7 +181,7 @@ public class DefaultFormsFactory {
 		mastered.setAuraColor("#E0E0E0");
 		mastered.setHairColor("#E0E0E0");
 		mastered.setBodyColor2("#E0E0E0");
-		mastered.setHairType("base");
+		mastered.setHairType("");
 		setDefaultMasteryValues(mastered);
 		mastered.setStackDrainMultiplier(1.0);
 		mastered.setDirectTransformation(true);
@@ -211,7 +211,7 @@ public class DefaultFormsFactory {
 		sign.setStaminaDrain(0.03);
 		sign.setAuraColor("#66023C");
 		sign.setHasLightnings(false);
-		sign.setHairType("base");
+		sign.setHairType("");
 		setDefaultMasteryValues(sign);
 		sign.setStackDrainMultiplier(1.0);
 		sign.setCanAlwaysTransform(true);
