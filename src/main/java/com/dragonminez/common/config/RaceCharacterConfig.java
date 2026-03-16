@@ -10,7 +10,7 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 public class RaceCharacterConfig {
-	public static final int CURRENT_VERSION = 3;
+	public static final int CURRENT_VERSION = 4;
 
 	private int configVersion;
 

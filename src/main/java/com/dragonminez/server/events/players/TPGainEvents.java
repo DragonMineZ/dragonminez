@@ -36,33 +36,35 @@ public class TPGainEvents {
 			}
 		}
 
-		if (event.getPlayer() instanceof ServerPlayer player) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) {
-					UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
-					if (partnerUUID != null) {
-						ServerPlayer partner = player.getServer().getPlayerList().getPlayer(partnerUUID);
-						if (partner != null) {
-							int shareAmount = modifiedTP[0] / 2;
-							StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(pData -> {
-								pData.getResources().addTrainingPoints(shareAmount);
-								NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
-							});
-						}
+		StatsProvider.get(StatsCapability.INSTANCE, event.getPlayer()).ifPresent(data -> {
+			if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) {
+				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
+				if (partnerUUID != null) {
+					ServerPlayer partner = event.getPlayer().getServer().getPlayerList().getPlayer(partnerUUID);
+					if (partner != null) {
+						int shareAmount = modifiedTP[0] / 2;
+						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(pData -> {
+							pData.getResources().addTrainingPoints(shareAmount);
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
+						});
 					}
 				}
-			});
-		}
+			}
 
-		// FrostDemon passive
-		if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()) {
-			StatsProvider.get(StatsCapability.INSTANCE, event.getPlayer()).ifPresent(data -> {
+			// FrostDemon passive
+			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()) {
 				if (data.getCharacter().getRace().equals("frostdemon")) {
 					double frostDemonMultiplier = ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost() - 1.0;
 					modifiedTP[0] = (int) (modifiedTP[0] + baseTP * frostDemonMultiplier);
 				}
-			});
-		}
+			}
+
+			// Extra racial multiplier
+			if (ConfigManager.getRaceStats(data.getCharacter().getRace()) != null) {
+				double racialMultiplier = ConfigManager.getRaceStats(data.getCharacter().getRace()).getClassStats(data.getCharacter().getCharacterClass()).getTpGainMultiplier() - 1.0;
+				modifiedTP[0] = (int) (modifiedTP[0] + baseTP * racialMultiplier);
+			}
+		});
 
 		// Final multiplier
 		double configMultiplier = ConfigManager.getServerConfig().getGameplay().getTpsGainMultiplier();
