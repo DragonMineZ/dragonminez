@@ -8,75 +8,49 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DragonBallSavedData extends SavedData {
-	private final Map<Integer, BlockPos> activeEarthBalls = new HashMap<>(), activeNamekBalls = new HashMap<>();
-	private final Map<Integer, BlockPos> pendingEarthBalls = new HashMap<>(), pendingNamekBalls = new HashMap<>();
+	// Ahora cada estrella (1-7) apunta a una LISTA de posiciones.
+	private final Map<Integer, List<BlockPos>> activeEarthBalls = new HashMap<>();
+	private final Map<Integer, List<BlockPos>> activeNamekBalls = new HashMap<>();
+	private final Map<Integer, List<BlockPos>> pendingEarthBalls = new HashMap<>();
+	private final Map<Integer, List<BlockPos>> pendingNamekBalls = new HashMap<>();
 	private boolean firstSpawnEarth = false, firstSpawnNamek = false;
+
+	public DragonBallSavedData() {
+		// Inicializamos las listas vacías para las 7 estrellas
+		for (int i = 1; i <= 7; i++) {
+			activeEarthBalls.put(i, new ArrayList<>());
+			activeNamekBalls.put(i, new ArrayList<>());
+			pendingEarthBalls.put(i, new ArrayList<>());
+			pendingNamekBalls.put(i, new ArrayList<>());
+		}
+	}
 
 	public static DragonBallSavedData get(ServerLevel level) {
 		return level.getDataStorage().computeIfAbsent(DragonBallSavedData::load, DragonBallSavedData::new, "dragon_balls_data");
-	}public Map<Integer, BlockPos> getActiveBalls(boolean isNamek) {
+	}
+
+	public Map<Integer, List<BlockPos>> getActiveBalls(boolean isNamek) {
 		return isNamek ? activeNamekBalls : activeEarthBalls;
 	}
 
-	public Map<Integer, BlockPos> getPendingBalls(boolean isNamek) {
+	public Map<Integer, List<BlockPos>> getPendingBalls(boolean isNamek) {
 		return isNamek ? pendingNamekBalls : pendingEarthBalls;
 	}
 
-	public Map<Integer, BlockPos> getAllPositionsForRadar(boolean isNamek) {
-		Map<Integer, BlockPos> combined = new HashMap<>(isNamek ? activeNamekBalls : activeEarthBalls);
-		combined.putAll(isNamek ? pendingNamekBalls : pendingEarthBalls);
-		return combined;
+	public List<BlockPos> getAllPositionsForRadar(boolean isNamek) {
+		List<BlockPos> allPos = new ArrayList<>();
+		Map<Integer, List<BlockPos>> active = getActiveBalls(isNamek);
+		for (List<BlockPos> positions : active.values()) {
+			allPos.addAll(positions);
+		}
+		return allPos;
 	}
-
-	public Map<Integer, BlockPos> getActiveBallsCopy(boolean isNamek) {
-		return new HashMap<>(isNamek ? activeNamekBalls : activeEarthBalls);
-	}
-
-	public void addActiveBall(int star, BlockPos pos, boolean isNamek) {
-		Map<Integer, BlockPos> map = isNamek ? activeNamekBalls : activeEarthBalls;
-		map.put(star, pos);
-		(isNamek ? pendingNamekBalls : pendingEarthBalls).remove(star);
-		setDirty();
-	}
-
-	public void clearActive(boolean isNamek) {
-		(isNamek ? activeNamekBalls : activeEarthBalls).clear();
-		setDirty();
-	}
-
-	public void clearPending(boolean isNamek) {
-		(isNamek ? pendingNamekBalls : pendingEarthBalls).clear();
-		setDirty();
-	}
-
-	public void removeActiveBall(BlockPos pos, boolean isNamek) {
-		Map<Integer, BlockPos> map = isNamek ? activeNamekBalls : activeEarthBalls;
-		map.values().removeIf(p -> p.equals(pos));
-		setDirty();
-	}
-
-	public void addPendingBall(int star, BlockPos pos, boolean isNamek) {
-		Map<Integer, BlockPos> map = isNamek ? pendingNamekBalls : pendingEarthBalls;
-		map.put(star, pos);
-		(isNamek ? activeNamekBalls : activeEarthBalls).remove(star);
-		setDirty();
-	}
-
-	public boolean hasFirstSpawnHappened(boolean isNamek) {
-		return isNamek ? firstSpawnNamek : firstSpawnEarth;
-	}
-
-	public void setFirstSpawnHappened(boolean isNamek) {
-		if (isNamek) this.firstSpawnNamek = true;
-		else this.firstSpawnEarth = true;
-		setDirty();
-	}
-
-	public DragonBallSavedData() {}
 
 	public static DragonBallSavedData load(CompoundTag tag) {
 		DragonBallSavedData data = new DragonBallSavedData();
@@ -102,22 +76,45 @@ public class DragonBallSavedData extends SavedData {
 		return tag;
 	}
 
-	private static void loadMap(ListTag list, Map<Integer, BlockPos> map) {
-		map.clear();
+	private static void loadMap(ListTag list, Map<Integer, List<BlockPos>> map) {
 		for (int i = 0; i < list.size(); i++) {
 			CompoundTag item = list.getCompound(i);
-			map.put(item.getInt("Star"), NbtUtils.readBlockPos(item.getCompound("Pos")));
+			int star = item.getInt("Star");
+			BlockPos pos = NbtUtils.readBlockPos(item.getCompound("Pos"));
+			if (map.containsKey(star)) {
+				map.get(star).add(pos);
+			}
 		}
 	}
 
-	private static ListTag saveMap(Map<Integer, BlockPos> map) {
+	private static ListTag saveMap(Map<Integer, List<BlockPos>> map) {
 		ListTag list = new ListTag();
-		map.forEach((star, pos) -> {
-			CompoundTag item = new CompoundTag();
-			item.putInt("Star", star);
-			item.put("Pos", NbtUtils.writeBlockPos(pos));
-			list.add(item);
-		});
+		for (Map.Entry<Integer, List<BlockPos>> entry : map.entrySet()) {
+			for (BlockPos pos : entry.getValue()) {
+				CompoundTag item = new CompoundTag();
+				item.putInt("Star", entry.getKey());
+				item.put("Pos", NbtUtils.writeBlockPos(pos));
+				list.add(item);
+			}
+		}
 		return list;
+	}
+
+	public boolean isFirstSpawnEarth() {
+		return firstSpawnEarth;
+	}
+
+	public void setFirstSpawnEarth(boolean firstSpawnEarth) {
+		this.firstSpawnEarth = firstSpawnEarth;
+		this.setDirty();
+	}
+
+	public boolean isFirstSpawnNamek() {
+		return firstSpawnNamek;
+	}
+
+	public void setFirstSpawnNamek(boolean firstSpawnNamek) {
+		this.firstSpawnNamek = firstSpawnNamek;
+		this.setDirty();
 	}
 }

@@ -52,18 +52,15 @@ public class IncreaseStatC2S {
 				int availableTPs = data.getResources().getTrainingPoints();
 				if (availableTPs <= 0) return;
 
-				double multiplier = ConfigManager.getServerConfig().getGameplay().getTpCostMultiplier();
-				int baseCost = (int) Math.round((data.getLevel() * multiplier) * multiplier * 4.0);
-
 				int statsCanIncrease = Math.min(msg.multiplier, maxStats - currentStat);
 
-				int statsToIncrease = data.calculateStatIncrease(baseCost, statsCanIncrease, availableTPs, maxStats, multiplier);
+				int statsToIncrease = data.calculateStatIncrease(statsCanIncrease, availableTPs, maxStats);
 
 				if (statsToIncrease <= 0) return;
 
 				int finalIncrease = Math.min(statsToIncrease, maxStats - currentStat);
 
-				int tpCost = data.calculateRecursiveCost(finalIncrease, baseCost, maxStats, multiplier);
+				int tpCost = data.calculateRecursiveCost(finalIncrease, maxStats);
 
 				if (tpCost > availableTPs) return;
 

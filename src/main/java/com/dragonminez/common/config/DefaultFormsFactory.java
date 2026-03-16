@@ -12,15 +12,13 @@ import java.util.Map;
 
 @AllArgsConstructor
 public class DefaultFormsFactory {
-	private final ConfigLoader loader;
-
 	private void setDefaultMasteryValues(FormConfig.FormData form) {
 		form.setMaxMastery(100.0);
-		form.setMasteryPerHit(0.001);
-		form.setMasteryPerDamageReceived(0.001);
+		form.setMasteryPerHit(0.025);
+		form.setMasteryPerDamageReceived(0.025);
 		form.setStatMultPerMasteryPoint(0.01);
 		form.setCostDecreasePerMasteryPoint(0.025);
-		form.setPassiveMasteryGainEveryFiveSeconds(0.001);
+		form.setPassiveMasteryGainEveryFiveSeconds(0.01);
 	}
 
 	public void createDefaultFormsForRace(String raceName, Path formsPath, Map<String, FormConfig> forms) throws IOException {
@@ -42,6 +40,7 @@ public class DefaultFormsFactory {
 
 	public void createDefaultKaiokenForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig kaiokenForms = new FormConfig();
+		kaiokenForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		kaiokenForms.setGroupName(StackForms.GROUP_KAIOKEN);
 		kaiokenForms.setFormType(StackForms.GROUP_KAIOKEN);
 
@@ -147,14 +146,12 @@ public class DefaultFormsFactory {
 		kaiokenForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_KAIOKEN, kaiokenForms);
-
-		Path kaiokenPath = formsPath.resolve(StackForms.GROUP_KAIOKEN + ".json");
-		loader.saveConfig(kaiokenPath, kaiokenForms);
 		LogUtil.info(Env.COMMON, "Default Kaioken forms created");
 	}
 
 	public void createDefaultUltraInstinctForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig ultraInstinctForms = new FormConfig();
+		ultraInstinctForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		ultraInstinctForms.setGroupName(StackForms.GROUP_ULTRAINSTINCT);
 		ultraInstinctForms.setFormType(StackForms.GROUP_ULTRAINSTINCT);
 
@@ -195,14 +192,12 @@ public class DefaultFormsFactory {
 		ultraInstinctForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_ULTRAINSTINCT, ultraInstinctForms);
-
-		Path ultraInstinctPath = formsPath.resolve(StackForms.GROUP_ULTRAINSTINCT + ".json");
-		loader.saveConfig(ultraInstinctPath, ultraInstinctForms);
 		LogUtil.info(Env.COMMON, "Default Ultra Instict forms created");
 	}
 
 	public void createDefaultUltraEgoForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig ultraEgoForms = new FormConfig();
+		ultraEgoForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		ultraEgoForms.setGroupName(StackForms.GROUP_ULTRAEGO);
 		ultraEgoForms.setFormType(StackForms.GROUP_ULTRAEGO);
 
@@ -243,14 +238,12 @@ public class DefaultFormsFactory {
 		ultraEgoForms.setForms(stackFormData);
 
 		forms.put(StackForms.GROUP_ULTRAEGO, ultraEgoForms);
-
-		Path ultraEgoPath = formsPath.resolve(StackForms.GROUP_ULTRAEGO + ".json");
-		loader.saveConfig(ultraEgoPath, ultraEgoForms);
 		LogUtil.info(Env.COMMON, "Default Ultra Ego forms created");
 	}
 
 	private void createDefaultHumanForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig humanForms = new FormConfig();
+		humanForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		humanForms.setGroupName(HumanForms.GROUP_SUPERFORMS);
 		humanForms.setFormType("super");
 
@@ -319,9 +312,6 @@ public class DefaultFormsFactory {
 		humanForms.setForms(humanFormData);
 
 		forms.put(HumanForms.GROUP_SUPERFORMS, humanForms);
-
-		Path humanPath = formsPath.resolve(HumanForms.GROUP_SUPERFORMS + ".json");
-		loader.saveConfig(humanPath, humanForms);
 		LogUtil.info(Env.COMMON, "Default Human forms created");
 
 		createAndroidForms(formsPath, forms);
@@ -329,6 +319,7 @@ public class DefaultFormsFactory {
 
 	private void createAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig androidForms = new FormConfig();
+		androidForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		androidForms.setGroupName(HumanForms.GROUP_ANDROIDFORMS);
 		androidForms.setFormType("android");
 
@@ -386,14 +377,12 @@ public class DefaultFormsFactory {
 		androidForms.setForms(androidFormData);
 
 		forms.put(HumanForms.GROUP_ANDROIDFORMS, androidForms);
-
-		Path androidPath = formsPath.resolve(HumanForms.GROUP_ANDROIDFORMS + ".json");
-		loader.saveConfig(androidPath, androidForms);
 		LogUtil.info(Env.COMMON, "Default Android forms created for Humans");
 	}
 
 	private void createSaiyanForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig oozaruForms = new FormConfig();
+		oozaruForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		oozaruForms.setGroupName(SaiyanForms.GROUP_OOZARU);
 		oozaruForms.setFormType("super");
 
@@ -460,6 +449,7 @@ public class DefaultFormsFactory {
 		oozaruForms.setForms(oozaruFormData);
 
 		FormConfig ssGrades = new FormConfig();
+		ssGrades.setConfigVersion(FormConfig.CURRENT_VERSION);
 		ssGrades.setGroupName(SaiyanForms.GROUP_SSGRADES);
 		ssGrades.setFormType("super");
 
@@ -532,6 +522,7 @@ public class DefaultFormsFactory {
 		ssGrades.setForms(ssGradeForms);
 
 		FormConfig superSaiyan = new FormConfig();
+		superSaiyan.setConfigVersion(FormConfig.CURRENT_VERSION);
 		superSaiyan.setGroupName(SaiyanForms.GROUP_SUPERSAIYAN);
 		superSaiyan.setFormType("super");
 
@@ -603,18 +594,12 @@ public class DefaultFormsFactory {
 		forms.put(SaiyanForms.OOZARU, oozaruForms);
 		forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
 		forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
-
-		Path oozaruPath = formsPath.resolve(SaiyanForms.OOZARU + ".json");
-		loader.saveConfig(oozaruPath, oozaruForms);
-		Path ssGradesPath = formsPath.resolve(SaiyanForms.GROUP_SSGRADES + ".json");
-		loader.saveConfig(ssGradesPath, ssGrades);
-		Path superSaiyanPath = formsPath.resolve(SaiyanForms.SUPER_SAIYAN + ".json");
-		loader.saveConfig(superSaiyanPath, superSaiyan);
 		LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
 	}
 
 	private void createNamekianForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig namekianForms = new FormConfig();
+		namekianForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		namekianForms.setGroupName(NamekianForms.GROUP_SUPERFORMS);
 		namekianForms.setFormType("super");
 
@@ -669,14 +654,12 @@ public class DefaultFormsFactory {
 		namekianForms.setForms(namekianFormData);
 
 		forms.put(NamekianForms.GROUP_SUPERFORMS, namekianForms);
-
-		Path namekianPath = formsPath.resolve(NamekianForms.GROUP_SUPERFORMS + ".json");
-		loader.saveConfig(namekianPath, namekianForms);
 		LogUtil.info(Env.COMMON, "Default Namekian forms created");
 	}
 
 	private void createFrostDemonForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig frostForms = new FormConfig();
+		frostForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		frostForms.setGroupName(FrostDemonForms.GROUP_EVOLUTIONFORMS);
 		frostForms.setFormType("super");
 
@@ -763,14 +746,12 @@ public class DefaultFormsFactory {
 		frostForms.setForms(frostFormData);
 
 		forms.put(FrostDemonForms.GROUP_EVOLUTIONFORMS, frostForms);
-
-		Path frostPath = formsPath.resolve(FrostDemonForms.GROUP_EVOLUTIONFORMS + ".json");
-		loader.saveConfig(frostPath, frostForms);
 		LogUtil.info(Env.COMMON, "Default Frost Demon forms created");
 	}
 
 	private void createMajinForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig majinForms = new FormConfig();
+		majinForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		majinForms.setGroupName(MajinForms.GROUP_PUREFORMS);
 		majinForms.setFormType("super");
 
@@ -844,14 +825,12 @@ public class DefaultFormsFactory {
 		majinForms.setForms(majinFormData);
 
 		forms.put(MajinForms.GROUP_PUREFORMS, majinForms);
-
-		Path majinPath = formsPath.resolve(MajinForms.GROUP_PUREFORMS + ".json");
-		loader.saveConfig(majinPath, majinForms);
 		LogUtil.info(Env.COMMON, "Default Majin forms created");
 	}
 
 	private void createBioAndroidForms(Path formsPath, Map<String, FormConfig> forms) throws IOException {
 		FormConfig bioForms = new FormConfig();
+		bioForms.setConfigVersion(FormConfig.CURRENT_VERSION);
 		bioForms.setGroupName(BioAndroidForms.GROUP_BIOEVOLUTION);
 		bioForms.setFormType("super");
 
@@ -949,9 +928,6 @@ public class DefaultFormsFactory {
 		bioForms.setForms(bioFormData);
 
 		forms.put(BioAndroidForms.GROUP_BIOEVOLUTION, bioForms);
-
-		Path bioAndroidPath = formsPath.resolve(BioAndroidForms.GROUP_BIOEVOLUTION + ".json");
-		loader.saveConfig(bioAndroidPath, bioForms);
 		LogUtil.info(Env.COMMON, "Default Bio Android forms created");
 	}
 }

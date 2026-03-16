@@ -1,9 +1,3 @@
-import org.gradle.api.file.DuplicatesStrategy
-import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.bundling.AbstractArchiveTask
-import org.gradle.api.tasks.bundling.Jar
-import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.language.jvm.tasks.ProcessResources
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
@@ -173,7 +167,12 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.42")
 
     // Database libraries
-    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.7,)") { jarJar.ranged(this, "[3.5.7,)") }
+    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.7,)") {
+        jarJar.ranged(
+            this,
+            "[3.5.7,)"
+        )
+    }
     jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.7")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
@@ -193,6 +192,14 @@ dependencies {
     // Armors mods for testing armor layer on Oozaru/Majin models, we may delete this once fully finished
     //runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
     //runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
+    // "Layers" mods for testing compatibility
+    runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
+    runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
+    runtimeOnly(fg.deobf("curse.maven:curios-api-309927:6418456"))
+    runtimeOnly(fg.deobf("curse.maven:artifacts-312353:6399828"))
+    runtimeOnly(fg.deobf("curse.maven:cloth-config-api-348521:5729105"))
+    runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))
+    runtimeOnly(fg.deobf("curse.maven:expandability-465066:5301414"))
 }
 
 sourceSets.main {
