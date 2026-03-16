@@ -3,6 +3,7 @@ package com.dragonminez.server.events;
 import com.dragonminez.Reference;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.stats.StatsCapability;
@@ -247,29 +248,34 @@ public class StoryModeEvents {
 	private static void updateIndividualProgress(ServerPlayer player, String sagaId, int questId, int objIndex, int newProgress) {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();
+			Saga saga = QuestRegistry.getSaga(sagaId);
+			if (saga == null) return;
+			Quest quest = getSagaQuest(saga, questId);
+			if (quest == null) return;
+
 			String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
 			int current = pqd.getObjectiveProgress(questKey, objIndex);
 			if (current != newProgress) {
 				pqd.setObjectiveProgress(questKey, objIndex, newProgress);
-				checkAndCompleteQuest(pqd, sagaId, questId);
+
+				if (objIndex >= 0 && objIndex < quest.getObjectives().size()) {
+					QuestObjective objective = quest.getObjectives().get(objIndex);
+					if (current < objective.getRequired() && newProgress >= objective.getRequired()) {
+						NetworkHandler.sendToPlayer(StoryToastS2C.objectiveComplete(questKey, objIndex), player);
+					}
+				}
+
+				if (checkAndCompleteQuest(pqd, sagaId, questId, quest)) {
+					if (questKey.equals(pqd.getTrackedQuestId())) pqd.setTrackedQuestId(null);
+					NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), player);
+				}
+
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 			}
 		});
 	}
 
-	private static void checkAndCompleteQuest(PlayerQuestData pqd, String sagaId, int questId) {
-		Saga saga = QuestRegistry.getSaga(sagaId);
-		if (saga == null) return;
-
-		Quest quest = null;
-		for (Quest q : saga.getQuests()) {
-			if (q.getId() == questId) {
-				quest = q;
-				break;
-			}
-		}
-		if (quest == null) return;
-
+	private static boolean checkAndCompleteQuest(PlayerQuestData pqd, String sagaId, int questId, Quest quest) {
 		String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
 		boolean allObjectivesComplete = true;
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
@@ -281,7 +287,19 @@ public class StoryModeEvents {
 			}
 		}
 
-		if (allObjectivesComplete && !pqd.isQuestCompleted(questKey)) pqd.completeQuest(questKey);
+		if (allObjectivesComplete && !pqd.isQuestCompleted(questKey)) {
+			pqd.completeQuest(questKey);
+			return true;
+		}
+
+		return false;
+	}
+
+	private static Quest getSagaQuest(Saga saga, int questId) {
+		for (Quest q : saga.getQuests()) {
+			if (q.getId() == questId) return q;
+		}
+		return null;
 	}
 
 	private static boolean shouldTrackSagaQuest(StatsData data, PlayerQuestData pqd, Saga saga, Quest quest, int questIndex) {

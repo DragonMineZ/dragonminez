@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
@@ -54,6 +55,8 @@ public class AcceptSideQuestC2S {
 				if (pqd.isQuestAccepted(sideQuestId)) return;
 				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) return;
 				pqd.acceptQuest(sideQuestId);
+				pqd.setTrackedQuestId(sideQuestId);
+				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(sideQuestId), player);
 
 				for (int i = 0; i < sideQuest.getObjectives().size(); i++) {
 					QuestObjective objective = sideQuest.getObjectives().get(i);

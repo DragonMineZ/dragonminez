@@ -171,6 +171,18 @@ public class NetworkHandler {
 				.consumerMainThread(UpdateCharacterC2S::handle)
 				.add();
 
+		net.messageBuilder(SetTrackedQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SetTrackedQuestC2S::new)
+				.encoder(SetTrackedQuestC2S::encode)
+				.consumerMainThread(SetTrackedQuestC2S::handle)
+				.add();
+
+		net.messageBuilder(AcknowledgeStoryIntroC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(AcknowledgeStoryIntroC2S::decode)
+				.encoder(AcknowledgeStoryIntroC2S::encode)
+				.consumerMainThread(AcknowledgeStoryIntroC2S::handle)
+				.add();
+
         net.messageBuilder(SokidanControlC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
                 .decoder(SokidanControlC2S::new)
                 .encoder(SokidanControlC2S::toBytes)
@@ -232,6 +244,12 @@ public class NetworkHandler {
 				.decoder(OpenRecustomizeS2C::new)
 				.encoder(OpenRecustomizeS2C::encode)
 				.consumerMainThread(OpenRecustomizeS2C::handle)
+				.add();
+
+		net.messageBuilder(StoryToastS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(StoryToastS2C::decode)
+				.encoder(StoryToastS2C::encode)
+				.consumerMainThread(StoryToastS2C::handle)
 				.add();
 	}
 

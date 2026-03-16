@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
@@ -66,6 +67,8 @@ public class StartQuestC2S {
 
 				SagaBranchingHelper.selectBranchIfNeeded(pqd, sagaId, quest);
 				pqd.acceptQuest(questKey);
+				pqd.setTrackedQuestId(questKey);
+				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), player);
 
 				for (int i = 0; i < quest.getObjectives().size(); i++) {
 					QuestObjective objective = quest.getObjectives().get(i);
