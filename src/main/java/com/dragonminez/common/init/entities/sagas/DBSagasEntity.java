@@ -48,6 +48,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 	private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Integer> SKILL_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> AURA_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<String> AURA_TYPE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.STRING);
 
 	//COMBOS O EVADIR
 	private static final EntityDataAccessor<Boolean> IS_EVADING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -333,6 +334,14 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		this.entityData.set(AURA_COLOR, color);
 	}
 
+	public String getAuraType() {
+		return this.entityData.get(AURA_TYPE);
+	}
+
+	public void setAuraType(String type) {
+		this.entityData.set(AURA_TYPE, type);
+	}
+
 	public boolean isTransforming() {
 		return this.entityData.get(TRANSFORMING);
 	}
@@ -437,7 +446,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		}
 
 		if (comboTimer > 1 && comboTimer <= 20) {
-			if (comboTimer % 5 == 0) { //GOLPE CADA X TICKS
+			if (comboTimer % 5 == 0) {
 				if (this.level() instanceof ServerLevel serverLevel) {
 					float r = 1.0F;
 					float g = 1.0F;
@@ -476,6 +485,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		pCompound.putDouble("FlySpeed", this.flySpeed);
 		pCompound.putFloat("KiBlastDamage", this.kiBlastDamage);
 		pCompound.putFloat("KiBlastSpeed", this.kiBlastSpeed);
+		pCompound.putString("AuraType", this.getAuraType());
 	}
 
 	@Override
@@ -486,6 +496,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		if (pCompound.contains("FlySpeed")) this.flySpeed = pCompound.getDouble("FlySpeed");
 		if (pCompound.contains("KiBlastDamage")) this.kiBlastDamage = pCompound.getFloat("KiBlastDamage");
 		if (pCompound.contains("KiBlastSpeed")) this.kiBlastSpeed = pCompound.getFloat("KiBlastSpeed");
+		if (pCompound.contains("AuraType")) this.setAuraType(pCompound.getString("AuraType"));
 	}
 
 	@Override
@@ -496,6 +507,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		this.entityData.define(SKILL_TYPE, 0);
 		this.entityData.define(BATTLE_POWER, 20);
 		this.entityData.define(AURA_COLOR, 0xFFFFFF);
+		this.entityData.define(AURA_TYPE, "smooth");
 		this.entityData.define(TRANSFORMING, false);
 		this.entityData.define(KI_CHARGE, false);
 		this.entityData.define(IS_LIGHTNING, false);
@@ -575,11 +587,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		return super.doHurtTarget(pEntity);
 	}
 
-	/**
-	 * @param target         El objetivo.
-	 * @param isActionActive Si está casteando/transformando (se detiene).
-	 * @param canFly         Si esta entidad tiene la capacidad de volar.
-	 */
 	protected void handleCommonCombatMovement(LivingEntity target, boolean isActionActive, boolean canFly) {
 		if (this.level().isClientSide) return;
 
@@ -718,8 +725,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		laser.setKiDamage(getKiBlastDamage());
 		laser.setKiSpeed(speed);
 
-		//laser.shoot(tx, ty, tz, speed, 0.5F);
-
 		this.level().addFreshEntity(laser);
 	}
 
@@ -762,13 +767,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		this.currentEvadeTimer = cooldown;
 	}
 
-	/**
-	 * Genera una explosión de Ki alrededor de la entidad.
-	 *
-	 * @param damage      Daño de la explosión.
-	 * @param colorCore   Color central (Hex).
-	 * @param colorBorder Color borde (Hex).
-	 */
 	public void performKiExplosion(float damage, int colorCore, int colorBorder) {
 		if (this.level().isClientSide) return;
 
@@ -784,13 +782,6 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		this.level().addFreshEntity(explosion);
 	}
 
-	/**
-	 * Dispara un Ki Disc hacia donde está mirando la entidad.
-	 *
-	 * @param size  Tamaño del disco.
-	 * @param color Color del disco (Hex).
-	 * @param speed Velocidad del proyectil.
-	 */
 	public void shootGenericKiDisc(float size, int color, float speed) {
 		if (this.level().isClientSide) return;
 
@@ -813,34 +804,19 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
 		disc.setColors(color, colorborder);
 
-
 		this.level().addFreshEntity(disc);
 		this.playSound(MainSounds.KI_EXPLOSION_IMPACT.get(), 1.0F, 1.1F);
 	}
 
-
-	/**
-	 * Maneja la lógica de "espera" durante la transformación (paralizar entidad, cancelar casteos).
-	 *
-	 * @param transformTick Tick actual de la transformación.
-	 * @param duration      Duración total en ticks (ej: 60).
-	 * @return true si el tiempo se ha cumplido y está listo para cambiar de forma.
-	 */
 	protected boolean handleTransformationLogic(int transformTick, int duration) {
 		this.getNavigation().stop();
 		this.setDeltaMovement(0, 0, 0);
 
 		if (this.isCasting()) this.stopCasting();
 
-
 		return transformTick >= duration;
 	}
 
-	/**
-	 * Finaliza la transformación spawneando la nueva entidad.
-	 *
-	 * @param newEntity La instancia ya creada de la nueva entidad
-	 */
 	protected void finishTransformationSpawn(DBSagasEntity newEntity) {
 		if (this.level().isClientSide || newEntity == null) return;
 

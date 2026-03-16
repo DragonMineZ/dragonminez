@@ -1,15 +1,23 @@
 package com.dragonminez.client.init.entities.renderer.sagas.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.aura.AuraMeshFactory;
+import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
-import com.dragonminez.common.init.entities.sagas.SagaFreezer2ndEntity;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexBuffer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoRenderer;
@@ -17,16 +25,12 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public class DBSagasAuraLayer<T extends DBSagasEntity> extends GeoRenderLayer<T> {
 
-    private static final ResourceLocation AURA_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiaura.geo.json");
-    private static final ResourceLocation AURA_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_0.png");
-    private static final ResourceLocation AURA_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_1.png");
-    private static final ResourceLocation AURA_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/aura_ki_2.png");
+    private static final ResourceLocation DUMMY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
 
     private static final ResourceLocation SPARK_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kirayos.geo.json");
     private static final ResourceLocation SPARK_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
     private static final ResourceLocation SPARK_TEX_1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_1.png");
     private static final ResourceLocation SPARK_TEX_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_2.png");
-
 
     public DBSagasAuraLayer(GeoRenderer<T> entityRendererIn) {
         super(entityRendererIn);
@@ -40,38 +44,25 @@ public class DBSagasAuraLayer<T extends DBSagasEntity> extends GeoRenderLayer<T>
 
         if (!showAura && !showLightning) return;
 
-        poseStack.pushPose();
-
-        float scale = 1.3f;
-        poseStack.scale(scale, scale, scale);
-
         long frame = (long) ((animatable.level().getGameTime() / 1.5f) % 3);
 
         if (showAura) {
-            BakedGeoModel auraModel = getGeoModel().getBakedModel(AURA_MODEL);
-            if (auraModel != null) {
-                for (GeoBone rootBone : auraModel.topLevelBones()) {
-                    setHiddenRecursive(rootBone, false);
-                }
+            poseStack.pushPose();
 
-                ResourceLocation currentTexture;
-                if (frame == 0) currentTexture = AURA_TEX_0;
-                else if (frame == 1) currentTexture = AURA_TEX_1;
-                else currentTexture = AURA_TEX_2;
+            poseStack.translate(0.0, 1.375, 0.0);
+            float baseScale = 1.3f;
+            poseStack.scale(baseScale * 1.5f, baseScale * 2.2f, baseScale * 1.5f);
 
-                syncModelToEntity(auraModel, entityModel);
+            executeAuraShaderDraw(animatable, poseStack, partialTick);
 
-                float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
-                RenderType auraRenderType = ModRenderTypes.energy(currentTexture);
-
-                getRenderer().reRender(auraModel, poseStack, bufferSource, animatable, auraRenderType,
-                        bufferSource.getBuffer(auraRenderType), partialTick, 15728880,
-                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
-                        color[0], color[1], color[2], 0.2f);
-            }
+            poseStack.popPose();
         }
 
         if (showLightning) {
+            poseStack.pushPose();
+            float scale = 1.3f;
+            poseStack.scale(scale, scale, scale);
+
             BakedGeoModel sparkModel = getGeoModel().getBakedModel(SPARK_MODEL);
             if (sparkModel != null) {
                 for (GeoBone rootBone : sparkModel.topLevelBones()) {
@@ -93,9 +84,76 @@ public class DBSagasAuraLayer<T extends DBSagasEntity> extends GeoRenderLayer<T>
                         net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
                         sparkColor[0], sparkColor[1], sparkColor[2], 0.5f);
             }
+            poseStack.popPose();
+        }
+    }
+
+    private void executeAuraShaderDraw(T animatable, PoseStack poseStack, float partialTick) {
+        ShaderInstance shader;
+        VertexBuffer mesh;
+
+        String auraType = animatable.getAuraType() != null ? animatable.getAuraType() : "smooth";
+
+        switch (auraType.toLowerCase()) {
+            case "sharp":
+                shader = DMZShaders.auraSharpShader;
+                mesh = AuraMeshFactory.getSharpAuraMesh();
+                break;
+            case "sparking":
+                shader = DMZShaders.auraSparkingShader;
+                mesh = AuraMeshFactory.getSparkingAuraMesh();
+                break;
+            case "smooth":
+            default:
+                shader = DMZShaders.auraSmoothShader;
+                mesh = AuraMeshFactory.getSmoothAuraMesh();
+                break;
         }
 
-        poseStack.popPose();
+        if (shader == null) return;
+
+        float time = (animatable.tickCount + partialTick) / 20.0f;
+        float[] color = ColorUtils.rgbIntToFloat(animatable.getAuraColor());
+
+        Matrix4f projectionMatrix = RenderSystem.getProjectionMatrix();
+
+        shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+        shader.safeGetUniform("ProjMat").set(projectionMatrix);
+        shader.safeGetUniform("normalMatrix").set(new Matrix4f(new Matrix3f(poseStack.last().normal())));
+        shader.safeGetUniform("time").set(time);
+        shader.safeGetUniform("auravar").set(1.0f);
+
+        float coreIntensity = 0.55f;
+        shader.safeGetUniform("color1").set(
+                Mth.lerp(coreIntensity, color[0], 1.0f),
+                Mth.lerp(coreIntensity, color[1], 1.0f),
+                Mth.lerp(coreIntensity, color[2], 1.0f)
+        );
+
+        float borderIntensity = 1.05f;
+        shader.safeGetUniform("color2").set(
+                color[0] * borderIntensity,
+                color[1] * borderIntensity,
+                color[2] * borderIntensity
+        );
+
+        float finalAlpha = 1.0f;
+
+        shader.safeGetUniform("alp1").set(0.45f * finalAlpha);
+        shader.safeGetUniform("alp2").set(0.45f * finalAlpha);
+        shader.safeGetUniform("power").set(6.0f);
+        shader.safeGetUniform("divis").set(0.02f);
+
+        RenderType auraRenderType = ModRenderTypes.getCustomAura(DUMMY_TEXTURE);
+        auraRenderType.setupRenderState();
+
+        shader.apply();
+        mesh.bind();
+        mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+        VertexBuffer.unbind();
+        shader.clear();
+
+        auraRenderType.clearRenderState();
     }
 
     private void setHiddenRecursive(GeoBone bone, boolean hidden) {

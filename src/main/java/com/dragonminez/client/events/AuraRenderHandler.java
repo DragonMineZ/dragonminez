@@ -92,6 +92,7 @@ public class AuraRenderHandler {
 		float bodyScaleX, bodyScaleY, bodyScaleZ;
 		float alphaProgress;
 		BakedGeoModel playerModel;
+		List<AuraLayer> lastLayers;
 	}
 
 	private static final Map<Integer, CachedAuraData> AURA_CACHE = new HashMap<>();
@@ -257,8 +258,11 @@ public class AuraRenderHandler {
 
 				List<AuraLayer> activeLayers = getAuraLayers(player, StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null), partialTick);
 				if (!activeLayers.isEmpty()) {
+					data.lastLayers = activeLayers;
 					AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
-					renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick);
+					if (player.onGround()) {
+						renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress);
+					}
 				}
 			}
 		}
@@ -489,13 +493,14 @@ public class AuraRenderHandler {
 
 		List<AuraLayer> activeLayers = getAuraLayers(player, stats, entry.partialTick());
 		if (activeLayers.isEmpty()) return;
+		data.lastLayers = activeLayers;
 
 		if (player.onGround()) {
 			spawnGroundDust(player, body[0] * auraScale[0]);
 			spawnFloatingRubble(player, body[0] * auraScale[0]);
 
 			AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
-			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, entry.partialTick());
+			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, entry.partialTick(), data.alphaProgress);
 		}
 
 		for (AuraLayer layer : activeLayers) {
@@ -511,7 +516,7 @@ public class AuraRenderHandler {
 		}
 	}
 
-	private static void renderShaderPulseAura(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick) {
+	private static void renderShaderPulseAura(Player player, CachedAuraData data, AuraLayer topLayer, PoseStack poseStack, Minecraft mc, Matrix4f projectionMatrix, float partialTick, float alphaMultiplier) {
 		int playerId = player.getId();
 		long gameTime = player.level().getGameTime();
 
@@ -545,7 +550,7 @@ public class AuraRenderHandler {
 		poseStack.scale(data.bodyScaleX, data.bodyScaleY, data.bodyScaleZ);
 		poseStack.scale(data.auraScaleX * expansion * layerScaleBoost, data.auraScaleY * 0.2f, data.auraScaleZ * expansion * layerScaleBoost);
 
-		executeAuraShaderDraw(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, alphaCurve * 0.5f, false);
+		executeAuraShaderDraw(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, alphaCurve * 0.5f * alphaMultiplier, false);
 		poseStack.popPose();
 	}
 
@@ -570,6 +575,7 @@ public class AuraRenderHandler {
 
 		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
 		if (activeLayers.isEmpty()) return;
+		data.lastLayers = activeLayers;
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
@@ -616,8 +622,13 @@ public class AuraRenderHandler {
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (stats == null) return false;
 
-		List<AuraLayer> activeLayers = getAuraLayers(player, stats, partialTick);
-		if (activeLayers.isEmpty()) return false;
+		List<AuraLayer> activeLayers = data.lastLayers;
+		if (activeLayers == null || activeLayers.isEmpty()) return false;
+
+		if (player.onGround()) {
+			AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
+			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress);
+		}
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 		double lerpX = Mth.lerp(partialTick, player.xo, player.getX());
@@ -676,14 +687,14 @@ public class AuraRenderHandler {
 		shader.safeGetUniform("time").set(time);
 		shader.safeGetUniform("auravar").set(1.0f);
 
-		float coreIntensity = 0.35f;
+		float coreIntensity = 0.55f;
 		shader.safeGetUniform("color1").set(
 				Mth.lerp(coreIntensity, layer.color[0], 1.0f),
 				Mth.lerp(coreIntensity, layer.color[1], 1.0f),
 				Mth.lerp(coreIntensity, layer.color[2], 1.0f)
 		);
 
-		float borderIntensity = 1.5f;
+		float borderIntensity = 0.85f;
 		shader.safeGetUniform("color2").set(
 				layer.color[0] * borderIntensity,
 				layer.color[1] * borderIntensity,
@@ -694,8 +705,8 @@ public class AuraRenderHandler {
 		float maxAlpha = (isLocalPlayer && isFirstPerson) ? 0.15f : 1.0f;
 		float finalAlpha = maxAlpha * alphaMultiplier;
 
-		shader.safeGetUniform("alp1").set(0.2f * finalAlpha);
-		shader.safeGetUniform("alp2").set(0.9f * finalAlpha);
+		shader.safeGetUniform("alp1").set(0.45f * finalAlpha);
+		shader.safeGetUniform("alp2").set(0.85f * finalAlpha);
 		shader.safeGetUniform("power").set(6.0f);
 		shader.safeGetUniform("divis").set(0.02f);
 
@@ -779,14 +790,18 @@ public class AuraRenderHandler {
 		shader.safeGetUniform("time").set(time);
 		shader.safeGetUniform("speedModifier").set(speedMod);
 
+		boolean isLocalPlayer = player == Minecraft.getInstance().player;
+		boolean isFirstPerson = isLocalPlayer && Minecraft.getInstance().options.getCameraType().isFirstPerson();
+		float cameraAlpha = (isLocalPlayer && isFirstPerson) ? 0.15f : 1.0f;
+
 		shader.safeGetUniform("color1").set(
 				Mth.lerp(0.8f, colorRgb[0], 1.0f),
 				Mth.lerp(0.8f, colorRgb[1], 1.0f),
 				Mth.lerp(0.8f, colorRgb[2], 1.0f)
 		);
 		shader.safeGetUniform("color2").set(colorRgb[0], colorRgb[1], colorRgb[2]);
-		shader.safeGetUniform("alp1").set(1.0f);
-		shader.safeGetUniform("alp2").set(0.1f);
+		shader.safeGetUniform("alp1").set(cameraAlpha);
+		shader.safeGetUniform("alp2").set(0.1f * cameraAlpha);
 		shader.safeGetUniform("power").set(3.0f);
 		shader.safeGetUniform("divis").set(1.0f);
 
