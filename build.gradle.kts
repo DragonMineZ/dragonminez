@@ -36,6 +36,7 @@ tasks.withType<AbstractArchiveTask>().configureEach {
 }
 
 tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
     options.encoding = "UTF-8"
     options.release.set(17)
 }

@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ClaimRewardC2S;
+import com.dragonminez.common.network.C2S.SetTrackedQuestC2S;
 import com.dragonminez.common.network.C2S.StartQuestC2S;
 import com.dragonminez.common.network.C2S.UnlockSagaC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -311,8 +312,43 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		this.clearWidgets();
 		initSagaNavigationButtons();
 		initNavigationButtons();
+		initTrackButton();
 		initActionButton();
 		initQuestDetailsNavigationButtons();
+	}
+
+	private void initTrackButton() {
+		if (selectedQuest == null || statsData == null || availableSagas.isEmpty()) return;
+
+		Saga currentSaga = availableSagas.get(currentSagaIndex);
+		String questKey = PlayerQuestData.sagaQuestKey(currentSaga.getId(), selectedQuest.getId());
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+
+		boolean isActive = questData.isQuestAccepted(questKey) && !questData.isQuestCompleted(questKey);
+		if (!isActive) return;
+
+		boolean isTracked = questKey.equals(questData.getTrackedQuestId());
+
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
+		int rightPanelY = centerY - 105;
+
+		TexturedTextButton trackButton = new TexturedTextButton.Builder()
+				.position(rightPanelX + 35, rightPanelY + 188)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(Component.translatable(isTracked
+						? "gui.dragonminez.quests.untrack"
+						: "gui.dragonminez.quests.track"))
+				.onPress(btn -> {
+					NetworkHandler.sendToServer(new SetTrackedQuestC2S(isTracked ? "" : questKey));
+					refreshButtons();
+				})
+				.build();
+
+		this.addRenderableWidget(trackButton);
 	}
 
 	private void initActionButton() {

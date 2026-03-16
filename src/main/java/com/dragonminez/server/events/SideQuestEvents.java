@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
@@ -87,7 +88,7 @@ public class SideQuestEvents {
 					processTickObjective(player, pqd, questId, objective, i);
 				}
 
-				checkAndComplete(pqd, questId);
+				checkAndComplete(player, pqd, questId);
 			}
 		});
 	}
@@ -157,7 +158,7 @@ public class SideQuestEvents {
 						}
 					}
 
-					checkAndComplete(pqd, questId);
+					checkAndComplete(member, pqd, questId);
 				}
 			});
 		}
@@ -225,7 +226,7 @@ public class SideQuestEvents {
 						}
 					}
 
-					checkAndComplete(pqd, questId);
+					checkAndComplete(member, pqd, questId);
 				}
 			});
 		}
@@ -308,11 +309,18 @@ public class SideQuestEvents {
 		int current = pqd.getObjectiveProgress(questId, objIndex);
 		if (current != newProgress) {
 			pqd.setObjectiveProgress(questId, objIndex, newProgress);
+			Quest quest = QuestRegistry.getQuest(questId);
+			if (quest != null && objIndex >= 0 && objIndex < quest.getObjectives().size()) {
+				QuestObjective objective = quest.getObjectives().get(objIndex);
+				if (current < objective.getRequired() && newProgress >= objective.getRequired()) {
+					NetworkHandler.sendToPlayer(StoryToastS2C.objectiveComplete(questId, objIndex), player);
+				}
+			}
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 		}
 	}
 
-	private static void checkAndComplete(PlayerQuestData pqd, String questId) {
+	private static void checkAndComplete(ServerPlayer player, PlayerQuestData pqd, String questId) {
 		if (pqd.isQuestCompleted(questId)) return;
 
 		Quest sideQuest = QuestRegistry.getQuest(questId);
@@ -325,6 +333,9 @@ public class SideQuestEvents {
 		}
 
 		pqd.completeQuest(questId);
+		if (questId.equals(pqd.getTrackedQuestId())) pqd.setTrackedQuestId(null);
+		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questId), player);
+		NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
 	}
 }
 

@@ -6,6 +6,7 @@ import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.HairEditorScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
+import com.dragonminez.client.gui.story.StoryNotificationManager;
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.util.KeyBinds;
@@ -13,6 +14,7 @@ import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
+import com.dragonminez.common.network.C2S.AcknowledgeStoryIntroC2S;
 import com.dragonminez.common.network.C2S.SokidanControlC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -32,6 +34,7 @@ import net.minecraftforge.fml.common.Mod;
 public class ForgeClientEvents {
 	public static boolean isHasCreatedCharacterCache = false;
 	private static String lastLang = "";
+	private static boolean introToastShownThisSession = false;
 
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
@@ -107,6 +110,15 @@ public class ForgeClientEvents {
 				if (isHasCreatedCharacterCache != data.getStatus().isHasCreatedCharacter()) {
 					isHasCreatedCharacterCache = data.getStatus().isHasCreatedCharacter();
 				}
+
+				if (!data.isDataLoaded()) return;
+				if (data.getStatus().isHasCreatedCharacter()) return;
+				if (introToastShownThisSession) return;
+				if (data.getPlayerQuestData().isIntroPromptShown()) return;
+
+				StoryNotificationManager.pushIntroHint();
+				NetworkHandler.sendToServer(new AcknowledgeStoryIntroC2S());
+				introToastShownThisSession = true;
 			});
 		}
 
@@ -127,5 +139,6 @@ public class ForgeClientEvents {
 	@SubscribeEvent
 	public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
 		ConfigManager.clearServerSync();
+		introToastShownThisSession = false;
 	}
 }

@@ -6,6 +6,7 @@ import com.dragonminez.client.crowdin.CrowdinPackResources;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.hud.AlternativeHUD;
 import com.dragonminez.client.gui.hud.ScouterHUD;
+import com.dragonminez.client.gui.hud.TrackedQuestHUD;
 import com.dragonminez.client.gui.hud.XenoverseHUD;
 import com.dragonminez.client.init.blocks.renderer.DragonBallBlockRenderer;
 import com.dragonminez.client.init.blocks.renderer.EnergyCableBlockRenderer;
@@ -60,6 +61,7 @@ public class ModClientEvents {
 		e.registerAboveAll("xenoversehud", XenoverseHUD.HUD_XENOVERSE);
 		e.registerAboveAll("alternativehud", AlternativeHUD.HUD_ALTERNATIVE);
 		e.registerAboveAll("scouterhud", ScouterHUD.HUD_SCOUTER);
+    e.registerAboveAll("tracked_quest_hud", TrackedQuestHUD.HUD_TRACKED_QUEST);
 	}
 
     @SubscribeEvent
