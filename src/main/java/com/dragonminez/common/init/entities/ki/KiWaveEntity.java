@@ -152,6 +152,29 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
     }
 
+    public void setupFinalFlash(LivingEntity owner, float damage, float speed, float size, int castTime) {
+        this.setKiRenderType(3);
+
+        this.setSize(size);
+        this.setCastSize(size / 2.0F);
+
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFFD55, 0xFFFD55);
+
+        this.setMaxLife(castTime * 2);
+        this.setCastWave(castTime);
+
+        this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+
+        this.setCastOffsets(0.0F, -0.3F, 0.4F);
+        updatePositionRelativeToOwner(owner, true);
+
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
         Vec3 look = owner.getLookAngle();
         Vec3 newPos;
