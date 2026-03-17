@@ -587,10 +587,25 @@ final class SideQuestDefaults {
 				},
 				new JsonObject[]{ rewTPS(800), rewItem("dragonminez:dball_radar", 1) }));
 
+		writeQuestFile(dir, "collect_dragon_balls.json", sidequest(
+				"collect_dragon_balls", "dmz.sidequest.collect_dballs.name", "dmz.sidequest.collect_dballs.desc",
+				"collection", true, "bulma", "bulma",
+				prereqs("AND", condSaga("saiyan_saga", 5)),
+				new JsonObject[]{
+						objItem("dmz.sidequest.collect_dballs.obj1", "dragonminez:dball1", 1),
+						objItem("dmz.sidequest.collect_dballs.obj2", "dragonminez:dball2", 1),
+						objItem("dmz.sidequest.collect_dballs.obj3", "dragonminez:dball3", 1),
+						objItem("dmz.sidequest.collect_dballs.obj4", "dragonminez:dball4", 1),
+						objItem("dmz.sidequest.collect_dballs.obj5", "dragonminez:dball5", 1),
+						objItem("dmz.sidequest.collect_dballs.obj6", "dragonminez:dball6", 1),
+						objItem("dmz.sidequest.collect_dballs.obj7", "dragonminez:dball7", 1)
+				},
+				new JsonObject[]{ rewTPS(2200) }));
+
 		writeQuestFile(dir, "chi_chi_provisions.json", sidequest(
 				"chi_chi_provisions", "dmz.sidequest.chichi_provisions.name", "dmz.sidequest.chichi_provisions.desc",
 				"collection", true, "chi_chi", "chi_chi",
-				prereqs("AND", condSaga("saiyan_saga", 6)),
+				prereqs("AND", condSaga("saiyan_saga", 5)),
 				new JsonObject[]{
 						objItem("dmz.sidequest.chichi_provisions.obj1", "minecraft:cooked_beef", 32),
 						objItem("dmz.sidequest.chichi_provisions.obj2", "minecraft:bread", 32),

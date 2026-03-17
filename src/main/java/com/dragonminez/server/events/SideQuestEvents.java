@@ -313,7 +313,8 @@ public class SideQuestEvents {
 			if (quest != null && objIndex >= 0 && objIndex < quest.getObjectives().size()) {
 				QuestObjective objective = quest.getObjectives().get(objIndex);
 				if (current < objective.getRequired() && newProgress >= objective.getRequired()) {
-					NetworkHandler.sendToPlayer(StoryToastS2C.objectiveComplete(questId, objIndex), player);
+					int clampedProgress = Math.min(newProgress, objective.getRequired());
+					NetworkHandler.sendToPlayer(StoryToastS2C.objectiveComplete(questId, objIndex, clampedProgress, objective.getRequired()), player);
 				}
 			}
 			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

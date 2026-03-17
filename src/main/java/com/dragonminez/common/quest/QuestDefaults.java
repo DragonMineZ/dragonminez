@@ -187,11 +187,12 @@ final class QuestDefaults {
 		return c;
 	}
 
-	private record QuestStep(String filename, String title, String desc, JsonObject[] objectives, JsonObject[] rewards) {
+	private record QuestStep(int id, String filename, String title, String desc, JsonObject[] objectives, JsonObject[] rewards) {
 	}
 
 	private static QuestStep step(String sagaKey, int id, String filename, JsonObject[] objectives, JsonObject... rewards) {
 		return new QuestStep(
+				id,
 				filename,
 				"dmz.quest." + sagaKey + id + ".name",
 				"dmz.quest." + sagaKey + id + ".desc",
@@ -207,11 +208,11 @@ final class QuestDefaults {
 	private static void writeLinearSaga(Path dir, String sagaId, String category, JsonObject firstPrereq, QuestStep... steps) {
 		for (int i = 0; i < steps.length; i++) {
 			QuestStep step = steps[i];
-			JsonObject prereq = i == 0 ? firstPrereq : prevQuest(sagaId, i);
+			JsonObject prereq = i == 0 ? firstPrereq : prevQuest(sagaId, steps[i - 1].id());
 			writeQuest(
 					dir,
 					step.filename(),
-					sagaQuest(i + 1, step.title(), step.desc(), category, sagaId, i + 1, null, prereq, step.objectives(), step.rewards())
+					sagaQuest(step.id(), step.title(), step.desc(), category, sagaId, step.id(), null, prereq, step.objectives(), step.rewards())
 			);
 		}
 	}
@@ -224,9 +225,9 @@ final class QuestDefaults {
 		Path dir = questsDir.resolve("saga_saiyan");
 		String s = "saiyan_saga", c = "saga_saiyan";
 
-		JsonObject[] dballObjs = new JsonObject[7];
+		JsonObject[] namekDballObjs = new JsonObject[7];
 		for (int i = 0; i < 7; i++)
-			dballObjs[i] = objItem("dmz.quest.saiyan4.obj" + (i + 1), "dragonminez:dball" + (i + 1), 1);
+			namekDballObjs[i] = objItem("dmz.quest.saiyan26.obj" + (i + 1), "dragonminez:dball" + (i + 1), 1);
 
 		writeLinearSaga(dir, s, c, null,
 				step("saiyan", 1, "01_find_roshi.json", new JsonObject[]{objStructure("dmz.quest.saiyan1.obj1", "dragonminez:roshi_house")}, rewTPS(500)),
@@ -234,7 +235,6 @@ final class QuestDefaults {
 				step("saiyan", 3, "03_detect_raditz.json", new JsonObject[]{objBiome("dmz.quest.saiyan3.obj1", "minecraft:plains"), objKill("dmz.quest.saiyan3.obj2", "dragonminez:saga_raditz", 1, 350, 22, 45)}, rewTPS(1200)),
 				step("saiyan", 4, "04_defeat_raditz.json", new JsonObject[]{objBiome("dmz.quest.saiyan4.obj1", "minecraft:plains"), objKill("dmz.quest.saiyan4.obj2", "dragonminez:saga_raditz", 1, 500, 32, 65)}, rewTPS(1500)),
 				step("saiyan", 5, "05_get_radar.json", new JsonObject[]{objItem("dmz.quest.saiyan5.obj1", "dragonminez:dball_radar", 1)}, rewTPS(1800)),
-				step("saiyan", 6, "06_collect_dragon_balls.json", dballObjs, rewTPS(2200)),
 				step("saiyan", 7, "07_scout_saiyan_landing.json", new JsonObject[]{objBiome("dmz.quest.saiyan7.obj1", "minecraft:plains"), objKill("dmz.quest.saiyan7.obj2", "dragonminez:saga_saibaman1", 3, 340, 22, 40)}, rewTPS(2500)),
 				step("saiyan", 8, "08_defeat_saibamen_wave1.json", new JsonObject[]{objBiome("dmz.quest.saiyan8.obj1", "minecraft:plains"), objKill("dmz.quest.saiyan8.obj2", "dragonminez:saga_saibaman1", 6, 420, 28, 55)}, rewTPS(2800)),
 				step("saiyan", 9, "09_defeat_saibamen_wave2.json", new JsonObject[]{objBiome("dmz.quest.saiyan9.obj1", "minecraft:plains"), objKill("dmz.quest.saiyan9.obj2", "dragonminez:saga_saibaman2", 6, 460, 30, 60)}, rewTPS(3200)),
@@ -254,7 +254,7 @@ final class QuestDefaults {
 				step("saiyan", 23, "23_secure_namek_village.json", new JsonObject[]{objStructure("dmz.quest.saiyan23.obj1", "dragonminez:village_ajissa")}, rewTPS(8600)),
 				step("saiyan", 24, "24_break_soldier_reinforcements.json", new JsonObject[]{objBiome("dmz.quest.saiyan24.obj1", "dragonminez:ajissa_plains"), objKill("dmz.quest.saiyan24.obj2", "dragonminez:saga_friezasoldier03", 10, 560, 40, 90)}, rewTPS(9000)),
 				step("saiyan", 25, "25_survive_vegeta_namek_clash.json", new JsonObject[]{objBiome("dmz.quest.saiyan25.obj1", "dragonminez:ajissa_plains"), objKill("dmz.quest.saiyan25.obj2", "dragonminez:saga_vegeta_namek", 1, 1700, 95, 210)}, rewTPS(9400)),
-				step("saiyan", 26, "26_collect_namek_dragon_balls.json", dballObjs, rewTPS(9800)),
+				step("saiyan", 26, "26_collect_namek_dragon_balls.json", namekDballObjs, rewTPS(9800)),
 				step("saiyan", 27, "27_hold_until_ginyu_arrives.json", new JsonObject[]{objBiome("dmz.quest.saiyan27.obj1", "dragonminez:ajissa_plains"), objKill("dmz.quest.saiyan27.obj2", "dragonminez:saga_friezasoldier01", 12, 620, 45, 100)}, rewTPS(10200)),
 				step("saiyan", 28, "28_ready_for_frieza_command.json", new JsonObject[]{objBiome("dmz.quest.saiyan28.obj1", "dragonminez:ajissa_plains")}, rewTPS(11000))
 		);
