@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.story;
 
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
@@ -8,7 +9,6 @@ import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
-import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
 public final class StoryNotificationManager {
@@ -74,23 +74,27 @@ public final class StoryNotificationManager {
 
 		QuestObjective objective = quest.getObjectives().get(idx);
 		Component objectiveText = toComponent(objective.getDescription());
+		int progress = message.getObjectiveProgress();
+		int required = message.getObjectiveRequired();
 
-		final int[] progress = {0};
-		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-			progress[0] = data.getPlayerQuestData().getObjectiveProgress(message.getQuestId(), idx);
-		});
+		if (progress < 0 || required < 0) {
+			final int[] fallbackProgress = {0};
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data ->
+					fallbackProgress[0] = data.getPlayerQuestData().getObjectiveProgress(message.getQuestId(), idx));
+			progress = fallbackProgress[0];
+			required = objective.getRequired();
+		}
 
 		return Component.translatable(
 				"toast.dragonminez.story.objective_complete.desc",
 				objectiveText,
-				progress[0],
-				objective.getRequired()
+				progress,
+				required
 		);
 	}
 
 	private static Component toComponent(String raw) {
-		if (raw == null || raw.isBlank()) return Component.empty();
-		return Language.getInstance().has(raw) ? Component.translatable(raw) : Component.literal(raw);
+		return LocalizationUtil.localizedOrReadable(raw);
 	}
 }
 

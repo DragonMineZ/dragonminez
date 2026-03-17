@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.quest;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.BaseMenuScreen;
+import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptSideQuestC2S;
@@ -777,8 +778,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		} else {
 			Quest q = entry.quest();
 			String label = q.isSideQuest()
-					? "- " + tr(q.getTitle()).getString()
-					: q.getId() + ". " + tr(q.getTitle()).getString();
+					? "- " + LocalizationUtil.localizedOrReadableText(q.getTitle())
+					: q.getId() + ". " + LocalizationUtil.localizedOrReadableText(q.getTitle());
 
 			int indent = entry.depth() * 10;
 			String clipped = fitSingleLineEllipsis(label, Math.max(24, rowWidth - indent - 8));
@@ -866,7 +867,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private int estimateTitleSectionHeight(int width) {
-		String title = tr(selectedQuest.getTitle()).getString();
+		String title = LocalizationUtil.localizedOrReadableText(selectedQuest.getTitle());
 		List<String> lines = limitLinesWithEllipsis(wrapText(title, width - 10), 2, width - 10);
 		return Math.max(32, 18 + (lines.size() * 10) + 10);
 	}
@@ -890,7 +891,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
 		List<String> wrappedTitle = limitLinesWithEllipsis(
-				wrapText(tr(selectedQuest.getTitle()).getString(), width - 10),
+				wrapText(LocalizationUtil.localizedOrReadableText(selectedQuest.getTitle()), width - 10),
 				2,
 				width - 10
 		);
@@ -1310,7 +1311,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			title = "§kUnknown Quest§r";
 			statusText = tr("gui.dragonminez.quest_tree.status.locked").getString();
 		} else {
-			title = tr(quest.getTitle()).getString();
+			title = LocalizationUtil.localizedOrReadableText(quest.getTitle());
 			statusText = getStatusText(getNodeStatus(quest));
 		}
 

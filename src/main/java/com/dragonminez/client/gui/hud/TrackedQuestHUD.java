@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
@@ -10,7 +11,6 @@ import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
@@ -110,8 +110,7 @@ public class TrackedQuestHUD {
 	}
 
 	private static Component toComponent(String raw) {
-		if (raw == null || raw.isBlank()) return Component.empty();
-		return Language.getInstance().has(raw) ? Component.translatable(raw) : Component.literal(raw);
+		return LocalizationUtil.localizedOrReadable(raw);
 	}
 }
 
