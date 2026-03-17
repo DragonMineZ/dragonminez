@@ -189,6 +189,18 @@ public class NetworkHandler {
                 .consumerMainThread(SokidanControlC2S::handle)
                 .add();
 
+		net.messageBuilder(EquipTechniqueC2S.class,  id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(EquipTechniqueC2S::new)
+				.encoder(EquipTechniqueC2S::toBytes)
+				.consumerMainThread(EquipTechniqueC2S::handle)
+				.add();
+
+		net.messageBuilder(SelectTechniqueSlotC2S.class,  id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SelectTechniqueSlotC2S::new)
+				.encoder(SelectTechniqueSlotC2S::toBytes)
+				.consumerMainThread(SelectTechniqueSlotC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

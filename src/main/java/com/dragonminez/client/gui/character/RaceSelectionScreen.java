@@ -16,6 +16,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
@@ -65,6 +66,14 @@ public class RaceSelectionScreen extends ScaledScreen {
     private CustomTextureButton rightButton;
     private TexturedTextButton selectButton;
 
+  private enum TransitionState { NONE, OPENING, CLOSING }
+  private static final long OPEN_ANIMATION_DURATION = 200;
+  private static final long CLOSE_ANIMATION_DURATION = 120;
+  private long animationStartTime;
+  private TransitionState transitionState = TransitionState.NONE;
+  private Screen pendingScreen;
+  private boolean closeCommitted;
+
     public RaceSelectionScreen(Character character) {
         super(Component.translatable("gui.dragonminez.character_creation.title"));
         this.character = character;
@@ -84,6 +93,7 @@ public class RaceSelectionScreen extends ScaledScreen {
     @Override
     protected void init() {
         super.init();
+		startOpenTransition();
 
         int centerX = getUiWidth() / 2;
         int centerY = getUiHeight() / 2;
@@ -130,6 +140,17 @@ public class RaceSelectionScreen extends ScaledScreen {
         addRenderableWidget(rightButton);
         addRenderableWidget(selectButton);
     }
+
+  @Override
+  public void tick() {
+    super.tick();
+    if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
+    if (transitionState != TransitionState.CLOSING || closeCommitted) return;
+    if (getTransitionProgress() >= 1.0f) {
+      closeCommitted = true;
+      if (this.minecraft != null) this.minecraft.setScreen(pendingScreen);
+    }
+  }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -456,7 +477,7 @@ public class RaceSelectionScreen extends ScaledScreen {
         if (this.minecraft != null) {
             isSwitchingMenu = true;
             GLOBAL_SWITCHING = true;
-            this.minecraft.setScreen(new CharacterCustomizationScreen(this, character));
+			startCloseTransition(new CharacterCustomizationScreen(this, character));
         }
 
 		NetworkHandler.sendToServer(new StatsSyncC2S(character));
@@ -464,6 +485,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (transitionState == TransitionState.CLOSING) return true;
         double uiMouseX = toUiX(mouseX);
         double uiMouseY = toUiY(mouseY);
         int centerX = getUiWidth() / 2 + 5;
@@ -482,12 +504,14 @@ public class RaceSelectionScreen extends ScaledScreen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (transitionState == TransitionState.CLOSING) return true;
         isDraggingModel = false;
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (transitionState == TransitionState.CLOSING) return true;
         if (isDraggingModel) {
             double uiMouseX = toUiX(mouseX);
             double deltaX = uiMouseX - lastMouseX;
@@ -500,8 +524,9 @@ public class RaceSelectionScreen extends ScaledScreen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (transitionState == TransitionState.CLOSING) return true;
         if (keyCode == 256 && this.minecraft != null) {
-            this.minecraft.setScreen(null);
+			startCloseTransition(null);
             return true;
         }
 
@@ -521,5 +546,33 @@ public class RaceSelectionScreen extends ScaledScreen {
     public boolean isPauseScreen() {
         return false;
     }
+
+  @Override
+  public void onClose() {
+    startCloseTransition(null);
+  }
+
+  private void startOpenTransition() {
+    transitionState = TransitionState.OPENING;
+    animationStartTime = System.currentTimeMillis();
+    pendingScreen = null;
+    closeCommitted = false;
+  }
+
+  private void startCloseTransition(Screen nextScreen) {
+    if (transitionState == TransitionState.CLOSING) return;
+    pendingScreen = nextScreen;
+    transitionState = TransitionState.CLOSING;
+    animationStartTime = System.currentTimeMillis();
+    closeCommitted = false;
+  }
+
+  private float getTransitionProgress() {
+    long duration = transitionState == TransitionState.CLOSING ? CLOSE_ANIMATION_DURATION : OPEN_ANIMATION_DURATION;
+    if (duration <= 0L) return 1.0f;
+    long elapsed = System.currentTimeMillis() - animationStartTime;
+    return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+  }
+
 
 }

@@ -5,6 +5,8 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -55,15 +57,21 @@ public class UpdateSkillC2S {
 						case UPGRADE:
 							if (skill != null && !skill.isMaxLevel() && data.getResources().getTrainingPoints() >= cost && cost != -1 && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 								data.getResources().removeTrainingPoints(cost);
+								boolean wasLevelZero = skill.getLevel() == 0;
 								skill.addLevel(1);
+
+								if (wasLevelZero) {
+									unlockTechniqueIfPresent(data, skillName);
+								}
 							}
 							break;
+
 						case PURCHASE:
-							if (!data.getSkills().hasSkill(skillName)
-									&& data.getResources().getTrainingPoints() >= cost
-									&& cost != -1) {
+							if (!data.getSkills().hasSkill(skillName) && data.getResources().getTrainingPoints() >= cost && cost != -1) {
 								data.getResources().removeTrainingPoints(cost);
 								data.getSkills().setSkillLevel(skillName, 1);
+
+								unlockTechniqueIfPresent(data, skillName);
 							}
 							break;
 					}
@@ -73,5 +81,14 @@ public class UpdateSkillC2S {
 			}
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private void unlockTechniqueIfPresent(com.dragonminez.common.stats.StatsData data, String techId) {
+		if (PredefinedTechniques.REGISTRY.containsKey(techId)) {
+			KiAttackData template = PredefinedTechniques.REGISTRY.get(techId);
+			KiAttackData clone = new KiAttackData();
+			clone.load(template.save());
+			data.getTechniques().unlockTechnique(clone);
+		}
 	}
 }

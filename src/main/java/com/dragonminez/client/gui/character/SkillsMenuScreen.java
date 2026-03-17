@@ -2,14 +2,21 @@ package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.ClippableTextureButton;
+import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.network.C2S.EquipTechniqueC2S;
 import com.dragonminez.common.network.C2S.UpdateSkillC2S;
+import com.dragonminez.common.network.C2S.UpgradeTechniqueC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.skills.Skills;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
+import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -25,6 +32,7 @@ import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
 public class SkillsMenuScreen extends BaseMenuScreen {
@@ -54,8 +62,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private int maxDescScroll = 0;
 	private boolean isDraggingMainScroll = false;
 	private boolean isDraggingDescScroll = false;
+	private boolean isBinding = false;
 
 	private ClippableTextureButton skillsButton, kiButton, formsButton, stacksButton;
+	private CustomTextureButton btnDmg, btnSize, btnSpeed, btnPen, btnCast, btnCd;
 	private int animTick = 0;
 	private boolean isHotZoneHovered = false;
 
@@ -81,7 +91,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		if (tickCount >= 10) {
 			tickCount = 0;
 			updateStatsData();
-			refreshButtons();
+			if (!isBinding) refreshButtons();
 		}
 
 		if (isHotZoneHovered) {
@@ -206,11 +216,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				});
 				break;
 			case KI:
-				skills.getAllSkills().forEach((name, skill) -> {
-					if (skillsConfig.getKiSkills().contains(name)) {
-						skillNames.add(name);
-					}
-				});
+				statsData.getTechniques().getUnlockedTechniques().keySet().forEach(skillNames::add);
 				break;
 			case FORMS:
 				skills.getAllSkills().forEach((name, skill) -> {
@@ -241,11 +247,117 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private void refreshButtons() {
 		this.clearWidgets();
 		if (upgradeButton != null) this.removeWidget(upgradeButton);
+		if (btnDmg != null) this.removeWidget(btnDmg);
+		if (btnSize != null) this.removeWidget(btnSize);
+		if (btnSpeed != null) this.removeWidget(btnSpeed);
+		if (btnPen != null) this.removeWidget(btnPen);
+		if (btnCast != null) this.removeWidget(btnCast);
+		if (btnCd != null) this.removeWidget(btnCd);
 
+		this.isBinding = false;
 		this.upgradeButton = null;
+		this.btnDmg = null; this.btnSize = null; this.btnSpeed = null;
+		this.btnPen = null; this.btnCast = null; this.btnCd = null;
+
 		initDynamicButtons();
 		initNavigationButtons();
 		initUpgradeButton();
+		initBindButtons();
+		initTechniqueUpgradeButtons();
+	}
+
+	private void initTechniqueUpgradeButtons() {
+		if (selectedSkill == null || statsData == null || currentCategory != SkillCategory.KI) return;
+
+		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
+		if (tech == null || PredefinedTechniques.isPredefinedTechnique(tech)) return;
+
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
+		int rightPanelY = centerY - 105;
+
+		int btnX = rightPanelX + 115;
+		int yOffset = rightPanelY + (tech instanceof KiAttackData ? 92 : 80);
+
+		int xpReq = 100;
+		boolean canAfford = tech.getExperience() >= xpReq;
+
+		if (tech instanceof KiAttackData) {
+			btnDmg = createUpgradeBtn(btnX, yOffset, "damage", canAfford); this.addRenderableWidget(btnDmg); yOffset += 12;
+			btnSize = createUpgradeBtn(btnX, yOffset, "size", canAfford); this.addRenderableWidget(btnSize); yOffset += 12;
+			btnSpeed = createUpgradeBtn(btnX, yOffset, "speed", canAfford); this.addRenderableWidget(btnSpeed); yOffset += 12;
+			btnPen = createUpgradeBtn(btnX, yOffset, "armor_pen", canAfford); this.addRenderableWidget(btnPen); yOffset += 12;
+		} else {
+			btnDmg = createUpgradeBtn(btnX, yOffset, "damage", canAfford); this.addRenderableWidget(btnDmg); yOffset += 12;
+		}
+
+		btnCast = createUpgradeBtn(btnX, yOffset, "cast", canAfford); this.addRenderableWidget(btnCast); yOffset += 12;
+		btnCd = createUpgradeBtn(btnX, yOffset, "cooldown", canAfford); this.addRenderableWidget(btnCd);
+	}
+
+	private CustomTextureButton createUpgradeBtn(int x, int y, String statName, boolean active) {
+		var btn = new CustomTextureButton.Builder()
+				.position(x, y - 1)
+				.size(14, 11)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 0, 0, 10)
+				.textureSize(10, 10)
+				.onPress(button -> {
+					NetworkHandler.INSTANCE.sendToServer(new UpgradeTechniqueC2S(selectedSkill, statName));
+				})
+				.build();
+		btn.active = active;
+		return btn;
+	}
+
+	private void initBindButtons() {
+		if (selectedSkill == null || statsData == null) return;
+
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
+		int rightPanelY = centerY - 105;
+
+		if (!isBinding) {
+			var bindButton = new TexturedTextButton.Builder()
+					.position(rightPanelX + 35, rightPanelY + 183)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(Component.literal("Bind to Slot"))
+					.onPress(btn -> {
+						isBinding = true;
+						this.clearWidgets();
+						initDynamicButtons();
+						initNavigationButtons();
+						initUpgradeButton();
+						initBindButtons();
+					})
+					.build();
+			this.addRenderableWidget(bindButton);
+		} else {
+			for (int i = 0; i < 8; i++) {
+				final int slotIndex = i;
+				int col = i % 4;
+				int row = i / 4;
+
+				var slotBtn = new TexturedTextButton.Builder()
+						.position(rightPanelX + 35 + (col * 18), rightPanelY + 160 + (row * 18))
+						.size(16, 16)
+						.texture(BUTTONS_TEXTURE) // Puedes usar una textura más pequeña aquí
+						.textureCoords(0, 0, 0, 16)
+						.textureSize(74, 20)
+						.message(Component.literal(String.valueOf(i + 1)))
+						.onPress(btn -> {
+							// Necesitas crear este paquete C2S que llame a equipOrSwapTechnique en el servidor
+							NetworkHandler.INSTANCE.sendToServer(new EquipTechniqueC2S(slotIndex, selectedSkill));
+							isBinding = false;
+							refreshButtons();
+						})
+						.build();
+				this.addRenderableWidget(slotBtn);
+			}
+		}
 	}
 
 	private void initUpgradeButton() {
@@ -317,24 +429,36 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
+		applyZoom(graphics);
 
-		updateButtonAnimations(uiMouseX, uiMouseY, partialTick);
+		int leftOffset = getLeftPanelSwitchOffset();
+		updateButtonAnimations(uiMouseX - leftOffset, uiMouseY, partialTick, leftOffset);
 
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
-		renderLeftPanel(graphics, uiMouseX, uiMouseY);
-		renderRightPanel(graphics, uiMouseX, uiMouseY);
+		leftOffset = getLeftPanelSwitchOffset();
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftOffset, 0, 0);
+		renderLeftPanel(graphics, uiMouseX - leftOffset, uiMouseY);
+		graphics.pose().popPose();
+
+		int rightOffset = getRightPanelSwitchOffset();
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0, 0);
+		renderRightPanel(graphics, uiMouseX - rightOffset, uiMouseY);
+		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
 	}
 
-	private void updateButtonAnimations(int mouseX, int mouseY, float partialTick) {
+	private void updateButtonAnimations(int mouseX, int mouseY, float partialTick, int leftOffset) {
 		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
 		int leftPanelY = centerY - 105;
+		int panelX = leftPanelX + leftOffset;
 
-		int hotZoneX = leftPanelX + 122;
+		int hotZoneX = panelX + 122;
 		int hotZoneY = leftPanelY + 6;
 		int hotZoneWidth = 48;
 		int hotZoneHeight = 133;
@@ -345,8 +469,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		float animProgress = (animTick + (isHotZoneHovered ? partialTick : -partialTick)) / BUTTON_ANIM_TIME;
 		animProgress = Mth.clamp(animProgress, 0.0f, 1.0f);
 
-		int hiddenX = leftPanelX + 122;
-		int visibleX = leftPanelX + 141;
+		int hiddenX = panelX + 122;
+		int visibleX = panelX + 141;
 
 		int newX = hiddenX + (int) ((visibleX - hiddenX) * animProgress);
 		skillsButton.setX(newX);
@@ -392,7 +516,9 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
 			Skill skill = statsData.getSkills().getSkill(skillName);
-			String displayName = tr("skill.dragonminez." + skillName).getString();
+			String displayName;
+			if (currentCategory == SkillCategory.KI) displayName = tr("technique.dragonminez." + skillName).getString();
+			else displayName = tr("skill.dragonminez." + skillName).getString();
 
 			drawStringWithBorder(graphics, txt(displayName), panelX + 15, itemY + 5, color);
 
@@ -440,16 +566,57 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info")
-				.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
+		if (currentCategory == SkillCategory.KI) {
+			graphics.blit(MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
+			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		} else {
+			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
+			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
+			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
+		}
+
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedSkill != null && statsData != null) {
-			renderSkillDetails(graphics, rightPanelX, rightPanelY);
+			if (currentCategory == SkillCategory.KI) renderTechniqueDetails(graphics, rightPanelX, rightPanelY, mouseX, mouseY);
+			else renderSkillDetails(graphics, rightPanelX, rightPanelY);
+		}
+	}
+
+	private void renderTechniqueDetails(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
+		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
+		if (tech == null) return;
+
+		int yOffset = panelY + 40;
+		boolean isCustom = !PredefinedTechniques.isPredefinedTechnique(tech);
+		int xpReq = 100;
+
+		drawCenteredStringWithBorder(graphics, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 12;
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.xp", tech.getExperience()), panelX + 70, yOffset, 0xFF55FF55); yOffset += 16;
+
+		if (tech instanceof KiAttackData ki) {
+			int scaledKiDamage = (int) (statsData.getKiDamage() * ki.getDamageMultiplier());
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + ki.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.utility").append(": ").append(tr("technique.utility." + ki.getUtility().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledKiDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSize()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", ki.getSpeed()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(ki.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(tech.getCastTime() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		} else if (tech instanceof StrikeAttackData st) {
+			int scaledStrikeDamage =  (int) (statsData.getStrikeDamage() * st.getDamageMultiplier());
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type.strike")), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+			drawStringWithBorder(graphics, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.valueOf(scaledStrikeDamage))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		}
+
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(tech.getCooldown() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost()))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
+
+		if (isCustom) {
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 70, yOffset, 0xFFAAAAAA);
 		}
 	}
 

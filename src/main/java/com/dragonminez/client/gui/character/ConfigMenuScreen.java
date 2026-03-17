@@ -216,12 +216,41 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
+		applyZoom(graphics);
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
-		renderLeftPanel(graphics, uiMouseX, uiMouseY);
-		renderRightPanel(graphics, uiMouseX, uiMouseY);
+
+		int leftOffset = getLeftPanelSwitchOffset();
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftOffset, 0, 0);
+		renderLeftPanel(graphics, uiMouseX - leftOffset, uiMouseY);
+		graphics.pose().popPose();
+
+		int rightOffset = getRightPanelSwitchOffset();
+		updateRightPanelButtonOffsets(rightOffset);
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0, 0);
+		renderRightPanel(graphics, uiMouseX - rightOffset, uiMouseY);
+		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
+	}
+
+	private void updateRightPanelButtonOffsets(int rightOffset) {
+		int rightPanelX = getUiWidth() - 163;
+		int decreaseX = rightPanelX + 25 + rightOffset;
+		int increaseX = rightPanelX + 108 + rightOffset;
+		int switchX = rightPanelX + 65 + rightOffset;
+
+		for (CustomTextureButton btn : decreaseButtons) {
+			btn.setX(decreaseX);
+		}
+		for (CustomTextureButton btn : increaseButtons) {
+			btn.setX(increaseX);
+		}
+		for (SwitchButton btn : switchButtons) {
+			btn.setX(switchX);
+		}
 	}
 
 	private void renderLeftPanel(GuiGraphics graphics, int mouseX, int mouseY) {

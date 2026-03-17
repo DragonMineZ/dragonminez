@@ -463,11 +463,21 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
 		beginUiScale(graphics);
+		applyZoom(graphics);
 
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
 
-		renderLeftPanel(graphics, uiMouseX, uiMouseY);
-		renderRightPanel(graphics, uiMouseX, uiMouseY);
+		int leftOffset = getLeftPanelSwitchOffset();
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftOffset, 0, 0);
+		renderLeftPanel(graphics, uiMouseX - leftOffset, uiMouseY);
+		graphics.pose().popPose();
+
+		int rightOffset = getRightPanelSwitchOffset();
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0, 0);
+		renderRightPanel(graphics, uiMouseX - rightOffset, uiMouseY);
+		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);

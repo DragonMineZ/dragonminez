@@ -82,6 +82,15 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private boolean isDraggingModel = false;
 	private double lastMouseX = 0;
 
+	private enum TransitionState { NONE, OPENING, CLOSING }
+	private static final long OPEN_ANIMATION_DURATION = 200;
+	private static final long CLOSE_ANIMATION_DURATION = 120;
+	private long animationStartTime;
+	private TransitionState transitionState = TransitionState.NONE;
+	private Screen pendingScreen;
+	private boolean closeCommitted;
+	private boolean transitionInitialized;
+
 	public CharacterCustomizationScreen(Screen previousScreen, Character character) {
 		super(Component.translatable("gui.dragonminez.customization.title"));
 		this.previousScreen = previousScreen;
@@ -132,6 +141,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	@Override
 	protected void init() {
 		super.init();
+		if (!transitionInitialized) {
+			startOpenTransition();
+			transitionInitialized = true;
+		}
 
 		if (this.character != null && this.character.getCharacterClass() != null) {
 			RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
@@ -144,6 +157,17 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		clearWidgets();
 		initPage();
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
+		if (transitionState != TransitionState.CLOSING || closeCommitted) return;
+		if (getTransitionProgress() >= 1.0f) {
+			closeCommitted = true;
+			if (this.minecraft != null) this.minecraft.setScreen(pendingScreen);
+		}
 	}
 
 	private void initPage() {
@@ -297,7 +321,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 							if (previousScreen instanceof RaceSelectionScreen) {
 								GLOBAL_SWITCHING = true;
 							}
-							this.minecraft.setScreen(previousScreen);
+							startCloseTransition(previousScreen);
 						}
 					})
 					.build());
@@ -708,7 +732,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				QuestsMenuScreen.SAVED_SAGA_INDEX = 0;
 				QuestsMenuScreen.SAVED_SCROLL_OFFSET = 0;
 			}
-			this.minecraft.setScreen(null);
+			startCloseTransition(null);
 		}
 	}
 
@@ -1107,6 +1131,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (transitionState == TransitionState.CLOSING) return true;
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
@@ -1160,7 +1185,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 						if (this.minecraft != null) {
 							isSwitchingMenu = true;
 							GLOBAL_SWITCHING = true;
-							this.minecraft.setScreen(new HairEditorScreen(this, character));
+							startCloseTransition(new HairEditorScreen(this, character));
 						}
 					}
 				}
@@ -1172,12 +1197,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (transitionState == TransitionState.CLOSING) return true;
 		isDraggingModel = false;
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (transitionState == TransitionState.CLOSING) return true;
 		if (isDraggingModel && !colorPickerVisible) {
 			double uiMouseX = toUiX(mouseX);
 			double deltaX = uiMouseX - lastMouseX;
@@ -1190,6 +1217,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (transitionState == TransitionState.CLOSING) return true;
 		if (keyCode == 256) {
 			if (colorPickerVisible) {
 				hideColorPicker();
@@ -1198,8 +1226,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			if (this.minecraft != null) {
 				if (this.previousScreen != null) {
 					isSwitchingMenu = true;
-					this.minecraft.setScreen(previousScreen);
-				} else this.minecraft.setScreen(null);
+					startCloseTransition(previousScreen);
+				} else startCloseTransition(null);
 			}
 			return true;
 		}
@@ -1209,13 +1237,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	@Override
 	public void onClose() {
-		if (this.minecraft != null) {
-			if (this.previousScreen != null) {
-				isSwitchingMenu = true;
-				this.minecraft.setScreen(previousScreen);
-			} else {
-				super.onClose();
-			}
+		if (this.previousScreen != null) {
+			isSwitchingMenu = true;
+			startCloseTransition(previousScreen);
+		} else {
+			startCloseTransition(null);
 		}
 	}
 
@@ -1231,4 +1257,27 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		if (config != null && config.hasCustomModel()) return config.getCustomModel().toLowerCase(Locale.ROOT);
 		return race;
 	}
+
+	private void startOpenTransition() {
+		transitionState = TransitionState.OPENING;
+		animationStartTime = System.currentTimeMillis();
+		pendingScreen = null;
+		closeCommitted = false;
+	}
+
+	private void startCloseTransition(Screen nextScreen) {
+		if (transitionState == TransitionState.CLOSING) return;
+		pendingScreen = nextScreen;
+		transitionState = TransitionState.CLOSING;
+		animationStartTime = System.currentTimeMillis();
+		closeCommitted = false;
+	}
+
+	private float getTransitionProgress() {
+		long duration = transitionState == TransitionState.CLOSING ? CLOSE_ANIMATION_DURATION : OPEN_ANIMATION_DURATION;
+		if (duration <= 0L) return 1.0f;
+		long elapsed = System.currentTimeMillis() - animationStartTime;
+		return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+	}
+
 }

@@ -14,6 +14,7 @@ import com.dragonminez.common.init.entities.redribbon.BanditEntity;
 import com.dragonminez.common.init.entities.redribbon.RedRibbonSoldierEntity;
 import com.dragonminez.common.init.entities.redribbon.RobotEntity;
 import com.dragonminez.common.init.entities.sagas.*;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.gen.OverworldSurfaceRules;
 import com.dragonminez.server.world.region.OverworldRegion;
@@ -126,6 +127,8 @@ public class ModCommonEvents {
     }
 
 	public static void commonSetup(final FMLCommonSetupEvent event) {
+		new PredefinedTechniques().init();
+
 		event.enqueueWork(() -> {
 
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.CHRYSANTHEMUM_FLOWER.getId(), MainBlocks.POTTED_CHRYSANTHEMUM_FLOWER);
@@ -143,7 +146,7 @@ public class ModCommonEvents {
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_AJISSA_SAPLING.getId(), MainBlocks.POTTED_AJISSA_SAPLING);
 			((FlowerPotBlock) Blocks.FLOWER_POT).addPlant(MainBlocks.NAMEK_SACRED_SAPLING.getId(), MainBlocks.POTTED_SACRED_SAPLING);
 
-			Regions.register(new OverworldRegion(14)); //activa cam
+			Regions.register(new OverworldRegion(14));
 			SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, Reference.MOD_ID, OverworldSurfaceRules.makeRules());
 		});
 	}

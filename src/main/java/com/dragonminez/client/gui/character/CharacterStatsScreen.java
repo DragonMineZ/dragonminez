@@ -102,13 +102,25 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		beginUiScale(graphics);
 		applyZoom(graphics);
+		int leftOffset = getLeftPanelSwitchOffset();
+		int rightOffset = getRightPanelSwitchOffset();
+		int topOffset = getTopPanelSwitchOffset();
+		updatePanelWidgetOffsets(leftOffset, rightOffset);
 
 		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
-		renderMenuPanels(graphics);
-		renderPlayerInfo(graphics, uiMouseX, uiMouseY);
-		renderStatsInfo(graphics, uiMouseX, uiMouseY);
-		renderStatisticsInfo(graphics, uiMouseX, uiMouseY);
+		renderMenuPanels(graphics, leftOffset, rightOffset, topOffset);
+		renderPlayerInfo(graphics, uiMouseX, uiMouseY - topOffset, topOffset);
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(leftOffset, 0, 0);
+		renderStatsInfo(graphics, uiMouseX - leftOffset, uiMouseY);
 		renderTPCost(graphics);
+		graphics.pose().popPose();
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(rightOffset, 0, 0);
+		renderStatisticsInfo(graphics, uiMouseX - rightOffset, uiMouseY);
+		graphics.pose().popPose();
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
@@ -224,26 +236,26 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		drawStringWithBorder2(graphics, txt("x" + tpMultiplier), 75, tpcY + 10, 0x2BFFE2, 0x000000);
 	}
 
-	private void renderMenuPanels(GuiGraphics graphics) {
+	private void renderMenuPanels(GuiGraphics graphics, int leftOffset, int rightOffset, int topOffset) {
 		int centerX = getUiWidth() / 2;
 		int centerY = getUiHeight() / 2;
 
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		graphics.blit(MENU_BIG, 12, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, 29, centerY - 95, 142, 22, 107, 21, 256, 256);
-		graphics.blit(MENU_BIG, 43, centerY - 28, 142, 0, 79, 21, 256, 256);
+		graphics.blit(MENU_BIG, 12 + leftOffset, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, 29 + leftOffset, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, 43 + leftOffset, centerY - 28, 142, 0, 79, 21, 256, 256);
 
-		graphics.blit(MENU_BIG, getUiWidth() - 158, centerY - 105, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 158 + rightOffset, centerY - 105, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, getUiWidth() - 141 + rightOffset, centerY - 95, 142, 22, 107, 21, 256, 256);
 
-		graphics.blit(MENU_SMALL, centerX - 70, 8, 0, 95, 145, 58, 256, 256);
+		graphics.blit(MENU_SMALL, centerX - 70, 8 + topOffset, 0, 95, 145, 58, 256, 256);
 
 		RenderSystem.disableBlend();
 	}
 
-	private void renderPlayerInfo(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderPlayerInfo(GuiGraphics graphics, int mouseX, int mouseY, int topOffset) {
 		int centerX = getUiWidth() / 2;
 
 		if (Minecraft.getInstance().player == null) return;
@@ -260,18 +272,18 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int totalWidth = font.width(nameBold) + font.width(" " + genderSymbol);
 		int startX = centerX - (totalWidth / 2);
 
-		graphics.drawString(font, nameBold, startX + 1, 19, 0x000000, false);
-		graphics.drawString(font, nameBold, startX - 1, 19, 0x000000, false);
-		graphics.drawString(font, nameBold, startX, 20, 0x000000, false);
-		graphics.drawString(font, nameBold, startX, 18, 0x000000, false);
-		graphics.drawString(font, nameBold, startX, 19, nameColor, false);
+		graphics.drawString(font, nameBold, startX + 1, 19 + topOffset, 0x000000, false);
+		graphics.drawString(font, nameBold, startX - 1, 19 + topOffset, 0x000000, false);
+		graphics.drawString(font, nameBold, startX, 20 + topOffset, 0x000000, false);
+		graphics.drawString(font, nameBold, startX, 18 + topOffset, 0x000000, false);
+		graphics.drawString(font, nameBold, startX, 19 + topOffset, nameColor, false);
 
 		int symbolX = startX + font.width(nameBold);
-		graphics.drawString(font, " " + genderSymbol, symbolX + 1, 19, 0x000000, false);
-		graphics.drawString(font, " " + genderSymbol, symbolX - 1, 19, 0x000000, false);
-		graphics.drawString(font, " " + genderSymbol, symbolX, 20, 0x000000, false);
-		graphics.drawString(font, " " + genderSymbol, symbolX, 18, 0x000000, false);
-		graphics.drawString(font, " " + genderSymbol, symbolX, 19, nameColor, false);
+		graphics.drawString(font, " " + genderSymbol, symbolX + 1, 19 + topOffset, 0x000000, false);
+		graphics.drawString(font, " " + genderSymbol, symbolX - 1, 19 + topOffset, 0x000000, false);
+		graphics.drawString(font, " " + genderSymbol, symbolX, 20 + topOffset, 0x000000, false);
+		graphics.drawString(font, " " + genderSymbol, symbolX, 18 + topOffset, 0x000000, false);
+		graphics.drawString(font, " " + genderSymbol, symbolX, 19 + topOffset, nameColor, false);
 
 		if (mouseX >= centerX - 40 && mouseX <= centerX + 40 && mouseY >= 19 && mouseY <= 19 + font.lineHeight) {
 			List<FormattedCharSequence> tooltip = new ArrayList<>();
@@ -286,7 +298,21 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		}
 
 		Component raceComponent = tr("race.dragonminez." + raceName);
-		drawStringWithBorder(graphics, raceComponent, centerX, 46, 0xFFFFFF, 0x000000);
+		drawStringWithBorder(graphics, raceComponent, centerX, 46 + topOffset, 0xFFFFFF, 0x000000);
+	}
+
+	private void updatePanelWidgetOffsets(int leftOffset, int rightOffset) {
+		int leftButtonX = 27 + leftOffset;
+		if (strButton != null) strButton.setX(leftButtonX);
+		if (skpButton != null) skpButton.setX(leftButtonX);
+		if (resButton != null) resButton.setX(leftButtonX);
+		if (vitButton != null) vitButton.setX(leftButtonX);
+		if (pwrButton != null) pwrButton.setX(leftButtonX);
+		if (eneButton != null) eneButton.setX(leftButtonX);
+		if (multiplierButton != null) multiplierButton.setX(leftButtonX);
+
+		int rightSwitchX = getUiWidth() - 45 + rightOffset;
+		if (viewSwitchButton != null) viewSwitchButton.setX(rightSwitchX);
 	}
 
 	private void renderStatsInfo(GuiGraphics graphics, int mouseX, int mouseY) {

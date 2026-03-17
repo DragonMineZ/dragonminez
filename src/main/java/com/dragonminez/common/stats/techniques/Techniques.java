@@ -37,6 +37,32 @@ public class Techniques {
 		return id.isEmpty() ? null : unlockedTechniques.get(id);
 	}
 
+	public String[] getEquippedSlots() {
+		return this.equippedSlots;
+	}
+
+	public int getSelectedSlot() {
+		return this.selectedSlot;
+	}
+
+	public void equipOrSwapTechnique(int slotIndex, String techniqueId) {
+		if (slotIndex < 0 || slotIndex >= 8) return;
+
+		int existingSlot = -1;
+		for (int i = 0; i < 8; i++) {
+			if (equippedSlots[i].equals(techniqueId)) {
+				existingSlot = i;
+				break;
+			}
+		}
+
+		if (existingSlot != -1) {
+			String temp = equippedSlots[slotIndex];
+			equippedSlots[slotIndex] = techniqueId;
+			equippedSlots[existingSlot] = temp;
+		} else equippedSlots[slotIndex] = techniqueId;
+	}
+
 	public void addExperienceToSelected(int amount) {
 		TechniqueData active = getSelectedTechnique();
 		if (active != null) active.addExperience(amount);

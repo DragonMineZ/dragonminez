@@ -12,6 +12,8 @@ import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -29,6 +31,7 @@ import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
@@ -334,7 +337,9 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 			int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
 			Skill skill = statsData.getSkills().getSkill(skillName);
-			String displayName = Component.translatable("skill.dragonminez." + skillName).getString();
+			String displayName;
+			if (currentCategory == SkillCategory.KI) displayName = Component.translatable("technique.dragonminez." + skillName).getString();
+			else displayName = Component.translatable("skill.dragonminez." + skillName).getString();
 
 			drawStringWithBorder(graphics, txt(displayName),
 					panelX + 15, itemY + 5, color);
@@ -385,16 +390,56 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		int rightPanelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
-		graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
-		graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
+
+		if (currentCategory == SkillCategory.KI) {
+			graphics.blit(MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
+			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+		} else {
+			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY, 0, 0, 141, 94, 256, 256);
+			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
+			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 96, 0, 0, 141, 94, 256, 256);
+			graphics.blit(MENU_SMALL, rightPanelX, rightPanelY + 190, 0, 154, 141, 32, 256, 256);
+		}
 
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info")
 				.withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedSkill != null && statsData != null) {
-			renderSkillDetails(graphics, rightPanelX, rightPanelY);
+			if (currentCategory == SkillCategory.KI) {
+				renderTechniqueDetails(graphics, rightPanelX, rightPanelY);
+			} else {
+				renderSkillDetails(graphics, rightPanelX, rightPanelY);
+			}
+		}
+	}
+
+	private void renderTechniqueDetails(GuiGraphics graphics, int panelX, int panelY) {
+		KiAttackData tech = PredefinedTechniques.REGISTRY.get(selectedSkill);
+		if (tech == null) return;
+
+		int yOffset = panelY + 40;
+
+		drawCenteredStringWithBorder(graphics, tr(tech.getName()).withStyle(ChatFormatting.BOLD), panelX + 70, yOffset, 0xFFFFFFFF); yOffset += 24;
+
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.type").append(": ").append(tr("technique.type." + tech.getKiType().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.utility").append(": ").append(tr("technique.utility." + tech.getUtility().name().toLowerCase())), panelX + 15, yOffset, 0xDDDDDD); yOffset += 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.damage").append(": ").append(txt(String.format(Locale.US, "%.0f%%", tech.getDamageMultiplier() * 100.0f))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getSize()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getSpeed()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(tech.getArmorPenetration()))), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(tech.getCastTime() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(tech.getCooldown() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
+
+		drawStringWithBorder(graphics, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost()))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
+
+		boolean learned = statsData.getTechniques().getUnlockedTechniques().containsKey(selectedSkill);
+		drawCenteredStringWithBorder(graphics, learned ? tr("gui.dragonminez.skills.already_learned") : tr("gui.dragonminez.skills.not_learned"), panelX + 70, yOffset, learned ? 0xFF55AA55 : 0xFFAAAAAA);
+
+		if (!learned) {
+			int tpCost = getUpgradeCost(selectedSkill, 0);
+			if (tpCost != Integer.MAX_VALUE && tpCost != -1) {
+				drawCenteredStringWithBorder(graphics, txt(tpCost + " TPS"), panelX + 70, yOffset + 12, 0xFFAAAAAA);
+			}
 		}
 	}
 

@@ -43,8 +43,8 @@ public class KiAttackData extends TechniqueData {
 	public TechniqueType getType() { return TechniqueType.KI_ATTACK; }
 
 	public void calculateAndSetBaseCost() {
-		double cost = (damageMultiplier * 50) + (speed * 10) + (size * 5) + (armorPenetration * 2);
-		this.setBaseCost(cost);
+		double cost = (damageMultiplier * 50) + (speed * 10) + (size * 5) + (armorPenetration * 2) - (castTime * 2) + (cooldown);
+		this.setBaseCost(Math.max(5, cost));
 	}
 
 	public String generateExportCode() {
@@ -89,6 +89,8 @@ public class KiAttackData extends TechniqueData {
 		tag.putString("Author", this.author);
 		tag.putInt("Experience", this.experience);
 		tag.putDouble("BaseCost", this.baseCost);
+		tag.putInt("CastTime", this.castTime);
+		tag.putInt("Cooldown", this.cooldown);
 
 		ListTag racesTag = new ListTag();
 		for (String race : allowedRaces) racesTag.add(StringTag.valueOf(race));
@@ -113,6 +115,8 @@ public class KiAttackData extends TechniqueData {
 		this.author = tag.getString("Author");
 		this.experience = tag.getInt("Experience");
 		this.baseCost = tag.getDouble("BaseCost");
+		this.castTime = tag.getInt("CastTime");
+		this.cooldown = tag.getInt("Cooldown");
 
 		this.allowedRaces.clear();
 		ListTag racesTag = tag.getList("AllowedRaces", 8);

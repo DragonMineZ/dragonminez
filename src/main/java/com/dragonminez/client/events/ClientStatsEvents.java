@@ -32,6 +32,7 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.Objects;
 
@@ -65,7 +66,43 @@ public class ClientStatsEvents {
 				}
 			}
 		});
+	}
 
+	@SubscribeEvent
+	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+		if (KeyBinds.SECOND_FUNCTION_KEY.isDown() && Minecraft.getInstance().player != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+				int delta = (int) Math.signum(event.getScrollDelta());
+				if (delta != 0) {
+					int currentSlot = data.getTechniques().getSelectedSlot();
+					int newSlot = currentSlot - delta;
+
+					if (newSlot < 0) newSlot = 7;
+					if (newSlot > 7) newSlot = 0;
+
+					data.getTechniques().selectSlot(newSlot);
+					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(newSlot));
+
+					event.setCanceled(true);
+				}
+			});
+		}
+	}
+
+	@SubscribeEvent
+	public static void onKeyInputHotbar(InputEvent.Key event) {
+		if (Minecraft.getInstance().player == null) return;
+
+		if (event.getAction() == 1 && KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
+			int key = event.getKey();
+			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_8) {
+				int slot = key - GLFW.GLFW_KEY_1;
+				StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+					data.getTechniques().selectSlot(slot);
+					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(slot));
+				});
+			}
+		}
 	}
 
 	@SubscribeEvent
