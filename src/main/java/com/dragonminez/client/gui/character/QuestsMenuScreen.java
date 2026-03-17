@@ -5,6 +5,7 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.C2S.ClaimRewardC2S;
 import com.dragonminez.common.network.C2S.SetTrackedQuestC2S;
@@ -490,7 +491,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 		int titleY = panelY + 10;
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
-		String sagaName = tr("dmz.saga." + currentSaga.getId()).withStyle(ChatFormatting.BOLD).getString();
+		String sagaName = LocalizationUtil.localizedOrReadableText("dmz.saga." + currentSaga.getId());
 
 		boolean sagaUnlocked = statsData != null && statsData.getPlayerQuestData().isSagaUnlocked(currentSaga.getId());
 		int sagaColor = sagaUnlocked ? 0xFFFFFFFF : 0xFF888888;
@@ -529,7 +530,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 
 			int color = isSelected ? 0xFFFFAA00 : (isHovered ? 0xFFAAAAAA : 0xFFFFFFFF);
 
-			String displayName = tr(quest.getTitle()).getString();
+			String displayName = LocalizationUtil.localizedOrReadableText(quest.getTitle());
 
 			drawStringWithBorder(graphics, txt(displayName),
 					panelX + 15, itemY + 5, color);
@@ -591,8 +592,8 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		PlayerQuestData questData = statsData.getPlayerQuestData();
 		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
 
-		String displayName = tr(selectedQuest.getTitle()).getString();
-		String description = tr(selectedQuest.getDescription()).getString();
+		String displayName = LocalizationUtil.localizedOrReadableText(selectedQuest.getTitle());
+		String description = LocalizationUtil.localizedOrReadableText(selectedQuest.getDescription());
 
 		int startY = panelY + 35;
 
@@ -718,7 +719,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 		PlayerQuestData questData = statsData.getPlayerQuestData();
 		boolean isCompleted = questData.isQuestCompleted(currentSaga.getId(), selectedQuest.getId());
 
-		String displayName = tr(selectedQuest.getTitle()).getString();
+		String displayName = LocalizationUtil.localizedOrReadableText(selectedQuest.getTitle());
 
 		int startY = panelY + 35;
 
@@ -800,7 +801,7 @@ public class QuestsMenuScreen extends BaseMenuScreen {
 	}
 
 	private String getObjectiveText(QuestObjective objective, int currentProgress) {
-		String description = tr(objective.getDescription()).getString();
+		String description = LocalizationUtil.localizedOrReadableText(objective.getDescription());
 		int required = objective.getRequired();
 
 		if (objective.getType() == QuestObjective.ObjectiveType.KILL ||

@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 public class GeneralUserConfig {
-	public static final int CURRENT_VERSION = 3;
+	public static final int CURRENT_VERSION = 4;
 
 	@Setter
 	private int configVersion;

@@ -12,7 +12,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class RaceStatsConfig {
-	public static final int CURRENT_VERSION = 3;
+	public static final int CURRENT_VERSION = 4;
 
 	@Setter
 	private int configVersion;
@@ -40,6 +40,7 @@ public class RaceStatsConfig {
 		private Double energyRegenRate = 0.01;
 		private Double staminaRegenRate = 0.01;
 		private Double tpCostMultiplier = 1.0;
+		private Double tpGainMultiplier = 1.0;
 	}
 
 	@Setter

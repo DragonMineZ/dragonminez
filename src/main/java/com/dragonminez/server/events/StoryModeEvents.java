@@ -261,7 +261,8 @@ public class StoryModeEvents {
 				if (objIndex >= 0 && objIndex < quest.getObjectives().size()) {
 					QuestObjective objective = quest.getObjectives().get(objIndex);
 					if (current < objective.getRequired() && newProgress >= objective.getRequired()) {
-						NetworkHandler.sendToPlayer(StoryToastS2C.objectiveComplete(questKey, objIndex), player);
+						int clampedProgress = Math.min(newProgress, objective.getRequired());
+						NetworkHandler.sendToPlayer(StoryToastS2C.objectiveComplete(questKey, objIndex, clampedProgress, objective.getRequired()), player);
 					}
 				}
 
