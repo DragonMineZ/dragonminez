@@ -30,20 +30,40 @@ public class KiDiscRenderer extends EntityRenderer<KiDiskEntity> {
     public void render(KiDiskEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
 
+        float ageInTicks = entity.tickCount + partialTick;
         float yaw = entity.getYRot();
         float pitch = entity.getXRot();
+        float scale = entity.getSize();
+
+        float castTime = (float) entity.getCastTime();
+        boolean isCasting = castTime > 0 && ageInTicks <= castTime;
+
+        if (isCasting) {
+            float halfCast = castTime / 2.0F;
+            if (ageInTicks <= halfCast) {
+                scale *= (ageInTicks / halfCast);
+            }
+        }
 
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
-        float scale = entity.getSize();
-        poseStack.scale(scale, 1.5f, scale);
+        if (isCasting) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
+        }
 
-        float ageInTicks = entity.tickCount + partialTick;
+        poseStack.scale(scale, 1.0f, scale);
 
+        renderDisc(entity, poseStack, buffer, ageInTicks);
+
+        poseStack.popPose();
+        super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
+    }
+
+    private void renderDisc(KiDiskEntity entity, PoseStack poseStack, MultiBufferSource buffer, float ageInTicks) {
         this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
 
+        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
         VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE));
 
         this.model.renderToBuffer(
@@ -54,10 +74,7 @@ public class KiDiscRenderer extends EntityRenderer<KiDiskEntity> {
                 auraColor[0], auraColor[1], auraColor[2],
                 1.0F
         );
-        poseStack.popPose();
-        super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
-
     @Override
     public ResourceLocation getTextureLocation(KiDiskEntity pEntity) {
         return TEXTURE;

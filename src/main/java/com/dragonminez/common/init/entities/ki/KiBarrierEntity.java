@@ -4,6 +4,9 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -21,6 +24,7 @@ import java.util.List;
 public class KiBarrierEntity extends AbstractKiProjectile {
 
     private static final EntityDataAccessor<Float> CURRENT_SIZE = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
 
     private static final int GROW_DURATION = 25;
     private static final int MAX_LIFESPAN = 100;
@@ -38,10 +42,18 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         this.setNoGravity(true);
         this.noPhysics = true;
 
-        this.setPos(owner.getX(), owner.getY(), owner.getZ());
+        this.centerOnOwner();
 
         level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
                 MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+    }
+
+    public void setupKiBarrier(LivingEntity owner, int color, int colorBorder, int castTime) {
+        this.setColors(color, colorBorder);
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime * 2);
+
+        if (!this.level().isClientSide) this.level().addFreshEntity(this);
     }
 
     @Override
@@ -53,55 +65,66 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CURRENT_SIZE, 0.1F);
+        this.entityData.define(CAST_TIME, 0);
     }
 
     public float getCurrentSize() {
         return this.entityData.get(CURRENT_SIZE);
     }
-
     public void setCurrentSize(float size) {
         this.entityData.set(CURRENT_SIZE, size);
+    }
+    public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }
+    public int getCastTime() { return this.entityData.get(CAST_TIME); }
+
+    private void centerOnOwner() {
+        if (this.getOwner() instanceof LivingEntity owner) {
+            double bodyCenterY = owner.getY() + (owner.getBbHeight() / 2.0D);
+
+            this.setPos(owner.getX(), bodyCenterY - (this.getBbHeight() * 0.5D), owner.getZ());
+        }
     }
 
     @Override
     public void tick() {
         this.baseTick();
-
-        Entity owner = this.getOwner();
-
-        if (owner != null && owner.isAlive()) {
-            double ownerCenterY = owner.getY() + owner.getBbHeight() * 0.5D;
-            double barrierHalfHeight = this.getBbHeight() * 0.5D;
-            this.setPos(owner.getX(), ownerCenterY - barrierHalfHeight, owner.getZ());
+        if (this.getOwner() instanceof LivingEntity owner && owner.isAlive()) {
+            centerOnOwner();
             this.setDeltaMovement(0, 0, 0);
         } else {
             if (!this.level().isClientSide) this.discard();
             return;
         }
 
-        if (!this.level().isClientSide) {
-            if (this.tickCount <= GROW_DURATION) {
-                float progress = (float) this.tickCount / (float) GROW_DURATION;
-                float newSize = 0.1F + (MAX_SIZE * progress);
-
-                this.setCurrentSize(newSize);
-                this.setSize(newSize);
-                this.refreshDimensions();
-            }
-        } else {
-            this.refreshDimensions();
-        }
+        int castTime = this.getCastTime();
+        boolean isCasting = this.tickCount <= castTime;
 
         if (!this.level().isClientSide) {
-            pushEntitiesAway();
-        } else {
-            spawnBarrierParticles();
+            if (isCasting) {
+                this.setCurrentSize(0.1F);
+            } else {
+                float progress = (float)(this.tickCount - castTime) / 10.0F;
+                float size = Math.min(MAX_SIZE, 1.0F + (MAX_SIZE * progress));
+                this.setCurrentSize(size);
+
+                if (this.tickCount == castTime + 1) {
+                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                            MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
+                }
+                pushEntitiesAway();
+            }
         }
 
-        if (this.tickCount >= MAX_LIFESPAN) {
-            if (!this.level().isClientSide) {
-                this.discard();
+        if (this.level().isClientSide) {
+            if (isCasting) {
+                spawnAbsorptionParticles();
+            } else {
+                spawnBarrierParticles();
             }
+        }
+
+        if (this.tickCount >= this.getMaxLife()) {
+            if (!this.level().isClientSide) this.discard();
         }
     }
 
@@ -136,21 +159,56 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
         float[] rgb = ColorUtils.rgbIntToFloat(this.getColor());
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             double theta = this.random.nextDouble() * Math.PI * 2;
             double phi = this.random.nextDouble() * Math.PI;
             double r = size / 2.0;
-            double x = r * Math.sin(phi) * Math.cos(theta);
-            double y = r * Math.cos(phi);
-            double z = r * Math.sin(phi) * Math.sin(theta);
 
-            this.level().addParticle(
+            double dx = r * Math.sin(phi) * Math.cos(theta);
+            double dy = r * Math.cos(phi);
+            double dz = r * Math.sin(phi) * Math.sin(theta);
+
+            double vx = dx * 0.1D;
+            double vy = dy * 0.1D;
+            double vz = dz * 0.1D;
+
+            Particle p = Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_TRAIL.get(),
-                    this.getX() + x,
-                    this.getY() + (this.getBbHeight() / 2.0) + y,
-                    this.getZ() + z,
-                    rgb[0], rgb[1], rgb[2]
+                    this.getX() + dx,
+                    this.getY() + (this.getBbHeight() / 2.0) + dy,
+                    this.getZ() + dz,
+                    vx, vy, vz
             );
+
+            if (p instanceof KiTrailParticle trail) {
+                trail.setKiColor(rgb[0], rgb[1], rgb[2]);
+                trail.setKiScale(size * 0.3f);
+            }
+        }
+    }
+    private void spawnAbsorptionParticles() {
+        float[] rgb = ColorUtils.rgbIntToFloat(this.getColor());
+        for (int i = 0; i < 3; i++) {
+            double r = 2.5D; // Radio de absorción
+            double theta = this.random.nextDouble() * Math.PI * 2;
+            double phi = Math.acos(2 * this.random.nextDouble() - 1);
+
+            double dx = r * Math.sin(phi) * Math.cos(theta);
+            double dy = r * Math.sin(phi) * Math.sin(theta);
+            double dz = r * Math.cos(phi);
+
+            Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+                    MainParticles.KI_TRAIL.get(),
+                    this.getX() + dx,
+                    this.getY() + (this.getBbHeight() * 0.5) + dy,
+                    this.getZ() + dz,
+                    -dx * 0.15, -dy * 0.15, -dz * 0.15
+            );
+
+            if (p instanceof KiTrailParticle trail) {
+                trail.setKiColor(rgb[0], rgb[1], rgb[2]);
+                trail.setKiScale(0.3f);
+            }
         }
     }
 

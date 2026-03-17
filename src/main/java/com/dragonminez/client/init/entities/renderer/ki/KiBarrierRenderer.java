@@ -1,6 +1,7 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.init.entities.model.ki.KiBallModel;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
@@ -16,62 +17,54 @@ import net.minecraft.resources.ResourceLocation;
 
 public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1.png");
-    private static final ResourceLocation TEXTURE_2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiexp1_border.png");
+    private static final ResourceLocation TEXTURE_EXPLOSION = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
 
-    private final KiBallPlaneModel model;
+    private final KiBallModel ballmodel;
 
     public KiBarrierRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
-        this.model = new KiBallPlaneModel(pContext.bakeLayer(KiBallPlaneModel.LAYER_LOCATION));
+        this.ballmodel = new KiBallModel(pContext.bakeLayer(KiBallModel.LAYER_LOCATION));
+
     }
 
     @Override
     public void render(KiBarrierEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+
+        if (entity.tickCount <= entity.getCastTime()) {
+            return;
+        }
+
         poseStack.pushPose();
 
         float halfHeight = entity.getBbHeight() / 2.0F;
         poseStack.translate(0.0D, halfHeight, 0.0D);
 
-        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
-        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-
         float scale = entity.getCurrentSize();
-        poseStack.scale(scale, scale, scale);
 
         float ageInTicks = entity.tickCount + partialTick;
+        this.ballmodel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
-        this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
         float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
         float[] auraColor2 = ColorUtils.rgbIntToFloat(entity.getColorBorde());
 
-        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE));
+        poseStack.scale(scale, scale, scale);
+        poseStack.translate(0.0D, -1.3D, 0.0D);
+        VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_EXPLOSION));
+        this.ballmodel.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
+                auraColor[0], auraColor[1], auraColor[2], 0.25F);
 
-        poseStack.translate(0.0D, -0.2D, 0.2D);
+        poseStack.scale(1.1f, 1.1f, 1.1f);
+        poseStack.translate(0.0D, -0.1D, 0.0D);
+        auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_EXPLOSION));
+        this.ballmodel.renderToBuffer(poseStack, auraBuffer, 15728880, OverlayTexture.NO_OVERLAY,
+                auraColor2[0], auraColor2[1], auraColor2[2], 0.15F);
 
-        this.model.renderToBuffer(
-                poseStack,
-                auraBuffer,
-                15728880,
-                OverlayTexture.NO_OVERLAY,
-                auraColor[0], auraColor[1], auraColor[2],
-                0.7F
-        );
-        VertexConsumer auraBuffer2 = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_2));
-        this.model.renderToBuffer(
-                poseStack,
-                auraBuffer2,
-                15728880,
-                OverlayTexture.NO_OVERLAY,
-                auraColor2[0], auraColor2[1], auraColor2[2],
-                0.7F
-        );
         poseStack.popPose();
         super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
     @Override
     public ResourceLocation getTextureLocation(KiBarrierEntity pEntity) {
-        return TEXTURE;
+        return TEXTURE_EXPLOSION;
     }
 }
