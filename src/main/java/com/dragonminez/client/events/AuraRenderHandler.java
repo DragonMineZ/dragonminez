@@ -486,8 +486,8 @@ public class AuraRenderHandler {
 		data.lastLayers = activeLayers;
 
 		if (player.onGround()) {
-			spawnGroundDust(player, body[0] * auraScale[0]);
-			spawnFloatingRubble(player, body[0] * auraScale[0]);
+//			spawnGroundDust(player, body[0] * auraScale[0]);
+//			spawnFloatingRubble(player, body[0] * auraScale[0]);
 
 			AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
 			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, entry.partialTick(), data.alphaProgress);
@@ -571,8 +571,8 @@ public class AuraRenderHandler {
 			AuraLayer topLayer = activeLayers.get(activeLayers.size() - 1);
 			renderShaderPulseAura(player, data, topLayer, poseStack, mc, projectionMatrix, partialTick, data.alphaProgress);
 
-			spawnGroundDust(player, body[0] * auraScale[0]);
-			spawnFloatingRubble(player, body[0] * auraScale[0]);
+//			spawnGroundDust(player, body[0] * auraScale[0]);
+//			spawnFloatingRubble(player, body[0] * auraScale[0]);
 		}
 
 		Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
@@ -716,7 +716,7 @@ public class AuraRenderHandler {
 		auraRenderType.clearRenderState();
 	}
 
-	private static VertexBuffer getLightningMesh() {
+	public static VertexBuffer getLightningMesh() {
 		if (cachedLightningMesh == null) {
 			cachedLightningMesh = new VertexBuffer(VertexBuffer.Usage.STATIC);
 			Tesselator tesselator = Tesselator.getInstance();
@@ -898,52 +898,6 @@ public class AuraRenderHandler {
 		for (GeoBone child : destBone.getChildBones()) syncBoneRecursively(child, sourceModel);
 	}
 
-	@SubscribeEvent
-	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-		if (event.phase != TickEvent.Phase.END || event.side != LogicalSide.CLIENT) return;
-
-		Player player = event.player;
-
-		if (!BetaWhitelist.isAllowed(player.getGameProfile().getName())) return;
-
-		var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-		if (stats == null) return;
-
-		float scale = 1.0f;
-		var character = stats.getCharacter();
-
-		if (character.hasActiveForm()) {
-			var activeForm = character.getActiveFormData();
-			if (activeForm != null) {
-				Float[] scales = activeForm.getModelScaling();
-				if (scales != null && scales.length >= 1) {
-					scale = scales[0];
-				}
-			}
-		}
-
-		if (!stats.getStatus().isHasCreatedCharacter()) return;
-		if (!stats.getStatus().isAuraActive() && !stats.getStatus().isPermanentAura()) return;
-
-		List<AuraLayer> layers = getAuraLayers(player, stats, 1.0f);
-		if (!layers.isEmpty()) {
-			float[] rgbColor = layers.get(layers.size() - 1).color;
-			int r = (int) Math.max(0, Math.min(255, rgbColor[0] * 255));
-			int g = (int) Math.max(0, Math.min(255, rgbColor[1] * 255));
-			int b = (int) Math.max(0, Math.min(255, rgbColor[2] * 255));
-			int particleColor = (r << 16) | (g << 8) | b;
-
-			for (int i = 0; i < 1; i++) spawnCalmAuraParticle(player, scale, particleColor);
-		}
-
-		if (player.getRandom().nextInt(20) == 0) {
-			int divineCount = 5 + player.getRandom().nextInt(10);
-			for (int i = 0; i < divineCount; i++) {
-				spawnPassiveDivineParticle(player, scale, 0xFFFFFF);
-			}
-		}
-	}
-
 	private static void renderFusionFlash(Player player, float time, PoseStack poseStack, MultiBufferSource buffer, int r, int g, int b) {
 		float rotationTime = time * 0.01F;
 		float rawSin = Mth.sin(time * 0.1F);
@@ -989,6 +943,50 @@ public class AuraRenderHandler {
 		poseStack.popPose();
 	}
 
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.isPaused()) return;
+
+        for (Player player : mc.level.players()) {
+            var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+            if (stats == null || !stats.getStatus().isHasCreatedCharacter()) continue;
+
+            boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+            if (!isAuraActive) continue;
+
+            float[] bodyScale = getBodyScale(stats);
+            float totalScale = bodyScale[0];
+
+            if (player.onGround()) {
+                spawnGroundDust(player, totalScale);
+                spawnFloatingRubble(player, totalScale);
+            }
+
+            if (!BetaWhitelist.isAllowed(player.getGameProfile().getName())) continue;
+
+            List<AuraLayer> layers = getAuraLayers(player, stats, 1.0f);
+            if (!layers.isEmpty()) {
+                float[] rgbColor = layers.get(layers.size() - 1).color;
+                int r = (int) (rgbColor[0] * 255);
+                int g = (int) (rgbColor[1] * 255);
+                int b = (int) (rgbColor[2] * 255);
+                int particleColor = (r << 16) | (g << 8) | b;
+
+                spawnCalmAuraParticle(player, totalScale, particleColor);
+            }
+
+            if (player.getRandom().nextInt(20) == 0) {
+                int divineCount = 5 + player.getRandom().nextInt(10);
+                for (int i = 0; i < divineCount; i++) {
+                    spawnPassiveDivineParticle(player, totalScale, 0xFFFFFF);
+                }
+            }
+        }
+    }
+
 	private static void vertex01(VertexConsumer pConsumer, Matrix4f pMatrix, int pAlpha, int r, int g, int b) {
 		pConsumer.vertex(pMatrix, 0.0F, 0.0F, 0.0F).color(r, g, b, pAlpha).endVertex();
 	}
@@ -1005,37 +1003,45 @@ public class AuraRenderHandler {
 		pConsumer.vertex(pMatrix, 0.0F, pWidth, pLength).color(r, g, b, alpha).endVertex();
 	}
 
-	private static void spawnCalmAuraParticle(Player player, float totalScale, int colorHex) {
-		var mc = Minecraft.getInstance();
-		if (mc.isPaused()) return;
-		var random = player.getRandom();
+    private static void spawnCalmAuraParticle(Player player, float totalScale, int colorHex) {
+        var mc = Minecraft.getInstance();
+        if (mc.isPaused()) return;
+        var random = player.getRandom();
 
-		double radius = (0.2f + random.nextDouble() * 0.3f) * totalScale;
-		double angle = random.nextDouble() * 2 * Math.PI;
+        float r = ((colorHex >> 16) & 0xFF) / 255f;
+        float g = ((colorHex >> 8) & 0xFF) / 255f;
+        float b = (colorHex & 0xFF) / 255f;
 
-		double offsetX = Math.cos(angle) * radius;
-		double offsetZ = Math.sin(angle) * radius;
-		double heightOffset = (random.nextDouble() * 1.8f) * totalScale;
+        int particlesCount = 2 + random.nextInt(3);
 
-		double x = player.getX() + offsetX;
-		double y = player.getY() + heightOffset;
-		double z = player.getZ() + offsetZ;
+        for (int i = 0; i < particlesCount; i++) {
+            double radius = (0.15f + random.nextDouble() * 0.45f) * totalScale;
+            double angle = random.nextDouble() * 2 * Math.PI;
 
-		float r = ((colorHex >> 16) & 0xFF) / 255f;
-		float g = ((colorHex >> 8) & 0xFF) / 255f;
-		float b = (colorHex & 0xFF) / 255f;
+            double offsetX = Math.cos(angle) * radius;
+            double offsetZ = Math.sin(angle) * radius;
 
-		Particle p = mc.particleEngine.createParticle(MainParticles.AURA.get(), x, y, z, r, g, b);
+            double heightOffset = (random.nextDouble() * 2.0f) * totalScale;
 
-		if (p instanceof AuraParticle auraP) {
-			auraP.resize(totalScale);
-			double driftSpeed = 0.02f;
-			double velX = (offsetX / radius) * driftSpeed;
-			double velZ = (offsetZ / radius) * driftSpeed;
-			double velY = 0.01f + (random.nextDouble() * 0.02f);
-			auraP.setParticleSpeed(velX, velY, velZ);
-		}
-	}
+            double x = player.getX() + offsetX;
+            double y = player.getY() + heightOffset;
+            double z = player.getZ() + offsetZ;
+
+            Particle p = mc.particleEngine.createParticle(MainParticles.AURA.get(), x, y, z, r, g, b);
+
+            if (p instanceof AuraParticle auraP) {
+                auraP.resize(totalScale);
+
+                double driftSpeed = 0.03f;
+                double velX = (offsetX / radius) * driftSpeed;
+                double velZ = (offsetZ / radius) * driftSpeed;
+
+                double velY = 0.02f + (random.nextDouble() * 0.04f);
+
+                auraP.setParticleSpeed(velX, velY, velZ);
+            }
+        }
+    }
 
 	private static void spawnPassiveDivineParticle(Player player, float totalScale, int colorHex) {
 		if (Minecraft.getInstance().isPaused()) return;
@@ -1064,52 +1070,55 @@ public class AuraRenderHandler {
 		}
 	}
 
-	private static void spawnGroundDust(Player player, float totalScale) {
-		if (player.getRandom().nextFloat() > 0.3f) return;
-		if (Minecraft.getInstance().isPaused()) return;
+    private static void spawnGroundDust(Player player, float totalScale) {
+        if (player.getRandom().nextFloat() > 0.5f) return;
 
-		var level = player.level();
-		var random = player.getRandom();
+        var level = player.level();
+        var random = player.getRandom();
 
-		double angle = random.nextDouble() * 2 * Math.PI;
-		double radius = (0.6f + random.nextDouble() * 0.4f) * totalScale;
+        for (int i = 0; i < 8; i++) {
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double radius = (0.4f + random.nextDouble() * 0.7f) * totalScale;
 
-		double offsetX = Math.cos(angle) * radius;
-		double offsetZ = Math.sin(angle) * radius;
+            double offsetX = Math.cos(angle) * radius;
+            double offsetZ = Math.sin(angle) * radius;
 
-		double x = player.getX() + offsetX;
-		double y = player.getY() + 0.3;
-		double z = player.getZ() + offsetZ;
+            double x = player.getX() + offsetX;
+            double y = player.getY() + 0.15;
+            double z = player.getZ() + offsetZ;
 
-		double speedBase = 0.15f;
-		double velX = Math.cos(angle) * speedBase;
-		double velY = 0.1f;
-		double velZ = Math.sin(angle) * speedBase;
+            double speedBase = 0.12f;
+            double velX = Math.cos(angle) * speedBase;
+            double velY = 0.05f + (random.nextDouble() * 0.1f);
+            double velZ = Math.sin(angle) * speedBase;
 
-		for (int i = 0; i < 3; i++) level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
-	}
+            level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
+        }
+    }
 
-	private static void spawnFloatingRubble(Player player, float totalScale) {
-		if (player.getRandom().nextFloat() > 0.15f) return;
-		if (Minecraft.getInstance().isPaused()) return;
+    private static void spawnFloatingRubble(Player player, float totalScale) {
+        if (player.getRandom().nextFloat() > 0.4f) return;
 
-		var level = player.level();
-		var random = player.getRandom();
+        var level = player.level();
+        var random = player.getRandom();
+        int rocksCount = 2 + random.nextInt(3);
 
-		double angle = random.nextDouble() * 2 * Math.PI;
-		double radius = (0.5f + random.nextDouble() * 1.9f) * totalScale;
+        for (int i = 0; i < rocksCount; i++) {
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double radius = (0.4f + random.nextDouble() * 1.5f) * totalScale;
 
-		double offsetX = Math.cos(angle) * radius;
-		double offsetZ = Math.sin(angle) * radius;
+            double offsetX = Math.cos(angle) * radius;
+            double offsetZ = Math.sin(angle) * radius;
 
-		double x = player.getX() + offsetX;
-		double y = player.getY() + 0.1;
-		double z = player.getZ() + offsetZ;
+            double x = player.getX() + offsetX;
+            double y = player.getY() + 0.1;
+            double z = player.getZ() + offsetZ;
 
-		double velX = (random.nextDouble() - 0.5) * 0.05;
-		double velZ = (random.nextDouble() - 0.5) * 0.05;
-		double velY = 0.05 + (random.nextDouble() * 0.1);
+            double velX = (random.nextDouble() - 0.5) * 0.08;
+            double velZ = (random.nextDouble() - 0.5) * 0.08;
+            double velY = 0.08 + (random.nextDouble() * 0.15);
 
-		level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
-	}
+            level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
+        }
+    }
 }

@@ -287,9 +287,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
             if (!isCasting) {
                 spawnWaveParticles();
                 spawnOriginSplash();
-                spawnLightningParticles(false);
+                //spawnLightningParticles(false);
             } else {
-                spawnLightningParticles(true);
+                //spawnLightningParticles(true);
             }
         }
 

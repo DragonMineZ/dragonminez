@@ -1,20 +1,30 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.events.AuraRenderHandler;
 import com.dragonminez.client.init.entities.model.ki.*;
+import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+
+import java.util.Random;
 
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
@@ -28,6 +38,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     private static final ResourceLocation TEXTURE_LASER_EXPLODE1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser_explode1.png");
     private static final ResourceLocation TEXTURE_LASER_EXPLODE2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser_explode2.png");
+    private static final ResourceLocation SPARK_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
 
     private final KiWaveModel waveModel;
     private final KiWave2DModel wave2Model;
@@ -211,13 +222,20 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             poseStack.translate(0.0D, -0.35D, 0.0D);
             renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
             poseStack.popPose();
+
+            if (entity.getKiRenderType() == 2) {
+                renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, true);
+            }
+
             return;
         }
+
+
 
         float length = Math.max(entity.getBeamLength(), 0.1F);
 
         poseStack.translate(0.0D, 0.5D, 0.0D);
-        Vec3 dir = net.minecraft.world.phys.Vec3.directionFromRotation(pitch, yaw);
+        Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
 
         poseStack.pushPose();
         poseStack.translate(0.0D, -0.5D, 0.0D);
@@ -286,6 +304,17 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.translate(0.0D, -0.35D, 0.0D);
         renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
         poseStack.popPose();
+
+        if (entity.getKiRenderType() == 2) {
+            poseStack.pushPose();
+            double offsetForward = 0.6D;
+            Vec3 lightningPos = startPos.add(dir.scale(offsetForward));
+
+            poseStack.translate(lightningPos.x, lightningPos.y, lightningPos.z);
+
+            renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, true);
+            poseStack.popPose();
+        }
 
         // ESFERA FINAL
         poseStack.pushPose();
@@ -416,6 +445,54 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.popPose();
 
         poseStack.popPose();
+    }
+
+    private void renderGalickLightning(PoseStack poseStack, KiWaveEntity entity, MultiBufferSource buffer, float[] color, float alpha, float ageInTicks, float dynamicWidth, boolean isFiring) {
+        ShaderInstance shader = DMZShaders.lightningShader;
+        VertexBuffer mesh = AuraRenderHandler.getLightningMesh();
+
+        if (shader == null || mesh == null) return;
+
+        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+        shader.safeGetUniform("speedModifier").set(isFiring ? 2.5f : 1.5f);
+        shader.safeGetUniform("color1").set(1.0f, 1.0f, 1.0f);
+        shader.safeGetUniform("color2").set(color[0], color[1], color[2]);
+        shader.safeGetUniform("alp1").set(alpha);
+        shader.safeGetUniform("alp2").set(0.1f * alpha);
+        shader.safeGetUniform("projectionMatrix").set(com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix());
+
+        RenderType lightningType = ModRenderTypes.getCustomLightning(SPARK_TEX_0);
+        lightningType.setupRenderState();
+
+        shader.apply();
+        mesh.bind();
+
+        Random seededRand = new Random((long) (entity.getId() + ((int)ageInTicks * 5)));
+
+        float baseScale = dynamicWidth * (isFiring ? 2.2f : 1.8f);
+
+        for (int i = 0; i < (isFiring ? 6 : 4); i++) {
+            poseStack.pushPose();
+            poseStack.translate(0.0D, isFiring ? -0.2D : -0.3D, 0.0D);
+
+            poseStack.mulPose(Axis.XP.rotationDegrees(seededRand.nextFloat() * 360));
+            poseStack.mulPose(Axis.YP.rotationDegrees(seededRand.nextFloat() * 360));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(seededRand.nextFloat() * 360));
+
+            float individualScale = baseScale * (0.8f + seededRand.nextFloat() * 0.4f);
+            poseStack.scale(individualScale, individualScale, individualScale);
+
+            shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+            shader.safeGetUniform("normalMatrix").set(new Matrix4f(new Matrix3f(poseStack.last().normal())));
+            shader.apply();
+
+            mesh.drawWithShader(poseStack.last().pose(), com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix(), shader);
+            poseStack.popPose();
+        }
+
+        VertexBuffer.unbind();
+        shader.clear();
+        lightningType.clearRenderState();
     }
 
     @Override
