@@ -30,7 +30,7 @@ You can also check the project in [Modrinth](https://modrinth.com/mod/dragonmine
 ## 🗺️ Roadmap
 
 <div align="center">
-  <img src="https://media.forgecdn.net/attachments/description/1136088/description_bcb3a22d-5cce-448e-8c34-38bb3e4ce240.png" alt="DMZ Roadmap"/>
+  <img src="https://cdn.discordapp.com/attachments/1280350384992288778/1479122401311854714/roadmap.png" alt="DMZ Roadmap"/>
 </div>
 
 ## 🎯 Use of Third Parties
