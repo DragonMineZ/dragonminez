@@ -61,6 +61,18 @@ public class KiDiskEntity extends AbstractKiProjectile {
         }
     }
 
+    public void setupKiDiskPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
+        this.setOwner(owner);
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, color);
+        this.setMaxLife(maxLife);
+        this.setCastTime(0);
+        this.setCastOffsets(0.4F, 0.7F, 0.2F);
+        this.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
+    }
+
     @Override
     public void tick() {
         super.tick();

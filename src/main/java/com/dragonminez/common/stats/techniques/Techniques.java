@@ -11,6 +11,9 @@ public class Techniques {
 	private final Map<String, TechniqueData> unlockedTechniques = new HashMap<>();
 	private final String[] equippedSlots = new String[8];
 	private int selectedSlot = 0;
+	private String chargingTechniqueId = "";
+	private float techniqueChargePercent = 0.0f;
+	private boolean techniqueCharging = false;
 
 	public Techniques() {
 		for (int i = 0; i < 8; i++) equippedSlots[i] = "";
@@ -39,6 +42,45 @@ public class Techniques {
 
 	public String[] getEquippedSlots() {
 		return this.equippedSlots;
+	}
+
+	public String getChargingTechniqueId() {
+		return chargingTechniqueId;
+	}
+
+	public float getTechniqueChargePercent() {
+		return techniqueChargePercent;
+	}
+
+	public boolean isTechniqueCharging() {
+		return techniqueCharging;
+	}
+
+	public boolean isTechniqueChargeActive() {
+		return !chargingTechniqueId.isEmpty() && techniqueChargePercent > 0.0f;
+	}
+
+	public void startTechniqueCharge(String techniqueId) {
+		if (techniqueId == null || techniqueId.isEmpty()) return;
+		if (!techniqueId.equals(this.chargingTechniqueId)) {
+			this.chargingTechniqueId = techniqueId;
+			this.techniqueChargePercent = 0.0f;
+		}
+		this.techniqueCharging = true;
+	}
+
+	public void setTechniqueCharging(boolean charging) {
+		this.techniqueCharging = charging;
+	}
+
+	public void setTechniqueChargePercent(float percent) {
+		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, percent));
+	}
+
+	public void clearTechniqueCharge() {
+		this.chargingTechniqueId = "";
+		this.techniqueChargePercent = 0.0f;
+		this.techniqueCharging = false;
 	}
 
 	public int getSelectedSlot() {
@@ -77,6 +119,9 @@ public class Techniques {
 	public CompoundTag save() {
 		CompoundTag tag = new CompoundTag();
 		tag.putInt("SelectedSlot", selectedSlot);
+		tag.putString("ChargingTechniqueId", chargingTechniqueId);
+		tag.putFloat("TechniqueChargePercent", techniqueChargePercent);
+		tag.putBoolean("TechniqueCharging", techniqueCharging);
 
 		CompoundTag slotsTag = new CompoundTag();
 		for (int i = 0; i < 8; i++) {
@@ -97,6 +142,9 @@ public class Techniques {
 
 	public void load(CompoundTag tag) {
 		this.selectedSlot = tag.getInt("SelectedSlot");
+		this.chargingTechniqueId = tag.getString("ChargingTechniqueId");
+		this.techniqueChargePercent = Math.max(0.0f, Math.min(200.0f, tag.getFloat("TechniqueChargePercent")));
+		this.techniqueCharging = tag.getBoolean("TechniqueCharging");
 
 		CompoundTag slotsTag = tag.getCompound("EquippedSlots");
 		for (int i = 0; i < 8; i++) {
@@ -116,6 +164,9 @@ public class Techniques {
 
 	public void copyFrom(Techniques other) {
 		this.selectedSlot = other.selectedSlot;
+		this.chargingTechniqueId = other.chargingTechniqueId;
+		this.techniqueChargePercent = other.techniqueChargePercent;
+		this.techniqueCharging = other.techniqueCharging;
 		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, 8);
 		this.unlockedTechniques.clear();
 		for (Map.Entry<String, TechniqueData> entry : other.unlockedTechniques.entrySet()) {

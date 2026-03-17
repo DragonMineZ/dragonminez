@@ -21,7 +21,7 @@ import java.util.zip.GZIPOutputStream;
 @Getter
 @Setter
 public class KiAttackData extends TechniqueData {
-	public enum KiType { SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, DISK, EXPLOSION, SHIELD, BARRAGE, AREA }
+	public enum KiType { SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA }
 	public enum Utility { DAMAGE, HEAL }
 
 	private List<String> allowedRaces = new ArrayList<>();

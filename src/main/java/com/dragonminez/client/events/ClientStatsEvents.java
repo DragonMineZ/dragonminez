@@ -16,6 +16,8 @@ import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
@@ -49,6 +51,9 @@ public class ClientStatsEvents {
 	private static boolean wasDashKeyDown = false;
 	private static boolean wasRightClickDown = false;
 	private static boolean wasDescendActionDown = false;
+	private static boolean wasTechniqueChargeDown = false;
+	private static int lockedVanillaHotbarSlot = -1;
+	private static int lockedTechniqueSlot = -1;
 
 	@SubscribeEvent
 	public static void onMouseInput(InputEvent.MouseButton.Pre event) {
@@ -70,8 +75,24 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+		if (Minecraft.getInstance().player != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+				boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+				if (isChargingTechnique) {
+					event.setCanceled(true);
+				}
+			});
+			if (event.isCanceled()) return;
+		}
+
 		if (KeyBinds.SECOND_FUNCTION_KEY.isDown() && Minecraft.getInstance().player != null) {
 			StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+				boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+				if (isChargingTechnique) {
+					event.setCanceled(true);
+					return;
+				}
+
 				int delta = (int) Math.signum(event.getScrollDelta());
 				if (delta != 0) {
 					int currentSlot = data.getTechniques().getSelectedSlot();
@@ -92,6 +113,19 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onKeyInputHotbar(InputEvent.Key event) {
 		if (Minecraft.getInstance().player == null) return;
+
+		if (event.getAction() == 1) {
+			int key = event.getKey();
+			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_8) {
+				StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+					boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+					if (isChargingTechnique) {
+						event.setCanceled(true);
+					}
+				});
+				if (event.isCanceled()) return;
+			}
+		}
 
 		if (event.getAction() == 1 && KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
 			int key = event.getKey();
@@ -117,6 +151,25 @@ public class ClientStatsEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			Character character = data.getCharacter();
+			TechniqueData selectedTechnique = data.getTechniques().getSelectedTechnique();
+			boolean hasSelectedKiTechnique = selectedTechnique instanceof KiAttackData;
+			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
+
+			if (isChargingTechnique) {
+				if (lockedVanillaHotbarSlot == -1) lockedVanillaHotbarSlot = player.getInventory().selected;
+				if (player.getInventory().selected != lockedVanillaHotbarSlot) {
+					player.getInventory().selected = lockedVanillaHotbarSlot;
+				}
+
+				if (lockedTechniqueSlot == -1) lockedTechniqueSlot = data.getTechniques().getSelectedSlot();
+				if (data.getTechniques().getSelectedSlot() != lockedTechniqueSlot) {
+					data.getTechniques().selectSlot(lockedTechniqueSlot);
+					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(lockedTechniqueSlot));
+				}
+			} else {
+				lockedVanillaHotbarSlot = -1;
+				lockedTechniqueSlot = -1;
+			}
 
 			boolean isStunned = data.getStatus().isStunned();
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
@@ -132,7 +185,7 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, shouldBlock));
 			}
 
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty) {
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty && !hasSelectedKiTechnique) {
 				String kiHex;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
@@ -153,6 +206,15 @@ public class ClientStatsEvents {
 				kiBlastTimer = 10;
 			}
 			wasRightClickDown = isRightClickDown;
+
+			boolean techniqueChargeDown = isDescendKeyPressed && isRightClickDown && mainHandEmpty && offHandEmpty && hasSelectedKiTechnique;
+
+			if (techniqueChargeDown && !wasTechniqueChargeDown) {
+				NetworkHandler.sendToServer(new TechniqueChargeC2S(true));
+			} else if (!techniqueChargeDown && wasTechniqueChargeDown) {
+				NetworkHandler.sendToServer(new TechniqueChargeC2S(false));
+			}
+			wasTechniqueChargeDown = techniqueChargeDown;
 
 			if (kiBlastTimer > 0) {
 				if (kiBlastTimer == 1) {
@@ -328,6 +390,10 @@ public class ClientStatsEvents {
 
 	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+		wasTechniqueChargeDown = false;
+		wasRightClickDown = false;
+		lockedVanillaHotbarSlot = -1;
+		lockedTechniqueSlot = -1;
 		StatsCapability.clearClientCache();
 	}
 }

@@ -201,6 +201,12 @@ public class NetworkHandler {
 				.consumerMainThread(SelectTechniqueSlotC2S::handle)
 				.add();
 
+		net.messageBuilder(TechniqueChargeC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(TechniqueChargeC2S::new)
+				.encoder(TechniqueChargeC2S::toBytes)
+				.consumerMainThread(TechniqueChargeC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */

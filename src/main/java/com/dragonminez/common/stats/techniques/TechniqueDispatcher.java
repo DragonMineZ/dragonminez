@@ -2,85 +2,126 @@ package com.dragonminez.common.stats.techniques;
 
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.stats.StatsData;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public class TechniqueDispatcher {
 
-	public static void executeKiAttack(LivingEntity owner, Level level, KiAttackData data, StatsData statsData) {
-		if (level.isClientSide) return;
+	public static boolean executeKiAttack(LivingEntity owner, Level level, KiAttackData data, StatsData statsData, float chargeMultiplier) {
+		if (level.isClientSide) return false;
 
-		double cost = data.getCalculatedCost();
+		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
+
+		double cost = data.getCalculatedCost() * clampedCharge;
 		if (statsData.getResources().getCurrentEnergy() < cost) {
-			return;
+			return false;
 		}
 
 		statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
 
-		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier());
+		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * clampedCharge);
 
-		AbstractKiProjectile projectile = null;
+		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		boolean isHeal = (data.getUtility() == KiAttackData.Utility.HEAL);
 
 		switch (data.getKiType()) {
 			case SMALL_BALL:
 				KiBlastEntity smallBall = new KiBlastEntity(level, owner);
 				smallBall.setupKiSmall(owner, realDamage, data.getSpeed(), data.getColorExterior());
-				projectile = smallBall;
+				smallBall.setMaxLife(maxLife);
+				smallBall.setTechniqueId(data.getId());
+				smallBall.setArmorPenetration(data.getArmorPenetration());
+				smallBall.setHeal(isHeal);
 				break;
 			case MEDIUM_BALL:
 				KiBlastEntity medBall = new KiBlastEntity(level, owner);
-				medBall.setupKiBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), 40);
-				projectile = medBall;
+				medBall.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), maxLife);
+				medBall.setTechniqueId(data.getId());
+				medBall.setArmorPenetration(data.getArmorPenetration());
+				medBall.setHeal(isHeal);
 				break;
 			case GIANT_BALL:
 				KiBlastEntity giantBall = new KiBlastEntity(level, owner);
-				giantBall.setupKiLargeBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), 40);
-				projectile = giantBall;
+				if ("spiritbomb".equals(data.getId())) {
+					giantBall.setupKiGenkiPlayer(owner, realDamage, data.getSpeed(), maxLife);
+				} else if ("supernova".equals(data.getId()) || "supernova_cooler".equals(data.getId())) {
+					giantBall.setupKiNovaPlayer(owner, realDamage, data.getSpeed(), maxLife);
+				} else if ("death_ball".equals(data.getId())) {
+					giantBall.setupKiDeathBallPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), maxLife);
+				} else {
+					giantBall.setupKiLargeBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), maxLife);
+				}
+				giantBall.setTechniqueId(data.getId());
+				giantBall.setArmorPenetration(data.getArmorPenetration());
+				giantBall.setHeal(isHeal);
 				break;
 			case WAVE:
 				KiWaveEntity wave = new KiWaveEntity(level, owner);
-				wave.setKiDamage(realDamage);
-				wave.setKiSpeed(data.getSpeed());
-				wave.setSize(data.getSize());
-				wave.setColors(data.getColorInterior(), data.getColorExterior());
-				projectile = wave;
+				if ("kamehameha".equals(data.getId())) {
+					wave.setupKiHamePlayer(owner, realDamage, data.getSpeed(), data.getSize(), maxLife);
+				} else if ("galick_gun".equals(data.getId())) {
+					wave.setupKiGalickGunPlayer(owner, realDamage, data.getSpeed(), data.getSize(), maxLife);
+				} else if ("final_flash".equals(data.getId())) {
+					wave.setupFinalFlashPlayer(owner, realDamage, data.getSpeed(), data.getSize(), maxLife);
+				} else {
+					wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), maxLife);
+				}
+				wave.setTechniqueId(data.getId());
+				wave.setArmorPenetration(data.getArmorPenetration());
+				wave.setHeal(isHeal);
+				level.addFreshEntity(wave);
 				break;
 			case LASER:
 				KiLaserEntity laser = new KiLaserEntity(level, owner);
-				laser.setKiDamage(realDamage);
-				laser.setKiSpeed(data.getSpeed());
-				laser.setSize(data.getSize());
-				laser.setColors(data.getColorInterior(), data.getColorExterior());
-				projectile = laser;
+				laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), maxLife);
+				laser.setTechniqueId(data.getId());
+				laser.setArmorPenetration(data.getArmorPenetration());
+				laser.setHeal(isHeal);
+				level.addFreshEntity(laser);
+				break;
+			case BEAM:
+				KiLaserEntity beam = new KiLaserEntity(level, owner);
+				beam.setupKiMakkankosanpoPlayer(owner, realDamage, data.getSpeed(), maxLife);
+				beam.setTechniqueId(data.getId());
+				beam.setArmorPenetration(data.getArmorPenetration());
+				beam.setHeal(isHeal);
+				level.addFreshEntity(beam);
 				break;
 			case DISK:
 				KiDiskEntity disk = new KiDiskEntity(level, owner);
-				disk.setKiDamage(realDamage);
-				disk.setKiSpeed(data.getSpeed());
-				disk.setSize(data.getSize());
-				disk.setColors(data.getColorInterior(), data.getColorExterior());
-				projectile = disk;
+				disk.setupKiDiskPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getSize(), maxLife);
+				disk.setTechniqueId(data.getId());
+				disk.setArmorPenetration(data.getArmorPenetration());
+				disk.setHeal(isHeal);
+				level.addFreshEntity(disk);
 				break;
 			case SHIELD: //Cambiar este luego xd
 				KiBarrierEntity barrier = new KiBarrierEntity(level, owner);
 				barrier.setColors(data.getColorInterior(), data.getColorExterior());
 				barrier.setSize(data.getSize());
 				barrier.setKiDamage(realDamage);
-				projectile = barrier;
+				barrier.setTechniqueId(data.getId());
+				barrier.setArmorPenetration(data.getArmorPenetration());
+				barrier.setHeal(isHeal);
+				level.addFreshEntity(barrier);
 				break;
 			case EXPLOSION:
 				KiExplosionEntity explosion = new KiExplosionEntity(level, owner);
 				explosion.setupExplosion(owner, realDamage, data.getColorInterior(), data.getColorExterior());
 				explosion.setMaxRadius(data.getSize());
-				projectile = explosion;
+				explosion.setTechniqueId(data.getId());
+				explosion.setArmorPenetration(data.getArmorPenetration());
+				explosion.setHeal(isHeal);
 				break;
 			case AREA: //Cambiar este luego xd
 				KiExplosionEntity areaDrop = new KiExplosionEntity(level, owner);
 				areaDrop.setupExplosion(owner, realDamage, data.getColorInterior(), data.getColorExterior());
 				areaDrop.setMaxRadius(data.getSize() * 1.5F);
-				projectile = areaDrop;
+				areaDrop.setTechniqueId(data.getId());
+				areaDrop.setArmorPenetration(data.getArmorPenetration());
+				areaDrop.setHeal(isHeal);
 				break;
 			case BARRAGE:
 				Vec3 look = owner.getLookAngle();
@@ -103,19 +144,26 @@ public class TechniqueDispatcher {
 					barrage.setHeal(isHeal);
 					level.addFreshEntity(barrage);
 				}
-				return;
+				return true;
 			default:
 				KiBlastEntity defaultBlast = new KiBlastEntity(level, owner);
-				defaultBlast.setupKiBlast(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), 40);
-				projectile = defaultBlast;
+				defaultBlast.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), maxLife);
+				defaultBlast.setTechniqueId(data.getId());
+				defaultBlast.setArmorPenetration(data.getArmorPenetration());
+				defaultBlast.setHeal(isHeal);
 				break;
 		}
+		return true;
+	}
 
-		if (projectile != null) {
-			projectile.setTechniqueId(data.getId());
-			projectile.setArmorPenetration(data.getArmorPenetration());
-			projectile.setHeal(isHeal);
-			level.addFreshEntity(projectile);
-		}
+	private static int resolvePlayerMaxLifeTicks(KiAttackData data, float chargeMultiplier) {
+		int base = switch (data.getKiType()) {
+			case WAVE, LASER, BEAM -> 80;
+			case GIANT_BALL, EXPLOSION -> 120;
+			case DISK -> 70;
+			case BARRAGE -> 50;
+			default -> 90;
+		};
+		return Math.max(20, (int) (base * chargeMultiplier));
 	}
 }

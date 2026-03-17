@@ -12,6 +12,10 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.extras.ActionMode;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
+import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
@@ -70,6 +74,7 @@ public class TickHandler {
 			if (serverPlayer.hasEffect(MainEffects.STUN.get())) {
 				data.getStatus().setChargingKi(false);
 				data.getStatus().setActionCharging(false);
+				data.getTechniques().clearTechniqueCharge();
 				data.getResources().setActionCharge(0);
 				if (!data.getStatus().isStunned()) data.getStatus().setStunned(true);
 
@@ -90,6 +95,8 @@ public class TickHandler {
 				data.getEffects().tick();
 				if (data.getStatus().isStunned()) data.getStatus().setStunned(false);
 			}
+
+			handleTechniqueCharge(serverPlayer, data);
 
 			boolean shouldRegen = tickCounter >= REGEN_INTERVAL;
 			boolean shouldSync = tickCounter % SYNC_INTERVAL == 0;
@@ -410,6 +417,74 @@ public class TickHandler {
 				data.getResources().setActionCharge(0);
 			}
 		}
+	}
+
+	private static void handleTechniqueCharge(ServerPlayer player, StatsData data) {
+		Techniques techniques = data.getTechniques();
+		String chargingTechniqueId = techniques.getChargingTechniqueId();
+
+		if (chargingTechniqueId == null || chargingTechniqueId.isEmpty()) {
+			if (techniques.getTechniqueChargePercent() > 0.0f || techniques.isTechniqueCharging()) {
+				techniques.clearTechniqueCharge();
+			}
+			return;
+		}
+
+		TechniqueData techniqueData = techniques.getUnlockedTechniques().get(chargingTechniqueId);
+		if (!(techniqueData instanceof KiAttackData kiAttack)) {
+			techniques.clearTechniqueCharge();
+			return;
+		}
+
+		String cooldownKey = getTechniqueCooldownKey(chargingTechniqueId);
+		if (data.getCooldowns().hasCooldown(cooldownKey)) {
+			techniques.clearTechniqueCharge();
+			return;
+		}
+
+		if (techniques.isTechniqueCharging()) {
+			float currentCharge = techniques.getTechniqueChargePercent();
+			float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
+			float maxAllowedCharge = getMaxAllowedChargePercent(kiAttack, data);
+			techniques.setTechniqueChargePercent(Math.min(nextCharge, maxAllowedCharge));
+			return;
+		}
+
+		float chargedPercent = techniques.getTechniqueChargePercent();
+		float maxAllowedCharge = getMaxAllowedChargePercent(kiAttack, data);
+		float effectiveCharge = Math.min(chargedPercent, maxAllowedCharge);
+
+		if (effectiveCharge < 50.0f) {
+			techniques.clearTechniqueCharge();
+			return;
+		}
+
+		float chargeMultiplier = effectiveCharge / 100.0f;
+		boolean fired = TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, chargeMultiplier);
+		if (fired) {
+			int cooldownTicks = Math.max(1, (int) Math.ceil(kiAttack.getCooldown() * chargeMultiplier));
+			data.getCooldowns().setCooldown(cooldownKey, cooldownTicks);
+		}
+
+		techniques.clearTechniqueCharge();
+	}
+
+	private static String getTechniqueCooldownKey(String techniqueId) {
+		return "TechniqueCooldown_" + techniqueId;
+	}
+
+	private static float getChargeRatePerTick(KiAttackData kiAttack, float currentPercent) {
+		int castTime = Math.max(1, kiAttack.getCastTime());
+		if (currentPercent < 100.0f) {
+			return 50.0f / castTime;
+		}
+		return 25.0f / (castTime * 3.0f);
+	}
+
+	private static float getMaxAllowedChargePercent(KiAttackData kiAttack, StatsData data) {
+		double baseCost = Math.max(1.0, kiAttack.getCalculatedCost());
+		double currentKi = Math.max(0.0, data.getResources().getCurrentEnergy());
+		return (float) Math.max(0.0, Math.min(200.0, (currentKi / baseCost) * 100.0));
 	}
 
 	private static boolean performAction(ServerPlayer player, StatsData data, ActionMode mode) {

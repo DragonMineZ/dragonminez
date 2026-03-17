@@ -85,6 +85,22 @@ public class KiLaserEntity extends AbstractKiProjectile{
     public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int castTime){
         this.setupKiLaser(owner, damage, speed, color, color, castTime);
     }
+
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int maxLife) {
+        this.setKiRenderType(0);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+
+        this.setCastTime(0);
+        this.setMaxLife(maxLife);
+        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+    }
+
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int maxLife) {
+        this.setupKiLaserPlayer(owner, damage, speed, color, color, maxLife);
+    }
     public void setupKiDodonpa(LivingEntity owner, float damage, float speed, int castTime){
         this.setKiRenderType(0);
 
@@ -121,6 +137,19 @@ public class KiLaserEntity extends AbstractKiProjectile{
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
+    }
+
+    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, int maxLife){
+        this.setKiRenderType(1);
+
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFE657, 0xFFE657);
+
+        this.setCastTime(0);
+        this.setMaxLife(maxLife);
+        this.setCastOffsets(0.3F, -0.1F, 0.5F);
     }
 
 

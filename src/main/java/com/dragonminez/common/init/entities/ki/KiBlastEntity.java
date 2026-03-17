@@ -88,6 +88,26 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setupKiBlast(owner,damage, speed, color, color, size, castTime);
     }
 
+    public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
+        this.setupKiBlastPlayer(owner, damage, speed, color, color, size, maxLife);
+    }
+
+    public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int maxLife) {
+        this.setOwner(owner);
+        this.setKiRenderType(1);
+
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+
+        this.setMaxLife(maxLife);
+        this.setCastTime(0);
+        this.setCastOffsets(0.0f, -0.5F, 0.5F);
+
+        finalizeSetupAndShoot(owner, speed);
+    }
+
     public void setupKiBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
         this.setOwner(owner);
         this.setKiRenderType(1);
@@ -107,6 +127,26 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
         this.setupKiLargeBlast(owner, damage, speed, color, color, size, castTime);
+    }
+
+    public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
+        this.setupKiLargeBlastPlayer(owner, damage, speed, color, color, size, maxLife);
+    }
+
+    public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int maxLife) {
+        this.setOwner(owner);
+        this.setKiRenderType(2);
+
+        this.setSize(size);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+
+        this.setMaxLife(maxLife);
+        this.setCastTime(0);
+        this.setCastOffsets(0.0f, 5.2F, 0.2F);
+
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupKiLargeBlast(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
@@ -181,6 +221,21 @@ public class KiBlastEntity extends AbstractKiProjectile {
         finalizeSetupAndShoot(owner, speed);
     }
 
+    public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed, int maxLife) {
+        this.setOwner(owner);
+        this.setKiRenderType(5);
+
+        this.setSize(5.0F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(0x30FFF1, 0x00F8FF);
+        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+
+        this.setCastTime(0);
+        this.setMaxLife(maxLife);
+        finalizeSetupAndShoot(owner, speed);
+    }
+
     public void setupKiNova(LivingEntity owner, float damage, float speed, int castTime) {
         this.setOwner(owner);
         this.setKiRenderType(6);
@@ -195,6 +250,21 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setMaxLife(castTime*2);
 
         //this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        finalizeSetupAndShoot(owner, speed);
+    }
+
+    public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed, int maxLife) {
+        this.setOwner(owner);
+        this.setKiRenderType(6);
+
+        this.setSize(5.0F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(0x9E0000, 0x9E0000);
+        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+
+        this.setCastTime(0);
+        this.setMaxLife(maxLife);
         finalizeSetupAndShoot(owner, speed);
     }
     public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color, int colorborder, int castTime) {
@@ -215,6 +285,25 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
     public void setupKiDeathBall(LivingEntity owner, float damage, float speed, int color, int castTime) {
         setupKiDeathBall(owner, damage, speed, color, color, castTime);
+    }
+
+    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int maxLife) {
+        setupKiDeathBallPlayer(owner, damage, speed, color, color, maxLife);
+    }
+
+    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int maxLife) {
+        this.setOwner(owner);
+        this.setKiRenderType(7);
+
+        this.setSize(2.5F);
+        this.setKiSpeed(speed);
+        this.setKiDamage(damage);
+        this.setColors(color, ColorUtils.darkenColor(colorBorder, 0.5f));
+        this.setCastOffsets(0.0F, 5.5F, 0.0F);
+
+        this.setCastTime(0);
+        this.setMaxLife(maxLife);
+        finalizeSetupAndShoot(owner, speed);
     }
 
     public void setupSokidan(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {

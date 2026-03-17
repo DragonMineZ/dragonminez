@@ -57,6 +57,7 @@ public class ModClientEvents {
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent e) {
 		e.registerAboveAll("xenoversehud", XenoverseHUD.HUD_XENOVERSE);
 		e.registerAboveAll("alternativehud", AlternativeHUD.HUD_ALTERNATIVE);
+		e.registerAboveAll("technique_charge_hud", TechniqueChargeOverlay.HUD_TECHNIQUE_CHARGE);
 		e.registerAboveAll("scouterhud", ScouterHUD.HUD_SCOUTER);
 		e.registerAboveAll("tracked_quest_hud", TrackedQuestHUD.HUD_TRACKED_QUEST);
 		e.registerAboveAll("techniquehud", TechniqueHotbarHUD.HUD_TECHNIQUES);
