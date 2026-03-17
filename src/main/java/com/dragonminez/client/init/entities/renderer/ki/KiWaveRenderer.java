@@ -77,6 +77,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             case 2: // Galick Gun
                 KiRenderWaveBrightness(entity, partialTick, poseStack, buffer, auraColor, borderColor, fadeAlpha);
                 break;
+            case 3: // FINAL FLASH AAAAAAAAAAAA
+                KiRenderWaveDouble(entity, partialTick, poseStack, buffer, auraColor, borderColor, fadeAlpha);
+                break;
             default: // Rayo Genérico
                 KiRenderWave(entity, partialTick, poseStack, buffer, auraColor, borderColor, fadeAlpha);
                 break;
@@ -327,6 +330,88 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         poseStack.popPose();
 
         poseStack.popPose(); // push global
+    }
+
+    private void KiRenderWaveDouble(KiWaveEntity entity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, float[] auraColor, float[] borderColor, float fadeAlpha) {
+        float ageInTicks = entity.tickCount + partialTick;
+        float castTime = (float) entity.getCastWave();
+        float targetCastSize = entity.getCastSize();
+        float finalSize = entity.getSize();
+
+        // Progreso de carga (de 0.0 a 1.0)
+        float chargeProgress = Math.min(1.0F, ageInTicks / castTime);
+
+        float currentWidth = (ageInTicks <= castTime) ? (targetCastSize * chargeProgress) : finalSize;
+        boolean isFiring = ageInTicks > castTime;
+
+        float basePulse = 1.0F + (float) Math.sin(ageInTicks * 1.5F) * 0.15F;
+        float width = currentWidth * basePulse;
+
+        float yaw = entity.getFixedYaw();
+        float pitch = entity.getFixedPitch();
+        float[] brightAuraColor = ColorUtils.lightenColor(auraColor, 0.85f);
+        Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
+
+        poseStack.pushPose();
+
+        if (!isFiring) {
+            float startBallScale = width * 1.2F;
+
+            float initialSpread = 3.0F;
+            float hitboxWidth = entity.getOwner() != null ? entity.getOwner().getBbWidth() : 0.6F;
+
+            float lateralOffset = (hitboxWidth * initialSpread) * (1.0F - chargeProgress);
+
+            // Esfera Derecha
+            poseStack.pushPose();
+            poseStack.scale(startBallScale, startBallScale, startBallScale);
+            poseStack.translate(lateralOffset, -0.35D, 0.0D);
+            renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+            renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, false);
+            poseStack.popPose();
+
+            // Esfera Izquierda
+            poseStack.pushPose();
+            poseStack.scale(startBallScale, startBallScale, startBallScale);
+            poseStack.translate(-lateralOffset, -0.35D, 0.0D);
+            renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+            renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, false);
+            poseStack.popPose();
+
+            poseStack.popPose();
+            return;
+        }
+
+        float length = Math.max(entity.getBeamLength(), 0.1F);
+        poseStack.translate(0.0D, 0.5D, 0.0D);
+
+        poseStack.pushPose();
+        poseStack.translate(0.0D, -0.5D, 0.0D);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
+        poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        poseStack.translate(0.0D, 0.0D, 0.5D);
+        renderKiWave2D(poseStack, buffer, entity, ageInTicks, width, Math.max(length - 0.8F, 0.1F), auraColor, borderColor, fadeAlpha);
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        Vec3 startPos = dir.scale(0.1D);
+        poseStack.translate(startPos.x, startPos.y - 0.5D, startPos.z);
+        float startBallScale = width * 1.8F;
+        poseStack.scale(startBallScale, startBallScale, startBallScale);
+        poseStack.translate(0.0D, -0.35D, 0.0D);
+        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+        renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, true);
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        Vec3 endPos = dir.scale(0.5D + length);
+        poseStack.translate(endPos.x, endPos.y - 0.5D, endPos.z);
+        poseStack.scale(width * 2.5F, width * 2.5F, width * 2.5F);
+        poseStack.translate(0.0D, -0.35D, 0.0D);
+        renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
+        poseStack.popPose();
+
+        poseStack.popPose();
     }
 
 
