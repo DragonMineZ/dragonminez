@@ -40,7 +40,7 @@ Schema source:
 ## 2) Configure base stat classes (`stats.json`)
 
 DMZ expects class blocks like `warrior`, `spiritualist`, and `martialartist`. You can make your own
-classes and tune their stats, but these three are used by default for form unlocks and skill requirements.
+classes and tune their stats, just duplicating any of the default one an renaming it.
 
 Inside each class:
 
