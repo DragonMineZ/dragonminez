@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/img/dragonminez_big_logo.png" alt="DMZ Banner" width="70%" />
+  <img src=".github/docs/img/dragonminez_big_logo.png" alt="DMZ Banner" width="70%" />
 </div>
 
 ## About
@@ -30,7 +30,7 @@ You can also check the project in [Modrinth](https://modrinth.com/mod/dragonmine
 ## 🗺️ Roadmap
 
 <div align="center">
-  <img src="https://cdn.discordapp.com/attachments/1280350384992288778/1479122401311854714/roadmap.png" alt="DMZ Roadmap"/>
+  <img src=".github/docs/img/roadmap.png" alt="DMZ Roadmap"/>
 </div>
 
 ## 🎯 Use of Third Parties
