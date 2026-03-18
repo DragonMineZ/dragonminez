@@ -21,4 +21,8 @@ public class SaiyanForms {
 	public static final String SUPER_SAIYAN_MASTERED = "supersaiyanmastered";
 	public static final String SUPER_SAIYAN_2 = "supersaiyan2";
 	public static final String SUPER_SAIYAN_3 = "supersaiyan3";
+
+	// Super Saiyan God Forms group
+	public static final String GROUP_SUPERSAIYAN_GOD = "supersaiyangod";
+	public static final String SUPER_SAIYAN_GOD = "supersaiyangod";
 }
