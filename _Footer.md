@@ -12,14 +12,6 @@
       <img src="https://img.shields.io/badge/GitHub-Progress_Board-red?style=for-the-badge&logo=GitHub" alt="GitHub Progress Board">
     </a>
   </p>
-
-  <!-- GeckoLib badge -->
-  <p>
-    <a href="https://www.curseforge.com/minecraft/mc-mods/geckolib" target="_blank" rel="nofollow noopener" style="text-decoration:none;">
-      <img src="https://imgur.com/gn0QIA4.png" alt="Requires GeckoLib library" width="180" height="61">
-    </a>
-  </p>
-
   <!-- Requirement text -->
   <p style="margin-top:4px;">
     --[ Requires
