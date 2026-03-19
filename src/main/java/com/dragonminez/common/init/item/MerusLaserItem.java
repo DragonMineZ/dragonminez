@@ -41,7 +41,7 @@ public class MerusLaserItem extends Item {
 
             //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 1.0f, 100);
             //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 3.0f, 100);
-            kiWave.setupFinalFlash(pPlayer, 10.0f, 1.0f, 2.5f, 100);
+            //kiWave.setupFinalFlash(pPlayer, 10.0f, 1.0f, 2.5f, 100);
             //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 2.0f, 100);
             //kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
             //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);

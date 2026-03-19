@@ -54,11 +54,15 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
 
         if (entity instanceof KiBlastEntity blastEntity) {
+            boolean isFiring = blastEntity.isFiring();
             float castTime = (float) blastEntity.getCastTime();
-            if (castTime > 0) {
-                if (ageInTicks <= castTime) {
+
+            if (!isFiring) {
+                if (castTime > 0.1F && ageInTicks <= castTime) {
                     scale = scale * (ageInTicks / castTime);
                 }
+            } else {
+                scale = entity.getSize();
             }
         }
 

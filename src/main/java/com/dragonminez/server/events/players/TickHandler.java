@@ -7,6 +7,9 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.common.init.entities.ki.KiBlastEntity;
+import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
@@ -419,55 +422,95 @@ public class TickHandler {
 		}
 	}
 
-	private static void handleTechniqueCharge(ServerPlayer player, StatsData data) {
-		Techniques techniques = data.getTechniques();
-		String chargingTechniqueId = techniques.getChargingTechniqueId();
+    private static void handleTechniqueCharge(ServerPlayer player, StatsData data) {
+        Techniques techniques = data.getTechniques();
+        String chargingTechniqueId = techniques.getChargingTechniqueId();
 
-		if (chargingTechniqueId == null || chargingTechniqueId.isEmpty()) {
-			if (techniques.getTechniqueChargePercent() > 0.0f || techniques.isTechniqueCharging()) {
-				techniques.clearTechniqueCharge();
-			}
-			return;
-		}
+        if (chargingTechniqueId == null || chargingTechniqueId.isEmpty()) {
+            if (techniques.getTechniqueChargePercent() > 0.0f || techniques.isTechniqueCharging()) {
+                techniques.clearTechniqueCharge();
+            }
+            return;
+        }
 
-		TechniqueData techniqueData = techniques.getUnlockedTechniques().get(chargingTechniqueId);
-		if (!(techniqueData instanceof KiAttackData kiAttack)) {
-			techniques.clearTechniqueCharge();
-			return;
-		}
+        TechniqueData techniqueData = techniques.getUnlockedTechniques().get(chargingTechniqueId);
+        if (!(techniqueData instanceof KiAttackData kiAttack)) {
+            techniques.clearTechniqueCharge();
+            return;
+        }
 
-		String cooldownKey = getTechniqueCooldownKey(chargingTechniqueId);
-		if (data.getCooldowns().hasCooldown(cooldownKey)) {
-			techniques.clearTechniqueCharge();
-			return;
-		}
+        String cooldownKey = getTechniqueCooldownKey(chargingTechniqueId);
+        if (data.getCooldowns().hasCooldown(cooldownKey)) {
+            techniques.clearTechniqueCharge();
+            return;
+        }
 
-		if (techniques.isTechniqueCharging()) {
-			float currentCharge = techniques.getTechniqueChargePercent();
-			float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
-			float maxAllowedCharge = getMaxAllowedChargePercent(kiAttack, data);
-			techniques.setTechniqueChargePercent(Math.min(nextCharge, maxAllowedCharge));
-			return;
-		}
+        var activeKi = findChargingEntity(player);
+        if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f) {
+            TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f);
+        }
 
-		float chargedPercent = techniques.getTechniqueChargePercent();
-		float maxAllowedCharge = getMaxAllowedChargePercent(kiAttack, data);
-		float effectiveCharge = Math.min(chargedPercent, maxAllowedCharge);
+        if (techniques.isTechniqueCharging()) {
+            float currentCharge = techniques.getTechniqueChargePercent();
+            float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
+            float maxAllowedCharge = getMaxAllowedChargePercent(kiAttack, data);
+            techniques.setTechniqueChargePercent(Math.min(nextCharge, maxAllowedCharge));
+        } else {
+            resolveKiAttackOnRelease(player, data, techniques);
+        }
+    }
 
-		if (effectiveCharge < 50.0f) {
-			techniques.clearTechniqueCharge();
-			return;
-		}
+    private static void resolveKiAttackOnRelease(ServerPlayer player, StatsData data, Techniques techniques) {
+        float chargedPercent = techniques.getTechniqueChargePercent();
+        float maxAllowedCharge = 200.0f;
+        float effectiveCharge = Math.min(chargedPercent, maxAllowedCharge);
 
-		float chargeMultiplier = effectiveCharge / 100.0f;
-		boolean fired = TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, chargeMultiplier);
-		if (fired) {
-			int cooldownTicks = Math.max(1, (int) Math.ceil(kiAttack.getCooldown() * chargeMultiplier));
-			data.getCooldowns().setCooldown(cooldownKey, cooldownTicks);
-		}
+        var activeKi = findChargingEntity(player);
 
-		techniques.clearTechniqueCharge();
-	}
+        if (activeKi != null) {
+            if (effectiveCharge < 50.0f) {
+                activeKi.discard();
+            } else {
+                float chargeMultiplier = effectiveCharge / 100.0f;
+
+                TechniqueData techniqueData = techniques.getUnlockedTechniques().get(techniques.getChargingTechniqueId());
+
+                if (techniqueData instanceof KiAttackData kiAttack) {
+                    boolean fired = TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, chargeMultiplier);
+
+                    if (fired) {
+                        int cooldownTicks = Math.max(1, (int) Math.ceil(kiAttack.getCooldown() * chargeMultiplier));
+                        data.getCooldowns().setCooldown(getTechniqueCooldownKey(kiAttack.getId()), cooldownTicks);
+                    } else {
+                        activeKi.discard();
+                    }
+                } else {
+                    activeKi.discard();
+                }
+            }
+        }
+
+        techniques.clearTechniqueCharge();
+    }
+
+    private static AbstractKiProjectile findChargingEntity(ServerPlayer player) {
+        List<AbstractKiProjectile> nearbyEntities = player.level().getEntitiesOfClass(
+                AbstractKiProjectile.class,
+                player.getBoundingBox().inflate(10.0D)
+        );
+
+        for (AbstractKiProjectile ki : nearbyEntities) {
+            if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) {
+                if (ki instanceof KiWaveEntity wave && !wave.isFiring()) {
+                    return wave;
+                }
+                if (ki instanceof KiBlastEntity blast && !blast.isFiring()) {
+                    return blast;
+                }
+            }
+        }
+        return null;
+    }
 
 	private static String getTechniqueCooldownKey(String techniqueId) {
 		return "TechniqueCooldown_" + techniqueId;

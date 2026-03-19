@@ -130,7 +130,6 @@ public abstract class AbstractKiProjectile extends Projectile {
 
         this.onKiTick();
 
-        if (this.tickCount > 10*20) this.discard();
     }
 
     protected void onKiTick() {}

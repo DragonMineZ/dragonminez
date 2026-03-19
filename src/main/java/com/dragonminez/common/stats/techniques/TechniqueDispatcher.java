@@ -7,24 +7,46 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.List;
+
 public class TechniqueDispatcher {
 
 	public static boolean executeKiAttack(LivingEntity owner, Level level, KiAttackData data, StatsData statsData, float chargeMultiplier) {
 		if (level.isClientSide) return false;
 
+        boolean isInitialSpawn = chargeMultiplier < 0.5f;
 		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
 
 		double cost = data.getCalculatedCost() * clampedCharge;
-		if (statsData.getResources().getCurrentEnergy() < cost) {
-			return false;
-		}
-
-		statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
+        if (isInitialSpawn) {
+            if (statsData.getResources().getCurrentEnergy() < (data.getCalculatedCost() * 0.5)) {
+                return false;
+            }
+        } else {
+            if (statsData.getResources().getCurrentEnergy() < cost) {
+                return false;
+            }
+            statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
+        }
 
 		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * clampedCharge);
 
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		boolean isHeal = (data.getUtility() == KiAttackData.Utility.HEAL);
+
+        if (!isInitialSpawn) {
+            AbstractKiProjectile activeKi = getChargingKiEntity(owner, level);
+
+            if (activeKi instanceof KiWaveEntity wave) {
+                wave.setKiDamage(realDamage);
+                wave.fireHability(maxLife);
+                return true;
+            } else if (activeKi instanceof KiBlastEntity blast) {
+                blast.setKiDamage(realDamage);
+                blast.fireHability(maxLife);
+                return true;
+            }
+        }
 
 		switch (data.getKiType()) {
 			case SMALL_BALL:
@@ -41,6 +63,10 @@ public class TechniqueDispatcher {
 				medBall.setTechniqueId(data.getId());
 				medBall.setArmorPenetration(data.getArmorPenetration());
 				medBall.setHeal(isHeal);
+
+                if (!level.isClientSide) {
+                    level.addFreshEntity(medBall); // <--- SOLO EL SERVER LA CREA
+                }
 				break;
 			case GIANT_BALL:
 				KiBlastEntity giantBall = new KiBlastEntity(level, owner);
@@ -56,23 +82,36 @@ public class TechniqueDispatcher {
 				giantBall.setTechniqueId(data.getId());
 				giantBall.setArmorPenetration(data.getArmorPenetration());
 				giantBall.setHeal(isHeal);
+
+                if (!level.isClientSide) {
+                    level.addFreshEntity(giantBall);
+                }
 				break;
-			case WAVE:
-				KiWaveEntity wave = new KiWaveEntity(level, owner);
-				if ("kamehameha".equals(data.getId())) {
-					wave.setupKiHamePlayer(owner, realDamage, data.getSpeed(), data.getSize(), maxLife);
-				} else if ("galick_gun".equals(data.getId())) {
-					wave.setupKiGalickGunPlayer(owner, realDamage, data.getSpeed(), data.getSize(), maxLife);
-				} else if ("final_flash".equals(data.getId())) {
-					wave.setupFinalFlashPlayer(owner, realDamage, data.getSpeed(), data.getSize(), maxLife);
-				} else {
-					wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize(), maxLife);
-				}
-				wave.setTechniqueId(data.getId());
-				wave.setArmorPenetration(data.getArmorPenetration());
-				wave.setHeal(isHeal);
-				level.addFreshEntity(wave);
-				break;
+            case WAVE:
+                KiWaveEntity wave = new KiWaveEntity(level, owner);
+                if ("kamehameha".equals(data.getId())) {
+                    //wave.setupKiHamePlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                    wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+                } else if ("galick_gun".equals(data.getId())) {
+                    wave.setupKiGalickGunPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                } else if ("final_flash".equals(data.getId())) {
+                    wave.setupFinalFlashPlayer(owner, realDamage, data.getSpeed(), data.getSize());
+                } else {
+                    wave.setupKiWavePlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());
+                }
+                wave.setTechniqueId(data.getId());
+                wave.setArmorPenetration(data.getArmorPenetration());
+                wave.setHeal(isHeal);
+
+                if (isInitialSpawn) {
+                    wave.setFiring(false);
+                    wave.setMaxLife(99999);
+                } else {
+                    wave.setFiring(true);
+                }
+
+                level.addFreshEntity(wave);
+                break;
 			case LASER:
 				KiLaserEntity laser = new KiLaserEntity(level, owner);
 				laser.setupKiLaserPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), maxLife);
@@ -155,6 +194,25 @@ public class TechniqueDispatcher {
 		}
 		return true;
 	}
+
+    private static AbstractKiProjectile getChargingKiEntity(LivingEntity owner, Level level) {
+        List<AbstractKiProjectile> nearby = level.getEntitiesOfClass(
+                AbstractKiProjectile.class,
+                owner.getBoundingBox().inflate(10.0D)
+        );
+        for (AbstractKiProjectile ki : nearby) {
+            if (ki.getOwner() != null && ki.getOwner().getUUID().equals(owner.getUUID())) {
+                if (ki instanceof KiWaveEntity wave && !wave.isFiring()) {
+                    return wave;
+                }
+                if (ki instanceof KiBlastEntity blast && !blast.isFiring()) {
+                    return blast;
+                }
+            }
+        }
+        return null;
+    }
+
 
 	private static int resolvePlayerMaxLifeTicks(KiAttackData data, float chargeMultiplier) {
 		int base = switch (data.getKiType()) {

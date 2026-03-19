@@ -42,6 +42,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.FLOAT);
 
     private static final EntityDataAccessor<Boolean> CONTINUOUS_FOLLOW = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiWaveEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final float MAX_RANGE = 300.0F; // uff
 
@@ -81,6 +82,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         return this.getMaxLife() / 20;
     }
 
+    //SETUPS
     public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
         this.setKiRenderType(0);
 
@@ -91,9 +93,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
 
-        this.setMaxLife(castTime*2);
+        this.setFiring(false);
         this.setCastWave(castTime);
-
+        this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
 
         this.setCastOffsets(0.4F, 0.6F, 0.0F);
@@ -108,18 +110,17 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setupKiWave(owner, damage, speed, color, color, size, castTime);
     }
 
-    public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int maxLife) {
+    public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
         this.setKiRenderType(0);
-
         this.setSize(size);
         this.setCastSize(size / 2);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
 
+        this.setFiring(false);
+        this.setMaxLife(99999);
         this.setCastWave(0);
-        this.setMaxLife(maxLife);
         this.setCastOffsets(0.4F, 0.6F, 0.0F);
         updatePositionRelativeToOwner(owner, false);
     }
@@ -134,8 +135,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(0x4FF7FF, 0x4FF7FF);
 
-        this.setMaxLife(castTime*2);
+        this.setFiring(false);
         this.setCastWave(castTime);
+        this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
 
         this.setCastOffsets(0.4F, 0.6F, 0.0F);
@@ -146,35 +148,35 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
     }
 
-    public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size, int maxLife) {
+    public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size) {
         this.setKiRenderType(1);
-
         this.setSize(size);
         this.setCastSize(size / 2);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0x4FF7FF, 0x4FF7FF);
 
+        // Sistema de carga manual
+        this.setFiring(false);
+        this.setMaxLife(99999); // Vida infinita mientras carga
         this.setCastWave(0);
-        this.setMaxLife(maxLife);
-        this.setCastOffsets(0.4F, 0.6F, 0.0F);
-        updatePositionRelativeToOwner(owner, false);
+        this.setCastOffsets(0.4F, -0.6F, 0.0F);
+        updatePositionRelativeToOwner(owner, true);
     }
 
     public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size, int castTime) {
         this.setKiRenderType(2);
-
         this.setSize(size);
         this.setCastSize(size / 2);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xCE10E3, 0xAE10E3);
 
-        this.setMaxLife(castTime*2);
+        this.setFiring(false);
         this.setCastWave(castTime);
-        this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+        this.setMaxLife(castTime * 2);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
 
         this.setCastOffsets(0.4F, 0.6F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
@@ -184,7 +186,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
     }
 
-    public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size, int maxLife) {
+    public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size) {
         this.setKiRenderType(2);
 
         this.setSize(size);
@@ -194,15 +196,16 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(0xCE10E3, 0xAE10E3);
 
+        // Sistema de carga manual
+        this.setFiring(false);
+        this.setMaxLife(99999); // Vida infinita mientras carga
         this.setCastWave(0);
-        this.setMaxLife(maxLife);
-        this.setCastOffsets(0.4F, 0.6F, 0.0F);
-        updatePositionRelativeToOwner(owner, false);
+        this.setCastOffsets(0.4F, 0.2F, 0.0F);
+        updatePositionRelativeToOwner(owner, true);
     }
 
     public void setupFinalFlash(LivingEntity owner, float damage, float speed, float size, int castTime) {
         this.setKiRenderType(3);
-
         this.setSize(size);
         this.setCastSize(size / 2.0F);
 
@@ -210,8 +213,9 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(0xFFFD55, 0xFFFD55);
 
-        this.setMaxLife(castTime * 2);
+        this.setFiring(false);
         this.setCastWave(castTime);
+        this.setMaxLife(castTime * 2);
 
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
 
@@ -223,7 +227,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
     }
 
-    public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size, int maxLife) {
+    public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size) {
         this.setKiRenderType(3);
 
         this.setSize(size);
@@ -233,10 +237,20 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(0xFFFD55, 0xFFFD55);
 
-        this.setCastWave(0);
-        this.setMaxLife(maxLife);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastWave(40);
         this.setCastOffsets(0.0F, -0.3F, 0.4F);
         updatePositionRelativeToOwner(owner, false);
+    }
+
+    public void fireHability(int finalMaxLife) {
+        this.setFiring(true);
+        this.setMaxLife(this.tickCount + finalMaxLife);
+
+        if (this.getOwner() instanceof LivingEntity livingOwner) {
+            updatePositionRelativeToOwner(livingOwner, false);
+        }
     }
 
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {
@@ -279,6 +293,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.entityData.define(OFFSET_Z, 0.0F);
 
         this.entityData.define(CONTINUOUS_FOLLOW, false);
+        this.entityData.define(IS_FIRING, false);
     }
 
     public float getBeamLength() { return this.entityData.get(BEAM_LENGTH); }
@@ -296,26 +311,34 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
     public boolean isContinuousFollow() { return this.entityData.get(CONTINUOUS_FOLLOW); }
     public void setContinuousFollow(boolean follow) { this.entityData.set(CONTINUOUS_FOLLOW, follow); }
+    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
+    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
 
     @Override
     public void tick() {
         this.baseTick();
         this.setDeltaMovement(0, 0, 0);
 
+        // 1. AUTO-DISPARO: Si es invocado por un ítem o NPC (vida no es infinita) y ya cumplió su tiempo de casteo
+        if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastWave()) {
+            this.setFiring(true);
+            if (this.getOwner() instanceof LivingEntity livingOwner) {
+                updatePositionRelativeToOwner(livingOwner, false);
+            }
+        }
+
+        boolean isFiring = this.isFiring();
         int castTime = this.getCastWave();
-        boolean isCasting = this.tickCount <= castTime;
 
         var owner = this.getOwner();
         if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
-            if (isCasting) {
+            if (!isFiring) {
+                // FASE DE CARGA: Solo sigue la rotación/posición en las manos
                 updatePositionRelativeToOwner(livingOwner, true);
             } else {
+                // FASE DE DISPARO: Se queda fijo frente al jugador o lo sigue
                 if (this.isContinuousFollow()) {
                     updatePositionRelativeToOwner(livingOwner, false);
-                } else {
-                    if (this.tickCount == castTime + 1) {
-                        updatePositionRelativeToOwner(livingOwner, false);
-                    }
                 }
             }
         } else if (!this.level().isClientSide) {
@@ -324,22 +347,20 @@ public class KiWaveEntity extends AbstractKiProjectile {
         }
 
         if (!this.level().isClientSide) {
-
-            if (isCasting) {
+            if (!isFiring) {
+                // Servidor en carga: Solo reproducir el sonido de carga inicial
                 if (this.tickCount == 1) {
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_EXPLOSION_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F);
                 }
             } else {
+                // Servidor en disparo: Expansión del láser, daño y colisiones
                 Vec3 startPos = this.position();
                 Vec3 dir = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
                 float currentLen = this.getBeamLength();
                 float currentSpeed = this.getKiSpeed();
 
-                if (this.tickCount == castTime + 1) {
-                    this.level().playSound(null, startPos.x, startPos.y, startPos.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-                }
-
-                if ((this.tickCount - castTime) % 5 == 0) {
+                // Sonido de avance del láser
+                if (this.tickCount % 5 == 0) {
                     Vec3 tipPosForSound = startPos.add(dir.scale(currentLen));
                     this.level().playSound(null, tipPosForSound.x, tipPosForSound.y, tipPosForSound.z, MainSounds.KI_KAME_FIRE.get(), SoundSource.HOSTILE, 0.1F, 1.0F);
                 }
@@ -347,8 +368,10 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 float targetLen = currentLen + currentSpeed;
                 Vec3 tipPos = startPos.add(dir.scale(targetLen));
 
+                // Romper bloques en la punta
                 this.destroyBlocksAtTip(tipPos);
 
+                // Colisión con bloques sólidos
                 HitResult hitResult = this.level().clip(new ClipContext(
                         startPos.add(dir.scale(currentLen)), tipPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this
                 ));
@@ -363,20 +386,23 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 }
 
                 this.setBeamLength(targetLen);
+
+                // Dañar entidades atravesadas por el láser
                 damageEntitiesInBeam(startPos, dir, targetLen);
 
+                // Si se detiene o se le acaba el tiempo de vida real, explota
                 if (currentSpeed < 0.05F || this.tickCount > this.getMaxLife()) {
                     explodeAndDie(startPos.add(dir.scale(targetLen)));
                     return;
                 }
             }
         } else {
-            if (!isCasting) {
+            // Cliente: Efectos visuales y partículas
+            if (!isFiring) {
+                // Aquí podrías agregar partículas girando alrededor de la esfera mientras carga
+            } else {
                 spawnWaveParticles();
                 spawnOriginSplash();
-                //spawnLightningParticles(false);
-            } else {
-                //spawnLightningParticles(true);
             }
         }
 
