@@ -59,7 +59,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             var character = data.getCharacter();
             String race = character.getRaceName().toLowerCase();
             String gender = character.getGender().toLowerCase();
-            String customRaceGender = (ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).getHasGender()) ? gender : "";
+            RaceCharacterConfig raceCharacterConfig = ConfigManager.getRaceCharacter(race);
+            String customRaceGender = (raceCharacterConfig != null && raceCharacterConfig.getHasGender()) ? gender : "";
             String currentForm = character.getActiveForm();
             int bodyType = character.getBodyType();
 

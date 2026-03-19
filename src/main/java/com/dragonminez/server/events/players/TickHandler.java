@@ -26,8 +26,12 @@ import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LightBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -46,11 +50,16 @@ public class TickHandler {
 
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
+	private static final int AURA_LIGHT_INTERVAL = 2;
+	private static final int AURA_LIGHT_LEVEL = 12;
+	private static final int AURA_LIGHT_STEP = 1;
 	private static final double MEDITATION_BONUS_PER_LEVEL = 0.05;
 	private static final double ACTIVE_CHARGE_MULTIPLIER = 1.5;
 	private static int masterySeconds = 0;
 
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
+	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
+	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
 
 	static {
 		registerActionModeHandlers();
@@ -73,6 +82,8 @@ public class TickHandler {
 
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
+
+			if (serverPlayer.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight(serverPlayer, data);
 
 			if (serverPlayer.hasEffect(MainEffects.STUN.get())) {
 				data.getStatus().setChargingKi(false);
@@ -218,7 +229,79 @@ public class TickHandler {
 
 	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-		playerTickCounters.remove(event.getEntity().getUUID());
+		UUID playerId = event.getEntity().getUUID();
+		playerTickCounters.remove(playerId);
+		auraLightLevels.remove(playerId);
+		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+			removeAuraLight(serverPlayer.serverLevel(), playerId);
+		}
+	}
+
+	private static void updateAuraLight(ServerPlayer player, StatsData data) {
+		boolean auraActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura();
+		ServerLevel level = player.serverLevel();
+		UUID playerId = player.getUUID();
+		int currentLevel = auraLightLevels.getOrDefault(playerId, 0);
+		int targetLevel = auraActive ? AURA_LIGHT_LEVEL : 0;
+		int nextLevel = approach(currentLevel, targetLevel, AURA_LIGHT_STEP);
+
+		if (nextLevel <= 0) {
+			auraLightLevels.remove(playerId);
+			removeAuraLight(level, playerId);
+			return;
+		}
+		auraLightLevels.put(playerId, nextLevel);
+
+		BlockPos targetPos = player.blockPosition().above();
+		if (!canHostAuraLight(level, targetPos)) {
+			targetPos = player.blockPosition();
+			if (!canHostAuraLight(level, targetPos)) {
+				removeAuraLight(level, playerId);
+				return;
+			}
+		}
+
+		BlockPos previousPos = auraLightPositions.get(playerId);
+		if (previousPos != null && !previousPos.equals(targetPos)) {
+			clearAuraLightIfOwned(level, previousPos);
+		}
+
+		BlockState currentState = level.getBlockState(targetPos);
+		if (!isAuraLight(currentState) || currentState.getValue(LightBlock.LEVEL) != nextLevel) {
+			BlockState lightState = Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, nextLevel);
+			level.setBlock(targetPos, lightState, 3);
+		}
+
+		auraLightPositions.put(playerId, targetPos.immutable());
+	}
+
+	private static boolean canHostAuraLight(ServerLevel level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		return state.isAir() || isAuraLight(state);
+	}
+
+	private static boolean isAuraLight(BlockState state) {
+		return state.is(Blocks.LIGHT);
+	}
+
+	private static void removeAuraLight(ServerLevel level, UUID playerId) {
+		BlockPos previousPos = auraLightPositions.remove(playerId);
+		if (previousPos != null) {
+			clearAuraLightIfOwned(level, previousPos);
+		}
+	}
+
+	private static void clearAuraLightIfOwned(ServerLevel level, BlockPos pos) {
+		BlockState currentState = level.getBlockState(pos);
+		if (isAuraLight(currentState) && currentState.getValue(LightBlock.LEVEL) <= AURA_LIGHT_LEVEL) {
+			level.removeBlock(pos, false);
+		}
+	}
+
+	private static int approach(int current, int target, int step) {
+		if (current < target) return Math.min(target, current + step);
+		if (current > target) return Math.max(target, current - step);
+		return current;
 	}
 
 	private static RaceStatsConfig.ClassStats getClassStats(RaceStatsConfig config, String characterClass) {

@@ -30,6 +30,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LightBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -69,6 +72,11 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 	protected int teleportCooldown = 0;
 	protected int castTimer = 0;
 	private int chargeSoundTimer = 0;
+	private static final int AURA_LIGHT_LEVEL = 12;
+	private static final int AURA_LIGHT_INTERVAL = 2;
+	private static final int AURA_LIGHT_STEP = 1;
+	private BlockPos auraLightPos;
+	private int auraLightLevel = 0;
 
 	//EVADE
 	private boolean canEvade = false;
@@ -131,6 +139,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		super.tick();
 
 		if (!this.level().isClientSide) {
+			if (this.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight();
 
 			if (this.comboEnabled) {
 				if (this.currentComboCooldown > 0) this.currentComboCooldown--;
@@ -206,6 +215,77 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 			}
 
 		}
+	}
+
+	private void updateAuraLight() {
+		if (!(this.level() instanceof ServerLevel serverLevel)) return;
+
+		boolean shouldEmitLight = this.isTransforming() || this.isCharge();
+		int targetLevel = shouldEmitLight ? AURA_LIGHT_LEVEL : 0;
+		this.auraLightLevel = approach(this.auraLightLevel, targetLevel, AURA_LIGHT_STEP);
+
+		if (this.auraLightLevel <= 0) {
+			removeAuraLight(serverLevel);
+			return;
+		}
+
+		BlockPos targetPos = this.blockPosition().above();
+		if (!canHostAuraLight(serverLevel, targetPos)) {
+			targetPos = this.blockPosition();
+			if (!canHostAuraLight(serverLevel, targetPos)) {
+				removeAuraLight(serverLevel);
+				return;
+			}
+		}
+
+		if (this.auraLightPos != null && !this.auraLightPos.equals(targetPos)) {
+			clearAuraLightIfOwned(serverLevel, this.auraLightPos);
+		}
+
+		BlockState currentState = serverLevel.getBlockState(targetPos);
+		if (!isAuraLight(currentState) || currentState.getValue(LightBlock.LEVEL) != this.auraLightLevel) {
+			BlockState lightState = Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, this.auraLightLevel);
+			serverLevel.setBlock(targetPos, lightState, 3);
+		}
+
+		this.auraLightPos = targetPos.immutable();
+	}
+
+	private boolean canHostAuraLight(ServerLevel level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		return state.isAir() || isAuraLight(state);
+	}
+
+	private boolean isAuraLight(BlockState state) {
+		return state.is(Blocks.LIGHT);
+	}
+
+	private void removeAuraLight(ServerLevel level) {
+		if (this.auraLightPos == null) return;
+		clearAuraLightIfOwned(level, this.auraLightPos);
+		this.auraLightPos = null;
+		this.auraLightLevel = 0;
+	}
+
+	private void clearAuraLightIfOwned(ServerLevel level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		if (isAuraLight(state) && state.getValue(LightBlock.LEVEL) <= AURA_LIGHT_LEVEL) {
+			level.removeBlock(pos, false);
+		}
+	}
+
+	private int approach(int current, int target, int step) {
+		if (current < target) return Math.min(target, current + step);
+		if (current > target) return Math.max(target, current - step);
+		return current;
+	}
+
+	@Override
+	public void remove(RemovalReason reason) {
+		if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+			removeAuraLight(serverLevel);
+		}
+		super.remove(reason);
 	}
 
 	@Override
@@ -507,7 +587,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		this.entityData.define(SKILL_TYPE, 0);
 		this.entityData.define(BATTLE_POWER, 20);
 		this.entityData.define(AURA_COLOR, 0xFFFFFF);
-		this.entityData.define(AURA_TYPE, "smooth");
+		this.entityData.define(AURA_TYPE, "kakarot");
 		this.entityData.define(TRANSFORMING, false);
 		this.entityData.define(KI_CHARGE, false);
 		this.entityData.define(IS_LIGHTNING, false);

@@ -36,7 +36,14 @@ import java.util.function.BiConsumer;
 public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private static final Map<ResourceLocation, ResourceLocation> VALIDATED_TEXTURES_CACHE = new ConcurrentHashMap<>();
 	private static final ResourceLocation BLANK_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png");
+
+	private static final Map<Integer, Float> AURA_TINT_PROGRESS = new ConcurrentHashMap<>();
+	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
+	private static final float FADE_SPEED = 0.005f;
+
 	private int currentKaiokenPhase = 0;
+	private float currentTintProgress = 0.0f;
+	private float[] currentAuraColor = new float[]{1.0f, 1.0f, 1.0f};
 
 	public DMZSkinLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
@@ -51,6 +58,30 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
 		var stats = statsCap.orElse(new StatsData(player));
 
+		int playerId = player.getId();
+		long gameTime = player.level().getGameTime();
+		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(playerId, 0.0f);
+
+		if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
+			tintProgress = 0.0f;
+		}
+		LAST_RENDER_TIME.put(playerId, gameTime);
+
+		if (stats.getStatus().isChargingKi()) {
+			if (tintProgress < 1.0f) {
+				tintProgress += FADE_SPEED;
+				if (tintProgress > 1.0f) tintProgress = 1.0f;
+			}
+		} else {
+			if (tintProgress > 0.0f) {
+				tintProgress -= FADE_SPEED;
+				if (tintProgress < 0.0f) tintProgress = 0.0f;
+			}
+		}
+		AURA_TINT_PROGRESS.put(playerId, tintProgress);
+
+		this.currentTintProgress = tintProgress;
+		this.currentAuraColor = getTopAuraColor(stats);
 		this.currentKaiokenPhase = TransformationsHelper.getKaiokenPhase(stats);
 
 		float alpha = player.isSpectator() ? 0.15f : 1.0f;
@@ -63,6 +94,22 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		SkinGathererProvider.INSTANCE.gatherTattooLayers(player, stats, partialTick, geoConsumer);
 		renderFace(poseStack, animatable, model, bufferSource, player, stats, partialTick, packedLight, packedOverlay, alpha);
+	}
+
+	private float[] getTopAuraColor(StatsData stats) {
+		var character = stats.getCharacter();
+		String hex = character.getAuraColor();
+
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
+			hex = character.getActiveFormData().getAuraColor();
+		}
+
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
+			hex = character.getActiveStackFormData().getAuraColor();
+		}
+
+		if (hex == null || hex.isEmpty()) hex = "#FFFFFF";
+		return ColorUtils.hexToRgb(hex);
 	}
 
 	private void renderHair(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
@@ -390,12 +437,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {
 
+		float intensity;
 		if (this.currentKaiokenPhase > 0) {
-			float intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
+			intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
+		} else {
+			intensity = 0.4f * this.currentTintProgress;
+		}
 
-			r = r * (1.0f - intensity) + (intensity);
-			g = g * (1.0f - intensity);
-			b = b * (1.0f - intensity);
+		if (intensity > 0.001f) {
+			r = r * (1.0f - intensity) + (this.currentAuraColor[0] * intensity);
+			g = g * (1.0f - intensity) + (this.currentAuraColor[1] * intensity);
+			b = b * (1.0f - intensity) + (this.currentAuraColor[2] * intensity);
 		}
 
 		poseStack.pushPose();

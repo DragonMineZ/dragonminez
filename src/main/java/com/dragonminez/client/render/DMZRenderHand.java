@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
 import com.dragonminez.client.model.KiTridentModel;
-import com.dragonminez.client.util.AuraRenderQueue;
+import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.client.util.SkinGathererProvider;
@@ -298,6 +298,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	private void queueFirstPersonAura(AbstractClientPlayer player, PoseStack poseStack, int packedLight) {
 		float partialTick = Minecraft.getInstance().getFrameTime();
-		AuraRenderQueue.addFirstPersonAura(player, poseStack, partialTick, packedLight);
+		PlayerEffectQueue.addFirstPersonAura(player, poseStack, partialTick, packedLight);
 	}
 }
