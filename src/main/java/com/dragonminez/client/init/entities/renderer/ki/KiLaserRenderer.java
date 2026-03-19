@@ -50,14 +50,15 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float ageInTicks = entity.tickCount + partialTick;
         float width = entity.getSize();
 
+        boolean isFiring = entity.isFiring();
         float castTime = (float) entity.getCastTime();
-        boolean isCasting = castTime > 0 && ageInTicks <= castTime;
 
-        if (isCasting) {
-            float halfCast = castTime / 2.0F;
-            if (ageInTicks <= halfCast) {
-                width *= (ageInTicks / halfCast);
+        if (!isFiring) {
+            if (castTime > 0.1F && ageInTicks <= castTime) {
+                width *= (ageInTicks / castTime);
             }
+        } else {
+            width = entity.getSize();
         }
 
         int maxLife = entity.getMaxLife();

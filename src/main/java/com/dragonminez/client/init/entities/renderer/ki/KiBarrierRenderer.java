@@ -30,7 +30,7 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
     @Override
     public void render(KiBarrierEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
 
-        if (entity.tickCount <= entity.getCastTime()) {
+        if (!entity.isFiring()) {
             return;
         }
 

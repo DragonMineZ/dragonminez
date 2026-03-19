@@ -26,6 +26,9 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Float> CURRENT_SIZE = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> CAST_TIME = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
 
+    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> FIRE_TICK = SynchedEntityData.defineId(KiBarrierEntity.class, EntityDataSerializers.INT);
+
     private static final int GROW_DURATION = 25;
     private static final int MAX_LIFESPAN = 100;
     private static final float MAX_SIZE = 3.0F;
@@ -44,16 +47,40 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
         this.centerOnOwner();
 
-        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
-                MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+//        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+//                MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 
     public void setupKiBarrier(LivingEntity owner, int color, int colorBorder, int castTime) {
         this.setColors(color, colorBorder);
         this.setCastTime(castTime);
-        this.setMaxLife(castTime * 2);
+        this.setMaxLife(castTime + 100);
+
+        this.setFiring(false);
+        this.setFireTick(-1);
 
         if (!this.level().isClientSide) this.level().addFreshEntity(this);
+    }
+
+    // SETUP PLAYERS
+    public void setupBarrierPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
+        this.setup(owner, damage, size, 0.0f, colorMain, colorBorder);
+
+        this.setFiring(false);
+        this.setFireTick(-1);
+        this.setMaxLife(99999);
+        this.setCastTime(40);
+    }
+
+    public void fireHability(int finalMaxLife) {
+        this.setFiring(true);
+        this.setFireTick(this.tickCount);
+        this.setMaxLife(this.tickCount + finalMaxLife);
+
+        if (!this.level().isClientSide) {
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
+        }
     }
 
     @Override
@@ -66,6 +93,8 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         super.defineSynchedData();
         this.entityData.define(CURRENT_SIZE, 0.1F);
         this.entityData.define(CAST_TIME, 0);
+        this.entityData.define(IS_FIRING, false);
+        this.entityData.define(FIRE_TICK, -1);
     }
 
     public float getCurrentSize() {
@@ -76,6 +105,11 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     }
     public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }
     public int getCastTime() { return this.entityData.get(CAST_TIME); }
+    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
+    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
+    public int getFireTick() { return this.entityData.get(FIRE_TICK); }
+    public void setFireTick(int tick) { this.entityData.set(FIRE_TICK, tick); }
+
 
     private void centerOnOwner() {
         if (this.getOwner() instanceof LivingEntity owner) {
@@ -88,6 +122,12 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     @Override
     public void tick() {
         this.baseTick();
+
+        // AUTO-DISPARO NPCs
+        if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
+            this.fireHability(this.getMaxLife() - this.tickCount);
+        }
+
         if (this.getOwner() instanceof LivingEntity owner && owner.isAlive()) {
             centerOnOwner();
             this.setDeltaMovement(0, 0, 0);
@@ -96,27 +136,24 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             return;
         }
 
-        int castTime = this.getCastTime();
-        boolean isCasting = this.tickCount <= castTime;
+        boolean isFiring = this.isFiring();
 
         if (!this.level().isClientSide) {
-            if (isCasting) {
+            if (!isFiring) {
                 this.setCurrentSize(0.1F);
             } else {
-                float progress = (float)(this.tickCount - castTime) / 10.0F;
-                float size = Math.min(MAX_SIZE, 1.0F + (MAX_SIZE * progress));
+                int activeTicks = this.tickCount - this.getFireTick();
+                float maxSize = this.getSize(); // Usa el tamaño real de la habilidad
+                float progress = (float) activeTicks / 10.0F;
+                float size = Math.min(maxSize, 1.0F + (maxSize * progress));
                 this.setCurrentSize(size);
 
-                if (this.tickCount == castTime + 1) {
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                            MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.5F, 1.2F);
-                }
                 pushEntitiesAway();
             }
         }
 
         if (this.level().isClientSide) {
-            if (isCasting) {
+            if (!isFiring) {
                 spawnAbsorptionParticles();
             } else {
                 spawnBarrierParticles();
@@ -156,7 +193,6 @@ public class KiBarrierEntity extends AbstractKiProjectile {
     private void spawnBarrierParticles() {
         float size = this.getCurrentSize();
         if (size < 0.2F) return;
-
         float[] rgb = ColorUtils.rgbIntToFloat(this.getColor());
 
         for (int i = 0; i < 3; i++) {
@@ -168,16 +204,10 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             double dy = r * Math.cos(phi);
             double dz = r * Math.sin(phi) * Math.sin(theta);
 
-            double vx = dx * 0.1D;
-            double vy = dy * 0.1D;
-            double vz = dz * 0.1D;
-
             Particle p = Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_TRAIL.get(),
-                    this.getX() + dx,
-                    this.getY() + (this.getBbHeight() / 2.0) + dy,
-                    this.getZ() + dz,
-                    vx, vy, vz
+                    this.getX() + dx, this.getY() + (this.getBbHeight() / 2.0) + dy, this.getZ() + dz,
+                    dx * 0.1D, dy * 0.1D, dz * 0.1D
             );
 
             if (p instanceof KiTrailParticle trail) {
@@ -186,10 +216,11 @@ public class KiBarrierEntity extends AbstractKiProjectile {
             }
         }
     }
+
     private void spawnAbsorptionParticles() {
         float[] rgb = ColorUtils.rgbIntToFloat(this.getColor());
         for (int i = 0; i < 3; i++) {
-            double r = 2.5D; // Radio de absorción
+            double r = 2.5D;
             double theta = this.random.nextDouble() * Math.PI * 2;
             double phi = Math.acos(2 * this.random.nextDouble() - 1);
 
@@ -199,9 +230,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 
             Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
                     MainParticles.KI_TRAIL.get(),
-                    this.getX() + dx,
-                    this.getY() + (this.getBbHeight() * 0.5) + dy,
-                    this.getZ() + dz,
+                    this.getX() + dx, this.getY() + (this.getBbHeight() * 0.5) + dy, this.getZ() + dz,
                     -dx * 0.15, -dy * 0.15, -dz * 0.15
             );
 

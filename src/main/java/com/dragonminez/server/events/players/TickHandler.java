@@ -7,9 +7,7 @@ import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
-import com.dragonminez.common.init.entities.ki.KiBlastEntity;
-import com.dragonminez.common.init.entities.ki.KiWaveEntity;
+import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.*;
@@ -529,7 +527,7 @@ public class TickHandler {
         }
 
         var activeKi = findChargingEntity(player);
-        if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f) {
+        if (activeKi == null && techniques.getTechniqueChargePercent() == 0.0f && techniques.isTechniqueCharging()) {
             TechniqueDispatcher.executeKiAttack(player, player.level(), kiAttack, data, 0.01f);
         }
 
@@ -590,6 +588,10 @@ public class TickHandler {
                 if (ki instanceof KiBlastEntity blast && !blast.isFiring()) {
                     return blast;
                 }
+                if (ki instanceof KiLaserEntity laser && !laser.isFiring()) return laser;
+                if (ki instanceof KiDiskEntity disk && !disk.isFiring()) return disk;
+                if (ki instanceof KiExplosionEntity explosion && !explosion.isFiring()) return explosion;
+                if (ki instanceof KiBarrierEntity barrier && !barrier.isFiring()) return barrier;
             }
         }
         return null;

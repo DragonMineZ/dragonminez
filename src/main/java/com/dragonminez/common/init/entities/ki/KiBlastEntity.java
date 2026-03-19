@@ -68,28 +68,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
     // SETUPS DE JUGADOR
 
-    public void setupKiSmallPlayer(LivingEntity owner, float damage, float speed, int color, int maxLife) {
-        this.setOwner(owner);
-        this.setKiRenderType(0);
-        this.setSize(0.6F);
-        this.setKiSpeed(speed);
-        this.setKiDamage(damage);
-        this.setColors(color, color);
-
-        this.setFiring(false);
-        this.setMaxLife(99999);
-        this.setCastTime(20); // Crece muy rápido (1 segundo visual)
-        this.setCastOffsets(0.0f, -0.5F, 0.5F);
-
-        updatePositionRelativeToOwner(owner);
-        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupKiBlastPlayer(owner, damage, speed, color, color, size);
     }
 
-    public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
-        this.setupKiBlastPlayer(owner, damage, speed, color, color, size, maxLife);
-    }
-
-    public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int maxLife) {
+    public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
         this.setOwner(owner);
         this.setKiRenderType(1);
         this.setSize(size);
@@ -106,11 +89,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
-    public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
-        this.setupKiLargeBlastPlayer(owner, damage, speed, color, color, size, maxLife);
+    public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupKiLargeBlastPlayer(owner, damage, speed, color, color, size);
     }
 
-    public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int maxLife) {
+    public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
         this.setOwner(owner);
         this.setKiRenderType(2);
         this.setSize(size);
@@ -127,11 +110,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
-    public void setupInvertedKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
-        this.setupInvertedKiBlastPlayer(owner, damage, speed, color, color, size, maxLife);
+    public void setupInvertedKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupInvertedKiBlastPlayer(owner, damage, speed, color, color, size);
     }
 
-    public void setupInvertedKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int maxLife) {
+    public void setupInvertedKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
         this.setOwner(owner);
         this.setKiRenderType(3);
         this.setSize(size);
@@ -148,7 +131,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
-    public void setupKiSoulsPlayer(LivingEntity owner, float damage, float speed, int color, int maxLife) {
+    public void setupKiSoulsPlayer(LivingEntity owner, float damage, float speed, int color) {
         this.setOwner(owner);
         this.setKiRenderType(4);
         this.setSize(0.6F);
@@ -165,7 +148,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
-    public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed, int maxLife) {
+    public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed) {
         this.setOwner(owner);
         this.setKiRenderType(5);
         this.setSize(5.0F);
@@ -182,7 +165,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
-    public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed, int maxLife) {
+    public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed) {
         this.setOwner(owner);
         this.setKiRenderType(6);
         this.setSize(5.0F);
@@ -199,11 +182,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
-    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int maxLife) {
-        setupKiDeathBallPlayer(owner, damage, speed, color, color, maxLife);
+    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color) {
+        setupKiDeathBallPlayer(owner, damage, speed, color, color);
     }
 
-    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int maxLife) {
+    public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
         this.setOwner(owner);
         this.setKiRenderType(7);
         this.setSize(2.5F);
@@ -220,7 +203,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
-    public void setupSokidanPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
+    public void setupSokidanPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
         this.setOwner(owner);
         this.setKiRenderType(8);
         this.setSize(size);
@@ -431,7 +414,6 @@ public class KiBlastEntity extends AbstractKiProjectile {
     }
 
     //ACA TERMINAN LOS METODOS PARA NPCS
-
 
     public void toggleSokidanControl() {
         if (this.isControllable()) {

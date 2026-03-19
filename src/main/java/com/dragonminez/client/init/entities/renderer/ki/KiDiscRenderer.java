@@ -35,20 +35,19 @@ public class KiDiscRenderer extends EntityRenderer<KiDiskEntity> {
         float pitch = entity.getXRot();
         float scale = entity.getSize();
 
+        boolean isFiring = entity.isFiring();
         float castTime = (float) entity.getCastTime();
-        boolean isCasting = castTime > 0 && ageInTicks <= castTime;
 
-        if (isCasting) {
-            float halfCast = castTime / 2.0F;
-            if (ageInTicks <= halfCast) {
-                scale *= (ageInTicks / halfCast);
+        if (!isFiring) {
+            if (castTime > 0.1F && ageInTicks <= castTime) {
+                scale *= (ageInTicks / castTime);
             }
         }
 
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
-        if (isCasting) {
+        if (!isFiring) {
             poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
 

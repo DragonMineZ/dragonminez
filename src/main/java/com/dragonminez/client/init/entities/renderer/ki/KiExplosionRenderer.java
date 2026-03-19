@@ -58,19 +58,23 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
         float currentScale;
 
-        if (ageInTicks <= halfCastTime) {
-            float progress = ageInTicks / halfCastTime;
-            currentScale = baseScale * progress;
-        }
-        else if (ageInTicks <= castTime) {
-            currentScale = baseScale;
-        }
-        else if (ageInTicks <= castTime + expansionTime) {
-            float progress = (ageInTicks - castTime) / expansionTime;
-            currentScale = baseScale + ((maxRadius - baseScale) * progress);
-        }
-        else {
-            currentScale = maxRadius;
+        boolean isFiring = entity.isFiring();
+        int fireTick = entity.getFireTick();
+
+        if (!isFiring) {
+            if (ageInTicks <= halfCastTime) {
+                currentScale = baseScale * (ageInTicks / halfCastTime);
+            } else {
+                currentScale = baseScale;
+            }
+        } else {
+            float activeTicks = ageInTicks - fireTick;
+            if (activeTicks <= expansionTime) {
+                float progress = activeTicks / expansionTime;
+                currentScale = baseScale + ((maxRadius - baseScale) * progress);
+            } else {
+                currentScale = maxRadius;
+            }
         }
 
         float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());

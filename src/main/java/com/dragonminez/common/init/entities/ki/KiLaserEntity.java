@@ -34,6 +34,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private static final EntityDataAccessor<Float> OFFSET_Y = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
 
+    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.BOOLEAN);
     private static final float MAX_RANGE = 250.0F;
 
     public KiLaserEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
@@ -60,96 +61,127 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.setKiSpeed(1.5F);
         this.setSize(1.5F);
 
-        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
-                MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
+
     }
 
-    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int colorBorder, int castTime){
+    //SETUPS ENTIDADES
+
+    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int colorBorder, int castTime) {
         this.setKiRenderType(0);
         this.setSize(1.0f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, colorBorder);
 
+        this.setFiring(false);
         this.setCastTime(castTime);
-        this.setMaxLife(castTime*2);
-
-        this.playInitialSound(MainSounds.KI_LASER.get());
+        this.setMaxLife(castTime + 80);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int castTime){
+    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int castTime) {
         this.setupKiLaser(owner, damage, speed, color, color, castTime);
     }
 
-    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int maxLife) {
+    public void setupKiDodonpa(LivingEntity owner, float damage, float speed, int castTime) {
         this.setKiRenderType(0);
-        this.setSize(1.0f);
-        this.setKiDamage(damage);
-        this.setKiSpeed(speed);
-        this.setColors(color, colorBorder);
-
-        this.setCastTime(0);
-        this.setMaxLife(maxLife);
-        this.setCastOffsets(0.3F, -0.1F, 0.5F);
-    }
-
-    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int maxLife) {
-        this.setupKiLaserPlayer(owner, damage, speed, color, color, maxLife);
-    }
-    public void setupKiDodonpa(LivingEntity owner, float damage, float speed, int castTime){
-        this.setKiRenderType(0);
-
         this.setSize(0.5f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xFFEB7A, 0xFFE657);
 
+        this.setFiring(false);
         this.setCastTime(castTime);
-        this.setMaxLife(castTime*2);
-
-        this.playInitialSound(MainSounds.KI_LASER.get());
+        this.setMaxLife(castTime + 80);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiMakkankosanpo(LivingEntity owner, float damage, float speed, int castTime){
+    public void setupKiMakkankosanpo(LivingEntity owner, float damage, float speed, int castTime) {
         this.setKiRenderType(1);
-
         this.setSize(1.0f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xFFE657, 0xFFE657);
 
+        this.setFiring(false);
         this.setCastTime(castTime);
-        this.setMaxLife(castTime*3);
-
+        this.setMaxLife(castTime + 120); // El Makankosappo suele llegar más lejos
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
 
-        this.playInitialSound(MainSounds.KI_LASER.get());
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
+
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, int maxLife){
-        this.setKiRenderType(1);
+    // SETUP PLAYERS
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
+        this.setKiRenderType(0);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
 
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(20);
+        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+        updatePositionRelativeToOwner(owner);
+    }
+
+    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
+        this.setKiRenderType(1);
         this.setSize(1.0f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(0xFFE657, 0xFFE657);
 
-        this.setCastTime(0);
-        this.setMaxLife(maxLife);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(40); // Tiempo visual
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
+        updatePositionRelativeToOwner(owner);
+    }
+
+    public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed) {
+        this.setKiRenderType(0);
+        this.setSize(0.5f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFEB7A, 0xFFE657);
+
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(20);
+        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+
+        updatePositionRelativeToOwner(owner);
+    }
+
+
+    public void fireHability(int finalMaxLife) {
+        this.setFiring(true);
+        this.setMaxLife(this.tickCount + finalMaxLife);
+        if (this.getOwner() instanceof LivingEntity livingOwner) {
+            updatePositionRelativeToOwner(livingOwner);
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_LASER.get(), SoundSource.PLAYERS, 0.4F, 1.0F + (this.random.nextFloat() * 0.2F));
+        }
     }
 
 
@@ -168,6 +200,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.entityData.define(OFFSET_X, 0.0F);
         this.entityData.define(OFFSET_Y, 0.0F);
         this.entityData.define(OFFSET_Z, 0.0F);
+        this.entityData.define(IS_FIRING, false);
     }
 
     public float getBeamLength() {return this.entityData.get(BEAM_LENGTH);}
@@ -181,28 +214,31 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.entityData.set(OFFSET_Y, y);
         this.entityData.set(OFFSET_Z, z);
     }
+    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
+    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
 
     @Override
     public void tick() {
         this.baseTick();
 
-        int castTime = this.getCastTime();
-        boolean isCasting = castTime > 0 && this.tickCount <= castTime;
+        if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
+            this.fireHability(this.getMaxLife() - this.tickCount);
+        }
 
-        if (isCasting) {
-            // LÓGICA MIENTRAS SE CARGA (CASTEANDO)
+        boolean isFiring = this.isFiring();
+
+        if (!isFiring) {
             if (this.getOwner() instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
-                // Se mantiene en la mano/frente
                 updatePositionRelativeToOwner(livingOwner);
                 this.setDeltaMovement(0, 0, 0);
 
-                // Actualizamos las rotaciones fijas para que al disparar salga hacia la mira actual
                 this.entityData.set(FIXED_YAW, livingOwner.getYRot());
                 this.entityData.set(FIXED_PITCH, livingOwner.getXRot());
                 this.setYRot(livingOwner.getYRot());
                 this.setXRot(livingOwner.getXRot());
             } else if (!this.level().isClientSide) {
                 this.discard();
+                return;
             }
         } else {
             this.setDeltaMovement(0, 0, 0);
@@ -239,8 +275,9 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
                 damageEntitiesInBeam(startPos, dir, targetLen);
 
-                if (this.tickCount > (this.getMaxLife())) {
+                if (this.tickCount > this.getMaxLife()) {
                     this.discard();
+                    return;
                 }
             }
         }
@@ -251,6 +288,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
         this.onKiTick();
     }
+
 
     private void updatePositionRelativeToOwner(LivingEntity owner) {
         Vec3 look = owner.getLookAngle();

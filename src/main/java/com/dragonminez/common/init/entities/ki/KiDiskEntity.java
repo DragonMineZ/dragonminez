@@ -28,6 +28,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Float> OFFSET_Y = SynchedEntityData.defineId(KiDiskEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiDiskEntity.class, EntityDataSerializers.FLOAT);
 
+    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiDiskEntity.class, EntityDataSerializers.BOOLEAN);
+
     public KiDiskEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.refreshDimensions();
@@ -41,8 +43,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
         Vec3 spawnPos = owner.getEyePosition().add(look.scale(0.5));
         this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
 
-        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
-                MainSounds.KI_DISK_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (this.random.nextFloat() * 0.2F));
+//        level.playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+//                MainSounds.KI_DISK_CHARGE.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (this.random.nextFloat() * 0.2F));
         this.refreshDimensions();
     }
 
@@ -52,51 +54,77 @@ public class KiDiskEntity extends AbstractKiProjectile {
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, color);
-        this.setMaxLife(castTime * 2);
+
+        this.setFiring(false);
         this.setCastTime(castTime);
+        this.setMaxLife(castTime + 100);
         this.setCastOffsets(0.4F, 0.7F, 0.2F);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
 
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiDiskPlayer(LivingEntity owner, float damage, float speed, int color, float size, int maxLife) {
+    public void setupKiDiskPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
         this.setOwner(owner);
         this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
         this.setColors(color, color);
-        this.setMaxLife(maxLife);
-        this.setCastTime(0);
+
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(40);
         this.setCastOffsets(0.4F, 0.7F, 0.2F);
-        this.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
+
+        updatePositionRelativeToOwner(owner);
+    }
+
+    public void fireHability(int finalMaxLife) {
+        this.setFiring(true);
+        this.setMaxLife(this.tickCount + finalMaxLife);
+
+        if (this.getOwner() instanceof LivingEntity livingOwner) {
+            Vec3 lookDir = livingOwner.getLookAngle();
+            Vec3 spawnPos = livingOwner.getEyePosition().add(lookDir.scale(0.5D));
+
+            this.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
+            this.shootFromRotation(livingOwner, livingOwner.getXRot(), livingOwner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
+
+            this.setDeltaMovement(lookDir.scale(this.getKiSpeed()));
+
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_DISK_CHARGE.get(), SoundSource.PLAYERS, 0.7F, 1.5F);
+        }
     }
 
     @Override
     public void tick() {
-        super.tick();
+        if (!this.isFiring() && this.getMaxLife() != 99999 && this.tickCount >= this.getCastTime()) {
+            this.fireHability(this.getMaxLife() - this.tickCount);
+        }
 
-        int castTime = this.getCastTime();
-        boolean isCasting = castTime > 0 && this.tickCount <= castTime;
+        boolean isFiring = this.isFiring();
 
-        if (isCasting) {
+        if (!isFiring) {
             if (this.getOwner() instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
                 updatePositionRelativeToOwner(livingOwner);
                 this.setDeltaMovement(0, 0, 0);
-
                 this.setXRot(-90.0F);
             } else if (!this.level().isClientSide) {
                 this.discard();
-            }
-        } else if (castTime > 0 && this.tickCount == castTime + 1) {
-            if (this.getOwner() instanceof LivingEntity livingOwner) {
-                this.shootFromRotation(livingOwner, livingOwner.getXRot(), livingOwner.getYRot(), 0.0F, this.getKiSpeed(), 0.0F);
-                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KI_DISK_CHARGE.get(), SoundSource.PLAYERS, 0.7F, 1.5F);
+                return;
             }
         }
-    }
 
+        super.tick();
+
+        if (!isFiring) {
+            this.setDeltaMovement(0, 0, 0);
+        }
+    }
     private void updatePositionRelativeToOwner(LivingEntity owner) {
         Vec3 look = owner.getLookAngle();
         Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
@@ -132,11 +160,12 @@ public class KiDiskEntity extends AbstractKiProjectile {
             return;
         }
 
-        int castTime = this.getCastTime();
-        boolean isCasting = castTime > 0 && this.tickCount <= castTime;
+        // Usamos la variable real para saber en qué fase estamos
+        boolean isFiring = this.isFiring();
 
         if (!this.level().isClientSide) {
-            if (!isCasting) {
+            // Si ya se disparó, empieza a sonar el zumbido constante y a cortar
+            if (isFiring) {
                 if (this.tickCount % 12 == 0) {
                     this.playSound(MainSounds.KI_DISK_CHARGE.get(), 0.3F, 1.2F);
                 }
@@ -150,7 +179,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
             float[] rgb = ColorUtils.rgbIntToFloat(this.getColor());
             float scale = this.getSize();
 
-            if (isCasting) {
+            // FASE DE CARGA: Atrae partículas hacia el disco en tu mano
+            if (!isFiring) {
                 for (int i = 0; i < 4; i++) {
                     double spawnRadius = scale * 2.5D;
                     double theta = this.random.nextDouble() * 2 * Math.PI;
@@ -178,6 +208,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
                     }
                 }
             } else {
+                // FASE DE VUELO: Deja la estela en el aire
                 for (int i = 0; i < 4; i++) {
                     double angle = this.random.nextDouble() * Math.PI * 2;
                     double radius = scale * 0.8D;
@@ -235,6 +266,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
         this.entityData.define(OFFSET_X, 0.0F);
         this.entityData.define(OFFSET_Y, 0.0F);
         this.entityData.define(OFFSET_Z, 0.0F);
+        this.entityData.define(IS_FIRING, false);
     }
 
     public void setCastTime(int ticks) { this.entityData.set(CAST_TIME, ticks); }
@@ -244,6 +276,8 @@ public class KiDiskEntity extends AbstractKiProjectile {
         this.entityData.set(OFFSET_Y, y);
         this.entityData.set(OFFSET_Z, z);
     }
+    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
+    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {
@@ -259,6 +293,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
 
     @Override
     protected void onHitEntity(EntityHitResult pResult) {
+        if (!this.isFiring()) return;
         super.onHitEntity(pResult);
 
         if (!this.level().isClientSide) {

@@ -852,12 +852,13 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
 		KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
 
-		explosion.setupExplosion(
-				this,
-				damage,
-				colorCore,
-				colorBorder
-		);
+//		explosion.setupExplosion(
+//				this,
+//				damage,
+//				colorCore,
+//				colorBorder
+//		);
+        explosion.setupKiExplosion(this, damage, colorCore, colorCore, 20);
 
 		this.level().addFreshEntity(explosion);
 	}
