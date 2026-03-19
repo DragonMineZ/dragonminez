@@ -149,7 +149,6 @@ minecraft {
 
 dependencies {
     minecraft("net.minecraftforge:forge:$minecraftVersion-$forgeVersion")
-
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
     // Vulnerability corrections
@@ -194,13 +193,13 @@ dependencies {
     //runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
     //runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
     // "Layers" mods for testing compatibility
-    runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
-    runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
-    runtimeOnly(fg.deobf("curse.maven:curios-api-309927:6418456"))
-    runtimeOnly(fg.deobf("curse.maven:artifacts-312353:6399828"))
-    runtimeOnly(fg.deobf("curse.maven:cloth-config-api-348521:5729105"))
-    runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))
-    runtimeOnly(fg.deobf("curse.maven:expandability-465066:5301414"))
+    //runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
+    //runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))
+    //runtimeOnly(fg.deobf("curse.maven:curios-api-309927:6418456"))
+    //runtimeOnly(fg.deobf("curse.maven:artifacts-312353:6399828"))
+    //runtimeOnly(fg.deobf("curse.maven:cloth-config-api-348521:5729105"))
+    //runtimeOnly(fg.deobf("curse.maven:architectury-api-419699:5137938"))
+    //runtimeOnly(fg.deobf("curse.maven:expandability-465066:5301414"))
 }
 
 sourceSets.main {

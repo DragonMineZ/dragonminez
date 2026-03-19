@@ -1,6 +1,6 @@
 package com.dragonminez.client.render.layer;
 
-import com.dragonminez.client.util.AuraRenderQueue;
+import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -39,10 +39,10 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		if (stats.getStatus().isAndroidUpgraded() && !isAndroidChargingForm && !hasLightning) return;
 
-		if (isAuraActive && !isAndroidChargingForm) AuraRenderQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
+		if (isAuraActive && !isAndroidChargingForm) PlayerEffectQueue.addAura(animatable, playerModel, poseStack, partialTick, packedLight);
 
 		if (isAuraActive || hasLightning) {
-			AuraRenderQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
+			PlayerEffectQueue.addSpark(animatable, playerModel, poseStack, partialTick, packedLight);
 		}
 	}
 }

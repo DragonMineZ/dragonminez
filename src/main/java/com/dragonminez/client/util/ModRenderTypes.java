@@ -26,7 +26,7 @@ public class ModRenderTypes extends RenderType {
                 false,
                 false,
                 RenderType.CompositeState.builder()
-                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.auraSmoothShader))
+                        .setShaderState(new RenderStateShard.ShaderStateShard(() -> DMZShaders.auraShader))
                         .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setCullState(RenderStateShard.NO_CULL)
@@ -236,6 +236,16 @@ public class ModRenderTypes extends RenderType {
                     .setOverlayState(OVERLAY)
                     .createCompositeState(false)));
 
+    private static final Function<ResourceLocation, RenderType> AURA_BILLBOARD = Util.memoize((pLocation) ->
+            create("aura_billboard", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, false, true, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                    .setTextureState(new TextureStateShard(pLocation, false, false))
+                    .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(NO_CULL)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setOverlayState(OVERLAY)
+                    .createCompositeState(false)));
+
     public static RenderType getKiLightning(ResourceLocation location) {
         return RenderType.create("ki_lightning",
                 DefaultVertexFormat.NEW_ENTITY,
@@ -255,6 +265,7 @@ public class ModRenderTypes extends RenderType {
     public static RenderType glow_ki(ResourceLocation pLocation) { return GLOW_KI.apply(pLocation); }
     public static RenderType energy(ResourceLocation pLocation) { return ENERGY.apply(pLocation); }
     public static RenderType energy2(ResourceLocation pLocation) { return ENERGY2.apply(pLocation); }
+    public static RenderType auraBillboard(ResourceLocation pLocation) { return AURA_BILLBOARD.apply(pLocation); }
     public static RenderType lightning(ResourceLocation pLocation) { return LIGHTNING.apply(pLocation); }
     public static RenderType kiblast(ResourceLocation pLocation) { return KI_BLAST.apply(pLocation); }
     public static RenderType ki_rendertype(ResourceLocation pLocation) { return KI_RENDERTYPE.apply(pLocation); }

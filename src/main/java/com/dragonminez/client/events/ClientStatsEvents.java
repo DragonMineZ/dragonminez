@@ -8,7 +8,8 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainParticles;
-import com.dragonminez.common.init.particles.KiLightningParticle;
+import com.dragonminez.common.init.particles.AuraParticle;
+import com.dragonminez.common.init.particles.DivineParticle;
 import com.dragonminez.common.network.C2S.*;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.*;
@@ -18,15 +19,18 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.StatsEvents;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
@@ -36,6 +40,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.List;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -144,11 +149,42 @@ public class ClientStatsEvents {
 		if (event.phase != TickEvent.Phase.END) return;
 
 		Minecraft mc = Minecraft.getInstance();
-		LocalPlayer player = mc.player;
+		LocalPlayer localPlayer = mc.player;
 
-		if (player == null || mc.screen != null) return;
+		if (mc.level != null && !mc.isPaused()) {
+			for (Player player : mc.level.players()) {
+				var stats = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+				if (stats == null || !stats.getStatus().isHasCreatedCharacter()) continue;
 
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+				if (!isAuraActive) continue;
+
+				float totalScale = getBodyScale(stats)[0];
+
+				if (player.onGround()) {
+					spawnGroundDust(player, totalScale);
+					spawnFloatingRubble(player, totalScale);
+				}
+
+				if (!BetaWhitelist.isAllowed(player.getGameProfile().getName())) continue;
+
+				if (characterHasAuraColor(stats.getCharacter())) {
+					int particleColor = getAuraColor(stats.getCharacter());
+					spawnCalmAuraParticle(player, totalScale, particleColor);
+				}
+
+				if (player.getRandom().nextInt(20) == 0) {
+					int divineCount = 5 + player.getRandom().nextInt(10);
+					for (int i = 0; i < divineCount; i++) {
+						spawnPassiveDivineParticle(player, totalScale, 0xFFFFFF);
+					}
+				}
+			}
+		}
+
+		if (localPlayer == null || mc.screen != null) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			Character character = data.getCharacter();
 			TechniqueData selectedTechnique = data.getTechniques().getSelectedTechnique();
@@ -156,9 +192,9 @@ public class ClientStatsEvents {
 			boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 
 			if (isChargingTechnique) {
-				if (lockedVanillaHotbarSlot == -1) lockedVanillaHotbarSlot = player.getInventory().selected;
-				if (player.getInventory().selected != lockedVanillaHotbarSlot) {
-					player.getInventory().selected = lockedVanillaHotbarSlot;
+				if (lockedVanillaHotbarSlot == -1) lockedVanillaHotbarSlot = localPlayer.getInventory().selected;
+				if (localPlayer.getInventory().selected != lockedVanillaHotbarSlot) {
+					localPlayer.getInventory().selected = lockedVanillaHotbarSlot;
 				}
 
 				if (lockedTechniqueSlot == -1) lockedTechniqueSlot = data.getTechniques().getSelectedSlot();
@@ -175,8 +211,8 @@ public class ClientStatsEvents {
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
-			boolean mainHandEmpty = player.getMainHandItem().isEmpty();
-			boolean offHandEmpty = player.getOffhandItem().isEmpty();
+			boolean mainHandEmpty = localPlayer.getMainHandItem().isEmpty();
+			boolean offHandEmpty = localPlayer.getOffhandItem().isEmpty();
 			boolean isRightClickDown = mc.options.keyUse.isDown();
 
 			boolean shouldBlock = isRightClickDown && mainHandEmpty && offHandEmpty && !isStunned && !isDescendKeyPressed;
@@ -261,18 +297,16 @@ public class ClientStatsEvents {
 			}
 			wasDescendActionDown = isDescendActionDown;
 
-			boolean isFlying = data.getSkills().isSkillActive("fly") && !player.onGround() && !player.isInWater();
+			boolean isFlying = data.getSkills().isSkillActive("fly") && !localPlayer.onGround() && !localPlayer.isInWater();
 
 			if (isFlying) {
 				if (flightSound == null || !mc.getSoundManager().isActive(flightSound)) {
-					flightSound = new FlightSoundInstance(player);
+					flightSound = new FlightSoundInstance(localPlayer);
 					mc.getSoundManager().play(flightSound);
 				}
-			} else {
-				flightSound = null;
-			}
+			} else flightSound = null;
 
-			boolean hasScouter = player.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
+			boolean hasScouter = localPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("scouter");
 			if (KeyBinds.KI_SENSE.consumeClick()) {
 				if (!hasScouter) {
 					Skill kiSense = data.getSkills().getSkill("kisense");
@@ -286,8 +320,8 @@ public class ClientStatsEvents {
 			}
 
 			if (hasScouter) {
-				if (ScouterHUD.getScouterColor() != player.getItemBySlot(EquipmentSlot.HEAD).getItem())
-					ScouterHUD.setScouterColor(player.getItemBySlot(EquipmentSlot.HEAD).getItem());
+				if (ScouterHUD.getScouterColor() != localPlayer.getItemBySlot(EquipmentSlot.HEAD).getItem())
+					ScouterHUD.setScouterColor(localPlayer.getItemBySlot(EquipmentSlot.HEAD).getItem());
 			}
 
 			if (!(mc.screen instanceof TrainingScreen)) {
@@ -395,5 +429,155 @@ public class ClientStatsEvents {
 		lockedVanillaHotbarSlot = -1;
 		lockedTechniqueSlot = -1;
 		StatsCapability.clearClientCache();
+	}
+
+	private static float[] getBodyScale(StatsData stats) {
+		float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
+		var character = stats.getCharacter();
+
+		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+			sX = character.getActiveFormData().getModelScaling()[0];
+			sY = character.getActiveFormData().getModelScaling()[1];
+			sZ = character.getActiveFormData().getModelScaling()[2];
+		} else {
+			sX = character.getModelScaling()[0];
+			sY = character.getModelScaling()[1];
+			sZ = character.getModelScaling()[2];
+		}
+
+		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
+		if (currentForm.contains("ozaru")) {
+			sX = Math.max(0.1f, sX - 2.8f);
+			sY = Math.max(0.1f, sY - 2.8f);
+			sZ = Math.max(0.1f, sZ - 2.8f);
+		}
+
+		return new float[]{sX, sY, sZ};
+	}
+
+	private static boolean characterHasAuraColor(Character character) {
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) return true;
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) return true;
+		return character.getAuraColor() != null;
+	}
+
+	private static int getAuraColor(Character character) {
+		String hex = character.getAuraColor();
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
+			hex = character.getActiveStackFormData().getAuraColor();
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
+			hex = character.getActiveFormData().getAuraColor();
+		}
+		return ColorUtils.hexToInt(hex != null ? hex : "#FFFFFF");
+	}
+
+	private static void spawnCalmAuraParticle(Player player, float totalScale, int colorHex) {
+		var mc = Minecraft.getInstance();
+		var random = player.getRandom();
+
+		float r = ((colorHex >> 16) & 0xFF) / 255f;
+		float g = ((colorHex >> 8) & 0xFF) / 255f;
+		float b = (colorHex & 0xFF) / 255f;
+
+		int particlesCount = 0 + random.nextInt(3);
+
+		for (int i = 0; i < particlesCount; i++) {
+			double radius = (0.15f + random.nextDouble() * 0.45f) * totalScale;
+			double angle = random.nextDouble() * 2 * Math.PI;
+
+			double offsetX = Math.cos(angle) * radius;
+			double offsetZ = Math.sin(angle) * radius;
+			double heightOffset = (random.nextDouble() * 2.0f) * totalScale;
+
+			double x = player.getX() + offsetX;
+			double y = player.getY() + heightOffset;
+			double z = player.getZ() + offsetZ;
+
+			Particle p = mc.particleEngine.createParticle(MainParticles.AURA.get(), x, y, z, r, g, b);
+
+			if (p instanceof AuraParticle auraP) {
+				auraP.resize(totalScale);
+				double driftSpeed = 0.03f;
+				double velX = (offsetX / radius) * driftSpeed;
+				double velZ = (offsetZ / radius) * driftSpeed;
+				double velY = 0.02f + (random.nextDouble() * 0.04f);
+				auraP.setParticleSpeed(velX, velY, velZ);
+			}
+		}
+	}
+
+	private static void spawnPassiveDivineParticle(Player player, float totalScale, int colorHex) {
+		var random = player.getRandom();
+
+		double widthSpread = player.getBbWidth() * totalScale * 2.0;
+		double offsetX = (random.nextDouble() - 0.5) * widthSpread;
+		double offsetZ = (random.nextDouble() - 0.5) * widthSpread;
+
+		double x = player.getX() + offsetX;
+		double z = player.getZ() + offsetZ;
+		double heightSpread = (random.nextDouble() * 1.2) * totalScale;
+		double y = player.getY() + heightSpread;
+
+		float r = ((colorHex >> 16) & 0xFF) / 255f;
+		float g = ((colorHex >> 8) & 0xFF) / 255f;
+		float b = (colorHex & 0xFF) / 255f;
+
+		Particle p = Minecraft.getInstance().particleEngine.createParticle(MainParticles.DIVINE.get(), x, y, z, r, g, b);
+
+		if (p instanceof DivineParticle divineP) {
+			divineP.resize(totalScale);
+			double velY = 0.02 + (random.nextDouble() * 0.03);
+			divineP.setParticleSpeed(0, velY, 0);
+		}
+	}
+
+	private static void spawnGroundDust(Player player, float totalScale) {
+		if (player.getRandom().nextFloat() > 0.5f) return;
+		var level = player.level();
+		var random = player.getRandom();
+
+		for (int i = 0; i < 8; i++) {
+			double angle = random.nextDouble() * 2 * Math.PI;
+			double radius = (0.4f + random.nextDouble() * 0.7f) * totalScale;
+
+			double offsetX = Math.cos(angle) * radius;
+			double offsetZ = Math.sin(angle) * radius;
+
+			double x = player.getX() + offsetX;
+			double y = player.getY() + 0.15;
+			double z = player.getZ() + offsetZ;
+
+			double speedBase = 0.12f;
+			double velX = Math.cos(angle) * speedBase;
+			double velY = 0.05f + (random.nextDouble() * 0.1f);
+			double velZ = Math.sin(angle) * speedBase;
+
+			level.addParticle(MainParticles.DUST.get(), x, y, z, velX, velY, velZ);
+		}
+	}
+
+	private static void spawnFloatingRubble(Player player, float totalScale) {
+		if (player.getRandom().nextFloat() > 0.4f) return;
+		var level = player.level();
+		var random = player.getRandom();
+		int rocksCount = 2 + random.nextInt(3);
+
+		for (int i = 0; i < rocksCount; i++) {
+			double angle = random.nextDouble() * 2 * Math.PI;
+			double radius = (0.4f + random.nextDouble() * 1.5f) * totalScale;
+
+			double offsetX = Math.cos(angle) * radius;
+			double offsetZ = Math.sin(angle) * radius;
+
+			double x = player.getX() + offsetX;
+			double y = player.getY() + 0.1;
+			double z = player.getZ() + offsetZ;
+
+			double velX = (random.nextDouble() - 0.5) * 0.08;
+			double velZ = (random.nextDouble() - 0.5) * 0.08;
+			double velY = 0.08 + (random.nextDouble() * 0.15);
+
+			level.addParticle(MainParticles.ROCK.get(), x, y, z, velX, velY, velZ);
+		}
 	}
 }

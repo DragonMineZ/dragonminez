@@ -28,6 +28,9 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
 	private static final ResourceLocation RACES_PARTS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/raceparts.geo.json");
@@ -45,6 +48,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	private static final ResourceLocation POWER_POLE_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/weapons/power_pole.geo.json");
 	private static final ResourceLocation POWER_POLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/item/armas/power_pole.png");
 
+	private static final Map<Integer, Float> AURA_TINT_PROGRESS = new HashMap<>();
+	private static final Map<Integer, Long> LAST_RENDER_TIME = new HashMap<>();
+	private static final float FADE_SPEED = 0.005f;
+
 	public DMZRacePartsLayer(GeoRenderer<T> entityRendererIn) {
 		super(entityRendererIn);
 	}
@@ -57,7 +64,29 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 
-		renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight, alpha);
+		int playerId = animatable.getId();
+		long gameTime = animatable.level().getGameTime();
+		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(playerId, 0.0f);
+
+		if (gameTime - LAST_RENDER_TIME.getOrDefault(playerId, 0L) > 2) {
+			tintProgress = 0.0f;
+		}
+		LAST_RENDER_TIME.put(playerId, gameTime);
+
+		if (stats.getStatus().isChargingKi()) {
+			if (tintProgress < 1.0f) {
+				tintProgress += FADE_SPEED;
+				if (tintProgress > 1.0f) tintProgress = 1.0f;
+			}
+		} else {
+			if (tintProgress > 0.0f) {
+				tintProgress -= FADE_SPEED;
+				if (tintProgress < 0.0f) tintProgress = 0.0f;
+			}
+		}
+		AURA_TINT_PROGRESS.put(playerId, tintProgress);
+
+		renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight, alpha, tintProgress);
 
 		if (!animatable.isSpectator()) {
 			renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
@@ -82,7 +111,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		};
 	}
 
-	private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight, float alpha) {
+	private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight, float alpha, float tintProgress) {
 		var character = stats.getCharacter();
 		String race = character.getRaceName().toLowerCase();
 
@@ -95,6 +124,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		syncModelToPlayer(partsModel, playerModel);
 		RenderType partsRenderType = RenderType.entityTranslucent(RACES_PARTS_TEXTURE);
 		int phase = TransformationsHelper.getKaiokenPhase(stats);
+		float[] topAuraColor = getTopAuraColor(stats);
 
 		boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
 
@@ -112,7 +142,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 				String hexColor = formHasAccessories ? character.getActiveFormData().getAccessoryColor(i) : raceConfig.getAccessoryColor(i);
 				float[] rgb = ColorUtils.hexToRgb(hexColor);
-				float[] tintedColor = applyKaiokenTint(rgb[0], rgb[1], rgb[2], phase);
+
+				float[] tintedColor = applyAuraTint(rgb[0], rgb[1], rgb[2], phase, topAuraColor, tintProgress);
 
 				poseStack.pushPose();
 				getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
@@ -125,7 +156,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			float[] renderColor = setupPartsAndColor(partsModel, stats);
 
 			if (renderColor != null) {
-				float[] tintedColor = applyKaiokenTint(renderColor[0], renderColor[1], renderColor[2], phase);
+				float[] tintedColor = applyAuraTint(renderColor[0], renderColor[1], renderColor[2], phase, topAuraColor, tintProgress);
 				poseStack.pushPose();
 				getRenderer().reRender(partsModel, poseStack, bufferSource, animatable, partsRenderType,
 						bufferSource.getBuffer(partsRenderType), partialTick, packedLight, OverlayTexture.NO_OVERLAY,
@@ -133,6 +164,40 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				poseStack.popPose();
 			}
 		}
+	}
+
+	private float[] getTopAuraColor(StatsData stats) {
+		var character = stats.getCharacter();
+		String hex = character.getAuraColor();
+
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
+			hex = character.getActiveFormData().getAuraColor();
+		}
+
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
+			hex = character.getActiveStackFormData().getAuraColor();
+		}
+
+		if (hex == null || hex.isEmpty()) hex = "#FFFFFF";
+		return ColorUtils.hexToRgb(hex);
+	}
+
+	private float[] applyAuraTint(float r, float g, float b, int kaiokenPhase, float[] auraColor, float tintProgress) {
+		float intensity;
+
+		if (kaiokenPhase > 0) {
+			intensity = Math.min(0.6f, kaiokenPhase * 0.1f);
+		} else {
+			intensity = 0.4f * tintProgress;
+		}
+
+		if (intensity <= 0.001f) return new float[]{r, g, b};
+
+		float newR = r * (1.0f - intensity) + (auraColor[0] * intensity);
+		float newG = g * (1.0f - intensity) + (auraColor[1] * intensity);
+		float newB = b * (1.0f - intensity) + (auraColor[2] * intensity);
+
+		return new float[]{newR, newG, newB};
 	}
 
 	private float[] setupPartsAndColor(BakedGeoModel partsModel, StatsData stats) {
@@ -160,7 +225,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 			String formBody2 = character.getActiveFormData().getBodyColor2();
 			if (formBody2 != null && !formBody2.isEmpty()) colorBody2 = ColorUtils.hexToRgb(formBody2);
-		} else if (hasStackForm && character.getActiveStackFormData() != null) {
+		}
+
+		if (hasStackForm && character.getActiveStackFormData() != null) {
 			String formBody = character.getActiveStackFormData().getBodyColor1();
 			if (formBody != null && !formBody.isEmpty()) colorBody1 = ColorUtils.hexToRgb(formBody);
 
@@ -269,19 +336,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		return null;
 	}
 
-
-	private float[] applyKaiokenTint(float r, float g, float b, int phase) {
-		if (phase <= 0) return new float[]{r, g, b};
-
-		float intensity = Math.min(0.6f, phase * 0.1f);
-
-		float newR = r * (1.0f - intensity) + (intensity);
-		float newG = g * (1.0f - intensity);
-		float newB = b * (1.0f - intensity);
-
-		return new float[]{newR, newG, newB};
-	}
-
 	private void setupSaiyanParts(BakedGeoModel partsModel) {
 		partsModel.getBone("tailenrolled").ifPresent(this::showBoneChain);
 	}
@@ -359,7 +413,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			setHiddenRecursive(child, hidden);
 		}
 	}
-
 
 	private void renderAccessories(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
 		boolean hasPothalaRight = animatable.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("pothala_right");

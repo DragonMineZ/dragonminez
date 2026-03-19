@@ -1,8 +1,9 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.events.AuraRenderHandler;
+import com.dragonminez.client.events.PlayerEffectsRenderHandler;
 import com.dragonminez.client.init.entities.model.ki.*;
+import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.ModRenderTypes;
@@ -19,7 +20,6 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -27,7 +27,6 @@ import org.joml.Matrix4f;
 import java.util.Random;
 
 public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
-
     private static final ResourceLocation TEXTURE_WAVE_CORE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiwave.png");
 
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
@@ -38,7 +37,6 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     private static final ResourceLocation TEXTURE_LASER_EXPLODE1 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser_explode1.png");
     private static final ResourceLocation TEXTURE_LASER_EXPLODE2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser_explode2.png");
-    private static final ResourceLocation SPARK_TEX_0 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/rayo_0.png");
 
     private final KiWaveModel waveModel;
     private final KiWave2DModel wave2Model;
@@ -534,7 +532,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     private void renderGalickLightning(PoseStack poseStack, KiWaveEntity entity, MultiBufferSource buffer, float[] color, float alpha, float ageInTicks, float dynamicWidth, boolean isFiring) {
         ShaderInstance shader = DMZShaders.lightningShader;
-        VertexBuffer mesh = AuraRenderHandler.getLightningMesh();
+        VertexBuffer mesh = AuraRenderer.getLightningMesh();
 
         if (shader == null || mesh == null) return;
 
@@ -546,7 +544,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.safeGetUniform("alp2").set(0.1f * alpha);
         shader.safeGetUniform("projectionMatrix").set(com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix());
 
-        RenderType lightningType = ModRenderTypes.getCustomLightning(SPARK_TEX_0);
+        RenderType lightningType = ModRenderTypes.getCustomLightning(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
         lightningType.setupRenderState();
 
         shader.apply();

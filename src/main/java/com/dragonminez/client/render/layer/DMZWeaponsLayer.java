@@ -1,10 +1,9 @@
     package com.dragonminez.client.render.layer;
 
     import com.dragonminez.Reference;
-    import com.dragonminez.client.util.AuraRenderQueue;
+    import com.dragonminez.client.render.util.PlayerEffectQueue;
     import com.dragonminez.client.util.ColorUtils;
-    import com.dragonminez.client.util.ModRenderTypes;
-    import com.dragonminez.common.stats.StatsCapability;
+	import com.dragonminez.common.stats.StatsCapability;
     import com.dragonminez.common.stats.StatsData;
     import com.dragonminez.common.stats.StatsProvider;
     import com.mojang.blaze3d.vertex.PoseStack;
@@ -12,18 +11,14 @@
     import net.minecraft.client.player.AbstractClientPlayer;
     import net.minecraft.client.renderer.MultiBufferSource;
     import net.minecraft.client.renderer.RenderType;
-    import net.minecraft.client.renderer.texture.OverlayTexture;
-    import net.minecraft.resources.ResourceLocation;
-    import net.minecraft.world.InteractionHand;
-    import net.minecraft.world.entity.HumanoidArm;
-    import software.bernie.geckolib.cache.object.BakedGeoModel;
+	import net.minecraft.resources.ResourceLocation;
+	import software.bernie.geckolib.cache.object.BakedGeoModel;
     import software.bernie.geckolib.cache.object.GeoBone;
     import software.bernie.geckolib.core.animatable.GeoAnimatable;
     import software.bernie.geckolib.renderer.GeoRenderer;
     import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
-    import software.bernie.geckolib.util.RenderUtils;
 
-    public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
+	public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 
         private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
         private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
@@ -41,7 +36,7 @@
             String weaponType = stats.getStatus().getKiWeaponType();
             if (weaponType == null || weaponType.equalsIgnoreCase("none")) return;
 
-            AuraRenderQueue.addWeapon(animatable, playerModel, poseStack, weaponType, getKiColor(stats), partialTick, packedLight);
+            PlayerEffectQueue.addWeapon(animatable, playerModel, poseStack, weaponType, getKiColor(stats), partialTick, packedLight);
 
         }
 

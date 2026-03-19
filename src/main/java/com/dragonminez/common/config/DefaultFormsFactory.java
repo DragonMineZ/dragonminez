@@ -20,7 +20,7 @@ public class DefaultFormsFactory {
 		form.setStatMultPerMasteryPoint(0.01);
 		form.setCostDecreasePerMasteryPoint(0.025);
 		form.setPassiveMasteryGainEveryFiveSeconds(0.01);
-		form.setAuraType("smooth");
+		form.setAuraType("kakarot");
 		form.setAuraLayer(0);
 	}
 
