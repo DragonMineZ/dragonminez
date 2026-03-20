@@ -12,7 +12,7 @@ authors="${mod_authors}"
 description='''${mod_description}'''
 displayTest = "MATCH_VERSION"
 displayURL="https://discord.dragonminez.com/"
-updateJSONURL=""
+updateJSONURL="https://github.com/DragonMineZ/dragonminez/blob/main/update.json"
 
 [[mixins]]
 config="dragonminez.mixins.json"
