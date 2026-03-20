@@ -3,9 +3,8 @@ package com.dragonminez.common.init.block.custom;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
-import com.dragonminez.server.world.dimension.NamekDimension;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -37,21 +36,18 @@ import java.util.Set;
 
 public class DragonBallBlock extends BaseEntityBlock {
 
-	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-	private final DragonBallType ballType;
-	private final boolean isNamekian;
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-	private static final Map<Direction, VoxelShape> EARTH_SHAPES = new EnumMap<>(Direction.class);
-	private static final Map<Direction, VoxelShape> NAMEK_SHAPES = new EnumMap<>(Direction.class);
+	@Getter
+    private final DragonBallType ballType;
+	private final String dragonName;
+	@Getter
+	private final String ballName;
+	private final Integer wishAmount;
+	private final String dimensionKey;
+	private final Integer ballAmount;
 
-	static {
-		VoxelShape earthBase = box(4.0D, 0.0D, 4.0D, 12.0D, 7.0D, 12.0D);
-		VoxelShape namekBase = box(2.0D, 0.0D, 2.0D, 14.0D, 12.0D, 14.0D);
-		for (Direction direction : Direction.Plane.HORIZONTAL) {
-			EARTH_SHAPES.put(direction, calculateShape(direction, earthBase));
-			NAMEK_SHAPES.put(direction, calculateShape(direction, namekBase));
-		}
-	}
+	private static final Map<Direction, VoxelShape> SHAPES = new EnumMap<>(Direction.class);
 
 	private static VoxelShape calculateShape(Direction to, VoxelShape shape) {
 		VoxelShape[] buffer = new VoxelShape[]{shape, Shapes.empty()};
@@ -65,25 +61,26 @@ public class DragonBallBlock extends BaseEntityBlock {
 		return buffer[0];
 	}
 
-	public DragonBallBlock(Properties properties, DragonBallType ballType, boolean isNamekian) {
+	public DragonBallBlock(Properties properties, DragonBallType ballType, String dragonName, Integer wishAmount, String ballName, String dimensionKey, Integer ballAmount, Double[] shapesBase) {
 		super(properties);
 		this.ballType = ballType;
-		this.isNamekian = isNamekian;
+		this.dragonName = dragonName;
+		this.wishAmount = wishAmount;
+		this.ballName = ballName;
+		this.dimensionKey = dimensionKey;
+		this.ballAmount = ballAmount;
+
+		VoxelShape voxelShape = box(shapesBase[0], shapesBase[1], shapesBase[2], shapesBase[3], shapesBase[4], shapesBase[5]);
+		for (Direction direction : Direction.Plane.HORIZONTAL) {
+			SHAPES.put(direction, calculateShape(direction, voxelShape));
+		}
 		this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
 	}
 
-	public DragonBallType getBallType() {
-		return ballType;
-	}
-
-	public boolean isNamekian() {
-		return isNamekian;
-	}
-
 	@Nullable
-	@Override
-	public BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
-		return new DragonBallBlockEntity(blockPos, blockState, ballType, isNamekian);
+    @Override
+    public BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
+        return new DragonBallBlockEntity(blockPos, blockState, ballType, ballName);
 	}
 
 	@Override
@@ -94,7 +91,7 @@ public class DragonBallBlock extends BaseEntityBlock {
 	@Override
 	public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
 		Direction direction = pState.getValue(FACING);
-		return isNamekian ? NAMEK_SHAPES.get(direction) : EARTH_SHAPES.get(direction);
+		return SHAPES.get(direction);
 	}
 
 	@Override
@@ -120,8 +117,7 @@ public class DragonBallBlock extends BaseEntityBlock {
 	@Override
 	public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
 		if (pLevel.isClientSide) return InteractionResult.SUCCESS;
-		if (areAllDragonBallsNearby(pLevel, pPos) && ((isNamekian && pLevel.dimension().equals(NamekDimension.NAMEK_KEY))
-				|| (!isNamekian && pLevel.dimension().equals(Level.OVERWORLD)))) {
+		if (areAllDragonBallsNearby(pLevel, pPos) && (pLevel.dimension().location().toString().equals(dimensionKey))) {
 			removeAllDragonBalls(pLevel, pPos);
 			spawnDragon((ServerLevel) pLevel, pPos, pPlayer);
 			return InteractionResult.CONSUME;
@@ -133,20 +129,13 @@ public class DragonBallBlock extends BaseEntityBlock {
 		long currentTime = serverLevel.getDayTime();
 		serverLevel.setDayTime(16000);
 
-		if (isNamekian && serverLevel.dimension().equals(NamekDimension.NAMEK_KEY)) {
-			PorungaEntity porunga = new PorungaEntity(MainEntities.PORUNGA.get(), serverLevel);
-			porunga.setOwnerName(pPlayer.getName().getString());
-			porunga.setInvokingTime(currentTime);
-			porunga.setGrantedWish(false);
-			porunga.moveTo(pPos.getX() + 0.5, pPos.getY(), pPos.getZ() + 0.5, 0.0F, 0.0F);
-			serverLevel.addFreshEntity(porunga);
-		} else if (!isNamekian && serverLevel.dimension().equals(Level.OVERWORLD)) {
-			ShenronEntity Shenron = new ShenronEntity(MainEntities.SHENRON.get(), serverLevel);
-			Shenron.setOwnerName(pPlayer.getName().getString());
-			Shenron.setInvokingTime(currentTime);
-			Shenron.setGrantedWish(false);
-			Shenron.moveTo(pPos.getX() + 0.5, pPos.getY(), pPos.getZ() + 0.5, 0.0F, 0.0F);
-			serverLevel.addFreshEntity(Shenron);
+		if (serverLevel.dimension().location().toString().equalsIgnoreCase(dimensionKey)) {
+			DragonWishEntity dragonWishEntity = new DragonWishEntity(MainEntities.DRAGON_ENTITIES.get(dragonName).get(), serverLevel, dragonName, wishAmount);
+			dragonWishEntity.setOwnerName(pPlayer.getName().getString());
+			dragonWishEntity.setInvokingTime(currentTime);
+			dragonWishEntity.setGrantedWish(false);
+			dragonWishEntity.moveTo(pPos.getX() + 0.5, pPos.getY(), pPos.getZ() + 0.5, 0.0F, 0.0F);
+			serverLevel.addFreshEntity(dragonWishEntity);
 		}
 		serverLevel.playSound(null, pPos, MainSounds.SHENRON.get(), SoundSource.AMBIENT, 1.0F, 1.0F);
 	}
@@ -155,9 +144,11 @@ public class DragonBallBlock extends BaseEntityBlock {
 		Set<DragonBallType> foundBalls = new HashSet<>();
 		for (BlockPos nearbyPos : BlockPos.betweenClosed(pos.offset(-2, -2, -2), pos.offset(2, 2, 2))) {
 			Block block = world.getBlockState(nearbyPos).getBlock();
-			if (block instanceof DragonBallBlock dragonBall && dragonBall.isNamekian() == this.isNamekian) {
+			if (block instanceof DragonBallBlock dragonBall
+					&& dragonBall.dimensionKey.equalsIgnoreCase(this.dimensionKey)
+					&& dragonBall.dragonName.equalsIgnoreCase(this.dragonName)) {
 				foundBalls.add(dragonBall.getBallType());
-				if (foundBalls.size() == 7) return true;
+				if (foundBalls.size() == this.ballAmount) return true;
 			}
 		}
 		return false;
@@ -167,7 +158,9 @@ public class DragonBallBlock extends BaseEntityBlock {
 		Set<DragonBallType> removedBalls = new HashSet<>();
 		for (BlockPos nearbyPos : BlockPos.betweenClosed(pos.offset(-2, -2, -2), pos.offset(2, 2, 2))) {
 			Block block = world.getBlockState(nearbyPos).getBlock();
-			if (block instanceof DragonBallBlock dragonBall && dragonBall.isNamekian() == this.isNamekian) {
+			if (block instanceof DragonBallBlock dragonBall
+					&& dragonBall.dimensionKey.equalsIgnoreCase(this.dimensionKey)
+					&& dragonBall.dragonName.equalsIgnoreCase(this.dragonName)) {
 				if (!removedBalls.contains(dragonBall.getBallType())) {
 					world.removeBlock(nearbyPos, false);
 					removedBalls.add(dragonBall.getBallType());
