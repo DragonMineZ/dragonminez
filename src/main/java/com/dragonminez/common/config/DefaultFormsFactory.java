@@ -585,15 +585,45 @@ public class DefaultFormsFactory {
 		setDefaultMasteryValues(ssj3);
 		ssj3.setStackDrainMultiplier(2.0);
 
+
 		Map<String, FormConfig.FormData> superSaiyanForms = new LinkedHashMap<>();
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_MASTERED, ssj1Mastered);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_2, ssj2);
 		superSaiyanForms.put(SaiyanForms.SUPER_SAIYAN_3, ssj3);
 		superSaiyan.setForms(superSaiyanForms);
 
+		FormConfig godForms = new FormConfig();
+		godForms.setConfigVersion(FormConfig.CURRENT_VERSION);
+		godForms.setGroupName(SaiyanForms.GROUP_SUPERSAIYAN_GOD);
+		godForms.setFormType("god");
+
+		FormConfig.FormData ssg = new FormConfig.FormData();
+		ssg.setName(SaiyanForms.SUPER_SAIYAN_GOD);
+		ssg.setUnlockOnSkillLevel(1);
+		ssg.setHairColor("#E81A43");
+		ssg.setBodyColor2("#E81A43");
+		ssg.setEye1Color("#E81A43");
+		ssg.setEye2Color("#E81A43");
+		ssg.setAuraColor("#FF4500");
+		ssg.setModelScaling(new Float[]{0.9f, 0.9f, 0.9f});
+		ssg.setStrMultiplier(4.5);
+		ssg.setSkpMultiplier(4.5);
+		ssg.setDefMultiplier(3.0);
+		ssg.setPwrMultiplier(4.5);
+		ssg.setEnergyDrain(0.4);
+		ssg.setHairType("base");
+		ssg.setCanAlwaysTransform(true);
+		setDefaultMasteryValues(ssg);
+		ssg.setStackDrainMultiplier(2.0);
+
+		Map<String, FormConfig.FormData> superSaiyanGodForms = new LinkedHashMap<>();
+		superSaiyanGodForms.put(SaiyanForms.SUPER_SAIYAN_GOD, ssg);
+		godForms.setForms(superSaiyanGodForms);
+
 		forms.put(SaiyanForms.OOZARU, oozaruForms);
 		forms.put(SaiyanForms.GROUP_SSGRADES, ssGrades);
 		forms.put(SaiyanForms.SUPER_SAIYAN, superSaiyan);
+		forms.put(SaiyanForms.GROUP_SUPERSAIYAN_GOD, godForms);
 		LogUtil.info(Env.COMMON, "Default Super Saiyan forms created");
 	}
 

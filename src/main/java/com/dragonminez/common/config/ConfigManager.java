@@ -561,7 +561,7 @@ public class ConfigManager {
 		config.setDefaultAuraColor("#7FFFFF");
 
 		config.setFormSkillTpCosts("superform", new Integer[]{20000, 40000, 60000, 80000, 100000, 120000, 140000, 160000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("godform", new Integer[]{10000});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
 	}
 
@@ -584,7 +584,7 @@ public class ConfigManager {
 		config.setDefaultAuraColor("#7FFF00");
 
 		config.setFormSkillTpCosts("superform", new Integer[]{20000, 80000, 120000, 160000});
-		config.setFormSkillTpCosts("godform", new Integer[]{});
+		config.setFormSkillTpCosts("godform", new Integer[]{10000});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
 	}
 
