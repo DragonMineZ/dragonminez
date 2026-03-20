@@ -31,8 +31,7 @@ public class TPGainEvents {
         } else {
 			double bonusGravity = GravityLogic.getBonusGravity(event.getPlayer());
 			if (bonusGravity > 0) {
-				double gravityBonus = 1.0 + (bonusGravity * 0.05);
-				modifiedTP[0] = (int) (baseTP + baseTP * gravityBonus);
+				modifiedTP[0] = (int) (baseTP * (1 + 0.05 * bonusGravity));
 			}
 		}
 
