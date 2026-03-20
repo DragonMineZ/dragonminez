@@ -1,6 +1,14 @@
 [[Home]]
 
-### _Creating your own_ in DMZ
+### Tweaking DMZ
+1. JSON Configurations
+   * [[Entities|Entities]]
+   * [[General Server|general-server]]
+   * [[General User|general-user]]
+   * [[Skills|Skills]]
+2. [[Notice to Server Owners/Developers|Notice-to-server-owners-developers]]
+
+### Creating your own in DMZ
 1. Start here
    * [[Locating specific folders|Locating-specific-folders]]
    * [[How to JSON|How-to-JSON]]
@@ -13,7 +21,7 @@
 3. Custom Models
    * [[Custom Models and Assets|Custom-Models-and-Assets]]
 
-### Creating a Forge Addon for DMZ
+### Creating a Forge Add-on for DMZ
 1. Setup
    * [[Getting Started|Getting-Started]]
    * [[Implementation & Events|Implementation-&-Events]]
