@@ -8,6 +8,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -223,8 +224,17 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
             renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
             poseStack.popPose();
 
+
             if (entity.getKiRenderType() == 2) {
+
+                Vec3 dir = Vec3.directionFromRotation(pitch, yaw);
+
+                double offsetForward = 0.5D;
+
+                poseStack.translate(dir.x * offsetForward, dir.y * offsetForward, dir.z * offsetForward);
+
                 renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, true);
+
             }
 
             poseStack.popPose();
@@ -308,7 +318,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         // Rayos del Galick
         if (entity.getKiRenderType() == 2) {
             poseStack.pushPose();
-            double offsetForward = 0.6D; // Separación visual de la base
+            double offsetForward = 0.6D;
             Vec3 lightningPos = startPosSphere.add(dir.scale(offsetForward));
             poseStack.translate(lightningPos.x, lightningPos.y, lightningPos.z);
             renderGalickLightning(poseStack, entity, buffer, borderColor, fadeAlpha, ageInTicks, width, true);
@@ -316,9 +326,9 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         }
 
         poseStack.pushPose();
-        Vec3 endPosSphere = dir.scale(0.5D + length); // Se mueve según la longitud real calculada en el servidor
+        Vec3 endPosSphere = dir.scale(0.5D + length);
         poseStack.translate(endPosSphere.x, endPosSphere.y - 0.5D, endPosSphere.z);
-        float endBallScaleDisp = width * 2F; // Esfera de impacto más grande
+        float endBallScaleDisp = width * 2F;
         poseStack.scale(endBallScaleDisp, endBallScaleDisp, endBallScaleDisp);
         poseStack.translate(0.0D, -0.35D, 0.0D);
         renderKiBlast(poseStack, entity, buffer, 1.0F, ageInTicks, auraColor, brightAuraColor, borderColor, fadeAlpha);
@@ -541,7 +551,7 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
         shader.safeGetUniform("color2").set(color[0], color[1], color[2]);
         shader.safeGetUniform("alp1").set(alpha);
         shader.safeGetUniform("alp2").set(0.1f * alpha);
-        shader.safeGetUniform("projectionMatrix").set(com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix());
+        shader.safeGetUniform("projectionMatrix").set(RenderSystem.getProjectionMatrix());
 
         RenderType lightningType = ModRenderTypes.getCustomLightning(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/null.png"));
         lightningType.setupRenderState();

@@ -582,12 +582,8 @@ public class TickHandler {
 
         for (AbstractKiProjectile ki : nearbyEntities) {
             if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) {
-                if (ki instanceof KiWaveEntity wave && !wave.isFiring()) {
-                    return wave;
-                }
-                if (ki instanceof KiBlastEntity blast && !blast.isFiring()) {
-                    return blast;
-                }
+                if (ki instanceof KiWaveEntity wave && !wave.isFiring()) {return wave;}
+                if (ki instanceof KiBlastEntity blast && !blast.isFiring()) {return blast;}
                 if (ki instanceof KiLaserEntity laser && !laser.isFiring()) return laser;
                 if (ki instanceof KiDiskEntity disk && !disk.isFiring()) return disk;
                 if (ki instanceof KiExplosionEntity explosion && !explosion.isFiring()) return explosion;

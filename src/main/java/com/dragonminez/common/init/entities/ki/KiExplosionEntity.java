@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.particles.KiExplosionSplashParticle;
 import com.dragonminez.common.init.particles.KiTrailParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
@@ -124,12 +125,9 @@ public class KiExplosionEntity extends AbstractKiProjectile {
             if (ownerId != -1) owner = this.level().getEntity(ownerId);
         }
 
-        if (!this.isFiring()) {
-            if (owner != null && owner.isAlive()) {
-                updatePositionToOwner(owner);
-            } else {
-                if (!this.level().isClientSide) this.discard();
-            }
+        if (owner == null || !owner.isAlive()) {
+            if (!this.level().isClientSide) this.discard();
+            return;
         }
 
         if (this.tickCount >= this.getMaxLife()) {
@@ -159,16 +157,17 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
         Entity owner = this.getOwner();
 
-        // Fase de levitación
-        if (!isFiring && owner != null && owner.isAlive()) {
-            owner.setDeltaMovement(owner.getDeltaMovement().x, 0, owner.getDeltaMovement().z);
+        if (owner != null && owner.isAlive()) {
+            owner.setDeltaMovement(0, 0, 0);
             owner.fallDistance = 0.0F;
             owner.hasImpulse = true;
 
-            if (this.tickCount <= castTime / 2.0F) {
+            if (!isFiring && this.tickCount <= castTime / 2.0F) {
                 double riseSpeed = 1.5D / (castTime / 2.0F);
-                owner.setPos(owner.getX(), owner.getY() + riseSpeed, owner.getZ());
+                this.setPos(this.getX(), this.getY() + riseSpeed, this.getZ());
             }
+
+            owner.setPos(this.getX(), this.getY() - (owner.getBbHeight() * 0.5F), this.getZ());
         }
 
         if (!this.level().isClientSide) {
@@ -194,7 +193,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
 
     private void pulseDamage(float radius) {
-        float damageRadius = radius * 1.2F;
+        float damageRadius = radius;
 
         AABB area = new AABB(
                 this.getX() - damageRadius, this.getY() - damageRadius, this.getZ() - damageRadius,
@@ -259,7 +258,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
                 0.0D, 0.0D, 0.0D
         );
 
-        if (p instanceof com.dragonminez.common.init.particles.KiExplosionSplashParticle splash) {
+        if (p instanceof KiExplosionSplashParticle splash) {
             splash.setSplashColor(rgb[0], rgb[1], rgb[2]);
             splash.setSplashScale(scale);
         }
