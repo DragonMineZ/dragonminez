@@ -40,7 +40,7 @@ config="dragonminez.mixins.json"
 
 [[dependencies.dragonminez]]
     modId="terrablender"
-    mandatory=false
+    mandatory=true
     versionRange="${terrablender_version_range}"
     ordering="AFTER"
     side="BOTH"
