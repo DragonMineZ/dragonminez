@@ -1,6 +1,6 @@
 package com.dragonminez.client.render.shader;
 
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexMultiConsumer;

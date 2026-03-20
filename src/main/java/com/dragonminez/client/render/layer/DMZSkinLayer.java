@@ -436,13 +436,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	}
 
 	private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {
-
 		float intensity;
-		if (this.currentKaiokenPhase > 0) {
-			intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
-		} else {
-			intensity = 0.4f * this.currentTintProgress;
-		}
+		if (this.currentKaiokenPhase > 0) intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
+		else intensity = 0.2f * this.currentTintProgress;
+
 
 		if (intensity > 0.001f) {
 			r = r * (1.0f - intensity) + (this.currentAuraColor[0] * intensity);

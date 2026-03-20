@@ -124,9 +124,7 @@ public class ClientStatsEvents {
 			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_8) {
 				StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 					boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
-					if (isChargingTechnique) {
-						event.setCanceled(true);
-					}
+					if (isChargingTechnique) return;
 				});
 				if (event.isCanceled()) return;
 			}

@@ -5,7 +5,7 @@ import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.util.AuraMeshFactory;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;

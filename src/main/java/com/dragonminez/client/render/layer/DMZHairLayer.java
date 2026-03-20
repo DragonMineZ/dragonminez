@@ -125,14 +125,40 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				colorTo = targetColor;
 				factor = smoothProgress;
 			}
-		} else {
-			progressMap.put(entityId, 0.0f);
-		}
+		} else progressMap.put(entityId, 0.0f);
 
 		int phase = TransformationsHelper.getKaiokenPhase(stats);
 		if (phase > 0) {
 			colorFrom = applyKaiokenToHex(colorFrom, phase);
 			colorTo = applyKaiokenToHex(colorTo, phase);
+		} else {
+			boolean isCharging = stats.getStatus().isChargingKi();
+			if (isCharging || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura()) {
+				String auraHex = character.getAuraColor();
+				if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
+					auraHex = character.getActiveFormData().getAuraColor();
+				}
+				if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
+					auraHex = character.getActiveStackFormData().getAuraColor();
+				}
+				if (auraHex == null || auraHex.isEmpty()) auraHex = "#FFFFFF";
+
+				float intensity = 0.2f;
+				float[] rgbFrom = ColorUtils.hexToRgb(colorFrom);
+				float[] rgbTo = ColorUtils.hexToRgb(colorTo);
+				float[] rgbAura = ColorUtils.hexToRgb(auraHex);
+
+				rgbFrom[0] = rgbFrom[0] * (1.0f - intensity) + (rgbAura[0] * intensity);
+				rgbFrom[1] = rgbFrom[1] * (1.0f - intensity) + (rgbAura[1] * intensity);
+				rgbFrom[2] = rgbFrom[2] * (1.0f - intensity) + (rgbAura[2] * intensity);
+
+				rgbTo[0] = rgbTo[0] * (1.0f - intensity) + (rgbAura[0] * intensity);
+				rgbTo[1] = rgbTo[1] * (1.0f - intensity) + (rgbAura[1] * intensity);
+				rgbTo[2] = rgbTo[2] * (1.0f - intensity) + (rgbAura[2] * intensity);
+
+				colorFrom = String.format("#%02x%02x%02x", (int)(rgbFrom[0]*255), (int)(rgbFrom[1]*255), (int)(rgbFrom[2]*255));
+				colorTo = String.format("#%02x%02x%02x", (int)(rgbTo[0]*255), (int)(rgbTo[1]*255), (int)(rgbTo[2]*255));
+			}
 		}
 
 		float alpha = 1.0f;

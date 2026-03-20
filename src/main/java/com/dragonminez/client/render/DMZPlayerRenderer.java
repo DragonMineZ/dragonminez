@@ -3,8 +3,8 @@ package com.dragonminez.client.render;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
 import com.dragonminez.client.render.layer.*;
-import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.client.util.BoneVisibilityHandler;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsCapability;
@@ -31,7 +31,6 @@ import java.util.Objects;
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
 	protected GeoRenderLayer<T> caller = null;
-
 
 	public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
 		super(renderManager, model);
@@ -76,7 +75,6 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		var activeForm = character.getActiveFormData();
 		String race = character.getRaceName().toLowerCase();
 		String currentForm = character.getActiveForm();
-
 
 		var raceConfig = ConfigManager.getRaceCharacter(race);
 		String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
@@ -153,7 +151,23 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		poseStack.scale(scalingX, scalingY, scalingZ);
 
+		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+
+		if (isAuraActive) {
+			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
+			org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_STENCIL_TEST);
+			com.mojang.blaze3d.systems.RenderSystem.stencilMask(0xFF);
+			com.mojang.blaze3d.systems.RenderSystem.stencilFunc(org.lwjgl.opengl.GL11.GL_ALWAYS, 1, 0xFF);
+			com.mojang.blaze3d.systems.RenderSystem.stencilOp(org.lwjgl.opengl.GL11.GL_KEEP, org.lwjgl.opengl.GL11.GL_KEEP, org.lwjgl.opengl.GL11.GL_REPLACE);
+		}
+
 		super.render(entity, entityYaw, partialTick, poseStack, effectiveBufferSource, packedLight);
+
+		if (isAuraActive) {
+			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
+			org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_STENCIL_TEST);
+			com.mojang.blaze3d.systems.RenderSystem.stencilMask(0x00);
+		}
 
 		this.shadowRadius = 0.4f * ((scalingX + scalingZ) / 2.0f);
 

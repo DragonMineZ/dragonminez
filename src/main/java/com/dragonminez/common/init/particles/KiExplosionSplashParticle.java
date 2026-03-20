@@ -1,7 +1,6 @@
 package com.dragonminez.common.init.particles;
 
-import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModParticleRenderTypes;
+import com.dragonminez.client.render.util.ModParticleRenderTypes;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;

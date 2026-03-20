@@ -1,12 +1,11 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.events.PlayerEffectsRenderHandler;
 import com.dragonminez.client.init.entities.model.ki.*;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.mojang.blaze3d.vertex.PoseStack;

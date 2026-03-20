@@ -4,7 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.DMZPlayerRenderer;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;

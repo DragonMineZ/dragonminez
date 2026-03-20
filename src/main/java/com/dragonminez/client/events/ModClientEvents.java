@@ -20,7 +20,6 @@ import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
 import com.dragonminez.client.model.KiTridentModel;
 import com.dragonminez.client.util.KeyBinds;
-import com.dragonminez.client.util.ModRenderTypes;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
@@ -140,6 +139,7 @@ public class ModClientEvents {
         });
 
         UtilityMenuScreen.initMenuSlots();
+		Minecraft.getInstance().getMainRenderTarget().enableStencil();
 	}
 
     @SubscribeEvent

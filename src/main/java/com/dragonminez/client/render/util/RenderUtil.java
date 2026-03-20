@@ -1,4 +1,4 @@
-package com.dragonminez.client.util;
+package com.dragonminez.client.render.util;
 
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.Mth;

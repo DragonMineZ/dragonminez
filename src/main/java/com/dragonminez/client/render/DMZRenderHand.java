@@ -6,7 +6,7 @@ import com.dragonminez.client.model.KiScytheModel;
 import com.dragonminez.client.model.KiTridentModel;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;

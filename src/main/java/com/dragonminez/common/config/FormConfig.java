@@ -208,7 +208,7 @@ public class FormConfig {
 		public static class TransformationPostShaderConfig {
 			private Boolean enabled = false;
 			private String primaryColor = "#7FFFFF";
-			private String secondaryColor = "#FFD970";
+			private String secondaryColor = "#7FFFFF";
 			private Double noiseScale = 4.0;
 			private Double colorMixSpeed = 0.7;
 

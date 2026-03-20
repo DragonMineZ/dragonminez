@@ -3,7 +3,7 @@ package com.dragonminez.client.init.entities.renderer.ki;
 import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.ki.KiDiscModel;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.KiDiskEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

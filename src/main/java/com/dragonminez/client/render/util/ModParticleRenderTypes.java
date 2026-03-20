@@ -1,4 +1,4 @@
-package com.dragonminez.client.util;
+package com.dragonminez.client.render.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;

@@ -3,9 +3,10 @@ package com.dragonminez.client.render.effects;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
@@ -205,6 +206,10 @@ public class AuraRenderer {
 	}
 
 	public static void cleanCaches(Set<Integer> currentFramePlayers) {
+		com.mojang.blaze3d.systems.RenderSystem.stencilMask(0xFF);
+		com.mojang.blaze3d.systems.RenderSystem.clear(org.lwjgl.opengl.GL11.GL_STENCIL_BUFFER_BIT, Minecraft.ON_OSX);
+		com.mojang.blaze3d.systems.RenderSystem.stencilMask(0x00);
+
 		LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		COLOR_PROGRESS_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		COLOR_TICK_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
@@ -286,12 +291,11 @@ public class AuraRenderer {
 			}
 			float smoothProgress = Mth.lerp(partialTick * interpolationSpeed, lastProgress, targetProgress);
 			chargeProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
-		} else {
-			COLOR_PROGRESS_MAP.put(entityId, 0.0f);
-		}
+		} else COLOR_PROGRESS_MAP.put(entityId, 0.0f);
 
 		String normalHex = character.getAuraColor();
-		String normalType = "kakarot";
+		String normalType = ConfigManager.getRaceCharacter(character.getRace()) != null ?
+				ConfigManager.getRaceCharacter(character.getRace()).getAuraType() : "kakarot";
 		int normalLayerId = 0;
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
@@ -489,13 +493,14 @@ public class AuraRenderer {
 		float finalAlpha = maxAlpha * alphaMultiplier;
 
 		String typeStr = layer.type != null && !layer.type.isEmpty() ? layer.type.toLowerCase() : "kakarot";
-		ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + typeStr + "_aura.png");
-		ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + typeStr + "_cross.png");
+		ResourceLocation mainTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_aura.png");
+		ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_cross.png");
+		ResourceLocation sparkingTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/sparking_effects.png");
 
 		float animSpeed = (player.tickCount + partialTick) * 0.5f;
+
 		shader.safeGetUniform("speed").set(animSpeed);
 		shader.safeGetUniform("ProjMat").set(projectionMatrix);
-
 		shader.safeGetUniform("color1").set(layer.color[0] * 1.6f, layer.color[1] * 1.6f, layer.color[2] * 1.6f, 1.0f);
 		shader.safeGetUniform("color2").set(layer.color[0] * 1.3f, layer.color[1] * 1.3f, layer.color[2] * 1.3f, 1.0f);
 		shader.safeGetUniform("color3").set(layer.color[0] * 1.0f, layer.color[1] * 1.0f, layer.color[2] * 1.0f, 0.85f);
@@ -506,28 +511,33 @@ public class AuraRenderer {
 		float finalScaleY = data.auraScaleY * baseMultiplier * (1.0f + layer.layerId * 0.15f);
 		float finalScaleZ = data.auraScaleZ * baseMultiplier * (1.0f + layer.layerId * 0.15f);
 
+		VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
+
 		if (isLocalPlayer && isFirstPerson) {
 			poseStack.pushPose();
 			poseStack.last().pose().identity();
 			poseStack.last().normal().identity();
-
 			poseStack.translate(0.0, -0.6, -0.7);
 			poseStack.scale(finalScaleX * 3.0f, finalScaleY * 3.0f, 1.0f);
 
 			shader.safeGetUniform("alp1").set(finalAlpha * 0.45f);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-
 			RenderType mainRender = ModRenderTypes.getCustomAura(mainTex);
 			mainRender.setupRenderState();
 			shader.apply();
-
-			VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 			mesh.bind();
 			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
 			mainRender.clearRenderState();
 
-			poseStack.popPose();
+			RenderType sparkingRender = ModRenderTypes.getCustomAura(sparkingTex);
+			sparkingRender.setupRenderState();
+			poseStack.scale(0.6f, 0.45f, 0.6f);
+			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+			shader.apply();
+			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+			sparkingRender.clearRenderState();
 
+			poseStack.popPose();
 			VertexBuffer.unbind();
 			shader.clear();
 			return;
@@ -545,25 +555,33 @@ public class AuraRenderer {
 
 		if (crossFactor < 1.0f) {
 			poseStack.pushPose();
-
 			poseStack.translate(0.0, data.bodyScaleY * 2f, 0.0);
-
 			poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
 			poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-
 			poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
 
 			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-
 			RenderType mainRender = ModRenderTypes.getCustomAura(mainTex);
 			mainRender.setupRenderState();
 			shader.apply();
-
-			VertexBuffer mesh = AuraMeshFactory.getBillboardQuad();
 			mesh.bind();
 			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
 			mainRender.clearRenderState();
+
+			poseStack.pushPose();
+			float sparkingPulse = 1.0f + (float) Math.sin((player.tickCount + partialTick) * 0.2f) * 0.05f;
+			poseStack.scale(0.8f * sparkingPulse, 0.65f * sparkingPulse, 0.8f * sparkingPulse);
+			poseStack.translate(0.0, -0.25, 0.0);
+
+			RenderType sparkingRender = ModRenderTypes.getCustomAura(sparkingTex);
+			sparkingRender.setupRenderState();
+			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha * 0.8f);
+			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
+			shader.apply();
+			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+			sparkingRender.clearRenderState();
+			poseStack.popPose();
 
 			poseStack.popPose();
 		}
@@ -572,23 +590,19 @@ public class AuraRenderer {
 			poseStack.pushPose();
 			poseStack.translate(0.0, 0.05, 0.0);
 			poseStack.mulPose(Axis.YP.rotationDegrees(-mc.gameRenderer.getMainCamera().getYRot()));
-
 			if (cameraPitch < 0.0f) {
 				poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
 			}
-
 			poseStack.scale(finalScaleX, 1.0f, finalScaleZ);
 
 			shader.safeGetUniform("alp1").set(crossFactor * finalAlpha);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-
 			RenderType crossRender = ModRenderTypes.getCustomAura(crossTex);
 			crossRender.setupRenderState();
 			shader.apply();
-
-			VertexBuffer mesh = AuraMeshFactory.getGroundQuad();
-			mesh.bind();
-			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
+			VertexBuffer groundMesh = AuraMeshFactory.getGroundQuad();
+			groundMesh.bind();
+			groundMesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);
 			crossRender.clearRenderState();
 
 			poseStack.popPose();
@@ -626,7 +640,7 @@ public class AuraRenderer {
 		float alphaCurve = (float) Math.sin(progress * Math.PI);
 
 		String typeStr = topLayer.type != null && !topLayer.type.isEmpty() ? topLayer.type.toLowerCase() : "kakarot";
-		ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/" + typeStr + "_cross.png");
+		ResourceLocation crossTex = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/aura/" + typeStr + "_cross.png");
 
 		ShaderInstance shader = DMZShaders.auraShader;
 		if (shader == null) return;
@@ -646,6 +660,7 @@ public class AuraRenderer {
 		poseStack.scale(sX, 1.0f, sZ);
 
 		float animSpeed = (player.tickCount + partialTick) * 0.5f;
+
 		shader.safeGetUniform("speed").set(animSpeed);
 		shader.safeGetUniform("ProjMat").set(projectionMatrix);
 		shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
@@ -769,7 +784,7 @@ public class AuraRenderer {
 		long timeHash = player.level().getGameTime() / tickInterval;
 		Random seededRand = new Random(player.getId() + timeHash);
 		float[] bScale = getBodyScale(stats);
-		float bbHeight = bScale[1];
+		float bbHeight = player.getBbHeight() * bScale[1];
 
 		for (int i = 0; i < maxBranches; i++) {
 			poseStack.pushPose();

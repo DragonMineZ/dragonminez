@@ -1,8 +1,9 @@
-package com.dragonminez.client.util;
+package com.dragonminez.client.render.util;
 
 import com.dragonminez.client.events.ModClientEvents;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.shader.TransformationMaskRenderState;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.Util;
@@ -10,6 +11,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.util.function.Function;
 
@@ -17,6 +19,15 @@ public class ModRenderTypes extends RenderType {
     public ModRenderTypes(String pName, VertexFormat pFormat, VertexFormat.Mode pMode, int pBufferSize, boolean pAffectsCrumbling, boolean pSortOnUpload, Runnable pSetupState, Runnable pClearState) {
         super(pName, pFormat, pMode, pBufferSize, pAffectsCrumbling, pSortOnUpload, pSetupState, pClearState);
     }
+
+    public static final RenderStateShard.LayeringStateShard STENCIL_READ_NOTEQUAL = new RenderStateShard.LayeringStateShard("stencil_read_notequal", () -> {
+        GL11.glEnable(GL11.GL_STENCIL_TEST);
+        RenderSystem.stencilMask(0x00);
+        RenderSystem.stencilFunc(GL11.GL_NOTEQUAL, 1, 0xFF);
+        RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
+    }, () -> {
+        GL11.glDisable(GL11.GL_STENCIL_TEST);
+    });
 
     public static RenderType getCustomAura(ResourceLocation texture) {
         return RenderType.create("dragonminez_custom_aura",
@@ -31,6 +42,7 @@ public class ModRenderTypes extends RenderType {
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setCullState(RenderStateShard.NO_CULL)
                         .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .setLayeringState(STENCIL_READ_NOTEQUAL)
                         .createCompositeState(false));
     }
 
@@ -47,6 +59,7 @@ public class ModRenderTypes extends RenderType {
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setCullState(RenderStateShard.NO_CULL)
                         .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .setLayeringState(STENCIL_READ_NOTEQUAL)
                         .createCompositeState(false));
     }
 
@@ -65,6 +78,23 @@ public class ModRenderTypes extends RenderType {
                         .setOverlayState(RenderStateShard.NO_OVERLAY)
                         .setCullState(RenderStateShard.NO_CULL)
                         .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                        .createCompositeState(false));
+    }
+
+    public static RenderType getSolidOutline(ResourceLocation texture) {
+        return RenderType.create("dragonminez_solid_outline",
+                DefaultVertexFormat.NEW_ENTITY,
+                VertexFormat.Mode.QUADS,
+                256,
+                false,
+                false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(RENDERTYPE_ENTITY_SOLID_SHADER)
+                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                        .setTransparencyState(NO_TRANSPARENCY)
+                        .setCullState(NO_CULL)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setLayeringState(STENCIL_READ_NOTEQUAL)
                         .createCompositeState(false));
     }
 
@@ -258,6 +288,7 @@ public class ModRenderTypes extends RenderType {
                         .setTransparencyState(RenderStateShard.LIGHTNING_TRANSPARENCY)
                         .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                         .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER)
+                        .setLayeringState(STENCIL_READ_NOTEQUAL)
                         .createCompositeState(false));
     }
 

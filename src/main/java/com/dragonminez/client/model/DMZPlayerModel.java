@@ -3,7 +3,7 @@ package com.dragonminez.client.model;
 import com.dragonminez.Reference;
 import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.events.FlySkillEvent;
-import com.dragonminez.client.util.RenderUtil;
+import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.StatsCapability;

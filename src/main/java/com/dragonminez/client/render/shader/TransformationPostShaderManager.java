@@ -2,7 +2,7 @@ package com.dragonminez.client.render.shader;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;

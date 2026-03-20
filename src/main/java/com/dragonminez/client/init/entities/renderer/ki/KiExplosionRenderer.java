@@ -2,20 +2,16 @@ package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.ki.KiBallModel;
-import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
 import com.dragonminez.client.util.ColorUtils;
-import com.dragonminez.client.util.ModRenderTypes;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 
 public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
 
