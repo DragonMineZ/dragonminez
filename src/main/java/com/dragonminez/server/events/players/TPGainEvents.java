@@ -6,6 +6,7 @@ import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.HTCDimension;
@@ -19,57 +20,56 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class TPGainEvents {
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
-    public static void onTPGain(DMZEvent.TPGainEvent event) {
-        if (event.getPlayer() == null || event.getTpGain() <= 0) return;
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public static void onTPGain(DMZEvent.TPGainEvent event) {
+		if (!(event.getPlayer() instanceof ServerPlayer player)) return;
 		int baseTP = event.getTpGain();
-		final int[] modifiedTP = {event.getTpGain()};
+		if (baseTP <= 0) return;
+		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+		if (data == null) return;
 
-        if (event.getPlayer().level().dimension().equals(HTCDimension.HTC_KEY)) {
-            double htcMultiplier = ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier() - 1.0;
-            modifiedTP[0] = (int) (baseTP + baseTP * htcMultiplier);
-        } else {
-			double bonusGravity = GravityLogic.getBonusGravity(event.getPlayer());
-			if (bonusGravity > 0) {
-				modifiedTP[0] = (int) (baseTP * (1 + 0.05 * bonusGravity));
-			}
+		double additiveMultiplier = 1.0;
+
+		// Gravity Bonus
+		if (player.level().dimension().equals(HTCDimension.HTC_KEY)) additiveMultiplier += (ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier() - 1.0);
+		else {
+			double bonusGravity = GravityLogic.getBonusGravity(player);
+			if (bonusGravity > 0) additiveMultiplier += (bonusGravity * 0.05);
 		}
 
-		StatsProvider.get(StatsCapability.INSTANCE, event.getPlayer()).ifPresent(data -> {
-			if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) {
-				UUID partnerUUID = data.getStatus().getFusionPartnerUUID();
-				if (partnerUUID != null) {
-					ServerPlayer partner = event.getPlayer().getServer().getPlayerList().getPlayer(partnerUUID);
-					if (partner != null) {
-						int shareAmount = modifiedTP[0] / 2;
-						StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(pData -> {
-							pData.getResources().addTrainingPoints(shareAmount);
-							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
-						});
-					}
-				}
-			}
+		// Frost Demon Racial Skill Bonus :p
+		String race = data.getCharacter().getRace();
 
-			// FrostDemon passive
-			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills() && ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()) {
-				if (data.getCharacter().getRace().equals("frostdemon")) {
-					double frostDemonMultiplier = ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost() - 1.0;
-					modifiedTP[0] = (int) (modifiedTP[0] + baseTP * frostDemonMultiplier);
-				}
-			}
+		if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
+				&& ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()
+				&& "frostdemon".equals(race)) {
+			additiveMultiplier += (ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost() - 1.0);
+		}
 
-			// Extra racial multiplier
-			if (ConfigManager.getRaceStats(data.getCharacter().getRace()) != null) {
-				double racialMultiplier = ConfigManager.getRaceStats(data.getCharacter().getRace()).getClassStats(data.getCharacter().getCharacterClass()).getTpGainMultiplier() - 1.0;
-				modifiedTP[0] = (int) (modifiedTP[0] + baseTP * racialMultiplier);
-			}
+		// Per Class Bonus
+		var raceStats = ConfigManager.getRaceStats(race);
+		if (raceStats != null) {
+			var classStats = raceStats.getClassStats(data.getCharacter().getCharacterClass());
+			if (classStats != null) additiveMultiplier += (classStats.getTpGainMultiplier() - 1.0);
+		}
+
+		double globalMultiplier = ConfigManager.getServerConfig().getGameplay().getTpsGainMultiplier();
+		int finalTP = (int) (baseTP * additiveMultiplier * globalMultiplier);
+
+		if (data.getStatus().isFused() && data.getStatus().isFusionLeader()) shareWithFusionPartner(player, data, finalTP);
+		event.setTpGain(finalTP);
+	}
+
+	private static void shareWithFusionPartner(ServerPlayer leader, StatsData leaderData, int totalTP) {
+		UUID partnerUUID = leaderData.getStatus().getFusionPartnerUUID();
+		if (partnerUUID == null) return;
+
+		ServerPlayer partner = leader.getServer().getPlayerList().getPlayer(partnerUUID);
+		if (partner == null) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(pData -> {
+			pData.getResources().addTrainingPoints(totalTP / 2);
+			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
 		});
-
-		// Final multiplier
-		double configMultiplier = ConfigManager.getServerConfig().getGameplay().getTpsGainMultiplier();
-		modifiedTP[0] *= (int) configMultiplier;
-
-        event.setTpGain(modifiedTP[0]);
-    }
+	}
 }
-
