@@ -81,25 +81,8 @@ public class OozaruCombatEvents {
     }
 
     private static boolean isOozaru(Player player) {
-        var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
-        if (statsCap == null) return false;
-
-        var character = statsCap.getCharacter();
-        String race = character.getRaceName().toLowerCase();
-        String currentForm = character.getActiveForm();
-        var activeForm = character.getActiveFormData();
-
-        var raceConfig = ConfigManager.getRaceCharacter(race);
-        String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-        String formCustomModel = (character.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-                ? activeForm.getCustomModel().toLowerCase() : "";
-
-        String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-        if (logicKey.isEmpty()) {
-            logicKey = race;
-        }
-
-        return logicKey.startsWith("oozaru") ||
-                (race.equals("saiyan") && (Objects.equals(currentForm, SaiyanForms.OOZARU) || Objects.equals(currentForm, SaiyanForms.GOLDEN_OOZARU)));
+        return StatsProvider.get(StatsCapability.INSTANCE, player)
+                .map(data -> data.getCharacter().isOozaruCached())
+                .orElse(false);
     }
 }

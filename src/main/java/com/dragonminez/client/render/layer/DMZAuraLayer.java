@@ -26,7 +26,7 @@ public class DMZAuraLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (stats == null) return;
 
 		boolean isAuraActive = stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
-		boolean isAndroidChargingForm = stats.getStatus().isAndroidUpgraded() && stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction().equals(ActionMode.FORM);
+		boolean isAndroidChargingForm = stats.getStatus().isAndroidUpgraded() && stats.getStatus().isActionCharging() && stats.getStatus().getSelectedAction() == ActionMode.FORM;
 
 		var character = stats.getCharacter();
 		boolean hasLightning = false;

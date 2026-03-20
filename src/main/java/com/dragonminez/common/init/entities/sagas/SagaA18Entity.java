@@ -9,7 +9,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaA18Entity extends DBSagasEntity{
@@ -95,7 +94,7 @@ public class SagaA18Entity extends DBSagasEntity{
             int skill = getSkillType();
 
             if (skill == SKILL_MILKY_CANNON) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+                return event.setAndContinue(ANIM_KIWAVE);
             }
         }
         event.getController().forceAnimationReset();

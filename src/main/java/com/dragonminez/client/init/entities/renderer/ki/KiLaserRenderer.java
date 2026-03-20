@@ -92,8 +92,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float pitch = entity.getFixedPitch();
         float ageInTicks = entity.tickCount + partialTick;
 
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
+        float[] auraColor = entity.getRgbColorMain();
+        float[] borderColor = entity.getRgbColorBorder();
 
         poseStack.pushPose();
 
@@ -198,8 +198,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float pitch = entity.getFixedPitch();
         float ageInTicks = entity.tickCount + partialTick;
 
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
+        float[] auraColor = entity.getRgbColorMain();
+        float[] borderColor = entity.getRgbColorBorder();
 
         poseStack.pushPose();
 
@@ -327,8 +327,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float pitch = entity.getFixedPitch();
         float ageInTicks = entity.tickCount + partialTick;
 
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
+        float[] auraColor = entity.getRgbColorMain();
+        float[] borderColor = entity.getRgbColorBorder();
         float[] brigterauraColor = ColorUtils.lightenColor(auraColor, 0.8f);
         float[] purpleColor = ColorUtils.rgbIntToFloat(0xEF00FF);
         float[] brightnesspurpleColor = ColorUtils.lightenColor(purpleColor, 0.8f);

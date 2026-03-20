@@ -6,19 +6,21 @@ import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 
 public class KiWeaponRenderer {
 	private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
 	private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
 
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public static void processWeapons(MultiBufferSource.BufferSource buffers, PoseStack poseStack) {
 		var weapons = PlayerEffectQueue.getAndClearWeapons();
 		if (weapons == null || weapons.isEmpty()) return;
@@ -27,81 +29,71 @@ public class KiWeaponRenderer {
 			if (entry == null || entry.player() == null) continue;
 
 			Player player = entry.player();
-			DMZPlayerRenderer renderer = DMZRendererCache.getTPRenderer(player);
+			DMZPlayerRenderer<?> renderer = DMZRendererCache.getTPRenderer(player);
 
 			if (renderer != null) {
 				BakedGeoModel weaponModel = renderer.getGeoModel().getBakedModel(KI_WEAPONS_MODEL);
 				if (weaponModel == null) continue;
 
-				resetModelParts(weaponModel);
 				boolean isRight = player.getMainArm() == HumanoidArm.RIGHT;
 				String boneName = getWeaponBoneName(entry.weaponType(), isRight);
 
 				if (!boneName.isEmpty()) {
-					weaponModel.getBone(boneName).ifPresent(KiWeaponRenderer::showBoneChain);
-					syncModelToPlayer(weaponModel, entry.playerModel());
+					weaponModel.getBone(boneName).ifPresent(targetBone -> {
 
-					poseStack.pushPose();
-					poseStack.last().pose().set(entry.poseMatrix());
+						syncTargetBoneAndParents(targetBone, entry.playerModel());
 
-					renderer.reRender(weaponModel, poseStack, buffers, (GeoAnimatable) player,
-							ModRenderTypes.energy(KI_WEAPONS_TEXTURE),
-							buffers.getBuffer(ModRenderTypes.energy(KI_WEAPONS_TEXTURE)),
-							entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
-							entry.color()[0], entry.color()[1], entry.color()[2], 0.85f);
+						poseStack.pushPose();
+						poseStack.last().pose().set(entry.poseMatrix());
 
-					poseStack.popPose();
+						RenderType renderType = ModRenderTypes.energy(KI_WEAPONS_TEXTURE);
+						VertexConsumer vertexConsumer = buffers.getBuffer(renderType);
+
+						DMZPlayerRenderer rawRenderer = renderer;
+
+						rawRenderer.renderRecursively(poseStack, player, targetBone, renderType, buffers, vertexConsumer, true,
+								entry.partialTick(), 15728880, OverlayTexture.NO_OVERLAY,
+								entry.color()[0], entry.color()[1], entry.color()[2], 0.85f);
+
+						poseStack.popPose();
+					});
 				}
 			}
 		}
 	}
 
 	private static String getWeaponBoneName(String type, boolean isRight) {
-		return switch (type.toLowerCase()) {
-			case "blade" -> isRight ? "blade_right" : "blade_left";
-			case "scythe" -> isRight ? "scythe_right" : "scythe_left";
-			case "clawlance" -> isRight ? "trident_right" : "trident_left";
-			default -> "";
+		if (type == null) return "";
+		return switch (type) {
+			case "blade", "BLADE", "Blade" -> isRight ? "blade_right" : "blade_left";
+			case "scythe", "SCYTHE", "Scythe" -> isRight ? "scythe_right" : "scythe_left";
+			case "clawlance", "CLAWLANCE", "Clawlance" -> isRight ? "trident_right" : "trident_left";
+			default -> {
+				String lower = type.toLowerCase();
+				if (lower.equals("blade")) yield isRight ? "blade_right" : "blade_left";
+				if (lower.equals("scythe")) yield isRight ? "scythe_right" : "scythe_left";
+				if (lower.equals("clawlance")) yield isRight ? "trident_right" : "trident_left";
+				yield "";
+			}
 		};
 	}
 
-	private static void syncModelToPlayer(BakedGeoModel auraModel, BakedGeoModel playerModel) {
-		for (GeoBone auraBone : auraModel.topLevelBones()) {
-			syncBoneRecursively(auraBone, playerModel);
+	private static void syncTargetBoneAndParents(GeoBone destBone, BakedGeoModel sourceModel) {
+		GeoBone currentDest = destBone;
+		while (currentDest != null) {
+			final GeoBone finalDest = currentDest;
+			sourceModel.getBone(finalDest.getName()).ifPresent(sourceBone -> {
+				finalDest.setRotX(sourceBone.getRotX());
+				finalDest.setRotY(sourceBone.getRotY());
+				finalDest.setRotZ(sourceBone.getRotZ());
+				finalDest.setPosX(sourceBone.getPosX());
+				finalDest.setPosY(sourceBone.getPosY());
+				finalDest.setPosZ(sourceBone.getPosZ());
+				finalDest.setScaleX(sourceBone.getScaleX());
+				finalDest.setScaleY(sourceBone.getScaleY());
+				finalDest.setScaleZ(sourceBone.getScaleZ());
+			});
+			currentDest = currentDest.getParent();
 		}
-	}
-
-	private static void showBoneChain(GeoBone bone) {
-		setHiddenRecursive(bone, false);
-		GeoBone parent = bone.getParent();
-		while (parent != null) {
-			parent.setHidden(false);
-			parent = parent.getParent();
-		}
-	}
-
-	private static void resetModelParts(BakedGeoModel model) {
-		for (GeoBone bone : model.topLevelBones()) {
-			setHiddenRecursive(bone, true);
-		}
-	}
-
-	private static void setHiddenRecursive(GeoBone bone, boolean hidden) {
-		bone.setHidden(hidden);
-		for (GeoBone child : bone.getChildBones()) {
-			setHiddenRecursive(child, hidden);
-		}
-	}
-
-	private static void syncBoneRecursively(GeoBone destBone, BakedGeoModel sourceModel) {
-		sourceModel.getBone(destBone.getName()).ifPresent(sourceBone -> {
-			destBone.setRotX(sourceBone.getRotX());
-			destBone.setRotY(sourceBone.getRotY());
-			destBone.setRotZ(sourceBone.getRotZ());
-			destBone.setPosX(sourceBone.getPosX());
-			destBone.setPosY(sourceBone.getPosY());
-			destBone.setPosZ(sourceBone.getPosZ());
-		});
-		for (GeoBone child : destBone.getChildBones()) syncBoneRecursively(child, sourceModel);
 	}
 }

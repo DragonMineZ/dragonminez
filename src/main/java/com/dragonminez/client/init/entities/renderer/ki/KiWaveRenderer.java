@@ -54,8 +54,8 @@ public class KiWaveRenderer extends EntityRenderer<KiWaveEntity> {
 
     @Override
     public void render(KiWaveEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
+        float[] auraColor = entity.getRgbColorMain();
+        float[] borderColor = entity.getRgbColorBorder();
 
         float exactAge = entity.tickCount + partialTick;
         float fadeAlpha = 1.0F;

@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.client.util.ColorUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -9,9 +10,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 
 public class KiExplosionVisualEntity extends Entity {
-
     private static final EntityDataAccessor<Integer> COLOR = SynchedEntityData.defineId(KiExplosionVisualEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MAX_SIZE = SynchedEntityData.defineId(KiExplosionVisualEntity.class, EntityDataSerializers.FLOAT);
+    private transient float[] cachedColorMainRgb;
 
     public KiExplosionVisualEntity(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -32,6 +33,11 @@ public class KiExplosionVisualEntity extends Entity {
 
     public int getColor() {
         return this.entityData.get(COLOR);
+    }
+
+    public float[] getRgbColorMain() {
+        if (this.cachedColorMainRgb == null) this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(this.getColor());
+        return this.cachedColorMainRgb;
     }
 
     public float getMaxSize() {

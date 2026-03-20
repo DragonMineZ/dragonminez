@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.ki;
 
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
@@ -27,8 +28,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final EntityDataAccessor<String> TECHNIQUE_ID = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> ARMOR_PENETRATION = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_HEAL = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.BOOLEAN);
-
     private static final EntityDataAccessor<Integer> MAX_LIFE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
+
+    private transient float[] cachedColorMainRgb;
+    private transient float[] cachedColorBorderRgb;
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -137,33 +140,39 @@ public abstract class AbstractKiProjectile extends Projectile {
     public void setColors(int main, int border) {
         this.entityData.set(COLOR_MAIN, main);
         this.entityData.set(COLOR_BORDER, border);
+        this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(main);
+        this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(border);
     }
+
     public int getColor() { return this.entityData.get(COLOR_MAIN); }
     public int getColorBorde() { return this.entityData.get(COLOR_BORDER); }
 
+    public float[] getRgbColorMain() {
+        if (this.cachedColorMainRgb == null) this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(this.getColor());
+        return this.cachedColorMainRgb;
+    }
+
+    public float[] getRgbColorBorder() {
+        if (this.cachedColorBorderRgb == null) this.cachedColorBorderRgb = this.getRgbColorBorder();
+        return this.cachedColorBorderRgb;
+    }
+
     public void setKiDamage(float damage) { this.entityData.set(DAMAGE, damage); }
     public float getKiDamage() { return this.entityData.get(DAMAGE); }
-
     public void setSize(float size) { this.entityData.set(SIZE, size); }
     public float getSize() { return this.entityData.get(SIZE); }
-
     public void setKiSpeed(float speed) { this.entityData.set(SPEED, speed); }
     public float getKiSpeed() { return this.entityData.get(SPEED); }
-
     public void setKiRenderType(int type) { this.entityData.set(KI_BALL_RENDER_TYPE, type); }
     public int getKiRenderType() { return this.entityData.get(KI_BALL_RENDER_TYPE); }
-
     public String getTechniqueId() { return this.entityData.get(TECHNIQUE_ID); }
     public void setTechniqueId(String id) { this.entityData.set(TECHNIQUE_ID, id); }
-
     public int getArmorPenetration() { return this.entityData.get(ARMOR_PENETRATION); }
     public void setArmorPenetration(int pen) { this.entityData.set(ARMOR_PENETRATION, pen); }
-
     public boolean isHeal() { return this.entityData.get(IS_HEAL); }
     public void setHeal(boolean heal) { this.entityData.set(IS_HEAL, heal); }
-
-    public void setMaxLife(int lifeInTicks) {this.entityData.set(MAX_LIFE, lifeInTicks);}
-    public int getMaxLife() {return this.entityData.get(MAX_LIFE);}
+    public void setMaxLife(int lifeInTicks) {this.entityData.set(MAX_LIFE, lifeInTicks); }
+    public int getMaxLife() {return this.entityData.get(MAX_LIFE); }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {

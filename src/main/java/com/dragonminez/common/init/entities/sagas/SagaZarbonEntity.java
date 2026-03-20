@@ -18,7 +18,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaZarbonEntity extends DBSagasEntity{
@@ -117,13 +116,13 @@ public class SagaZarbonEntity extends DBSagasEntity{
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isTransforming()) {
-            return event.setAndContinue(RawAnimation.begin().thenLoop("transform"));
+            return event.setAndContinue(ANIM_TRANSFORM);
         }
 
         if (this.isCasting()) {
             int skill = getSkillType();
             if (skill == SKILL_KIBLAST) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+                return event.setAndContinue(ANIM_KIWAVE);
             }
         }
 

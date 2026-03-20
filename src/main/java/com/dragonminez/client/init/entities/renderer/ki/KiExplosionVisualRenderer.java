@@ -44,7 +44,7 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
         }
 
 
-        float[] color = ColorUtils.rgbIntToFloat(entity.getColor());
+        float[] color = entity.getRgbColorMain();
 
         poseStack.pushPose();
         this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);

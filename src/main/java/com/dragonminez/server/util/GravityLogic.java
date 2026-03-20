@@ -13,13 +13,17 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class GravityLogic {
 	public static final UUID GRAVITY_SPEED_UUID = UUID.fromString("019c3047-cd2f-7af4-a3cd-5bca51dd3588");
 	private static final UUID GRAVITY_ATTACK_SPEED_UUID = UUID.fromString("019c3047-4e91-74e1-ac87-d4ea8e463688");
+
+	private static final Map<UUID, Double> NPC_GRAVITY_CACHE = new HashMap<>();
+	private static final Map<UUID, Long> NPC_GRAVITY_TICK = new HashMap<>();
 
 	public static double getRawGravity(Player player) {
 		double maxGravity = 1.0;
@@ -35,16 +39,25 @@ public class GravityLogic {
 		// double machineGravity = GravityMachineLogic.getNearbyGravity(player);
 		// if (machineGravity > 1.0) return machineGravity;
 		return maxGravity;
-
 	}
 
 	private static double getNpcGravity(Player player) {
-		double gravity = 0.0;
-		double range = 100.0;
-		AABB searchBox = player.getBoundingBox().inflate(range);
-		List<MasterKaiosamaEntity> kais = player.level().getEntitiesOfClass(MasterKaiosamaEntity.class, searchBox);
-		if (!kais.isEmpty()) gravity = 10.0;
-		return gravity;
+		UUID id = player.getUUID();
+		long currentTick = player.level().getGameTime();
+
+		if (!NPC_GRAVITY_CACHE.containsKey(id) || currentTick - NPC_GRAVITY_TICK.getOrDefault(id, 0L) > 100) {
+			double gravity = 0.0;
+			double range = 100.0;
+			AABB searchBox = player.getBoundingBox().inflate(range);
+			List<MasterKaiosamaEntity> kais = player.level().getEntitiesOfClass(MasterKaiosamaEntity.class, searchBox);
+			if (!kais.isEmpty()) gravity = 10.0;
+
+			NPC_GRAVITY_CACHE.put(id, gravity);
+			NPC_GRAVITY_TICK.put(id, currentTick);
+			return gravity;
+		}
+
+		return NPC_GRAVITY_CACHE.getOrDefault(id, 0.0);
 	}
 
 	public static double getBonusGravity(Player player) {
@@ -66,9 +79,8 @@ public class GravityLogic {
 	public static double getPenalizationGravity(Player player) {
 		double rawGravity = getRawGravity(player);
 		if (rawGravity <= 1.0) return 0.0;
-		AtomicReference<Double> penGravity = new AtomicReference<>(0.0);
 
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+		return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
 			double totalStats = data.getStats().getTotalStats();
 			double avgStats = totalStats / 6.0;
 
@@ -85,10 +97,8 @@ public class GravityLogic {
 			double transformFactor = 1.0 + avgBonus;
 			double finalResistance = baseResistance * transformFactor;
 
-			penGravity.set(Math.max(0.0, rawGravity - finalResistance));
-		});
-
-		return penGravity.get();
+			return Math.max(0.0, rawGravity - finalResistance);
+		}).orElse(0.0);
 	}
 
 	public static double getGeneralPenaltyFactor(double pGravity) {

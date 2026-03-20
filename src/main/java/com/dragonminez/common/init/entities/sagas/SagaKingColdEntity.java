@@ -15,7 +15,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaKingColdEntity extends DBSagasEntity {
@@ -89,7 +88,7 @@ public class SagaKingColdEntity extends DBSagasEntity {
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-        event.getController().setAnimation(RawAnimation.begin().thenLoop("tail"));
+        event.getController().setAnimation(ANIM_TAIL);
         return PlayState.CONTINUE;
     }
 
@@ -97,7 +96,7 @@ public class SagaKingColdEntity extends DBSagasEntity {
         if (this.isCasting()) {
             int currentSkill = getSkillType();
             if (currentSkill == 2) {
-                event.getController().setAnimation(RawAnimation.begin().thenPlay("kiattack"));
+                event.getController().setAnimation(ANIM_KIATTACK);
             }
             return PlayState.CONTINUE;
         }

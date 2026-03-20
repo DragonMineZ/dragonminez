@@ -40,6 +40,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private static final Map<Integer, Float> AURA_TINT_PROGRESS = new ConcurrentHashMap<>();
 	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static final float FADE_SPEED = 0.005f;
+	private static final float[] DARK_GRAY = ColorUtils.hexToRgb("#383838");
+
+	private static final String[] ARMOR_BONES = {
+			"armorHead", "armorBody", "armorBody2", "armorLeggingsBody",
+			"armorRightArm", "armorLeftArm", "armorLeftLeg", "armorLeftBoot",
+			"armorRightLeg", "armorRightBoot"
+	};
 
 	private int currentKaiokenPhase = 0;
 	private float currentTintProgress = 0.0f;
@@ -98,18 +105,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private float[] getTopAuraColor(StatsData stats) {
 		var character = stats.getCharacter();
-		String hex = character.getAuraColor();
+		float[] color = character.getRgbAuraColor();
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
-			hex = character.getActiveFormData().getAuraColor();
+		if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null && !character.getActiveFormData().getAuraColor().isEmpty()) {
+			color = character.getActiveFormData().getRgbAuraColor();
 		}
 
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
-			hex = character.getActiveStackFormData().getAuraColor();
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null && !character.getActiveStackFormData().getAuraColor().isEmpty()) {
+			color = character.getActiveStackFormData().getRgbAuraColor();
 		}
 
-		if (hex == null || hex.isEmpty()) hex = "#FFFFFF";
-		return ColorUtils.hexToRgb(hex);
+		return color;
 	}
 
 	private void renderHair(PoseStack poseStack, T animatable, BakedGeoModel model, MultiBufferSource bufferSource, AbstractClientPlayer player, StatsData stats, float partialTick, int packedLight, int packedOverlay, float alpha) {
@@ -124,16 +130,16 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (hairId == 5) return;
 		if (hairId == 0 && character.getHairBase().getVisibleStrandCount() == 0) return;
 
-		float[] currentTint = ColorUtils.hexToRgb(character.getHairColor());
+		float[] currentTint = character.getRgbHairColor();
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			if (!character.getActiveFormData().getHairColor().isEmpty()) {
-				currentTint = ColorUtils.hexToRgb(character.getActiveFormData().getHairColor());
+				currentTint = character.getActiveFormData().getRgbHairColor();
 			}
 		}
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
 			if (!character.getActiveStackFormData().getHairColor().isEmpty()) {
-				currentTint = ColorUtils.hexToRgb(character.getActiveStackFormData().getHairColor());
+				currentTint = character.getActiveStackFormData().getRgbHairColor();
 			}
 		}
 
@@ -143,13 +149,13 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
 				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
 					float chargeProgress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					finalTint = lerpColor(chargeProgress, currentTint, ColorUtils.hexToRgb(nextForm.getHairColor()));
+					finalTint = lerpColor(chargeProgress, currentTint, nextForm.getRgbHairColor());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
 				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
 					float chargeProgress = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					finalTint = lerpColor(chargeProgress, currentTint, ColorUtils.hexToRgb(nextForm.getHairColor()));
+					finalTint = lerpColor(chargeProgress, currentTint, nextForm.getRgbHairColor());
 				}
 			}
 		}
@@ -168,27 +174,16 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			headBone.setScaleY(originalSY + inflation);
 			headBone.setScaleZ(originalSZ + inflation);
 
-			List<String> hiddenBones = new ArrayList<>();
-			for (GeoBone bone : model.topLevelBones()) {
-				if (!bone.isHidden()) {
-					hiddenBones.add(bone.getName());
-					bone.setHidden(true);
-				}
+			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
+			try {
+				renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/hair_base.png", hairTint, partialTick, packedLight, packedOverlay, alpha);
+			} finally {
+				restoreHiddenBones(hiddenBones);
+				headBone.setPosZ(originalZ);
+				headBone.setScaleX(originalSX);
+				headBone.setScaleY(originalSY);
+				headBone.setScaleZ(originalSZ);
 			}
-
-			headBone.setHidden(false);
-			unhideParents(headBone);
-
-			renderColoredLayer(model, poseStack, animatable, bufferSource, "textures/entity/races/hair_base.png", hairTint, partialTick, packedLight, packedOverlay, alpha);
-
-			for (GeoBone bone : model.topLevelBones()) {
-				if (hiddenBones.contains(bone.getName())) bone.setHidden(false);
-			}
-
-			headBone.setPosZ(originalZ);
-			headBone.setScaleX(originalSX);
-			headBone.setScaleY(originalSY);
-			headBone.setScaleZ(originalSZ);
 		});
 	}
 
@@ -223,64 +218,68 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		model.getBone("head").ifPresent(headBone -> {
 			float originalZ = headBone.getPosZ();
 			headBone.setPosZ(originalZ - 0.001f);
-			dispatchFaceRender(model, poseStack, animatable, bufferSource, character, finalFaceKey, isModelEmpty, raceName, partialTick, packedLight, packedOverlay, alpha);
-			headBone.setPosZ(originalZ);
+			List<GeoBone> hiddenBones = hideAllTopLevelAndKeepHead(model, headBone);
+			try {
+				dispatchFaceRender(model, poseStack, animatable, bufferSource, stats, character, finalFaceKey, isModelEmpty, raceName, partialTick, packedLight, packedOverlay, alpha);
+			} finally {
+				restoreHiddenBones(hiddenBones);
+				headBone.setPosZ(originalZ);
+			}
 		});
 	}
 
-	private void dispatchFaceRender(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, boolean isModelEmpty, String race, float pt, int pl, int po, float alpha) {
-		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+	private void dispatchFaceRender(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, StatsData stats, Character character, String faceKey, boolean isModelEmpty, String race, float pt, int pl, int po, float alpha) {
 
-		float[] eye1 = ColorUtils.hexToRgb(character.getEye1Color());
-		float[] eye2 = ColorUtils.hexToRgb(character.getEye2Color());
-		float[] skin = ColorUtils.hexToRgb(character.getBodyColor());
-		float[] b2 = ColorUtils.hexToRgb(character.getBodyColor2());
-		float[] hair = ColorUtils.hexToRgb(character.getHairColor());
+		float[] eye1 = character.getRgbEye1Color();
+		float[] eye2 = character.getRgbEye2Color();
+		float[] skin = character.getRgbBodyColor();
+		float[] b2 = character.getRgbBodyColor2();
+		float[] hair = character.getRgbHairColor();
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			var f = character.getActiveFormData();
-			if (!f.getEye1Color().isEmpty()) eye1 = ColorUtils.hexToRgb(f.getEye1Color());
-			if (!f.getEye2Color().isEmpty()) eye2 = ColorUtils.hexToRgb(f.getEye2Color());
-			if (!f.getHairColor().isEmpty()) hair = ColorUtils.hexToRgb(f.getHairColor());
-			if (!f.getBodyColor1().isEmpty()) skin = ColorUtils.hexToRgb(f.getBodyColor1());
-			if (!f.getBodyColor2().isEmpty()) b2 = ColorUtils.hexToRgb(f.getBodyColor2());
+			if (!f.getEye1Color().isEmpty()) eye1 = f.getRgbEye1Color();
+			if (!f.getEye2Color().isEmpty()) eye2 = f.getRgbEye2Color();
+			if (!f.getHairColor().isEmpty()) hair = f.getRgbHairColor();
+			if (!f.getBodyColor1().isEmpty()) skin = f.getRgbBodyColor1();
+			if (!f.getBodyColor2().isEmpty()) b2 = f.getRgbBodyColor2();
 		}
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
 			var sf = character.getActiveStackFormData();
-			if (!sf.getEye1Color().isEmpty()) eye1 = ColorUtils.hexToRgb(sf.getEye1Color());
-			if (!sf.getEye2Color().isEmpty()) eye2 = ColorUtils.hexToRgb(sf.getEye2Color());
-			if (!sf.getHairColor().isEmpty()) hair = ColorUtils.hexToRgb(sf.getHairColor());
-			if (!sf.getBodyColor1().isEmpty()) skin = ColorUtils.hexToRgb(sf.getBodyColor1());
-			if (!sf.getBodyColor2().isEmpty()) b2 = ColorUtils.hexToRgb(sf.getBodyColor2());
+			if (!sf.getEye1Color().isEmpty()) eye1 = sf.getRgbEye1Color();
+			if (!sf.getEye2Color().isEmpty()) eye2 = sf.getRgbEye2Color();
+			if (!sf.getHairColor().isEmpty()) hair = sf.getRgbHairColor();
+			if (!sf.getBodyColor1().isEmpty()) skin = sf.getRgbBodyColor1();
+			if (!sf.getBodyColor2().isEmpty()) b2 = sf.getRgbBodyColor2();
 		}
 
-		if (stats != null && stats.getStatus().isActionCharging()) {
+		if (stats.getStatus().isActionCharging()) {
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
 				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
 				if (nextForm != null) {
 					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					if (!nextForm.getEye1Color().isEmpty())
-						eye1 = lerpColor(factor, eye1, ColorUtils.hexToRgb(nextForm.getEye1Color()));
+						eye1 = lerpColor(factor, eye1, nextForm.getRgbEye1Color());
 					if (!nextForm.getEye2Color().isEmpty())
-						eye2 = lerpColor(factor, eye2, ColorUtils.hexToRgb(nextForm.getEye2Color()));
+						eye2 = lerpColor(factor, eye2, nextForm.getRgbEye2Color());
 					if (!nextForm.getBodyColor1().isEmpty())
-						skin = lerpColor(factor, skin, ColorUtils.hexToRgb(nextForm.getBodyColor1()));
+						skin = lerpColor(factor, skin, nextForm.getRgbBodyColor1());
 					if (!nextForm.getHairColor().isEmpty())
-						hair = lerpColor(factor, hair, ColorUtils.hexToRgb(nextForm.getHairColor()));
+						hair = lerpColor(factor, hair, nextForm.getRgbHairColor());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
 				if (nextForm != null) {
 					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
 					if (!nextForm.getEye1Color().isEmpty())
-						eye1 = lerpColor(factor, eye1, ColorUtils.hexToRgb(nextForm.getEye1Color()));
+						eye1 = lerpColor(factor, eye1, nextForm.getRgbEye1Color());
 					if (!nextForm.getEye2Color().isEmpty())
-						eye2 = lerpColor(factor, eye2, ColorUtils.hexToRgb(nextForm.getEye2Color()));
+						eye2 = lerpColor(factor, eye2, nextForm.getRgbEye2Color());
 					if (!nextForm.getBodyColor1().isEmpty())
-						skin = lerpColor(factor, skin, ColorUtils.hexToRgb(nextForm.getBodyColor1()));
+						skin = lerpColor(factor, skin, nextForm.getRgbBodyColor1());
 					if (!nextForm.getHairColor().isEmpty())
-						hair = lerpColor(factor, hair, ColorUtils.hexToRgb(nextForm.getHairColor()));
+						hair = lerpColor(factor, hair, nextForm.getRgbHairColor());
 				}
 			}
 		}
@@ -379,7 +378,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		boolean isPrimitiveForm = !character.hasActiveForm() || currentForm.equals("second") || currentForm.equals("third");
-		float[] finalDetailColor = (isPrimitiveForm && (faceKey.equals("frostdemon") || faceKey.equals("frostdemon_third") ||faceKey.equals("frostdemon_second") )) ? b2 : (bodyType == 1 ? b2 : skin);
+		float[] finalDetailColor = (isPrimitiveForm && (faceKey.equals("frostdemon") || faceKey.equals("frostdemon_third") || faceKey.equals("frostdemon_second"))) ? b2 : (bodyType == 1 ? b2 : skin);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "frostdemon_nose_" + character.getNoseType() + ".png", finalDetailColor, pt, pl, po, alpha);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "frostdemon_mouth_" + character.getMouthType() + ".png", finalDetailColor, pt, pl, po, alpha);
 	}
@@ -397,7 +396,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			phase = (character.hasActiveForm() && currentForm.equals(BioAndroidForms.SEMI_PERFECT)) ? "semiperfect" : (character.hasActiveForm() ? "perfect" : "base");
 		else phase = "base";
 
-		float[] color0 = phase.equals("base") ? ColorUtils.hexToRgb("#FF6B6B") : ColorUtils.hexToRgb("#FFFFFF");
 		String textureBase = folder + phase + "_eye_layer";
 
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer0.png")).getPath(), eye2, pt, pl, po, alpha);
@@ -421,9 +419,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] skin, float pt, int pl, int po, float alpha) {
 		String folder = "textures/entity/races/majin/faces/";
 		int eyeType = character.getEyesType();
-		float[] darkGray = ColorUtils.hexToRgb("#383838");
-
-		float[] bgColor = eyeType == 0 ? skin : darkGray;
+		float[] bgColor = eyeType == 0 ? skin : DARK_GRAY;
 		float[] layer1Color = eyeType == 0 ? skin : eye1;
 		String eyePath = folder + "majin_eye_" + eyeType + "_";
 
@@ -440,7 +436,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (this.currentKaiokenPhase > 0) intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
 		else intensity = 0.2f * this.currentTintProgress;
 
-
 		if (intensity > 0.001f) {
 			r = r * (1.0f - intensity) + (this.currentAuraColor[0] * intensity);
 			g = g * (1.0f - intensity) + (this.currentAuraColor[1] * intensity);
@@ -450,7 +445,19 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		poseStack.pushPose();
 		if (scaleInflation > 1.0f) poseStack.scale(scaleInflation, scaleInflation, scaleInflation);
 
+		List<GeoBone> hiddenArmors = new ArrayList<>();
+		for (String armorBone : ARMOR_BONES) {
+			model.getBone(armorBone).ifPresent(bone -> {
+				if (!bone.isHidden()) {
+					bone.setHidden(true);
+					hiddenArmors.add(bone);
+				}
+			});
+		}
+
 		getRenderer().reRender(model, poseStack, bufferSource, animatable, renderType, bufferSource.getBuffer(renderType), partialTick, packedLight, packedOverlay, r, g, b, alpha);
+
+		for (GeoBone bone : hiddenArmors) bone.setHidden(false);
 
 		poseStack.popPose();
 	}
@@ -465,6 +472,25 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		while (parent != null) {
 			parent.setHidden(false);
 			parent = parent.getParent();
+		}
+	}
+
+	private List<GeoBone> hideAllTopLevelAndKeepHead(BakedGeoModel model, GeoBone headBone) {
+		List<GeoBone> hiddenBones = new ArrayList<>();
+		for (GeoBone bone : model.topLevelBones()) {
+			if (!bone.isHidden()) {
+				hiddenBones.add(bone);
+				bone.setHidden(true);
+			}
+		}
+		headBone.setHidden(false);
+		unhideParents(headBone);
+		return hiddenBones;
+	}
+
+	private void restoreHiddenBones(List<GeoBone> hiddenBones) {
+		for (GeoBone hiddenBone : hiddenBones) {
+			hiddenBone.setHidden(false);
 		}
 	}
 

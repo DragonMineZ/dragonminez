@@ -2,7 +2,6 @@
 
     import com.dragonminez.Reference;
     import com.dragonminez.client.render.util.PlayerEffectQueue;
-    import com.dragonminez.client.util.ColorUtils;
 	import com.dragonminez.common.stats.StatsCapability;
     import com.dragonminez.common.stats.StatsData;
     import com.dragonminez.common.stats.StatsProvider;
@@ -11,7 +10,6 @@
     import net.minecraft.client.player.AbstractClientPlayer;
     import net.minecraft.client.renderer.MultiBufferSource;
     import net.minecraft.client.renderer.RenderType;
-	import net.minecraft.resources.ResourceLocation;
 	import software.bernie.geckolib.cache.object.BakedGeoModel;
     import software.bernie.geckolib.cache.object.GeoBone;
     import software.bernie.geckolib.core.animatable.GeoAnimatable;
@@ -19,10 +17,6 @@
     import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 	public class DMZWeaponsLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
-
-        private static final ResourceLocation KI_WEAPONS_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/kiweapons.geo.json");
-        private static final ResourceLocation KI_WEAPONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/kiweapons.png");
-
         public DMZWeaponsLayer(GeoRenderer<T> entityRendererIn) {
             super(entityRendererIn);
         }
@@ -89,12 +83,12 @@
 
         private float[] getKiColor(StatsData stats) {
             var character = stats.getCharacter();
-            String kiHex = character.getAuraColor();
+            float[] kiColor = character.getRgbAuraColor();
             if (character.hasActiveForm() && character.getActiveFormData() != null) {
                 String formColor = character.getActiveFormData().getAuraColor();
-                if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
+                if (formColor != null && !formColor.isEmpty()) kiColor = character.getActiveFormData().getRgbAuraColor();
             }
-            return ColorUtils.hexToRgb(kiHex);
+            return kiColor;
         }
     }
 

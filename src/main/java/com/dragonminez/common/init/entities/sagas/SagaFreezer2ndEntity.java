@@ -25,7 +25,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaFreezer2ndEntity extends DBSagasEntity{
@@ -169,17 +168,17 @@ public class SagaFreezer2ndEntity extends DBSagasEntity{
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-        return event.setAndContinue(RawAnimation.begin().thenLoop("tail"));
+        return event.setAndContinue(ANIM_TAIL);
     }
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isTransforming()) {
-            return event.setAndContinue(RawAnimation.begin().thenLoop("transform"));
+            return event.setAndContinue(ANIM_TRANSFORM);
         }
 
         if (this.isCasting()) {
             if (getSkillType() == SKILL_GRAB) {
-                return event.setAndContinue(RawAnimation.begin().thenLoop("grab"));
+                return event.setAndContinue(ANIM_GRAB);
             }
         }
 

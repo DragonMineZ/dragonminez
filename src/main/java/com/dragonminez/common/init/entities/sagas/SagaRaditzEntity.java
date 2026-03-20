@@ -17,7 +17,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaRaditzEntity extends DBSagasEntity{
@@ -85,7 +84,7 @@ public class SagaRaditzEntity extends DBSagasEntity{
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
         if (this.isCasting()) {
-            event.getController().setAnimation(RawAnimation.begin().thenPlay("kiwave"));
+            event.getController().setAnimation(ANIM_KIWAVE);
             return PlayState.CONTINUE;
         }
         event.getController().forceAnimationReset();

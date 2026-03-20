@@ -9,7 +9,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaMechaFreezerEntity extends DBSagasEntity {
@@ -118,7 +117,7 @@ public class SagaMechaFreezerEntity extends DBSagasEntity {
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-        return event.setAndContinue(RawAnimation.begin().thenLoop("tail"));
+        return event.setAndContinue(ANIM_TAIL);
     }
 
     private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
@@ -126,9 +125,9 @@ public class SagaMechaFreezerEntity extends DBSagasEntity {
             int currentSkill = getSkillType();
 
             if (currentSkill == SKILL_LASER_COMBO) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kilaser"));
+                return event.setAndContinue(ANIM_KILASER);
             } else if (currentSkill == SKILL_DEATH_BALL) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiball"));
+                return event.setAndContinue(ANIM_KIBALL);
             }
         }
         event.getController().forceAnimationReset();

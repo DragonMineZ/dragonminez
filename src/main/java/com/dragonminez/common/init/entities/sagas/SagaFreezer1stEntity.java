@@ -14,7 +14,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaFreezer1stEntity extends DBSagasEntity{
@@ -89,7 +88,7 @@ public class SagaFreezer1stEntity extends DBSagasEntity{
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-        event.getController().setAnimation(RawAnimation.begin().thenLoop("tail"));
+        event.getController().setAnimation(ANIM_TAIL);
         return PlayState.CONTINUE;
     }
 
@@ -98,7 +97,7 @@ public class SagaFreezer1stEntity extends DBSagasEntity{
             int skill = getSkillType();
 
             if (skill == SKILL_LASER) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiattack"));
+                return event.setAndContinue(ANIM_KIATTACK);
             }
         }
         event.getController().forceAnimationReset();

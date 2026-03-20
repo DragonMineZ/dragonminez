@@ -5,7 +5,6 @@ import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
 import com.dragonminez.client.model.KiTridentModel;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
-import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
@@ -51,6 +50,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 	public static final KiScytheModel KI_SCYTHE_MODEL = new KiScytheModel(KiScytheModel.createBodyLayer().bakeRoot());
 	public static final KiBladeModel KI_BLADE_MODEL = new KiBladeModel(KiBladeModel.createBodyLayer().bakeRoot());
 	public static final KiTridentModel KI_TRIDENT_MODEL = new KiTridentModel(KiTridentModel.createBodyLayer().bakeRoot());
+
+	private static final float[] WHITE_COLOR = {1.0F, 1.0F, 1.0F};
+	private final float[] colorBuffer = new float[3];
 
 	public DMZRenderHand(EntityRendererProvider.Context pContext, PlayerModel<AbstractClientPlayer> pModel) {
 		super(pContext, new PlayerModel(pContext.bakeLayer(ModelLayers.PLAYER), false), 0.4f);
@@ -102,7 +104,6 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		}
 
 		this.renderKiWeapon(pPoseStack, pBuffer, pCombinedLight, pPlayer, stats, HumanoidArm.LEFT);
-
 	}
 
 	private void applyBlockingTransform(PoseStack stack, float side) {
@@ -127,13 +128,13 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		boolean forceVanilla = (raceConfig != null && raceConfig.getUseVanillaSkin());
 
 		java.util.function.BiConsumer<ResourceLocation, float[]> layerConsumer = (texture, color) -> {
-			float[] finalColor = applyKaiokenTint(color, kaiokenPhase);
-			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, finalColor);
+			applyKaiokenTint(color, kaiokenPhase, colorBuffer);
+			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, texture, colorBuffer);
 		};
 
 		if (forceVanilla) {
-			float[] skinTint = applyKaiokenTint(new float[]{1.0f, 1.0f, 1.0f}, kaiokenPhase);
-			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), skinTint);
+			applyKaiokenTint(WHITE_COLOR, kaiokenPhase, colorBuffer);
+			renderPart(pPoseStack, pBuffer, pCombinedLight, pRendererArm, pPlayer.getSkinTextureLocation(), colorBuffer);
 		} else {
 			float pt = Minecraft.getInstance().getFrameTime();
 			SkinGathererProvider.INSTANCE.gatherBodyLayers(pPlayer, stats, pt, layerConsumer);
@@ -200,10 +201,9 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 			ps.translate(isRightArm ? 0.02D : -0.01, 0.02D, 0.0D);
 
-			renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, new float[]{1.0F, 1.0F, 1.0F});
+			renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, WHITE_COLOR);
 
 			ps.popPose();
-
 		}
 	}
 
@@ -276,24 +276,26 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 
 	private float[] getKiColor(StatsData stats) {
 		var character = stats.getCharacter();
-		String kiHex = character.getAuraColor();
+		float[] kiColor = character.getRgbAuraColor();
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
-			String formColor = character.getActiveFormData().getAuraColor();
-			if (formColor != null && !formColor.isEmpty()) kiHex = formColor;
+			float[] formColor = character.getActiveFormData().getRgbAuraColor();
+			if (formColor != null) kiColor = formColor;
 		}
-		return ColorUtils.hexToRgb(kiHex);
+		return kiColor;
 	}
 
-	private float[] applyKaiokenTint(float[] rgb, int phase) {
-		if (phase <= 0) return rgb;
+	private void applyKaiokenTint(float[] source, int phase, float[] dest) {
+		if (phase <= 0) {
+			dest[0] = source[0];
+			dest[1] = source[1];
+			dest[2] = source[2];
+			return;
+		}
 
 		float intensity = Math.min(0.6f, phase * 0.1f);
-
-		float newR = rgb[0] * (1.0f - intensity) + (intensity);
-		float newG = rgb[1] * (1.0f - intensity);
-		float newB = rgb[2] * (1.0f - intensity);
-
-		return new float[]{newR, newG, newB};
+		dest[0] = source[0] * (1.0f - intensity) + intensity;
+		dest[1] = source[1] * (1.0f - intensity);
+		dest[2] = source[2] * (1.0f - intensity);
 	}
 
 	private void queueFirstPersonAura(AbstractClientPlayer player, PoseStack poseStack, int packedLight) {

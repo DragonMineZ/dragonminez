@@ -224,7 +224,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     }
 
     private void spawnParticles(float maxRadius, boolean isFiring) {
-        float[] rgbBorder = ColorUtils.rgbIntToFloat(this.getColorBorde());
+        float[] rgbBorder = this.getRgbColorBorder();
         float[] rgbCore = ColorUtils.rgbIntToFloat(this.getColor());
         double floorY = this.getY() + 0.1D;
 

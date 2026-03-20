@@ -2,7 +2,6 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
-import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
@@ -33,7 +32,6 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	public DMZHairLayer(GeoRenderer<T> renderer) {
 		super(renderer);
-
 	}
 
 	@Override
@@ -64,21 +62,21 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (effectiveHair == null || effectiveHair.isEmpty()) return;
 
 		CustomHair hairFrom = character.getHairBase();
-		String colorFrom = character.getHairColor();
+		float[] rgbFrom = character.getRgbHairColor().clone();
 
 		if (character.hasActiveForm()) {
 			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
-			colorFrom = getColorForForm(character, character.getActiveFormGroup(), character.getActiveForm());
-			if (character.getActiveForm().toLowerCase().contains("oozaru")) return;
+			rgbFrom = getRgbForForm(character, character.getActiveFormGroup(), character.getActiveForm()).clone();
+			if (character.isOozaruCached()) return;
 		}
 
 		if (character.hasActiveStackForm()) {
 			hairFrom = getHairForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm(), hairFrom);
-			colorFrom = getColorForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm(), colorFrom);
+			rgbFrom = getRgbForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm(), rgbFrom).clone();
 		}
 
 		CustomHair hairTo = hairFrom;
-		String colorTo = colorFrom;
+		float[] rgbTo = rgbFrom.clone();
 		float factor = 0.0f;
 
 		int entityId = animatable.getId();
@@ -89,25 +87,25 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			String targetGroup;
 			FormConfig.FormData nextForm = null;
 			CustomHair targetHair = null;
-			String targetColor = null;
+			float[] targetRgb = null;
 
 			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
 				targetGroup = character.getSelectedFormGroup();
 				nextForm = TransformationsHelper.getNextAvailableForm(stats);
 				if (nextForm != null) {
 					targetHair = getHairForForm(character, targetGroup, nextForm.getName());
-					targetColor = getColorForForm(character, targetGroup, nextForm.getName());
+					targetRgb = getRgbForForm(character, targetGroup, nextForm.getName());
 				}
 			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
 				targetGroup = character.getSelectedStackFormGroup();
 				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
 				if (nextForm != null) {
 					targetHair = getHairForStackForm(character, targetGroup, nextForm.getName(), hairFrom);
-					targetColor = getColorForStackForm(character, targetGroup, nextForm.getName(), colorFrom);
+					targetRgb = getRgbForStackForm(character, targetGroup, nextForm.getName(), rgbFrom);
 				}
 			}
 
-			if (nextForm != null && targetHair != null) {
+			if (nextForm != null && targetHair != null && targetRgb != null) {
 				float targetProgress = stats.getResources().getActionCharge() / 100.0f;
 				long currentTick = animatable.tickCount;
 				float interpolationSpeed = 0.1f;
@@ -122,50 +120,38 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				smoothProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
 
 				hairTo = targetHair;
-				colorTo = targetColor;
+				rgbTo = targetRgb.clone();
 				factor = smoothProgress;
 			}
-		} else progressMap.put(entityId, 0.0f);
+		} else {
+			progressMap.put(entityId, 0.0f);
+		}
 
 		int phase = TransformationsHelper.getKaiokenPhase(stats);
 		if (phase > 0) {
-			colorFrom = applyKaiokenToHex(colorFrom, phase);
-			colorTo = applyKaiokenToHex(colorTo, phase);
+			applyKaiokenToRgb(rgbFrom, phase);
+			applyKaiokenToRgb(rgbTo, phase);
 		} else {
 			boolean isCharging = stats.getStatus().isChargingKi();
 			if (isCharging || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura()) {
-				String auraHex = character.getAuraColor();
-				if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getAuraColor() != null) {
-					auraHex = character.getActiveFormData().getAuraColor();
+				float[] rgbAura = character.getRgbAuraColor();
+				if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getRgbAuraColor() != null) {
+					rgbAura = character.getActiveFormData().getRgbAuraColor();
 				}
-				if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getAuraColor() != null) {
-					auraHex = character.getActiveStackFormData().getAuraColor();
+				if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getRgbAuraColor() != null) {
+					rgbAura = character.getActiveStackFormData().getRgbAuraColor();
 				}
-				if (auraHex == null || auraHex.isEmpty()) auraHex = "#FFFFFF";
 
 				float intensity = 0.2f;
-				float[] rgbFrom = ColorUtils.hexToRgb(colorFrom);
-				float[] rgbTo = ColorUtils.hexToRgb(colorTo);
-				float[] rgbAura = ColorUtils.hexToRgb(auraHex);
-
-				rgbFrom[0] = rgbFrom[0] * (1.0f - intensity) + (rgbAura[0] * intensity);
-				rgbFrom[1] = rgbFrom[1] * (1.0f - intensity) + (rgbAura[1] * intensity);
-				rgbFrom[2] = rgbFrom[2] * (1.0f - intensity) + (rgbAura[2] * intensity);
-
-				rgbTo[0] = rgbTo[0] * (1.0f - intensity) + (rgbAura[0] * intensity);
-				rgbTo[1] = rgbTo[1] * (1.0f - intensity) + (rgbAura[1] * intensity);
-				rgbTo[2] = rgbTo[2] * (1.0f - intensity) + (rgbAura[2] * intensity);
-
-				colorFrom = String.format("#%02x%02x%02x", (int)(rgbFrom[0]*255), (int)(rgbFrom[1]*255), (int)(rgbFrom[2]*255));
-				colorTo = String.format("#%02x%02x%02x", (int)(rgbTo[0]*255), (int)(rgbTo[1]*255), (int)(rgbTo[2]*255));
+				applyAuraTintToRgb(rgbFrom, rgbAura, intensity);
+				applyAuraTintToRgb(rgbTo, rgbAura, intensity);
 			}
 		}
 
-		float alpha = 1.0f;
-		if (animatable.isSpectator()) alpha = 0.15f;
+		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 
 		poseStack.pushPose();
-		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, colorFrom, colorTo, partialTick, packedLight, packedOverlay, alpha);
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, partialTick, packedLight, packedOverlay, alpha);
 		poseStack.popPose();
 	}
 
@@ -177,85 +163,10 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				CustomHair override = HairManager.fromCode(formData.getForcedHairCode());
 				if (override != null) return override;
 			} else if (formData != null && formData.hasDefinedHairType()) {
-				switch (formData.getHairType().toLowerCase()) {
-					case "base" -> {
-						return character.getHairBase();
-					}
-					case "ssj" -> {
-						return character.getHairSSJ();
-					}
-					case "ssj2" -> {
-						return character.getHairSSJ2();
-					}
-					case "ssj3" -> {
-						return character.getHairSSJ3();
-					}
-					default -> {
-					}
-				}
+				return resolveHairType(character, formData.getHairType());
 			}
 		}
-
 		return character.getHairBase();
-	}
-
-	private CustomHair getHairForStackForm(Character character, String group, String formName) {
-		FormConfig config = ConfigManager.getStackFormGroup(group);
-		if (config != null) {
-			var formData = config.getForm(formName);
-			if (formData != null && formData.hasHairCodeOverride()) {
-				CustomHair override = HairManager.fromCode(formData.getForcedHairCode());
-				if (override != null) return override;
-			} else if (formData != null && formData.hasDefinedHairType()) {
-				switch (formData.getHairType().toLowerCase()) {
-					case "base" -> {
-						return character.getHairBase();
-					}
-					case "ssj" -> {
-						return character.getHairSSJ();
-					}
-					case "ssj2" -> {
-						return character.getHairSSJ2();
-					}
-					case "ssj3" -> {
-						return character.getHairSSJ3();
-					}
-					default -> {
-					}
-				}
-			}
-		}
-
-		return character.getHairBase();
-	}
-
-	private String getColorForForm(Character character, String group, String formName) {
-		FormConfig config = ConfigManager.getFormGroup(character.getRaceName(), group);
-		if (config != null) {
-			var formData = config.getForm(formName);
-			if (formData != null && formData.hasHairColorOverride()) {
-				return formData.getHairColor();
-			}
-		}
-		return character.getHairColor();
-	}
-
-	private String applyKaiokenToHex(String hexColor, int phase) {
-		try {
-			float[] rgb = ColorUtils.hexToRgb(hexColor);
-			float intensity = Math.min(0.6f, phase * 0.1f);
-
-			float r = rgb[0] * (1.0f - intensity) + (1.0f * intensity);
-			float g = rgb[1] * (1.0f - intensity);
-			float b = rgb[2] * (1.0f - intensity);
-
-			return String.format("#%02x%02x%02x",
-					(int) (Mth.clamp(r, 0, 1) * 255),
-					(int) (Mth.clamp(g, 0, 1) * 255),
-					(int) (Mth.clamp(b, 0, 1) * 255));
-		} catch (Exception e) {
-			return hexColor;
-		}
 	}
 
 	private CustomHair getHairForStackForm(Character character, String group, String formName, CustomHair fallback) {
@@ -266,33 +177,54 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				CustomHair override = HairManager.fromCode(formData.getForcedHairCode());
 				if (override != null) return override;
 			} else if (formData != null && formData.hasDefinedHairType()) {
-				switch (formData.getHairType().toLowerCase()) {
-					case "base" -> {
-						return character.getHairBase();
-					}
-					case "ssj" -> {
-						return character.getHairSSJ();
-					}
-					case "ssj2" -> {
-						return character.getHairSSJ2();
-					}
-					case "ssj3" -> {
-						return character.getHairSSJ3();
-					}
-				}
+				return resolveHairType(character, formData.getHairType());
 			}
 		}
 		return fallback;
 	}
 
-	private String getColorForStackForm(Character character, String group, String formName, String fallback) {
+	private CustomHair resolveHairType(Character character, String type) {
+		return switch (type.toLowerCase()) {
+			case "base" -> character.getHairBase();
+			case "ssj" -> character.getHairSSJ();
+			case "ssj2" -> character.getHairSSJ2();
+			case "ssj3" -> character.getHairSSJ3();
+			default -> character.getHairBase();
+		};
+	}
+
+	private float[] getRgbForForm(Character character, String group, String formName) {
+		FormConfig config = ConfigManager.getFormGroup(character.getRaceName(), group);
+		if (config != null) {
+			var formData = config.getForm(formName);
+			if (formData != null && formData.getRgbHairColor() != null) {
+				return formData.getRgbHairColor();
+			}
+		}
+		return character.getRgbHairColor();
+	}
+
+	private float[] getRgbForStackForm(Character character, String group, String formName, float[] fallback) {
 		FormConfig config = ConfigManager.getStackFormGroup(group);
 		if (config != null) {
 			var formData = config.getForm(formName);
-			if (formData != null && formData.hasHairColorOverride()) {
-				return formData.getHairColor();
+			if (formData != null && formData.getRgbHairColor() != null) {
+				return formData.getRgbHairColor();
 			}
 		}
 		return fallback;
+	}
+
+	private void applyKaiokenToRgb(float[] rgb, int phase) {
+		float intensity = Math.min(0.6f, phase * 0.1f);
+		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + (1.0f * intensity), 0, 1);
+		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity), 0, 1);
+		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity), 0, 1);
+	}
+
+	private void applyAuraTintToRgb(float[] rgb, float[] auraRgb, float intensity) {
+		rgb[0] = rgb[0] * (1.0f - intensity) + (auraRgb[0] * intensity);
+		rgb[1] = rgb[1] * (1.0f - intensity) + (auraRgb[1] * intensity);
+		rgb[2] = rgb[2] * (1.0f - intensity) + (auraRgb[2] * intensity);
 	}
 }

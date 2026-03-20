@@ -14,15 +14,12 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
-
     private static final ResourceLocation TEXTURE_EXPLOSION = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
-
     private final KiBallModel ballmodel;
 
     public KiBarrierRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
         this.ballmodel = new KiBallModel(pContext.bakeLayer(KiBallModel.LAYER_LOCATION));
-
     }
 
     @Override
@@ -42,8 +39,8 @@ public class KiBarrierRenderer extends EntityRenderer<KiBarrierEntity> {
         float ageInTicks = entity.tickCount + partialTick;
         this.ballmodel.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
-        float[] auraColor2 = ColorUtils.rgbIntToFloat(entity.getColorBorde());
+        float[] auraColor = entity.getRgbColorMain();
+        float[] auraColor2 = entity.getRgbColorBorder();
 
         poseStack.scale(scale, scale, scale);
         poseStack.translate(0.0D, -1.3D, 0.0D);

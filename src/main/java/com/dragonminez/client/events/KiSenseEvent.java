@@ -18,14 +18,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderNameTagEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
 import java.text.NumberFormat;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class KiSenseEvent {
@@ -33,38 +37,54 @@ public class KiSenseEvent {
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
+	private static final Set<Integer> SENSED_ENTITIES = new HashSet<>();
+	private static int scanTickCounter = 0;
+
 	static {
 		numberFormat.setMaximumFractionDigits(1);
 		numberFormat.setMinimumFractionDigits(0);
 	}
 
 	@SubscribeEvent
-	public static void onRenderNameTag(RenderNameTagEvent event) {
-		if (!(event.getEntity() instanceof LivingEntity entity)) return;
-
+	public static void onClientTick(TickEvent.ClientTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) return;
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
-		if (player == null || entity == player) return;
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().isHasCreatedCharacter()) return;
-			Skill kiSense = data.getSkills().getSkill("kisense");
-			if (kiSense == null) return;
-			if (!kiSense.isActive()) return;
+		if (player == null || mc.level == null) return;
 
-			int skillLevel = kiSense.getLevel();
+		scanTickCounter++;
+		if (scanTickCounter >= 5) {
+			scanTickCounter = 0;
+			SENSED_ENTITIES.clear();
 
-			if (skillLevel > 0) {
-				double maxDistance = 5 + 3.0 * skillLevel;
-				if (data.getStatus().isAndroidUpgraded()) maxDistance += 10.0;
-				if (entity.distanceToSqr(player) <= (maxDistance * maxDistance)) {
-					if (player.hasLineOfSight(entity) || data.getStatus().isAndroidUpgraded()) {
-						if (!entity.isInvisible() || !entity.isInvisibleTo(player)) {
-							renderHealthBar(event.getPoseStack(), entity, event.getMultiBufferSource());
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				if (!data.getStatus().isHasCreatedCharacter()) return;
+				Skill kiSense = data.getSkills().getSkill("kisense");
+				if (kiSense == null || !kiSense.isActive()) return;
+
+				int skillLevel = kiSense.getLevel();
+				if (skillLevel > 0) {
+					double maxDistance = 5 + 3.0 * skillLevel;
+					if (data.getStatus().isAndroidUpgraded()) maxDistance += 10.0;
+
+					AABB searchBox = player.getBoundingBox().inflate(maxDistance);
+					for (LivingEntity entity : mc.level.getEntitiesOfClass(LivingEntity.class, searchBox, e -> e != player && e.isAlive())) {
+						if (player.hasLineOfSight(entity) || data.getStatus().isAndroidUpgraded()) {
+							if (!entity.isInvisible() || !entity.isInvisibleTo(player)) {
+								SENSED_ENTITIES.add(entity.getId());
+							}
 						}
 					}
 				}
-			}
-		});
+			});
+		}
+	}
+
+	@SubscribeEvent
+	public static void onRenderNameTag(RenderNameTagEvent event) {
+		if (!(event.getEntity() instanceof LivingEntity entity)) return;
+		if (!SENSED_ENTITIES.contains(entity.getId())) return;
+		renderHealthBar(event.getPoseStack(), entity, event.getMultiBufferSource());
 	}
 
 	private static void renderHealthBar(PoseStack poseStack, LivingEntity entity, MultiBufferSource bufferSource) {

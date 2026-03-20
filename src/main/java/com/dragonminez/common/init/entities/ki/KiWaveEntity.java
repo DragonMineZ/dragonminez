@@ -421,7 +421,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         Vec3 endPos = startPos.add(dir.scale(length));
 
         float scale = this.getSize();
-        float[] borderColor = ColorUtils.rgbIntToFloat(this.getColorBorde());
+        float[] borderColor = this.getRgbColorBorder();
 
         int rayosPorTick = 8;
 
@@ -517,7 +517,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         Vec3 tipPos = startPos.add(dir.scale(length));
 
         float scale = this.getSize();
-        float[] borderColor = ColorUtils.rgbIntToFloat(this.getColorBorde());
+        float[] borderColor = this.getRgbColorBorder();
         float pr = borderColor[0], pg = borderColor[1], pb = borderColor[2];
 
         for (int i = 0; i < 4; i++) {

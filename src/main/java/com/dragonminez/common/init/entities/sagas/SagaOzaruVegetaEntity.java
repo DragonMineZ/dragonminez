@@ -188,7 +188,7 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
             int skill = getSkillType();
 
             if (skill == SKILL_KIBLAST) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+                return event.setAndContinue(ANIM_KIWAVE);
             }
             else if (skill == SKILL_ROAR) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("roar"));
@@ -199,6 +199,6 @@ public class SagaOzaruVegetaEntity extends DBSagasEntity{
     }
 
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-        return event.setAndContinue(RawAnimation.begin().thenLoop("tail"));
+        return event.setAndContinue(ANIM_TAIL);
     }
 }

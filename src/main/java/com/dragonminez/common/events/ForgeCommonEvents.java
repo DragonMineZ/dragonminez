@@ -12,6 +12,7 @@ import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
@@ -37,6 +38,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
@@ -333,23 +335,16 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onLivingAttack(LivingAttackEvent event) {
 		LivingEntity victim = event.getEntity();
-
-		if (event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-			return;
-		}
+		if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
+		if (!(victim instanceof Player) && !(victim instanceof DBSagasEntity)) return;
 
 		AABB searchArea = victim.getBoundingBox().inflate(3.0D);
 		List<KiBarrierEntity> barriers = victim.level().getEntitiesOfClass(KiBarrierEntity.class, searchArea);
 
 		for (KiBarrierEntity barrier : barriers) {
 			if (barrier.getOwner() == victim) {
-
-
 				event.setCanceled(true);
-
-				victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
-						MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-
+				victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(), MainSounds.BLOCK1.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 				return;
 			}
 		}

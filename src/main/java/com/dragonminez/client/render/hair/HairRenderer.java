@@ -1,7 +1,6 @@
 package com.dragonminez.client.render.hair;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairManager;
@@ -20,7 +19,6 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-
 public class HairRenderer {
 	public static boolean PHYSICS_ENABLED = true;
 	private static final float UNIT_SCALE = 1.0f / 16.0f;
@@ -30,7 +28,7 @@ public class HairRenderer {
 	public static void render(PoseStack poseStack, MultiBufferSource bufferSource,
 							  CustomHair hairFrom, CustomHair hairTo, float transitionFactor,
 							  Character character, StatsData stats, AbstractClientPlayer player,
-							  String colorFrom, String colorTo, float partialTick, int packedLight, int packedOverlay, float alpha) {
+							  float[] rgbFrom, float[] rgbTo, float partialTick, int packedLight, int packedOverlay, float alpha) {
 
 		if (hairFrom == null) hairFrom = new CustomHair();
 		if (hairTo == null) hairTo = hairFrom;
@@ -66,7 +64,7 @@ public class HairRenderer {
 				if (!v1) s1 = createZeroScaleStrand(s2);
 				if (!v2) s2 = createZeroScaleStrand(s1);
 
-				String color = getColor(s1, s2, transitionFactor, colorFrom, colorTo);
+				float[] finalRgb = getInterpolatedRgb(s1, s2, transitionFactor, rgbFrom, rgbTo);
 
 				float lerpRotX = Mth.lerp(transitionFactor, s1.getRotationX(), s2.getRotationX());
 				float lerpRotY = Mth.lerp(transitionFactor, s1.getRotationY(), s2.getRotationY());
@@ -87,11 +85,10 @@ public class HairRenderer {
 				float lerpD = Mth.lerp(transitionFactor, s1.getCubeDepth(), s2.getCubeDepth());
 
 				int length = Math.max(s1.getLength(), s2.getLength());
-
 				Vector3f staticPos = CustomHair.getStrandBasePosition(face, i);
 
 				renderStrandInterpolated(poseStack, bufferSource,
-						staticPos, color, packedLight, packedOverlay,
+						staticPos, finalRgb, packedLight, packedOverlay,
 						time, movementIntensity, isCharging,
 						lerpRotX, lerpRotY, lerpRotZ,
 						lerpScaleX, lerpScaleY, lerpScaleZ, lerpStretch,
@@ -107,43 +104,30 @@ public class HairRenderer {
 		return empty;
 	}
 
-	private static String getColor(HairStrand s1, HairStrand s2, float factor, String globalColorFrom, String globalColorTo) {
-		String effectiveFrom = globalColorFrom;
-		if (s1 != null && s1.hasCustomColor()) effectiveFrom = s1.getColor();
+	private static float[] getInterpolatedRgb(HairStrand s1, HairStrand s2, float factor, float[] globalRgbFrom, float[] globalRgbTo) {
+		float[] effectiveFrom = globalRgbFrom;
+		if (s1 != null && s1.hasCustomColor()) effectiveFrom = com.dragonminez.client.util.ColorUtils.hexToRgb(s1.getColor()); // Idealmente esto también debería estar en caché en el Strand
 
-		String effectiveTo = globalColorTo;
-		if (s2 != null && s2.hasCustomColor()) effectiveTo = s2.getColor();
-		
+		float[] effectiveTo = globalRgbTo;
+		if (s2 != null && s2.hasCustomColor()) effectiveTo = com.dragonminez.client.util.ColorUtils.hexToRgb(s2.getColor());
+
 		if (factor <= 0.0f) return effectiveFrom;
 		if (factor >= 1.0f) return effectiveTo;
-		if (effectiveFrom.equals(effectiveTo)) return effectiveTo;
 
-		return interpolateColor(effectiveFrom, effectiveTo, factor);
+		return new float[]{
+				Mth.lerp(factor, effectiveFrom[0], effectiveTo[0]),
+				Mth.lerp(factor, effectiveFrom[1], effectiveTo[1]),
+				Mth.lerp(factor, effectiveFrom[2], effectiveTo[2])
+		};
 	}
 
-	private static String interpolateColor(String hexFrom, String hexTo, float factor) {
-		float[] rgbFrom = ColorUtils.hexToRgb(hexFrom);
-		float[] rgbTo = ColorUtils.hexToRgb(hexTo);
-
-		float r = Mth.lerp(factor, rgbFrom[0], rgbTo[0]);
-		float g = Mth.lerp(factor, rgbFrom[1], rgbTo[1]);
-		float b = Mth.lerp(factor, rgbFrom[2], rgbTo[2]);
-
-		int ri = (int) (r * 255);
-		int gi = (int) (g * 255);
-		int bi = (int) (b * 255);
-
-		return String.format("#%02X%02X%02X", ri, gi, bi);
-	}
-
-	private static void renderStrandInterpolated(PoseStack poseStack, MultiBufferSource bufferSource, Vector3f pos, String colorHex, int packedLight, int packedOverlay,
+	private static void renderStrandInterpolated(PoseStack poseStack, MultiBufferSource bufferSource, Vector3f pos, float[] rgb, int packedLight, int packedOverlay,
 												 float time, float moveIntensity, boolean isCharging,
 												 float rotX, float rotY, float rotZ,
 												 float scaleX, float scaleY, float scaleZ, float stretchFactor,
 												 float curveX, float curveY, float curveZ,
 												 float width, float height, float depth, int length, int id, HairFace face, float alpha) {
 
-		float[] rgb = ColorUtils.hexToRgb(colorHex);
 		poseStack.pushPose();
 		poseStack.translate(pos.x * UNIT_SCALE, pos.y * UNIT_SCALE, pos.z * UNIT_SCALE);
 
@@ -163,20 +147,10 @@ public class HairRenderer {
 		float finalRotZ = rotZ + animRotZ;
 
 		switch (face) {
-			case FRONT:
-				if (animRotX > 0) finalRotX = Math.min(finalRotX, rotX);
-				break;
-			case BACK:
-				if (animRotX < 0) finalRotX = Math.max(finalRotX, rotX);
-				break;
-			case LEFT:
-				if (animRotZ < 0) finalRotZ = Math.max(finalRotZ, rotZ);
-				break;
-			case RIGHT:
-				if (animRotZ > 0) finalRotZ = Math.min(finalRotZ, rotZ);
-				break;
-			default:
-				break;
+			case FRONT -> finalRotX = animRotX > 0 ? Math.min(finalRotX, rotX) : finalRotX;
+			case BACK -> finalRotX = animRotX < 0 ? Math.max(finalRotX, rotX) : finalRotX;
+			case LEFT -> finalRotZ = animRotZ < 0 ? Math.max(finalRotZ, rotZ) : finalRotZ;
+			case RIGHT -> finalRotZ = animRotZ > 0 ? Math.min(finalRotZ, rotZ) : finalRotZ;
 		}
 
 		applyRotation(poseStack, finalRotX, rotY, finalRotZ);
@@ -224,18 +198,12 @@ public class HairRenderer {
 		float hd = depth / 2.0f;
 		float h = height;
 
-		float u0 = 0.0f;
-		float u1 = 1.0f;
-		float v0 = 0.0f;
-		float v1 = 1.0f;
-
-		// Bottom, Top, North, South, East, West
-		addQuad(buffer, pose, normal, -hw, 0, -hd, hw, 0, -hd, hw, 0, hd, -hw, 0, hd, 0, -1, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, h, hd, hw, h, hd, hw, h, -hd, -hw, h, -hd, 0, 1, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, 0, -hd, -hw, h, -hd, hw, h, -hd, hw, 0, -hd, 0, 0, -1, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, hw, 0, hd, hw, h, hd, -hw, h, hd, -hw, 0, hd, 0, 0, 1, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, hw, 0, -hd, hw, h, -hd, hw, h, hd, hw, 0, hd, 1, 0, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, 0, hd, -hw, h, hd, -hw, h, -hd, -hw, 0, -hd, -1, 0, 0, r, g, b, u0, v0, u1, v1, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, 0, -hd, hw, 0, -hd, hw, 0, hd, -hw, 0, hd, 0, -1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, h, hd, hw, h, hd, hw, h, -hd, -hw, h, -hd, 0, 1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, 0, -hd, -hw, h, -hd, hw, h, -hd, hw, 0, -hd, 0, 0, -1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, hw, 0, hd, hw, h, hd, -hw, h, hd, -hw, 0, hd, 0, 0, 1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, hw, 0, -hd, hw, h, -hd, hw, h, hd, hw, 0, hd, 1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, 0, hd, -hw, h, hd, -hw, h, -hd, -hw, 0, -hd, -1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
 	}
 
 	private static void addQuad(VertexConsumer buffer, Matrix4f pose, Matrix3f normal, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float nx, float ny, float nz, float r, float g, float b, float u0, float v0, float u1, float v1, int packedLight, int packedOverlay, float alpha) {

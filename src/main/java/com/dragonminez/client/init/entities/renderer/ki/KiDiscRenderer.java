@@ -62,7 +62,7 @@ public class KiDiscRenderer extends EntityRenderer<KiDiskEntity> {
     private void renderDisc(KiDiskEntity entity, PoseStack poseStack, MultiBufferSource buffer, float ageInTicks) {
         this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
+        float[] auraColor = entity.getRgbColorMain();
         VertexConsumer auraBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE));
 
         this.model.renderToBuffer(

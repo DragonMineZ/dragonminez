@@ -76,7 +76,7 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
             }
         }
 
-        float[] auraColor = ColorUtils.rgbIntToFloat(entity.getColor());
+        float[] auraColor = entity.getRgbColorMain();
         float[] brightnessColor = ColorUtils.lightenColor(auraColor,  0.5f);
 
         poseStack.pushPose();

@@ -20,6 +20,7 @@ import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class PlayerEffectsRenderHandler {
+	private static final Set<Integer> CURRENT_FRAME_PLAYERS = new HashSet<>();
 
 	@SubscribeEvent
 	public static void onRenderTick(TickEvent.RenderTickEvent event) {
@@ -34,34 +35,34 @@ public class PlayerEffectsRenderHandler {
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
 		if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
-
 		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null || mc.player == null) return;
+
 		MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
 		PoseStack poseStack = event.getPoseStack();
 		Matrix4f projectionMatrix = event.getProjectionMatrix();
 		float partialTick = event.getPartialTick();
 		long gameTime = mc.level.getGameTime();
-		Set<Integer> currentFramePlayers = new HashSet<>();
+
+		CURRENT_FRAME_PLAYERS.clear();
 
 		boolean isFirstPerson = mc.options.getCameraType().isFirstPerson();
 		boolean isCameraColliding = false;
 
-		if (!isFirstPerson) {
+		if (!isFirstPerson && mc.cameraEntity != null) {
 			Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 			Vec3 entityPos = mc.cameraEntity.getPosition(partialTick);
-			if (cameraPos.distanceToSqr(entityPos) < 0.25) {
-				isCameraColliding = true;
-			}
+			if (cameraPos.distanceToSqr(entityPos) < 0.25) isCameraColliding = true;
 		}
 
 		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
 		KiWeaponRenderer.processWeapons(buffers, poseStack);
 		buffers.endBatch();
 
-		AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, currentFramePlayers, isFirstPerson, isCameraColliding);
-		AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, currentFramePlayers, isFirstPerson);
-		AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, currentFramePlayers);
+		AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
+		AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);
+		AuraRenderer.processGhostAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS);
 		AuraRenderer.processSparks(poseStack, projectionMatrix, isFirstPerson);
-		AuraRenderer.cleanCaches(currentFramePlayers);
+		AuraRenderer.cleanCaches(CURRENT_FRAME_PLAYERS);
 	}
 }

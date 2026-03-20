@@ -562,7 +562,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (this.level().isClientSide) {
             int type = this.getKiRenderType();
             float scale = this.getSize();
-            float[] borderColor = ColorUtils.rgbIntToFloat(this.getColorBorde());
+            float[] borderColor = this.getRgbColorBorder();
             float pr = borderColor[0], pg = borderColor[1], pb = borderColor[2];
 
             if (type == 4) { // Ki Souls
@@ -619,7 +619,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         if (this.level().isClientSide && !hasSpawnedSplash) {
-            float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
+            float[] rgb = this.getRgbColorBorder();
             this.level().addParticle(
                     MainParticles.KI_SPLASH.get(),
                     this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(),

@@ -11,7 +11,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaCellSuperPerfectEntity extends DBSagasEntity {
@@ -156,13 +155,13 @@ public class SagaCellSuperPerfectEntity extends DBSagasEntity {
             int currentSkill = getSkillType();
 
             if (currentSkill == SKILL_KAMEHA) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+                return event.setAndContinue(ANIM_KIWAVE);
             }
             else if (currentSkill == SKILL_KILASER) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kilaser"));
+                return event.setAndContinue(ANIM_KILASER);
             }
             else if (currentSkill == SKILL_BARRIER) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("barrier"));
+                return event.setAndContinue(ANIM_BARRIER);
             }
 
             return PlayState.CONTINUE;

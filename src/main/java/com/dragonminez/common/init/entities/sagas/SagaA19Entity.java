@@ -14,7 +14,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaA19Entity extends DBSagasEntity {
@@ -161,9 +160,9 @@ public class SagaA19Entity extends DBSagasEntity {
 			int currentSkill = getSkillType();
 
 			if (currentSkill == SKILL_EYE_LASER) {
-				return event.setAndContinue(RawAnimation.begin().thenPlay("kilaser"));
+				return event.setAndContinue(ANIM_KILASER);
 			} else if (currentSkill == SKILL_ENERGY_DRAIN) {
-				return event.setAndContinue(RawAnimation.begin().thenLoop("grab"));
+				return event.setAndContinue(ANIM_GRAB);
 			}
 		}
 		event.getController().forceAnimationReset();

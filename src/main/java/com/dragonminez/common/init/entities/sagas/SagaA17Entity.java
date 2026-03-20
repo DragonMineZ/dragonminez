@@ -9,7 +9,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaA17Entity extends DBSagasEntity {
@@ -116,10 +115,10 @@ public class SagaA17Entity extends DBSagasEntity {
             int skill = getSkillType();
 
             if (skill == SKILL_KI_DISC) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+                return event.setAndContinue(ANIM_KIWAVE);
             }
             else if (skill == SKILL_BARRIER) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("barrier"));
+                return event.setAndContinue(ANIM_BARRIER);
             }
         }
         event.getController().forceAnimationReset();

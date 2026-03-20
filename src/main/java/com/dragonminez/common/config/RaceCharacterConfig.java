@@ -43,6 +43,9 @@ public class RaceCharacterConfig {
 	private String defaultAuraColor = null;
 	private Map<String, List<Integer>> formSkillsCosts = new HashMap<>();
 
+	private transient float[][] rgbAccessoriesColors;
+	private transient float[][] rgbExtraLayersColor;
+
 	public Integer[] getFormSkillTpCosts(String form) {
 		List<Integer> list = formSkillsCosts.getOrDefault(form, new ArrayList<>());
 		return list.toArray(new Integer[0]);
@@ -70,5 +73,29 @@ public class RaceCharacterConfig {
 		if (extraLayersColor == null || extraLayersColor.length == 0) return "#FFFFFF";
 		if (index < extraLayersColor.length) return extraLayersColor[index];
 		return extraLayersColor[extraLayersColor.length - 1];
+	}
+
+	public float[] getRgbAccessoryColor(int index) {
+		if (rgbAccessoriesColors == null || rgbAccessoriesColors.length != accessoriesColors.length) {
+			rgbAccessoriesColors = new float[accessoriesColors.length][];
+			for (int i = 0; i < accessoriesColors.length; i++) {
+				rgbAccessoriesColors[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(accessoriesColors[i]);
+			}
+		}
+		if (rgbAccessoriesColors.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
+		if (index < rgbAccessoriesColors.length) return rgbAccessoriesColors[index];
+		return rgbAccessoriesColors[rgbAccessoriesColors.length - 1];
+	}
+
+	public float[] getRgbExtraLayerColor(int index) {
+		if (rgbExtraLayersColor == null || rgbExtraLayersColor.length != extraLayersColor.length) {
+			rgbExtraLayersColor = new float[extraLayersColor.length][];
+			for (int i = 0; i < extraLayersColor.length; i++) {
+				rgbExtraLayersColor[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(extraLayersColor[i]);
+			}
+		}
+		if (rgbExtraLayersColor.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
+		if (index < rgbExtraLayersColor.length) return rgbExtraLayersColor[index];
+		return rgbExtraLayersColor[rgbExtraLayersColor.length - 1];
 	}
 }

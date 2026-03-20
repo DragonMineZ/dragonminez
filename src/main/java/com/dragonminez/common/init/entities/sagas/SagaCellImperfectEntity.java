@@ -161,7 +161,7 @@ public class SagaCellImperfectEntity extends DBSagasEntity {
 			int currentSkill = getSkillType();
 
 			if (currentSkill == SKILL_KAMEHA) {
-				return event.setAndContinue(RawAnimation.begin().thenPlay("kiwave"));
+				return event.setAndContinue(ANIM_KIWAVE);
 			} else if (currentSkill == SKILL_ABSORBER) {
 				return event.setAndContinue(RawAnimation.begin().thenLoop("absorb"));
 			}
@@ -173,6 +173,6 @@ public class SagaCellImperfectEntity extends DBSagasEntity {
 	}
 
 	private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-		return event.setAndContinue(RawAnimation.begin().thenLoop("tail"));
+		return event.setAndContinue(ANIM_TAIL);
 	}
 }

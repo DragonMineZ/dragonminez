@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats.character;
 
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -60,6 +61,16 @@ public class Character {
     private String eye2Color;
     private String auraColor;
 
+	private transient float[] rgbBodyColor;
+	private transient float[] rgbBodyColor2;
+	private transient float[] rgbBodyColor3;
+	private transient float[] rgbHairColor;
+	private transient float[] rgbEye1Color;
+	private transient float[] rgbEye2Color;
+	private transient float[] rgbAuraColor;
+
+	private transient boolean oozaruCached = false;
+
 	private Boolean armored;
 
 	public Character() {
@@ -100,6 +111,83 @@ public class Character {
 		}
 	}
 
+	public void setBodyColor(String hex) {
+		this.bodyColor = hex;
+		this.rgbBodyColor = ColorUtils.hexToRgb(hex);
+	}
+	public void setBodyColor2(String hex) {
+		this.bodyColor2 = hex;
+		this.rgbBodyColor2 = ColorUtils.hexToRgb(hex);
+	}
+	public void setBodyColor3(String hex) {
+		this.bodyColor3 = hex;
+		this.rgbBodyColor3 = ColorUtils.hexToRgb(hex);
+	}
+	public void setHairColor(String hex) {
+		this.hairColor = hex;
+		this.rgbHairColor = ColorUtils.hexToRgb(hex);
+	}
+	public void setEye1Color(String hex) {
+		this.eye1Color = hex;
+		this.rgbEye1Color = ColorUtils.hexToRgb(hex);
+	}
+	public void setEye2Color(String hex) {
+		this.eye2Color = hex;
+		this.rgbEye2Color = ColorUtils.hexToRgb(hex);
+	}
+	public void setAuraColor(String hex) {
+		this.auraColor = hex;
+		this.rgbAuraColor = ColorUtils.hexToRgb(hex);
+	}
+
+	public float[] getRgbBodyColor() {
+		if (rgbBodyColor == null) rgbBodyColor = ColorUtils.hexToRgb(bodyColor != null ? bodyColor : "#FFFFFF");
+		return rgbBodyColor;
+	}
+	public float[] getRgbBodyColor2() {
+		if (rgbBodyColor2 == null) rgbBodyColor2 = ColorUtils.hexToRgb(bodyColor2 != null ? bodyColor2 : "#FFFFFF");
+		return rgbBodyColor2;
+	}
+	public float[] getRgbBodyColor3() {
+		if (rgbBodyColor3 == null) rgbBodyColor3 = ColorUtils.hexToRgb(bodyColor3 != null ? bodyColor3 : "#FFFFFF");
+		return rgbBodyColor3;
+	}
+	public float[] getRgbHairColor() {
+		if (rgbHairColor == null) rgbHairColor = ColorUtils.hexToRgb(hairColor != null ? hairColor : "#FFFFFF");
+		return rgbHairColor;
+	}
+	public float[] getRgbEye1Color() {
+		if (rgbEye1Color == null) rgbEye1Color = ColorUtils.hexToRgb(eye1Color != null ? eye1Color : "#FFFFFF");
+		return rgbEye1Color;
+	}
+	public float[] getRgbEye2Color() {
+		if (rgbEye2Color == null) rgbEye2Color = ColorUtils.hexToRgb(eye2Color != null ? eye2Color : "#FFFFFF");
+		return rgbEye2Color;
+	}
+	public float[] getRgbAuraColor() {
+		if (rgbAuraColor == null) rgbAuraColor = ColorUtils.hexToRgb(auraColor != null ? auraColor : "#FFFFFF");
+		return rgbAuraColor;
+	}
+
+	public void updateOozaruCache() {
+		String raceName = this.getRaceName().toLowerCase();
+		String currentForm = this.getActiveForm();
+		var activeFormConfig = this.getActiveFormData();
+
+		var raceConfig = ConfigManager.getRaceCharacter(raceName);
+		String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+		String formCustomModel = (this.hasActiveForm() && activeFormConfig != null && activeFormConfig.hasCustomModel())
+				? activeFormConfig.getCustomModel().toLowerCase() : "";
+
+		String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+		if (logicKey.isEmpty()) {
+			logicKey = raceName;
+		}
+
+		this.oozaruCached = logicKey.startsWith("oozaru") ||
+				(raceName.equals("saiyan") && (java.util.Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.OOZARU) || java.util.Objects.equals(currentForm, com.dragonminez.common.util.lists.SaiyanForms.GOLDEN_OOZARU)));
+	}
+
 	public CustomHair getHairBase() {
 		if (this.hairId > 0) return HairManager.getPresetHair(this.hairId, this.hairColor);
 		return hairBase;
@@ -124,12 +212,10 @@ public class Character {
 	}
 
 	public void setRace(String race) {
-		if (race != null) {
-			this.race = race.toLowerCase();
-		} else {
-			this.race = "human";
-		}
+		if (race != null) this.race = race.toLowerCase();
+		else this.race = "human";
 		if (!canHaveGender() && !gender.equals(GENDER_MALE)) this.gender = GENDER_MALE;
+		updateOozaruCache();
 	}
 
     public String getRaceName() {
@@ -211,13 +297,13 @@ public class Character {
         this.noseType = tag.getInt("NoseType");
         this.mouthType = tag.getInt("MouthType");
         this.tattooType = tag.getInt("TattooType");
-        this.bodyColor = tag.getString("BodyColor");
-        this.bodyColor2 = tag.getString("BodyColor2");
-        this.bodyColor3 = tag.getString("BodyColor3");
-        this.hairColor = tag.getString("HairColor");
-        this.eye1Color = tag.getString("Eye1Color");
-        this.eye2Color = tag.getString("Eye2Color");
-        this.auraColor = tag.getString("AuraColor");
+		setBodyColor(tag.getString("BodyColor"));
+		setBodyColor2(tag.getString("BodyColor2"));
+		setBodyColor3(tag.getString("BodyColor3"));
+		setHairColor(tag.getString("HairColor"));
+		setEye1Color(tag.getString("Eye1Color"));
+		setEye2Color(tag.getString("Eye2Color"));
+		setAuraColor(tag.getString("AuraColor"));
 		if (tag.contains("SelectedMaster")) this.selectedMaster = tag.getString("SelectedMaster");
         this.selectedFormGroup = tag.getString("SelectedFormGroup");
         this.activeFormGroup = tag.getString("CurrentFormGroup");
@@ -233,6 +319,7 @@ public class Character {
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
         this.armored = tag.getBoolean("isArmored");
+		updateOozaruCache();
     }
 
 	public boolean hasActiveForm() {
@@ -242,11 +329,13 @@ public class Character {
     public void setActiveForm(String groupName, String formName) {
         this.activeFormGroup = groupName != null ? groupName : "";
         this.activeForm = formName != null ? formName : "";
+		updateOozaruCache();
     }
 
     public void clearActiveForm() {
         this.activeFormGroup = "";
         this.activeForm = "";
+		updateOozaruCache();
     }
 
 	public void clearSelectedForm() {
@@ -255,9 +344,7 @@ public class Character {
 	}
 
     public FormConfig.FormData getActiveFormData() {
-        if (!hasActiveForm()) {
-			return null;
-		}
+        if (!hasActiveForm()) return null;
         return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
     }
 
@@ -321,13 +408,13 @@ public class Character {
         this.noseType = other.noseType;
         this.mouthType = other.mouthType;
         this.tattooType = other.tattooType;
-        this.bodyColor = other.bodyColor;
-        this.bodyColor2 = other.bodyColor2;
-        this.bodyColor3 = other.bodyColor3;
-        this.hairColor = other.hairColor;
-        this.eye1Color = other.eye1Color;
-        this.eye2Color = other.eye2Color;
-        this.auraColor = other.auraColor;
+		setBodyColor(other.bodyColor);
+		setBodyColor2(other.bodyColor2);
+		setBodyColor3(other.bodyColor3);
+		setHairColor(other.hairColor);
+		setEye1Color(other.eye1Color);
+		setEye2Color(other.eye2Color);
+		setAuraColor(other.auraColor);
 		this.selectedMaster = other.selectedMaster;
         this.selectedFormGroup = other.selectedFormGroup;
         this.activeFormGroup = other.activeFormGroup;

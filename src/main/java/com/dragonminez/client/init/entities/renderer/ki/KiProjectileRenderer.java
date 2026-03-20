@@ -46,10 +46,10 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     public void render(AbstractKiProjectile entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         float ageInTicks = entity.tickCount + partialTick;
 
-        float[] coreColor = ColorUtils.rgbIntToFloat(entity.getColor());
+        float[] coreColor = entity.getRgbColorMain();
         float[] brightAuraColor = ColorUtils.lightenColor(coreColor, 0.8f);
         float[] invertedAuraColor = ColorUtils.darkenColor(coreColor, 0.8f);
-        float[] borderColor = ColorUtils.rgbIntToFloat(entity.getColorBorde());
+        float[] borderColor = entity.getRgbColorBorder();
         float scale = entity.getSize();
 
 

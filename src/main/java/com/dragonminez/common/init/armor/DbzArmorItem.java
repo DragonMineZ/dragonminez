@@ -23,7 +23,7 @@ public class DbzArmorItem extends ArmorItem {
 
     public DbzArmorItem(ArmorMaterial pMaterial, Type pType, Properties pProperties, String itemId, boolean isDamageOn) {
         super(pMaterial, pType, pProperties);
-        this.itemId = itemId; // ID del item
+        this.itemId = itemId;
         this.isDamageOn = isDamageOn;
     }
 
@@ -69,17 +69,12 @@ public class DbzArmorItem extends ArmorItem {
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
-
             private ArmorBaseModel model;
 
             @Override
             public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack, EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
-
-                if(model == null){
-                    model = new ArmorBaseModel(Minecraft.getInstance().getEntityModels().bakeLayer(ArmorBaseModel.LAYER_LOCATION));
-                }
+                if(model == null)model = new ArmorBaseModel(Minecraft.getInstance().getEntityModels().bakeLayer(ArmorBaseModel.LAYER_LOCATION));
                 return model;
-
             }
         });
     }

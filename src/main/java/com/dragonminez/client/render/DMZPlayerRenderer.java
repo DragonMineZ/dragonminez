@@ -11,6 +11,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.SaiyanForms;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -20,6 +21,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.model.GeoModel;
@@ -155,18 +157,18 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
-			org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_STENCIL_TEST);
-			com.mojang.blaze3d.systems.RenderSystem.stencilMask(0xFF);
-			com.mojang.blaze3d.systems.RenderSystem.stencilFunc(org.lwjgl.opengl.GL11.GL_ALWAYS, 1, 0xFF);
-			com.mojang.blaze3d.systems.RenderSystem.stencilOp(org.lwjgl.opengl.GL11.GL_KEEP, org.lwjgl.opengl.GL11.GL_KEEP, org.lwjgl.opengl.GL11.GL_REPLACE);
+			GL11.glEnable(GL11.GL_STENCIL_TEST);
+			RenderSystem.stencilMask(0xFF);
+			RenderSystem.stencilFunc(GL11.GL_ALWAYS, 1, 0xFF);
+			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 		}
 
 		super.render(entity, entityYaw, partialTick, poseStack, effectiveBufferSource, packedLight);
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
-			org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_STENCIL_TEST);
-			com.mojang.blaze3d.systems.RenderSystem.stencilMask(0x00);
+			GL11.glDisable(GL11.GL_STENCIL_TEST);
+			RenderSystem.stencilMask(0x00);
 		}
 
 		this.shadowRadius = 0.4f * ((scalingX + scalingZ) / 2.0f);

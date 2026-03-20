@@ -64,6 +64,23 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 	private static final EntityDataAccessor<Boolean> IS_LIGHTNING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
+	protected static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("idle");
+	protected static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("walk");
+	protected static final RawAnimation ANIM_RUN = RawAnimation.begin().thenLoop("run");
+	protected static final RawAnimation ANIM_FLY = RawAnimation.begin().thenLoop("fly");
+	protected static final RawAnimation ANIM_ATTACK1 = RawAnimation.begin().thenPlay("attack1");
+	protected static final RawAnimation ANIM_ATTACK2 = RawAnimation.begin().thenPlay("attack2");
+	protected static final RawAnimation ANIM_EVADE = RawAnimation.begin().thenPlay("evade");
+	protected static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("kiwave");
+	protected static final RawAnimation ANIM_KILASER = RawAnimation.begin().thenPlay("kilaser");
+	protected static final RawAnimation ANIM_BARRIER = RawAnimation.begin().thenPlay("barrier");
+	protected static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
+	protected static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("kiball");
+	protected static final RawAnimation ANIM_KIBLAST = RawAnimation.begin().thenPlay("kiblast");
+	protected static final RawAnimation ANIM_TAIL = RawAnimation.begin().thenLoop("tail");
+	protected static final RawAnimation ANIM_TRANSFORM = RawAnimation.begin().thenLoop("transform");
+	protected static final RawAnimation ANIM_GRAB = RawAnimation.begin().thenLoop("grab");
+
 	private double roarDamage = 50.0D;
 	private double roarRange = 15.0D;
 	private double flySpeed = 0.45D;
@@ -303,18 +320,18 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 		}
 
 		if (entity.isFlying()) {
-			return event.setAndContinue(RawAnimation.begin().thenLoop("fly"));
+			return event.setAndContinue(ANIM_FLY);
 		}
 
 		if (event.isMoving()) {
 			if (entity.isAggressive() || entity.getTarget() != null) {
-				return event.setAndContinue(RawAnimation.begin().thenLoop("run"));
+				return event.setAndContinue(ANIM_RUN);
 			} else {
-				return event.setAndContinue(RawAnimation.begin().thenLoop("walk"));
+				return event.setAndContinue(ANIM_WALK);
 			}
 		}
 
-		return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
+		return event.setAndContinue(ANIM_IDLE);
 	}
 
 	private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
@@ -331,9 +348,9 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 			isAttacking = true;
 			event.getController().forceAnimationReset();
 			if (this.random.nextBoolean()) {
-				event.getController().setAnimation(RawAnimation.begin().thenPlay("attack1"));
+				event.getController().setAnimation(ANIM_ATTACK1);
 			} else {
-				event.getController().setAnimation(RawAnimation.begin().thenPlay("attack2"));
+				event.getController().setAnimation(ANIM_ATTACK2);
 			}
 			return PlayState.CONTINUE;
 		}
@@ -350,7 +367,7 @@ public class DBSagasEntity extends Monster implements GeoEntity {
 
 	private <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event) {
 		if (this.isEvading()) {
-			return event.setAndContinue(RawAnimation.begin().thenPlay("evade"));
+			return event.setAndContinue(ANIM_EVADE);
 		}
 		event.getController().forceAnimationReset();
 		return PlayState.STOP;

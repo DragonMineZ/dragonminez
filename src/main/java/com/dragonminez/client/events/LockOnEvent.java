@@ -28,12 +28,12 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
 public class LockOnEvent {
 	private static final ResourceLocation LOCK_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/lock_on.png");
 	private static LivingEntity lockedTarget = null;
+	private static int scanTickCounter = 0;
 
 	public static void toggleLock() {
 		Minecraft mc = Minecraft.getInstance();
@@ -66,44 +66,48 @@ public class LockOnEvent {
 	}
 
 	@SubscribeEvent
-	public static void onRenderTick(TickEvent.RenderTickEvent event) {
-		if (event.phase != TickEvent.Phase.START) return;
-
+	public static void onClientTick(TickEvent.ClientTickEvent event) {
+		if (event.phase != TickEvent.Phase.END) return;
 		Minecraft mc = Minecraft.getInstance();
 		Player player = mc.player;
-
 		if (player == null || lockedTarget == null) return;
 
-		if (!lockedTarget.isAlive()) {
-			unlock();
-			return;
-		}
+		scanTickCounter++;
+		if (scanTickCounter >= 5) {
+			scanTickCounter = 0;
 
-		AtomicBoolean shouldUnlock = new AtomicBoolean(false);
-
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			int level = data.getSkills().getSkillLevel("kisense");
-
-			if (level <= 0 || data.getSkills().getSkill("kisense") == null) {
-				shouldUnlock.set(true);
+			if (!lockedTarget.isAlive()) {
+				unlock();
 				return;
 			}
 
-			double maxRange = 5 + 2.0 * level;
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				int level = data.getSkills().getSkillLevel("kisense");
 
-			if (player.distanceTo(lockedTarget) > maxRange) {
-				shouldUnlock.set(true);
-			}
+				if (level <= 0 || data.getSkills().getSkill("kisense") == null) {
+					unlock();
+					return;
+				}
 
-			if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) {
-				shouldUnlock.set(true);
-			}
-		});
+				double maxRange = 5 + 3.0 * level;
+				if (data.getStatus().isAndroidUpgraded()) maxRange += 10.0;
 
-		if (shouldUnlock.get()) {
-			unlock();
-			return;
+				if (player.distanceTo(lockedTarget) > maxRange) {
+					unlock();
+					return;
+				}
+
+				if (!player.hasLineOfSight(lockedTarget) && !data.getStatus().isAndroidUpgraded()) unlock();
+			});
 		}
+	}
+
+	@SubscribeEvent
+	public static void onRenderTick(TickEvent.RenderTickEvent event) {
+		if (event.phase != TickEvent.Phase.START) return;
+		Minecraft mc = Minecraft.getInstance();
+		Player player = mc.player;
+		if (player == null || lockedTarget == null) return;
 
 		float partialTick = event.renderTickTime;
 		double targetX = Mth.lerp(partialTick, lockedTarget.xo, lockedTarget.getX());

@@ -13,6 +13,8 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexBuffer;
@@ -30,25 +32,26 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AuraRenderer {
 	private static final float HALF_SQRT_3 = (float) (Math.sqrt(3.0D) / 2.0D);
 	private static final float FADE_SPEED = 0.005f;
 	private static final float PULSE_SPEED = 0.01f;
 
-	private static final Map<Integer, Long> FUSION_START_TIME = new HashMap<>();
-	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new HashMap<>();
-	private static final Map<Integer, Float> COLOR_PROGRESS_MAP = new HashMap<>();
-	private static final Map<Integer, Long> COLOR_TICK_MAP = new HashMap<>();
-	private static final Map<Integer, Float> PULSE_PROGRESS = new HashMap<>();
-	private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new HashMap<>();
-	private static final Map<Integer, CachedAuraData> AURA_CACHE = new HashMap<>();
-	private static final Map<Integer, Long> LAST_RENDER_TIME = new HashMap<>();
+	private static final Map<Integer, Long> FUSION_START_TIME = new ConcurrentHashMap<>();
+	private static final Map<Integer, Boolean> WAS_FUSED_CACHE = new ConcurrentHashMap<>();
+	private static final Map<Integer, Float> COLOR_PROGRESS_MAP = new ConcurrentHashMap<>();
+	private static final Map<Integer, Long> COLOR_TICK_MAP = new ConcurrentHashMap<>();
+	private static final Map<Integer, Float> PULSE_PROGRESS = new ConcurrentHashMap<>();
+	private static final Map<Integer, Long> PULSE_LAST_RENDER_TIME = new ConcurrentHashMap<>();
+	private static final Map<Integer, CachedAuraData> AURA_CACHE = new ConcurrentHashMap<>();
+	private static final Map<Integer, Long> LAST_RENDER_TIME = new ConcurrentHashMap<>();
 	private static VertexBuffer cachedLightningMesh;
 
 	public static class AuraLayer {
@@ -206,9 +209,12 @@ public class AuraRenderer {
 	}
 
 	public static void cleanCaches(Set<Integer> currentFramePlayers) {
-		com.mojang.blaze3d.systems.RenderSystem.stencilMask(0xFF);
-		com.mojang.blaze3d.systems.RenderSystem.clear(org.lwjgl.opengl.GL11.GL_STENCIL_BUFFER_BIT, Minecraft.ON_OSX);
-		com.mojang.blaze3d.systems.RenderSystem.stencilMask(0x00);
+		RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+		if (!mainTarget.isStencilEnabled()) mainTarget.enableStencil();
+		mainTarget.bindWrite(false);
+		RenderSystem.stencilMask(0xFF);
+		RenderSystem.clear(GL11.GL_STENCIL_BUFFER_BIT, Minecraft.ON_OSX);
+		RenderSystem.stencilMask(0x00);
 
 		LAST_RENDER_TIME.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 		COLOR_PROGRESS_MAP.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
@@ -294,18 +300,21 @@ public class AuraRenderer {
 		} else COLOR_PROGRESS_MAP.put(entityId, 0.0f);
 
 		String normalHex = character.getAuraColor();
+		float[] normalColor = character.getRgbAuraColor();
 		String normalType = ConfigManager.getRaceCharacter(character.getRace()) != null ?
 				ConfigManager.getRaceCharacter(character.getRace()).getAuraType() : "kakarot";
 		int normalLayerId = 0;
 
 		if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			var fd = character.getActiveFormData();
-			if (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) normalHex = fd.getAuraColor();
+			if (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) {
+				normalHex = fd.getAuraColor();
+				normalColor = fd.getRgbAuraColor();
+			}
 			if (fd.getAuraType() != null && !fd.getAuraType().isEmpty()) normalType = fd.getAuraType();
 			normalLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 0;
 		}
 
-		float[] normalColor = ColorUtils.hexToRgb(normalHex);
 		if (chargingNormal && nextForm != null) {
 			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : normalHex;
 			normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
@@ -318,7 +327,7 @@ public class AuraRenderer {
 			String stackType = fd.getAuraType() != null && !fd.getAuraType().isEmpty() ? fd.getAuraType() : "kakarot";
 			int stackLayerId = fd.getAuraLayer() != null ? fd.getAuraLayer() : 1;
 
-			float[] stackColor = ColorUtils.hexToRgb(stackHex);
+			float[] stackColor = (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) ? fd.getRgbAuraColor() : ColorUtils.hexToRgb(stackHex);
 			if (chargingStack && nextForm != null) {
 				String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : stackHex;
 				stackColor = interpolateColor(stackHex, targetHex, chargeProgress);
@@ -805,7 +814,7 @@ public class AuraRenderer {
 			poseStack.scale(scale, scale, scale);
 
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
-			shader.safeGetUniform("normalMatrix").set(new Matrix4f(new Matrix3f(poseStack.last().normal())));
+			shader.safeGetUniform("normalMatrix").set(poseStack.last().normal());
 			shader.apply();
 
 			mesh.drawWithShader(poseStack.last().pose(), projectionMatrix, shader);

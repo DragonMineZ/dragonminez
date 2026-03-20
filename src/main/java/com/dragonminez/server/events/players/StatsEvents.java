@@ -43,7 +43,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StatsEvents {
@@ -141,14 +140,14 @@ public class StatsEvents {
 	public static void onEntityDeath(LivingDeathEvent event) {
 		if (event.getEntity().level().isClientSide) return;
 		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
-		AtomicBoolean addAlignment = new AtomicBoolean(false);
-		AtomicBoolean removeAlignment = new AtomicBoolean(false);
+		boolean[] addAlignment = new boolean[]{false};
+		boolean[] removeAlignment = new boolean[]{false};
 
 		if (event.getEntity() instanceof Player victim) {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getResources().getAlignment() < 50 || !victimData.getStatus().isHasCreatedCharacter())
-					addAlignment.set(true);
-				else removeAlignment.set(true);
+					addAlignment[0] = true;
+				else removeAlignment[0] = true;
 				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getEffects().removeAllEffects();
 					victimData.getStatus().setChargingKi(false);
@@ -159,8 +158,8 @@ public class StatsEvents {
 			});
 		}
 
-		if (removesAlignment(event.getEntity())) removeAlignment.set(true);
-		if (addsAlignment(event.getEntity())) addAlignment.set(true);
+		if (removesAlignment(event.getEntity())) removeAlignment[0] = true;
+		if (addsAlignment(event.getEntity())) addAlignment[0] = true;
 
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
@@ -174,14 +173,14 @@ public class StatsEvents {
 				data.getResources().addTrainingPoints(tpsHealth);
 			}
 
-			if (removeAlignment.get()) {
+			if (removeAlignment[0]) {
 				data.getResources().removeAlignment(5);
-				removeAlignment.set(false);
+				removeAlignment[0] =  false;
 			}
 
-			if (addAlignment.get()) {
+			if (addAlignment[0]) {
 				data.getResources().addAlignment(2);
-				addAlignment.set(false);
+				addAlignment[0] = false;
 			}
 		});
 	}
@@ -373,15 +372,22 @@ public class StatsEvents {
 
 				AttributeInstance speedAttr = serverPlayer.getAttribute(Attributes.MOVEMENT_SPEED);
 				if (speedAttr != null) {
-					if (speedAttr.getModifier(FORM_SPEED_UUID) != null) speedAttr.removeModifier(FORM_SPEED_UUID);
+					double expectedBonus = 0.0;
 					if (data.getCharacter().hasActiveForm()) {
 						FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
 						if (activeForm != null) {
 							double multiplier = activeForm.getSpeedMultiplier();
-							if (multiplier != 1.0) {
-								double bonus = multiplier - 1.0;
-								speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", bonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
-							}
+							if (multiplier != 1.0) expectedBonus = multiplier - 1.0;
+						}
+					}
+
+					AttributeModifier existingSpeed = speedAttr.getModifier(FORM_SPEED_UUID);
+					double currentBonus = existingSpeed != null ? existingSpeed.getAmount() : 0.0;
+
+					if (expectedBonus != currentBonus) {
+						speedAttr.removeModifier(FORM_SPEED_UUID);
+						if (expectedBonus > 0) {
+							speedAttr.addTransientModifier(new AttributeModifier(FORM_SPEED_UUID, "Form Speed Bonus", expectedBonus, AttributeModifier.Operation.MULTIPLY_TOTAL));
 						}
 					}
 				}
@@ -389,43 +395,39 @@ public class StatsEvents {
 				AttributeInstance reachAttr = serverPlayer.getAttribute(ForgeMod.BLOCK_REACH.get());
 				AttributeInstance entityReachAttr = serverPlayer.getAttribute(ForgeMod.ENTITY_REACH.get());
 
-				if (reachAttr != null) {
-					if (reachAttr.getModifier(FORM_REACH_UUID) != null) reachAttr.removeModifier(FORM_REACH_UUID);
-				}
-				if (entityReachAttr != null) {
-					if (entityReachAttr.getModifier(FORM_REACH_UUID) != null)
-						entityReachAttr.removeModifier(FORM_REACH_UUID);
-				}
-
 				Float[] scaling = data.getCharacter().getModelScaling();
 				if (scaling == null || scaling.length < 2) scaling = new Float[]{0.9375f, 0.9375f, 0.9375f};
-
 				float currentScaleY = scaling[1];
 
 				if (data.getCharacter().hasActiveForm()) {
 					FormConfig.FormData activeForm = data.getCharacter().getActiveFormData();
-					if (activeForm != null) {
-						Float[] formMultiplier = activeForm.getModelScaling();
-						currentScaleY *= formMultiplier[1];
-					}
+					if (activeForm != null) currentScaleY *= activeForm.getModelScaling()[1];
 				}
 
 				final float BASE_SCALE = 0.9375f;
 				final float BASE_HEIGHT = 1.8F;
 				final float BASE_REACH = 4.5F;
-
 				float ratioY = currentScaleY / BASE_SCALE;
-				float currentHeight = BASE_HEIGHT * ratioY;
 
+				double expectedReach = 0.0;
 				if (ratioY > 1.01f) {
-					float heightDifference = currentHeight - BASE_HEIGHT;
-					float reachBonus = heightDifference * (BASE_REACH / BASE_HEIGHT);
+					float currentHeight = BASE_HEIGHT * ratioY;
+					expectedReach = (currentHeight - BASE_HEIGHT) * (BASE_REACH / BASE_HEIGHT);
+				}
 
-					if (reachAttr != null) {
-						reachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", reachBonus, AttributeModifier.Operation.ADDITION));
+				if (reachAttr != null) {
+					AttributeModifier existingReach = reachAttr.getModifier(FORM_REACH_UUID);
+					if ((existingReach != null ? existingReach.getAmount() : 0.0) != expectedReach) {
+						reachAttr.removeModifier(FORM_REACH_UUID);
+						if (expectedReach > 0) reachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADDITION));
 					}
-					if (entityReachAttr != null) {
-						entityReachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", reachBonus, AttributeModifier.Operation.ADDITION));
+				}
+
+				if (entityReachAttr != null) {
+					AttributeModifier existingEntityReach = entityReachAttr.getModifier(FORM_REACH_UUID);
+					if ((existingEntityReach != null ? existingEntityReach.getAmount() : 0.0) != expectedReach) {
+						entityReachAttr.removeModifier(FORM_REACH_UUID);
+						if (expectedReach > 0) entityReachAttr.addTransientModifier(new AttributeModifier(FORM_REACH_UUID, "Form Reach Bonus", expectedReach, AttributeModifier.Operation.ADDITION));
 					}
 				}
 			});

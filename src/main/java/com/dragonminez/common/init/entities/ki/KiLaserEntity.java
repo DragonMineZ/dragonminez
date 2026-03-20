@@ -309,7 +309,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         float scale = this.getSize();
 
         float[] rgbMain = ColorUtils.rgbIntToFloat(this.getColor());
-        float[] rgbBorder = ColorUtils.rgbIntToFloat(this.getColorBorde());
+        float[] rgbBorder = this.getRgbColorBorder();
 
         if (this.tickCount == 1) {
             this.level().addParticle(MainParticles.KI_SPLASH.get(),

@@ -119,13 +119,13 @@ public class SagaSaibamanEntity extends DBSagasEntity{
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
         if (event.isMoving()) {
             if (entity.isAggressive() || entity.getTarget() != null) {
-                event.getController().setAnimation(RawAnimation.begin().thenLoop("run"));
+                event.getController().setAnimation(ANIM_RUN);
             } else {
-                event.getController().setAnimation(RawAnimation.begin().thenLoop("walk"));
+                event.getController().setAnimation(ANIM_WALK);
             }
             return PlayState.CONTINUE;
         }
-        event.getController().setAnimation(RawAnimation.begin().thenLoop("idle"));
+        event.getController().setAnimation(ANIM_IDLE);
         return PlayState.CONTINUE;
     }
 

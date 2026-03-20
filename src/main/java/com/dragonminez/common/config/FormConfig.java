@@ -82,6 +82,16 @@ public class FormConfig {
 		private Boolean directTransformation = false;
 		private TransformationPostShaderConfig transformationPostShader = new TransformationPostShaderConfig();
 
+		private transient float[] rgbBodyColor1;
+		private transient float[] rgbBodyColor2;
+		private transient float[] rgbBodyColor3;
+		private transient float[] rgbHairColor;
+		private transient float[] rgbEye1Color;
+		private transient float[] rgbEye2Color;
+		private transient float[] rgbAuraColor;
+		private transient float[][] rgbAccessoriesColors;
+		private transient float[][] rgbExtraLayersColor;
+
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
 		}
@@ -200,6 +210,65 @@ public class FormConfig {
 
 		public TransformationPostShaderConfig getTransformationPostShader() {
 			return transformationPostShader != null ? transformationPostShader : new TransformationPostShaderConfig();
+		}
+
+		public float[] getRgbAccessoryColor(int index) {
+			if (rgbAccessoriesColors == null || rgbAccessoriesColors.length != accessoriesColors.length) {
+				rgbAccessoriesColors = new float[accessoriesColors.length][];
+				for (int i = 0; i < accessoriesColors.length; i++) {
+					rgbAccessoriesColors[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(accessoriesColors[i]);
+				}
+			}
+			if (rgbAccessoriesColors.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
+			if (index < rgbAccessoriesColors.length) return rgbAccessoriesColors[index];
+			return rgbAccessoriesColors[rgbAccessoriesColors.length - 1];
+		}
+
+		public float[] getRgbExtraLayerColor(int index) {
+			if (rgbExtraLayersColor == null || rgbExtraLayersColor.length != extraLayersColor.length) {
+				rgbExtraLayersColor = new float[extraLayersColor.length][];
+				for (int i = 0; i < extraLayersColor.length; i++) {
+					rgbExtraLayersColor[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(extraLayersColor[i]);
+				}
+			}
+			if (rgbExtraLayersColor.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
+			if (index < rgbExtraLayersColor.length) return rgbExtraLayersColor[index];
+			return rgbExtraLayersColor[rgbExtraLayersColor.length - 1];
+		}
+
+		public float[] getRgbBodyColor1() {
+			if (rgbBodyColor1 == null && bodyColor1 != null && !bodyColor1.isEmpty()) rgbBodyColor1 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor1);
+			return rgbBodyColor1;
+		}
+
+		public float[] getRgbBodyColor2() {
+			if (rgbBodyColor2 == null && bodyColor2 != null && !bodyColor2.isEmpty()) rgbBodyColor2 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor2);
+			return rgbBodyColor2;
+		}
+
+		public float[] getRgbBodyColor3() {
+			if (rgbBodyColor3 == null && bodyColor3 != null && !bodyColor3.isEmpty()) rgbBodyColor3 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor3);
+			return rgbBodyColor3;
+		}
+
+		public float[] getRgbHairColor() {
+			if (rgbHairColor == null && hairColor != null && !hairColor.isEmpty()) rgbHairColor = com.dragonminez.client.util.ColorUtils.hexToRgb(hairColor);
+			return rgbHairColor;
+		}
+
+		public float[] getRgbEye1Color() {
+			if (rgbEye1Color == null && eye1Color != null && !eye1Color.isEmpty()) rgbEye1Color = com.dragonminez.client.util.ColorUtils.hexToRgb(eye1Color);
+			return rgbEye1Color;
+		}
+
+		public float[] getRgbEye2Color() {
+			if (rgbEye2Color == null && eye2Color != null && !eye2Color.isEmpty()) rgbEye2Color = com.dragonminez.client.util.ColorUtils.hexToRgb(eye2Color);
+			return rgbEye2Color;
+		}
+
+		public float[] getRgbAuraColor() {
+			if (rgbAuraColor == null && auraColor != null && !auraColor.isEmpty()) rgbAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(auraColor);
+			return rgbAuraColor;
 		}
 
 		@Setter

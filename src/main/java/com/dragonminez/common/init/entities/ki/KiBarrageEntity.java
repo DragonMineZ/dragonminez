@@ -86,7 +86,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
             return;
         }
         if (this.level().isClientSide) {
-            float[] rgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
+            float[] rgb = this.getRgbColorBorder();
             if (!hasSpawnedSplash) {
                 this.level().addParticle(MainParticles.KI_SPLASH.get(), this.getX(), this.getY(), this.getZ(), rgb[0], rgb[1], rgb[2]);
                 this.hasSpawnedSplash = true;

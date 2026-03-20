@@ -6,7 +6,6 @@ import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.util.lists.SaiyanForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;
@@ -17,7 +16,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
@@ -41,7 +39,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 
 	@Override
 	protected @Nullable ItemStack getArmorItemForBone(GeoBone bone, T animatable) {
-		final String boneName = bone.getName().trim();
+		final String boneName = bone.getName();
 
 		EquipmentSlot slot = switch (boneName) {
 			case "armorHead", "armor_head" -> EquipmentSlot.HEAD;
@@ -70,14 +68,12 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		if (!stack.canEquip(slot, animatable) && !(stack.getItem() instanceof DbzArmorItem)) return null;
 
 		if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
-			final LazyOptional<StatsData> optStats = StatsProvider.get(StatsCapability.INSTANCE, animatable);
-			if (!optStats.isPresent()) return null;
+			StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+			if (stats == null) return null;
 
-			final var stats = optStats.orElse(new StatsData(animatable));
 			var character = stats.getCharacter();
-			String race = character.getRace().toLowerCase();
+			String race = character.getRaceName().toLowerCase();
 			String gender = character.getGender().toLowerCase();
-			String currentForm = character.getActiveForm();
 
 			var raceConfig = ConfigManager.getRaceCharacter(race);
 			String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
@@ -90,7 +86,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			boolean isArmored = character.getArmored();
 			boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
 			boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
-			boolean isOozaru = race.equals("saiyan") && SaiyanForms.OOZARU.equalsIgnoreCase(currentForm) || logicKey.startsWith("oozaru");
+			boolean isOozaru = character.isOozaruCached() || logicKey.startsWith("oozaru");
 			boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
 					|| logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra") || logicKey.startsWith("frostdemon_second") || logicKey.startsWith("frostdemon_third") || logicKey.startsWith("frostdemon_fifth") || logicKey.startsWith("bioandroid_semi");
 			boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;

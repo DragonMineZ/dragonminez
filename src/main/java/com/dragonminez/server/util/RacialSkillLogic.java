@@ -23,7 +23,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RacialSkillLogic {
 
@@ -47,7 +46,6 @@ public class RacialSkillLogic {
 				default -> {
 				}
 			}
-
 		});
 	}
 
@@ -64,10 +62,9 @@ public class RacialSkillLogic {
 		boolean isValidTarget = false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
-			AtomicBoolean isNamek = new AtomicBoolean(false);
-			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(tData ->
-					isNamek.set(tData.getCharacter().getRaceName().equals("namekian")));
-			isValidTarget = isNamek.get();
+			isValidTarget = StatsProvider.get(StatsCapability.INSTANCE, targetPlayer)
+					.map(tData -> tData.getCharacter().getRaceName().equals("namekian"))
+					.orElse(false);
 		} else if (config.getNamekianAssimilationOnNamekNpcs()) {
 			isValidTarget = (target instanceof NamekWarriorEntity || target instanceof NamekTraderEntity);
 		}
@@ -202,13 +199,9 @@ public class RacialSkillLogic {
 		if (target.getHealth() > maxDmg) return false;
 
 		if (target instanceof ServerPlayer targetPlayer) {
-			AtomicBoolean levelCheck = new AtomicBoolean(false);
-			StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> {
-				if (targetData.getLevel() < playerData.getLevel()) {
-					levelCheck.set(true);
-				}
-			});
-			return levelCheck.get();
+			return StatsProvider.get(StatsCapability.INSTANCE, targetPlayer)
+					.map(targetData -> targetData.getLevel() < playerData.getLevel())
+					.orElse(false);
 		}
 
 		return true;

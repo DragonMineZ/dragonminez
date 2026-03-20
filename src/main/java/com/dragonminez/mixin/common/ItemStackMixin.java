@@ -13,27 +13,29 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Random;
 import java.util.function.Consumer;
 
 @Mixin(ItemStack.class)
-public class ItemStackMixin {
+public abstract class ItemStackMixin {
 
-	@Shadow public boolean hurt(int pAmount, RandomSource pRandom, @Nullable ServerPlayer pUser) {
-		if (!((ItemStack) (Object) this).isDamageableItem()) {
+	@Overwrite
+	public boolean hurt(int pAmount, RandomSource pRandom, @Nullable ServerPlayer pUser) {
+		ItemStack stack = (ItemStack) (Object) this;
+
+		if (!stack.isDamageableItem()) {
 			return false;
 		} else {
 			if (pAmount > 0) {
-				int i = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.UNBREAKING, ((ItemStack) (Object) this));
+				int i = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.UNBREAKING, stack);
 				int j = 0;
 
 				for(int k = 0; i > 0 && k < pAmount; ++k) {
-					if (DigDurabilityEnchantment.shouldIgnoreDurabilityDrop(((ItemStack) (Object) this), i, pRandom)) {
+					if (DigDurabilityEnchantment.shouldIgnoreDurabilityDrop(stack, i, pRandom)) {
 						++j;
 					}
 				}
@@ -45,36 +47,43 @@ public class ItemStackMixin {
 			}
 
 			if (pUser != null && pAmount != 0) {
-				CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(pUser, ((ItemStack) (Object) this), ((ItemStack) (Object) this).getDamageValue() + pAmount);
+				CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(pUser, stack, stack.getDamageValue() + pAmount);
 			}
 
-			int l = ((ItemStack) (Object) this).getDamageValue() + pAmount;
-			((ItemStack) (Object) this).setDamageValue(l);
-			return l >= ((ItemStack) (Object) this).getMaxDamage();
+			int l = stack.getDamageValue() + pAmount;
+			stack.setDamageValue(l);
+			return l >= stack.getMaxDamage();
 		}
 	}
 
-
 	@Inject(method = "hurtAndBreak", at = @At("HEAD"), cancellable = true)
 	public <T extends LivingEntity> void onHurtAndBreak(int pAmount, T pEntity, Consumer<T> pOnBroken, CallbackInfo ci) {
-		if (((ItemStack) (Object) this).getItem() instanceof ArmorItem) {
-			int unbreakingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.UNBREAKING, (ItemStack) (Object) this);
+		ItemStack stack = (ItemStack) (Object) this;
+
+		if (!stack.isDamageableItem()) {
+			ci.cancel();
+			return;
+		}
+
+		if (stack.getItem() instanceof ArmorItem) {
+			int unbreakingLevel = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.UNBREAKING, stack);
 
 			if (unbreakingLevel > 0) {
-				Random rand = new Random();
-				if (rand.nextInt(unbreakingLevel + 1) < unbreakingLevel) {
+				if (pEntity.getRandom().nextInt(unbreakingLevel + 1) < unbreakingLevel) {
 					ci.cancel();
 					return;
 				}
 			}
 
-			((ItemStack) (Object) this).setDamageValue(((ItemStack) (Object) this).getDamageValue() + 1);
+			stack.setDamageValue(stack.getDamageValue() + 1);
 
-			if (((ItemStack) (Object) this).getMaxDamage() < ((ItemStack) (Object) this).getDamageValue()) {
+			if (stack.getDamageValue() >= stack.getMaxDamage()) {
 				pOnBroken.accept(pEntity);
-				((ItemStack) (Object) this).shrink(1);
-				((Player)pEntity).awardStat(Stats.ITEM_BROKEN.get(((ItemStack) (Object) this).getItem()));
-				((ItemStack) (Object) this).setDamageValue(0);
+				stack.shrink(1);
+				if (pEntity instanceof Player player) {
+					player.awardStat(Stats.ITEM_BROKEN.get(stack.getItem()));
+				}
+				stack.setDamageValue(0);
 			}
 
 			ci.cancel();

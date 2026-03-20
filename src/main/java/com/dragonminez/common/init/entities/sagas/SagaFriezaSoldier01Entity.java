@@ -13,7 +13,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaFriezaSoldier01Entity extends DBSagasEntity{
@@ -100,7 +99,7 @@ public class SagaFriezaSoldier01Entity extends DBSagasEntity{
             int skill = getSkillType();
 
             if (skill == SKILL_KIBLAST) {
-                return event.setAndContinue(RawAnimation.begin().thenPlay("kiblast"));
+                return event.setAndContinue(ANIM_KIBLAST);
             }
         }
         event.getController().forceAnimationReset();
