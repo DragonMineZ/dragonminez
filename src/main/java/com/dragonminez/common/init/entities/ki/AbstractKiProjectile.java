@@ -153,7 +153,9 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     public float[] getRgbColorBorder() {
-        if (this.cachedColorBorderRgb == null) this.cachedColorBorderRgb = this.getRgbColorBorder();
+        if (this.cachedColorBorderRgb == null) {
+            this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
+        }
         return this.cachedColorBorderRgb;
     }
 

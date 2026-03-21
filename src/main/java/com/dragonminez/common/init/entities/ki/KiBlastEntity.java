@@ -222,17 +222,38 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
+    public void setupKiVolleyPlayer(LivingEntity owner, float damage, float speed, int color, int castTime) {
+        this.setOwner(owner);
+        this.setKiRenderType(9);
+        this.setSize(0.0F);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, color);
+
+        this.setFiring(false);
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime + 100);
+        this.setCastOffsets(0.0f, 0.0f, 0.5f);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
+
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
     // HASTA ACA TERMINAN LOS METODOS DEL JUGADOR
 
     public void setupKiSmall(LivingEntity owner, float damage, float speed, int color) {
         this.setOwner(owner);
         this.setKiRenderType(0);
-        this.setSize(0.6F);
+        this.setSize(0.8F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);
 
-        this.setFiring(false);
+        this.setFiring(true);
         this.setCastTime(0);
         this.setMaxLife(100);
         this.setCastOffsets(0.0f, -0.5F, 0.5F);
@@ -413,6 +434,25 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
     }
 
+    public void setupKiVolley(LivingEntity owner, float damage, float speed, int color, int castTime) {
+        this.setOwner(owner);
+        this.setKiRenderType(9);
+        this.setSize(0.0F);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, color);
+
+        this.setFiring(false);
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime + 100);
+        this.setCastOffsets(0.0f, 0.2f, 0.5f);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
+
+        if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+    }
+
     //ACA TERMINAN LOS METODOS PARA NPCS
 
     public void toggleSokidanControl() {
@@ -441,6 +481,11 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setMaxLife(this.tickCount + finalMaxLife);
 
         if (this.getOwner() instanceof LivingEntity livingOwner) {
+
+            if (this.getKiRenderType() == 9) { //KiVolley
+                return;
+            }
+
             Vec3 lookDir = livingOwner.getLookAngle();
             Vec3 spawnPos = livingOwner.getEyePosition().add(lookDir.scale(0.5D));
 
@@ -481,7 +526,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         boolean isFiring = this.isFiring();
 
-        if (!isFiring) {
+        if (!isFiring || this.getKiRenderType() == 9) {
             var owner = this.getOwner();
             if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
                 updatePositionRelativeToOwner(livingOwner);
@@ -507,8 +552,44 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         boolean isCasting = !this.isFiring();
+        int type = this.getKiRenderType();
+        Entity ownerEntity = this.getOwner();
 
-        if (!isCasting && this.isParked() && this.getOwner() instanceof LivingEntity owner) {
+        if (type == 9) {
+            if (ownerEntity instanceof LivingEntity owner && owner.isAlive()) {
+
+                owner.setDeltaMovement(0, 0, 0);
+                owner.fallDistance = 0.0F;
+                owner.hasImpulse = true;
+
+                if (!this.level().isClientSide) {
+                    if (!isCasting) {
+                        if (this.tickCount % 4 == 0) {
+                            KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
+
+                            bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
+
+                            bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 15.0F);
+
+                            this.level().addFreshEntity(bullet);
+
+                            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                                    MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.5F + (this.random.nextFloat() * 0.5F));
+                        }
+                    }
+
+                    if (this.tickCount >= this.getMaxLife()) {
+                        this.discard();
+                    }
+                }
+            } else if (!this.level().isClientSide) {
+                this.discard();
+            }
+
+            return;
+        }
+
+        if (!isCasting && this.isParked() && ownerEntity instanceof LivingEntity owner) {
             Vec3 eyePos = owner.getEyePosition();
             Vec3 look = owner.getLookAngle();
 
@@ -528,8 +609,6 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         if (!this.level().isClientSide) {
-            int type = this.getKiRenderType();
-
             if (!isCasting) {
                 if (this.isDetonating) {
                     this.processDetonation();
@@ -560,7 +639,6 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         if (this.level().isClientSide) {
-            int type = this.getKiRenderType();
             float scale = this.getSize();
             float[] borderColor = this.getRgbColorBorder();
             float pr = borderColor[0], pg = borderColor[1], pb = borderColor[2];
@@ -619,12 +697,14 @@ public class KiBlastEntity extends AbstractKiProjectile {
         }
 
         if (this.level().isClientSide && !hasSpawnedSplash) {
-            float[] rgb = this.getRgbColorBorder();
-            this.level().addParticle(
-                    MainParticles.KI_SPLASH.get(),
-                    this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(),
-                    rgb[0], rgb[1], rgb[2]
-            );
+            if (type != 0) {
+                float[] rgb = this.getRgbColorBorder();
+                this.level().addParticle(
+                        MainParticles.KI_SPLASH.get(),
+                        this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(),
+                        rgb[0], rgb[1], rgb[2]
+                );
+            }
             this.hasSpawnedSplash = true;
         }
     }

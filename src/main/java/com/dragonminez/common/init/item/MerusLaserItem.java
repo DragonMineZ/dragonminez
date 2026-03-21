@@ -38,7 +38,7 @@ public class MerusLaserItem extends Item {
             //kiBlast.setupKiNova(pPlayer,10,0.6f, 100);
             //kiBlast.setupKiDeathBall(pPlayer,10,2.0f, 0xA927F5, 100);
             //kiBlast.setupSokidan(pPlayer,10,0.5f, 0xFFEF26, 1.0f, 100);
-
+            kiBlast.setupKiVolley(pPlayer, 10, 1.4f, 0xFFFFFF, 40);
             //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 1.0f, 100);
             //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 3.0f, 100);
             //kiWave.setupFinalFlash(pPlayer, 10.0f, 1.0f, 2.5f, 100);
