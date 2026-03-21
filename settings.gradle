@@ -9,7 +9,7 @@ pluginManagement {
         maven { url = 'https://maven.parchmentmc.org' }
     }
     plugins {
-        id 'org.jetbrains.kotlin.jvm' version '2.3.10'
+        id 'org.jetbrains.kotlin.jvm' version '2.3.20'
     }
 }
 
