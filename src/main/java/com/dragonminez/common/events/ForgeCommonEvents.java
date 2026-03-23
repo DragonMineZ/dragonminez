@@ -221,8 +221,7 @@ public class ForgeCommonEvents {
 		BetaWhitelist.reload();
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
-		SagaManager.loadSagas(event.getServer());
-		SideQuestManager.loadSideQuests(event.getServer());
+		QuestRegistry.loadAll(event.getServer());
 
 		WorldGuardCompat.init();
 

@@ -4,9 +4,11 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
 import com.dragonminez.common.network.S2C.SyncSagasS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
-import com.dragonminez.common.quest.QuestData;
+import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.SagaManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -83,14 +85,15 @@ public class StatsCapability {
 					), serverPlayer
 			);
 			NetworkHandler.sendToPlayer(
-					new SyncSagasS2C(
-							SagaManager.getAllSagas()
+					new SyncQuestRegistryS2C(
+							QuestRegistry.getAllSagas(),
+							QuestRegistry.getAllQuests()
 					), serverPlayer
 			);
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
-				QuestData questData = data.getQuestData();
-				if (!questData.isSagaUnlocked("saiyan_saga")) questData.unlockSaga("saiyan_saga");
+				PlayerQuestData questData = data.getPlayerQuestData();
+				if (!questData.isSagaUnlocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}

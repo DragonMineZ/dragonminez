@@ -1,59 +1,57 @@
-package com.dragonminez.common.quest.sidequest;
+package com.dragonminez.common.quest;
 
-import com.dragonminez.common.stats.character.Stats;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.character.Stats;
 
+/**
+ * Evaluates whether a player meets all {@link QuestPrerequisites} for a given quest.
+ * Uses {@link PlayerQuestData} for all quest completion checks.
+ *
+ * @since 2.1
+ */
 public class QuestAvailabilityChecker {
 
-	/**
-	 * Checks whether a player meets all prerequisites for the given side-quest.
-	 *
-	 * @param quest     the side-quest to check
-	 * @param statsData the player's stats data
-	 * @return true if the player is eligible to accept this side-quest
-	 */
-	public static boolean isAvailable(SideQuest quest, StatsData statsData) {
+	public static boolean isAvailable(Quest quest, StatsData statsData) {
 		if (quest == null || statsData == null) return false;
 		if (!quest.hasPrerequisites()) return true;
 		return evaluate(quest.getPrerequisites(), statsData);
 	}
 
-	private static boolean evaluate(SideQuestPrerequisites prereqs, StatsData data) {
+	private static boolean evaluate(QuestPrerequisites prereqs, StatsData data) {
 		if (prereqs == null || prereqs.getConditions().isEmpty()) return true;
 
-		if (prereqs.getOperator() == SideQuestPrerequisites.Operator.AND) {
-			for (SideQuestPrerequisites.Condition condition : prereqs.getConditions()) {
+		if (prereqs.getOperator() == QuestPrerequisites.Operator.AND) {
+			for (QuestPrerequisites.Condition condition : prereqs.getConditions()) {
 				if (!evaluateCondition(condition, data)) return false;
 			}
 			return true;
 		} else {
-			// OR
-			for (SideQuestPrerequisites.Condition condition : prereqs.getConditions()) {
+			for (QuestPrerequisites.Condition condition : prereqs.getConditions()) {
 				if (evaluateCondition(condition, data)) return true;
 			}
 			return false;
 		}
 	}
 
-	private static boolean evaluateCondition(SideQuestPrerequisites.Condition condition, StatsData data) {
-		// Nested group — recurse
+	private static boolean evaluateCondition(QuestPrerequisites.Condition condition, StatsData data) {
 		if (condition.isNestedGroup()) {
 			return evaluate(condition.getNested(), data);
 		}
 
 		if (condition.getType() == null) return false;
+		PlayerQuestData pqd = data.getPlayerQuestData();
 
 		return switch (condition.getType()) {
 			case SAGA_QUEST -> {
 				String sagaId = condition.getSagaId();
 				Integer questId = condition.getQuestId();
 				if (sagaId == null || questId == null) yield false;
-				yield data.getQuestData().isQuestCompleted(sagaId, questId);
+				yield pqd.isQuestCompleted(PlayerQuestData.sagaQuestKey(sagaId, questId));
 			}
-			case SIDE_QUEST -> {
-				String sideQuestId = condition.getSideQuestId();
-				if (sideQuestId == null) yield false;
-				yield data.getSideQuestData().isQuestCompleted(sideQuestId);
+			case QUEST -> {
+				String requiredQuestId = condition.getRequiredQuestId();
+				if (requiredQuestId == null) yield false;
+				yield pqd.isQuestCompleted(requiredQuestId);
 			}
 			case STAT -> {
 				String stat = condition.getStat();
@@ -86,4 +84,3 @@ public class QuestAvailabilityChecker {
 		};
 	}
 }
-

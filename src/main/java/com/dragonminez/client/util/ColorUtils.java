@@ -97,9 +97,9 @@ public class ColorUtils {
         int b = Math.round((bf + m) * 255);
 
         return new int[]{
-            Math.max(0, Math.min(255, r)),
-            Math.max(0, Math.min(255, g)),
-            Math.max(0, Math.min(255, b))
+                Math.max(0, Math.min(255, r)),
+                Math.max(0, Math.min(255, g)),
+                Math.max(0, Math.min(255, b))
         };
     }
 
@@ -117,23 +117,39 @@ public class ColorUtils {
         if (hex == null || hex.isEmpty()) return 0xFFFFFF;
 
         try {
-			if (hex.startsWith("#")) hex = hex.substring(1);
+            if (hex.startsWith("#")) hex = hex.substring(1);
             return (int) Long.parseLong(hex, 16);
         } catch (NumberFormatException e) {
             return 0xFFFFFF;
         }
     }
 
-	public static int darkenColor(int color, float factor) {
-		int r = (color >> 16) & 0xFF;
-		int g = (color >> 8) & 0xFF;
-		int b = color & 0xFF;
+    public static int darkenColor(int color, float factor) {
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
 
-		r = (int) (r * factor);
-		g = (int) (g * factor);
-		b = (int) (b * factor);
+        r = (int) (r * factor);
+        g = (int) (g * factor);
+        b = (int) (b * factor);
 
-		return (r << 16) | (g << 8) | b;
-	}
+        return (r << 16) | (g << 8) | b;
+    }
+
+    public static float[] lightenColor(float[] color, float whiteness) {
+        return new float[]{
+                color[0] + (1.0f - color[0]) * whiteness,
+                color[1] + (1.0f - color[1]) * whiteness,
+                color[2] + (1.0f - color[2]) * whiteness
+        };
+    }
+
+    public static float[] darkenColor(float[] color, float darkness) {
+        return new float[]{
+                color[0] * (1.0f - darkness),
+                color[1] * (1.0f - darkness),
+                color[2] * (1.0f - darkness)
+        };
+    }
+
 }
-

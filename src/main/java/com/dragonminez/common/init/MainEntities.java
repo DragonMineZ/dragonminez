@@ -37,16 +37,16 @@ public class MainEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Reference.MOD_ID);
 
-	public static final RegistryObject<EntityType<ShenronEntity>> SHENRON =
-			ENTITY_TYPES.register("shenron",
-					() -> EntityType.Builder.of(ShenronEntity::new, MobCategory.CREATURE)
-							.sized(3.0f, 17.0f)
-							.build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shenron").toString()));
-	public static final RegistryObject<EntityType<PorungaEntity>> PORUNGA =
-			ENTITY_TYPES.register("porunga",
-					() -> EntityType.Builder.of(PorungaEntity::new, MobCategory.CREATURE)
-							.sized(4.0f, 20.0f)
-							.build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "porunga").toString()));
+    public static final RegistryObject<EntityType<ShenronEntity>> SHENRON =
+            ENTITY_TYPES.register("shenron",
+                    () -> EntityType.Builder.of(ShenronEntity::new, MobCategory.CREATURE)
+                            .sized(3.0f, 17.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shenron").toString()));
+    public static final RegistryObject<EntityType<PorungaEntity>> PORUNGA =
+            ENTITY_TYPES.register("porunga",
+                    () -> EntityType.Builder.of(PorungaEntity::new, MobCategory.CREATURE)
+                            .sized(4.0f, 20.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "porunga").toString()));
     public static final RegistryObject<EntityType<MasterKarinEntity>> MASTER_KARIN =
             ENTITY_TYPES.register("master_karin",
                     () -> EntityType.Builder.of(MasterKarinEntity::new, MobCategory.CREATURE)
@@ -507,6 +507,17 @@ public class MainEntities {
                     .build("ki_barrier")
     );
 
+    public static final RegistryObject<EntityType<KiExplosionVisualEntity>> KI_EXPLOSION_VISUAL =
+            ENTITY_TYPES.register("ki_explosion_visual",
+                    () -> EntityType.Builder.<KiExplosionVisualEntity>of(KiExplosionVisualEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(10)
+                            .updateInterval(1)
+                            .fireImmune()
+                            .noSave()
+                            .build("ki_explosion_visual")
+            );
+
     // Single generic entity type for ALL data-driven quest NPCs
     public static final RegistryObject<EntityType<QuestNPCEntity>> QUEST_NPC =
             ENTITY_TYPES.register("quest_npc",
@@ -520,54 +531,54 @@ public class MainEntities {
 
     @SubscribeEvent
     public static void registerSpawnPlacements(SpawnPlacementRegisterEvent event) {
-		List<RegistryObject<? extends EntityType<? extends Mob>>> sagaEntities = List.of(
-				SAGA_SAIBAMAN, SAGA_SAIBAMAN2, SAGA_SAIBAMAN3, SAGA_SAIBAMAN4, SAGA_SAIBAMAN5, SAGA_SAIBAMAN6,
-				SAGA_RADITZ, SAGA_NAPPA, SAGA_VEGETA, SAGA_OZARU_VEGETA,
-				SAGA_FRIEZA_SOLDIER, SAGA_FRIEZA_SOLDIER2, SAGA_FRIEZA_SOLDIER3, SAGA_MORO_SOLDIER,
-				SAGA_CUI, SAGA_DODORIA, SAGA_VEGETA_NAMEK, SAGA_ZARBON, SAGA_ZARBON_TRANSF,
-				SAGA_GULDO, SAGA_RECOOME, SAGA_BURTER, SAGA_JEICE, SAGA_GINYU, SAGA_GINYU_GOKU,
-				SAGA_FREEZER_FIRST, SAGA_FREEZER_SECOND, SAGA_FREEZER_THIRD, SAGA_FREEZER_BASE, SAGA_FREEZER_FP,
-				SAGA_MECHA_FRIEZA, SAGA_KING_COLD, SAGA_GOKU_YARDRAT, SAGA_DRGERO, SAGA_A19, SAGA_A18, SAGA_A17, SAGA_A16,
-				SAGA_CELL_IMPERFECT, SAGA_PICCOLO_KAMI, SAGA_CELL_SEMIPERFECT, SAGA_SUPER_VEGETA, SAGA_TRUNKS_SSJ, SAGA_CELL_PERFECT,
-				SAGA_GOHAN_SSJ, SAGA_CELL_SUPERPERFECT, SAGA_CELL_JR, SHADOW_DUMMY);
+        List<RegistryObject<? extends EntityType<? extends Mob>>> sagaEntities = List.of(
+                SAGA_SAIBAMAN, SAGA_SAIBAMAN2, SAGA_SAIBAMAN3, SAGA_SAIBAMAN4, SAGA_SAIBAMAN5, SAGA_SAIBAMAN6,
+                SAGA_RADITZ, SAGA_NAPPA, SAGA_VEGETA, SAGA_OZARU_VEGETA,
+                SAGA_FRIEZA_SOLDIER, SAGA_FRIEZA_SOLDIER2, SAGA_FRIEZA_SOLDIER3, SAGA_MORO_SOLDIER,
+                SAGA_CUI, SAGA_DODORIA, SAGA_VEGETA_NAMEK, SAGA_ZARBON, SAGA_ZARBON_TRANSF,
+                SAGA_GULDO, SAGA_RECOOME, SAGA_BURTER, SAGA_JEICE, SAGA_GINYU, SAGA_GINYU_GOKU,
+                SAGA_FREEZER_FIRST, SAGA_FREEZER_SECOND, SAGA_FREEZER_THIRD, SAGA_FREEZER_BASE, SAGA_FREEZER_FP,
+                SAGA_MECHA_FRIEZA, SAGA_KING_COLD, SAGA_GOKU_YARDRAT, SAGA_DRGERO, SAGA_A19, SAGA_A18, SAGA_A17, SAGA_A16,
+                SAGA_CELL_IMPERFECT, SAGA_PICCOLO_KAMI, SAGA_CELL_SEMIPERFECT, SAGA_SUPER_VEGETA, SAGA_TRUNKS_SSJ, SAGA_CELL_PERFECT,
+                SAGA_GOHAN_SSJ, SAGA_CELL_SUPERPERFECT, SAGA_CELL_JR, SHADOW_DUMMY);
 
-		for (RegistryObject<? extends EntityType<? extends Mob>> sE : sagaEntities) {
-			registerSagaSpawn(event, sE.get());
-		}
+        for (RegistryObject<? extends EntityType<? extends Mob>> sE : sagaEntities) {
+            registerSagaSpawn(event, sE.get());
+        }
 
-		List<RegistryObject<? extends EntityType<? extends Mob>>> dinoEntities = List.of(
-				DINOSAUR1, DINOSAUR2, DINOSAUR3, DINO_KID, SABERTOOTH);
+        List<RegistryObject<? extends EntityType<? extends Mob>>> dinoEntities = List.of(
+                DINOSAUR1, DINOSAUR2, DINOSAUR3, DINO_KID, SABERTOOTH);
 
-		for (RegistryObject<? extends EntityType<? extends Mob>> dE : dinoEntities) {
-			registerDinoSpawn(event, dE.get());
-		}
+        for (RegistryObject<? extends EntityType<? extends Mob>> dE : dinoEntities) {
+            registerDinoSpawn(event, dE.get());
+        }
 
-		List<RegistryObject<? extends EntityType<? extends Mob>>> redRibbonEntities = List.of(
-				BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER);
+        List<RegistryObject<? extends EntityType<? extends Mob>>> redRibbonEntities = List.of(
+                BANDIT, RED_RIBBON_ROBOT1, RED_RIBBON_ROBOT2, RED_RIBBON_ROBOT3, RED_RIBBON_SOLDIER);
 
-		for (RegistryObject<? extends EntityType<? extends Mob>> rrE : redRibbonEntities) {
-			registerRedRibbonSpawn(event, rrE.get());
-		}
-	}
+        for (RegistryObject<? extends EntityType<? extends Mob>> rrE : redRibbonEntities) {
+            registerRedRibbonSpawn(event, rrE.get());
+        }
+    }
 
-	private static <T extends Mob> void registerSagaSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
-		event.register(entityType, SpawnPlacements.Type.ON_GROUND,
-				Heightmap.Types.MOTION_BLOCKING,
-				(e, w, r, p, rand) -> DBSagasEntity.canSpawnHere((EntityType<? extends DBSagasEntity>) e, w, r, p, rand),
-				SpawnPlacementRegisterEvent.Operation.REPLACE);
-	}
+    private static <T extends Mob> void registerSagaSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
+        event.register(entityType, SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING,
+                (e, w, r, p, rand) -> DBSagasEntity.canSpawnHere((EntityType<? extends DBSagasEntity>) e, w, r, p, rand),
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
+    }
 
-	private static <T extends Mob> void registerDinoSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
-		event.register(entityType, SpawnPlacements.Type.ON_GROUND,
-				Heightmap.Types.MOTION_BLOCKING,
-				(e, w, r, p, rand) -> DinoGlobalEntity.canSpawnHere((EntityType<? extends DinoGlobalEntity>) e, w, r, p, rand),
-				SpawnPlacementRegisterEvent.Operation.REPLACE);
-	}
+    private static <T extends Mob> void registerDinoSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
+        event.register(entityType, SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING,
+                (e, w, r, p, rand) -> DinoGlobalEntity.canSpawnHere((EntityType<? extends DinoGlobalEntity>) e, w, r, p, rand),
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
+    }
 
-	private static <T extends Mob> void registerRedRibbonSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
-		event.register(entityType, SpawnPlacements.Type.ON_GROUND,
-				Heightmap.Types.MOTION_BLOCKING,
-				(e, w, r, p, rand) -> RedRibbonEntity.canSpawnHere((EntityType<? extends RedRibbonEntity>) e, w, r, p, rand),
-				SpawnPlacementRegisterEvent.Operation.REPLACE);
-	}
+    private static <T extends Mob> void registerRedRibbonSpawn(SpawnPlacementRegisterEvent event, EntityType<T> entityType) {
+        event.register(entityType, SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING,
+                (e, w, r, p, rand) -> RedRibbonEntity.canSpawnHere((EntityType<? extends RedRibbonEntity>) e, w, r, p, rand),
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
+    }
 }

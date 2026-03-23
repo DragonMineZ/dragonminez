@@ -239,6 +239,8 @@ public class TickHandler {
 		UUID playerId = event.getEntity().getUUID();
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
+		auraLightLevels.remove(playerId);
+		if (event.getEntity() instanceof ServerPlayer serverPlayer) removeAuraLight(serverPlayer.serverLevel(), playerId);
 	}
 
 	@SubscribeEvent
@@ -256,13 +258,8 @@ public class TickHandler {
 		if (Float.isNaN(health) || Float.isInfinite(health)) return true;
 
 		return health <= 0.0F;
-		UUID playerId = event.getEntity().getUUID();
-		playerTickCounters.remove(playerId);
-		auraLightLevels.remove(playerId);
-		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			removeAuraLight(serverPlayer.serverLevel(), playerId);
-		}
 	}
+
 
 	private static void updateAuraLight(ServerPlayer player, StatsData data) {
 		boolean auraActive = data.getStatus().isAuraActive() || data.getStatus().isPermanentAura();

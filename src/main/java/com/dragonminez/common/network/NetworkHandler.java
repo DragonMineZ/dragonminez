@@ -252,6 +252,12 @@ public class NetworkHandler {
 				.consumerMainThread(SyncWishesS2C::handle)
 				.add();
 
+		net.messageBuilder(SyncQuestRegistryS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncQuestRegistryS2C::new)
+				.encoder(SyncQuestRegistryS2C::encode)
+				.consumerMainThread(SyncQuestRegistryS2C::handle)
+				.add();
+
 		net.messageBuilder(RadarSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(RadarSyncS2C::decode)
 				.encoder(RadarSyncS2C::encode)
