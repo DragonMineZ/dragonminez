@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -69,6 +70,27 @@ public class DragonBallsHandler {
 		syncRadar(level);
 	}
 
+	public static void unregisterConsumedDragonBalls(ServerLevel level, Collection<BlockPos> consumedPositions, boolean isNamek) {
+		if (consumedPositions == null || consumedPositions.isEmpty()) return;
+
+		DragonBallSavedData data = DragonBallSavedData.get(level);
+		Map<Integer, List<BlockPos>> active = data.getActiveBalls(isNamek);
+		Set<BlockPos> consumedSet = new HashSet<>(consumedPositions);
+		boolean changed = false;
+
+		for (int star = 1; star <= 7; star++) {
+			List<BlockPos> positions = active.get(star);
+			if (positions != null && positions.removeIf(consumedSet::contains)) {
+				changed = true;
+			}
+		}
+
+		if (changed) {
+			data.setDirty();
+			syncRadar(level);
+		}
+	}
+
 	@SubscribeEvent
 	public static void onChunkLoad(ChunkEvent.Load event) {
 		if (!(event.getLevel() instanceof ServerLevel level)) return;
@@ -97,6 +119,13 @@ public class DragonBallsHandler {
 		while (!generationQueue.isEmpty()) {
 			Runnable task = generationQueue.poll();
 			if (task != null) task.run();
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (event.getEntity() instanceof ServerPlayer player) {
+			syncRadarForPlayer(player);
 		}
 	}
 
@@ -172,6 +201,7 @@ public class DragonBallsHandler {
 	}
 
 	public static void syncRadar(ServerLevel level) {
+		if (level == null) return;
 		ServerLevel overworld = level.getServer().getLevel(Level.OVERWORLD);
 		ServerLevel namek = level.getServer().getLevel(NamekDimension.NAMEK_KEY);
 
@@ -180,15 +210,38 @@ public class DragonBallsHandler {
 
 		if (overworld != null) {
 			DragonBallSavedData data = DragonBallSavedData.get(overworld);
-			earthList.addAll(data.getAllPositionsForRadar(false));
+			earthList.addAll(data.getAllKnownPositionsForRadar(false));
 		}
 
 		if (namek != null) {
 			DragonBallSavedData data = DragonBallSavedData.get(namek);
-			namekList.addAll(data.getAllPositionsForRadar(true));
+			namekList.addAll(data.getAllKnownPositionsForRadar(true));
 		}
 
 		NetworkHandler.sendToAllPlayers(new RadarSyncS2C(earthList, namekList));
+	}
+
+	public static void syncRadarForPlayer(ServerPlayer player) {
+		if (player == null) return;
+
+		ServerLevel currentLevel = player.serverLevel();
+		ServerLevel overworld = currentLevel.getServer().getLevel(Level.OVERWORLD);
+		ServerLevel namek = currentLevel.getServer().getLevel(NamekDimension.NAMEK_KEY);
+
+		List<BlockPos> earthList = new ArrayList<>();
+		List<BlockPos> namekList = new ArrayList<>();
+
+		if (overworld != null) {
+			DragonBallSavedData data = DragonBallSavedData.get(overworld);
+			earthList.addAll(data.getAllKnownPositionsForRadar(false));
+		}
+
+		if (namek != null) {
+			DragonBallSavedData data = DragonBallSavedData.get(namek);
+			namekList.addAll(data.getAllKnownPositionsForRadar(true));
+		}
+
+		NetworkHandler.sendToPlayer(new RadarSyncS2C(earthList, namekList), player);
 	}
 
 	private static BlockState getBallState(int star, boolean isNamek) {
@@ -232,3 +285,4 @@ public class DragonBallsHandler {
 		return block.getDescriptionId().contains("namek");
 	}
 }
+

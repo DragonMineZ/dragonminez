@@ -14,60 +14,60 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 public class StackFormMenuSlot extends AbstractMenuSlot implements IUtilityMenuSlot {
-    @Override
-    public ButtonInfo render(StatsData statsData) {
-        ActionMode currentMode = statsData.getStatus().getSelectedAction();
+	@Override
+	public ButtonInfo render(StatsData statsData) {
+		ActionMode currentMode = statsData.getStatus().getSelectedAction();
 
-        boolean hasStackform = false;
-        var skillConfig = ConfigManager.getSkillsConfig();
-        for (String formSkill : skillConfig.getStackSkills()) {
-            if (statsData.getSkills().getSkillLevel(formSkill) >= 1) {
-                hasStackform = true;
-                break;
-            }
-        }
+		boolean hasStackform = false;
+		var skillConfig = ConfigManager.getSkillsConfig();
+		for (String formSkill : skillConfig.getStackSkills()) {
+			if (statsData.getSkills().getSkillLevel(formSkill) >= TransformationsHelper.getFirstAvailableStackFormLevel(statsData)) {
+				hasStackform = true;
+				break;
+			}
+		}
 
-        if (hasStackform) {
-            boolean formGroupIsEmpty = statsData.getCharacter().getSelectedStackFormGroup() == null || statsData.getCharacter().getSelectedStackFormGroup().isEmpty();
-            boolean formIsEmpty = statsData.getCharacter().getSelectedStackForm() == null || statsData.getCharacter().getSelectedStackForm().isEmpty();
-            if (formGroupIsEmpty || formIsEmpty) {
-                statsData.getCharacter().clearSelectedStackForm();
-                NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_STACK_FORM_GROUP, false));
-            }
-            return new ButtonInfo(
-                    Component.translatable("race.dragonminez.stack.group." + statsData.getCharacter().getSelectedStackFormGroup()).withStyle(ChatFormatting.BOLD),
-                    Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getSelectedStackFormGroup() + "." + statsData.getCharacter().getSelectedStackForm()),
-                    currentMode == ActionMode.STACK);
-        } else {
-            return new ButtonInfo();
-        }
-    }
+		if (hasStackform) {
+			boolean formGroupIsEmpty = statsData.getCharacter().getSelectedStackFormGroup() == null || statsData.getCharacter().getSelectedStackFormGroup().isEmpty();
+			boolean formIsEmpty = statsData.getCharacter().getSelectedStackForm() == null || statsData.getCharacter().getSelectedStackForm().isEmpty();
+			if (formGroupIsEmpty || formIsEmpty) {
+				statsData.getCharacter().clearSelectedStackForm();
+				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_STACK_FORM_GROUP, false));
+			}
+			return new ButtonInfo(
+					Component.translatable("race.dragonminez.stack.group." + statsData.getCharacter().getSelectedStackFormGroup()).withStyle(ChatFormatting.BOLD),
+					Component.translatable("race.dragonminez.stack.form." + statsData.getCharacter().getSelectedStackFormGroup() + "." + statsData.getCharacter().getSelectedStackForm()),
+					currentMode == ActionMode.STACK);
+		} else {
+			return new ButtonInfo();
+		}
+	}
 
-    @Override
-    public void handle(StatsData statsData, boolean rightClick) {
-        boolean hasStackform = false;
-        var skillConfig = ConfigManager.getSkillsConfig();
-        for (String formSkill : skillConfig.getStackSkills()) {
-            if (statsData.getSkills().getSkillLevel(formSkill) >= 1) {
-                hasStackform = true;
-                break;
-            }
-        }
+	@Override
+	public void handle(StatsData statsData, boolean rightClick) {
+		boolean hasStackform = false;
+		var skillConfig = ConfigManager.getSkillsConfig();
+		for (String formSkill : skillConfig.getStackSkills()) {
+			if (statsData.getSkills().getSkillLevel(formSkill) >= TransformationsHelper.getFirstAvailableStackFormLevel(statsData)) {
+				hasStackform = true;
+				break;
+			}
+		}
 
-        if (hasStackform) {
-            boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.STACK;
-            if (wasActive && statsData.getCharacter().hasActiveStackForm()) {
-                if (TransformationsHelper.canStackDescend(statsData)) {
-                    NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
-                    playToggleSound(false);
-                }
-            } else if (!wasActive) {
-                NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.STACK));
-                playToggleSound(true);
-            } else {
-                NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_STACK_FORM_GROUP, rightClick));
-                playToggleSound(true);
-            }
-        }
-    }
+		if (hasStackform) {
+			boolean wasActive = statsData.getStatus().getSelectedAction() == ActionMode.STACK;
+			if (wasActive && statsData.getCharacter().hasActiveStackForm()) {
+				if (TransformationsHelper.canStackDescend(statsData)) {
+					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.DESCEND));
+					playToggleSound(false);
+				}
+			} else if (!wasActive) {
+				NetworkHandler.sendToServer(new SwitchActionC2S(ActionMode.STACK));
+				playToggleSound(true);
+			} else {
+				NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.CYCLE_STACK_FORM_GROUP, rightClick));
+				playToggleSound(true);
+			}
+		}
+	}
 }

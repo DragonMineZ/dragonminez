@@ -467,6 +467,8 @@ public class StatsData {
 	}
 
 	public void updateTransformationSkillLimits(String raceName) {
+		skills.refreshNonFormSkillMaxLevels();
+
 		RaceCharacterConfig charConfig = ConfigManager.getRaceCharacter(raceName);
 		if (charConfig != null) {
 			Collection<String> formSkills = charConfig.getFormSkills();

@@ -51,7 +51,10 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		ItemStack stack = animatable.getItemBySlot(EquipmentSlot.CHEST);
 		if (CosmeticArmorCompat.isLoaded()) {
 			ItemStack cosmeticStack = CosmeticArmorCompat.getCosmeticStack(animatable, EquipmentSlot.CHEST);
-			if (cosmeticStack != null) stack = cosmeticStack;
+			if (cosmeticStack != null) {
+				if (cosmeticStack.isEmpty()) return;
+				stack = cosmeticStack;
+			}
 		}
 		if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem armorItem)) return;
 
@@ -85,10 +88,9 @@ public class DMZCustomArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			shouldRender = true;
 			isOozaruTarget = true;
 		} else if (logicKey.contains("buffed") || logicKey.contains("frostdemon_fp") || logicKey.contains("majin_ultra")
-				|| logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") || logicKey.contains("frostdemon_second")
-				|| logicKey.contains("frostdemon_third") || logicKey.contains("frostdemon_fifth") || logicKey.contains("bioandroid_semi")) {
+				|| logicKey.contains("namekian_orange") || logicKey.contains("bioandroid_ultra") ) {
 			if (isDbzArmor) shouldRender = true;
-		} else if ((logicKey.equals("majin") && (gender.equals("male") || gender.equals("hombre"))) || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
+		} else if ((logicKey.equals("majin") && (gender.equals("male") || gender.equals("hombre")) ) || (raceName.equals("majin") && (gender.equals("male") || gender.equals("hombre")))) {
 			shouldRender = true;
 		} else if (gender.equals("female") || gender.equals("mujer") || gender.equals("fem")) {
 			boolean isKnownModel = SLIM_SUPPORTED_MODELS.contains(logicKey);

@@ -49,6 +49,7 @@ public class TickHandler {
 
 	private static final int REGEN_INTERVAL = 20;
 	private static final int SYNC_INTERVAL = 10;
+	private static final int FORCED_KILL_GRACE_TICKS = 40;
 	private static final int AURA_LIGHT_INTERVAL = 2;
 	private static final int AURA_LIGHT_LEVEL = 12;
 	private static final int AURA_LIGHT_STEP = 1;
@@ -59,6 +60,7 @@ public class TickHandler {
 	private static final Map<UUID, Integer> playerTickCounters = new HashMap<>();
 	private static final Map<UUID, BlockPos> auraLightPositions = new HashMap<>();
 	private static final Map<UUID, Integer> auraLightLevels = new HashMap<>();
+	private static final Map<UUID, Integer> forceKillGraceByPlayer = new HashMap<>();
 
 	static {
 		registerActionModeHandlers();
@@ -72,12 +74,18 @@ public class TickHandler {
 
 
 		UUID playerId = serverPlayer.getUUID();
+		int graceTicks = forceKillGraceByPlayer.getOrDefault(playerId, 0);
+		if (graceTicks > 0) forceKillGraceByPlayer.put(playerId, graceTicks - 1);
+
 		int tickCounter = playerTickCounters.getOrDefault(playerId, 0) + 1;
 		if (tickCounter >= REGEN_INTERVAL) playerTickCounters.put(playerId, 0);
 		else playerTickCounters.put(playerId, tickCounter);
 
-		if (serverPlayer.getHealth() < 0 && !serverPlayer.isDeadOrDying()) serverPlayer.setHealth(1);
-		if (serverPlayer.getHealth() <= 0.25 && !serverPlayer.isDeadOrDying()) serverPlayer.kill();
+		if (shouldForceKillForInvalidHealth(serverPlayer, playerId)) {
+			serverPlayer.kill();
+			forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
+			return;
+		}
 
 		StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
@@ -230,6 +238,26 @@ public class TickHandler {
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID playerId = event.getEntity().getUUID();
 		playerTickCounters.remove(playerId);
+		forceKillGraceByPlayer.remove(playerId);
+	}
+
+	@SubscribeEvent
+	public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+		UUID playerId = event.getEntity().getUUID();
+		forceKillGraceByPlayer.put(playerId, FORCED_KILL_GRACE_TICKS);
+		playerTickCounters.remove(playerId);
+	}
+
+	private static boolean shouldForceKillForInvalidHealth(ServerPlayer serverPlayer, UUID playerId) {
+		if (forceKillGraceByPlayer.getOrDefault(playerId, 0) > 0) return false;
+		if (!serverPlayer.isAlive() || serverPlayer.isDeadOrDying() || serverPlayer.deathTime > 0) return false;
+
+		float health = serverPlayer.getHealth();
+		if (Float.isNaN(health) || Float.isInfinite(health)) return true;
+
+		return health <= 0.0F;
+		UUID playerId = event.getEntity().getUUID();
+		playerTickCounters.remove(playerId);
 		auraLightLevels.remove(playerId);
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
 			removeAuraLight(serverPlayer.serverLevel(), playerId);
@@ -309,15 +337,15 @@ public class TickHandler {
 
 	private static void regenerateHealth(ServerPlayer player, StatsData data,
 										 RaceStatsConfig.ClassStats classStats) {
-		int currentHealth = (int) player.getHealth();
+		float currentHealth = player.getHealth();
 		float maxHealth = player.getMaxHealth();
 
 		if (currentHealth < maxHealth) {
 			double baseRegen = classStats.getHealthRegenRate();
 			double regenAmount = maxHealth * baseRegen;
-			if (regenAmount <= 1.0) return;
+			if (regenAmount <= 0.0) return;
 
-			float newHealth = (float) Math.min(maxHealth, currentHealth + Math.ceil(regenAmount));
+			float newHealth = (float) Math.min(maxHealth, currentHealth + regenAmount);
 			player.setHealth(newHealth);
 		}
 	}

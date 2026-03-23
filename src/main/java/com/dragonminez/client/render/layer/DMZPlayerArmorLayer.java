@@ -55,15 +55,16 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		};
 		if (slot == null) return null;
 
-		ItemStack stack = null;
+		ItemStack stack = animatable.getInventory().armor.get(slot.getIndex());
 		if (CosmeticArmorCompat.isLoaded()) {
 			ItemStack cosStack = CosmeticArmorCompat.getCosmeticStack(animatable, slot);
-			if (cosStack != null && !cosStack.isEmpty()) stack = cosStack;
+			if (cosStack != null) {
+				if (cosStack.isEmpty()) return null;
+				stack = cosStack;
+			}
 		}
 
-		if (stack == null) stack = animatable.getInventory().armor.get(slot.getIndex());
-
-		if (stack == null || stack.isEmpty()) return null;
+		if (stack.isEmpty()) return null;
 		if (!(stack.getItem() instanceof ArmorItem) && !(stack.getItem() instanceof DbzArmorItem)) return null;
 		if (!stack.canEquip(slot, animatable) && !(stack.getItem() instanceof DbzArmorItem)) return null;
 
@@ -88,7 +89,7 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
 			boolean isOozaru = character.isOozaruCached() || logicKey.startsWith("oozaru");
 			boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
-					|| logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra") || logicKey.startsWith("frostdemon_second") || logicKey.startsWith("frostdemon_third") || logicKey.startsWith("frostdemon_fifth") || logicKey.startsWith("bioandroid_semi");
+					|| logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra");
 			boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
 
 			if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
@@ -127,4 +128,6 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 			default -> super.getModelPartForBone(bone, slot, stack, animatable, baseModel);
 		};
 	}
+
+
 }

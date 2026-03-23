@@ -76,24 +76,22 @@ public class TransformationsHelper {
 	public static String getGroupWithFirstAvailableForm(StatsData statsData) {
 		String race = statsData.getCharacter().getRaceName();
 		Map<String, FormConfig> allGroups = ConfigManager.getAllFormsForRace(race);
-		int lowestReqLevel = Integer.MAX_VALUE;
-		String selectedGroup = null;
-		for (String groupKey : allGroups.keySet()) {
-			FormConfig config = ConfigManager.getFormGroup(race, groupKey);
-			if (config != null && (!config.getGroupName().contains("oozaru") || statsData.getCharacter().isHasSaiyanTail())) {
-				int[] reqLevels = config.getForms().values().stream()
-						.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
-						.sorted()
-						.toArray();
+		if (allGroups == null || allGroups.isEmpty()) return null;
 
-				if (reqLevels.length > 0 && reqLevels[0] < lowestReqLevel) {
-					lowestReqLevel = reqLevels[0];
-					selectedGroup = groupKey;
-				}
-			}
+		List<String> preferredTypes = new ArrayList<>();
+		if (statsData.getSkills().getSkillLevel("superform") > 0) preferredTypes.add("super");
+		if (statsData.getSkills().getSkillLevel("legendaryforms") > 0) preferredTypes.add("legendary");
+		if (statsData.getSkills().getSkillLevel("godform") > 0) preferredTypes.add("god");
+		if (statsData.getSkills().getSkillLevel("androidforms") > 0) preferredTypes.add("android");
+
+		if (preferredTypes.isEmpty()) preferredTypes.add("super");
+
+		for (String formType : preferredTypes) {
+			String group = findBestGroupByType(statsData, race, allGroups, formType);
+			if (group != null) return group;
 		}
 
-		return selectedGroup;
+		return null;
 	}
 
 	public static String getFirstAvailableForm(StatsData statsData) {
@@ -111,7 +109,9 @@ public class TransformationsHelper {
 			return null;
 		}
 
+		int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getName).orElse(null);
@@ -132,10 +132,116 @@ public class TransformationsHelper {
 			return -1;
 		}
 
+		int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
 		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
 				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
 
 		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
+	}
+
+	public static String getGroupWithFirstAvailableStackForm(StatsData statsData) {
+		Map<String, FormConfig> allGroups = ConfigManager.getAllStackForms();
+		if (allGroups == null || allGroups.isEmpty()) return null;
+
+		List<String> preferredTypes = new ArrayList<>();
+		for (FormConfig config : allGroups.values()) {
+			String formType = config.getFormType();
+			if (formType == null || formType.isEmpty()) continue;
+			if (statsData.getSkills().getSkillLevel(formType) > 0 && !preferredTypes.contains(formType.toLowerCase())) {
+				preferredTypes.add(formType.toLowerCase());
+			}
+		}
+
+		if (preferredTypes.isEmpty()) preferredTypes.add("kaioken");
+
+		for (String formType : preferredTypes) {
+			String group = findBestStackGroupByType(statsData, allGroups, formType);
+			if (group != null) return group;
+		}
+
+		return null;
+	}
+
+	public static String getFirstAvailableStackForm(StatsData statsData) {
+		String group = getGroupWithFirstAvailableStackForm(statsData);
+		if (group == null) return null;
+
+		FormConfig config = ConfigManager.getStackFormGroup(group);
+		if (config == null) return null;
+
+		int currentSkillLevel = getSkillLevelForStackType(statsData, config.getFormType());
+		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
+				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
+
+		return firstForm.map(FormConfig.FormData::getName).orElse(null);
+	}
+
+	public static int getFirstAvailableStackFormLevel(StatsData statsData) {
+		String group = getGroupWithFirstAvailableStackForm(statsData);
+		if (group == null) return -1;
+
+		FormConfig config = ConfigManager.getStackFormGroup(group);
+		if (config == null) return -1;
+
+		int currentSkillLevel = getSkillLevelForStackType(statsData, config.getFormType());
+		Optional<FormConfig.FormData> firstForm = config.getForms().values().stream()
+				.filter(f -> f.getUnlockOnSkillLevel() <= currentSkillLevel)
+				.min(Comparator.comparingInt(FormConfig.FormData::getUnlockOnSkillLevel));
+
+		return firstForm.map(FormConfig.FormData::getUnlockOnSkillLevel).orElse(-1);
+	}
+
+	private static String findBestGroupByType(StatsData statsData, String race, Map<String, FormConfig> allGroups, String formType) {
+		int lowestReqLevel = Integer.MAX_VALUE;
+		String selectedGroup = null;
+
+		for (Map.Entry<String, FormConfig> entry : allGroups.entrySet()) {
+			String groupKey = entry.getKey();
+			FormConfig config = ConfigManager.getFormGroup(race, groupKey);
+			if (config == null || !config.getFormType().equalsIgnoreCase(formType)) continue;
+			if (config.getGroupName().contains("oozaru") && !statsData.getCharacter().isHasSaiyanTail()) continue;
+
+			int currentSkillLevel = getSkillLevelForType(statsData, config.getFormType());
+			int[] reqLevels = config.getForms().values().stream()
+					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
+					.filter(req -> req <= currentSkillLevel)
+					.sorted()
+					.toArray();
+
+			if (reqLevels.length > 0 && reqLevels[0] < lowestReqLevel) {
+				lowestReqLevel = reqLevels[0];
+				selectedGroup = groupKey;
+			}
+		}
+
+		return selectedGroup;
+	}
+
+	private static String findBestStackGroupByType(StatsData statsData, Map<String, FormConfig> allGroups, String formType) {
+		int lowestReqLevel = Integer.MAX_VALUE;
+		String selectedGroup = null;
+
+		for (Map.Entry<String, FormConfig> entry : allGroups.entrySet()) {
+			String groupKey = entry.getKey();
+			FormConfig config = entry.getValue();
+			if (config == null || !config.getFormType().equalsIgnoreCase(formType)) continue;
+
+			int currentSkillLevel = getSkillLevelForStackType(statsData, config.getFormType());
+			int[] reqLevels = config.getForms().values().stream()
+					.mapToInt(FormConfig.FormData::getUnlockOnSkillLevel)
+					.filter(req -> req <= currentSkillLevel)
+					.sorted()
+					.toArray();
+
+			if (reqLevels.length > 0 && reqLevels[0] < lowestReqLevel) {
+				lowestReqLevel = reqLevels[0];
+				selectedGroup = groupKey;
+			}
+		}
+
+		return selectedGroup;
 	}
 
 	public static FormConfig.FormData getNextAvailableForm(StatsData statsData) {

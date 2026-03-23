@@ -4,7 +4,6 @@ import com.dragonminez.common.init.entities.dragon.PorungaEntity;
 import com.dragonminez.common.init.entities.dragon.ShenronEntity;
 import com.dragonminez.common.wish.Wish;
 import com.dragonminez.common.wish.WishManager;
-import com.dragonminez.server.events.DragonBallsHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -67,9 +66,6 @@ public class GrantWishC2S {
 					porunga.setGrantedWish(true);
 				}
 			}
-
-			boolean isNamek = this.dragonType.equalsIgnoreCase("porunga");
-			DragonBallsHandler.scatterDragonBalls(level, isNamek);
 		});
 		context.get().setPacketHandled(true);
 	}

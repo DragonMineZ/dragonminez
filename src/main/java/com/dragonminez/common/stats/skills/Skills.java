@@ -59,6 +59,16 @@ public class Skills {
 		else return Math.min(costBasedMaxLevel, 50);
 	}
 
+	public void refreshNonFormSkillMaxLevels() {
+		var formSkills = ConfigManager.getSkillsConfig().getFormSkills();
+		for (Skill skill : skillMap.values()) {
+			String skillName = skill.getName().toLowerCase();
+			if (!formSkills.contains(skillName)) {
+				skill.setMaxLevel(calculateMaxLevel(skillName));
+			}
+		}
+	}
+
 	public void setSkillLevel(String name, int level) {
 		String lowerName = name.toLowerCase();
 		if (!skillMap.containsKey(lowerName)) {

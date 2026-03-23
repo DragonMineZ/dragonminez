@@ -2,7 +2,10 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.quest.*;
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.SagaManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -38,22 +41,20 @@ public class ClaimRewardC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-				Saga saga = QuestRegistry.getSaga(sagaId);
+				Saga saga = SagaManager.getSaga(sagaId);
 				if (saga == null) return;
 				Quest quest = saga.getQuestById(questId);
 				if (quest == null) return;
 
-				PlayerQuestData pqd = stats.getPlayerQuestData();
-				String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
+				if (stats.getQuestData().isQuestCompleted(sagaId, questId)) {
 
-				if (pqd.isQuestCompleted(questKey)) {
 					List<QuestReward> rewards = quest.getRewards();
 					boolean anyClaimed = false;
 
 					for (int i = 0; i < rewards.size(); i++) {
-						if (!pqd.isRewardClaimed(questKey, i)) {
+						if (!stats.getQuestData().isRewardClaimed(sagaId, questId, i)) {
 							rewards.get(i).giveReward(player);
-							pqd.claimReward(questKey, i);
+							stats.getQuestData().claimReward(sagaId, questId, i);
 							anyClaimed = true;
 						}
 					}

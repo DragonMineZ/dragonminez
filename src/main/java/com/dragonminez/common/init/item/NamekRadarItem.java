@@ -42,12 +42,7 @@ public class NamekRadarItem extends Item {
 			int newRange = RANGES[(indexOf(currentRange) + 1) % RANGES.length];
 
 			stack.getOrCreateTag().putInt(NBT_RANGE, newRange);
-
-			Component message = Component.translatable("ui.dmzradar.range").append(": ")
-					.append(String.valueOf(newRange)).append(" ")
-					.append(Component.translatable("ui.dmzradar.blocks"));
-
-			player.displayClientMessage(message, true);
+			player.displayClientMessage(Component.translatable("gui.dmzradar.range", newRange), true);
 		}
 
 		player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);

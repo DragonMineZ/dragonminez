@@ -290,6 +290,7 @@
   "gui.dragonminez.lines.toribot.name": "Toribot",
   "gui.dragonminez.lines.toribot.main": "Beep boop! I am Toribot, thanks for visiting me! It's kinda lonely here with King Kai...",
   "gui.dragonminez.lines.generic.createcharacter": "You need to create your character first.",
+  "gui.dmzradar.range": "Range: %s blocks",
   "gui.dragonminez.technique.xp": "XP: %s",
   "gui.dragonminez.technique.type": "Type",
   "gui.dragonminez.technique.utility": "Utility",

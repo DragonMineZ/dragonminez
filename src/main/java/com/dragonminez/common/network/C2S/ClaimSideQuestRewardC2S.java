@@ -2,7 +2,9 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.quest.*;
+import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.sidequest.SideQuest;
+import com.dragonminez.common.quest.sidequest.SideQuestManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -34,19 +36,18 @@ public class ClaimSideQuestRewardC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-				Quest sideQuest = QuestRegistry.getQuest(sideQuestId);
+				SideQuest sideQuest = SideQuestManager.getSideQuest(sideQuestId);
 				if (sideQuest == null) return;
 
-				PlayerQuestData pqd = stats.getPlayerQuestData();
-				if (!pqd.isQuestCompleted(sideQuestId)) return;
+				if (!stats.getSideQuestData().isQuestCompleted(sideQuestId)) return;
 
 				List<QuestReward> rewards = sideQuest.getRewards();
 				boolean anyClaimed = false;
 
 				for (int i = 0; i < rewards.size(); i++) {
-					if (!pqd.isRewardClaimed(sideQuestId, i)) {
+					if (!stats.getSideQuestData().isRewardClaimed(sideQuestId, i)) {
 						rewards.get(i).giveReward(player);
-						pqd.claimReward(sideQuestId, i);
+						stats.getSideQuestData().claimReward(sideQuestId, i);
 						anyClaimed = true;
 					}
 				}
@@ -57,3 +58,4 @@ public class ClaimSideQuestRewardC2S {
 		context.setPacketHandled(true);
 	}
 }
+

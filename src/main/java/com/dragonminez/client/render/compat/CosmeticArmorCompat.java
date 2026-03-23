@@ -17,7 +17,6 @@ public final class CosmeticArmorCompat {
 	static {
 		boolean loaded = false;
 		try {
-			// Try to access the public API class — works regardless of mod ID
 			Class<?> apiClass = Class.forName("lain.mods.cos.api.CosArmorAPI");
 			getCAStacksClient = apiClass.getMethod("getCAStacksClient", UUID.class);
 
@@ -49,8 +48,7 @@ public final class CosmeticArmorCompat {
 			boolean active = (boolean) isSkinArmor.invoke(cosInv, cosSlot);
 			if (!active) return null;
 
-			ItemStack cosStack = (ItemStack) getStackInSlot.invoke(cosInv, cosSlot);
-			return cosStack != null ? cosStack : ItemStack.EMPTY;
+			return (ItemStack) getStackInSlot.invoke(cosInv, cosSlot);
 		} catch (Exception e) {
 			return null;
 		}

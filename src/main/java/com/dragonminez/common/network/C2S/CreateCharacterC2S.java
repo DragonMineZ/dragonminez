@@ -141,6 +141,8 @@ public class CreateCharacterC2S {
 							msg.eye1Color, msg.eye2Color, msg.auraColor);
 					data.getCharacter().setSelectedFormGroup(TransformationsHelper.getGroupWithFirstAvailableForm(data));
 					data.getCharacter().setSelectedForm(TransformationsHelper.getFirstAvailableForm(data));
+					data.getCharacter().setSelectedStackFormGroup(TransformationsHelper.getGroupWithFirstAvailableStackForm(data));
+					data.getCharacter().setSelectedStackForm(TransformationsHelper.getFirstAvailableStackForm(data));
 					player.refreshDimensions();
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				}

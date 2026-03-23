@@ -43,12 +43,19 @@ public class DragonBallSavedData extends SavedData {
 		return isNamek ? pendingNamekBalls : pendingEarthBalls;
 	}
 
-	public List<BlockPos> getAllPositionsForRadar(boolean isNamek) {
+	public List<BlockPos> getAllKnownPositionsForRadar(boolean isNamek) {
 		List<BlockPos> allPos = new ArrayList<>();
 		Map<Integer, List<BlockPos>> active = getActiveBalls(isNamek);
-		for (List<BlockPos> positions : active.values()) {
-			allPos.addAll(positions);
+		Map<Integer, List<BlockPos>> pending = getPendingBalls(isNamek);
+
+		for (int star = 1; star <= 7; star++) {
+			List<BlockPos> activePositions = active.get(star);
+			if (activePositions != null) allPos.addAll(activePositions);
+
+			List<BlockPos> pendingPositions = pending.get(star);
+			if (pendingPositions != null) allPos.addAll(pendingPositions);
 		}
+
 		return allPos;
 	}
 

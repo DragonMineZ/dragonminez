@@ -1,0 +1,52 @@
+{
+  "id": "roshi_training",
+  "name": "Roshi's Special Training",
+  "description": "Master Roshi has a secret training regime for worthy warriors. Prove yourself by completing his challenges.",
+  "category": "training",
+  "parallelObjectives": false,
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SAGA_QUEST",
+        "sagaId": "saiyan_saga",
+        "questId": 1
+      },
+      {
+        "type": "LEVEL",
+        "minLevel": 5
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "KILL",
+      "description": "dmz.sidequest.roshi_training.obj1",
+      "entity": "minecraft:zombie",
+      "count": 10
+    },
+    {
+      "type": "ITEM",
+      "description": "dmz.sidequest.roshi_training.obj2",
+      "item": "minecraft:golden_apple",
+      "count": 3
+    },
+    {
+      "type": "BIOME",
+      "description": "dmz.sidequest.roshi_training.obj3",
+      "biome": "minecraft:beach"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 500
+    },
+    {
+      "type": "ITEM",
+      "item": "minecraft:diamond",
+      "count": 5
+    }
+  ]
+}
+

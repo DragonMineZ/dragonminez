@@ -16,6 +16,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import java.text.NumberFormat;
@@ -30,22 +32,32 @@ public class XenoverseHUD {
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
 	private static volatile float currentStmBarWidth = 0;
+	private static volatile float lastSeenMaxHP = -1.0f;
+	private static volatile int lastSeenMaxKi = -1;
+	private static volatile int lastSeenMaxStm = -1;
 	private static final float LERP_SPEED = 0.25f;
+	private static final float HP_BAR_MAX_WIDTH = 137.0f;
+	private static final float KI_BAR_MAX_WIDTH = 114.0f;
+	private static final float STM_BAR_MAX_WIDTH = 85.0f;
 
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	public static final IGuiOverlay HUD_XENOVERSE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
-		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.options.renderDebug || mc.player == null) return;
 		if (ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
-		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			Character character = data.getCharacter();
 			Status status = data.getStatus();
 			Resources resources = data.getResources();
 
 			if (status.isHasCreatedCharacter()) {
-				float maxHP = Minecraft.getInstance().player.getMaxHealth();
-				int maxKi = data.getMaxEnergy();
-				int maxStm = data.getMaxStamina();
+				float maxHP = (float) mc.player.getAttributeValue(Attributes.MAX_HEALTH);
+				if (maxHP <= 0.0f) maxHP = mc.player.getMaxHealth();
+				maxHP = Math.max(1.0f, maxHP);
+
+				int maxKi = Math.max(1, data.getMaxEnergy());
+				int maxStm = Math.max(1, data.getMaxStamina());
 				int powerRelease = resources.getPowerRelease();
 				int formRelease;
 				if (resources.getActionCharge() < 10) formRelease = 10 + resources.getActionCharge();
@@ -63,13 +75,31 @@ public class XenoverseHUD {
 					auraColor = formData.getAuraColor();
 				}
 
-				float currentHP = Minecraft.getInstance().player.getHealth();
+				float currentHP = mc.player.getHealth();
 				int currentKi = resources.getCurrentEnergy();
 				int currentStm = resources.getCurrentStamina();
 
-				float targetHPBarWidth = (currentHP / maxHP) * 137;
-				float targetKiBarWidth = (currentKi / (float) maxKi) * 114;
-				float targetStmBarWidth = (currentStm / (float) maxStm) * 85;
+				float hpRatio = Mth.clamp(currentHP / maxHP, 0.0f, 1.0f);
+				float kiRatio = Mth.clamp(currentKi / (float) maxKi, 0.0f, 1.0f);
+				float stmRatio = Mth.clamp(currentStm / (float) maxStm, 0.0f, 1.0f);
+
+				float targetHPBarWidth = hpRatio * HP_BAR_MAX_WIDTH;
+				float targetKiBarWidth = kiRatio * KI_BAR_MAX_WIDTH;
+				float targetStmBarWidth = stmRatio * STM_BAR_MAX_WIDTH;
+
+				// Cuando cambia el maximo (ej. Curios), reseteamos el suavizado para no arrastrar escala vieja.
+				if (lastSeenMaxHP != maxHP) {
+					currentHPBarWidth = targetHPBarWidth;
+					lastSeenMaxHP = maxHP;
+				}
+				if (lastSeenMaxKi != maxKi) {
+					currentKiBarWidth = targetKiBarWidth;
+					lastSeenMaxKi = maxKi;
+				}
+				if (lastSeenMaxStm != maxStm) {
+					currentStmBarWidth = targetStmBarWidth;
+					lastSeenMaxStm = maxStm;
+				}
 
 				float lerpedHPWidth = currentHPBarWidth + (targetHPBarWidth - currentHPBarWidth) * LERP_SPEED * partialTicks;
 				float lerpedKiWidth = currentKiBarWidth + (targetKiBarWidth - currentKiBarWidth) * LERP_SPEED * partialTicks;
@@ -79,20 +109,20 @@ public class XenoverseHUD {
 				currentKiBarWidth = lerpedKiWidth;
 				currentStmBarWidth = lerpedStmWidth;
 
-				if (currentHP == maxHP) {
-					currentHPBarWidth = 137;
+				if (currentHP >= maxHP - 0.001f) {
+					currentHPBarWidth = HP_BAR_MAX_WIDTH;
 				} else if (Math.abs(currentHPBarWidth - targetHPBarWidth) <= 1) {
 					currentHPBarWidth = targetHPBarWidth;
 				}
 
 				if (currentKi == maxKi) {
-					currentKiBarWidth = 114;
+					currentKiBarWidth = KI_BAR_MAX_WIDTH;
 				} else if (Math.abs(currentKiBarWidth - targetKiBarWidth) <= 1) {
 					currentKiBarWidth = targetKiBarWidth;
 				}
 
 				if (currentStm == maxStm) {
-					currentStmBarWidth = 85;
+					currentStmBarWidth = STM_BAR_MAX_WIDTH;
 				} else if (Math.abs(currentStmBarWidth - targetStmBarWidth) <= 1) {
 					currentStmBarWidth = targetStmBarWidth;
 				}
@@ -117,11 +147,11 @@ public class XenoverseHUD {
 				// HP Bar
 				guiGraphics.blit(hud, initialX + 31, initialY + 13, 14, 2, 141, 9);
 				if (currentHP < maxHP * 0.33) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, Math.min((int) currentHPBarWidth, 145), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 48, Math.min((int) currentHPBarWidth, (int) HP_BAR_MAX_WIDTH), 5);
 				} else if (currentHP < maxHP * 0.66) {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, Math.min((int) currentHPBarWidth, 145), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 35, Math.min((int) currentHPBarWidth, (int) HP_BAR_MAX_WIDTH), 5);
 				} else {
-					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, Math.min((int) currentHPBarWidth, 145), 5);
+					guiGraphics.blit(hud, initialX + 32, initialY + 15, 15, 21, Math.min((int) currentHPBarWidth, (int) HP_BAR_MAX_WIDTH), 5);
 				}
 
 				// Ki Bar with Aura Color
@@ -129,12 +159,12 @@ public class XenoverseHUD {
 
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, Math.min((int) currentKiBarWidth, 145), 4);
+				guiGraphics.blit(hud, initialX + 29, initialY + 23, 9, 81, Math.min((int) currentKiBarWidth, (int) KI_BAR_MAX_WIDTH), 4);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 				// Stamina Bar
 				guiGraphics.blit(hud, initialX + 28, initialY + 28, 9, 105, 100, 7);
-				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, Math.min((int) currentStmBarWidth, 145), 5);
+				guiGraphics.blit(hud, initialX + 43, initialY + 29, 24, 121, Math.min((int) currentStmBarWidth, (int) STM_BAR_MAX_WIDTH), 5);
 
 				// Racial Icon / Power Release
 				RenderSystem.setShaderTexture(0, racialIcons);

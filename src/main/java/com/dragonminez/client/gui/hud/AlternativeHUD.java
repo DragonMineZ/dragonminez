@@ -16,6 +16,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import java.text.NumberFormat;
@@ -31,24 +33,32 @@ public class AlternativeHUD {
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
 	private static volatile float currentStmBarWidth = 0;
+	private static volatile float lastSeenMaxHP = -1.0f;
+	private static volatile int lastSeenMaxKi = -1;
+	private static volatile int lastSeenMaxStm = -1;
 	private static final float LERP_SPEED = 0.25f;
+	private static final float BAR_MAX_WIDTH = 76.0f;
 
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
 	public static final IGuiOverlay HUD_ALTERNATIVE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
-		if (Minecraft.getInstance().options.renderDebug || Minecraft.getInstance().player == null) return;
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.options.renderDebug || mc.player == null) return;
 		if (!ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
 
 
-		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			Character character = data.getCharacter();
 			Status status = data.getStatus();
 			Resources resources = data.getResources();
 
 			if (status.isHasCreatedCharacter()) {
-				float maxHP = Minecraft.getInstance().player.getMaxHealth();
-				int maxKi = data.getMaxEnergy();
-				int maxStm = data.getMaxStamina();
+				float maxHP = (float) mc.player.getAttributeValue(Attributes.MAX_HEALTH);
+				if (maxHP <= 0.0f) maxHP = mc.player.getMaxHealth();
+				maxHP = Math.max(1.0f, maxHP);
+
+				int maxKi = Math.max(1, data.getMaxEnergy());
+				int maxStm = Math.max(1, data.getMaxStamina());
 				int powerRelease = resources.getPowerRelease();
 				int formRelease;
 				if (resources.getActionCharge() < 10) formRelease = 10 + resources.getActionCharge();
@@ -66,21 +76,38 @@ public class AlternativeHUD {
 					auraColor = formData.getAuraColor();
 				}
 
-				float currentHP = Minecraft.getInstance().player.getHealth();
+				float currentHP = mc.player.getHealth();
 				int currentKi = resources.getCurrentEnergy();
 				int currentStm = resources.getCurrentStamina();
 
-				float targetHPBarWidth = (currentHP / maxHP) * 76;
-				float targetKiBarWidth = (currentKi / (float) maxKi) * 76;
-				float targetStmBarWidth = (currentStm / (float) maxStm) * 76;
+				float hpRatio = Mth.clamp(currentHP / maxHP, 0.0f, 1.0f);
+				float kiRatio = Mth.clamp(currentKi / (float) maxKi, 0.0f, 1.0f);
+				float stmRatio = Mth.clamp(currentStm / (float) maxStm, 0.0f, 1.0f);
+
+				float targetHPBarWidth = hpRatio * BAR_MAX_WIDTH;
+				float targetKiBarWidth = kiRatio * BAR_MAX_WIDTH;
+				float targetStmBarWidth = stmRatio * BAR_MAX_WIDTH;
+
+				if (lastSeenMaxHP != maxHP) {
+					currentHPBarWidth = targetHPBarWidth;
+					lastSeenMaxHP = maxHP;
+				}
+				if (lastSeenMaxKi != maxKi) {
+					currentKiBarWidth = targetKiBarWidth;
+					lastSeenMaxKi = maxKi;
+				}
+				if (lastSeenMaxStm != maxStm) {
+					currentStmBarWidth = targetStmBarWidth;
+					lastSeenMaxStm = maxStm;
+				}
 
 				currentHPBarWidth = lerp(currentHPBarWidth, targetHPBarWidth, partialTicks);
 				currentKiBarWidth = lerp(currentKiBarWidth, targetKiBarWidth, partialTicks);
 				currentStmBarWidth = lerp(currentStmBarWidth, targetStmBarWidth, partialTicks);
 
-				if (currentHP == maxHP) currentHPBarWidth = 76;
-				if (currentKi == maxKi) currentKiBarWidth = 76;
-				if (currentStm == maxStm) currentStmBarWidth = 76;
+				if (currentHP >= maxHP - 0.001f) currentHPBarWidth = BAR_MAX_WIDTH;
+				if (currentKi == maxKi) currentKiBarWidth = BAR_MAX_WIDTH;
+				if (currentStm == maxStm) currentStmBarWidth = BAR_MAX_WIDTH;
 
 				RenderSystem.enableBlend();
 				RenderSystem.defaultBlendFunc();
@@ -114,7 +141,7 @@ public class AlternativeHUD {
 				guiGraphics.blit(hud, -18, -17, 0, 0, 83, 9, 128, 128);
 
 				int hpTextureV = (currentHP < maxHP * 0.33) ? 33 : (currentHP < maxHP * 0.66) ? 22 : 11;
-				guiGraphics.blit(hud, -16, -14, 2, hpTextureV, 7 + Math.min((int) currentHPBarWidth, 76), 5, 128, 128);
+				guiGraphics.blit(hud, -16, -14, 2, hpTextureV, 7 + Math.min((int) currentHPBarWidth, (int) BAR_MAX_WIDTH), 5, 128, 128);
 
 				drawTinyText(guiGraphics, powerRelease + "%", -20, 24, ColorUtils.hexToInt("#FACAF7"));
 				drawBarValues(guiGraphics, currentHP, maxHP, 24, -14);
@@ -130,7 +157,7 @@ public class AlternativeHUD {
 
 				float[] auraRgb = ColorUtils.hexToRgb(auraColor);
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
-				guiGraphics.blit(hud, -15, -8, 3, 61, 7 + Math.min((int) currentKiBarWidth, 76), 4, 128, 128);
+				guiGraphics.blit(hud, -15, -8, 3, 61, 7 + Math.min((int) currentKiBarWidth, (int) BAR_MAX_WIDTH), 4, 128, 128);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 				drawBarValues(guiGraphics, currentKi, maxKi, 24, -8);
@@ -148,7 +175,7 @@ public class AlternativeHUD {
 
 				RenderSystem.setShaderTexture(0, hud);
 				guiGraphics.blit(hud, -12, -11, 0, 72, 83, 9, 128, 128);
-				guiGraphics.blit(hud, -10, -8, 2, 90, -5 + Math.min((int) currentStmBarWidth, 76), 4, 128, 128);
+				guiGraphics.blit(hud, -10, -8, 2, 90, -5 + Math.min((int) currentStmBarWidth, (int) BAR_MAX_WIDTH), 4, 128, 128);
 				guiGraphics.blit(hud, 65, -8, 77, 90, 4, 4, 128, 128);
 
 				drawBarValues(guiGraphics, currentStm, maxStm, 29, -8);

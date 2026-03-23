@@ -124,16 +124,14 @@ public class ForgeCommonEvents {
 						data.getCooldowns().addCooldown(Cooldowns.REVIVE_BABA, ConfigManager.getServerConfig().getGameplay().getReviveCooldownSeconds() * 20);
 					if (data.getStatus().isHasCreatedCharacter()) data.getStatus().setAlive(false);
 					if (!data.getStatus().isInKaioPlanet()) data.getStatus().setInKaioPlanet(true);
-					data.getEffects().removeAllEffects();
-					data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
-				} else {
-					data.getEffects().removeAllEffects();
 				}
 
-				if (data.getSkills().hasSkill("kaioken")) data.getSkills().setSkillActive("kaioken", false);
+				if (data.getSkills().hasSkill("kaioken") && data.getSkills().isSkillActive("kaioken"))
+					data.getSkills().setSkillActive("kaioken", false);
 				data.getCooldowns().removeCooldown(Cooldowns.COMBAT);
 				data.getCharacter().clearActiveForm();
 				data.getCharacter().clearActiveStackForm();
+				data.getEffects().removeAllEffects();
 			});
 		}
 	}
@@ -214,7 +212,7 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public static void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-		if (event.getEntity() instanceof ServerPlayer player) DragonBallsHandler.syncRadar(player.serverLevel());
+		if (event.getEntity() instanceof ServerPlayer player) DragonBallsHandler.syncRadarForPlayer(player);
 	}
 
 	@SubscribeEvent
@@ -223,7 +221,8 @@ public class ForgeCommonEvents {
 		BetaWhitelist.reload();
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
-		QuestRegistry.loadAll(event.getServer());
+		SagaManager.loadSagas(event.getServer());
+		SideQuestManager.loadSideQuests(event.getServer());
 
 		WorldGuardCompat.init();
 

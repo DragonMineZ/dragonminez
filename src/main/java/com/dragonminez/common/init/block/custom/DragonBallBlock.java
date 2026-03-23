@@ -5,6 +5,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
 import com.dragonminez.common.init.entities.dragon.PorungaEntity;
 import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -30,8 +31,10 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -122,7 +125,10 @@ public class DragonBallBlock extends BaseEntityBlock {
 		if (pLevel.isClientSide) return InteractionResult.SUCCESS;
 		if (areAllDragonBallsNearby(pLevel, pPos) && ((isNamekian && pLevel.dimension().equals(NamekDimension.NAMEK_KEY))
 				|| (!isNamekian && pLevel.dimension().equals(Level.OVERWORLD)))) {
-			removeAllDragonBalls(pLevel, pPos);
+			List<BlockPos> consumedPositions = removeAllDragonBalls(pLevel, pPos);
+			if (pLevel instanceof ServerLevel serverLevel) {
+				DragonBallsHandler.unregisterConsumedDragonBalls(serverLevel, consumedPositions, this.isNamekian);
+			}
 			spawnDragon((ServerLevel) pLevel, pPos, pPlayer);
 			return InteractionResult.CONSUME;
 		}
@@ -163,18 +169,21 @@ public class DragonBallBlock extends BaseEntityBlock {
 		return false;
 	}
 
-	private void removeAllDragonBalls(Level world, BlockPos pos) {
+	private List<BlockPos> removeAllDragonBalls(Level world, BlockPos pos) {
 		Set<DragonBallType> removedBalls = new HashSet<>();
+		List<BlockPos> removedPositions = new ArrayList<>();
 		for (BlockPos nearbyPos : BlockPos.betweenClosed(pos.offset(-2, -2, -2), pos.offset(2, 2, 2))) {
 			Block block = world.getBlockState(nearbyPos).getBlock();
 			if (block instanceof DragonBallBlock dragonBall && dragonBall.isNamekian() == this.isNamekian) {
 				if (!removedBalls.contains(dragonBall.getBallType())) {
 					world.removeBlock(nearbyPos, false);
+					removedPositions.add(nearbyPos.immutable());
 					removedBalls.add(dragonBall.getBallType());
 				}
 				if (removedBalls.size() == 7) break;
 			}
 		}
+		return removedPositions;
 	}
 
 	@Override

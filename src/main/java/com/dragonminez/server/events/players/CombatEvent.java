@@ -157,12 +157,12 @@ public class CombatEvent {
 				}
 
 				if (attackerData.getCharacter().hasActiveStackForm()) {
-					FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveStackFormData();
+					FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveFormData();
 					if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
-						String formGroup = attackerData.getCharacter().getActiveStackFormGroup();
-						String formName = attackerData.getCharacter().getActiveStackForm();
+						String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
+						String stackForm = attackerData.getCharacter().getActiveStackForm();
 						double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
-						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeStackForm.getMasteryPerHit() * bonus, activeStackForm.getMaxMastery() * bonus);
+						attackerData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, activeStackForm.getMasteryPerHit() * bonus, activeStackForm.getMaxMastery() * bonus);
 					}
 				}
 
@@ -393,12 +393,12 @@ public class CombatEvent {
 					}
 
 					if (victimData.getCharacter().hasActiveStackForm()) {
-						FormConfig.FormData activeForm = victimData.getCharacter().getActiveStackFormData();
-						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
-							String formGroup = victimData.getCharacter().getActiveStackFormGroup();
-							String formName = victimData.getCharacter().getActiveStackForm();
+						FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveStackFormData();
+						if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
+							String stackGroup = victimData.getCharacter().getActiveStackFormGroup();
+							String stackForm = victimData.getCharacter().getActiveStackForm();
 							double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
-							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived() * bonus, activeForm.getMaxMastery() * bonus);
+							victimData.getCharacter().getStackFormMasteries().addMastery(stackGroup, stackForm, activeStackForm.getMasteryPerDamageReceived() * bonus, activeStackForm.getMaxMastery() * bonus);
 						}
 					}
 

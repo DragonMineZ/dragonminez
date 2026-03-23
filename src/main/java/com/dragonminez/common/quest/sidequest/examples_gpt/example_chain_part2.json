@@ -1,0 +1,41 @@
+{
+  "id": "namek_elder_chain_2",
+  "name": "The Elder's Secret",
+  "description": "The elder reveals that the herbs you gathered are for an ancient ritual. He needs you to find a sacred structure and defeat its guardian.",
+  "category": "namek_lore",
+  "parallelObjectives": false,
+  "prerequisites": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "type": "SIDE_QUEST",
+        "sideQuestId": "namek_elder_chain_1"
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "STRUCTURE",
+      "description": "dmz.sidequest.namek_elder_2.obj1",
+      "structure": "minecraft:desert_pyramid"
+    },
+    {
+      "type": "KILL",
+      "description": "dmz.sidequest.namek_elder_2.obj2",
+      "entity": "minecraft:wither_skeleton",
+      "count": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 500
+    },
+    {
+      "type": "SKILL",
+      "skill": "ki_sense",
+      "level": 1
+    }
+  ]
+}
+

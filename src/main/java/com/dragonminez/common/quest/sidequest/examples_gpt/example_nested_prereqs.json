@@ -1,0 +1,54 @@
+{
+  "id": "advanced_warrior_test",
+  "name": "The Warrior's Trial",
+  "description": "A mysterious warrior challenges you. You must either be a powerful Saiyan OR have completed the elder's chain AND be strong enough.",
+  "category": "combat",
+  "parallelObjectives": false,
+  "prerequisites": {
+    "operator": "OR",
+    "conditions": [
+      {
+        "operator": "AND",
+        "conditions": [
+          { "type": "RACE", "race": "saiyan" },
+          { "type": "STAT", "stat": "PWR", "minValue": 500 }
+        ]
+      },
+      {
+        "operator": "AND",
+        "conditions": [
+          { "type": "SIDE_QUEST", "sideQuestId": "namek_elder_chain_2" },
+          { "type": "STAT", "stat": "STR", "minValue": 300 }
+        ]
+      }
+    ]
+  },
+  "objectives": [
+    {
+      "type": "COORDS",
+      "description": "dmz.sidequest.warrior_test.obj1",
+      "x": 0,
+      "y": 64,
+      "z": 0,
+      "radius": 50
+    },
+    {
+      "type": "KILL",
+      "description": "dmz.sidequest.warrior_test.obj2",
+      "entity": "minecraft:iron_golem",
+      "count": 1
+    }
+  ],
+  "rewards": [
+    {
+      "type": "TPS",
+      "amount": 1000
+    },
+    {
+      "type": "COMMAND",
+      "command": "title %player% title {\"text\":\"Warrior!\",\"color\":\"gold\"}",
+      "translationKey": "dmz.sidequest.warrior_test.reward_title"
+    }
+  ]
+}
+

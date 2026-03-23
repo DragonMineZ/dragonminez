@@ -27,13 +27,14 @@ public class TexturedTextButton extends Button {
     private final int normalTextColor;
     private final int hoverTextColor;
     private int backgroundColor;
+    private boolean hasBackgroundColor;
     private final SoundEvent sound;
 
     public TexturedTextButton(int x, int y, int width, int height, ResourceLocation texture,
                               int normalU, int normalV, int hoverU, int hoverV,
                               int textureWidth, int textureHeight,
                               int normalTextColor, int hoverTextColor,
-                              int backgroundColor,
+                              int backgroundColor, boolean hasBackgroundColor,
                               Component message, OnPress onPress, SoundEvent sound) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION);
         this.texture = texture;
@@ -46,6 +47,7 @@ public class TexturedTextButton extends Button {
         this.normalTextColor = normalTextColor;
         this.hoverTextColor = hoverTextColor;
         this.backgroundColor = backgroundColor;
+        this.hasBackgroundColor = hasBackgroundColor;
         this.sound = sound;
     }
 
@@ -72,10 +74,10 @@ public class TexturedTextButton extends Button {
 
         graphics.blit(texture, this.getX(), this.getY(), u, v, textureWidth, textureHeight);
 
-        if (backgroundColor != 0) {
+        if (hasBackgroundColor) {
             graphics.fill(this.getX() + 2, this.getY() + 2,
                          this.getX() + this.width - 2, this.getY() + this.height - 2,
-                         0xFF000000 | backgroundColor);
+                         0xFF000000 | (backgroundColor & 0xFFFFFF));
         }
 
         int textColor = this.active ? (this.isHoveredOrFocused() ? hoverTextColor : normalTextColor) : 0xA0A0A0;
@@ -87,6 +89,7 @@ public class TexturedTextButton extends Button {
 
     public void setBackgroundColor(int color) {
         this.backgroundColor = color;
+        this.hasBackgroundColor = true;
     }
 
     public static class Builder {
@@ -98,6 +101,7 @@ public class TexturedTextButton extends Button {
         private int normalTextColor = 0xFFFFFF;
         private int hoverTextColor = 0x7CFDD6;
         private int backgroundColor = 0;
+        private boolean hasBackgroundColor = false;
         private Component message = Component.empty();
         private OnPress onPress;
 		private SoundEvent sound = MainSounds.PIP_MENU.get();
@@ -141,6 +145,7 @@ public class TexturedTextButton extends Button {
 
         public Builder backgroundColor(int color) {
             this.backgroundColor = color;
+            this.hasBackgroundColor = true;
             return this;
         }
 
@@ -163,7 +168,7 @@ public class TexturedTextButton extends Button {
             return new TexturedTextButton(x, y, width, height, texture,
                     normalU, normalV, hoverU, hoverV,
                     textureWidth, textureHeight,
-                    normalTextColor, hoverTextColor, backgroundColor, message, onPress, sound);
+                    normalTextColor, hoverTextColor, backgroundColor, hasBackgroundColor, message, onPress, sound);
         }
     }
 }
