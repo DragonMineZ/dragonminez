@@ -99,7 +99,9 @@ public class UtilityMenuScreen extends Screen {
 			int x = centerX + (col * (BUTTON_WIDTH + GAP)) - (BUTTON_WIDTH / 2);
 			int y = centerY + (row * (BUTTON_HEIGHT + GAP)) - (BUTTON_HEIGHT / 2);
 
-			boolean isHovered = mouseX >= x && mouseX <= x + BUTTON_WIDTH && mouseY >= y && mouseY <= y + BUTTON_HEIGHT;
+			boolean isHovered = isSlotInteractive(i)
+					&& mouseX >= x && mouseX <= x + BUTTON_WIDTH
+					&& mouseY >= y && mouseY <= y + BUTTON_HEIGHT;
 			int color = isHovered ? 0x80FFFFFF : 0x60000000;
 
 			graphics.fill(x, y, x + BUTTON_WIDTH, y + BUTTON_HEIGHT, color);
@@ -148,8 +150,18 @@ public class UtilityMenuScreen extends Screen {
 		}
 	}
 
+	private boolean isSlotInteractive(int index) {
+		if (statsData == null || index < 0 || index >= MENU_SLOTS.size()) return false;
+		IUtilityMenuSlot menuSlot = MENU_SLOTS.get(index);
+		if (menuSlot == null) return false;
+		ButtonInfo buttonInfo = menuSlot.render(statsData);
+		return buttonInfo != null && buttonInfo.hasContent();
+	}
+
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (statsData == null) return super.mouseClicked(mouseX, mouseY, button);
+
 		int centerX = this.width / 2;
 		int centerY = this.height / 2;
 
@@ -163,6 +175,7 @@ public class UtilityMenuScreen extends Screen {
 			int y = centerY + (row * (BUTTON_HEIGHT + GAP)) - (BUTTON_HEIGHT / 2);
 
 			if (mouseX >= x && mouseX <= x + BUTTON_WIDTH && mouseY >= y && mouseY <= y + BUTTON_HEIGHT) {
+				if (!isSlotInteractive(i)) continue;
 				handleSlotClick(i, button);
 				return true;
 			}

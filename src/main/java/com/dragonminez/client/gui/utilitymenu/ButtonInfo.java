@@ -39,6 +39,10 @@ public class ButtonInfo {
         return isSelected;
     }
 
+	public boolean hasContent() {
+		return !line1.getString().isEmpty() || !line2.getString().isEmpty();
+	}
+
     public void setColor(int color) {
         this.color = color;
     }

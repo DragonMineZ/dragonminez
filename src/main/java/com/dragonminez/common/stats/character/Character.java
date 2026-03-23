@@ -73,6 +73,10 @@ public class Character {
 
 	private Boolean armored;
 
+	private static String safeString(String value) {
+		return value != null ? value : "";
+	}
+
 	public Character() {
 		this.race = "human";
 		this.gender = GENDER_MALE;
@@ -218,9 +222,25 @@ public class Character {
 		updateOozaruCache();
 	}
 
-    public String getRaceName() {
-        return race != null && !race.isEmpty() ? race : "human";
-    }
+	public void setSelectedFormGroup(String selectedFormGroup) {
+		this.selectedFormGroup = safeString(selectedFormGroup);
+	}
+
+	public void setSelectedForm(String selectedForm) {
+		this.selectedForm = safeString(selectedForm);
+	}
+
+	public void setSelectedStackFormGroup(String selectedStackFormGroup) {
+		this.selectedStackFormGroup = safeString(selectedStackFormGroup);
+	}
+
+	public void setSelectedStackForm(String selectedStackForm) {
+		this.selectedStackForm = safeString(selectedStackForm);
+	}
+
+	public String getRaceName() {
+		return race != null && !race.isEmpty() ? race : "human";
+	}
 
 	public boolean canHaveGender() {
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(getRaceName());
@@ -237,9 +257,9 @@ public class Character {
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
-        tag.putString("Race", race);
-        tag.putString("Gender", gender);
-        tag.putString("Class", characterClass);
+		tag.putString("Race", safeString(race));
+		tag.putString("Gender", safeString(gender));
+		tag.putString("Class", safeString(characterClass));
         tag.putInt("HairId", hairId);
 		tag.put("HairBase", hairBase.save());
 		tag.put("HairSSJ", hairSSJ.save());
@@ -250,26 +270,24 @@ public class Character {
         tag.putInt("NoseType", noseType);
         tag.putInt("MouthType", mouthType);
         tag.putInt("TattooType", tattooType);
-        tag.putString("BodyColor", bodyColor);
-        tag.putString("BodyColor2", bodyColor2);
-        tag.putString("BodyColor3", bodyColor3);
-        tag.putString("HairColor", hairColor);
-        tag.putString("Eye1Color", eye1Color);
-        tag.putString("Eye2Color", eye2Color);
-        tag.putString("AuraColor", auraColor);
-		tag.putString("SelectedMaster",  selectedMaster);
-        tag.putString("SelectedFormGroup", selectedFormGroup);
-        tag.putString("CurrentFormGroup", activeFormGroup);
-		tag.putString("SelectedForm", selectedForm);
-        tag.putString("CurrentForm", activeForm);
-        tag.putString("SelectedStackFormGroup", selectedStackFormGroup);
-        tag.putString("CurrentStackFormGroup", activeStackFormGroup);
-		tag.putString("SelectedStackForm", selectedStackForm);
-        tag.putString("CurrentStackForm", activeStackForm);
-        tag.put("FormMasteries", formMasteries.save());
-        tag.put("StackFormMasteries", stackFormMasteries.save());
-		tag.put("FormsUsedBefore", formsUsedBefore.save());
-		tag.put("StackFormsUsedBefore", stackFormsUsedBefore.save());
+		tag.putString("BodyColor", safeString(bodyColor));
+		tag.putString("BodyColor2", safeString(bodyColor2));
+		tag.putString("BodyColor3", safeString(bodyColor3));
+		tag.putString("HairColor", safeString(hairColor));
+		tag.putString("Eye1Color", safeString(eye1Color));
+		tag.putString("Eye2Color", safeString(eye2Color));
+		tag.putString("AuraColor", safeString(auraColor));
+		tag.putString("SelectedMaster",  safeString(selectedMaster));
+		tag.putString("SelectedFormGroup", safeString(selectedFormGroup));
+		tag.putString("CurrentFormGroup", safeString(activeFormGroup));
+		tag.putString("SelectedForm", safeString(selectedForm));
+		tag.putString("CurrentForm", safeString(activeForm));
+		tag.putString("SelectedStackFormGroup", safeString(selectedStackFormGroup));
+		tag.putString("CurrentStackFormGroup", safeString(activeStackFormGroup));
+		tag.putString("SelectedStackForm", safeString(selectedStackForm));
+		tag.putString("CurrentStackForm", safeString(activeStackForm));
+		tag.put("FormsUsedBefore", (formsUsedBefore != null ? formsUsedBefore : new UsedForms()).save());
+		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
         tag.putBoolean("isArmored", armored);
         return tag;
@@ -338,15 +356,10 @@ public class Character {
 		updateOozaruCache();
     }
 
-	public void clearSelectedForm() {
-		this.selectedFormGroup = "";
-		this.selectedForm = "";
+	public FormConfig.FormData getActiveFormData() {
+		if (!hasActiveForm()) return null;
+		return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
 	}
-
-    public FormConfig.FormData getActiveFormData() {
-        if (!hasActiveForm()) return null;
-        return ConfigManager.getForm(getRaceName(), activeFormGroup, activeForm);
-    }
 
     public boolean hasActiveStackForm() {
         return !activeStackFormGroup.isEmpty() && !activeStackForm.isEmpty();
@@ -362,26 +375,19 @@ public class Character {
         this.activeStackForm = "";
     }
 
-	public void clearSelectedStackForm() {
-		this.selectedStackFormGroup = "";
-		this.selectedStackForm = "";
+	public FormConfig.FormData getActiveStackFormData() {
+		if (!hasActiveStackForm()) return null;
+		return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
 	}
 
-    public FormConfig.FormData getActiveStackFormData() {
-        if (!hasActiveStackForm()) {
-			return null;
-		}
-        return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
-    }
-
 	public void saveAppearance(CompoundTag tag) {
-		tag.putString("BodyColor", bodyColor);
-		tag.putString("BodyColor2", bodyColor2);
-		tag.putString("BodyColor3", bodyColor3);
-		tag.putString("HairColor", hairColor);
-		tag.putString("Eye1Color", eye1Color);
-		tag.putString("Eye2Color", eye2Color);
-		tag.putString("AuraColor", auraColor);
+		tag.putString("BodyColor", safeString(bodyColor));
+		tag.putString("BodyColor2", safeString(bodyColor2));
+		tag.putString("BodyColor3", safeString(bodyColor3));
+		tag.putString("HairColor", safeString(hairColor));
+		tag.putString("Eye1Color", safeString(eye1Color));
+		tag.putString("Eye2Color", safeString(eye2Color));
+		tag.putString("AuraColor", safeString(auraColor));
 	}
 
 	public void loadAppearance(CompoundTag tag) {
@@ -415,14 +421,16 @@ public class Character {
 		setEye1Color(other.eye1Color);
 		setEye2Color(other.eye2Color);
 		setAuraColor(other.auraColor);
-		this.selectedMaster = other.selectedMaster;
-        this.selectedFormGroup = other.selectedFormGroup;
-        this.activeFormGroup = other.activeFormGroup;
-        this.activeForm = other.activeForm;
-        this.formMasteries.copyFrom(other.formMasteries);
-        this.selectedStackFormGroup = other.selectedStackFormGroup;
-        this.activeStackFormGroup = other.activeStackFormGroup;
-        this.activeStackForm = other.activeStackForm;
+		this.selectedMaster = safeString(other.selectedMaster);
+		this.selectedFormGroup = safeString(other.selectedFormGroup);
+		this.activeFormGroup = safeString(other.activeFormGroup);
+		this.selectedForm = safeString(other.selectedForm);
+		this.activeForm = safeString(other.activeForm);
+		this.formMasteries.copyFrom(other.formMasteries);
+		this.selectedStackFormGroup = safeString(other.selectedStackFormGroup);
+		this.activeStackFormGroup = safeString(other.activeStackFormGroup);
+		this.selectedStackForm = safeString(other.selectedStackForm);
+		this.activeStackForm = safeString(other.activeStackForm);
         this.stackFormMasteries.copyFrom(other.stackFormMasteries);
         this.armored = other.armored;
     }
