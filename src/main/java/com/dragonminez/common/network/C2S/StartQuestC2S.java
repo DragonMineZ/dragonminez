@@ -3,7 +3,12 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.quest.*;
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestObjective;
+import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.SagaBranchingHelper;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -46,7 +51,7 @@ public class StartQuestC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
-			Saga saga = SagaManager.getSaga(sagaId);
+			Saga saga = QuestRegistry.getSaga(sagaId);
 			if (saga == null) return;
 			Quest quest = saga.getQuestById(questId);
 			if (quest == null) return;

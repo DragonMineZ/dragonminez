@@ -97,6 +97,11 @@ repositories {
         name = "ModMaven"
         url = uri("https://modmaven.dev")
     }
+    maven {
+        name = "luck-repo"
+        url = uri("https://repo.lucko.me/")
+        content { includeModule("me.lucko", "spark-api") }
+    }
     mavenCentral()
 }
 
@@ -186,13 +191,16 @@ dependencies {
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
     runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
+    runtimeOnly(fg.deobf("me.lucko:spark-api:0.1-SNAPSHOT"))
 
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)
     //runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
     //runtimeOnly(fg.deobf("curse.maven:naturecompass-252848:4712189"))
+
     // Armors mods for testing armor layer on Oozaru/Majin models, we may delete this once fully finished
     //runtimeOnly(fg.deobf("curse.maven:fantasy-armor-1083998:7328423"))
     //runtimeOnly(fg.deobf("curse.maven:epic-paladins-635165:6227566"))
+
     // "Layers" mods for testing compatibility
     //runtimeOnly(fg.deobf("curse.maven:travelers-backpack-321117:7573110"))
     //runtimeOnly(fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191"))

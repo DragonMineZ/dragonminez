@@ -3,8 +3,7 @@ package com.dragonminez.server.commands;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.*;
-import com.dragonminez.common.quest.SagaManager;
-import com.dragonminez.common.quest.sidequest.SideQuestManager;
+import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.WishManager;
@@ -32,8 +31,7 @@ public class ReloadCommand {
 			ConfigManager.clearServerSync();
 			ConfigManager.reload();
 			StorageManager.reload();
-			SagaManager.loadSagas(server);
-			SideQuestManager.loadSideQuests(server);
+			QuestRegistry.loadAll(server);
 			WishManager.loadWishes(server);
 			int syncedPlayers = 0;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -53,8 +51,11 @@ public class ReloadCommand {
 					else data.getSkills().refreshNonFormSkillMaxLevels();
 					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 				});
-				NetworkHandler.sendToPlayer(new SyncSagasS2C(SagaManager.getAllSagas()), player);
-				NetworkHandler.sendToPlayer(new SyncSideQuestsS2C(SideQuestManager.getAllSideQuests()), player);
+				// Sync quest registry (sagas + sidequests)
+				NetworkHandler.sendToPlayer(
+						new SyncQuestRegistryS2C(QuestRegistry.getAllSagas(), QuestRegistry.getAllQuests()),
+						player
+				);
 				NetworkHandler.sendToPlayer(new SyncWishesS2C(WishManager.getAllWishes()), player);
 				syncedPlayers++;
 			}

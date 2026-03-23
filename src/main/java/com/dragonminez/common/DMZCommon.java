@@ -6,7 +6,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.ModCommonEvents;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.quest.SagaManager;
+import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.world.feature.OverworldFeatures;
 import com.dragonminez.server.world.structure.placement.MainStructurePlacements;
@@ -19,7 +19,7 @@ public class DMZCommon {
     public static void init() {
 		LogUtil.info(Env.COMMON, "Initializing DragonMineZ Common...");
         ConfigManager.initialize();
-        SagaManager.init();
+        QuestRegistry.init();
 		WishManager.init();
         NetworkHandler.register();
         GeckoLib.initialize();
