@@ -5,8 +5,6 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -28,7 +26,7 @@ import java.util.*;
  * <p>
  * This is the <b>sole quest loader</b>. It loads:
  * <ul>
- *   <li><b>Saga manifest files</b> from {@code dragonminez/sagas/} — each saga is its own JSON with embedded quests</li>
+ *   <li><b>Saga manifest files</b> from {@code dragonminez/sagas/} — each saga references a quest folder</li>
  *   <li><b>Side-quest files</b> from {@code dragonminez/sidequests/} — each quest is its own JSON</li>
  *   <li><b>Individual quest files</b> from {@code dragonminez/quests/} — new unified format (future expansion)</li>
  * </ul>
@@ -159,7 +157,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 			LogUtil.error(Env.COMMON, "Failed to create quests directory", e);
 		}
 
-		// --- Step 2: Load sagas (reads quest files from quests/ subfolders or embedded quests) ---
+		// --- Step 2: Load sagas (reads quest files from quests/ subfolders) ---
 		if (ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled()) {
 			loadSagaFiles(worldFolder.resolve(SAGA_FOLDER));
 		}
@@ -211,7 +209,7 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	private static void loadSingleSagaFile(Path file) {
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject root = GSON.fromJson(reader, JsonObject.class);
-			Saga saga = parseSagaFromJson(root);
+			Saga saga = parseSagaFromJson(root, cachedWorldFolder);
 			LOADED_SAGAS.put(saga.getId(), saga);
 
 			// Index each saga quest by composite key
@@ -227,17 +225,19 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	}
 
 	/**
-	 * Parses a Saga from a JSON object. Used by the loader and the network sync packet.
+	 * Parses a saga manifest from a JSON object.
 	 * <p>
-	 * Supports only the new format:
+	 * Supports only the 2.1 format:
 	 * <ul>
 	 *   <li>{@code "questFolder": "saga_saiyan"} — loads quest files from
 	 *       {@code dragonminez/quests/saga_saiyan/}, sorted by filename (e.g. {@code 01_find_roshi.json}).</li>
 	 * </ul>
 	 *
+	 * @implNote This parser is for server/world loading. Client sync should use packet-specific parsing.
+	 *
 	 * @since 2.1
 	 */
-	public static Saga parseSagaFromJson(JsonObject json) {
+	private static Saga parseSagaFromJson(JsonObject json, @Nullable Path worldFolder) {
 		String id = json.get("id").getAsString();
 		String name = json.get("name").getAsString();
 
@@ -249,15 +249,22 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		}
 
 		List<Quest> quests = new ArrayList<>();
+		if (!json.has("questFolder")) {
+			LogUtil.warn(Env.COMMON, "Saga '{}' is missing required field 'questFolder'", id);
+			return new Saga(id, name, quests, requirements);
+		}
 
-		if (json.has("questFolder") && cachedWorldFolder != null) {
-			String folderName = json.get("questFolder").getAsString();
-			Path questFolder = cachedWorldFolder.resolve(QUESTS_FOLDER).resolve(folderName);
-			if (Files.exists(questFolder)) {
-				quests = loadQuestsFromFolder(questFolder);
-			} else {
-				LogUtil.warn(Env.COMMON, "Saga '{}' references questFolder '{}' but it doesn't exist", id, folderName);
-			}
+		String folderName = json.get("questFolder").getAsString();
+		if (worldFolder == null) {
+			LogUtil.warn(Env.COMMON, "Saga '{}' cannot resolve questFolder '{}' because world folder context is unavailable", id, folderName);
+			return new Saga(id, name, quests, requirements);
+		}
+
+		Path questFolder = worldFolder.resolve(QUESTS_FOLDER).resolve(folderName);
+		if (Files.exists(questFolder)) {
+			quests = loadQuestsFromFolder(questFolder);
+		} else {
+			LogUtil.warn(Env.COMMON, "Saga '{}' references questFolder '{}' but it doesn't exist", id, folderName);
 		}
 
 		return new Saga(id, name, quests, requirements);

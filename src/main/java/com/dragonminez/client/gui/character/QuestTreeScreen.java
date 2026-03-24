@@ -1,8 +1,8 @@
-package com.dragonminez.client.gui.quest;
+package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.gui.character.BaseMenuScreen;
+import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;

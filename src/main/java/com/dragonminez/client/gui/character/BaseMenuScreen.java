@@ -110,7 +110,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 						.texture(SCREEN_BUTTONS)
 						.textureSize(20, 20)
 						.textureCoords(60, 0, 60, 20)
-						.onPress(btn -> switchMenu(new com.dragonminez.client.gui.quest.QuestTreeScreen()))
+						.onPress(btn -> switchMenu(new QuestTreeScreen()))
 						.sound(MainSounds.UI_MENU_SWITCH.get())
 						.build()
 		);

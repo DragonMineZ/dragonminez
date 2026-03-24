@@ -7,7 +7,6 @@ import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.gui.quest.QuestTreeScreen;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;

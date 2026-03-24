@@ -1,5 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.quest.rewards.*;
@@ -54,11 +56,11 @@ public class SyncQuestRegistryS2C {
 	// ========================================================================================
 
 	private void handleOnClient() {
-		// Deserialize sagas (each saga is a full saga JSON with embedded quests)
+		// Deserialize sagas from packet format (saga metadata + embedded saga quests)
 		Map<String, Saga> sagas = new LinkedHashMap<>();
 		JsonObject sagasRoot = JsonParser.parseString(sagasJson).getAsJsonObject();
 		for (Map.Entry<String, JsonElement> entry : sagasRoot.entrySet()) {
-			Saga saga = QuestRegistry.parseSagaFromJson(entry.getValue().getAsJsonObject());
+			Saga saga = parseSyncedSagaFromJson(entry.getValue().getAsJsonObject());
 			sagas.put(entry.getKey(), saga);
 		}
 
@@ -84,6 +86,43 @@ public class SyncQuestRegistryS2C {
 		QuestRegistry.applySyncedQuests(allQuests);
 	}
 
+	private static Saga parseSyncedSagaFromJson(JsonObject json) {
+		String id = json.has("id") ? json.get("id").getAsString() : "";
+		String name = json.has("name") ? json.get("name").getAsString() : id;
+
+		Saga.SagaRequirements requirements = null;
+		if (json.has("requirements") && json.get("requirements").isJsonObject()) {
+			JsonObject reqJson = json.getAsJsonObject("requirements");
+			String prevSaga = reqJson.has("previousSaga") ? reqJson.get("previousSaga").getAsString() : "";
+			requirements = new Saga.SagaRequirements(prevSaga);
+		}
+
+		List<Quest> quests = new ArrayList<>();
+		if (json.has("quests") && json.get("quests").isJsonArray()) {
+			for (JsonElement questElement : json.getAsJsonArray("quests")) {
+				if (!questElement.isJsonObject()) continue;
+				Quest parsed = parseSyncedSagaQuest(questElement.getAsJsonObject(), id);
+				if (parsed != null) {
+					quests.add(parsed);
+				}
+			}
+		}
+
+		return new Saga(id, name, quests, requirements);
+	}
+
+	private static Quest parseSyncedSagaQuest(JsonObject questJson, String sagaId) {
+		try {
+			return QuestParser.parseSagaQuest(questJson);
+		} catch (Exception sagaFormatError) {
+			Quest fallback = QuestParser.parseQuest(questJson);
+			if (fallback == null) {
+				LogUtil.warn(Env.CLIENT, "SyncQuestRegistryS2C: failed to parse a saga quest in saga '{}'", sagaId);
+			}
+			return fallback;
+		}
+	}
+
 	// ========================================================================================
 	// Saga Serialization — reuses the same format as saga JSON files
 	// ========================================================================================
@@ -97,7 +136,7 @@ public class SyncQuestRegistryS2C {
 	}
 
 	/**
-	 * Serializes a Saga in the exact JSON format that {@link QuestRegistry#parseSagaFromJson} expects.
+	 * Serializes a saga in the packet format consumed by {@link #parseSyncedSagaFromJson(JsonObject)}.
 	 */
 	private static JsonObject serializeSaga(Saga saga) {
 		JsonObject obj = new JsonObject();
