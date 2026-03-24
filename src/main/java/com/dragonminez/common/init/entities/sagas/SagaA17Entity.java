@@ -21,72 +21,8 @@ public class SagaA17Entity extends DBSagasEntity {
 
     public SagaA17Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.evade(true, 40);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(700000000);
-        }
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.discCooldown > 0) this.discCooldown--;
-            if (this.barrierCooldown > 0) this.barrierCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.teleportCooldown <= 0 && distSqr > 256.0D) {
-                    performTeleport(target);
-                    return;
-                }
-
-                if (this.barrierCooldown <= 0) {
-                    startCasting(SKILL_BARRIER);
-                }
-                else if (this.discCooldown <= 0 && distSqr > 25.0D) {
-                    startCasting(SKILL_KI_DISC);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null) {
-                    this.lookAt(target, 30.0F, 30.0F);
-                }
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-                    int skill = getSkillType();
-
-                    if (skill == SKILL_KI_DISC) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiDisc(10.5F, 0x12C75C, 1.8F);
-                            stopCasting();
-                        }
-                    }
-                    else if (skill == SKILL_BARRIER) {
-
-                        if (this.castTimer == 10) {
-                            shootKiBarrier(0x13ED6C, 0x12C75C);
-                        }
-
-                        if (this.castTimer >= 40) {
-                            stopCasting();
-                        }
-                    }
-
-                } else {
-                    stopCasting();
-                }
-            }
         }
     }
 
@@ -118,7 +54,7 @@ public class SagaA17Entity extends DBSagasEntity {
                 return event.setAndContinue(ANIM_KIWAVE);
             }
             else if (skill == SKILL_BARRIER) {
-                return event.setAndContinue(ANIM_BARRIER);
+                return event.setAndContinue(ANIM_KI_BARRIER);
             }
         }
         event.getController().forceAnimationReset();

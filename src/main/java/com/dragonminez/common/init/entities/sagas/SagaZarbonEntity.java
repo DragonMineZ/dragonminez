@@ -34,66 +34,6 @@ public class SagaZarbonEntity extends DBSagasEntity{
 		}
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-
-        if (this.isTransforming()) {
-            this.transformTick++;
-
-            if (handleTransformationLogic(this.transformTick, 60)) {
-
-                DBSagasEntity newForm = (DBSagasEntity) MainEntities.SAGA_ZARBON_TRANSF.get().create(this.level());
-
-                finishTransformationSpawn(newForm);
-            }
-            return;
-        }
-
-        if (!this.level().isClientSide && this.getHealth() <= this.getMaxHealth() / 2.0F) {
-            startTransformation();
-            return;
-        }
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.kiBlastCooldown <= 0 && distSqr > 169.0D) {
-                    startCasting(SKILL_KIBLAST);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_KIBLAST) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    1.2F,
-                                    0xFFB0F5,
-                                    0xFA73E9,
-                                    1.1f
-                            );
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
 
     @Override
     protected boolean shouldTriggerTransformationOnDeath() {

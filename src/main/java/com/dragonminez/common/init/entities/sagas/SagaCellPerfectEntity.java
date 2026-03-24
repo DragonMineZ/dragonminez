@@ -21,75 +21,9 @@ public class SagaCellPerfectEntity extends DBSagasEntity {
 
     public SagaCellPerfectEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.useCombo1(true, 20*20);
-        this.evade(true, 20);
         this.setFlySpeed(0.6D);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(2147483647);
-        }
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kamehaCooldown > 0) this.kamehaCooldown--;
-            if (this.kilaserCooldown > 0) this.kilaserCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.teleportCooldown <= 0 && distSqr > 256.0D) {
-                    performTeleport(target);
-                    return;
-                }
-
-                if (this.kilaserCooldown <= 0 && distSqr > 25.0D) {
-                    startCasting(SKILL_KILASER);
-                }
-                else if (this.kamehaCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_KAMEHA);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null) {
-                    this.lookAt(target, 30.0F, 30.0F);
-                }
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-                    int currentSkill = getSkillType();
-
-                    if (currentSkill == SKILL_KAMEHA) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiWave(target, 2.0F, 0xB0FDFF, 0x40FAFF, 2.0f);
-                            stopCasting();
-                        }
-                    }
-                    else if (currentSkill == SKILL_KILASER) {
-                        if (this.castTimer >= 25) {
-                            shootGenericKiLaser(
-                                    target,
-                                    2.5F,
-                                    0xE040FB,
-                                    0xAA00FF
-                            );
-                            stopCasting();
-                        }
-                    }
-
-                } else {
-                    stopCasting();
-                }
-            }
         }
     }
 
@@ -121,7 +55,6 @@ public class SagaCellPerfectEntity extends DBSagasEntity {
                 return event.setAndContinue(ANIM_KIWAVE);
             }
             else if (currentSkill == SKILL_KILASER) {
-                return event.setAndContinue(ANIM_KILASER);
             }
 
             return PlayState.CONTINUE;

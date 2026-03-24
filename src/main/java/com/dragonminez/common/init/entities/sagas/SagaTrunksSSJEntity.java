@@ -21,60 +21,9 @@ public class SagaTrunksSSJEntity extends DBSagasEntity {
         super(pEntityType, pLevel);
         this.setAuraColor(0xFFF06E);
         this.setKiCharge(true);
-        this.useCombo1(true, 20*20);
 		if (this instanceof IBattlePower bp) {
             bp.setBattlePower(1800000000);
 		}
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiVolleyCooldown > 0) this.kiVolleyCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.teleportCooldown <= 0 && distSqr > 200.0D) {
-                    performTeleport(target);
-                    return;
-                }
-
-                if (this.kiVolleyCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_BIGBANG);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_BIGBANG) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    8.0f,
-                                    0xFFF282,
-                                    0xFAE743,
-                                    1.4f
-                            );
-
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
     }
 
     @Override

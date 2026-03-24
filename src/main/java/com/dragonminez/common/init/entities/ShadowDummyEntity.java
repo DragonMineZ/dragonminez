@@ -68,69 +68,6 @@ public class ShadowDummyEntity extends DBSagasEntity {
 		this.getPersistentData().putBoolean("dmz_stats_configured", true);
 	}
 
-	@Override
-	public void tick() {
-		super.tick();
-		LivingEntity target = this.getTarget();
-		handleCommonCombatMovement(target, this.isCasting(), false);
-
-		//if (ownerUUID == null) this.discard();
-
-		if (this.level().isClientSide) {
-			for (int i = 0; i < 2; i++) {
-				this.level().addParticle(
-						ParticleTypes.LARGE_SMOKE,
-						this.getRandomX(0.5D),
-						this.getRandomY(),
-						this.getRandomZ(0.5D),
-						0.0D, 0.05D, 0.0D
-				);
-			}
-		}
-
-		if (target != null && ownerUUID != null && target.getUUID().equals(ownerUUID)) {
-			this.setTarget(null);
-			return;
-		}
-
-		if (!this.level().isClientSide) {
-			if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-			if (target != null && target.isAlive() && !this.isCasting()) {
-				double distSqr = this.distanceToSqr(target);
-
-				if (this.teleportCooldown <= 0 && distSqr > 200.0D) {
-					performTeleport(target);
-					return;
-				}
-
-				if (this.kiBlastCooldown <= 0 && distSqr > 100.0D) startCasting(Bolita);
-			}
-
-			if (this.isCasting()) {
-				this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-				if (target != null && target.isAlive()) {
-					this.castTimer++;
-
-					if (getSkillType() == Bolita) {
-						if (this.castTimer >= 50) {
-							shootGenericKiBlast(
-									target,
-									0.8F,
-									0xFF3838,
-									0x241111,
-									0.8f
-							);
-							stopCasting();
-						}
-					}
-				} else {
-					stopCasting();
-				}
-			}
-		}
-	}
 
 	@Override
 	public void stopCasting() {

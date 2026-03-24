@@ -30,50 +30,6 @@ public class SagaJeiceEntity extends DBSagasEntity{
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.kiBlastCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_CRUSHER_BALL);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_CRUSHER_BALL) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    1.5F,
-                                    0xFF8A8A,
-                                    0xFC4444,
-                                    2.0f
-                            );
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         if (getSkillType() == SKILL_CRUSHER_BALL) {
             this.kiBlastCooldown = 10 * 20;

@@ -26,72 +26,8 @@ public class SagaCellImperfectEntity extends DBSagasEntity {
 
 	public SagaCellImperfectEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
 		super(pEntityType, pLevel);
-		this.evade(true, 40);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(750000000);
-		}
-	}
-
-	@Override
-	public void tick() {
-		super.tick();
-
-		LivingEntity target = this.getTarget();
-
-		boolean isAbsorbing = this.isCasting() && this.getSkillType() == SKILL_ABSORBER;
-		handleCommonCombatMovement(target, this.isCasting() && !isAbsorbing, true);
-
-		if (!this.level().isClientSide) {
-			if (this.kamehaCooldown > 0) this.kamehaCooldown--;
-			if (this.absorberCooldown > 0) this.absorberCooldown--;
-
-			if (target != null && target.isAlive() && !this.isCasting()) {
-				double distSqr = this.distanceToSqr(target);
-
-				// Iniciar Absorción
-				if (this.absorberCooldown <= 0 && distSqr < 9.0D) {
-					startCasting(SKILL_ABSORBER);
-				}
-				// Iniciar Kamehameha
-				else if (this.kamehaCooldown <= 0 && distSqr > 100.0D) {
-					startCasting(SKILL_KAMEHA);
-				} else if (this.teleportCooldown <= 0 && distSqr > 64.0D) {
-					performTeleport(target);
-				}
-			}
-
-			if (this.isCasting()) {
-				this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-				if (target != null && target.isAlive()) {
-					this.castTimer++;
-					int currentSkill = getSkillType();
-
-					if (currentSkill == SKILL_KAMEHA) {
-						this.lookAt(target, 30.0F, 30.0F);
-						if (this.castTimer >= 50) {
-							shootGenericKiWave(target, 2.0F, 0xB0FDFF, 0x40FAFF, 1.5f);
-							stopCasting();
-						}
-					} else if (currentSkill == SKILL_ABSORBER) {
-
-						performTeleportBehind(target);
-
-						this.lookAt(target, 360.0F, 360.0F);
-
-						if (this.castTimer % 5 == 0) {
-							drainLifeAndEnergy(target);
-						}
-
-						if (this.castTimer >= 120) {
-							stopCasting();
-						}
-					}
-
-				} else {
-					stopCasting();
-				}
-			}
 		}
 	}
 

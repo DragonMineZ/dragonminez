@@ -28,42 +28,6 @@ public class SagaNappaEntity extends DBSagasEntity{
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                if (this.kiBlastCooldown <= 0 && this.distanceToSqr(target) > 10.0D) {
-                    startCasting(1);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == 1) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(target, 1.5F, 0xFA39D0, 0xFA3969, 0.8f);
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         if (getSkillType() == 1) {
             this.kiBlastCooldown = 10 * 20;

@@ -21,79 +21,9 @@ public class SagaMechaFreezerEntity extends DBSagasEntity {
 
     public SagaMechaFreezerEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.evade(true, 40);
-        this.useCombo1(true, 20*20);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(140000000);
 		}
-    }
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiLaserCooldown > 0) this.kiLaserCooldown--;
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-
-                if (this.teleportCooldown <= 0) {
-                    performTeleport(target);
-                    return;
-                }
-
-                double distSqr = this.distanceToSqr(target);
-
-                if (distSqr > 120.0D && this.kiBlastCooldown <= 0) {
-                    startCasting(SKILL_DEATH_BALL);
-                }
-                else if (distSqr > 100.0D && this.kiLaserCooldown <= 0) {
-                    startCasting(SKILL_LASER_COMBO);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    int currentSkill = getSkillType();
-
-                    if (currentSkill == SKILL_LASER_COMBO) {
-                        if (this.castTimer == 20 || this.castTimer == 40 || this.castTimer == 60) {
-                            shootGenericKiLaser(
-                                    target,
-                                    2.3F,
-                                    0xBA1616,
-                                    0x850707
-                            );
-                        }
-                        if (this.castTimer >= 60) {
-                            stopCasting();
-                        }
-                    }
-                    else if (currentSkill == SKILL_DEATH_BALL) {
-                        if (this.castTimer >= 20) {
-                            shootGenericKiBlast(
-                                    target,
-                                    2.5F,
-                                    0x8A2FCC,
-                                    0x5D1294,
-                                    1.5F
-                            );
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
     }
 
     @Override
@@ -125,7 +55,7 @@ public class SagaMechaFreezerEntity extends DBSagasEntity {
             int currentSkill = getSkillType();
 
             if (currentSkill == SKILL_LASER_COMBO) {
-                return event.setAndContinue(ANIM_KILASER);
+
             } else if (currentSkill == SKILL_DEATH_BALL) {
                 return event.setAndContinue(ANIM_KIBALL);
             }

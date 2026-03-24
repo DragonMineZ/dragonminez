@@ -33,15 +33,6 @@ public class SagaFriezaSoldier02Entity extends DBSagasEntity{
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, false, true);
-    }
-
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {

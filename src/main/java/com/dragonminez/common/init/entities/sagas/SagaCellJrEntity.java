@@ -24,51 +24,6 @@ public class SagaCellJrEntity extends DBSagasEntity{
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kamehaCooldown > 0) this.kamehaCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.teleportCooldown <= 0) {
-                    performTeleport(target);
-                    return;
-                }
-
-                if (this.kamehaCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_KAMEHA);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    int currentSkill = getSkillType();
-
-                    if (currentSkill == SKILL_KAMEHA) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiWave(target, 0.8F, 0xB0FDFF, 0x40FAFF, 1.5f);
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         int usedSkill = getSkillType();
 

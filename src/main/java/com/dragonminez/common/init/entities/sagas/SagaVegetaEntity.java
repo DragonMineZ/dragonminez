@@ -29,46 +29,6 @@ public class SagaVegetaEntity extends DBSagasEntity{
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.galickGunCooldown > 0) this.galickGunCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.galickGunCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_GALICK_GUN);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    int currentSkill = getSkillType();
-
-                    if (currentSkill == SKILL_GALICK_GUN) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiWave(target, 1.5F, 0xEE9EFF, 0xDD3DFF, 1.2f);
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         int usedSkill = getSkillType();
 

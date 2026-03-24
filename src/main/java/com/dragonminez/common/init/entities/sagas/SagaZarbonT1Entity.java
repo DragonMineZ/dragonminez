@@ -29,50 +29,6 @@ public class SagaZarbonT1Entity extends DBSagasEntity{
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.kiBlastCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_KIBLAST);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_KIBLAST) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    1.2F,
-                                    0xEE69FF,
-                                    0xCC3F9F,
-                                    1.2f
-                            );
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         if (getSkillType() == SKILL_KIBLAST) {
             this.kiBlastCooldown = 10 * 20;

@@ -23,53 +23,6 @@ public class SagaCuiEntity extends DBSagasEntity {
 			bp.setBattlePower(18000);
 		}
     }
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiVolleyCooldown > 0) this.kiVolleyCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-                double distancePlayer = 100.0D;
-
-                if (this.kiVolleyCooldown <= 0 && distSqr > distancePlayer) {
-                    startCasting(SKILL_VOLLEY);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_VOLLEY) {
-                        if (this.castTimer > 15 && this.castTimer < 55 && this.castTimer % 4 == 0) {
-
-                            shootGenericKiVolley(
-                                    target,
-                                    1.0f,
-                                    0xFF8FFF,
-                                    0xC069FF
-                            );
-                        }
-
-                        if (this.castTimer >= 60) {
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
 
     @Override
     public void stopCasting() {

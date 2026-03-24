@@ -30,50 +30,6 @@ public class SagaGinyuEntity extends DBSagasEntity{
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.kiBlastCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_MILKY_CANNON);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_MILKY_CANNON) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    1.5F,
-                                    0xB556FC,
-                                    0x841DD1,
-                                    1.5f
-                            );
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         if (getSkillType() == SKILL_MILKY_CANNON) {
             this.kiBlastCooldown = 10 * 20;

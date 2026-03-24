@@ -30,82 +30,8 @@ public class SagaCellSuperPerfectEntity extends DBSagasEntity {
         this.setKiCharge(true);
         this.setLightning(true);
         this.setLightningColor(0xA1FFFF);
-        this.useCombo1(true, 20*20);
-        this.evade(true, 10);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(2147483647);
-        }
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kamehaCooldown > 0) this.kamehaCooldown--;
-            if (this.kilaserCooldown > 0) this.kilaserCooldown--;
-            if (this.barrierCooldown > 0) this.barrierCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.teleportCooldown <= 0 && distSqr > 256.0D) {
-                    performTeleport(target);
-                    return;
-                }
-
-                if (this.barrierCooldown <= 0 && distSqr < 400.0D) {
-                    startCasting(SKILL_BARRIER);
-                }
-                else if (this.kilaserCooldown <= 0 && distSqr > 25.0D) {
-                    startCasting(SKILL_KILASER);
-                }
-                else if (this.kamehaCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_KAMEHA);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null) {
-                    this.lookAt(target, 30.0F, 30.0F);
-                }
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-                    int currentSkill = getSkillType();
-
-                    if (currentSkill == SKILL_KAMEHA) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiWave(target, 2.0F, 0xB0FDFF, 0x40FAFF, 2.0f);
-                            stopCasting();
-                        }
-                    }
-                    else if (currentSkill == SKILL_KILASER) {
-                        if (this.castTimer >= 25) {
-                            shootGenericKiLaser(target, 2.5F, 0xE040FB, 0xAA00FF);
-                            stopCasting();
-                        }
-                    }
-                    else if (currentSkill == SKILL_BARRIER) {
-                        if (this.castTimer == 10) {
-                            shootKiBarrier(0xB246FF, 0xB246FF);
-                        }
-
-                        if (this.castTimer >= 40) {
-                            stopCasting();
-                        }
-                    }
-
-                } else {
-                    stopCasting();
-                }
-            }
         }
     }
 
@@ -145,8 +71,6 @@ public class SagaCellSuperPerfectEntity extends DBSagasEntity {
 
         this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
 
-        this.teleportCooldown = 4 * 20;
-
         this.lookAt(target, 360, 360);
     }
 
@@ -158,10 +82,8 @@ public class SagaCellSuperPerfectEntity extends DBSagasEntity {
                 return event.setAndContinue(ANIM_KIWAVE);
             }
             else if (currentSkill == SKILL_KILASER) {
-                return event.setAndContinue(ANIM_KILASER);
             }
             else if (currentSkill == SKILL_BARRIER) {
-                return event.setAndContinue(ANIM_BARRIER);
             }
 
             return PlayState.CONTINUE;

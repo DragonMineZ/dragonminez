@@ -32,103 +32,6 @@ public class SagaA19Entity extends DBSagasEntity {
 	}
 
 	@Override
-	public void tick() {
-		super.tick();
-
-		LivingEntity target = this.getTarget();
-
-		handleCommonCombatMovement(target, this.isCasting(), true);
-
-		if (!this.level().isClientSide) {
-			// Cooldowns
-			if (this.laserCooldown > 0) this.laserCooldown--;
-			if (this.drainCooldown > 0) this.drainCooldown--;
-
-			if (target != null && target.isAlive() && !this.isCasting()) {
-				double distSqr = this.distanceToSqr(target);
-
-				if (this.teleportCooldown <= 0 && distSqr > 200.0D) {
-					performTeleport(target);
-					return;
-				}
-
-				if (this.drainCooldown <= 0 && distSqr < 9.0D) {
-					startCasting(SKILL_ENERGY_DRAIN);
-				} else if (this.laserCooldown <= 0 && distSqr > 100.0D) {
-					startCasting(SKILL_EYE_LASER);
-				}
-			}
-
-			if (this.isCasting()) {
-				this.setDeltaMovement(0, 0, 0);
-				this.getNavigation().stop();
-
-				if (target != null && target.isAlive()) {
-					this.castTimer++;
-					int currentSkill = getSkillType();
-
-					if (currentSkill == SKILL_EYE_LASER) {
-						this.lookAt(target, 30.0F, 30.0F);
-
-						if (this.castTimer == 20) {
-							performDoubleEyeLaser(target);
-							stopCasting();
-						}
-					} else if (currentSkill == SKILL_ENERGY_DRAIN) {
-						performGrabLogic(target);
-					}
-
-				} else {
-					stopCasting();
-				}
-			}
-		}
-	}
-
-	private void performGrabLogic(LivingEntity target) {
-		Vec3 viewVector = this.getViewVector(1.0F);
-		double grabDist = 1.2D;
-		double targetX = this.getX() + viewVector.x * grabDist;
-		double targetY = this.getY() + 0.5D;
-		double targetZ = this.getZ() + viewVector.z * grabDist;
-
-		target.setPos(targetX, targetY, targetZ);
-		target.setDeltaMovement(0, 0, 0);
-		target.hurtMarked = true;
-
-		this.lookAt(target, 360, 360);
-
-		if (this.castTimer % 10 == 0) {
-			float damageAmount = getKiBlastDamage() / 3;
-
-			target.hurt(this.damageSources().mobAttack(this), damageAmount);
-
-			this.heal(damageAmount);
-
-			if (target instanceof Player player) {
-				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-
-					int maxEnergy = stats.getMaxEnergy();
-					int drainPercentage = (int) (maxEnergy * 0.05);
-
-					if (drainPercentage < 1) drainPercentage = 1;
-
-					stats.getResources().removeEnergy(drainPercentage);
-				});
-			}
-		}
-		if (this.castTimer >= 60) {
-			target.setDeltaMovement(viewVector.scale(1.5));
-			stopCasting();
-		}
-	}
-
-	private void performDoubleEyeLaser(LivingEntity target) {
-		shootGenericKiLaser(target, 2.0F, 0xFFFF00, 0xFFD700);
-		shootGenericKiLaser(target, 2.0F, 0xFFFF00, 0xFFD700);
-	}
-
-	@Override
 	public void stopCasting() {
 		int usedSkill = getSkillType();
 
@@ -160,7 +63,6 @@ public class SagaA19Entity extends DBSagasEntity {
 			int currentSkill = getSkillType();
 
 			if (currentSkill == SKILL_EYE_LASER) {
-				return event.setAndContinue(ANIM_KILASER);
 			} else if (currentSkill == SKILL_ENERGY_DRAIN) {
 				return event.setAndContinue(ANIM_GRAB);
 			}

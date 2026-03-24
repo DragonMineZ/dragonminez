@@ -19,60 +19,9 @@ public class SagaCellSemiPerfectEntity extends DBSagasEntity {
 
     public SagaCellSemiPerfectEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.evade(true, 40);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(1450000000);
 		}
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiVolleyCooldown > 0) this.kiVolleyCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.teleportCooldown <= 0 && distSqr > 200.0D) {
-                    performTeleport(target);
-                    return;
-                }
-
-                if (this.kiVolleyCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_BIGBANG);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_BIGBANG) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    8.0f,
-                                    0xD9234D,
-                                    0x850925,
-                                    3.0f
-                            );
-
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
     }
 
     @Override

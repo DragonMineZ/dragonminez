@@ -29,53 +29,6 @@ public class SagaVegetaNamekEntity extends DBSagasEntity {
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiVolleyCooldown > 0) this.kiVolleyCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.kiVolleyCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_VOLLEY);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_VOLLEY) {
-                        if (this.castTimer > 15 && this.castTimer < 55 && this.castTimer % 4 == 0) {
-
-                            shootGenericKiVolley(
-                                    target,
-                                    1.2f,
-                                    0x94F4FF,
-                                    0x3FE9FC
-                            );
-                        }
-
-                        if (this.castTimer >= 60) {
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         int usedSkill = getSkillType();
 

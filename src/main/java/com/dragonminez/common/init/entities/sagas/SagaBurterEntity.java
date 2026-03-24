@@ -40,47 +40,6 @@ public class SagaBurterEntity extends DBSagasEntity {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        boolean shouldStopMoving = this.isCasting() && getSkillType() != SKILL_BLUE_HURRICANE;
-        handleCommonCombatMovement(target, shouldStopMoving, true);
-
-        if (!this.level().isClientSide) {
-            if (this.hurricaneCooldown > 0) this.hurricaneCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.hurricaneCooldown <= 0 && distSqr < 225.0D) {
-                    startCasting(SKILL_BLUE_HURRICANE);
-
-                    this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.30D);
-                }
-            }
-
-            if (this.isCasting()) {
-                if (getSkillType() == SKILL_BLUE_HURRICANE) {
-                    this.castTimer++;
-
-                    if (this.castTimer == 1) {
-                        performBlueHurricaneEffect();
-                    }
-
-                    if (target != null) {
-                        this.lookAt(target, 30.0F, 30.0F);
-                    }
-
-                    if (this.castTimer >= 140) {
-                        stopCasting();
-                    }
-                }
-            }
-        }
-    }
 
     @Override
     public void moveTowardsTargetInAir(LivingEntity target) {

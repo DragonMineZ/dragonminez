@@ -23,51 +23,8 @@ public class SagaKingColdEntity extends DBSagasEntity {
 
     public SagaKingColdEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.evade(true, 40);
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(80000000);
-        }
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-
-                if (this.teleportCooldown <= 0) {
-                    performTeleport(target);
-                    return;
-                }
-
-                double distSqr = this.distanceToSqr(target);
-                if (distSqr > 120.0D && this.kiBlastCooldown <= 0) {
-                    startCasting(2);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == 2) {
-                        if (this.castTimer >= 20) {
-                            shootGenericKiBlast(target, 3.5F, 0xAD3BFF, 0x5E1FCC, 1.4F);
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
         }
     }
 

@@ -37,46 +37,6 @@ public class SagaRecoomeEntity extends DBSagasEntity {
 			bp.setBattlePower(40000);
 		}
     }
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.skillCooldown > 0) this.skillCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.skillCooldown <= 0 && distSqr < 225.0D) {
-                    startCasting(SKILL_EXPLOSION);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(0, 0, 0);
-
-                if (getSkillType() == SKILL_EXPLOSION) {
-                    this.castTimer++;
-
-                    if (this.castTimer == 1) {
-                        performKiExplosion(
-                                this.getKiBlastDamage(),
-                                0xE58FFF,
-                                0xFF00FF
-                        );
-                    }
-
-                    if (this.castTimer >= KiExplosionEntity.DURATION) {
-                        stopCasting();
-                    }
-                }
-            }
-        }
-    }
 
     @Override
     public void stopCasting() {

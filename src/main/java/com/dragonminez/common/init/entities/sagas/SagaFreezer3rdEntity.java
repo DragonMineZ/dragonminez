@@ -30,54 +30,6 @@ public class SagaFreezer3rdEntity extends DBSagasEntity{
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiLaserCooldown > 0) this.kiLaserCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.kiLaserCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_LASER_BARRAGE);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_LASER_BARRAGE) {
-
-                        if (this.castTimer >= 20 && this.castTimer <= 50 && this.castTimer % 10 == 0) {
-
-                            shootGenericKiLaser(
-                                    target,
-                                    1.5F,
-                                    0xF157FF,
-                                    0x850491
-                            );
-                        }
-
-                        if (this.castTimer >= 55) {
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
-
-    @Override
     public void stopCasting() {
         if (getSkillType() == SKILL_LASER_BARRAGE) {
             this.kiLaserCooldown = 10 * 20;

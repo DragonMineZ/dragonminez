@@ -19,61 +19,11 @@ public class SagaA18Entity extends DBSagasEntity{
 
     public SagaA18Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
-        this.evade(true, 40);
-        this.useCombo1(true, 20*20);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(700000000);
 		}
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.kiBlastCooldown > 0) this.kiBlastCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.teleportCooldown <= 0 && distSqr > 200.0D) {
-                    performTeleport(target);
-                    return;
-                }
-
-                if (this.kiBlastCooldown <= 0 && distSqr > 100.0D) {
-                    startCasting(SKILL_MILKY_CANNON);
-                }
-            }
-
-            if (this.isCasting()) {
-                this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.5, 0.5));
-
-                if (target != null && target.isAlive()) {
-                    this.castTimer++;
-
-                    if (getSkillType() == SKILL_MILKY_CANNON) {
-                        if (this.castTimer >= 50) {
-                            shootGenericKiBlast(
-                                    target,
-                                    2.1F,
-                                    0xF3A3FF,
-                                    0xEB57FF,
-                                    2.0f
-                            );
-                            stopCasting();
-                        }
-                    }
-                } else {
-                    stopCasting();
-                }
-            }
-        }
-    }
 
     @Override
     public void stopCasting() {

@@ -47,50 +47,6 @@ public class SagaFreezer2ndEntity extends DBSagasEntity{
 		}
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-
-        if (this.isTransforming()) {
-            if (this.heldTarget != null) releaseTarget();
-
-            this.transformTick++;
-            if (handleTransformationLogic(this.transformTick, 100)) { // 100 ticks para Freezer
-                DBSagasEntity newForm = (DBSagasEntity) MainEntities.SAGA_FREEZER_THIRD.get().create(this.level());
-                finishTransformationSpawn(newForm);
-            }
-            return;
-        }
-
-        if (!this.level().isClientSide && this.getHealth() <= this.getMaxHealth() / 2.0F) {
-            startTransformation();
-            return;
-        }
-
-        LivingEntity target = this.getTarget();
-
-        handleCommonCombatMovement(target, this.isCasting(), true);
-
-        if (!this.level().isClientSide) {
-            if (this.grabCooldown > 0) this.grabCooldown--;
-
-            if (target != null && target.isAlive() && !this.isCasting()) {
-                double distSqr = this.distanceToSqr(target);
-
-                if (this.grabCooldown <= 0 && distSqr <= GRAB_RANGE_SQR) {
-                    performGrabStart(target);
-                }
-            }
-
-            if (this.isCasting()) {
-                if (getSkillType() == SKILL_GRAB) {
-                    tickHeldTarget();
-                }
-            }
-        }
-    }
-
-
     private void performGrabStart(LivingEntity target) {
         this.heldTarget = target;
         startCasting(SKILL_GRAB);
