@@ -475,10 +475,9 @@ public class QuestParser {
 				int questId = json.get("questId").getAsInt();
 				yield QuestPrerequisites.Condition.sagaQuest(sagaId, questId);
 			}
-			// Support both "SIDE_QUEST" (legacy JSON) and "QUEST" (new format)
-			case "SIDE_QUEST", "QUEST" -> {
-				String reqId = json.has("sideQuestId") ? json.get("sideQuestId").getAsString()
-						: json.get("questId").getAsString();
+			// For Quests that are not default from our Sagas
+			case "QUEST" -> {
+				String reqId = json.get("questId").getAsString();
 				yield QuestPrerequisites.Condition.quest(reqId);
 			}
 			case "STAT" -> {

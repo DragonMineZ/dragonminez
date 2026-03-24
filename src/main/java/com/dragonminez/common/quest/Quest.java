@@ -230,16 +230,9 @@ public class Quest {
     // Convenience Getters
     // ========================================================================================
 
-    /**
-     * Alias for {@link #getTitle()}. Kept for convenience.
-     */
-    public String getName() {
-        return title;
-    }
-
     /** Returns {@code true} if this quest has non-empty prerequisites. */
     public boolean hasPrerequisites() {
-        return prerequisites != null && !prerequisites.getConditions().isEmpty();
+        return prerequisites != null && !prerequisites.conditions().isEmpty();
     }
 
     /** Returns {@code true} if this is a {@link QuestType#SIDEQUEST}. */

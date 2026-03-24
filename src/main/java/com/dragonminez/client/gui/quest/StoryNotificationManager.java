@@ -1,4 +1,4 @@
-package com.dragonminez.client.gui.story;
+package com.dragonminez.client.gui.quest;
 
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.util.LocalizationUtil;

@@ -56,10 +56,13 @@ public class PlayerQuestData {
     private final Map<String, String> branchSelections = new HashMap<>();
 
     /** Current tracked quest key (saga:questId or sidequestId) shown in client HUD. */
-    private String trackedQuestId = null;
+    @Getter
+	private String trackedQuestId = null;
 
     /** True once the player has seen the first-time "Press V" story prompt. */
-    private boolean introPromptShown = false;
+    @Setter
+	@Getter
+	private boolean introPromptShown = false;
 
     // ========================================================================================
     // Quest Progress — Accept / Complete / Reset
@@ -122,7 +125,6 @@ public class PlayerQuestData {
         sagaUnlockState.clear();
         branchSelections.clear();
         trackedQuestId = null;
-        introPromptShown = false;
     }
 
     /**
@@ -136,11 +138,7 @@ public class PlayerQuestData {
         branchSelections.keySet().removeIf(key -> key.startsWith(branchPrefix));
     }
 
-    public String getTrackedQuestId() {
-        return trackedQuestId;
-    }
-
-    public void setTrackedQuestId(String trackedQuestId) {
+	public void setTrackedQuestId(String trackedQuestId) {
         if (trackedQuestId == null || trackedQuestId.isBlank()) {
             this.trackedQuestId = null;
             return;
@@ -148,15 +146,7 @@ public class PlayerQuestData {
         this.trackedQuestId = trackedQuestId;
     }
 
-    public boolean isIntroPromptShown() {
-        return introPromptShown;
-    }
-
-    public void setIntroPromptShown(boolean introPromptShown) {
-        this.introPromptShown = introPromptShown;
-    }
-
-    /**
+	/**
      * Returns the set of all quest IDs that have been accepted (in progress).
      */
     public Set<String> getAcceptedQuestIds() {
@@ -290,18 +280,8 @@ public class PlayerQuestData {
         return getObjectiveProgress(sagaQuestKey(sagaId, questId), objectiveIndex);
     }
 
-    /** Alias for backwards compatibility with old QuestData API. */
-    public int getQuestObjectiveProgress(String sagaId, int questId, int objectiveIndex) {
-        return getObjectiveProgress(sagaQuestKey(sagaId, questId), objectiveIndex);
-    }
-
     /** Sets objective progress for a saga quest. */
     public void setObjectiveProgress(String sagaId, int questId, int objectiveIndex, int progress) {
-        setObjectiveProgress(sagaQuestKey(sagaId, questId), objectiveIndex, progress);
-    }
-
-    /** Alias for backwards compatibility with old QuestData API. */
-    public void setQuestObjectiveProgress(String sagaId, int questId, int objectiveIndex, int progress) {
         setObjectiveProgress(sagaQuestKey(sagaId, questId), objectiveIndex, progress);
     }
 
@@ -406,97 +386,6 @@ public class PlayerQuestData {
 
         if (tag.contains("introPromptShown", Tag.TAG_BYTE)) {
             introPromptShown = tag.getBoolean("introPromptShown");
-        }
-    }
-
-    // ========================================================================================
-    // Legacy Migration
-    // ========================================================================================
-
-    /**
-     * Migrates legacy data from the old {@code "QuestData"} and {@code "SideQuestData"}
-     * NBT compounds into this unified structure.
-     * <p>
-     * Called automatically when loading a player who has not yet been migrated.
-     *
-     * @param fullNbt the full player stats NBT compound
-     */
-    public void migrateFromLegacy(CompoundTag fullNbt) {
-        // Migrate old saga QuestData
-        if (fullNbt.contains("QuestData")) {
-            CompoundTag questDataTag = fullNbt.getCompound("QuestData");
-            ListTag sagaList = questDataTag.getList("sagas", Tag.TAG_COMPOUND);
-
-            for (int i = 0; i < sagaList.size(); i++) {
-                CompoundTag sagaTag = sagaList.getCompound(i);
-                String sagaId = sagaTag.getString("sagaId");
-                boolean unlocked = sagaTag.getBoolean("unlocked");
-
-                sagaUnlockState.put(sagaId, unlocked);
-
-                ListTag questList = sagaTag.getList("quests", Tag.TAG_COMPOUND);
-                for (int j = 0; j < questList.size(); j++) {
-                    CompoundTag questTag = questList.getCompound(j);
-                    int numericId = questTag.getInt("questId");
-                    boolean completed = questTag.getBoolean("completed");
-                    String compositeKey = sagaQuestKey(sagaId, numericId);
-
-                    QuestProgress progress = new QuestProgress(compositeKey);
-                    progress.setStatus(completed ? QuestStatus.COMPLETED : QuestStatus.ACCEPTED);
-
-                    // Migrate objective progress
-                    CompoundTag objectivesTag = questTag.getCompound("objectives");
-                    for (String key : objectivesTag.getAllKeys()) {
-                        progress.setObjectiveProgress(Integer.parseInt(key), objectivesTag.getInt(key));
-                    }
-
-                    // Migrate reward claims
-                    CompoundTag rewardsTag = questTag.getCompound("rewards");
-                    for (String key : rewardsTag.getAllKeys()) {
-                        if (rewardsTag.getBoolean(key)) {
-                            progress.claimReward(Integer.parseInt(key));
-                        }
-                    }
-
-                    quests.put(compositeKey, progress);
-                }
-            }
-        }
-
-        // Migrate old SideQuestData
-        if (fullNbt.contains("SideQuestData")) {
-            CompoundTag sideQuestDataTag = fullNbt.getCompound("SideQuestData");
-            ListTag sideQuestList = sideQuestDataTag.getList("sideQuests", Tag.TAG_COMPOUND);
-
-            for (int i = 0; i < sideQuestList.size(); i++) {
-                CompoundTag sqTag = sideQuestList.getCompound(i);
-                String sideQuestId = sqTag.getString("sideQuestId");
-                boolean accepted = sqTag.getBoolean("accepted");
-                boolean completed = sqTag.getBoolean("completed");
-
-                QuestProgress progress = new QuestProgress(sideQuestId);
-                if (completed) {
-                    progress.setStatus(QuestStatus.COMPLETED);
-                } else if (accepted) {
-                    progress.setStatus(QuestStatus.ACCEPTED);
-                }
-
-                // Migrate objective progress
-                CompoundTag objectivesTag = sqTag.getCompound("objectives");
-                for (String key : objectivesTag.getAllKeys()) {
-                    progress.setObjectiveProgress(Integer.parseInt(key), objectivesTag.getInt(key));
-                }
-
-                // Migrate reward claims
-                CompoundTag rewardsTag = sqTag.getCompound("rewards");
-                for (String key : rewardsTag.getAllKeys()) {
-                    if (rewardsTag.getBoolean(key)) {
-                        progress.claimReward(Integer.parseInt(key));
-                    }
-                }
-
-                quests.put(sideQuestId, progress);
-            }
         }
     }
 

@@ -13,8 +13,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * Unified sync packet that sends the entire QuestRegistry state (sagas + quests) to the client.
- * Replaces the old SyncSagasS2C packets.
+ * Sync packet that sends the entire QuestRegistry state (sagas + quests) to the client.
  * <p>
  * Serialization uses the same JSON format as the disk files so that the existing
  * {@link QuestParser} methods can deserialize everything without a custom format.
@@ -107,7 +106,7 @@ public class SyncQuestRegistryS2C {
 
 		if (saga.getRequirements() != null) {
 			JsonObject req = new JsonObject();
-			req.addProperty("previousSaga", saga.getRequirements().getPreviousSagaId());
+			req.addProperty("previousSaga", saga.getRequirements().previousSagaId());
 			obj.add("requirements", req);
 		}
 
@@ -171,7 +170,7 @@ public class SyncQuestRegistryS2C {
 		if (quest.getTurnIn() != null) obj.addProperty("turnIn", quest.getTurnIn());
 
 		// Prerequisites
-		if (quest.getPrerequisites() != null && !quest.getPrerequisites().getConditions().isEmpty()) {
+		if (quest.getPrerequisites() != null && !quest.getPrerequisites().conditions().isEmpty()) {
 			obj.add("prerequisites", serializePrerequisites(quest.getPrerequisites()));
 		}
 
@@ -276,10 +275,10 @@ public class SyncQuestRegistryS2C {
 
 	private static JsonObject serializePrerequisites(QuestPrerequisites prereqs) {
 		JsonObject obj = new JsonObject();
-		obj.addProperty("operator", prereqs.getOperator().name());
+		obj.addProperty("operator", prereqs.operator().name());
 
 		JsonArray conditions = new JsonArray();
-		for (QuestPrerequisites.Condition condition : prereqs.getConditions()) {
+		for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
 			conditions.add(serializeCondition(condition));
 		}
 		obj.add("conditions", conditions);

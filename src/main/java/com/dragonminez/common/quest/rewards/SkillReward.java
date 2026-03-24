@@ -3,9 +3,11 @@ package com.dragonminez.common.quest.rewards;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+@Getter
 public class SkillReward extends QuestReward {
 	private final String skill;
 	private final int level;
@@ -14,14 +16,6 @@ public class SkillReward extends QuestReward {
 		super(RewardType.SKILL);
 		this.skill = skill;
 		this.level = level;
-	}
-
-	public String getSkill() {
-		return skill;
-	}
-
-	public int getLevel() {
-		return level;
 	}
 
 	@Override

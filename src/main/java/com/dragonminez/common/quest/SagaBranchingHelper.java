@@ -6,6 +6,10 @@ import java.util.List;
 
 /**
  * Shared branch/saga availability helpers used by both server logic and client UI.
+ * This is for creating branching for some quests (in the future).
+ * Currently it should not be used. (It's still used for dev purposes)
+ * <p>
+ * Branching is like Detroit Become Human stuff with different endings
  */
 public final class SagaBranchingHelper {
 
@@ -14,18 +18,18 @@ public final class SagaBranchingHelper {
 
 	public static boolean hasBranchMetadata(Quest quest) {
 		// Branch paths are currently enabled for sidequest chains only.
-		return quest != null && quest.isSideQuest() && quest.isBranchingQuest();
+		return quest == null || !quest.isSideQuest() || !quest.isBranchingQuest();
 	}
 
 	public static boolean isQuestLockedByBranch(PlayerQuestData pqd, String sagaId, Quest quest) {
-		if (pqd == null || sagaId == null || !hasBranchMetadata(quest)) return false;
+		if (pqd == null || sagaId == null || hasBranchMetadata(quest)) return false;
 
 		String selectedPath = pqd.getBranchSelection(sagaId, quest.getBranchGroup());
 		return selectedPath != null && !selectedPath.equalsIgnoreCase(quest.getBranchPath());
 	}
 
 	public static void selectBranchIfNeeded(PlayerQuestData pqd, String sagaId, Quest quest) {
-		if (pqd == null || sagaId == null || !hasBranchMetadata(quest)) return;
+		if (pqd == null || sagaId == null || hasBranchMetadata(quest)) return;
 		if (pqd.getBranchSelection(sagaId, quest.getBranchGroup()) == null) {
 			pqd.setBranchSelection(sagaId, quest.getBranchGroup(), quest.getBranchPath());
 		}

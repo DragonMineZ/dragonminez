@@ -602,7 +602,7 @@ public class StatsData {
 		return nbt;
 	}
 
-	public void load(CompoundTag nbt) {
+	public void load(CompoundTag nbt) throws ClassNotFoundException {
 		if (nbt.contains("Stats")) stats.load(nbt.getCompound("Stats"));
 		if (nbt.contains("Status")) status.load(nbt.getCompound("Status"));
 		if (nbt.contains("Cooldowns")) cooldowns.load(nbt.getCompound("Cooldowns"));
@@ -611,7 +611,8 @@ public class StatsData {
 		if (nbt.contains("Skills")) skills.load(nbt.getCompound("Skills"));
 		if (nbt.contains("Effects")) effects.load(nbt.getCompound("Effects"));
 		if (nbt.contains("PlayerQuestData")) playerQuestData.deserializeNBT(nbt.getCompound("PlayerQuestData"));
-		else playerQuestData.migrateFromLegacy(nbt);
+		else throw new ClassNotFoundException("PlayerQuestData not found in NBT. This is required for quest progression to work correctly. " +
+				"Please update the mod or re-generate your config files.");
 		if (nbt.contains("BonusStats")) bonusStats.load(nbt.getCompound("BonusStats"));
 		if (nbt.contains("Training")) training.load(nbt.getCompound("Training"));
 		if (nbt.contains("Techniques")) techniques.load(nbt.getCompound("Techniques"));

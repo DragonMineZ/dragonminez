@@ -426,7 +426,7 @@ public class StoryCommand {
                     }
 
                     context.getSource().sendSystemMessage(
-                            Component.literal(status + " \u00A7r" + id + " - " + sideQuest.getName())
+                            Component.literal(status + " \u00A7r" + id + " - " + sideQuest.getTitle())
                     );
 
                     if (pqd.isQuestAccepted(id)) {

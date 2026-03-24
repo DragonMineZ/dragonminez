@@ -52,12 +52,8 @@ public class Saga {
                 .findFirst()
                 .orElse(null);
     }
-
-    @Setter
-    @Getter
-    @AllArgsConstructor
-    public static class SagaRequirements {
-        private final String previousSagaId;
+    
+    public record SagaRequirements(String previousSagaId) {
     }
 }
 

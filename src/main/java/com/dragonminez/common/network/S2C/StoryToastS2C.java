@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.gui.story.StoryNotificationManager;
+import com.dragonminez.client.gui.quest.StoryNotificationManager;
+import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -8,6 +9,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
+@Getter
 public class StoryToastS2C {
 
 	public enum ToastEventType {
@@ -45,26 +47,6 @@ public class StoryToastS2C {
 
 	public static StoryToastS2C questComplete(String questId) {
 		return new StoryToastS2C(ToastEventType.QUEST_COMPLETE, questId, -1, -1, -1);
-	}
-
-	public ToastEventType getEventType() {
-		return eventType;
-	}
-
-	public String getQuestId() {
-		return questId;
-	}
-
-	public int getObjectiveIndex() {
-		return objectiveIndex;
-	}
-
-	public int getObjectiveProgress() {
-		return objectiveProgress;
-	}
-
-	public int getObjectiveRequired() {
-		return objectiveRequired;
 	}
 
 	public static void encode(StoryToastS2C msg, FriendlyByteBuf buf) {

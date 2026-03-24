@@ -41,13 +41,13 @@ final class SagaDefaults {
 	}
 
 	/**
-	 * Writes a single saga manifest JSON file if it doesn't exist or is in the old embedded format.
+	 * Writes a single saga manifest JSON file if it doesn't exist.
 	 */
 	private static void writeSagaManifest(Path sagaDir, String filename, String sagaId, String name, String previousSaga, String questFolder) {
 		Path file = sagaDir.resolve(filename);
 
-		// If file exists and already uses questFolder format, skip
-		if (Files.exists(file) && !isOldEmbeddedFormat(file)) return;
+		// If file exists, skip
+		if (Files.exists(file)) return;
 
 		try {
 			Files.createDirectories(sagaDir);
@@ -70,15 +70,4 @@ final class SagaDefaults {
 		}
 	}
 
-	/**
-	 * Checks if an existing saga file uses the old embedded format (has "quests" array instead of "questFolder").
-	 */
-	private static boolean isOldEmbeddedFormat(Path file) {
-		try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-			return root.has("quests") && !root.has("questFolder");
-		} catch (Exception e) {
-			return false;
-		}
-	}
 }

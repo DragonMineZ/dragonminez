@@ -1,25 +1,17 @@
 package com.dragonminez.common.quest;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.network.chat.Component;
 
+@Getter
 public abstract class QuestReward {
 	private final RewardType type;
+	@Setter
 	private DifficultyType difficultyType = DifficultyType.ALL;
 
 	public QuestReward(RewardType type) {
 		this.type = type;
-	}
-
-	public RewardType getType() {
-		return type;
-	}
-
-	public DifficultyType getDifficultyType() {
-		return difficultyType;
-	}
-
-	public void setDifficultyType(DifficultyType difficultyType) {
-		this.difficultyType = difficultyType;
 	}
 
 	public abstract void giveReward(net.minecraft.server.level.ServerPlayer player);

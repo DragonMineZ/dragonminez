@@ -443,7 +443,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private boolean isSagaUnlockedByPreviousCompletion(Saga saga) {
 		if (saga == null || saga.getRequirements() == null) return true;
-		String previousSagaId = saga.getRequirements().getPreviousSagaId();
+		String previousSagaId = saga.getRequirements().previousSagaId();
 		if (previousSagaId == null || previousSagaId.isEmpty()) return true;
 		if (statsData == null) return false;
 

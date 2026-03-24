@@ -32,15 +32,11 @@ import java.util.List;
  * }
  * }</pre>
  *
- * @since 2.0
  * @see QuestAvailabilityChecker
  * @see QuestParser#parsePrerequisites
+ * @since 2.0
  */
-@Getter
-public class QuestPrerequisites {
-	private final Operator operator;
-	private final List<Condition> conditions;
-
+public record QuestPrerequisites(Operator operator, List<Condition> conditions) {
 	public QuestPrerequisites(Operator operator, List<Condition> conditions) {
 		this.operator = operator != null ? operator : Operator.AND;
 		this.conditions = conditions != null ? conditions : new ArrayList<>();
@@ -51,15 +47,25 @@ public class QuestPrerequisites {
 	}
 
 	public enum ConditionType {
-		/** A specific saga quest must be completed */
+		/**
+		 * A specific saga quest must be completed
+		 */
 		SAGA_QUEST,
-		/** Another quest (by string ID) must be completed */
+		/**
+		 * Another quest (by string ID) must be completed
+		 */
 		QUEST,
-		/** A player stat must meet a minimum threshold */
+		/**
+		 * A player stat must meet a minimum threshold
+		 */
 		STAT,
-		/** Player must be a specific race */
+		/**
+		 * Player must be a specific race
+		 */
 		RACE,
-		/** Player level must meet a minimum threshold */
+		/**
+		 * Player level must meet a minimum threshold
+		 */
 		LEVEL
 	}
 
@@ -115,7 +121,9 @@ public class QuestPrerequisites {
 			return new Condition(ConditionType.SAGA_QUEST, sagaId, questId, null, null, null, null, null, null);
 		}
 
-		/** Requires another quest (by string ID) to be completed. Replaces the old sideQuest() factory. */
+		/**
+		 * Requires another quest (by string ID) to be completed. Replaces the old sideQuest() factory.
+		 */
 		public static Condition quest(String requiredQuestId) {
 			return new Condition(ConditionType.QUEST, null, null, requiredQuestId, null, null, null, null, null);
 		}

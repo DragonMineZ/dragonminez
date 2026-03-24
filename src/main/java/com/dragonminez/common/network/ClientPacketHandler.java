@@ -19,7 +19,11 @@ public class ClientPacketHandler {
 		var entity = clientLevel.getEntity(playerId);
 		if (entity instanceof Player player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-				data.load(nbt);
+				try {
+					data.load(nbt);
+				} catch (ClassNotFoundException e) {
+					throw new RuntimeException(e);
+				}
 				player.refreshDimensions();
 			});
 		}

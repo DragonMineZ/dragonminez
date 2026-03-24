@@ -18,15 +18,15 @@ public class QuestAvailabilityChecker {
 	}
 
 	private static boolean evaluate(QuestPrerequisites prereqs, StatsData data) {
-		if (prereqs == null || prereqs.getConditions().isEmpty()) return true;
+		if (prereqs == null || prereqs.conditions().isEmpty()) return true;
 
-		if (prereqs.getOperator() == QuestPrerequisites.Operator.AND) {
-			for (QuestPrerequisites.Condition condition : prereqs.getConditions()) {
+		if (prereqs.operator() == QuestPrerequisites.Operator.AND) {
+			for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
 				if (!evaluateCondition(condition, data)) return false;
 			}
 			return true;
 		} else {
-			for (QuestPrerequisites.Condition condition : prereqs.getConditions()) {
+			for (QuestPrerequisites.Condition condition : prereqs.conditions()) {
 				if (evaluateCondition(condition, data)) return true;
 			}
 			return false;

@@ -3,19 +3,17 @@ package com.dragonminez.common.quest.rewards;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+@Getter
 public class TPSReward extends QuestReward {
 	private final int amount;
 
 	public TPSReward(int amount) {
 		super(RewardType.TPS);
 		this.amount = amount;
-	}
-
-	public int getAmount() {
-		return amount;
 	}
 
 	@Override

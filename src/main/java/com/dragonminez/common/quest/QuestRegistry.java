@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * Unified registry for all quest types — saga quests, side-quests, dailies, and events.
+ * Registry for all quest types — saga quests, (side)-quests, dailies, and events.
  * <p>
  * This is the <b>sole quest loader</b>. It loads:
  * <ul>
@@ -35,6 +35,7 @@ import java.util.*;
  * <p>
  * On first run, default saga and side-quest files are generated automatically via
  * {@link SagaDefaults} and {@link SideQuestDefaults}.
+ * Note: Default SideQuests are tied by default to some Saga in specific.
  *
  * <h3>Folder Structure</h3>
  * <pre>
@@ -136,13 +137,13 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		TURN_IN_INDEX.clear();
 
 		if (server == null) {
-			LogUtil.warn(Env.COMMON, "QuestRegistry: cannot load — server is null");
+			LogUtil.error(Env.COMMON, "QuestRegistry: cannot load — server is null");
 			return;
 		}
 
 		ServerLevel overworld = server.getLevel(Level.OVERWORLD);
 		if (overworld == null) {
-			LogUtil.warn(Env.COMMON, "QuestRegistry: cannot load — overworld is null");
+			LogUtil.error(Env.COMMON, "QuestRegistry: cannot load — overworld is null");
 			return;
 		}
 
@@ -204,6 +205,9 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 		}
 	}
 
+	/**
+	 * Loads a Single Default Saga File, used in loadSagaFiles.
+	 */
 	private static void loadSingleSagaFile(Path file) {
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject root = GSON.fromJson(reader, JsonObject.class);
@@ -225,12 +229,13 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	/**
 	 * Parses a Saga from a JSON object. Used by the loader and the network sync packet.
 	 * <p>
-	 * Supports two formats:
+	 * Supports only the new format:
 	 * <ul>
-	 *   <li><b>New format:</b> {@code "questFolder": "saga_saiyan"} — loads quest files from
+	 *   <li>{@code "questFolder": "saga_saiyan"} — loads quest files from
 	 *       {@code dragonminez/quests/saga_saiyan/}, sorted by filename (e.g. {@code 01_find_roshi.json}).</li>
-	 *   <li><b>Legacy format:</b> {@code "quests": [...]} — quests embedded directly in the saga file.</li>
 	 * </ul>
+	 *
+	 * @since 2.1
 	 */
 	public static Saga parseSagaFromJson(JsonObject json) {
 		String id = json.get("id").getAsString();
@@ -245,7 +250,6 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 
 		List<Quest> quests = new ArrayList<>();
 
-		// New format: questFolder references a subfolder in dragonminez/quests/
 		if (json.has("questFolder") && cachedWorldFolder != null) {
 			String folderName = json.get("questFolder").getAsString();
 			Path questFolder = cachedWorldFolder.resolve(QUESTS_FOLDER).resolve(folderName);
@@ -253,14 +257,6 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 				quests = loadQuestsFromFolder(questFolder);
 			} else {
 				LogUtil.warn(Env.COMMON, "Saga '{}' references questFolder '{}' but it doesn't exist", id, folderName);
-			}
-		}
-		// Legacy format: quests embedded in the saga JSON
-		else if (json.has("quests")) {
-			JsonArray questsArray = json.getAsJsonArray("quests");
-			for (JsonElement questElement : questsArray) {
-				Quest quest = QuestParser.parseSagaQuest(questElement.getAsJsonObject());
-				quests.add(quest);
 			}
 		}
 
@@ -321,8 +317,8 @@ public class QuestRegistry extends SimplePreparableReloadListener<Map<String, Qu
 	private static void loadSingleSideQuestFile(Path file) {
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject root = GSON.fromJson(reader, JsonObject.class);
-			// Use unified parser — supports both old camelCase and new snake_case field names
 			Quest quest = QuestParser.parseQuest(root);
+
 			if (quest != null) {
 				String effectiveId = quest.getStringId() != null ? quest.getStringId() : quest.getEffectiveId();
 				LOADED_QUESTS.put(effectiveId, quest);

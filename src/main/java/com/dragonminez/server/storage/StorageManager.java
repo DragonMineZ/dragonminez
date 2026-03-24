@@ -90,7 +90,11 @@ public class StorageManager {
 		MinecraftForge.EVENT_BUS.post(new DMZEvent.PlayerDataLoadEvent(player, loadedData));
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-			stats.load(loadedData);
+			try {
+				stats.load(loadedData);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			}
 
 			if (!stats.getPlayerQuestData().isSagaUnlocked("saiyan_saga")) {
 				stats.getPlayerQuestData().setSagaUnlocked("saiyan_saga", true);

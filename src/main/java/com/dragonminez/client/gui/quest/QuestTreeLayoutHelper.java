@@ -252,8 +252,8 @@ public class QuestTreeLayoutHelper {
 												   Map<Integer, NodePosition> sagaNodeMap,
 												   List<Quest> sagaQuests,
 												   int childIndex) {
-		if (child.getPrerequisites() != null && child.getPrerequisites().getConditions() != null) {
-			for (var cond : child.getPrerequisites().getConditions()) {
+		if (child.getPrerequisites() != null && child.getPrerequisites().conditions() != null) {
+			for (var cond : child.getPrerequisites().conditions()) {
 				if (cond.getType() == QuestPrerequisites.ConditionType.SAGA_QUEST
 						&& sagaId.equals(cond.getSagaId())
 						&& cond.getQuestId() != null) {
@@ -278,7 +278,7 @@ public class QuestTreeLayoutHelper {
 										Map<String, NodePosition> sideNodeMap) {
 		if (sidequest.getPrerequisites() == null) return -1;
 
-		var conditions = sidequest.getPrerequisites().getConditions();
+		var conditions = sidequest.getPrerequisites().conditions();
 		if (conditions == null) return -1;
 
 		for (var cond : conditions) {
@@ -311,7 +311,7 @@ public class QuestTreeLayoutHelper {
 											   Map<String, NodePosition> sideNodeMap) {
 		if (sidequest.getPrerequisites() == null) return null;
 
-		var conditions = sidequest.getPrerequisites().getConditions();
+		var conditions = sidequest.getPrerequisites().conditions();
 		if (conditions == null) return null;
 
 		for (var cond : conditions) {
@@ -345,7 +345,7 @@ public class QuestTreeLayoutHelper {
 	private static boolean belongsToSaga(Quest sidequest, String sagaId) {
 		if (sidequest.getPrerequisites() == null) return false;
 
-		var conditions = sidequest.getPrerequisites().getConditions();
+		var conditions = sidequest.getPrerequisites().conditions();
 		if (conditions == null) return false;
 
 		for (var cond : conditions) {

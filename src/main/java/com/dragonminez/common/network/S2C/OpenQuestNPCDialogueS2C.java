@@ -1,6 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.gui.questnpc.QuestNPCDialogueScreen;
+import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
@@ -59,7 +59,7 @@ public class OpenQuestNPCDialogueS2C {
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
-		context.enqueueWork(() -> handleClient());
+		context.enqueueWork(this::handleClient);
 		context.setPacketHandled(true);
 	}
 

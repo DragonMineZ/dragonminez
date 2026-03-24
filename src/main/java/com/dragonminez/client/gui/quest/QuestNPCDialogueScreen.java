@@ -1,4 +1,4 @@
-package com.dragonminez.client.gui.questnpc;
+package com.dragonminez.client.gui.quest;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -210,7 +210,7 @@ public class QuestNPCDialogueScreen extends Screen {
 					case IN_PROGRESS -> "[...] ";
 				};
 
-				Component questName = txt(statusPrefix).withStyle(statusColor).append(tr(entry.quest.getName()).withStyle(ChatFormatting.WHITE));
+				Component questName = txt(statusPrefix).withStyle(statusColor).append(tr(entry.quest.getTitle()).withStyle(ChatFormatting.WHITE));
 
 				guiGraphics.drawString(this.font, questName, listX + 4, entryY + 4, 0xFFFFFF);
 			}
@@ -221,7 +221,7 @@ public class QuestNPCDialogueScreen extends Screen {
 			QuestEntry selected = questEntries.get(selectedIndex);
 			int detailY = listY + MAX_VISIBLE * ENTRY_HEIGHT + 8;
 
-			guiGraphics.drawString(this.font, tr(selected.quest.getName()).withStyle(ChatFormatting.GOLD), listX, detailY, 0xFFFFFF);
+			guiGraphics.drawString(this.font, tr(selected.quest.getTitle()).withStyle(ChatFormatting.GOLD), listX, detailY, 0xFFFFFF);
 			detailY += 12;
 
 			guiGraphics.drawString(this.font, tr(selected.quest.getDescription()).withStyle(ChatFormatting.GRAY), listX, detailY, 0xBBBBBB);

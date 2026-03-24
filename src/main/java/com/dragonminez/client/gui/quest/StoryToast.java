@@ -1,4 +1,4 @@
-package com.dragonminez.client.gui.story;
+package com.dragonminez.client.gui.quest;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.toasts.Toast;

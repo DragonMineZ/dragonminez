@@ -1,5 +1,6 @@
 package com.dragonminez.common.quest;
 
+import lombok.Getter;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
@@ -13,7 +14,7 @@ public class PartyManager {
 
     public static PlayerTeam getOrCreateParty(ServerPlayer player) {
         Scoreboard scoreboard = player.getServer().getScoreboard();
-        String teamName = PARTY_PREFIX + player.getUUID().toString();
+        String teamName = PARTY_PREFIX + player.getUUID();
 
         PlayerTeam team = scoreboard.getPlayerTeam(teamName);
         if (team == null) {
@@ -111,8 +112,10 @@ public class PartyManager {
 	}
 
     public static class PendingInvite {
-        private final UUID inviterUUID;
-        private final String teamName;
+        @Getter
+		private final UUID inviterUUID;
+        @Getter
+		private final String teamName;
         private final long timestamp;
 
         public PendingInvite(UUID inviterUUID, String teamName) {
@@ -121,15 +124,7 @@ public class PartyManager {
             this.timestamp = System.currentTimeMillis();
         }
 
-        public UUID getInviterUUID() {
-            return inviterUUID;
-        }
-
-        public String getTeamName() {
-            return teamName;
-        }
-
-        public boolean isExpired() {
+		public boolean isExpired() {
             return System.currentTimeMillis() - timestamp > 60000;
         }
     }
