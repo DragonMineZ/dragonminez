@@ -75,8 +75,16 @@ public class NPCActionC2S {
 			}
 		} else if (action == 2) {
 			if (!data.getCooldowns().hasCooldown(Cooldowns.SENZU_KARIN)) {
-				player.addItem(new ItemStack(MainItems.SENZU_BEAN.get(), 5));
-				data.getCooldowns().addCooldown(Cooldowns.SENZU_KARIN, 900 * 20);
+				player.addItem(
+						new ItemStack(
+								MainItems.SENZU_BEAN.get(),
+								ConfigManager.getServerConfig().getGameplay().getSenzuGiftAmount()
+						)
+				);
+				data.getCooldowns().addCooldown(
+						Cooldowns.SENZU_KARIN,
+						ConfigManager.getServerConfig().getGameplay().getSenzuGiftCooldownTicks()
+				);
 			}
 		}
 	}
