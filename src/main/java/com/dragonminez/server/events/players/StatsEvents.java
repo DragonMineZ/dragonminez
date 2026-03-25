@@ -3,6 +3,8 @@ package com.dragonminez.server.events.players;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
+import com.dragonminez.common.config.GeneralServerConfig;
+import com.dragonminez.common.config.GeneralServerConfig.FoodConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainFluids;
 import com.dragonminez.common.init.MainItems;
@@ -261,10 +263,17 @@ public class StatsEvents {
 
 		Player player = event.getEntity();
 		ItemStack stack = event.getItemStack();
-		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		String itemId = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).toString();
+		String namespace = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).getNamespace();
 
-		Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
-		if (regens != null && regens.length >= 3) {
+		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
+		boolean isModWhitelisted = foodConfig.getWhitelistedNamespaces().isEmpty() || foodConfig.getWhitelistedNamespaces().contains(namespace);
+		boolean isItemWhitelisted = foodConfig.getWhitelistedItems().isEmpty() || foodConfig.getWhitelistedItems().contains(itemId);
+
+		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
+		boolean isItemBlacklisted = !foodConfig.getBlacklistedItems().isEmpty() && foodConfig.getBlacklistedItems().contains(itemId);
+
+		if ((isModWhitelisted || isItemWhitelisted) && !isModBlacklisted && !isItemBlacklisted) {
 			player.startUsingItem(event.getHand());
 			event.setCancellationResult(InteractionResult.CONSUME);
 		}
@@ -275,15 +284,54 @@ public class StatsEvents {
 		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
 		ItemStack stack = event.getItem();
-		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
-		Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
+		String itemId = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).toString();
+		String namespace = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).getNamespace();
 
-		if (regens != null && regens.length >= 3) {
+		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
+		boolean isModWhitelisted = foodConfig.getWhitelistedNamespaces().isEmpty() || foodConfig.getWhitelistedNamespaces().contains(namespace);
+		boolean isItemWhitelisted = foodConfig.getWhitelistedItems().isEmpty() || foodConfig.getWhitelistedItems().contains(itemId);
+
+		boolean isModBlacklisted = !foodConfig.getBlacklistedNamespaces().isEmpty() && foodConfig.getBlacklistedNamespaces().contains(namespace);
+		boolean isItemBlacklisted = !foodConfig.getBlacklistedItems().isEmpty() && foodConfig.getBlacklistedItems().contains(itemId);
+
+		if ((isModWhitelisted || isItemWhitelisted) && !isModBlacklisted && !isItemBlacklisted) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				boolean isSenzu = itemId.equals("dragonminez:senzu_bean");
 				boolean isHeartMedicine = itemId.equals("dragonminez:heart_medicine");
 
 				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
+
+				// Retrieve food item hunger points and saturation points
+				int foodGain = Objects.requireNonNull(stack.getFoodProperties(player)).getNutrition();
+				float saturationGain = Objects.requireNonNull(stack.getFoodProperties(player)).getSaturationModifier();
+
+
+				// Calculate recovery percentages based on hunger points
+				float healthFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
+						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getHealthPercentageRecoveredPerHungerPoint()
+						: 0;
+				float kiFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
+						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getKiPercentageRecoveredPerHungerPoint()
+						: 0;
+				float staminaFoodRecoveryPercentage = foodGain >= foodConfig.getMinHungerPoints()
+						? Math.min(foodGain, foodConfig.getMaxHungerPoints()) * foodConfig.getStaminaPercentageRecoveredPerHungerPoint()
+						: 0;
+
+				// Calculate recovery percentages based on saturation points
+				float healthSaturationRecoveryPercentage = saturationGain >= foodConfig.getMinSaturationPoints()
+						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getHealthPercentageRecoveredPerSaturationPoint()
+						: 0;
+				float kiSaturationRecoveryPercentage = saturationGain >= foodConfig.getMinSaturationPoints()
+						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getKiPercentageRecoveredPerSaturationPoint()
+						: 0;
+				float staminaSaturationRecoveryPercentage = saturationGain >= foodConfig.getMinSaturationPoints()
+						? Math.min(saturationGain, foodConfig.getMaxSaturationPoints()) * foodConfig.getStaminaPercentageRecoveredPerSaturationPoint()
+						: 0;
+
+				// Calculate total recovery percentages
+				float healthTotalRecoveryPercentage = healthFoodRecoveryPercentage + healthSaturationRecoveryPercentage;
+				float kiTotalRecoveryPercentage = kiFoodRecoveryPercentage + kiSaturationRecoveryPercentage;
+				float staminaTotalRecoveryPercentage = staminaFoodRecoveryPercentage + staminaSaturationRecoveryPercentage;
 
 				float maxHealth = player.getMaxHealth();
 				int maxEnergy = data.getMaxEnergy();
@@ -292,9 +340,9 @@ public class StatsEvents {
 				int currentEnergy = data.getResources().getCurrentEnergy();
 				int currentStamina = data.getResources().getCurrentStamina();
 
-				float healAmount = (maxHealth * regens[0]);
-				int energyAmount = (int) (maxEnergy * regens[1]);
-				int staminaAmount = (int) (maxStamina * regens[2]);
+				float healAmount = (maxHealth * healthTotalRecoveryPercentage);
+				int energyAmount = (int) (maxEnergy * kiTotalRecoveryPercentage);
+				int staminaAmount = (int) (maxStamina * staminaTotalRecoveryPercentage);
 
 				player.heal(healAmount);
 

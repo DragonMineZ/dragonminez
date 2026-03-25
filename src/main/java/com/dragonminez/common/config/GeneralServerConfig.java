@@ -4,7 +4,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -57,7 +59,7 @@ public class GeneralServerConfig {
 		private Boolean sideQuestsEnabled = true;
 		private Boolean createDefaultSideQuests = true;
 		private Integer senzuCooldownTicks = 240;
-		private Map<String, Float[]> foodRegenerations = createDefaultFoodRegenerations();
+		private FoodConfig food = new FoodConfig();
 		private Double mightFruitPower = 1.2;
 		private Double majinPower = 1.3;
 		private Double metamoruFusionThreshold = 0.5;
@@ -98,10 +100,6 @@ public class GeneralServerConfig {
 			return Math.max(0, Math.min(senzuCooldownTicks, Integer.MAX_VALUE));
 		}
 
-		public Float[] getFoodRegeneration(String itemId) {
-			return foodRegenerations.getOrDefault(itemId, new Float[]{0.0f, 0.0f, 0.0f});
-		}
-
 		public Double getMightFruitPower() {
 			return Math.max(0, Math.min(mightFruitPower, Double.MAX_VALUE));
 		}
@@ -135,6 +133,48 @@ public class GeneralServerConfig {
 			defaults.put("dragonminez:might_tree_fruit", new Float[]{0.035f, 0.35f, 0.35f});
 			return defaults;
 		}
+	}
+
+	@Getter
+	@NoArgsConstructor
+	public static class FoodConfig {
+		// Lower and upper bounds on hunger points provided by
+		// the food item, for it to recover health, ki and stamina;
+		// Food points above the upper bound do not contribute
+		// to recovery values;
+		// Food points below the lower bound do not contribute
+		// to recovery values;
+		private Integer minHungerPoints = 4;
+		private Integer maxHungerPoints = 20;
+
+		// Lower and upper bounds on saturation points provided by
+		// the food item, for it to recover health, ki and stamina;
+		// Saturation points above the upper bound do not contribute
+		// to recovery values;
+		// Saturation points below the lower bound do not contribute
+		// to recovery values;
+		private Float minSaturationPoints = 0.4f;
+		private Float maxSaturationPoints = 2.0f;
+
+		// Health, ki and stamina percentage recovered by
+		// consumed food, per hunger point provided
+		private Float healthPercentageRecoveredPerHungerPoint = 1.0f;
+		private Float kiPercentageRecoveredPerHungerPoint = 1.0f;
+		private Float staminaPercentageRecoveredPerHungerPoint = 1.0f;
+
+		// Health, ki and stamina percentage recovered by
+		// consumed food, per saturation point provided
+		private Float healthPercentageRecoveredPerSaturationPoint = 1.0f;
+		private Float kiPercentageRecoveredPerSaturationPoint = 1.0f;
+		private Float staminaPercentageRecoveredPerSaturationPoint = 1.0f;
+
+		// Whitelisted mods and items
+		private List<String> whitelistedNamespaces = new ArrayList();
+		private List<String> whitelistedItems = new ArrayList<>();
+
+		// Blacklisted mods and items
+		private List<String> blacklistedNamespaces = new ArrayList<>();
+		private List<String> blacklistedItems = new ArrayList<>();
 	}
 
 	@Getter
