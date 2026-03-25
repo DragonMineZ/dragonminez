@@ -46,31 +46,7 @@ public class MightTreeFruitItem extends Item {
     @Override
     public @NonNull ItemStack finishUsingItem(@NonNull ItemStack pStack, Level pLevel, @NonNull LivingEntity pLivingEntity) {
         if (!pLevel.isClientSide && pLivingEntity instanceof ServerPlayer player) {
-            String itemId = "dragonminez:might_tree_fruit";
-            Float[] regens = ConfigManager.getServerConfig().getGameplay().getFoodRegeneration(itemId);
-
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                if (regens != null && regens.length >= 3) {
-					float maxHealth = data.getMaxHealth();
-					int maxEnergy = data.getMaxEnergy();
-					int maxStamina = data.getMaxStamina();
-
-					float currentEnergy = data.getResources().getCurrentEnergy();
-					float currentStamina = data.getResources().getCurrentStamina();
-
-					float healAmount = (maxHealth * regens[0]);
-					int energyAmount = (int) (maxEnergy * regens[1]);
-					int staminaAmount = (int) (maxStamina * regens[2]);
-
-					player.heal(healAmount);
-
-					float newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
-					float newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
-
-					data.getResources().setCurrentEnergy(newEnergy);
-					data.getResources().setCurrentStamina(newStamina);
-                }
-
                 double effectPower = ConfigManager.getServerConfig().getGameplay().getMightFruitPower();
                 data.getEffects().addEffect("mightfruit", effectPower, EFFECT_DURATION_TICKS);
             });
