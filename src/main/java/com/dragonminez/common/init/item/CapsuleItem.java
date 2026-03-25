@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.item;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.GeneralServerConfig.CapsuleValues;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -30,53 +31,63 @@ public class CapsuleItem extends Item {
 
 	@Override
 	public @NotNull Component getName(@NotNull ItemStack pStack) {
-		return Component.translatable("item.dragonminez." + capsuleType.getTranslationKey());
+		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
+		return Component.translatable("item.dragonminez.capsule", values.getStats()).withStyle(ChatFormatting.GREEN);
 	}
 
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-		pTooltipComponents.add(Component.translatable("item.dragonminez." + capsuleType.getTranslationKey() + ".tooltip").withStyle(ChatFormatting.GRAY));
-		pTooltipComponents.add(Component.translatable("item.dragonminez." + capsuleType.getTranslationKey() + ".tooltip2").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
+		pTooltipComponents.add(Component.translatable("item.dragonminez.capsule.tooltip", values.getPoints(), values.getStats()).withStyle(ChatFormatting.GREEN));
+		pTooltipComponents.add(Component.translatable("item.dragonminez.capsule.tooltip2", values.getStats()).withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
 	}
 
 	@Override
 	public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, @NotNull InteractionHand pUsedHand) {
-		ItemStack capsula = pPlayer.getItemInHand(pUsedHand);
+		ItemStack capsule = pPlayer.getItemInHand(pUsedHand);
 		pLevel.playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.NEUTRAL, 1.5F, 1.0F);
-
 		if (!pLevel.isClientSide) {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
 				if (data.getStatus().isHasCreatedCharacter()) {
-					String statName = capsuleType.getStatName();
-					int maxStat = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
-					int currentStat = getCurrentStat(data, statName);
+					String separator = ConfigManager.getServerConfig().getGameplay().getCapsules().getStatSeparator();
+					CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
 
-					if (currentStat < maxStat) {
-						int increment = Math.min(5, maxStat - currentStat);
-						addToStat(data, statName, increment);
-
-						pPlayer.displayClientMessage(
-								Component.literal("+")
-										.append(Component.literal(increment + " "))
-										.append(Component.translatable("item.dragonminez." + capsuleType.getTranslationKey() + "." + statName.toLowerCase() + ".use"))
-										.withStyle(ChatFormatting.GREEN),
-								true
-						);
-						capsula.shrink(1);
-					} else {
-						pPlayer.displayClientMessage(
-								Component.translatable("item.dragonminez." + capsuleType.getTranslationKey() + "." + statName.toLowerCase() + ".full")
-										.withStyle(ChatFormatting.RED),
-								true
-						);
-					}
+					var capsuleComponent = Component.empty();
+					String statSeparator = ConfigManager.getServerConfig().getGameplay().getCapsules().getStatSeparator();
+                    String[] split = values.getStats().split(separator);
+                    for (int i = 0; i < split.length; i++) {
+                        String statName = split[i];
+                        capsuleComponent.append(applyCapsuleStats(capsule, data, statName));
+						if (i < split.length - 1) {
+                            capsuleComponent.append(Component.literal(statSeparator).withStyle(ChatFormatting.GRAY));
+						}
+                    }
+					pPlayer.displayClientMessage(capsuleComponent, true);
 				} else {
 					pPlayer.displayClientMessage(Component.translatable("error.dmz.createcharacter").withStyle(ChatFormatting.RED), true);
 				}
 			});
-			return InteractionResultHolder.sidedSuccess(capsula, pLevel.isClientSide());
+			return InteractionResultHolder.sidedSuccess(capsule, pLevel.isClientSide());
 		} else {
-			return InteractionResultHolder.fail(capsula);
+			return InteractionResultHolder.fail(capsule);
+		}
+	}
+
+	private Component applyCapsuleStats(ItemStack capsule, StatsData data, String statName) {
+		int maxStat = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+		int currentStat = getCurrentStat(data, statName);
+
+		if (currentStat < maxStat) {
+			CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
+			int increment = Math.min(values.getPoints(), maxStat - currentStat);
+			addToStat(data, statName, increment);
+			capsule.shrink(1);
+
+			return Component.translatable("item.dragonminez.capsule.use", increment, statName)
+							.withStyle(ChatFormatting.GREEN);
+		} else {
+			return Component.translatable("item.dragonminez.capsule.full", statName)
+							.withStyle(ChatFormatting.RED);
 		}
 	}
 

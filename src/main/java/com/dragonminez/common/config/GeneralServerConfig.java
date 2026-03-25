@@ -1,9 +1,12 @@
 package com.dragonminez.common.config;
 
+import com.dragonminez.common.init.item.CapsuleType;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,6 +55,7 @@ public class GeneralServerConfig {
 		private Integer tpPerHit = 2;
 		private Double HTCTpMultiplier = 2.5;
 		private Integer maxStatValue = 10000;
+		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
 		private Boolean sideQuestsEnabled = true;
@@ -135,6 +139,42 @@ public class GeneralServerConfig {
 			defaults.put("dragonminez:might_tree_fruit", new Float[]{0.035f, 0.35f, 0.35f});
 			return defaults;
 		}
+	}
+
+	@Getter
+	public static class CapsulesConfig {
+		private String statSeparator = ", ";
+		private Map<CapsuleType, CapsuleValues> values = new HashMap<>();
+
+		public CapsulesConfig() {
+			Arrays.stream(CapsuleType.values()).forEach(type -> {
+				values.put(
+						type,
+						new CapsuleValues(
+								type.getStatName(),
+								5
+						)
+				);
+			});
+		}
+
+		public CapsuleValues getCapsuleValues(CapsuleType type) {
+			return values.getOrDefault(
+					type,
+					new CapsuleValues(
+							type.getStatName(),
+							type.getStatPoints()
+					)
+			);
+		}
+	}
+
+	@Getter
+	@AllArgsConstructor
+	@NoArgsConstructor
+	public static class CapsuleValues {
+		private String stats;
+		private Integer points;
 	}
 
 	@Getter
