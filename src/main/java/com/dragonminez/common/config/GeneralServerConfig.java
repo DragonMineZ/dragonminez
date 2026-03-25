@@ -57,6 +57,8 @@ public class GeneralServerConfig {
 		private Boolean sideQuestsEnabled = true;
 		private Boolean createDefaultSideQuests = true;
 		private Integer senzuCooldownTicks = 240;
+		private Integer senzuGiftCooldownTicks = 18000;
+		private Integer senzuGiftAmount = 5;
 		private Map<String, Float[]> foodRegenerations = createDefaultFoodRegenerations();
 		private Double mightFruitPower = 1.2;
 		private Double majinPower = 1.3;
