@@ -6,6 +6,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.QuestLocationHelper;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.SagaBranchingHelper;
@@ -64,6 +65,7 @@ public class StartQuestC2S {
 				int questIndex = saga.getQuests().indexOf(quest);
 				if (questIndex < 0) return;
 				if (!SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, data)) return;
+				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, quest)) return;
 
 				SagaBranchingHelper.selectBranchIfNeeded(pqd, sagaId, quest);
 				pqd.acceptQuest(questKey);

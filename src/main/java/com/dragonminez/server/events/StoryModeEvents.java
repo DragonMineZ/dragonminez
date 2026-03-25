@@ -9,21 +9,13 @@ import com.dragonminez.common.quest.objectives.*;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.StatsData;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -76,13 +68,13 @@ public class StoryModeEvents {
 					}
 
 					if (objective == null || currentObjIndex == -1) continue;
-					boolean isLocationObjective = (objective instanceof BiomeObjective) || (objective instanceof StructureObjective) || (objective instanceof CoordsObjective);
+					boolean isLocationObjective = QuestLocationHelper.isLocationObjective(objective);
 
 					if (isLocationObjective) {
 						List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(player);
 						boolean anyMemberInZone = false;
 						for (ServerPlayer member : partyMembers) {
-							if (checkLocationCondition(member, objective)) {
+							if (QuestLocationHelper.isLocationConditionMet(member, objective)) {
 								anyMemberInZone = true;
 								break;
 							}
@@ -182,50 +174,6 @@ public class StoryModeEvents {
 		}
 	}
 
-    private static boolean checkLocationCondition(ServerPlayer player, QuestObjective objective) {
-        BlockPos pos = player.blockPosition();
-        ServerLevel level = player.serverLevel();
-
-        if (objective instanceof BiomeObjective biomeObj) {
-            try {
-                String target = biomeObj.getBiomeId();
-                Holder<Biome> biomeHolder = level.getBiome(pos);
-
-                if (target.startsWith("#")) {
-                    ResourceLocation tagRL = ResourceLocation.parse(target.substring(1));
-                    TagKey<Biome> tagKey = TagKey.create(Registries.BIOME, tagRL);
-                    return biomeHolder.is(tagKey);
-                }
-                else {
-                    ResourceLocation biomeRL = ResourceLocation.parse(target.contains(":") ? target : "minecraft:" + target);
-                    return biomeHolder.is(biomeRL);
-                }
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
-        else if (objective instanceof StructureObjective structObj) {
-            try {
-                String target = structObj.getStructureId();
-                ResourceLocation structRL = ResourceLocation.parse(target.contains(":") ? target : "minecraft:" + target);
-
-                ResourceKey<Structure> structKey = ResourceKey.create(Registries.STRUCTURE, structRL);
-
-                return level.structureManager().getStructureWithPieceAt(pos, structKey).isValid();
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
-        else if (objective instanceof CoordsObjective coordsObj) {
-            double distSq = pos.distSqr(coordsObj.getTargetPos());
-            double radiusSq = (double) coordsObj.getRadius() * coordsObj.getRadius();
-            return distSq <= radiusSq;
-        }
-
-        return false;
-    }
 
 	private static int countItems(ServerPlayer player, String itemId) {
 		try {

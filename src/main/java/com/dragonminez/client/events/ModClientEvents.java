@@ -70,8 +70,10 @@ public class ModClientEvents {
 	@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
-			String currentLang = Minecraft.getInstance().options.languageCode;
-			CrowdinManager.fetchLanguage(currentLang);
+      if (CrowdinManager.isLiveTranslationsEnabled()) {
+        String currentLang = Minecraft.getInstance().options.languageCode;
+        CrowdinManager.fetchLanguage(currentLang);
+      }
 
 			event.addRepositorySource((packConsumer) -> {
 				Pack crowdinPack = Pack.readMetaAndCreate("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), true,

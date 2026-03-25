@@ -14,6 +14,7 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
+import com.dragonminez.common.quest.QuestLocationHelper;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.Saga;
@@ -479,6 +480,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		String selectedKey = questProgressKey(currentSaga, selectedQuest);
 		boolean isCompleted = isQuestCompleted(questData, currentSaga, selectedQuest);
 		boolean canStart = canStartQuest(selectedQuest);
+		boolean startBlockedByLocation = isQuestStartBlockedByLocation(selectedQuest);
 
 		Component buttonText;
 		boolean buttonActive = true;
@@ -500,11 +502,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			} else {
 				return;
 			}
-		} else if (canStart) {
+		} else if (canStart || startBlockedByLocation) {
 			buttonText = tr("gui.dragonminez.quests.start");
-			long now = System.currentTimeMillis();
-			long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
-			buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
+			if (startBlockedByLocation) {
+				buttonActive = false;
+			} else {
+				long now = System.currentTimeMillis();
+				long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
+				buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
+			}
 		} else {
 			return;
 		}
@@ -558,7 +564,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		String questKey = questProgressKey(currentSaga, quest);
 		if (questData.isQuestCompleted(questKey)) return false;
 		if (questData.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) return false;
+		if (!QuestLocationHelper.isQuestStartLocationSatisfied(Minecraft.getInstance().player, quest)) return false;
 		return getNodeStatus(quest) == QuestNodeStatus.AVAILABLE;
+	}
+
+	private boolean isQuestStartBlockedByLocation(Quest quest) {
+		if (statsData == null || availableSagas.isEmpty() || quest == null) return false;
+		Saga currentSaga = availableSagas.get(currentSagaIndex);
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+		String questKey = questProgressKey(currentSaga, quest);
+		if (questData.isQuestCompleted(questKey)) return false;
+		if (questData.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) return false;
+		if (getNodeStatus(quest) != QuestNodeStatus.AVAILABLE) return false;
+		return !QuestLocationHelper.isQuestStartLocationSatisfied(Minecraft.getInstance().player, quest);
 	}
 
 	// ========================================================================================

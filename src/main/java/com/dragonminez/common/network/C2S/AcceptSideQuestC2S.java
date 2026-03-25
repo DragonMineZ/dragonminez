@@ -7,6 +7,7 @@ import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestLocationHelper;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.StatsCapability;
@@ -54,6 +55,7 @@ public class AcceptSideQuestC2S {
 				PlayerQuestData pqd = data.getPlayerQuestData();
 				if (pqd.isQuestAccepted(sideQuestId)) return;
 				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) return;
+				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, sideQuest)) return;
 				pqd.acceptQuest(sideQuestId);
 				pqd.setTrackedQuestId(sideQuestId);
 				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(sideQuestId), player);

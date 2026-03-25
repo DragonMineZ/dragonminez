@@ -123,7 +123,9 @@ public class ForgeClientEvents {
 		String current = mc.options.languageCode;
 		if (!current.equals(lastLang)) {
 			lastLang = current;
-			CrowdinManager.fetchLanguage(current);
+			if (CrowdinManager.isLiveTranslationsEnabled()) {
+				CrowdinManager.fetchLanguage(current);
+			}
 		}
 	}
 

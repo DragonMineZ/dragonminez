@@ -6,12 +6,12 @@ import lombok.Setter;
 
 @Getter
 public class GeneralUserConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
 
-	private HudConfig hud = new HudConfig();
+	private final HudConfig hud = new HudConfig();
 
 	@Setter
 	@Getter
@@ -33,6 +33,7 @@ public class GeneralUserConfig {
 		private Integer staminaBarPosY = 10;
 		private Boolean storyHardDifficulty = false;
 		private Boolean cameraMovementDuringFlight = true;
+		private Boolean liveCrowdinTranslations = true;
 
 		public Float getMenuScaleMultiplier() {
 			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
