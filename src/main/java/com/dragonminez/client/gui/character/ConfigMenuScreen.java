@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.common.config.ConfigManager;
@@ -126,6 +127,10 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
 				ConfigType.BOOLEAN, hudConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
 				v -> hudConfig.setCameraMovementDuringFlight(v > 0)));
+
+		configOptions.add(new ConfigOption("config.liveCrowdinTranslations",
+				ConfigType.BOOLEAN, hudConfig.getLiveCrowdinTranslations() ? 1 : 0, 0, 1,
+				v -> hudConfig.setLiveCrowdinTranslations(v > 0)));
 	}
 
 	private void initConfigButtons() {
@@ -379,6 +384,15 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 
 		if ("config.menuScaleMultiplier".equals(option.key)) {
 			rebuildWidgets();
+		}
+
+		if ("config.liveCrowdinTranslations".equals(option.key) && this.minecraft != null) {
+			if (hudConfig.getLiveCrowdinTranslations()) {
+				CrowdinManager.fetchLanguage(this.minecraft.options.languageCode);
+			} else {
+				CrowdinManager.clearCache();
+			}
+			this.minecraft.reloadResourcePacks();
 		}
 	}
 

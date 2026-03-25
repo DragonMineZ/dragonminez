@@ -2,9 +2,11 @@ package com.dragonminez.client.crowdin;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
+import com.dragonminez.common.config.ConfigManager;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 
 import java.io.ByteArrayInputStream;
@@ -24,11 +26,15 @@ import java.util.zip.GZIPInputStream;
 public class CrowdinManager {
 	private static final String DISTRIBUTION_HASH = "d73150d692be7df04ba8738ssuc";
 	private static final String BASE_URL = "https://distributions.crowdin.net/" + DISTRIBUTION_HASH;
+	private static final String CROWDIN_OVERRIDE_PROPERTY = "dmz.crowdin.enabled";
 	private static JsonObject cachedLangData = null;
+	@Getter
 	private static String cachedLangCode = "";
 
 
 	public static void fetchLanguage(String mcLangCode) {
+		if (!isLiveTranslationsEnabled()) return;
+
 		String crowdinPath = formatPath(mcLangCode);
 
 		if ((mcLangCode.equals(cachedLangCode) && cachedLangData != null) || mcLangCode.equals("en_us")) return;
@@ -71,6 +77,41 @@ public class CrowdinManager {
 		});
 	}
 
+	public static boolean isLiveTranslationsEnabled() {
+		String override = System.getProperty(CROWDIN_OVERRIDE_PROPERTY);
+		if (override != null && !override.isBlank()) {
+			return Boolean.parseBoolean(override);
+		}
+
+		boolean production = isProductionEnvironment();
+		boolean defaultValue = production;
+		Boolean configuredValue = null;
+		try {
+			configuredValue = ConfigManager.getUserConfig().getHud().getLiveCrowdinTranslations();
+		} catch (Exception ignored) {
+		}
+
+		if (configuredValue == null) return defaultValue;
+		return configuredValue;
+	}
+
+	public static void clearCache() {
+		cachedLangData = null;
+		cachedLangCode = "";
+	}
+
+	private static boolean isProductionEnvironment() {
+		try {
+			Class<?> fmlLoaderClass = Class.forName("net.minecraftforge.fml.loading.FMLLoader");
+			Object result = fmlLoaderClass.getMethod("isProduction").invoke(null);
+			if (result instanceof Boolean bool) {
+				return bool;
+			}
+		} catch (Exception ignored) {
+		}
+		return false;
+	}
+
 	private static void fixColors(JsonObject json) {
 		Set<Map.Entry<String, JsonElement>> entries = json.entrySet();
 		for (Map.Entry<String, JsonElement> entry : entries) {
@@ -110,7 +151,4 @@ public class CrowdinManager {
 		return cachedLangData != null;
 	}
 
-	public static String getCachedLangCode() {
-		return cachedLangCode;
-	}
 }
