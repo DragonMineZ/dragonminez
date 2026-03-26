@@ -15,8 +15,7 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getModelResource(T animatable) {
-        String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/" + name + ".geo.json");
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/sagas/" + animatable.getGeckolibModelName() + ".geo.json");
     }
 
     @Override

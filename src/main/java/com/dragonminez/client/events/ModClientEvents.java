@@ -33,17 +33,21 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.io.IOException;
 
@@ -146,69 +150,31 @@ public class ModClientEvents {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(MainEntities.MASTER_KARIN.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_GOKU.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_KAIOSAMA.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_ROSHI.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_URANAI.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_ENMA.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_DENDE.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_GERO.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_POPO.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_GURU.get(), MasterEntityRenderer::new);
-        event.registerEntityRenderer(MainEntities.MASTER_TORIBOT.get(), MasterEntityRenderer::new);
+        //MAESTROS
+        regRender(event, MasterEntityRenderer::new,
+                MainEntities.MASTER_KARIN, MainEntities.MASTER_GOKU, MainEntities.MASTER_KAIOSAMA, MainEntities.MASTER_ROSHI,
+                MainEntities.MASTER_URANAI, MainEntities.MASTER_ENMA, MainEntities.MASTER_DENDE, MainEntities.MASTER_GERO,
+                MainEntities.MASTER_POPO, MainEntities.MASTER_GURU, MainEntities.MASTER_TORIBOT);
 
         // Quest NPC — single renderer for all data-driven quest NPCs | usa un renderer genérico para los NPCs de misiones, después usa gráficos.json para asignar modelos/texturas específicos a cada npcId
         event.registerEntityRenderer(MainEntities.QUEST_NPC.get(), QuestNPCRenderer::new);
 
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN2.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN3.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN4.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN5.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SAIBAMAN6.get(), SagaSaibamanRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_RADITZ.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_NAPPA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_VEGETA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_OZARU_VEGETA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER2.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FRIEZA_SOLDIER3.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_MORO_SOLDIER.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CUI.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_DODORIA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_VEGETA_NAMEK.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_ZARBON.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_ZARBON_TRANSF.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GULDO.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_RECOOME.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_BURTER.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_JEICE.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GINYU.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GINYU_GOKU.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_FIRST.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_SECOND.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_THIRD.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_BASE.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_FREEZER_FP.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_MECHA_FRIEZA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_KING_COLD.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GOKU_YARDRAT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_DRGERO.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A19.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A18.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A17.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_A16.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_IMPERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_PICCOLO_KAMI.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_SEMIPERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_SUPER_VEGETA.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_TRUNKS_SSJ.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_PERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_GOHAN_SSJ.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_SUPERPERFECT.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SAGA_CELL_JR.get(), DBSagasRenderer::new);
-        event.registerEntityRenderer(MainEntities.SHADOW_DUMMY.get(), DBSagasRenderer::new);
+        //SAIBAMANS
+        regRender(event, SagaSaibamanRenderer::new,
+                MainEntities.SAGA_SAIBAMAN, MainEntities.SAGA_SAIBAMAN2, MainEntities.SAGA_SAIBAMAN3,
+                MainEntities.SAGA_SAIBAMAN4, MainEntities.SAGA_SAIBAMAN5, MainEntities.SAGA_SAIBAMAN6);
+
+        // SAGAS
+        regRender(event, DBSagasRenderer::new,
+                MainEntities.SAGA_GOKU_EARLY, MainEntities.SAGA_GOKU_EARLY_NOWEIGHTS,
+                MainEntities.SAGA_RADITZ, MainEntities.SAGA_NAPPA, MainEntities.SAGA_VEGETA, MainEntities.SAGA_OZARU_VEGETA,
+                MainEntities.SAGA_FRIEZA_SOLDIER, MainEntities.SAGA_FRIEZA_SOLDIER2, MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER,
+                MainEntities.SAGA_CUI, MainEntities.SAGA_DODORIA, MainEntities.SAGA_VEGETA_NAMEK, MainEntities.SAGA_ZARBON, MainEntities.SAGA_ZARBON_TRANSF,
+                MainEntities.SAGA_GULDO, MainEntities.SAGA_RECOOME, MainEntities.SAGA_BURTER, MainEntities.SAGA_JEICE, MainEntities.SAGA_GINYU, MainEntities.SAGA_GINYU_GOKU,
+                MainEntities.SAGA_FREEZER_FIRST, MainEntities.SAGA_FREEZER_SECOND, MainEntities.SAGA_FREEZER_THIRD, MainEntities.SAGA_FREEZER_BASE, MainEntities.SAGA_FREEZER_FP,
+                MainEntities.SAGA_MECHA_FRIEZA, MainEntities.SAGA_KING_COLD, MainEntities.SAGA_GOKU_YARDRAT, MainEntities.SAGA_DRGERO, MainEntities.SAGA_A19, MainEntities.SAGA_A18, MainEntities.SAGA_A17, MainEntities.SAGA_A16,
+                MainEntities.SAGA_CELL_IMPERFECT, MainEntities.SAGA_PICCOLO_KAMI, MainEntities.SAGA_CELL_SEMIPERFECT, MainEntities.SAGA_SUPER_VEGETA, MainEntities.SAGA_TRUNKS_SSJ, MainEntities.SAGA_CELL_PERFECT,
+                MainEntities.SAGA_GOHAN_SSJ, MainEntities.SAGA_CELL_SUPERPERFECT, MainEntities.SAGA_CELL_JR, MainEntities.SHADOW_DUMMY);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);
         event.registerEntityRenderer(MainEntities.DINOSAUR2.get(), GranDinoRenderer::new);
@@ -290,6 +256,13 @@ public class ModClientEvents {
         event.registerSpriteSet(MainParticles.ROCK.get(), RockParticle.Provider::new);
         event.registerSpriteSet(MainParticles.DIVINE.get(), DivineParticle.Provider::new);
 
+    }
+
+    @SafeVarargs
+    private static <T extends Entity> void regRender(EntityRenderersEvent.RegisterRenderers event, EntityRendererProvider<T> provider, RegistryObject<? extends EntityType<? extends T>>... entities) {
+        for (RegistryObject<? extends EntityType<? extends T>> reg : entities) {
+            event.registerEntityRenderer(reg.get(), provider);
+        }
     }
 
 	@SubscribeEvent

@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.LightBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -122,6 +123,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     protected static final RawAnimation ANIM_COMBO1 = RawAnimation.begin().thenPlay("combo1");
     protected static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");
+    protected static final RawAnimation ANIM_COMBO3 = RawAnimation.begin().thenPlay("combo3");
 
     private double roarDamage = 50.0D;
     private double roarRange = 15.0D;
@@ -655,6 +657,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             int comboId = entity.entityData.get(CURRENT_COMBO_ID);
             if (comboId == 0) return event.setAndContinue(ANIM_COMBO1);
             if (comboId == 1) return event.setAndContinue(ANIM_COMBO2);
+            if (comboId == 2) return event.setAndContinue(ANIM_COMBO3);
         }
 
         if (entity.isCasting()) {
@@ -857,6 +860,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.setComboing(false);
         this.comboTimer = 0;
         this.comboTarget = null;
+
+        if (this.isCharge()) {
+            this.setKiCharge(false);
+        }
     }
 
     @Override
@@ -994,6 +1001,47 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             if (comboTimer == 25) {
                 comboTarget.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
 
+                this.stopCombo();
+            }
+        } else if (comboId == 2) {
+            if (comboTimer == 1) {
+                this.setKiCharge(true);
+                this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.5F);
+
+                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.5);
+                this.setDeltaMovement(dashDir);
+            }
+
+            if (comboTimer == 6) {
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 6.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
+                spawnPunchParticles(comboTarget);
+
+                this.setDeltaMovement(0, 0, 0);
+                comboTarget.setDeltaMovement(0, 0, 0);
+            }
+
+            if (comboTimer == 11) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double destX = comboTarget.getX() - (targetLook.x * 1.5);
+                double destZ = comboTarget.getZ() - (targetLook.z * 1.5);
+                this.teleportTo(destX, comboTarget.getY(), destZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
+                this.lookAt(comboTarget, 360, 360);
+            }
+
+            if (comboTimer == 17) {
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 12.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
+                spawnPunchParticles(comboTarget);
+
+                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
+                comboTarget.setDeltaMovement(pushDir.x * 3.0, 0.5, pushDir.z * 3.0);
+                comboTarget.hasImpulse = true;
+
+                this.setKiCharge(false);
                 this.stopCombo();
             }
         }
@@ -1309,5 +1357,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected void startTransformation() {
         this.setTransforming(true);
         this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);
+    }
+
+    public String getGeckolibModelName() {
+        return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();
     }
 }

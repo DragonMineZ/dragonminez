@@ -205,6 +205,18 @@ public class MainEntities {
                             .sized(0.5f, 0.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "majin_skill").toString()));
 
+    // SAGAS ENTITY
+    public static final RegistryObject<EntityType<SagaGokuEarlyEntity>> SAGA_GOKU_EARLY =
+            ENTITY_TYPES.register("saga_goku_early",
+                    () -> EntityType.Builder.of(SagaGokuEarlyEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_early").toString()));
+    public static final RegistryObject<EntityType<SagaGokuEarlyEntity>> SAGA_GOKU_EARLY_NOWEIGHTS =
+            ENTITY_TYPES.register("saga_goku_early_noweights",
+                    () -> EntityType.Builder.of(SagaGokuEarlyEntity::new, MobCategory.MONSTER)
+                            .sized(1.0f, 2.0f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_early_noweights").toString()));
+
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",
                     () -> EntityType.Builder.of(SagaSaibamanEntity::new, MobCategory.MONSTER)

@@ -140,7 +140,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
 
-        this.setCastOffsets(0.4F, 0.6F, 0.0F);
+        this.setCastOffsets(0.4F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
 
         if (!this.level().isClientSide) {
