@@ -92,12 +92,11 @@ public class CapsuleItem extends Item {
 	}
 
 	private Component applyCapsuleStats(ItemStack capsule, StatsData data, String statName) {
-		int maxStat = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
-		int currentStat = getCurrentStat(data, statName);
+		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
+		int requested = values.getPoints() * tierMultiplier;
+		int increment = data.getMaxAllowedIncreaseForStat(statName, requested);
 
-		if (currentStat < maxStat) {
-			CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
-			int increment = Math.min(values.getPoints() * tierMultiplier, maxStat - currentStat);
+		if (increment > 0) {
 			addToStat(data, statName, increment);
 			capsule.shrink(1);
 
@@ -109,17 +108,6 @@ public class CapsuleItem extends Item {
 		}
 	}
 
-	private int getCurrentStat(StatsData data, String statName) {
-		return switch (statName) {
-			case "STR" -> data.getStats().getStrength();
-			case "SKP" -> data.getStats().getStrikePower();
-			case "RES" -> data.getStats().getResistance();
-			case "VIT" -> data.getStats().getVitality();
-			case "PWR" -> data.getStats().getKiPower();
-			case "ENE" -> data.getStats().getEnergy();
-			default -> 0;
-		};
-	}
 
 	private void addToStat(StatsData data, String statName, int amount) {
 		switch (statName) {

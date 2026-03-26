@@ -54,7 +54,8 @@ public class GeneralServerConfig {
 		private Double tpHealthRatio = 0.10;
 		private Integer tpPerHit = 2;
 		private Double HTCTpMultiplier = 2.5;
-		private Integer maxStatValue = 10000;
+		private Boolean maxLevelValueInsteadOfStats = true;
+		private Integer maxValue = 10000;
 		private CapsulesConfig capsules = new CapsulesConfig();
 		private Boolean storyModeEnabled = true;
 		private Boolean createDefaultSagas = true;
@@ -96,8 +97,12 @@ public class GeneralServerConfig {
 			return Math.max(1.0, Math.min(HTCTpMultiplier, Double.MAX_VALUE));
 		}
 
-		public Integer getMaxStatValue() {
-			return Math.max(1000, Math.min(maxStatValue, Integer.MAX_VALUE));
+		public Integer getMaxValue() {
+			return Math.max(1000, Math.min(maxValue, Integer.MAX_VALUE));
+		}
+
+		public Boolean getMaxLevelValueInsteadOfStats() {
+			return maxLevelValueInsteadOfStats != null ? maxLevelValueInsteadOfStats : true;
 		}
 
 		public Integer getSenzuCooldownTicks() {

@@ -194,10 +194,6 @@ public class KiAttackData extends TechniqueData {
 		this.armorPenetration = tag.getInt("ArmorPenetration");
 	}
 
-	/**
-	 * Calcula valores derivados para previsualización en la pantalla de creación.
-	 * Devuelve un array [kiCost, tpCost, castTime, cooldown].
-	 */
 	public static float[] previewDerivedValues(KiType type, Utility util,
 											   float damage, float size, float speed, int armorPen) {
 		float maxStat = 20.0f;
