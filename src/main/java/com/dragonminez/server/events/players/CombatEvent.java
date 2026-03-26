@@ -90,7 +90,7 @@ public class CombatEvent {
 				baseStaminaRequired = (int) (baseStaminaRequired * gravityMult);
 				double staminaDrainMultiplier = attackerData.getAdjustedStaminaDrainMultiplier();
 				int staminaRequired = (int) Math.ceil(baseStaminaRequired * staminaDrainMultiplier);
-				int currentStamina = attackerData.getResources().getCurrentStamina();
+				float currentStamina = attackerData.getResources().getCurrentStamina();
 
 				if (wantsCombo) {
 					if (isCooldownFull) {
@@ -251,7 +251,7 @@ public class CombatEvent {
 								float poiseDamage = (float) (currentDamage[0] * poiseMultiplier);
 
 								if (isParry) poiseDamage *= 0.66f;
-								int currentPoise = victimData.getResources().getCurrentPoise();
+								float currentPoise = victimData.getResources().getCurrentPoise();
 
 								if (currentPoise - poiseDamage <= 0) {
 									victimData.getResources().setCurrentPoise(0);
@@ -265,7 +265,7 @@ public class CombatEvent {
 											new MobEffectInstance(MainEffects.POISE_CD.get(), regenCd, 0, false, false, true)
 									);
 
-									int currentStamina = victimData.getResources().getCurrentStamina();
+									float currentStamina = victimData.getResources().getCurrentStamina();
 									victimData.getResources().setCurrentStamina(currentStamina / 2);
 
 									currentDamage[0] = Math.max(1.0, currentDamage[0] - defense);
@@ -469,7 +469,7 @@ public class CombatEvent {
 				if (evasionEvent.isCanceled()) return;
 
 				kiCost = evasionEvent.getKiCost();
-				int currentEnergy = data.getResources().getCurrentEnergy();
+				float currentEnergy = data.getResources().getCurrentEnergy();
 
 				if (currentEnergy >= kiCost) {
 					data.getResources().addEnergy(-kiCost);
@@ -513,7 +513,7 @@ public class CombatEvent {
 			if (dashEvent.isCanceled()) return;
 			distance = dashEvent.getDistance();
 			kiCost = dashEvent.getKiCost();
-			int currentEnergy = data.getResources().getCurrentEnergy();
+			float currentEnergy = data.getResources().getCurrentEnergy();
 			if (currentEnergy < kiCost) return;
 			if (player.getFoodData().getFoodLevel() <= 3) return;
 			data.getResources().addEnergy(-kiCost);

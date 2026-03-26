@@ -349,7 +349,7 @@ public class TickHandler {
 
 	private static void regenerateEnergy(ServerPlayer player, StatsData data,
 										 RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
-		int currentEnergy = data.getResources().getCurrentEnergy();
+		float currentEnergy = data.getResources().getCurrentEnergy();
 		int maxEnergy = data.getMaxEnergy();
 
 		boolean hasActiveForm = data.getCharacter().hasActiveForm();
@@ -456,7 +456,7 @@ public class TickHandler {
 
 	private static void regenerateStamina(StatsData data,
 										  RaceStatsConfig.ClassStats classStats, double meditationBonus) {
-		int currentStamina = data.getResources().getCurrentStamina();
+		float currentStamina = data.getResources().getCurrentStamina();
 		int maxStamina = data.getMaxStamina();
 
 		if (currentStamina < maxStamina) {
@@ -464,7 +464,7 @@ public class TickHandler {
 			double regenAmount = maxStamina * baseRegen * meditationBonus;
 			if (regenAmount <= 1.0) regenAmount = 0.5;
 
-			int newStamina = (int) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
+			float newStamina = (float) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
 			data.getResources().setCurrentStamina(newStamina);
 		}
 	}
@@ -473,14 +473,14 @@ public class TickHandler {
 		if (data.getCooldowns().hasCooldown(Cooldowns.POISE_CD) || data.getStatus().isBlocking() || data.getStatus().isStunned())
 			return;
 
-		int currentPoise = data.getResources().getCurrentPoise();
+		float currentPoise = data.getResources().getCurrentPoise();
 		int maxPoise = data.getMaxPoise();
 
 		if (currentPoise < maxPoise) {
 			double baseRegen = 0.1;
 			double regenAmount = maxPoise * baseRegen * meditationBonus;
 			if (regenAmount < 1.0) regenAmount = 1.0;
-			data.getResources().addPoise((int) regenAmount);
+			data.getResources().addPoise((float) regenAmount);
 		}
 	}
 

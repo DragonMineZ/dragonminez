@@ -1,36 +1,19 @@
 package com.dragonminez.common.stats.character;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
+@Getter
 public class Effect {
     private final String name;
-    private double power;
-    private int duration;
+    @Setter private double power;
+    @Setter private int duration;
 
     public Effect(String name, double power, int duration) {
         this.name = name;
         this.power = power;
-        this.duration = duration;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public double getPower() {
-        return power;
-    }
-
-    public void setPower(double power) {
-        this.power = power;
-    }
-
-    public int getDuration() {
-        return duration;
-    }
-
-    public void setDuration(int duration) {
         this.duration = duration;
     }
 
@@ -80,4 +63,3 @@ public class Effect {
         return new Effect(this.name, this.power, this.duration);
     }
 }
-

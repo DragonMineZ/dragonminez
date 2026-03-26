@@ -134,7 +134,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int startY = centerY - 15;
 
 		int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
-		int availableTPs = statsData.getResources().getTrainingPoints();
+		float availableTPs = statsData.getResources().getTrainingPoints();
 		int tpCost = statsData.calculateRecursiveCost(tpMultiplier, maxStats);
 
 		multiplierButton = new CustomTextureButton.Builder()
@@ -322,7 +322,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		drawStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), 85, titleY, 0xFBC51C, 0x000000);
 
 		int level = statsData.getLevel();
-		int tps = statsData.getResources().getTrainingPoints();
+		float tps = statsData.getResources().getTrainingPoints();
 		String characterClass = statsData.getCharacter().getCharacterClass();
 		String form = statsData.getCharacter().getActiveForm();
 		String stackForm = statsData.getCharacter().getActiveStackForm();

@@ -180,8 +180,8 @@ public class StatsCommand {
 					int newVit = (stats.getVitality() * finalKeepPercentage) / 100;
 					int newPwr = (stats.getKiPower() * finalKeepPercentage) / 100;
 					int newEne = (stats.getEnergy() * finalKeepPercentage) / 100;
-					int currentTPs = data.getResources().getTrainingPoints();
-					int newTPs = (currentTPs * finalKeepPercentage) / 100;
+					float currentTPs = data.getResources().getTrainingPoints();
+					float newTPs = (currentTPs * finalKeepPercentage) / 100;
 
 					stats.setStrength(Math.max(5, newStr));
 					stats.setStrikePower(Math.max(5, newSkp));

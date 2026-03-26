@@ -42,9 +42,65 @@ public class KiAttackData extends TechniqueData {
 	@Override
 	public TechniqueType getType() { return TechniqueType.KI_ATTACK; }
 
-	public void calculateAndSetBaseCost() {
-		double cost = (damageMultiplier * 50) + (speed * 10) + (size * 5) + (armorPenetration * 2) - (castTime * 2) + (cooldown);
-		this.setBaseCost(Math.max(5, cost));
+	private static float getTypeMultiplier(KiType type) {
+		return switch (type) {
+			case SMALL_BALL -> 1.0f;
+			case MEDIUM_BALL -> 1.4f;
+			case GIANT_BALL -> 2.2f;
+			case WAVE -> 1.6f;
+			case LASER -> 0.8f;
+			case BEAM -> 1.4f;
+			case DISK -> 1.2f;
+			case EXPLOSION -> 2.6f;
+			case SHIELD -> 1.6f;
+			case BARRAGE -> 1.4f;
+			case AREA -> 1.8f;
+		};
+	}
+
+	private static float getUtilityMultiplier(Utility util) {
+		return switch (util) {
+			case DAMAGE -> 1.0f;
+			case HEAL -> 1.25f;
+		};
+	}
+
+	private float getWeightedComplexity() {
+		float maxStat = 20.0f;
+		int maxArmorPen = 100;
+
+		float damageWeight = 10.0f;
+		float sizeWeight = 4.0f;
+		float speedWeight = 3.0f;
+		float armorPenWeight = 2.0f;
+
+		float damageRatio = damageMultiplier / maxStat;
+		float sizeRatio = size / maxStat;
+		float speedRatio = speed / maxStat;
+		float armorPenRatio = (float) armorPenetration / maxArmorPen;
+
+		return (damageRatio * damageWeight) +
+				(sizeRatio * sizeWeight) +
+				(speedRatio * speedWeight) +
+				(armorPenRatio * armorPenWeight);
+	}
+
+	public void calculateDerivedValues() {
+		float typeMult = getTypeMultiplier(kiType != null ? kiType : KiType.SMALL_BALL);
+		float utilMult = getUtilityMultiplier(utility != null ? utility : Utility.DAMAGE);
+		float complexity = getWeightedComplexity();
+
+		double kiCost = (10.0 + complexity * 40.0) * typeMult * utilMult;
+		this.baseCost = Math.max(5, kiCost);
+
+		float tpBase = (80.0f + complexity * 200.0f) * typeMult * utilMult;
+		this.tpCost = Math.max(10, Math.round(tpBase));
+
+		float castBase = (8.0f + complexity * 12.0f) * (float) Math.sqrt(typeMult) * utilMult;
+		this.castTime = Math.max(5, Math.min(200, Math.round(castBase)));
+
+		float cdBase = (20.0f + complexity * 30.0f) * typeMult * utilMult;
+		this.cooldown = Math.max(10, Math.min(600, Math.round(cdBase)));
 	}
 
 	public String generateExportCode() {
@@ -89,6 +145,7 @@ public class KiAttackData extends TechniqueData {
 		tag.putString("Author", this.author);
 		tag.putInt("Experience", this.experience);
 		tag.putDouble("BaseCost", this.baseCost);
+		tag.putFloat("TpCost", this.tpCost);
 		tag.putInt("CastTime", this.castTime);
 		tag.putInt("Cooldown", this.cooldown);
 
@@ -115,6 +172,7 @@ public class KiAttackData extends TechniqueData {
 		this.author = tag.getString("Author");
 		this.experience = tag.getInt("Experience");
 		this.baseCost = tag.getDouble("BaseCost");
+		this.tpCost = tag.contains("TpCost") ? tag.getFloat("TpCost") : 0;
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
 
@@ -134,5 +192,33 @@ public class KiAttackData extends TechniqueData {
 		this.speed = tag.getFloat("Speed");
 		this.size = tag.getFloat("Size");
 		this.armorPenetration = tag.getInt("ArmorPenetration");
+	}
+
+	/**
+	 * Calcula valores derivados para previsualización en la pantalla de creación.
+	 * Devuelve un array [kiCost, tpCost, castTime, cooldown].
+	 */
+	public static float[] previewDerivedValues(KiType type, Utility util,
+											   float damage, float size, float speed, int armorPen) {
+		float maxStat = 20.0f;
+		int maxArmorPen = 100;
+
+		float damageRatio = damage / maxStat;
+		float sizeRatio = size / maxStat;
+		float speedRatio = speed / maxStat;
+		float armorPenRatio = (float) armorPen / maxArmorPen;
+
+		float complexity = (damageRatio * 10.0f) + (sizeRatio * 4.0f) +
+				(speedRatio * 3.0f) + (armorPenRatio * 2.0f);
+
+		float typeMult = getTypeMultiplier(type != null ? type : KiType.SMALL_BALL);
+		float utilMult = getUtilityMultiplier(util != null ? util : Utility.DAMAGE);
+
+		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult));
+		float tpCostVal = Math.max(10, Math.round((80.0f + complexity * 200.0f) * typeMult * utilMult));
+		float castVal = Math.max(5, Math.min(200, Math.round((8.0f + complexity * 12.0f) * (float) Math.sqrt(typeMult) * utilMult)));
+		float cdVal = Math.max(10, Math.min(600, Math.round((20.0f + complexity * 30.0f) * typeMult * utilMult)));
+
+		return new float[]{kiCost, tpCostVal, castVal, cdVal};
 	}
 }

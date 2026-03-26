@@ -55,8 +55,8 @@ public class MightTreeFruitItem extends Item {
 					int maxEnergy = data.getMaxEnergy();
 					int maxStamina = data.getMaxStamina();
 
-					int currentEnergy = data.getResources().getCurrentEnergy();
-					int currentStamina = data.getResources().getCurrentStamina();
+					float currentEnergy = data.getResources().getCurrentEnergy();
+					float currentStamina = data.getResources().getCurrentStamina();
 
 					float healAmount = (maxHealth * regens[0]);
 					int energyAmount = (int) (maxEnergy * regens[1]);
@@ -64,8 +64,8 @@ public class MightTreeFruitItem extends Item {
 
 					player.heal(healAmount);
 
-					int newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
-					int newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
+					float newEnergy = Math.min(maxEnergy, currentEnergy + energyAmount);
+					float newStamina = Math.min(maxStamina, currentStamina + staminaAmount);
 
 					data.getResources().setCurrentEnergy(newEnergy);
 					data.getResources().setCurrentStamina(newStamina);
