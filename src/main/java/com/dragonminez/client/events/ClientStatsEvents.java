@@ -45,6 +45,8 @@ import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientStatsEvents {
+	private static final int TECHNIQUE_VISIBLE_SLOTS = 5;
+
 	private static FlightSoundInstance flightSound;
 
 	private static int transformDoubleTapTimer = 0;
@@ -103,8 +105,8 @@ public class ClientStatsEvents {
 					int currentSlot = data.getTechniques().getSelectedSlot();
 					int newSlot = currentSlot - delta;
 
-					if (newSlot < 0) newSlot = 7;
-					if (newSlot > 7) newSlot = 0;
+					if (newSlot < 0) newSlot = TECHNIQUE_VISIBLE_SLOTS - 1;
+					if (newSlot >= TECHNIQUE_VISIBLE_SLOTS) newSlot = 0;
 
 					data.getTechniques().selectSlot(newSlot);
 					NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(newSlot));
@@ -121,7 +123,7 @@ public class ClientStatsEvents {
 
 		if (event.getAction() == 1) {
 			int key = event.getKey();
-			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_8) {
+			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_5) {
 				StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 					boolean isChargingTechnique = data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive();
 					if (isChargingTechnique) return;
@@ -132,7 +134,7 @@ public class ClientStatsEvents {
 
 		if (event.getAction() == 1 && KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
 			int key = event.getKey();
-			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_8) {
+			if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_5) {
 				int slot = key - GLFW.GLFW_KEY_1;
 				StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 					data.getTechniques().selectSlot(slot);
@@ -184,6 +186,12 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
+
+			if (data.getTechniques().getSelectedSlot() >= TECHNIQUE_VISIBLE_SLOTS) {
+				data.getTechniques().selectSlot(0);
+				NetworkHandler.sendToServer(new SelectTechniqueSlotC2S(0));
+			}
+
 			Character character = data.getCharacter();
 			TechniqueData selectedTechnique = data.getTechniques().getSelectedTechnique();
 			boolean hasSelectedKiTechnique = selectedTechnique instanceof KiAttackData;

@@ -42,6 +42,14 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> SKILLS_LIST_SELF = register("dmzskill.list.self", "Allows listing your own skills.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> SKILLS_LIST_OTHERS = register("dmzskill.list.others", "Allows listing other players' skills.", (player, uuid, context) -> false);
 
+	// Techniques
+	public static final PermissionNode<Boolean> TECH_ADD_SELF = register("dmztech.add.self", "Allows adding ki techniques to yourself.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_ADD_OTHERS = register("dmztech.add.others", "Allows adding ki techniques to other players.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_REMOVE_SELF = register("dmztech.remove.self", "Allows removing your own ki techniques.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_REMOVE_OTHERS = register("dmztech.remove.others", "Allows removing ki techniques from other players.", (player, uuid, context) -> false);
+	public static final PermissionNode<Boolean> TECH_LIST_SELF = register("dmztech.list.self", "Allows listing your own ki techniques.", (player, uuid, context) -> true);
+	public static final PermissionNode<Boolean> TECH_LIST_OTHERS = register("dmztech.list.others", "Allows listing other players' ki techniques.", (player, uuid, context) -> false);
+
 	// Bonus
 	public static final PermissionNode<Boolean> BONUS_ADD_SELF = register("dmzbonus.add.self", "Allows adding bonus stats to yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> BONUS_ADD_OTHERS = register("dmzbonus.add.others", "Allows adding bonus stats to other players.", (player, uuid, context) -> false);

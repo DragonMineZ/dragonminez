@@ -195,6 +195,18 @@ public class NetworkHandler {
 				.consumerMainThread(EquipTechniqueC2S::handle)
 				.add();
 
+		net.messageBuilder(CreateTechniqueC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(CreateTechniqueC2S::new)
+				.encoder(CreateTechniqueC2S::toBytes)
+				.consumerMainThread(CreateTechniqueC2S::handle)
+				.add();
+
+		net.messageBuilder(UpgradeTechniqueC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(UpgradeTechniqueC2S::new)
+				.encoder(UpgradeTechniqueC2S::toBytes)
+				.consumerMainThread(UpgradeTechniqueC2S::handle)
+				.add();
+
 		net.messageBuilder(SelectTechniqueSlotC2S.class,  id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(SelectTechniqueSlotC2S::new)
 				.encoder(SelectTechniqueSlotC2S::toBytes)
