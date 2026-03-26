@@ -13,7 +13,9 @@ import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -50,16 +52,31 @@ public class AcceptSideQuestC2S {
 			if (player == null) return;
 
 			Quest sideQuest = QuestRegistry.getQuest(sideQuestId);
-			if (sideQuest == null) return;
+			if (sideQuest == null) {
+				notifyStartFailure(player, "message.dragonminez.quest.start.unavailable");
+				return;
+			}
 
 			ServerPlayer controller = PartyManager.resolveQuestController(player);
-			if (controller == null) return;
+			if (controller == null) {
+				notifyStartFailure(player, "message.dragonminez.quest.start.unavailable");
+				return;
+			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();
-				if (pqd.isQuestAccepted(sideQuestId)) return;
-				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) return;
-				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, sideQuest)) return;
+				if (pqd.isQuestAccepted(sideQuestId)) {
+					notifyStartFailure(player, "message.dragonminez.quest.start.already_active");
+					return;
+				}
+				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) {
+					notifyStartFailure(player, "message.dragonminez.quest.start.locked");
+					return;
+				}
+				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, sideQuest)) {
+					notifyStartFailure(player, "message.dragonminez.quest.start.location");
+					return;
+				}
 				pqd.acceptQuest(sideQuestId);
 				pqd.setTrackedQuestId(sideQuestId);
 				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(sideQuestId), controller);
@@ -112,6 +129,10 @@ public class AcceptSideQuestC2S {
 			});
 		});
 		context.setPacketHandled(true);
+	}
+
+	private static void notifyStartFailure(ServerPlayer player, String translationKey) {
+		player.displayClientMessage(Component.translatable(translationKey).withStyle(ChatFormatting.RED), true);
 	}
 }
 

@@ -56,22 +56,44 @@ public class StartQuestC2S {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
 			Saga saga = QuestRegistry.getSaga(sagaId);
-			if (saga == null) return;
+			if (saga == null) {
+				notifyStartFailure(player, "message.dragonminez.quest.start.unavailable");
+				return;
+			}
 			Quest quest = saga.getQuestById(questId);
-			if (quest == null) return;
+			if (quest == null) {
+				notifyStartFailure(player, "message.dragonminez.quest.start.unavailable");
+				return;
+			}
 
 			ServerPlayer controller = PartyManager.resolveQuestController(player);
-			if (controller == null) return;
+			if (controller == null) {
+				notifyStartFailure(player, "message.dragonminez.quest.start.unavailable");
+				return;
+			}
 
 			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();
 				String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
-				if (pqd.isQuestCompleted(questKey)) return;
+				if (pqd.isQuestCompleted(questKey)
+						|| pqd.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) {
+					notifyStartFailure(player, "message.dragonminez.quest.start.already_active");
+					return;
+				}
 
 				int questIndex = saga.getQuests().indexOf(quest);
-				if (questIndex < 0) return;
-				if (!SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, data)) return;
-				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, quest)) return;
+				if (questIndex < 0) {
+					notifyStartFailure(player, "message.dragonminez.quest.start.unavailable");
+					return;
+				}
+				if (!SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, data)) {
+					notifyStartFailure(player, "message.dragonminez.quest.start.locked");
+					return;
+				}
+				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, quest)) {
+					notifyStartFailure(player, "message.dragonminez.quest.start.location");
+					return;
+				}
 
 				SagaBranchingHelper.selectBranchIfNeeded(pqd, sagaId, quest);
 				pqd.acceptQuest(questKey);
@@ -133,5 +155,9 @@ public class StartQuestC2S {
 			});
 		});
 		context.setPacketHandled(true);
+	}
+
+	private static void notifyStartFailure(ServerPlayer player, String translationKey) {
+		player.displayClientMessage(Component.translatable(translationKey).withStyle(ChatFormatting.RED), true);
 	}
 }

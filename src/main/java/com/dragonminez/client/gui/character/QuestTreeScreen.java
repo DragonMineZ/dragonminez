@@ -172,8 +172,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private TexturedTextButton actionButton;
 	private TexturedTextButton partyPrimaryButton;
 	private TexturedTextButton partySecondaryButton;
-	private static final Map<String, Long> QUEST_COOLDOWNS = new HashMap<>();
-	private static final long START_QUEST_COOLDOWN = 30000;
 	private long lastClickTime = 0;
 
 	// Saga navigation
@@ -528,8 +526,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean buttonActive = true;
 		boolean isClaimAction = false;
 
-		String cooldownKey = currentSaga.getId() + ":" + selectedKey;
-
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
@@ -546,13 +542,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 		} else if (canStart || startBlockedByLocation) {
 			buttonText = tr("gui.dragonminez.quests.start");
-			if (startBlockedByLocation) {
-				buttonActive = false;
-			} else {
-				long now = System.currentTimeMillis();
-				long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
-				buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
-			}
+			buttonActive = !startBlockedByLocation;
 		} else {
 			return;
 		}
@@ -588,7 +578,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					} else {
-						QUEST_COOLDOWNS.put(cooldownKey, now);
 						boolean isHard = ConfigManager.getUserConfig().getHud().getStoryHardDifficulty();
 						if (selectedQuest.isSideQuest()) {
 							NetworkHandler.sendToServer(new AcceptSideQuestC2S(selectedKey, isHard));
