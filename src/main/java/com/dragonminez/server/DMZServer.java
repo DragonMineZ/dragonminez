@@ -18,6 +18,7 @@ public class DMZServer {
 		BonusCommand.register(dispatcher);
 		EffectsCommand.register(dispatcher);
 		SkillsCommand.register(dispatcher);
+		TechCommand.register(dispatcher);
 		FormsCommand.register(dispatcher);
 		PointsCommand.register(dispatcher);
 		MasteryCommand.register(dispatcher);

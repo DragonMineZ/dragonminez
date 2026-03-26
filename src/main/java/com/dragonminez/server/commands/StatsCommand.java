@@ -206,6 +206,7 @@ public class StatsCommand {
 				data.getResources().setPowerRelease(0);
 				data.getStatus().setAndroidUpgraded(false);
 				data.getStatus().setInKaioPlanet(false);
+				clearTechniqueBindings(data);
 
 				if (!keepSkills) {
 					data.getSkills().removeAllSkills();
@@ -232,6 +233,15 @@ public class StatsCommand {
 			source.sendSuccess(() -> Component.translatable("command.dragonminez.stats.reset.multiple", targets.size()), log);
 		}
 		return targets.size();
+	}
+
+	private static void clearTechniqueBindings(StatsData data) {
+		String[] slots = data.getTechniques().getEquippedSlots();
+		for (int i = 0; i < slots.length; i++) {
+			slots[i] = "";
+		}
+		data.getTechniques().selectSlot(0);
+		data.getTechniques().clearTechniqueCharge();
 	}
 
 	private static boolean isValidStat(String stat) {

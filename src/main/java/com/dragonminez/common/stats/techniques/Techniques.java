@@ -9,14 +9,14 @@ import java.util.Map;
 public class Techniques {
 	@Getter
 	private final Map<String, TechniqueData> unlockedTechniques = new HashMap<>();
-	private final String[] equippedSlots = new String[8];
+	private final String[] equippedSlots = new String[5];
 	private int selectedSlot = 0;
 	private String chargingTechniqueId = "";
 	private float techniqueChargePercent = 0.0f;
 	private boolean techniqueCharging = false;
 
 	public Techniques() {
-		for (int i = 0; i < 8; i++) equippedSlots[i] = "";
+		for (int i = 0; i < 5; i++) equippedSlots[i] = "";
 	}
 
 	public void unlockTechnique(TechniqueData data) {
@@ -24,13 +24,13 @@ public class Techniques {
 	}
 
 	public void equipTechnique(int slotIndex, String techniqueId) {
-		if (slotIndex >= 0 && slotIndex < 8 && unlockedTechniques.containsKey(techniqueId)) {
+		if (slotIndex >= 0 && slotIndex < 5 && unlockedTechniques.containsKey(techniqueId)) {
 			equippedSlots[slotIndex] = techniqueId;
 		}
 	}
 
 	public void selectSlot(int slotIndex) {
-		if (slotIndex >= 0 && slotIndex < 8) {
+		if (slotIndex >= 0 && slotIndex < 5) {
 			this.selectedSlot = slotIndex;
 		}
 	}
@@ -88,10 +88,10 @@ public class Techniques {
 	}
 
 	public void equipOrSwapTechnique(int slotIndex, String techniqueId) {
-		if (slotIndex < 0 || slotIndex >= 8) return;
+		if (slotIndex < 0 || slotIndex >= 5) return;
 
 		int existingSlot = -1;
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 5; i++) {
 			if (equippedSlots[i].equals(techniqueId)) {
 				existingSlot = i;
 				break;
@@ -124,7 +124,7 @@ public class Techniques {
 		tag.putBoolean("TechniqueCharging", techniqueCharging);
 
 		CompoundTag slotsTag = new CompoundTag();
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 5; i++) {
 			slotsTag.putString("Slot" + i, equippedSlots[i]);
 		}
 		tag.put("EquippedSlots", slotsTag);
@@ -147,7 +147,7 @@ public class Techniques {
 		this.techniqueCharging = tag.getBoolean("TechniqueCharging");
 
 		CompoundTag slotsTag = tag.getCompound("EquippedSlots");
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 5; i++) {
 			this.equippedSlots[i] = slotsTag.getString("Slot" + i);
 		}
 
@@ -167,7 +167,7 @@ public class Techniques {
 		this.chargingTechniqueId = other.chargingTechniqueId;
 		this.techniqueChargePercent = other.techniqueChargePercent;
 		this.techniqueCharging = other.techniqueCharging;
-		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, 8);
+		System.arraycopy(other.equippedSlots, 0, this.equippedSlots, 0, 5);
 		this.unlockedTechniques.clear();
 		for (Map.Entry<String, TechniqueData> entry : other.unlockedTechniques.entrySet()) {
 			TechniqueData clone = entry.getValue() instanceof KiAttackData ? new KiAttackData() : new StrikeAttackData();

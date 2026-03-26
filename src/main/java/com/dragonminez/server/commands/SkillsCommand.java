@@ -24,7 +24,7 @@ public class SkillsCommand {
 	private static final SuggestionProvider<CommandSourceStack> SKILL_SUGGESTIONS = (ctx, builder) -> {
 		var config = ConfigManager.getSkillsConfig();
 		var validSkills = config.getSkills().keySet().stream()
-				.filter(s -> !config.getStackSkills().contains(s) && !config.getFormSkills().contains(s))
+				.filter(s -> !config.getKiSkills().contains(s) && !config.getStackSkills().contains(s) && !config.getFormSkills().contains(s))
 				.toList();
 		return SharedSuggestionProvider.suggest(validSkills, builder);
 	};
@@ -68,7 +68,7 @@ public class SkillsCommand {
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 
-		if (config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
+		if (config.getKiSkills().contains(lowerName) || config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}
@@ -93,7 +93,7 @@ public class SkillsCommand {
 		String lowerName = skillName.toLowerCase();
 		var config = ConfigManager.getSkillsConfig();
 
-		if (config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
+		if (config.getKiSkills().contains(lowerName) || config.getStackSkills().contains(lowerName) || config.getFormSkills().contains(lowerName) || !config.getSkills().containsKey(lowerName)) {
 			source.sendFailure(Component.translatable("command.dragonminez.skills.unknown_skill", skillName));
 			return 0;
 		}

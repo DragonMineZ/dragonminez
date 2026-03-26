@@ -18,6 +18,7 @@ public class GeneralUserConfig {
 	@NoArgsConstructor
 	public static class HudConfig {
 		private Boolean firstPersonAnimated = true;
+		private Boolean techniqueHotbarHorizontal = true;
 		private Integer xenoverseHudPosX = 5;
 		private Integer xenoverseHudPosY = 5;
 		private Boolean advancedDescription = true;
@@ -38,6 +39,11 @@ public class GeneralUserConfig {
 		public Float getMenuScaleMultiplier() {
 			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
 			return menuScaleMultiplier;
+		}
+
+		public Boolean getTechniqueHotbarHorizontal() {
+			if (techniqueHotbarHorizontal == null) techniqueHotbarHorizontal = true;
+			return techniqueHotbarHorizontal;
 		}
 
 		public void setMenuScaleMultiplier(Float menuScaleMultiplier) {

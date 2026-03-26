@@ -47,8 +47,10 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	private static final int SKILL_ITEM_HEIGHT = 20;
 	private static final int MAX_VISIBLE_SKILLS = 8;
 	private static final int BUTTON_ANIM_TIME = 5;
+	private static final int TECHNIQUE_BIND_SLOT_COUNT = 5;
+	private static final String NEW_SKILL_ENTRY = "__new_skill__";
 
-	private enum SkillCategory {SKILLS, KI, FORMS, STACKS}
+	private enum SkillCategory {SKILLS, KI, FORMS, STRIKE}
 
 	private SkillCategory currentCategory = SkillCategory.SKILLS;
 
@@ -178,7 +180,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				.textureCoords(226, 44, 226, 44)
 				.clipping(true, scissorXScreen, scissorYScreen, scissorRight, scissorBottom)
 				.onPress(btn -> {
-					currentCategory = SkillCategory.STACKS;
+					currentCategory = SkillCategory.STRIKE;
 					selectedSkill = null;
 					scrollOffset = 0;
 					descScrollOffset = 0;
@@ -216,25 +218,27 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				});
 				break;
 			case KI:
-				statsData.getTechniques().getUnlockedTechniques().keySet().forEach(skillNames::add);
+					skillNames.add(NEW_SKILL_ENTRY);
+					statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
+						if (technique instanceof KiAttackData) skillNames.add(id);
+					});
 				break;
 			case FORMS:
 				skills.getAllSkills().forEach((name, skill) -> {
-					if (skillsConfig.getFormSkills().contains(name)) {
+						if (skillsConfig.getFormSkills().contains(name) || skillsConfig.getStackSkills().contains(name)) {
 						skillNames.add(name);
 					}
 				});
 				break;
-			case STACKS:
-				skills.getAllSkills().forEach((name, skill) -> {
-					if (skillsConfig.getStackSkills().contains(name)) {
-						skillNames.add(name);
-					}
-				});
+				case STRIKE:
+					statsData.getTechniques().getUnlockedTechniques().forEach((id, technique) -> {
+						if (technique instanceof StrikeAttackData) skillNames.add(id);
+					});
 				break;
 		}
 
-		skillNames.sort(String::compareToIgnoreCase);
+		skillNames.sort((a, b) -> getDisplayNameForEntry(a).compareToIgnoreCase(getDisplayNameForEntry(b)));
+		if (skillNames.remove(NEW_SKILL_ENTRY)) skillNames.add(0, NEW_SKILL_ENTRY);
 		if (currentCategory == SkillCategory.SKILLS) {
 			String race = statsData.getCharacter().getRaceName().toLowerCase();
 			if (!race.isEmpty() && !ConfigManager.getRaceCharacter(race).getRacialSkill().isEmpty()) {
@@ -262,12 +266,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		initDynamicButtons();
 		initNavigationButtons();
 		initUpgradeButton();
+		initCreateSkillButton();
 		initBindButtons();
 		initTechniqueUpgradeButtons();
 	}
 
 	private void initTechniqueUpgradeButtons() {
-		if (selectedSkill == null || statsData == null || currentCategory != SkillCategory.KI) return;
+		if (selectedSkill == null || statsData == null || (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE)) return;
+		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
 
 		TechniqueData tech = statsData.getTechniques().getUnlockedTechniques().get(selectedSkill);
 		if (tech == null || PredefinedTechniques.isPredefinedTechnique(tech)) return;
@@ -311,7 +317,8 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 	}
 
 	private void initBindButtons() {
-		if (selectedSkill == null || statsData == null) return;
+		if (selectedSkill == null || statsData == null || (currentCategory != SkillCategory.KI && currentCategory != SkillCategory.STRIKE)) return;
+		if (NEW_SKILL_ENTRY.equals(selectedSkill)) return;
 
 		int rightPanelX = getUiWidth() - 158;
 		int centerY = getUiHeight() / 2;
@@ -336,20 +343,17 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 					.build();
 			this.addRenderableWidget(bindButton);
 		} else {
-			for (int i = 0; i < 8; i++) {
+			for (int i = 0; i < TECHNIQUE_BIND_SLOT_COUNT; i++) {
 				final int slotIndex = i;
-				int col = i % 4;
-				int row = i / 4;
 
 				var slotBtn = new TexturedTextButton.Builder()
-						.position(rightPanelX + 35 + (col * 18), rightPanelY + 160 + (row * 18))
-						.size(16, 16)
-						.texture(BUTTONS_TEXTURE) // Puedes usar una textura más pequeña aquí
-						.textureCoords(0, 0, 0, 16)
-						.textureSize(74, 20)
+						.position(rightPanelX + 40 + (i * 12), rightPanelY + 185)
+						.size(10, 10)
+						.texture(BUTTONS_TEXTURE)
+						.textureCoords(152, 0, 152, 10)
+						.textureSize(10, 10)
 						.message(Component.literal(String.valueOf(i + 1)))
 						.onPress(btn -> {
-							// Necesitas crear este paquete C2S que llame a equipOrSwapTechnique en el servidor
 							NetworkHandler.INSTANCE.sendToServer(new EquipTechniqueC2S(slotIndex, selectedSkill));
 							isBinding = false;
 							refreshButtons();
@@ -358,6 +362,25 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 				this.addRenderableWidget(slotBtn);
 			}
 		}
+	}
+
+	private void initCreateSkillButton() {
+		if (statsData == null || currentCategory != SkillCategory.KI || !NEW_SKILL_ENTRY.equals(selectedSkill)) return;
+
+		int rightPanelX = getUiWidth() - 158;
+		int centerY = getUiHeight() / 2;
+		int rightPanelY = centerY - 105;
+
+		var createButton = new TexturedTextButton.Builder()
+				.position(rightPanelX + 35, rightPanelY + 183)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.skills.create_skill"))
+				.onPress(btn -> openTechniqueCreator())
+				.build();
+		this.addRenderableWidget(createButton);
 	}
 
 	private void initUpgradeButton() {
@@ -517,12 +540,19 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 			Skill skill = statsData.getSkills().getSkill(skillName);
 			String displayName;
-			if (currentCategory == SkillCategory.KI) displayName = tr("technique.dragonminez." + skillName).getString();
+			if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) displayName = getDisplayNameForEntry(skillName);
 			else displayName = tr("skill.dragonminez." + skillName).getString();
 
 			drawStringWithBorder(graphics, txt(displayName), panelX + 15, itemY + 5, color);
 
-			if (skill != null) {
+			if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) {
+				TechniqueData technique = NEW_SKILL_ENTRY.equals(skillName) ? null : statsData.getTechniques().getUnlockedTechniques().get(skillName);
+				if (technique != null) {
+					String xpText = String.valueOf(technique.getExperience());
+					int xpX = panelX + 130 - this.font.width(xpText);
+					drawStringWithBorder(graphics, txt(xpText), xpX, itemY + 5, color);
+				}
+			} else if (skill != null) {
 				String levelText = String.valueOf(skill.getLevel());
 				int levelX = panelX + 130 - this.font.width(levelText);
 				drawStringWithBorder(graphics, txt(levelText),
@@ -553,7 +583,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			case SKILLS -> title = "gui.dragonminez.skills.tab.skills";
 			case KI -> title = "gui.dragonminez.skills.tab.kiattacks";
 			case FORMS -> title = "gui.dragonminez.skills.tab.forms";
-			case STACKS -> title = "gui.dragonminez.skills.tab.stacks";
+			case STRIKE -> title = "gui.dragonminez.skills.tab.strikeattacks";
 		}
 
 		drawCenteredStringWithBorder(graphics, tr(title)
@@ -567,7 +597,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-		if (currentCategory == SkillCategory.KI) {
+		if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) {
 			graphics.blit(MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
 			graphics.blit(MENU_BIG, getUiWidth() - 141, centerY - 95, 142, 22, 107, 21, 256, 256);
 		} else {
@@ -580,9 +610,14 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.character_stats.info").withStyle(style -> style.withBold(true)), rightPanelX + 70, rightPanelY + 16, 0xFFFFD700);
 
 		if (selectedSkill != null && statsData != null) {
-			if (currentCategory == SkillCategory.KI) renderTechniqueDetails(graphics, rightPanelX, rightPanelY, mouseX, mouseY);
+			if (currentCategory == SkillCategory.KI && NEW_SKILL_ENTRY.equals(selectedSkill)) renderNewSkillPlaceholder(graphics, rightPanelX, rightPanelY);
+			else if (currentCategory == SkillCategory.KI || currentCategory == SkillCategory.STRIKE) renderTechniqueDetails(graphics, rightPanelX, rightPanelY, mouseX, mouseY);
 			else renderSkillDetails(graphics, rightPanelX, rightPanelY);
 		}
+	}
+
+	private void renderNewSkillPlaceholder(GuiGraphics graphics, int panelX, int panelY) {
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.new_skill").withStyle(ChatFormatting.BOLD), panelX + 70, panelY + 48, 0xFFFFFFFF);
 	}
 
 	private void renderTechniqueDetails(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
@@ -838,6 +873,20 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 			return true;
 		}
 		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	private String getDisplayNameForEntry(String entryId) {
+		if (NEW_SKILL_ENTRY.equals(entryId)) return tr("gui.dragonminez.skills.new_skill").getString();
+		if (statsData == null) return entryId;
+		TechniqueData technique = statsData.getTechniques().getUnlockedTechniques().get(entryId);
+		if (technique == null || technique.getName() == null || technique.getName().isEmpty()) return entryId;
+		String rawName = technique.getName();
+		if (rawName.contains(".")) return tr(rawName).getString();
+		return rawName;
+	}
+
+	private void openTechniqueCreator() {
+		if (this.minecraft != null) this.minecraft.setScreen(new TechniqueCreatorScreen(this));
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
