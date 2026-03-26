@@ -14,6 +14,7 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -22,23 +23,40 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class CapsuleItem extends Item {
-	private final CapsuleType capsuleType;
+	private final CapsuleType type;
+	private ChatFormatting tierColor = ChatFormatting.WHITE;
+	private String tierLabel = null;
+	private Integer tierMultiplier = 1;
 
-	public CapsuleItem(CapsuleType capsuleType) {
+	public CapsuleItem(CapsuleType type) {
 		super(new Properties());
-		this.capsuleType = capsuleType;
+		this.type = type;
+	}
+
+	public CapsuleItem(CapsuleType type, ChatFormatting tierColor, String tierLabel, Integer tierMultiplier, Rarity rarity) {
+		super(new Properties().rarity(rarity));
+		this.type = type;
+		this.tierColor = tierColor;
+		this.tierLabel = tierLabel;
+		this.tierMultiplier = tierMultiplier;
 	}
 
 	@Override
 	public @NotNull Component getName(@NotNull ItemStack pStack) {
-		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
-		return Component.translatable("item.dragonminez.capsule", values.getStats()).withStyle(ChatFormatting.GREEN);
+		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
+		return Component.translatable("item.dragonminez.capsule")
+				.append(Component.literal(" "))
+				.append(tierLabel != null
+						? Component.translatable("item.dragonminez.capsule.tier", tierLabel).withStyle(tierColor)
+						: Component.empty())
+				.append(Component.translatable("item.dragonminez.capsule.stat", values.getStats()).withStyle(ChatFormatting.GREEN))
+				;
 	}
 
 	@Override
 	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
-		pTooltipComponents.add(Component.translatable("item.dragonminez.capsule.tooltip", values.getPoints(), values.getStats()).withStyle(ChatFormatting.GREEN));
+		CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
+		pTooltipComponents.add(Component.translatable("item.dragonminez.capsule.tooltip", values.getPoints() * tierMultiplier, values.getStats()).withStyle(ChatFormatting.GREEN));
 		pTooltipComponents.add(Component.translatable("item.dragonminez.capsule.tooltip2", values.getStats()).withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
 	}
 
@@ -50,18 +68,18 @@ public class CapsuleItem extends Item {
 			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
 				if (data.getStatus().isHasCreatedCharacter()) {
 					String separator = ConfigManager.getServerConfig().getGameplay().getCapsules().getStatSeparator();
-					CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
+					CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
 
 					var capsuleComponent = Component.empty();
 					String statSeparator = ConfigManager.getServerConfig().getGameplay().getCapsules().getStatSeparator();
-                    String[] split = values.getStats().split(separator);
-                    for (int i = 0; i < split.length; i++) {
-                        String statName = split[i];
-                        capsuleComponent.append(applyCapsuleStats(capsule, data, statName));
+					String[] split = values.getStats().split(separator);
+					for (int i = 0; i < split.length; i++) {
+						String statName = split[i];
+						capsuleComponent.append(applyCapsuleStats(capsule, data, statName));
 						if (i < split.length - 1) {
-                            capsuleComponent.append(Component.literal(statSeparator).withStyle(ChatFormatting.GRAY));
+							capsuleComponent.append(Component.literal(statSeparator).withStyle(ChatFormatting.GRAY));
 						}
-                    }
+					}
 					pPlayer.displayClientMessage(capsuleComponent, true);
 				} else {
 					pPlayer.displayClientMessage(Component.translatable("error.dmz.createcharacter").withStyle(ChatFormatting.RED), true);
@@ -78,16 +96,16 @@ public class CapsuleItem extends Item {
 		int currentStat = getCurrentStat(data, statName);
 
 		if (currentStat < maxStat) {
-			CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(capsuleType);
-			int increment = Math.min(values.getPoints(), maxStat - currentStat);
+			CapsuleValues values = ConfigManager.getServerConfig().getGameplay().getCapsules().getCapsuleValues(type);
+			int increment = Math.min(values.getPoints() * tierMultiplier, maxStat - currentStat);
 			addToStat(data, statName, increment);
 			capsule.shrink(1);
 
 			return Component.translatable("item.dragonminez.capsule.use", increment, statName)
-							.withStyle(ChatFormatting.GREEN);
+					.withStyle(ChatFormatting.GREEN);
 		} else {
 			return Component.translatable("item.dragonminez.capsule.full", statName)
-							.withStyle(ChatFormatting.RED);
+					.withStyle(ChatFormatting.RED);
 		}
 	}
 

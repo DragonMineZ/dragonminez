@@ -611,7 +611,7 @@ public class TickHandler {
 
 		List<AbstractKiProjectile> nearbyEntities = player.level().getEntitiesOfClass(
 				AbstractKiProjectile.class,
-				player.getBoundingBox().inflate(5.0D)
+				player.getBoundingBox().inflate(25.0D)
 		);
 
 		for (AbstractKiProjectile ki : nearbyEntities) {

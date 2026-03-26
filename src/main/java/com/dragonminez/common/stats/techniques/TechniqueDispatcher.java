@@ -229,7 +229,7 @@ public class TechniqueDispatcher {
     private static AbstractKiProjectile getChargingKiEntity(LivingEntity owner, Level level) {
         List<AbstractKiProjectile> nearby = level.getEntitiesOfClass(
                 AbstractKiProjectile.class,
-                owner.getBoundingBox().inflate(10.0D)
+                owner.getBoundingBox().inflate(25.0D)
         );
         for (AbstractKiProjectile ki : nearby) {
             if (ki.getOwner() != null && ki.getOwner().getUUID().equals(owner.getUUID())) {
