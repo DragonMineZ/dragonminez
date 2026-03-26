@@ -67,10 +67,10 @@ public abstract class DMZEvent extends Event {
 	public static class KiChargeEvent extends Event {
 
 		private final Player player;
-		private final int currentEnergy;
+		private final float currentEnergy;
 		private final int maxEnergy;
 
-		public KiChargeEvent(Player player, int currentEnergy, int maxEnergy) {
+		public KiChargeEvent(Player player, float currentEnergy, int maxEnergy) {
 			this.player = player;
 			this.currentEnergy = currentEnergy;
 			this.maxEnergy = maxEnergy;
@@ -80,7 +80,7 @@ public abstract class DMZEvent extends Event {
 			return player;
 		}
 
-		public int getCurrentEnergy() {
+		public float getCurrentEnergy() {
 			return currentEnergy;
 		}
 

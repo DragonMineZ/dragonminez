@@ -52,8 +52,8 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	private int creatorArmorPen = 0;
 	private int creatorCast = 20;
 	private int creatorCooldown = 20;
-	private int dummyKiCost = 25;
-	private int dummyTpCost = 120;
+	private float kiCost = 25;
+	private float tpCost = 120;
 	private int creatorColorInterior = 0xFFFFFF;
 	private int creatorColorExterior = 0x00AEEF;
 
@@ -187,11 +187,14 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	}
 
 	private void recomputeDerivedValues() {
-		float complexity = (creatorDamage * 8.0f) + (creatorSize * 5.0f) + (creatorSpeed * 4.0f) + (creatorArmorPen * 1.5f);
-		creatorCast = Mth.clamp(Math.round(8.0f + (complexity / 6.0f)), 5, 120);
-		creatorCooldown = Mth.clamp(Math.round(20.0f + (complexity / 3.0f)), 10, 300);
-		dummyKiCost = Math.max(5, Math.round(12.0f + complexity));
-		dummyTpCost = Math.max(10, Math.round(100.0f + (complexity * 3.0f)));
+		float[] values = KiAttackData.previewDerivedValues(
+				creatorType, creatorUtility,
+				creatorDamage, creatorSize, creatorSpeed, creatorArmorPen
+		);
+		kiCost = values[0];
+		tpCost = values[1];
+		creatorCast = (int) values[2];
+		creatorCooldown = (int) values[3];
 	}
 
 	private void updateUtilityArrowsVisibility() {
@@ -344,9 +347,9 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		graphics.fill(x + 30, y + 165, x + 42, y + 178, 0xFF000000 | creatorColorInterior);
 		graphics.fill(x + 99, y + 165, x + 111, y + 178, 0xFF000000 | creatorColorExterior);
 		drawStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.ki_cost_label"), x + 14, y + 180, 0xFFDDDDDD);
-		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(dummyKiCost)), x + 98, y + 180, 0xFFDDDDDD);
+		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(kiCost)), x + 98, y + 180, 0xFFDDDDDD);
 		drawStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.tp_cost_label"), x + 14, y + 190, 0xFFDDDDDD);
-		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(dummyTpCost)), x + 98, y + 190, 0xFFDDDDDD);
+		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(tpCost)), x + 98, y + 190, 0xFFDDDDDD);
 
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);

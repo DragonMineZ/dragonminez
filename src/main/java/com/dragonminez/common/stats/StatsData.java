@@ -562,7 +562,7 @@ public class StatsData {
 		return totalCost;
 	}
 
-	public int calculateStatIncrease(int maxStatsToAdd, int availableTPs, int maxStats) {
+	public int calculateStatIncrease(int maxStatsToAdd, float availableTPs, int maxStats) {
 		int statsIncreased = 0;
 		int costAccumulated = 0;
 		int currentTotalStats = stats.getTotalStats();

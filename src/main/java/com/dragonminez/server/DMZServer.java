@@ -21,6 +21,7 @@ public class DMZServer {
 		TechCommand.register(dispatcher);
 		FormsCommand.register(dispatcher);
 		PointsCommand.register(dispatcher);
+		DebugCommand.register(dispatcher);
 		MasteryCommand.register(dispatcher);
 		StackMasteryCommand.register(dispatcher);
 		LocateCommand.register(dispatcher);

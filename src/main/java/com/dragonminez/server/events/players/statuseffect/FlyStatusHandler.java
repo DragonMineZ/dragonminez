@@ -63,7 +63,7 @@ public class FlyStatusHandler implements IStatusEffectHandler {
         double energyCostPercent = Math.max(0.002, basePercent - (flyLevel * 0.005));
         int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
-        int currentEnergy = data.getResources().getCurrentEnergy();
+        float currentEnergy = data.getResources().getCurrentEnergy();
 
         if (currentEnergy >= energyCost) {
             data.getResources().removeEnergy(energyCost);

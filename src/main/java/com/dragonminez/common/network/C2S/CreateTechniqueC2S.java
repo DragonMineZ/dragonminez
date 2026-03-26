@@ -105,7 +105,7 @@ public class CreateTechniqueC2S {
 				technique.setColorInterior(colorInterior & 0xFFFFFF);
 				technique.setColorExterior(colorExterior & 0xFFFFFF);
 				technique.setAnimation("");
-				technique.calculateAndSetBaseCost();
+				technique.calculateDerivedValues();
 
 				data.getTechniques().unlockTechnique(technique);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);

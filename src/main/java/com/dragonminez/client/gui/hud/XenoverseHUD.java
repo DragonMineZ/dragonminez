@@ -76,8 +76,8 @@ public class XenoverseHUD {
 				}
 
 				float currentHP = mc.player.getHealth();
-				int currentKi = resources.getCurrentEnergy();
-				int currentStm = resources.getCurrentStamina();
+				float currentKi = resources.getCurrentEnergy();
+				float currentStm = resources.getCurrentStamina();
 
 				float hpRatio = Mth.clamp(currentHP / maxHP, 0.0f, 1.0f);
 				float kiRatio = Mth.clamp(currentKi / (float) maxKi, 0.0f, 1.0f);

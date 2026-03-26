@@ -55,7 +55,7 @@ public class PredefinedTechniques {
 		data.getAllowedRaces().add("ALL");
 		data.setCastTime(5 * 20);
 		data.setCooldown(cooldownSeconds * 20);
-		data.calculateAndSetBaseCost();
+		data.calculateDerivedValues();
 
 		REGISTRY.put(id, data);
 	}

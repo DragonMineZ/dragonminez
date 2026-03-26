@@ -75,7 +75,6 @@ public class DMZPermissions {
 	public static final PermissionNode<Boolean> POINTS_REMOVE_OTHERS = register("dmzpoints.remove.others", "Allows removing other players' points.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> POINTS_INFO_SELF = register("dmzpoints.info.self", "Allows viewing your own points.", (player, uuid, context) -> true);
 	public static final PermissionNode<Boolean> POINTS_INFO_OTHERS = register("dmzpoints.info.others", "Allows viewing other players' points.", (player, uuid, context) -> false);
-
 	// Story
 	public static final PermissionNode<Boolean> STORY_FINISH_SELF = register("dmzstory.finish.self", "Allows finishing quests for yourself.", (player, uuid, context) -> false);
 	public static final PermissionNode<Boolean> STORY_FINISH_OTHERS = register("dmzstory.finish.others", "Allows finishing quests for other players.", (player, uuid, context) -> false);

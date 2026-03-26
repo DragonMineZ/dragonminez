@@ -54,7 +54,7 @@ public class UpgradeTechniqueC2S {
 								case "cooldown" -> tech.setCooldown(Math.max(0, tech.getCooldown() - 2));
 								case "cast" -> tech.setCastTime(Math.max(0, tech.getCastTime() - 1));
 							}
-							if (tech instanceof KiAttackData ki) ki.calculateAndSetBaseCost();
+							if (tech instanceof KiAttackData ki) ki.calculateDerivedValues();
 							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
 						}
 					}

@@ -22,6 +22,7 @@ public class StrikeAttackData extends TechniqueData {
 		tag.putString("Author", this.author);
 		tag.putInt("Experience", this.experience);
 		tag.putDouble("BaseCost", this.baseCost);
+		tag.putFloat("TpCost", this.tpCost);
 		tag.putFloat("DamageMultiplier", this.damageMultiplier);
 		tag.putInt("CastTime", this.castTime);
 		tag.putInt("Cooldown", this.cooldown);
@@ -35,6 +36,7 @@ public class StrikeAttackData extends TechniqueData {
 		this.author = tag.getString("Author");
 		this.experience = tag.getInt("Experience");
 		this.baseCost = tag.getDouble("BaseCost");
+		this.tpCost = tag.contains("TpCost") ? tag.getFloat("TpCost") : 0;
 		this.damageMultiplier = tag.getFloat("DamageMultiplier");
 		this.castTime = tag.getInt("CastTime");
 		this.cooldown = tag.getInt("Cooldown");
