@@ -236,6 +236,7 @@ val loaderVersionRange = requiredProp("loader_version_range")
 val modName = requiredProp("mod_name")
 val modLicense = requiredProp("mod_license")
 val modAuthors = requiredProp("mod_authors")
+val modCredits = requiredProp("mod_credits")
 val modDescription = requiredProp("mod_description")
 val geckolibVersionRange = requiredProp("geckolib_version_range")
 val terrablenderVersionRange = requiredProp("terrablender_version_range")
@@ -255,6 +256,7 @@ tasks.named<ProcessResources>("processResources").configure {
         "mod_license" to modLicense,
         "mod_version" to modVersion,
         "mod_authors" to modAuthors,
+        "mod_credits" to modCredits,
         "mod_description" to modDescription,
         "geckolib_version_range" to geckolibVersionRange,
         "terrablender_version_range" to terrablenderVersionRange
