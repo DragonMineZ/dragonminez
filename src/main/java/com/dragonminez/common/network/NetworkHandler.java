@@ -183,6 +183,36 @@ public class NetworkHandler {
 				.consumerMainThread(AcknowledgeStoryIntroC2S::handle)
 				.add();
 
+		net.messageBuilder(CreatePartyC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(CreatePartyC2S::new)
+				.encoder(CreatePartyC2S::encode)
+				.consumerMainThread(CreatePartyC2S::handle)
+				.add();
+
+		net.messageBuilder(InvitePartyMemberC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(InvitePartyMemberC2S::new)
+				.encoder(InvitePartyMemberC2S::encode)
+				.consumerMainThread(InvitePartyMemberC2S::handle)
+				.add();
+
+		net.messageBuilder(AcceptPartyInviteC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(AcceptPartyInviteC2S::new)
+				.encoder(AcceptPartyInviteC2S::encode)
+				.consumerMainThread(AcceptPartyInviteC2S::handle)
+				.add();
+
+		net.messageBuilder(RejectPartyInviteC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(RejectPartyInviteC2S::new)
+				.encoder(RejectPartyInviteC2S::encode)
+				.consumerMainThread(RejectPartyInviteC2S::handle)
+				.add();
+
+		net.messageBuilder(LeavePartyC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(LeavePartyC2S::new)
+				.encoder(LeavePartyC2S::encode)
+				.consumerMainThread(LeavePartyC2S::handle)
+				.add();
+
         net.messageBuilder(SokidanControlC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
                 .decoder(SokidanControlC2S::new)
                 .encoder(SokidanControlC2S::toBytes)
@@ -280,6 +310,12 @@ public class NetworkHandler {
 				.decoder(StoryToastS2C::decode)
 				.encoder(StoryToastS2C::encode)
 				.consumerMainThread(StoryToastS2C::handle)
+				.add();
+
+		net.messageBuilder(PartyInviteToastS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(PartyInviteToastS2C::new)
+				.encoder(PartyInviteToastS2C::encode)
+				.consumerMainThread(PartyInviteToastS2C::handle)
 				.add();
 	}
 

@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
@@ -45,7 +46,10 @@ public class TurnInSideQuestC2S {
 			Quest sideQuest = QuestRegistry.getQuest(sideQuestId);
 			if (sideQuest == null) return;
 
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			ServerPlayer controller = PartyManager.resolveQuestController(player);
+			if (controller == null) return;
+
+			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();
 
 				if (!pqd.isQuestAccepted(sideQuestId)) return;
@@ -68,15 +72,22 @@ public class TurnInSideQuestC2S {
 				}
 
 				pqd.completeQuest(sideQuestId);
-
-				for (QuestReward reward : sideQuest.getRewards()) {
-					reward.giveReward(player);
-				}
+				if (sideQuestId.equals(pqd.getTrackedQuestId())) pqd.setTrackedQuestId(null);
 
 				player.displayClientMessage(
 						Component.translatable("command.dragonminez.story.sidequest.turned_in", sideQuestId), false);
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(sideQuestId), controller);
+				if (PartyManager.isInParty(controller)) {
+					PartyManager.syncPartyQuestState(controller);
+					for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+						if (!member.getUUID().equals(controller.getUUID())) {
+							NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(sideQuestId), member);
+						}
+					}
+				} else {
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(controller), controller);
+				}
 			});
 		});
 		context.setPacketHandled(true);

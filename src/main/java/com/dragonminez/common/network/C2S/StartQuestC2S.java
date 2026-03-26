@@ -6,6 +6,7 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.QuestLocationHelper;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
@@ -13,7 +14,9 @@ import com.dragonminez.common.quest.SagaBranchingHelper;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -57,7 +60,10 @@ public class StartQuestC2S {
 			Quest quest = saga.getQuestById(questId);
 			if (quest == null) return;
 
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			ServerPlayer controller = PartyManager.resolveQuestController(player);
+			if (controller == null) return;
+
+			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();
 				String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
 				if (pqd.isQuestCompleted(questKey)) return;
@@ -70,7 +76,7 @@ public class StartQuestC2S {
 				SagaBranchingHelper.selectBranchIfNeeded(pqd, sagaId, quest);
 				pqd.acceptQuest(questKey);
 				pqd.setTrackedQuestId(questKey);
-				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), player);
+				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), controller);
 
 				for (int i = 0; i < quest.getObjectives().size(); i++) {
 					QuestObjective objective = quest.getObjectives().get(i);
@@ -114,7 +120,16 @@ public class StartQuestC2S {
 					}
 				}
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				if (PartyManager.isInParty(controller)) {
+					PartyManager.syncPartyQuestState(controller);
+					for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+						if (!member.getUUID().equals(controller.getUUID())) {
+							NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), member);
+						}
+					}
+				} else {
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(controller), controller);
+				}
 			});
 		});
 		context.setPacketHandled(true);

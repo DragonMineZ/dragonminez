@@ -10,6 +10,7 @@ import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestLocationHelper;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.PlayerQuestData;
+import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -51,14 +52,17 @@ public class AcceptSideQuestC2S {
 			Quest sideQuest = QuestRegistry.getQuest(sideQuestId);
 			if (sideQuest == null) return;
 
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			ServerPlayer controller = PartyManager.resolveQuestController(player);
+			if (controller == null) return;
+
+			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(data -> {
 				PlayerQuestData pqd = data.getPlayerQuestData();
 				if (pqd.isQuestAccepted(sideQuestId)) return;
 				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) return;
 				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, sideQuest)) return;
 				pqd.acceptQuest(sideQuestId);
 				pqd.setTrackedQuestId(sideQuestId);
-				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(sideQuestId), player);
+				NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(sideQuestId), controller);
 
 				for (int i = 0; i < sideQuest.getObjectives().size(); i++) {
 					QuestObjective objective = sideQuest.getObjectives().get(i);
@@ -95,7 +99,16 @@ public class AcceptSideQuestC2S {
 					}
 				}
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				if (PartyManager.isInParty(controller)) {
+					PartyManager.syncPartyQuestState(controller);
+					for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+						if (!member.getUUID().equals(controller.getUUID())) {
+							NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(sideQuestId), member);
+						}
+					}
+				} else {
+					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(controller), controller);
+				}
 			});
 		});
 		context.setPacketHandled(true);

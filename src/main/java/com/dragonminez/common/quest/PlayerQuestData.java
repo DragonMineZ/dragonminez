@@ -4,9 +4,19 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Per-player quest progress for all quest types (saga, sidequest, daily, event).
@@ -57,15 +67,30 @@ public class PlayerQuestData {
 
     /** Current tracked quest key (saga:questId or sidequestId) shown in client HUD. */
     @Getter
-	private String trackedQuestId = null;
+    private String trackedQuestId = null;
 
     /** True once the player has seen the first-time "Press V" story prompt. */
     @Setter
-	@Getter
-	private boolean introPromptShown = false;
+    @Getter
+    private boolean introPromptShown = false;
+
+    /** Active party identifier for synchronized story progress. */
+    private UUID activePartyId = null;
+
+    /** Leader that owns the current synchronized quest state. */
+    private UUID partyLeaderId = null;
+
+    /** Snapshot of the current online party composition for the local player UI. */
+    private final List<UUID> partyMemberIds = new ArrayList<>();
+
+    /** Pending invitation shown in the quest screen. */
+    private PartyInviteData pendingPartyInvite = null;
+
+    /** Personal quest state to restore when leaving a synchronized party. */
+    private CompoundTag partyQuestBackup = null;
 
     // ========================================================================================
-    // Quest Progress — Accept / Complete / Reset
+    // Quest Progress - Accept / Complete / Reset
     // ========================================================================================
 
     /**
@@ -138,7 +163,7 @@ public class PlayerQuestData {
         branchSelections.keySet().removeIf(key -> key.startsWith(branchPrefix));
     }
 
-	public void setTrackedQuestId(String trackedQuestId) {
+    public void setTrackedQuestId(String trackedQuestId) {
         if (trackedQuestId == null || trackedQuestId.isBlank()) {
             this.trackedQuestId = null;
             return;
@@ -146,7 +171,7 @@ public class PlayerQuestData {
         this.trackedQuestId = trackedQuestId;
     }
 
-	/**
+    /**
      * Returns the set of all quest IDs that have been accepted (in progress).
      */
     public Set<String> getAcceptedQuestIds() {
@@ -230,7 +255,7 @@ public class PlayerQuestData {
     }
 
     // ========================================================================================
-    // Legacy Compatibility — Saga Composite Keys
+    // Legacy Compatibility - Saga Composite Keys
     // ========================================================================================
 
     /**
@@ -296,6 +321,92 @@ public class PlayerQuestData {
     }
 
     // ========================================================================================
+    // Party State
+    // ========================================================================================
+
+    public UUID getActivePartyId() {
+        return activePartyId;
+    }
+
+    public UUID getPartyLeaderId() {
+        return partyLeaderId;
+    }
+
+    public List<UUID> getPartyMemberIds() {
+        return Collections.unmodifiableList(partyMemberIds);
+    }
+
+    public boolean isInParty() {
+        return activePartyId != null;
+    }
+
+    public boolean isPartyLeader(UUID playerId) {
+        return playerId != null && playerId.equals(partyLeaderId);
+    }
+
+    public void setPartyState(UUID partyId, UUID leaderId, Collection<UUID> members) {
+        this.activePartyId = partyId;
+        this.partyLeaderId = leaderId;
+        this.partyMemberIds.clear();
+
+        if (leaderId != null) {
+            this.partyMemberIds.add(leaderId);
+        }
+
+        if (members != null) {
+            for (UUID memberId : members) {
+                if (memberId == null || this.partyMemberIds.contains(memberId)) continue;
+                this.partyMemberIds.add(memberId);
+            }
+        }
+    }
+
+    public void clearPartyState() {
+        this.activePartyId = null;
+        this.partyLeaderId = null;
+        this.partyMemberIds.clear();
+    }
+
+    public PartyInviteData getPendingPartyInviteData() {
+        return pendingPartyInvite;
+    }
+
+    public boolean hasPendingPartyInvite() {
+        return pendingPartyInvite != null;
+    }
+
+    public void setPendingPartyInvite(PartyInviteData invite) {
+        this.pendingPartyInvite = invite;
+    }
+
+    public void clearPendingPartyInvite() {
+        this.pendingPartyInvite = null;
+    }
+
+    public void savePartyQuestBackup() {
+        this.partyQuestBackup = serializeCoreQuestState();
+    }
+
+    public boolean hasPartyQuestBackup() {
+        return partyQuestBackup != null && !partyQuestBackup.isEmpty();
+    }
+
+    public void restorePartyQuestBackup() {
+        if (hasPartyQuestBackup()) {
+            deserializeCoreQuestState(partyQuestBackup);
+        }
+    }
+
+    public void clearPartyQuestBackup() {
+        this.partyQuestBackup = null;
+    }
+
+    public void copyQuestStateFrom(PlayerQuestData other) {
+        if (other == null) return;
+        deserializeCoreQuestState(other.serializeCoreQuestState());
+    }
+
+    // ========================================================================================
     // Internal Helpers
     // ========================================================================================
 
@@ -303,31 +414,21 @@ public class PlayerQuestData {
         return quests.computeIfAbsent(questId, QuestProgress::new);
     }
 
-    // ========================================================================================
-    // NBT Serialization
-    // ========================================================================================
-
-    /**
-     * Serializes all quest progress to NBT.
-     */
-    public CompoundTag serializeNBT() {
+    private CompoundTag serializeCoreQuestState() {
         CompoundTag tag = new CompoundTag();
 
-        // Quest progress
         ListTag questList = new ListTag();
         for (QuestProgress progress : quests.values()) {
             questList.add(progress.serializeNBT());
         }
         tag.put("quests", questList);
 
-        // Saga unlock state
         CompoundTag sagaUnlocks = new CompoundTag();
         for (Map.Entry<String, Boolean> entry : sagaUnlockState.entrySet()) {
             sagaUnlocks.putBoolean(entry.getKey(), entry.getValue());
         }
         tag.put("sagaUnlocks", sagaUnlocks);
 
-        // Branch selections
         CompoundTag branchTag = new CompoundTag();
         for (Map.Entry<String, String> entry : branchSelections.entrySet()) {
             branchTag.putString(entry.getKey(), entry.getValue());
@@ -342,17 +443,13 @@ public class PlayerQuestData {
         return tag;
     }
 
-    /**
-     * Deserializes quest progress from NBT.
-     */
-    public void deserializeNBT(CompoundTag tag) {
+    private void deserializeCoreQuestState(CompoundTag tag) {
         quests.clear();
         sagaUnlockState.clear();
         branchSelections.clear();
         trackedQuestId = null;
         introPromptShown = false;
 
-        // Quest progress
         ListTag questList = tag.getList("quests", Tag.TAG_COMPOUND);
         for (int i = 0; i < questList.size(); i++) {
             CompoundTag questTag = questList.getCompound(i);
@@ -360,7 +457,6 @@ public class PlayerQuestData {
             quests.put(progress.getQuestId(), progress);
         }
 
-        // Saga unlock state
         if (tag.contains("sagaUnlocks")) {
             CompoundTag sagaUnlocks = tag.getCompound("sagaUnlocks");
             for (String key : sagaUnlocks.getAllKeys()) {
@@ -368,7 +464,6 @@ public class PlayerQuestData {
             }
         }
 
-        // Branch selections
         if (tag.contains("branchSelections")) {
             CompoundTag branchTag = tag.getCompound("branchSelections");
             for (String key : branchTag.getAllKeys()) {
@@ -389,6 +484,94 @@ public class PlayerQuestData {
         }
     }
 
+    private static UUID parseUuid(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return UUID.fromString(raw);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    // ========================================================================================
+    // NBT Serialization
+    // ========================================================================================
+
+    /**
+     * Serializes all quest progress to NBT.
+     */
+    public CompoundTag serializeNBT() {
+        CompoundTag tag = serializeCoreQuestState();
+
+        CompoundTag partyTag = new CompoundTag();
+        if (activePartyId != null) {
+            partyTag.putString("partyId", activePartyId.toString());
+        }
+        if (partyLeaderId != null) {
+            partyTag.putString("leaderId", partyLeaderId.toString());
+        }
+        if (!partyMemberIds.isEmpty()) {
+            ListTag membersTag = new ListTag();
+            for (UUID memberId : partyMemberIds) {
+                membersTag.add(StringTag.valueOf(memberId.toString()));
+            }
+            partyTag.put("members", membersTag);
+        }
+        if (pendingPartyInvite != null) {
+            partyTag.put("pendingInvite", pendingPartyInvite.serializeNBT());
+        }
+        if (partyQuestBackup != null && !partyQuestBackup.isEmpty()) {
+            partyTag.put("questBackup", partyQuestBackup.copy());
+        }
+        if (!partyTag.isEmpty()) {
+            tag.put("partyState", partyTag);
+        }
+
+        return tag;
+    }
+
+    /**
+     * Deserializes quest progress from NBT.
+     */
+    public void deserializeNBT(CompoundTag tag) {
+        deserializeCoreQuestState(tag);
+
+        activePartyId = null;
+        partyLeaderId = null;
+        partyMemberIds.clear();
+        pendingPartyInvite = null;
+        partyQuestBackup = null;
+
+        if (tag.contains("partyState", Tag.TAG_COMPOUND)) {
+            CompoundTag partyTag = tag.getCompound("partyState");
+
+            if (partyTag.contains("partyId", Tag.TAG_STRING)) {
+                activePartyId = parseUuid(partyTag.getString("partyId"));
+            }
+            if (partyTag.contains("leaderId", Tag.TAG_STRING)) {
+                partyLeaderId = parseUuid(partyTag.getString("leaderId"));
+            }
+            if (partyTag.contains("members", Tag.TAG_LIST)) {
+                ListTag memberList = partyTag.getList("members", Tag.TAG_STRING);
+                for (int i = 0; i < memberList.size(); i++) {
+                    UUID memberId = parseUuid(memberList.getString(i));
+                    if (memberId != null && !partyMemberIds.contains(memberId)) {
+                        partyMemberIds.add(memberId);
+                    }
+                }
+            }
+            if (partyLeaderId != null && !partyMemberIds.contains(partyLeaderId)) {
+                partyMemberIds.add(0, partyLeaderId);
+            }
+            if (partyTag.contains("pendingInvite", Tag.TAG_COMPOUND)) {
+                pendingPartyInvite = PartyInviteData.deserialize(partyTag.getCompound("pendingInvite"));
+            }
+            if (partyTag.contains("questBackup", Tag.TAG_COMPOUND)) {
+                partyQuestBackup = partyTag.getCompound("questBackup").copy();
+            }
+        }
+    }
+
     // ========================================================================================
     // Quest Progress Inner Class
     // ========================================================================================
@@ -399,11 +582,11 @@ public class PlayerQuestData {
     public static class QuestProgress {
 
         @Getter
-		private final String questId;
+        private final String questId;
 
         @Setter
-		@Getter
-		private QuestStatus status;
+        @Getter
+        private QuestStatus status;
 
         private final Map<Integer, Integer> objectiveProgress = new HashMap<>();
         private final Map<Integer, Boolean> rewardsClaimed = new HashMap<>();
@@ -413,7 +596,7 @@ public class PlayerQuestData {
             this.status = QuestStatus.NOT_STARTED;
         }
 
-		public void setObjectiveProgress(int index, int progress) {
+        public void setObjectiveProgress(int index, int progress) {
             objectiveProgress.put(index, progress);
         }
 
@@ -472,5 +655,49 @@ public class PlayerQuestData {
             return progress;
         }
     }
-}
 
+    // ========================================================================================
+    // Party Invite Inner Class
+    // ========================================================================================
+
+    @Getter
+    public static class PartyInviteData {
+        private final UUID inviterUUID;
+        private final UUID partyId;
+        private final UUID partyLeaderId;
+        private final String inviterName;
+        private final long expiresAtMs;
+
+        public PartyInviteData(UUID inviterUUID, UUID partyId, UUID partyLeaderId, String inviterName, long expiresAtMs) {
+            this.inviterUUID = inviterUUID;
+            this.partyId = partyId;
+            this.partyLeaderId = partyLeaderId;
+            this.inviterName = inviterName == null ? "" : inviterName;
+            this.expiresAtMs = expiresAtMs;
+        }
+
+        public boolean isExpired() {
+            return System.currentTimeMillis() > expiresAtMs;
+        }
+
+        public CompoundTag serializeNBT() {
+            CompoundTag tag = new CompoundTag();
+            if (inviterUUID != null) tag.putString("inviterUUID", inviterUUID.toString());
+            if (partyId != null) tag.putString("partyId", partyId.toString());
+            if (partyLeaderId != null) tag.putString("partyLeaderId", partyLeaderId.toString());
+            if (!inviterName.isBlank()) tag.putString("inviterName", inviterName);
+            tag.putLong("expiresAtMs", expiresAtMs);
+            return tag;
+        }
+
+        public static PartyInviteData deserialize(CompoundTag tag) {
+            return new PartyInviteData(
+                    parseUuid(tag.getString("inviterUUID")),
+                    parseUuid(tag.getString("partyId")),
+                    parseUuid(tag.getString("partyLeaderId")),
+                    tag.getString("inviterName"),
+                    tag.getLong("expiresAtMs")
+            );
+        }
+    }
+}
