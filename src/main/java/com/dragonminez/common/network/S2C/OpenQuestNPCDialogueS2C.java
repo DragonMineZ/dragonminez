@@ -1,10 +1,9 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.gui.quest.QuestNPCDialogueScreen;
-import net.minecraft.client.Minecraft;
+import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
@@ -59,16 +58,10 @@ public class OpenQuestNPCDialogueS2C {
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
-		context.enqueueWork(this::handleClient);
+		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+				() -> () -> ClientPacketHandler.handleOpenQuestNpcDialoguePacket(
+						npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds)));
 		context.setPacketHandled(true);
-	}
-
-	@OnlyIn(Dist.CLIENT)
-	private void handleClient() {
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null) {
-			mc.setScreen(new QuestNPCDialogueScreen(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds));
-		}
 	}
 }
 

@@ -1,9 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.gui.quest.StoryToast;
-import net.minecraft.client.Minecraft;
+import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
@@ -27,14 +25,8 @@ public class PartyInviteToastS2C {
 
     public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            Minecraft mc = Minecraft.getInstance();
-            mc.getToasts().addToast(new StoryToast(
-                    Component.translatable("toast.dragonminez.party.invite.title"),
-                    Component.translatable("toast.dragonminez.party.invite.desc", Component.literal(inviterName)),
-                    StoryToast.Tone.INFO
-            ));
-        }));
+        context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                () -> () -> ClientPacketHandler.handlePartyInviteToastPacket(inviterName)));
         context.setPacketHandled(true);
     }
 }

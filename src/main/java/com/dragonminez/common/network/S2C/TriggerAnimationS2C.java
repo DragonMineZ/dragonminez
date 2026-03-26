@@ -1,10 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.animation.IPlayerAnimatable;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
+import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
@@ -53,19 +50,9 @@ public class TriggerAnimationS2C {
 
 	public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
 		NetworkEvent.Context context = contextSupplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			if (Minecraft.getInstance().level != null) {
-				Player player = Minecraft.getInstance().level.getPlayerByUUID(playerUUID);
-				if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
-					switch (animationType) {
-						case EVASION -> animatable.dragonminez$triggerEvasion();
-						case DASH -> animatable.dragonminez$triggerDash(variant);
-						case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
-						case COMBO -> animatable.dragonminez$triggerCombo(variant);
-					}
-				}
-			}
-		}));
+		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+				() -> () -> ClientPacketHandler.handleTriggerAnimationPacket(
+						playerUUID, animationType, variant, entityId)));
 		context.setPacketHandled(true);
 	}
 }

@@ -1,6 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.events.RadarRenderEvent;
+import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
@@ -31,11 +31,8 @@ public class RadarSyncS2C {
 	}
 
 	public static void handle(RadarSyncS2C msg, Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-				RadarRenderEvent.updateRadarData(msg.earthPositions, msg.namekPositions);
-			});
-		});
+		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+				() -> () -> ClientPacketHandler.handleRadarSyncPacket(msg.earthPositions, msg.namekPositions)));
 		ctx.get().setPacketHandled(true);
 	}
 }
