@@ -98,7 +98,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
 
-        this.setCastOffsets(0.4F, 0.2F, 0.0F);
+        this.setCastOffsets(0F, -0.2F, 0.4F);
         updatePositionRelativeToOwner(owner, true);
 
         if (!this.level().isClientSide) {
@@ -140,7 +140,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
 
-        this.setCastOffsets(0.4F, 0.2F, 0.0F);
+        this.setCastOffsets(0.4F, -0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
 
         if (!this.level().isClientSide) {
@@ -156,9 +156,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(0x4FF7FF, 0x4FF7FF);
 
-        // Sistema de carga manual
         this.setFiring(false);
-        this.setMaxLife(99999); // Vida infinita mientras carga
+        this.setMaxLife(99999);
         this.setCastWave(0);
         this.setCastOffsets(0.4F, -0.6F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
@@ -178,7 +177,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
 
-        this.setCastOffsets(0.4F, 0.6F, 0.0F);
+        this.setCastOffsets(0.4F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
 
         if (!this.level().isClientSide) {
@@ -196,9 +195,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setKiSpeed(speed);
         this.setColors(0xCE10E3, 0xAE10E3);
 
-        // Sistema de carga manual
         this.setFiring(false);
-        this.setMaxLife(99999); // Vida infinita mientras carga
+        this.setMaxLife(99999);
         this.setCastWave(0);
         this.setCastOffsets(0.4F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
@@ -241,6 +239,45 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setMaxLife(99999);
         this.setCastWave(40);
         this.setCastOffsets(0.0F, -0.3F, 0.4F);
+        updatePositionRelativeToOwner(owner, false);
+    }
+    public void setupKiOozaru(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
+        this.setKiRenderType(0);
+        this.setSize(size);
+        this.setCastSize(size / 2);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+
+        this.setContinuousFollow(true);
+
+        this.setFiring(false);
+        this.setCastWave(castTime);
+        this.setMaxLife(castTime * 2);
+        this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
+
+        this.setCastOffsets(0.0F, 0.0F, 0.6F);
+        updatePositionRelativeToOwner(owner, true);
+
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
+    public void setupKiOozaruPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setKiRenderType(0);
+        this.setSize(size);
+        this.setCastSize(size / 2);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, colorBorder);
+
+        this.setContinuousFollow(true);
+
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastWave(0);
+        this.setCastOffsets(0.0F, 0.0F, 0.5F);
         updatePositionRelativeToOwner(owner, false);
     }
 

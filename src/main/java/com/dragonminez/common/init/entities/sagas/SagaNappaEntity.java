@@ -18,35 +18,22 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaNappaEntity extends DBSagasEntity{
 
-    private int kiBlastCooldown = 0;
-
     public SagaNappaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(4000);
 		}
+        this.setCanFly(true);
+        this.setWildSense(true, 200);
+        this.setKiBlastDamage(12.0F);
+        this.setKiBlastSpeed(1.3F);
+        this.setKiOozaru(true, 200, 12.0f);
+        this.setAuraColor(0XF527AD);
+        this.setDBZStyle(1);
+
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.20D);
+
     }
 
-    @Override
-    public void stopCasting() {
-        if (getSkillType() == 1) {
-            this.kiBlastCooldown = 10 * 20;
-        }
-        super.stopCasting();
-    }
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
-        super.registerControllers(controllers);
-    }
-
-    private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        if (this.isCasting()) {
-            event.getController().setAnimation(ANIM_KIWAVE);
-            return PlayState.CONTINUE;
-        }
-        event.getController().forceAnimationReset();
-        return PlayState.STOP;
-    }
 }

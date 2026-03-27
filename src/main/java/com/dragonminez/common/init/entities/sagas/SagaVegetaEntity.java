@@ -18,44 +18,25 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaVegetaEntity extends DBSagasEntity{
 
-    private static final int SKILL_GALICK_GUN = 1;
-    private int galickGunCooldown = 0;
-
     public SagaVegetaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(18000);
 		}
+
+        this.setCanFly(true);
+        this.setWildSense(true, 200);
+        this.setKiBlastDamage(12.0F);
+        this.setKiBlastSpeed(1.3F);
+        this.setCombo(1, 160);
+        this.setKiGalick(true, 200, 12.0f);
+        this.setAuraColor(0XF527AD);
+        this.setDBZStyle(0);
     }
 
     @Override
-    public void stopCasting() {
-        int usedSkill = getSkillType();
-
-        if (usedSkill == SKILL_GALICK_GUN) {
-            this.galickGunCooldown = 10 * 20;
-        }
-
-        super.stopCasting();
+    public String getGeckolibModelName() {
+        return "saga_vegeta";
     }
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        super.registerControllers(controllers);
-        controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
-    }
-
-    private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        if (this.isCasting()) {
-            int currentSkill = getSkillType();
-
-            if (currentSkill == SKILL_GALICK_GUN) {
-                return event.setAndContinue(ANIM_KIWAVE);
-            }
-
-            return PlayState.CONTINUE;
-        }
-        event.getController().forceAnimationReset();
-        return PlayState.STOP;
-    }
 }

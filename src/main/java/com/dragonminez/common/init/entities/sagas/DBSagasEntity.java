@@ -101,7 +101,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_FLY_FAST = RawAnimation.begin().thenLoop("fly_fast");
 
     protected static final RawAnimation ANIM_EVADE = RawAnimation.begin().thenPlay("evasion1");
-    protected static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("ki_kame");
+    protected static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("ki_finalflash");
     protected static final RawAnimation ANIM_KILASER = RawAnimation.begin().thenPlay("kilaser");
     protected static final RawAnimation ANIM_BARRIER = RawAnimation.begin().thenPlay("barrier");
     protected static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
@@ -120,6 +120,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_KI_FINALFLASH = RawAnimation.begin().thenPlay("ki_finalflash");
     protected static final RawAnimation ANIM_KI_DISC = RawAnimation.begin().thenPlay("ki_finalflash");
     protected static final RawAnimation ANIM_KI_LASER = RawAnimation.begin().thenPlay("ki_laser");
+    protected static final RawAnimation ANIM_KIOZARU = RawAnimation.begin().thenPlay("ki_oozaru");
 
     protected static final RawAnimation ANIM_COMBO1 = RawAnimation.begin().thenPlay("combo1");
     protected static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");
@@ -199,6 +200,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private int kiWaveColorMain = 0xFFFFFF;
     private int kiWaveColorBorder = 0xFFFFFF;
     private float kiWaveSize = 1.0F;
+
+    private boolean canUseKiOozaru = false;
+    private int kiOozaruCooldownMax = 0;
+    private int currentKiOozaruCooldown = 0;
+    private float kiOozaruDamage = 0.0F;
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
@@ -308,6 +314,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.kiWaveSize = size;
     }
 
+    public void setKiOozaru(boolean active, int cooldown, float damage) {
+        this.canUseKiOozaru = active;
+        this.kiOozaruCooldownMax = cooldown;
+        this.currentKiOozaruCooldown = cooldown;
+        this.kiOozaruDamage = damage;
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this) {
@@ -371,6 +384,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 if (this.canUseKiBarrier && this.currentKiBarrierCooldown > 0) this.currentKiBarrierCooldown--;
                 if (this.canUseSKPRoar && this.currentSkpRoarCooldown > 0) this.currentSkpRoarCooldown--;
                 if (this.canUseKiWave && this.currentKiWaveCooldown > 0) this.currentKiWaveCooldown--;
+                if (this.canUseKiOozaru && this.currentKiOozaruCooldown > 0) this.currentKiOozaruCooldown--;
             }
 
             if (this.isCasting()) {
@@ -491,6 +505,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 KiWaveEntity genericWave = new KiWaveEntity(this.level(), this);
                 genericWave.setupKiWave(this, this.kiWaveDamage, this.getKiBlastSpeed(), this.kiWaveColorMain, this.kiWaveColorBorder, this.kiWaveSize, syncCastTime);
                 break;
+            case 9:
+                KiWaveEntity oozaruBeam = new KiWaveEntity(this.level(), this);
+                oozaruBeam.setupKiOozaru(this, this.kiOozaruDamage, this.getKiBlastSpeed(), this.getAuraColor(), this.getAuraColor(), 1.5F, syncCastTime);
+                break;
         }
     }
 
@@ -505,6 +523,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 (this.canUseKiExplosion && this.currentKiExplosionCooldown <= 0) ||
                 (this.canUseKiBarrier && this.currentKiBarrierCooldown <= 0) ||
                 (this.canUseSKPRoar && this.currentSkpRoarCooldown <= 0) ||
+                (this.canUseKiOozaru && this.currentKiOozaruCooldown <= 0) ||
                 (this.canUseKiWave && this.currentKiWaveCooldown <= 0);
     }
 
@@ -530,9 +549,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         } else if (this.canUseSKPRoar && this.currentSkpRoarCooldown <= 0) {
             this.startCasting(7);
             this.currentSkpRoarCooldown = this.skpRoarCooldownMax;
-        } else if (this.canUseKiWave && this.currentKiWaveCooldown <= 0) {
+        }  else if (this.canUseKiWave && this.currentKiWaveCooldown <= 0) {
             this.startCasting(8);
             this.currentKiWaveCooldown = this.kiWaveCooldownMax;
+        } else if (this.canUseKiOozaru && this.currentKiOozaruCooldown <= 0) {
+            this.startCasting(9);
+            this.currentKiOozaruCooldown = this.kiOozaruCooldownMax;
         }
     }
 
@@ -613,6 +635,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         controllers.add(new AnimationController<>(this, "skill_controller", 5, this::skillPredicate));
         controllers.add(new AnimationController<>(this, "evasion_controller", 5, this::evasionPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
+        controllers.add(new AnimationController<>(this, "tail_controller", 5, this::tailPredicate));
     }
 
     private <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
@@ -671,6 +694,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 case 6: return event.setAndContinue(ANIM_KI_BARRIER);
                 case 7: return event.setAndContinue(ANIM_KI_EXPLOSION);
                 case 8: return event.setAndContinue(ANIM_KIWAVE);
+                case 9: return event.setAndContinue(ANIM_KIOZARU);
                 default: return event.setAndContinue(ANIM_KIWAVE);
             }
         }
@@ -734,6 +758,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
         event.getController().forceAnimationReset();
         return PlayState.STOP;
+    }
+
+    private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
+        return event.setAndContinue(ANIM_TAIL);
     }
 
     @Override
@@ -888,7 +916,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.setDeltaMovement(new Vec3(-look.x * 1.5, 0.3, -look.z * 1.5));
         this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
     }
-
+    /*
+    COMBO LOGIC
+    0: Classic
+    1: Meteor Smash
+    2: Kaioken Attack
+    10: All
+     */
     private void handleComboLogic() {
         if (comboTarget == null || !comboTarget.isAlive()) {
             this.stopCombo();
@@ -1173,7 +1207,23 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             }
         }
 
-        return super.hurt(pSource, pAmount);
+        boolean actuallyHurt = super.hurt(pSource, pAmount);
+
+        if (actuallyHurt && !this.level().isClientSide) {
+            Entity attacker = pSource.getEntity();
+
+            if (attacker instanceof LivingEntity livingAttacker) {
+
+                if (!this.isCasting() && !this.isComboing()) {
+
+                    if (this.getTarget() != livingAttacker) {
+                        this.setTarget(livingAttacker);
+                    }
+                }
+            }
+        }
+
+        return actuallyHurt;
     }
 
     @Override

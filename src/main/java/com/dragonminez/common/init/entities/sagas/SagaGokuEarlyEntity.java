@@ -37,11 +37,6 @@ public class SagaGokuEarlyEntity extends DBSagasEntity{
 
         //Primer Estilo
         this.setDBZStyle(0);
-
-        //this.setKiCharge(true);
-        //this.setLightning(true);
-
-        //Lanza un kamehameha
         this.setKiHame(true, 160, 20f);
 
     }

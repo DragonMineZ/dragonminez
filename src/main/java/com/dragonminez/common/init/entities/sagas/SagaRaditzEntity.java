@@ -19,9 +19,8 @@ public class SagaRaditzEntity extends DBSagasEntity {
         this.setFlySpeed(0.45D);
         this.setAuraColor(0xFF00FF);
 
-
         this.setEvade(true, 60);
-        this.setCombo(10, 100);
+//        this.setCombo(10, 100);
         this.setWildSense(true, 160);
 
         this.setDBZStyle(0);
