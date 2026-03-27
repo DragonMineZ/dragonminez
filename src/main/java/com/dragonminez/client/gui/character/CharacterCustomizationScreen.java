@@ -21,11 +21,13 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
@@ -37,6 +39,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 @OnlyIn(Dist.CLIENT)
@@ -81,6 +85,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private float playerRotation = 180.0f;
 	private boolean isDraggingModel = false;
 	private double lastMouseX = 0;
+	private final List<PreviewFormOption> previewFormOptions = new ArrayList<>();
+	private int previewFormIndex = -1;
+
+	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("super", "android", "legendary", "god");
 
 	private enum TransitionState { NONE, OPENING, CLOSING }
 	private static final long OPEN_ANIMATION_DURATION = 200;
@@ -90,6 +98,34 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private Screen pendingScreen;
 	private boolean closeCommitted;
 	private boolean transitionInitialized;
+
+	private static final class PreviewFormOption {
+		private final String groupName;
+		private final String formName;
+		private final String formType;
+		private final int unlockLevel;
+
+		private PreviewFormOption(String groupName, String formName, String formType, int unlockLevel) {
+			this.groupName = groupName;
+			this.formName = formName;
+			this.formType = formType;
+			this.unlockLevel = unlockLevel;
+		}
+	}
+
+	private static final class ActiveFormSnapshot {
+		private final String activeFormGroup;
+		private final String activeForm;
+		private final String activeStackFormGroup;
+		private final String activeStackForm;
+
+		private ActiveFormSnapshot(String activeFormGroup, String activeForm, String activeStackFormGroup, String activeStackForm) {
+			this.activeFormGroup = activeFormGroup;
+			this.activeForm = activeForm;
+			this.activeStackFormGroup = activeStackFormGroup;
+			this.activeStackForm = activeStackForm;
+		}
+	}
 
 	public CharacterCustomizationScreen(Screen previousScreen, Character character) {
 		super(Component.translatable("gui.dragonminez.customization.title"));
@@ -256,6 +292,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void initPage1(int centerY) {
+		reloadPreviewFormOptions();
+
 		int classPosX = 125;
 		int classPosY = centerY - 90;
 
@@ -280,16 +318,33 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 					}));
 		}
 
+		int previewPosX = 125;
+		int previewPosY = centerY - 60;
+		if (previewFormIndex > 0) {
+			addRenderableWidget(createArrowButton(previewPosX - 105, previewPosY, true,
+					btn -> {
+						changePreviewTransformation(-1);
+						refreshButtons();
+					}));
+		}
+		if (previewFormIndex >= 0 && previewFormIndex < previewFormOptions.size() - 1) {
+			addRenderableWidget(createArrowButton(previewPosX, previewPosY, false,
+					btn -> {
+						changePreviewTransformation(1);
+						refreshButtons();
+					}));
+		}
+
 		int colorPosX = 67;
-		int colorStartY = centerY - 45;
+		int colorStartY = centerY - 25;
 
 		addRenderableWidget(createColorButton(colorPosX - 25, colorStartY, "bodyColor"));
 		addRenderableWidget(createColorButton(colorPosX, colorStartY, "bodyColor2"));
 		addRenderableWidget(createColorButton(colorPosX + 25, colorStartY, "bodyColor3"));
 
-		addRenderableWidget(createColorButton(colorPosX - 25, colorStartY + 35, "eye1Color"));
+		addRenderableWidget(createColorButton(colorPosX - 25, colorStartY + 30, "eye1Color"));
 		addRenderableWidget(new CustomTextureButton.Builder()
-				.position(colorPosX + 5, colorStartY + 40)
+				.position(colorPosX + 5, colorStartY + 35)
 				.size(10, 10)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(102, 0, 102, 10)
@@ -301,9 +356,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 					refreshButtons();
 				})
 				.build());
-		addRenderableWidget(createColorButton(colorPosX + 25, colorStartY + 35, "eye2Color"));
-		addRenderableWidget(createColorButton(colorPosX, colorStartY + 70, "hairColor"));
-		addRenderableWidget(createColorButton(colorPosX, colorStartY + 105, "auraColor"));
+		addRenderableWidget(createColorButton(colorPosX + 25, colorStartY + 30, "eye2Color"));
+		addRenderableWidget(createColorButton(colorPosX, colorStartY + 60, "hairColor"));
+		addRenderableWidget(createColorButton(colorPosX, colorStartY + 90, "auraColor"));
 	}
 
 	private void initNavigationButtons() {
@@ -723,6 +778,11 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void finish() {
 		if (this.minecraft != null) {
+			clearAllTransformSelections(character);
+			clearLocalPlayerTransformState();
+			previewFormIndex = -1;
+			previewFormOptions.clear();
+
 			if (this.previousScreen == null) {
 				NetworkHandler.sendToServer(new UpdateCharacterC2S(character));
 			} else {
@@ -885,19 +945,26 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			Component className = tr("class.dragonminez." + character.getCharacterClass());
 			drawCenteredStringWithBorder2(graphics, className, textX, centerY - 68, 0xFFFFFF);
 
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.transformation_preview").getString(), textX, centerY - 50, 0xFF9B9B);
+			drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), textX, centerY - 38, 0xFFFFFF);
+
 			int labelX = 79;
-			int labelStartY = centerY - 40;
+			int labelStartY = centerY - 20;
 
 			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.body").getString(), labelX, labelStartY, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.eyes").getString(), labelX, labelStartY + 35, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hair").getString(), labelX, labelStartY + 70, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.aura").getString(), labelX, labelStartY + 105, 0xFF9B9B);
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.eyes").getString(), labelX, labelStartY + 30, 0xFF9B9B);
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hair").getString(), labelX, labelStartY + 60, 0xFF9B9B);
+			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.aura").getString(), labelX, labelStartY + 90, 0xFF9B9B);
 		}
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
 		LivingEntity player = Minecraft.getInstance().player;
 		if (player == null) return;
+
+		ActiveFormSnapshot snapshot = captureLocalPlayerFormSnapshot(player);
+		boolean previewApplied = applyPreviewTransformationToPlayer(player);
+
 		int adjustedScale = getAdjustedModelScale(scale);
 		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
 		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
@@ -919,6 +986,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().translate(0.0D, 0.0D, 0.0D);
 		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
 		graphics.pose().popPose();
+
+		if (previewApplied && snapshot != null) {
+			restoreLocalPlayerFormSnapshot(player, snapshot);
+		}
 
 		player.yBodyRot = yBodyRotO;
 		player.setYRot(yRotO);
@@ -1234,6 +1305,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	@Override
 	public void onClose() {
+		clearLocalPlayerTransformState();
+		previewFormIndex = -1;
+		previewFormOptions.clear();
+
 		if (this.previousScreen != null) {
 			isSwitchingMenu = true;
 			startCloseTransition(previousScreen);
@@ -1275,6 +1350,139 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		if (duration <= 0L) return 1.0f;
 		long elapsed = System.currentTimeMillis() - animationStartTime;
 		return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
+	}
+
+	private void reloadPreviewFormOptions() {
+		String previousGroup = null;
+		String previousForm = null;
+		if (previewFormIndex >= 0 && previewFormIndex < previewFormOptions.size()) {
+			PreviewFormOption previous = previewFormOptions.get(previewFormIndex);
+			previousGroup = previous.groupName;
+			previousForm = previous.formName;
+		}
+
+		previewFormOptions.clear();
+		previewFormIndex = -1;
+
+		previewFormOptions.add(new PreviewFormOption("", "", "base", 0));
+
+		List<TransformationsHelper.OrderedFormEntry> orderedForms =
+				TransformationsHelper.getOrderedFormsForRace(character.getRace(), PREVIEW_FORM_TYPE_ORDER);
+		for (TransformationsHelper.OrderedFormEntry entry : orderedForms) {
+			if (entry == null || entry.getFormData() == null) continue;
+			previewFormOptions.add(new PreviewFormOption(
+					entry.getGroupName(),
+					entry.getFormData().getName(),
+					entry.getFormType(),
+					entry.getFormData().getUnlockOnSkillLevel() != null ? entry.getFormData().getUnlockOnSkillLevel() : 0
+			));
+		}
+
+		if (previewFormOptions.isEmpty()) return;
+
+		if (previousGroup != null && previousForm != null) {
+			for (int i = 0; i < previewFormOptions.size(); i++) {
+				PreviewFormOption option = previewFormOptions.get(i);
+				if (option.groupName.equalsIgnoreCase(previousGroup) && option.formName.equalsIgnoreCase(previousForm)) {
+					previewFormIndex = i;
+					return;
+				}
+			}
+		}
+
+		previewFormIndex = 0;
+	}
+
+	private void changePreviewTransformation(int delta) {
+		if (previewFormOptions.isEmpty()) {
+			previewFormIndex = -1;
+			return;
+		}
+		int nextIndex = previewFormIndex + delta;
+		if (nextIndex < 0) nextIndex = previewFormOptions.size() - 1;
+		if (nextIndex >= previewFormOptions.size()) nextIndex = 0;
+		previewFormIndex = nextIndex;
+	}
+
+	private String getCurrentPreviewTransformationName() {
+		if (previewFormIndex < 0 || previewFormIndex >= previewFormOptions.size()) {
+			return tr("forms.dragonminez.base").getString();
+		}
+
+		PreviewFormOption option = previewFormOptions.get(previewFormIndex);
+		String rawName = option.formName != null ? option.formName : "";
+		if (rawName.isEmpty()) return tr("forms.dragonminez.base").getString();
+		String raceName = character.getRace() != null ? character.getRace().toLowerCase(Locale.ROOT) : "human";
+		String translationKey = "race.dragonminez." + raceName + ".form." + option.groupName + "." + rawName;
+		if (I18n.exists(translationKey)) {
+			return tr(translationKey).getString();
+		}
+
+		return formatPreviewFormName(rawName);
+	}
+
+	private String formatPreviewFormName(String rawName) {
+		String[] parts = rawName.replace('-', ' ').replace('_', ' ').split("\\s+");
+		StringBuilder builder = new StringBuilder();
+		for (String part : parts) {
+			if (part == null || part.isEmpty()) continue;
+			if (!builder.isEmpty()) builder.append(' ');
+			builder.append(java.lang.Character.toUpperCase(part.charAt(0)));
+			if (part.length() > 1) builder.append(part.substring(1).toLowerCase(Locale.ROOT));
+		}
+		return builder.isEmpty() ? rawName : builder.toString();
+	}
+
+	private ActiveFormSnapshot captureLocalPlayerFormSnapshot(LivingEntity player) {
+		final ActiveFormSnapshot[] snapshot = new ActiveFormSnapshot[1];
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			Character currentCharacter = stats.getCharacter();
+			snapshot[0] = new ActiveFormSnapshot(
+					currentCharacter.getActiveFormGroup(),
+					currentCharacter.getActiveForm(),
+					currentCharacter.getActiveStackFormGroup(),
+					currentCharacter.getActiveStackForm()
+			);
+		});
+		return snapshot[0];
+	}
+
+	private boolean applyPreviewTransformationToPlayer(LivingEntity player) {
+		if (previewFormIndex < 0 || previewFormIndex >= previewFormOptions.size()) return false;
+		PreviewFormOption option = previewFormOptions.get(previewFormIndex);
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			Character currentCharacter = stats.getCharacter();
+			if (option.groupName == null || option.groupName.isEmpty() || option.formName == null || option.formName.isEmpty()) {
+				currentCharacter.clearActiveForm();
+			} else {
+				currentCharacter.setActiveForm(option.groupName, option.formName);
+			}
+			currentCharacter.clearActiveStackForm();
+		});
+		return true;
+	}
+
+	private void restoreLocalPlayerFormSnapshot(LivingEntity player, ActiveFormSnapshot snapshot) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			Character currentCharacter = stats.getCharacter();
+			currentCharacter.setActiveForm(snapshot.activeFormGroup, snapshot.activeForm);
+			currentCharacter.setActiveStackForm(snapshot.activeStackFormGroup, snapshot.activeStackForm);
+		});
+	}
+
+	private void clearLocalPlayerTransformState() {
+		var mc = Minecraft.getInstance();
+		if (mc.player == null) return;
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(stats -> clearAllTransformSelections(stats.getCharacter()));
+	}
+
+	private void clearAllTransformSelections(Character targetCharacter) {
+		targetCharacter.clearActiveForm();
+		targetCharacter.clearActiveStackForm();
+		targetCharacter.setSelectedFormGroup("");
+		targetCharacter.setSelectedForm("");
+		targetCharacter.setSelectedStackFormGroup("");
+		targetCharacter.setSelectedStackForm("");
 	}
 
 }
