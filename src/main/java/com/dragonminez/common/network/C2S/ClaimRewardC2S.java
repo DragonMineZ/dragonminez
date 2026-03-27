@@ -5,7 +5,9 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -36,8 +38,16 @@ public class ClaimRewardC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player == null) return;
+			if (PartyManager.isInParty(player) && !PartyManager.canClaimSharedRewards(player)) {
+				player.sendSystemMessage(Component.translatable("quest.dmz.party.reward.leader_only")
+						.withStyle(ChatFormatting.RED));
+				return;
+			}
 
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			ServerPlayer controller = PartyManager.resolveQuestController(player);
+			if (controller == null) return;
+
+			StatsProvider.get(StatsCapability.INSTANCE, controller).ifPresent(stats -> {
 				Saga saga = QuestRegistry.getSaga(sagaId);
 				if (saga == null) return;
 				Quest quest = saga.getQuestById(questId);
@@ -52,13 +62,19 @@ public class ClaimRewardC2S {
 
 					for (int i = 0; i < rewards.size(); i++) {
 						if (!pqd.isRewardClaimed(questKey, i)) {
-							rewards.get(i).giveReward(player);
+							rewards.get(i).giveReward(controller);
 							pqd.claimReward(questKey, i);
 							anyClaimed = true;
 						}
 					}
 
-					if (anyClaimed) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					if (anyClaimed) {
+						if (PartyManager.isInParty(controller)) {
+							PartyManager.syncPartyQuestState(controller);
+						} else {
+							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(controller), controller);
+						}
+					}
 
 				}
 			});

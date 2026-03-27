@@ -36,8 +36,8 @@ public class Resources {
         return Math.round(value * 4.0f) / 4.0f;
     }
 
-    private static float roundToInt(float value) {
-        return Math.round(value);
+    private static float truncateToInt(float value) {
+        return (float) Math.floor(value);
     }
 
     private static float clampMax(float value, float max) {
@@ -73,7 +73,8 @@ public class Resources {
     }
 
     public void setTrainingPoints(float points) {
-        this.trainingPoints = Math.max(0, Math.min(Float.MAX_VALUE - 1, roundToInt(points)));
+        float clamped = Math.max(0, Math.min(Float.MAX_VALUE - 1, points));
+        this.trainingPoints = truncateToInt(clamped);
     }
 
     public void setRacialSkillCount(int count) {

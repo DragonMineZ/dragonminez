@@ -10,6 +10,8 @@ import com.dragonminez.common.stats.extras.Training;
 import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationsHelper;
+import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.world.dimension.HTCDimension;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -62,22 +64,63 @@ public class StatsData {
 	}
 
 	public int getLevel() {
-		int totalStats = stats.getTotalStats();
+		int maxLevel = getConfiguredMaxValue();
+		if (maxLevel <= 1) return 1;
 
-		String raceName = character.getRaceName();
-		String characterClass = character.getCharacterClass();
+		int initialStats = getInitialTotalStats();
+		int totalStats = Math.max(initialStats, stats.getTotalStats());
 
-		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
-		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
-		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
+		long maxTotalStatsForLevel = Math.max((long) initialStats, getConfiguredMaxTotalStatsRaw());
+		double denominator = Math.max(1.0, (double) maxTotalStatsForLevel - initialStats);
+		double progress = (totalStats - initialStats) / denominator;
+		progress = Math.max(0.0, Math.min(1.0, progress));
 
-		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
+		int computedLevel = 1 + (int) Math.floor(progress * (maxLevel - 1));
+		return Math.max(1, Math.min(maxLevel, computedLevel));
+	}
 
-		int initialStats = baseStats.getStrength() + baseStats.getStrikePower() +
-				baseStats.getResistance() + baseStats.getVitality() +
-				baseStats.getKiPower() + baseStats.getEnergy();
+	public int getConfiguredMaxValue() {
+		return ConfigManager.getServerConfig().getGameplay().getMaxValue();
+	}
 
-		return ((totalStats - initialStats) / 6) + 1;
+	public boolean isMaxLevelValueInsteadOfStats() {
+		return ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats();
+	}
+
+	public int getConfiguredMaxTotalStats() {
+		long rawMax = getConfiguredMaxTotalStatsRaw();
+		return rawMax > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rawMax;
+	}
+
+	public int getRemainingAssignableStats() {
+		long remaining = (long) getConfiguredMaxTotalStats() - stats.getTotalStats();
+		return remaining <= 0 ? 0 : (int) Math.min(Integer.MAX_VALUE, remaining);
+	}
+
+	public int getCurrentStatValue(String statName) {
+		return switch (statName.toUpperCase()) {
+			case "STR" -> stats.getStrength();
+			case "SKP" -> stats.getStrikePower();
+			case "RES" -> stats.getResistance();
+			case "VIT" -> stats.getVitality();
+			case "PWR" -> stats.getKiPower();
+			case "ENE" -> stats.getEnergy();
+			default -> 0;
+		};
+	}
+
+	public int getMaxAllowedIncreaseForStat(String statName, int requestedAmount) {
+		int safeRequested = Math.max(0, requestedAmount);
+		if (safeRequested <= 0) return 0;
+
+		int remainingTotal = getRemainingAssignableStats();
+		if (remainingTotal <= 0) return 0;
+
+		int allowedByTotal = Math.min(safeRequested, remainingTotal);
+		if (isMaxLevelValueInsteadOfStats()) return allowedByTotal;
+
+		int remainingStat = Math.max(0, getConfiguredMaxValue() - getCurrentStatValue(statName));
+		return Math.min(allowedByTotal, remainingStat);
 	}
 
 	public int getBattlePower() {
@@ -523,6 +566,25 @@ public class StatsData {
 		return config.getClassStats(characterClass);
 	}
 
+	private int getInitialTotalStats() {
+		String raceName = character.getRaceName();
+		String characterClass = character.getCharacterClass();
+
+		RaceStatsConfig raceConfig = ConfigManager.getRaceStats(raceName);
+		RaceStatsConfig.ClassStats classStats = getClassStats(raceConfig, characterClass);
+		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
+
+		if (baseStats == null) baseStats = new RaceStatsConfig().getClassStats(characterClass).getBaseStats();
+
+		return baseStats.getStrength() + baseStats.getStrikePower() +
+				baseStats.getResistance() + baseStats.getVitality() +
+				baseStats.getKiPower() + baseStats.getEnergy();
+	}
+
+	private long getConfiguredMaxTotalStatsRaw() {
+		return (long) getConfiguredMaxValue() * 6L;
+	}
+
 	public double getRaceTpCostMultiplier() {
 		String raceName = character.getRaceName();
 		String characterClass = character.getCharacterClass();
@@ -532,6 +594,62 @@ public class StatsData {
 		if (classStats == null) return 1.0;
 		Double classMult = classStats.getTpCostMultiplier();
 		return classMult != null ? classMult : 1.0;
+	}
+
+	public double getTpAdditiveMultiplier() {
+		double additiveMultiplier = 1.0;
+		additiveMultiplier += (getTpClassMultiplier() - 1.0);
+		additiveMultiplier += (getTpFrostDemonMultiplier() - 1.0);
+		additiveMultiplier += (getTpHTCMultiplier() - 1.0);
+		additiveMultiplier += (getTpGravityMultiplier() - 1.0);
+		return Math.max(0.0, additiveMultiplier);
+	}
+
+	public double getTpGlobalMultiplier() {
+		return ConfigManager.getServerConfig().getGameplay().getTpsGainMultiplier();
+	}
+
+	public double getTpClassMultiplier() {
+		String race = character.getRace();
+		var raceStats = ConfigManager.getRaceStats(race);
+		if (raceStats == null) return 1.0;
+		var classStats = raceStats.getClassStats(character.getCharacterClass());
+		if (classStats == null) return 1.0;
+		Double classMult = classStats.getTpGainMultiplier();
+		return classMult != null ? classMult : 1.0;
+	}
+
+	public boolean isFrostDemonTpPassiveActive() {
+		return ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
+				&& ConfigManager.getServerConfig().getRacialSkills().getFrostDemonRacialSkill()
+				&& "frostdemon".equals(character.getRace());
+	}
+
+	public double getTpFrostDemonMultiplier() {
+		if (!isFrostDemonTpPassiveActive()) return 1.0;
+		return ConfigManager.getServerConfig().getRacialSkills().getFrostDemonTPBoost();
+	}
+
+	public double getTpHTCMultiplier() {
+		if (!player.level().dimension().equals(HTCDimension.HTC_KEY)) return 1.0;
+		return ConfigManager.getServerConfig().getGameplay().getHTCTpMultiplier();
+	}
+
+	public double getTpGravityMultiplier() {
+		if (player.level().dimension().equals(HTCDimension.HTC_KEY)) return 1.0;
+		double bonusGravity = GravityLogic.getBonusGravity(player);
+		if (bonusGravity <= 0) return 1.0;
+		return 1.0 + (bonusGravity * 0.05);
+	}
+
+	public double getTpTotalMultiplier() {
+		return getTpAdditiveMultiplier() * getTpGlobalMultiplier();
+	}
+
+	public int calculateTPGain(int baseTP) {
+		if (baseTP <= 0) return 0;
+		double total = baseTP * getTpTotalMultiplier();
+		return (int) Math.max(0.0, total);
 	}
 
 	public int getSingleStatCost(int simulatedTotalStats) {
@@ -554,9 +672,10 @@ public class StatsData {
 	public int calculateRecursiveCost(int statsToAdd, int maxStats) {
 		int totalCost = 0;
 		int currentTotalStats = stats.getTotalStats();
+		int totalCap = getConfiguredMaxTotalStats();
 
 		for (int i = 0; i < statsToAdd; i++) {
-			if (currentTotalStats + i >= maxStats * 6) break;
+			if (currentTotalStats + i >= totalCap) break;
 			totalCost += getSingleStatCost(currentTotalStats + i);
 		}
 		return totalCost;
@@ -566,9 +685,10 @@ public class StatsData {
 		int statsIncreased = 0;
 		int costAccumulated = 0;
 		int currentTotalStats = stats.getTotalStats();
+		int totalCap = getConfiguredMaxTotalStats();
 
 		while (statsIncreased < maxStatsToAdd) {
-			if (currentTotalStats + statsIncreased >= maxStats * 6) break;
+			if (currentTotalStats + statsIncreased >= totalCap) break;
 
 			int costForNext = getSingleStatCost(currentTotalStats + statsIncreased);
 

@@ -1,6 +1,6 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.gui.quest.StoryNotificationManager;
+import com.dragonminez.common.network.ClientPacketHandler;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
@@ -69,7 +69,7 @@ public class StoryToastS2C {
 
 	public static void handle(StoryToastS2C msg, Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-				() -> () -> StoryNotificationManager.push(msg)));
+				() -> () -> ClientPacketHandler.handleStoryToastPacket(msg)));
 		ctx.get().setPacketHandled(true);
 	}
 }

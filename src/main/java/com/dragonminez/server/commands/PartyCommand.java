@@ -13,6 +13,7 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
+import java.util.Objects;
 
 public class PartyCommand {
 
@@ -46,6 +47,19 @@ public class PartyCommand {
                 return 0;
             }
 
+            if (!PartyManager.canInvitePlayers(inviter)) {
+                inviter.sendSystemMessage(Component.translatable("quest.dmz.party.invite.leader_only")
+                        .withStyle(ChatFormatting.RED));
+                return 0;
+            }
+
+            if (PartyManager.getPartyId(inviter) != null
+                    && Objects.equals(PartyManager.getPartyId(inviter), PartyManager.getPartyId(invitee))) {
+                inviter.sendSystemMessage(Component.translatable("quest.dmz.party.invite.same_party")
+                        .withStyle(ChatFormatting.RED));
+                return 0;
+            }
+
             PartyManager.sendInvite(inviter, invitee);
 
             inviter.sendSystemMessage(Component.translatable("quest.dmz.party.invite.sent", invitee.getName())
@@ -69,6 +83,8 @@ public class PartyCommand {
 
             invitee.sendSystemMessage(Component.translatable("quest.dmz.party.invite.received", inviter.getName())
                     .withStyle(ChatFormatting.YELLOW));
+            invitee.sendSystemMessage(Component.translatable("quest.dmz.party.invite.open_quest")
+                    .withStyle(ChatFormatting.GRAY));
             invitee.sendSystemMessage(Component.literal("[")
                     .append(acceptButton)
                     .append(Component.literal("] ["))
@@ -147,21 +163,33 @@ public class PartyCommand {
             return 0;
         }
 
-        List<ServerPlayer> members = PartyManager.getAllPartyMembers(player);
-        if (members.size() <= 1) {
+        if (!PartyManager.isInParty(player)) {
             player.sendSystemMessage(Component.translatable("quest.dmz.party.leave.solo")
                     .withStyle(ChatFormatting.RED));
             return 0;
         }
 
+        boolean leaderLeaving = PartyManager.isPartyLeader(player);
+        List<ServerPlayer> members = PartyManager.getAllPartyMembers(player);
         PartyManager.leaveParty(player);
-        player.sendSystemMessage(Component.translatable("quest.dmz.party.left")
-                .withStyle(ChatFormatting.YELLOW));
 
-        for (ServerPlayer member : members) {
-            if (!member.equals(player)) {
-                member.sendSystemMessage(Component.translatable("quest.dmz.party.player.left", player.getName())
-                        .withStyle(ChatFormatting.YELLOW));
+        if (leaderLeaving) {
+            player.sendSystemMessage(Component.translatable("quest.dmz.party.disbanded.self")
+                    .withStyle(ChatFormatting.YELLOW));
+            for (ServerPlayer member : members) {
+                if (!member.equals(player)) {
+                    member.sendSystemMessage(Component.translatable("quest.dmz.party.disbanded.other", player.getName())
+                            .withStyle(ChatFormatting.YELLOW));
+                }
+            }
+        } else {
+            player.sendSystemMessage(Component.translatable("quest.dmz.party.left")
+                    .withStyle(ChatFormatting.YELLOW));
+            for (ServerPlayer member : members) {
+                if (!member.equals(player)) {
+                    member.sendSystemMessage(Component.translatable("quest.dmz.party.player.left", player.getName())
+                            .withStyle(ChatFormatting.YELLOW));
+                }
             }
         }
 

@@ -7,12 +7,12 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 logoFile="dmz_logo.png"
-credits="Thanks to Toji71 for helping us with the Builds."
+credits="${mod_credits}"
 authors="${mod_authors}"
 description='''${mod_description}'''
 displayTest = "MATCH_VERSION"
 displayURL="https://discord.dragonminez.com/"
-updateJSONURL="https://github.com/DragonMineZ/dragonminez/blob/main/update.json"
+updateJSONURL="https://raw.githubusercontent.com/DragonMineZ/dragonminez/main/update.json"
 
 [[mixins]]
 config="dragonminez.mixins.json"

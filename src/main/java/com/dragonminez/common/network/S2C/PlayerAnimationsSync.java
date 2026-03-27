@@ -1,10 +1,7 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.client.animation.IPlayerAnimatable;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
+import com.dragonminez.common.network.ClientPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
@@ -32,17 +29,8 @@ public class PlayerAnimationsSync {
 	}
 
 	public boolean handle(Supplier<NetworkEvent.Context> ctx) {
-		ctx.get().enqueueWork(() -> {
-			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-				Minecraft mc = Minecraft.getInstance();
-				if (mc.level != null) {
-					Player player = mc.level.getPlayerByUUID(playerUUID);
-					if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
-						animatable.dragonminez$setFlying(isFlying);
-					}
-				}
-			});
-		});
+		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+				() -> () -> ClientPacketHandler.handlePlayerAnimationsSyncPacket(playerUUID, isFlying)));
 		ctx.get().setPacketHandled(true);
 		return true;
 	}

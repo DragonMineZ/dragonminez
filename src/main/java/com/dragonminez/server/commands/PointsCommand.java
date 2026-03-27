@@ -6,13 +6,15 @@ import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Collection;
@@ -29,35 +31,36 @@ public class PointsCommand {
 				// set <amount> [targets]
 				.then(Commands.literal("set")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_SET_SELF, DMZPermissions.POINTS_SET_OTHERS))
-						.then(Commands.argument("amount", FloatArgumentType.floatArg(0, Float.MAX_VALUE - 1))
-								.executes(ctx -> setPoints(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), FloatArgumentType.getFloat(ctx, "amount")))
+						.then(Commands.argument("amount", StringArgumentType.word())
+								.executes(ctx -> setPoints(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "amount")))
 								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_SET_OTHERS))
-										.executes(ctx -> setPoints(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), FloatArgumentType.getFloat(ctx, "amount"))))))
+										.executes(ctx -> setPoints(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "amount"))))))
 
 				// add <amount> [targets]
 				.then(Commands.literal("add")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_ADD_SELF, DMZPermissions.POINTS_ADD_OTHERS))
-						.then(Commands.argument("amount", FloatArgumentType.floatArg(0, Float.MAX_VALUE - 1))
-								.executes(ctx -> addPoints(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), FloatArgumentType.getFloat(ctx, "amount")))
+						.then(Commands.argument("amount", StringArgumentType.word())
+								.executes(ctx -> addPoints(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "amount")))
 								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_ADD_OTHERS))
-										.executes(ctx -> addPoints(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), FloatArgumentType.getFloat(ctx, "amount"))))))
+										.executes(ctx -> addPoints(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "amount"))))))
 
 				// remove <amount> [targets]
 				.then(Commands.literal("remove")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.POINTS_REMOVE_SELF, DMZPermissions.POINTS_REMOVE_OTHERS))
-						.then(Commands.argument("amount", FloatArgumentType.floatArg(0, Float.MAX_VALUE - 1))
-								.executes(ctx -> removePoints(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), FloatArgumentType.getFloat(ctx, "amount")))
+						.then(Commands.argument("amount", StringArgumentType.word())
+								.executes(ctx -> removePoints(ctx.getSource(), List.of(ctx.getSource().getPlayerOrException()), StringArgumentType.getString(ctx, "amount")))
 								.then(Commands.argument("targets", EntityArgument.players())
 										.requires(source -> DMZPermissions.hasPermission(source, DMZPermissions.POINTS_REMOVE_OTHERS))
-										.executes(ctx -> removePoints(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), FloatArgumentType.getFloat(ctx, "amount"))))))
+										.executes(ctx -> removePoints(ctx.getSource(), EntityArgument.getPlayers(ctx, "targets"), StringArgumentType.getString(ctx, "amount"))))))
 		);
 	}
 
-	private static int setPoints(CommandSourceStack source, Collection<ServerPlayer> targets, float amount) {
+	private static int setPoints(CommandSourceStack source, Collection<ServerPlayer> targets, String amountStr) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
-		int normalizedAmount = normalizePoints(amount);
+		Float normalizedAmount = parseIntegerLikeAmount(source, amountStr);
+		if (normalizedAmount == null) return 0;
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getResources().setTrainingPoints(normalizedAmount);
@@ -73,9 +76,10 @@ public class PointsCommand {
 		return targets.size();
 	}
 
-	private static int addPoints(CommandSourceStack source, Collection<ServerPlayer> targets, float amount) {
+	private static int addPoints(CommandSourceStack source, Collection<ServerPlayer> targets, String amountStr) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
-		int normalizedAmount = normalizePoints(amount);
+		Float normalizedAmount = parseIntegerLikeAmount(source, amountStr);
+		if (normalizedAmount == null) return 0;
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				float currentPoints = data.getResources().getTrainingPoints();
@@ -93,9 +97,10 @@ public class PointsCommand {
 		return targets.size();
 	}
 
-	private static int removePoints(CommandSourceStack source, Collection<ServerPlayer> targets, float amount) {
+	private static int removePoints(CommandSourceStack source, Collection<ServerPlayer> targets, String amountStr) {
 		boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
-		int normalizedAmount = normalizePoints(amount);
+		Float normalizedAmount = parseIntegerLikeAmount(source, amountStr);
+		if (normalizedAmount == null) return 0;
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				float currentPoints = data.getResources().getTrainingPoints();
@@ -113,12 +118,24 @@ public class PointsCommand {
 		return targets.size();
 	}
 
-	private static int normalizePoints(float value) {
-		return (int) Math.max(0, Math.min(Float.MAX_VALUE - 1, Math.round(value)));
+	private static Float parseIntegerLikeAmount(CommandSourceStack source, String rawAmount) {
+		if (!rawAmount.matches("\\d+")) {
+			source.sendFailure(Component.translatable("command.dragonminez.points.invalid_number", rawAmount));
+			return null;
+		}
+
+		BigDecimal parsed = new BigDecimal(rawAmount);
+		if (parsed.compareTo(BigDecimal.valueOf(Float.MAX_VALUE - 1)) > 0) {
+			source.sendFailure(Component.translatable("command.dragonminez.points.invalid_number", rawAmount));
+			return null;
+		}
+
+		return parsed.floatValue();
 	}
 
-	private static String formatPoints(int value) {
-		return POINTS_FORMAT.format(value);
+	private static String formatPoints(float value) {
+		BigDecimal displayValue = BigDecimal.valueOf(value).setScale(0, RoundingMode.DOWN);
+		return POINTS_FORMAT.format(displayValue);
 	}
 
 	private static DecimalFormat createPointsFormat() {

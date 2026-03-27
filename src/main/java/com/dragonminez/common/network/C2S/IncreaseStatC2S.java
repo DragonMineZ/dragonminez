@@ -44,21 +44,29 @@ public class IncreaseStatC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				String statNameStr = msg.statType.name();
 
-				int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
-				int currentStat = getCurrentStat(data, statNameStr);
-
-				if (currentStat >= maxStats) return;
-
 				float availableTPs = data.getResources().getTrainingPoints();
 				if (availableTPs <= 0) return;
 
-				int statsCanIncrease = Math.min(msg.multiplier, maxStats - currentStat);
+				int maxStats = data.getConfiguredMaxValue();
+				boolean maxByLevel = ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats();
+				int statsCanIncrease;
+
+				if (maxByLevel) {
+					statsCanIncrease = Math.min(msg.multiplier, data.getRemainingAssignableStats());
+				} else {
+					int currentStat = data.getCurrentStatValue(statNameStr);
+					statsCanIncrease = Math.min(msg.multiplier, Math.max(0, maxStats - currentStat));
+				}
+
+				statsCanIncrease = data.getMaxAllowedIncreaseForStat(statNameStr, statsCanIncrease);
+				if (statsCanIncrease <= 0) return;
 
 				int statsToIncrease = data.calculateStatIncrease(statsCanIncrease, availableTPs, maxStats);
 
 				if (statsToIncrease <= 0) return;
 
-				int finalIncrease = Math.min(statsToIncrease, maxStats - currentStat);
+				int finalIncrease = data.getMaxAllowedIncreaseForStat(statNameStr, statsToIncrease);
+				if (finalIncrease <= 0) return;
 
 				int tpCost = data.calculateRecursiveCost(finalIncrease, maxStats);
 
@@ -71,17 +79,6 @@ public class IncreaseStatC2S {
 		ctx.get().setPacketHandled(true);
 	}
 
-	private static int getCurrentStat(StatsData data, String statName) {
-		return switch (statName.toUpperCase()) {
-			case "STR" -> data.getStats().getStrength();
-			case "SKP" -> data.getStats().getStrikePower();
-			case "RES" -> data.getStats().getResistance();
-			case "VIT" -> data.getStats().getVitality();
-			case "PWR" -> data.getStats().getKiPower();
-			case "ENE" -> data.getStats().getEnergy();
-			default -> 0;
-		};
-	}
 
 	private static void increaseStat(StatsData data, ServerPlayer player, String statName, int amount) {
 		switch (statName.toUpperCase()) {

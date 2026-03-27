@@ -6,9 +6,14 @@ import com.dragonminez.client.gui.quest.QuestTreeLayoutHelper;
 import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
 import com.dragonminez.common.network.C2S.AcceptSideQuestC2S;
+import com.dragonminez.common.network.C2S.CreatePartyC2S;
 import com.dragonminez.common.network.C2S.ClaimRewardC2S;
 import com.dragonminez.common.network.C2S.ClaimSideQuestRewardC2S;
+import com.dragonminez.common.network.C2S.InvitePartyMemberC2S;
+import com.dragonminez.common.network.C2S.LeavePartyC2S;
+import com.dragonminez.common.network.C2S.RejectPartyInviteC2S;
 import com.dragonminez.common.network.C2S.StartQuestC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
@@ -27,6 +32,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -39,10 +45,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Full-screen tree-like quest visualization.
@@ -141,6 +149,17 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final String SECTION_DESC = "desc";
 	private static final String SECTION_REWARDS = "rewards";
 
+	// Party UI
+	private static final int PARTY_BUTTON_WIDTH = 74;
+	private static final int PARTY_BUTTON_HEIGHT = 20;
+	private static final int PARTY_FOOTER_TEXT_GAP = 10;
+	private static final int PARTY_FOOTER_PADDING = 8;
+	private static final int PARTY_POPUP_WIDTH = 188;
+	private static final int PARTY_POPUP_HEIGHT = 148;
+	private static final int PARTY_POPUP_ROW_HEIGHT = 18;
+	private static final int PARTY_CONFIRM_WIDTH = 188;
+	private static final int PARTY_CONFIRM_HEIGHT = 112;
+
 	// ========================================================================================
 	// State
 	// ========================================================================================
@@ -151,8 +170,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	// Action button (start quest / claim rewards)
 	private TexturedTextButton actionButton;
-	private static final Map<String, Long> QUEST_COOLDOWNS = new HashMap<>();
-	private static final long START_QUEST_COOLDOWN = 30000;
+	private TexturedTextButton partyPrimaryButton;
+	private TexturedTextButton partySecondaryButton;
 	private long lastClickTime = 0;
 
 	// Saga navigation
@@ -197,6 +216,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private long panelIntroStartMs = 0L;
 	private boolean panelIntroActive = false;
 
+	private boolean invitePopupOpen = false;
+	private int invitePopupScroll = 0;
+	private final List<PartyInviteEntry> inviteEntries = new ArrayList<>();
+
+	private boolean confirmOverlayOpen = false;
+	private PartyConfirmAction confirmAction = PartyConfirmAction.NONE;
+	private Component confirmTitle = Component.empty();
+	private Component confirmBody = Component.empty();
+
 	// ========================================================================================
 	// Constructor
 	// ========================================================================================
@@ -225,6 +253,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		SIDE_QUEST
 	}
 
+	private enum PartyConfirmAction {
+		NONE,
+		ACCEPT_INVITE,
+		LEAVE_PARTY
+	}
+
 	private record PanelRect(int x, int y, int width, int height) {
 		int right() {
 			return x + width;
@@ -240,6 +274,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private record NavigatorEntry(NavEntryType type, int depth, Saga saga, Quest quest) {
+	}
+
+	private record PartyInviteEntry(UUID playerId, String playerName) {
 	}
 
 	private record RewardHitbox(int x, int y, int size, ItemStack stack, Component tooltip) {
@@ -396,7 +433,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		PanelRect left = getLeftPanelRect();
-		int usableHeight = Math.max(32, left.height - 40);
+		int usableHeight = Math.max(32, left.height - 40 - getPartyFooterHeight());
 		int visibleCount = Math.max(1, usableHeight / NAV_ITEM_HEIGHT);
 		navMaxScroll = Math.max(0, navigatorEntries.size() - visibleCount);
 		navScrollOffset = Math.max(0, Math.min(navScrollOffset, navMaxScroll));
@@ -468,7 +505,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void refreshButtons() {
 		this.clearWidgets();
 		actionButton = null;
+		partyPrimaryButton = null;
+		partySecondaryButton = null;
 		initNavigationButtons();
+		initPartyButtons();
 		initActionButton();
 	}
 
@@ -486,8 +526,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean buttonActive = true;
 		boolean isClaimAction = false;
 
-		String cooldownKey = currentSaga.getId() + ":" + selectedKey;
-
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
 			for (int i = 0; i < selectedQuest.getRewards().size(); i++) {
@@ -504,28 +542,27 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 		} else if (canStart || startBlockedByLocation) {
 			buttonText = tr("gui.dragonminez.quests.start");
-			if (startBlockedByLocation) {
-				buttonActive = false;
-			} else {
-				long now = System.currentTimeMillis();
-				long lastRun = QUEST_COOLDOWNS.getOrDefault(cooldownKey, 0L);
-				buttonActive = now - lastRun >= START_QUEST_COOLDOWN;
-			}
+			buttonActive = !startBlockedByLocation;
 		} else {
 			return;
 		}
 
+		if (isClaimAction && isInSharedPartyAsMember()) {
+			buttonText = tr("gui.dragonminez.party.leader_only");
+			buttonActive = false;
+		}
+
 		boolean finalIsClaimAction = isClaimAction;
 		PanelRect right = getRightPanelRect();
-		int buttonX = right.x + (right.width - 74) / 2;
+		int buttonX = right.x + (right.width - PARTY_BUTTON_WIDTH) / 2;
 		int buttonY = right.bottom() - 28;
 
 		actionButton = new TexturedTextButton.Builder()
 				.position(buttonX, buttonY)
-				.size(74, 20)
+				.size(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
+				.textureSize(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
 				.message(buttonText)
 				.onPress(btn -> {
 					long now = System.currentTimeMillis();
@@ -541,7 +578,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					} else {
-						QUEST_COOLDOWNS.put(cooldownKey, now);
 						boolean isHard = ConfigManager.getUserConfig().getHud().getStoryHardDifficulty();
 						if (selectedQuest.isSideQuest()) {
 							NetworkHandler.sendToServer(new AcceptSideQuestC2S(selectedKey, isHard));
@@ -555,6 +591,112 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		actionButton.active = buttonActive;
 		this.addRenderableWidget(actionButton);
+	}
+
+	private void initPartyButtons() {
+		if (statsData == null) return;
+
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+		PlayerQuestData.PartyInviteData invite = getVisiblePartyInvite();
+		boolean inParty = questData.isInParty();
+		boolean isLeader = isLocalPartyLeader();
+		boolean hasOtherPlayers = hasOtherOnlinePlayers();
+
+		if (invite == null && !inParty && !hasOtherPlayers) {
+			return;
+		}
+
+		PanelRect footer = getPartyFooterRect();
+		if (footer == null) return;
+
+		if (invite != null) {
+			partyPrimaryButton = buildPartyButton(
+					tr("quest.dmz.party.invite.accept"),
+					footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
+					footer.bottom() - (PARTY_BUTTON_HEIGHT * 2) - 6,
+					btn -> {
+						if (questData.isInParty()) {
+							requestConfirm(
+									PartyConfirmAction.ACCEPT_INVITE,
+									tr("gui.dragonminez.party.confirm.title"),
+									tr("gui.dragonminez.party.confirm.leave_current", txt(resolveInviteName(invite)))
+							);
+						} else {
+							NetworkHandler.sendToServer(new AcceptPartyInviteC2S());
+							queuePartyRefresh();
+						}
+					}
+			);
+
+			partySecondaryButton = buildPartyButton(
+					tr("quest.dmz.party.invite.reject"),
+					footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
+					footer.bottom() - PARTY_BUTTON_HEIGHT,
+					btn -> {
+						NetworkHandler.sendToServer(new RejectPartyInviteC2S());
+						queuePartyRefresh();
+					}
+			);
+			return;
+		}
+
+		if (inParty) {
+			if (isLeader) {
+				partyPrimaryButton = buildPartyButton(
+						tr("gui.dragonminez.party.invite_players"),
+						footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
+						footer.bottom() - (PARTY_BUTTON_HEIGHT * 2) - 6,
+						btn -> openInvitePopup()
+				);
+				partySecondaryButton = buildPartyButton(
+						tr("gui.dragonminez.party.disband"),
+						footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
+						footer.bottom() - PARTY_BUTTON_HEIGHT,
+						btn -> requestConfirm(
+								PartyConfirmAction.LEAVE_PARTY,
+								tr("gui.dragonminez.party.disband"),
+								tr("gui.dragonminez.party.confirm.disband")
+						)
+				);
+			} else {
+				partyPrimaryButton = buildPartyButton(
+						tr("gui.dragonminez.party.leave"),
+						footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
+						footer.bottom() - PARTY_BUTTON_HEIGHT,
+						btn -> requestConfirm(
+								PartyConfirmAction.LEAVE_PARTY,
+								tr("gui.dragonminez.party.leave"),
+								tr("gui.dragonminez.party.confirm.leave")
+						)
+				);
+			}
+			return;
+		}
+
+		partyPrimaryButton = buildPartyButton(
+				tr("gui.dragonminez.party.create"),
+				footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
+				footer.bottom() - PARTY_BUTTON_HEIGHT,
+				btn -> {
+					NetworkHandler.sendToServer(new CreatePartyC2S());
+					openInvitePopup();
+					queuePartyRefresh();
+				}
+		);
+	}
+
+	private TexturedTextButton buildPartyButton(Component label, int x, int y, net.minecraft.client.gui.components.Button.OnPress onPress) {
+		TexturedTextButton button = new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
+				.message(label)
+				.onPress(onPress)
+				.build();
+		this.addRenderableWidget(button);
+		return button;
 	}
 
 	private boolean canStartQuest(Quest quest) {
@@ -591,13 +733,25 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (tickCount >= 10) {
 			tickCount = 0;
 			updateStatsData();
+			rebuildNavigatorEntries();
+			refreshButtons();
+			if (invitePopupOpen) {
+				rebuildInviteEntries();
+				if (getVisiblePartyInvite() != null) {
+					invitePopupOpen = false;
+				}
+			}
 		}
 
 		if (pendingRefreshTicks > 0) {
 			pendingRefreshTicks--;
 			if (pendingRefreshTicks == 0) {
 				updateStatsData();
+				rebuildNavigatorEntries();
 				refreshButtons();
+				if (invitePopupOpen) {
+					rebuildInviteEntries();
+				}
 			}
 		}
 
@@ -650,6 +804,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		beginUiScale(graphics);
 		syncActionButtonPosition();
+		syncPartyButtonPositions();
 		rewardHitboxes.clear();
 
 		renderTreeCanvas(graphics, uiMouseX, uiMouseY);
@@ -662,7 +817,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			renderActionButtonGlow(graphics);
 		}
 
-		renderRewardTooltips(graphics, uiMouseX, uiMouseY);
+		if (invitePopupOpen) {
+			renderInvitePopup(graphics, uiMouseX, uiMouseY);
+		}
+		if (confirmOverlayOpen) {
+			renderConfirmOverlay(graphics, uiMouseX, uiMouseY);
+		}
+		if (!invitePopupOpen && !confirmOverlayOpen) {
+			renderRewardTooltips(graphics, uiMouseX, uiMouseY);
+		}
 		endUiScale(graphics);
 	}
 
@@ -752,7 +915,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int listX = panel.x + 10;
 		int listY = panel.y + 28;
 		int listW = panel.width - 20;
-		int listH = panel.height - 38;
+		int listH = Math.max(32, panel.height - 38 - getPartyFooterHeight());
 
 		int visibleCount = Math.max(1, listH / NAV_ITEM_HEIGHT);
 		int visibleStart = navScrollOffset;
@@ -777,6 +940,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			int indicatorY = listY + (int) ((listH - indicatorHeight) * scrollPercent);
 			graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
 		}
+
+		renderPartyFooter(graphics, panel);
 	}
 
 	private void renderNavigatorEntry(GuiGraphics graphics, NavigatorEntry entry, int x, int y, int rowWidth, boolean hovered) {
@@ -811,6 +976,97 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		int indent = entry.depth() * 10;
 		drawStringWithBorder(graphics, text, x + indent, textY, color);
+	}
+
+	private void renderPartyFooter(GuiGraphics graphics, PanelRect panel) {
+		PanelRect footer = getPartyFooterRect();
+		if (footer == null || statsData == null) return;
+
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+		PlayerQuestData.PartyInviteData invite = getVisiblePartyInvite();
+
+		graphics.fill(footer.x, footer.y, footer.right(), footer.bottom(), 0x55111122);
+		graphics.renderOutline(footer.x, footer.y, footer.width, footer.height, 0x88444466);
+
+		drawStringWithBorder(graphics,
+				tr("gui.dragonminez.party.title").copy().withStyle(ChatFormatting.BOLD),
+				footer.x + 6,
+				footer.y + 4,
+				0xFFFFD700);
+
+		int textY = footer.y + 18;
+		int textW = footer.width - 12;
+		if (invite != null) {
+			drawStringWithBorder(graphics,
+					txt(fitSingleLineEllipsis(tr("gui.dragonminez.party.invited_by", resolveInviteName(invite)).getString(), textW)),
+					footer.x + 6,
+					textY,
+					0xFFFFFFFF);
+			textY += PARTY_FOOTER_TEXT_GAP;
+
+			if (questData.isInParty()) {
+				drawStringWithBorder(graphics,
+						txt(fitSingleLineEllipsis(tr("gui.dragonminez.party.invite_warning").getString(), textW)),
+						footer.x + 6,
+						textY,
+						0xFFFFAA66);
+			} else {
+				drawStringWithBorder(graphics,
+						txt(fitSingleLineEllipsis(tr("gui.dragonminez.party.invite_open_quest").getString(), textW)),
+						footer.x + 6,
+						textY,
+						0xFFBBD6FF);
+			}
+			return;
+		}
+
+		if (questData.isInParty()) {
+			String roleKey = isLocalPartyLeader()
+					? "gui.dragonminez.party.role.leader"
+					: "gui.dragonminez.party.role.member";
+			drawStringWithBorder(graphics,
+					txt(fitSingleLineEllipsis(tr(roleKey).getString(), textW)),
+					footer.x + 6,
+					textY,
+					0xFFFFFFFF);
+			textY += PARTY_FOOTER_TEXT_GAP;
+
+			drawStringWithBorder(graphics,
+					txt(fitSingleLineEllipsis(buildPartyMemberSummary(), textW)),
+					footer.x + 6,
+					textY,
+					0xFFBBD6FF);
+			return;
+		}
+
+		if (hasOtherOnlinePlayers()) {
+			drawStringWithBorder(graphics,
+					txt(fitSingleLineEllipsis(tr("gui.dragonminez.party.multiplayer_ready").getString(), textW)),
+					footer.x + 6,
+					textY,
+					0xFFFFFFFF);
+			textY += PARTY_FOOTER_TEXT_GAP;
+			drawStringWithBorder(graphics,
+					txt(fitSingleLineEllipsis(tr("gui.dragonminez.party.create_hint").getString(), textW)),
+					footer.x + 6,
+					textY,
+					0xFFBBD6FF);
+		}
+	}
+
+	private int getPartyFooterHeight() {
+		if (statsData == null) return 0;
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+		if (getVisiblePartyInvite() != null) return 94;
+		if (questData.isInParty()) return isLocalPartyLeader() ? 94 : 70;
+		return hasOtherOnlinePlayers() ? 64 : 0;
+	}
+
+	private PanelRect getPartyFooterRect() {
+		int footerHeight = getPartyFooterHeight();
+		if (footerHeight <= 0) return null;
+		PanelRect panel = getLeftPanelRect();
+		return new PanelRect(panel.x + PARTY_FOOTER_PADDING, panel.bottom() - footerHeight, panel.width - (PARTY_FOOTER_PADDING * 2), footerHeight - 6);
 	}
 
 	// ========================================================================================
@@ -1364,19 +1620,322 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.fill(btnX - 2, btnY - 2, btnX + btnW + 2, btnY + btnH + 2, glowColor);
 	}
 
+	private boolean hasOtherOnlinePlayers() {
+		Minecraft mc = Minecraft.getInstance();
+		return mc.getConnection() != null && mc.getConnection().getOnlinePlayers().size() > 1;
+	}
+
+	private boolean isLocalPartyLeader() {
+		if (statsData == null || Minecraft.getInstance().player == null) return false;
+		return statsData.getPlayerQuestData().isPartyLeader(Minecraft.getInstance().player.getUUID());
+	}
+
+	private boolean isInSharedPartyAsMember() {
+		if (statsData == null) return false;
+		PlayerQuestData questData = statsData.getPlayerQuestData();
+		return questData.isInParty() && !isLocalPartyLeader();
+	}
+
+	private PlayerQuestData.PartyInviteData getVisiblePartyInvite() {
+		if (statsData == null) return null;
+		PlayerQuestData.PartyInviteData invite = statsData.getPlayerQuestData().getPendingPartyInviteData();
+		if (invite == null || invite.isExpired()) {
+			return null;
+		}
+		return invite;
+	}
+
+	private String resolveInviteName(PlayerQuestData.PartyInviteData invite) {
+		if (invite == null) return "";
+		if (invite.getInviterName() != null && !invite.getInviterName().isBlank()) {
+			return invite.getInviterName();
+		}
+		return resolvePlayerName(invite.getInviterUUID());
+	}
+
+	private String resolvePlayerName(UUID playerId) {
+		if (playerId == null) return "";
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player != null && playerId.equals(mc.player.getUUID())) {
+			return mc.player.getGameProfile().getName();
+		}
+		if (mc.getConnection() != null) {
+			for (PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
+				if (info.getProfile().getId().equals(playerId)) {
+					return info.getProfile().getName();
+				}
+			}
+		}
+		return playerId.toString().substring(0, 8);
+	}
+
+	private String buildPartyMemberSummary() {
+		if (statsData == null) return "";
+		List<String> names = new ArrayList<>();
+		for (UUID memberId : statsData.getPlayerQuestData().getPartyMemberIds()) {
+			names.add(resolvePlayerName(memberId));
+		}
+		return tr("gui.dragonminez.party.members", String.join(", ", names)).getString();
+	}
+
+	private void syncPartyButtonPositions() {
+		PanelRect footer = getPartyFooterRect();
+		if (footer == null) return;
+		int centerX = footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2;
+
+		if (partySecondaryButton != null) {
+			partySecondaryButton.setX(centerX);
+			partySecondaryButton.setY(footer.bottom() - PARTY_BUTTON_HEIGHT);
+		}
+		if (partyPrimaryButton != null) {
+			partyPrimaryButton.setX(centerX);
+			partyPrimaryButton.setY(partySecondaryButton != null
+					? footer.bottom() - (PARTY_BUTTON_HEIGHT * 2) - 6
+					: footer.bottom() - PARTY_BUTTON_HEIGHT);
+		}
+	}
+
+	private void queuePartyRefresh() {
+		pendingRefreshTicks = Math.max(pendingRefreshTicks, 5);
+	}
+
+	private void openInvitePopup() {
+		if (getVisiblePartyInvite() != null) return;
+		invitePopupOpen = true;
+		confirmOverlayOpen = false;
+		invitePopupScroll = 0;
+		rebuildInviteEntries();
+	}
+
+	private void rebuildInviteEntries() {
+		inviteEntries.clear();
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.getConnection() == null || mc.player == null || statsData == null) {
+			return;
+		}
+
+		List<UUID> currentPartyMembers = statsData.getPlayerQuestData().getPartyMemberIds();
+		for (PlayerInfo info : mc.getConnection().getOnlinePlayers()) {
+			UUID playerId = info.getProfile().getId();
+			if (playerId == null || playerId.equals(mc.player.getUUID()) || currentPartyMembers.contains(playerId)) {
+				continue;
+			}
+			inviteEntries.add(new PartyInviteEntry(playerId, info.getProfile().getName()));
+		}
+		inviteEntries.sort(Comparator.comparing(PartyInviteEntry::playerName, String.CASE_INSENSITIVE_ORDER));
+		invitePopupScroll = Math.max(0, Math.min(invitePopupScroll, Math.max(0, inviteEntries.size() - getInvitePopupVisibleRows())));
+	}
+
+	private void requestConfirm(PartyConfirmAction action, Component title, Component body) {
+		confirmAction = action;
+		confirmTitle = title;
+		confirmBody = body;
+		confirmOverlayOpen = true;
+		invitePopupOpen = false;
+	}
+
+	private void closeTransientOverlay() {
+		invitePopupOpen = false;
+		confirmOverlayOpen = false;
+		confirmAction = PartyConfirmAction.NONE;
+		confirmTitle = Component.empty();
+		confirmBody = Component.empty();
+	}
+
+	private void executeConfirmAction() {
+		switch (confirmAction) {
+			case ACCEPT_INVITE -> NetworkHandler.sendToServer(new AcceptPartyInviteC2S());
+			case LEAVE_PARTY -> NetworkHandler.sendToServer(new LeavePartyC2S());
+			case NONE -> {
+				closeTransientOverlay();
+				return;
+			}
+		}
+		queuePartyRefresh();
+		closeTransientOverlay();
+	}
+
+	private PanelRect getInvitePopupRect() {
+		return new PanelRect((getUiWidth() - PARTY_POPUP_WIDTH) / 2, (getUiHeight() - PARTY_POPUP_HEIGHT) / 2, PARTY_POPUP_WIDTH, PARTY_POPUP_HEIGHT);
+	}
+
+	private PanelRect getConfirmRect() {
+		return new PanelRect((getUiWidth() - PARTY_CONFIRM_WIDTH) / 2, (getUiHeight() - PARTY_CONFIRM_HEIGHT) / 2, PARTY_CONFIRM_WIDTH, PARTY_CONFIRM_HEIGHT);
+	}
+
+	private int getInvitePopupVisibleRows() {
+		return Math.max(1, (PARTY_POPUP_HEIGHT - 48) / PARTY_POPUP_ROW_HEIGHT);
+	}
+
+	private void renderInvitePopup(GuiGraphics graphics, int mouseX, int mouseY) {
+		graphics.fill(0, 0, getUiWidth(), getUiHeight(), 0x99000000);
+		PanelRect popup = getInvitePopupRect();
+		renderSidePanelBackground(graphics, popup, false, false);
+
+		drawCenteredStringWithBorder(graphics,
+				tr("gui.dragonminez.party.invite_popup").copy().withStyle(ChatFormatting.BOLD),
+				popup.x + popup.width / 2,
+				popup.y + 8,
+				0xFFFFD700);
+
+		int listX = popup.x + 10;
+		int listY = popup.y + 24;
+		int listW = popup.width - 20;
+		int visibleRows = getInvitePopupVisibleRows();
+
+		if (inviteEntries.isEmpty()) {
+			drawCenteredStringWithBorder(graphics,
+					tr("gui.dragonminez.party.invite_none"),
+					popup.x + popup.width / 2,
+					popup.y + popup.height / 2 - 6,
+					0xFFAAAAAA);
+		} else {
+			for (int i = 0; i < visibleRows && (i + invitePopupScroll) < inviteEntries.size(); i++) {
+				PartyInviteEntry entry = inviteEntries.get(i + invitePopupScroll);
+				int rowY = listY + (i * PARTY_POPUP_ROW_HEIGHT);
+				boolean hovered = mouseX >= listX && mouseX <= listX + listW && mouseY >= rowY && mouseY <= rowY + PARTY_POPUP_ROW_HEIGHT - 2;
+				graphics.fill(listX, rowY, listX + listW, rowY + PARTY_POPUP_ROW_HEIGHT - 2, hovered ? 0x66FFFFFF : 0x33000000);
+				graphics.renderOutline(listX, rowY, listW, PARTY_POPUP_ROW_HEIGHT - 2, hovered ? 0xFFCCDDFF : 0x55444466);
+				drawStringWithBorder(graphics,
+						txt(fitSingleLineEllipsis(entry.playerName(), listW - 10)),
+						listX + 5,
+						rowY + 5,
+						hovered ? 0xFFFFFFFF : 0xFFDCE6FF);
+			}
+		}
+
+		drawCenteredStringWithBorder(graphics,
+				tr("gui.dragonminez.party.invite_hint"),
+				popup.x + popup.width / 2,
+				popup.bottom() - 12,
+				0xFFAAAAAA);
+	}
+
+	private void renderConfirmOverlay(GuiGraphics graphics, int mouseX, int mouseY) {
+		graphics.fill(0, 0, getUiWidth(), getUiHeight(), 0xAA000000);
+		PanelRect popup = getConfirmRect();
+		renderSidePanelBackground(graphics, popup, false, false);
+
+		drawCenteredStringWithBorder(graphics,
+				confirmTitle.copy().withStyle(ChatFormatting.BOLD),
+				popup.x + popup.width / 2,
+				popup.y + 10,
+				0xFFFFD700);
+
+		List<String> lines = wrapText(confirmBody.getString(), popup.width - 20);
+		int bodyY = popup.y + 28;
+		for (int i = 0; i < Math.min(3, lines.size()); i++) {
+			drawCenteredStringWithBorder(graphics, txt(lines.get(i)), popup.x + popup.width / 2, bodyY, 0xFFDCE6FF);
+			bodyY += 10;
+		}
+
+		PanelRect yesRect = getConfirmYesRect();
+		PanelRect noRect = getConfirmNoRect();
+		renderModalButton(graphics, yesRect, tr("gui.dragonminez.party.confirm_yes"), yesRect.contains(mouseX, mouseY));
+		renderModalButton(graphics, noRect, tr("gui.dragonminez.party.confirm_no"), noRect.contains(mouseX, mouseY));
+	}
+
+	private void renderModalButton(GuiGraphics graphics, PanelRect rect, Component label, boolean hovered) {
+		int fill = hovered ? 0x66FFFFFF : 0x33000000;
+		int outline = hovered ? 0xFFCCDDFF : 0x88444466;
+		graphics.fill(rect.x, rect.y, rect.right(), rect.bottom(), fill);
+		graphics.renderOutline(rect.x, rect.y, rect.width, rect.height, outline);
+		drawCenteredStringWithBorder(graphics, label, rect.x + rect.width / 2, rect.y + 6, 0xFFFFFFFF);
+	}
+
+	private PanelRect getConfirmYesRect() {
+		PanelRect popup = getConfirmRect();
+		return new PanelRect(popup.x + 18, popup.bottom() - 30, 66, 20);
+	}
+
+	private PanelRect getConfirmNoRect() {
+		PanelRect popup = getConfirmRect();
+		return new PanelRect(popup.right() - 84, popup.bottom() - 30, 66, 20);
+	}
+
 	// ========================================================================================
 	// Input Handling
 	// ========================================================================================
 
 	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (keyCode == 256 && (invitePopupOpen || confirmOverlayOpen)) {
+			closeTransientOverlay();
+			return true;
+		}
+		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
+
+	private boolean handleInvitePopupClick(double uiMouseX, double uiMouseY, int button) {
+		if (!invitePopupOpen) return false;
+		if (button != 0) return true;
+
+		PanelRect popup = getInvitePopupRect();
+		if (!popup.contains(uiMouseX, uiMouseY)) {
+			invitePopupOpen = false;
+			return true;
+		}
+
+		if (inviteEntries.isEmpty()) {
+			return true;
+		}
+
+		int listX = popup.x + 10;
+		int listY = popup.y + 24;
+		int listW = popup.width - 20;
+		int visibleRows = getInvitePopupVisibleRows();
+
+		if (uiMouseX < listX || uiMouseX > listX + listW) {
+			return true;
+		}
+
+		for (int i = 0; i < visibleRows && (i + invitePopupScroll) < inviteEntries.size(); i++) {
+			int rowY = listY + (i * PARTY_POPUP_ROW_HEIGHT);
+			if (uiMouseY >= rowY && uiMouseY <= rowY + PARTY_POPUP_ROW_HEIGHT - 2) {
+				PartyInviteEntry entry = inviteEntries.get(i + invitePopupScroll);
+				NetworkHandler.sendToServer(new InvitePartyMemberC2S(entry.playerId()));
+				invitePopupOpen = false;
+				queuePartyRefresh();
+				return true;
+			}
+		}
+
+		return true;
+	}
+
+	private boolean handleConfirmOverlayClick(double uiMouseX, double uiMouseY, int button) {
+		if (!confirmOverlayOpen) return false;
+		if (button != 0) return true;
+
+		if (getConfirmYesRect().contains(uiMouseX, uiMouseY)) {
+			executeConfirmAction();
+			return true;
+		}
+
+		if (getConfirmNoRect().contains(uiMouseX, uiMouseY) || !getConfirmRect().contains(uiMouseX, uiMouseY)) {
+			closeTransientOverlay();
+			return true;
+		}
+
+		return true;
+	}
+
+	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
+
+		if (handleConfirmOverlayClick(uiMouseX, uiMouseY, button)) {
+			return true;
+		}
+		if (handleInvitePopupClick(uiMouseX, uiMouseY, button)) {
+			return true;
+		}
+
 		// Let widgets (buttons) handle clicks first
 		if (super.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
-
-		double uiMouseX = toUiX(mouseX);
-		double uiMouseY = toUiY(mouseY);
 
 		if (button != 0) return false;
 
@@ -1423,7 +1982,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int listX = panel.x + 10;
 		int listY = panel.y + 28;
 		int listW = panel.width - 20;
-		int listH = panel.height - 38;
+		int listH = Math.max(32, panel.height - 38 - getPartyFooterHeight());
 		if (uiMouseX < listX || uiMouseX > listX + listW || uiMouseY < listY || uiMouseY > listY + listH) return false;
 
 		int visibleCount = Math.max(1, listH / NAV_ITEM_HEIGHT);
@@ -1457,6 +2016,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (invitePopupOpen || confirmOverlayOpen) {
+			return true;
+		}
 		if (isDraggingTree && button == 0) {
 			double uiMouseX = toUiX(mouseX);
 			double uiMouseY = toUiY(mouseY);
@@ -1469,6 +2031,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (invitePopupOpen || confirmOverlayOpen) {
+			return true;
+		}
 		if (isDraggingTree) {
 			isDraggingTree = false;
 			return true;
@@ -1478,6 +2043,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		if (confirmOverlayOpen) {
+			return true;
+		}
+		if (invitePopupOpen) {
+			int direction = (int) Math.signum(delta);
+			int maxScroll = Math.max(0, inviteEntries.size() - getInvitePopupVisibleRows());
+			invitePopupScroll = Math.max(0, Math.min(maxScroll, invitePopupScroll - direction));
+			return true;
+		}
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 		int scrollAmount = (int) Math.signum(delta);
@@ -1901,7 +2475,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void syncActionButtonPosition() {
 		if (actionButton == null) return;
 		PanelRect right = getRightPanelRect();
-		actionButton.setX(right.x + (right.width - 74) / 2);
+		actionButton.setX(right.x + (right.width - PARTY_BUTTON_WIDTH) / 2);
 		actionButton.setY(right.bottom() - 28);
 	}
 

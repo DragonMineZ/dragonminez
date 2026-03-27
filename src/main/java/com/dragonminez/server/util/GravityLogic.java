@@ -68,7 +68,7 @@ public class GravityLogic {
 			double totalStats = data.getStats().getTotalStats();
 			double avgStats = totalStats / 6.0;
 
-			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 			double div = Math.max(1.0, maxStats - (maxStats / 10.0));
 			double baseResistance = (avgStats / div) * 100.0;
 
@@ -84,7 +84,7 @@ public class GravityLogic {
 			double totalStats = data.getStats().getTotalStats();
 			double avgStats = totalStats / 6.0;
 
-			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+			int maxStats = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 			double div = Math.max(1.0, maxStats - (maxStats / 10.0));
 			double baseResistance = (avgStats / div) * 100.0;
 			double strMult = data.getTotalMultiplier("STR");

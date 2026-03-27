@@ -110,6 +110,13 @@ val forgeVersion = requiredProp("forge_version")
 val mappingChannelProp = requiredProp("mapping_channel")
 val mappingVersionProp = requiredProp("mapping_version")
 val jeiVersion = requiredProp("jei_version")
+val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
+val serverLikeTaskRequested = requestedTasks.any {
+    it.contains("runserver") || it.contains("gametestserver") || it.contains("rundata")
+}
+val includeClientOnlyDevMods = providers.gradleProperty("includeClientOnlyDevMods")
+    .map { it.toBoolean() }
+    .orElse(!serverLikeTaskRequested)
 
 minecraft {
     mappings(mappingChannelProp, mappingVersionProp)
@@ -185,18 +192,21 @@ dependencies {
     // Dev utility mods
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-common-api:$jeiVersion"))
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge-api:$jeiVersion"))
-    runtimeOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge:$jeiVersion"))
-
-    runtimeOnly(fg.deobf("curse.maven:xenon-564239:5752040"))
     runtimeOnly(fg.deobf("curse.maven:worldedit-225608:4586218"))
     runtimeOnly(fg.deobf("curse.maven:cyanide-541676:5778405"))
-    runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
     runtimeOnly(fg.deobf("me.lucko:spark-api:0.1-SNAPSHOT"))
 
-    // For extra tooltip info, like rarity
-    runtimeOnly(fg.deobf("curse.maven:prism-lib-638111:4650325"))
-    runtimeOnly(fg.deobf("curse.maven:iceberg-520110:5838149"))
-    runtimeOnly(fg.deobf("curse.maven:legendary-tooltips-532127:4662781"))
+    // Client-only visual/testing mods should stay off dedicated server and data runs.
+    if (includeClientOnlyDevMods.get()) {
+        runtimeOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge:$jeiVersion"))
+        runtimeOnly(fg.deobf("curse.maven:xenon-564239:5752040"))
+        runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
+
+        // For extra tooltip info, like rarity
+        runtimeOnly(fg.deobf("curse.maven:prism-lib-638111:4650325"))
+        runtimeOnly(fg.deobf("curse.maven:iceberg-520110:5838149"))
+        runtimeOnly(fg.deobf("curse.maven:legendary-tooltips-532127:4662781"))
+    }
 
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)
     //runtimeOnly(fg.deobf("curse.maven:explorerscompass-491794:4712194"))
@@ -226,6 +236,7 @@ val loaderVersionRange = requiredProp("loader_version_range")
 val modName = requiredProp("mod_name")
 val modLicense = requiredProp("mod_license")
 val modAuthors = requiredProp("mod_authors")
+val modCredits = requiredProp("mod_credits")
 val modDescription = requiredProp("mod_description")
 val geckolibVersionRange = requiredProp("geckolib_version_range")
 val terrablenderVersionRange = requiredProp("terrablender_version_range")
@@ -245,6 +256,7 @@ tasks.named<ProcessResources>("processResources").configure {
         "mod_license" to modLicense,
         "mod_version" to modVersion,
         "mod_authors" to modAuthors,
+        "mod_credits" to modCredits,
         "mod_description" to modDescription,
         "geckolib_version_range" to geckolibVersionRange,
         "terrablender_version_range" to terrablenderVersionRange

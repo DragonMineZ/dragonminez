@@ -94,9 +94,9 @@ public class StatsCommand {
 		}
 
 		int value;
-		int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+		int maxValue = ConfigManager.getServerConfig().getGameplay().getMaxValue();
 		try {
-			if (amountStr.equalsIgnoreCase("max")) value = MAX_STAT_VALUE;
+			if (amountStr.equalsIgnoreCase("max")) value = maxValue;
 			else if (amountStr.equalsIgnoreCase("min")) value = 5;
 			else value = Integer.parseInt(amountStr);
 		} catch (NumberFormatException e) {
@@ -143,10 +143,21 @@ public class StatsCommand {
 	}
 
 	private static void applyModification(StatsData data, String stat, int value, String mode) {
-		int MAX_STAT_VALUE = ConfigManager.getServerConfig().getGameplay().getMaxStatValue();
+		int current = data.getCurrentStatValue(stat);
 		switch (mode) {
-			case "set" -> data.getStats().setStat(stat, Math.min(value, MAX_STAT_VALUE));
-			case "add" -> data.getStats().addStat(stat, value);
+			case "set" -> {
+				int target = Math.max(5, value);
+				if (target <= current) {
+					data.getStats().setStat(stat, target);
+				} else {
+					int increase = data.getMaxAllowedIncreaseForStat(stat, target - current);
+					data.getStats().setStat(stat, current + increase);
+				}
+			}
+			case "add" -> {
+				int increase = data.getMaxAllowedIncreaseForStat(stat, value);
+				if (increase > 0) data.getStats().addStat(stat, increase);
+			}
 			case "remove" -> data.getStats().removeStat(stat, value);
 		}
 	}

@@ -1,10 +1,15 @@
 package com.dragonminez.common.stats.character;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 
+@Setter
+@Getter
 public class Stats {
     private int strength;
     private int strikePower;
@@ -24,20 +29,29 @@ public class Stats {
         this.energy = 5;
     }
 
-    public void setPlayer(Player player) {
-        this.player = player;
-    }
+      private int clampStatValue(int value) {
+        int min = 5;
+        int capped = Math.max(min, value);
+        if (ConfigManager.getServerConfig() == null || ConfigManager.getServerConfig().getGameplay() == null) {
+          return capped;
+        }
+        if (ConfigManager.getServerConfig().getGameplay().getMaxLevelValueInsteadOfStats()) {
+          return capped;
+        }
+        int max = ConfigManager.getServerConfig().getGameplay().getMaxValue();
+        return Math.min(capped, max);
+      }
 
-    public int getStrength() { return strength; }
-    public int getStrikePower() { return strikePower; }
-    public int getResistance() { return resistance; }
-    public int getVitality() { return vitality; }
-    public int getKiPower() { return kiPower; }
-    public int getEnergy() { return energy; }
+      private int safeAdd(int base, int delta) {
+        long result = (long) base + delta;
+        if (result > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        if (result < Integer.MIN_VALUE) return Integer.MIN_VALUE;
+        return (int) result;
+      }
 
     public void setStrength(int value) {
         int oldValue = this.strength;
-        int newValue = Math.max(5, value);
+        int newValue = clampStatValue(value);
         if (oldValue != newValue && player != null) {
             DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.STRENGTH, oldValue, newValue);
             if (!MinecraftForge.EVENT_BUS.post(event)) {
@@ -50,7 +64,7 @@ public class Stats {
 
     public void setStrikePower(int value) {
         int oldValue = this.strikePower;
-        int newValue = Math.max(5, value);
+        int newValue = clampStatValue(value);
         if (oldValue != newValue && player != null) {
             DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.STRIKE_POWER, oldValue, newValue);
             if (!MinecraftForge.EVENT_BUS.post(event)) {
@@ -63,7 +77,7 @@ public class Stats {
 
     public void setResistance(int value) {
         int oldValue = this.resistance;
-        int newValue = Math.max(5, value);
+        int newValue = clampStatValue(value);
         if (oldValue != newValue && player != null) {
             DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.RESISTANCE, oldValue, newValue);
             if (!MinecraftForge.EVENT_BUS.post(event)) {
@@ -76,7 +90,7 @@ public class Stats {
 
     public void setVitality(int value) {
         int oldValue = this.vitality;
-        int newValue = Math.max(5, value);
+        int newValue = clampStatValue(value);
         if (oldValue != newValue && player != null) {
             DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.VITALITY, oldValue, newValue);
             if (!MinecraftForge.EVENT_BUS.post(event)) {
@@ -89,7 +103,7 @@ public class Stats {
 
     public void setKiPower(int value) {
         int oldValue = this.kiPower;
-        int newValue = Math.max(5, value);
+        int newValue = clampStatValue(value);
         if (oldValue != newValue && player != null) {
             DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.KI_POWER, oldValue, newValue);
             if (!MinecraftForge.EVENT_BUS.post(event)) {
@@ -102,7 +116,7 @@ public class Stats {
 
     public void setEnergy(int value) {
         int oldValue = this.energy;
-        int newValue = Math.max(5, value);
+        int newValue = clampStatValue(value);
         if (oldValue != newValue && player != null) {
             DMZEvent.StatChangeEvent event = new DMZEvent.StatChangeEvent(player, DMZEvent.StatChangeEvent.StatType.ENERGY, oldValue, newValue);
             if (!MinecraftForge.EVENT_BUS.post(event)) {
@@ -113,12 +127,12 @@ public class Stats {
         }
     }
 
-    public void addStrength(int amount) { setStrength(strength + amount); }
-    public void addStrikePower(int amount) { setStrikePower(strikePower + amount); }
-    public void addResistance(int amount) { setResistance(resistance + amount); }
-    public void addVitality(int amount) { setVitality(vitality + amount); }
-    public void addKiPower(int amount) { setKiPower(kiPower + amount); }
-    public void addEnergy(int amount) { setEnergy(energy + amount); }
+      public void addStrength(int amount) { setStrength(safeAdd(strength, amount)); }
+      public void addStrikePower(int amount) { setStrikePower(safeAdd(strikePower, amount)); }
+      public void addResistance(int amount) { setResistance(safeAdd(resistance, amount)); }
+      public void addVitality(int amount) { setVitality(safeAdd(vitality, amount)); }
+      public void addKiPower(int amount) { setKiPower(safeAdd(kiPower, amount)); }
+      public void addEnergy(int amount) { setEnergy(safeAdd(energy, amount)); }
 
 	public void setStat(String statName, int value) {
 		switch (statName.toLowerCase()) {
@@ -149,7 +163,8 @@ public class Stats {
 	}
 
     public int getTotalStats() {
-        return strength + strikePower + resistance + vitality + kiPower + energy;
+        long total = (long) strength + strikePower + resistance + vitality + kiPower + energy;
+        return total > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) total;
     }
 
     public CompoundTag save() {
@@ -164,21 +179,21 @@ public class Stats {
     }
 
     public void load(CompoundTag tag) {
-        this.strength = tag.getInt("STR");
-        this.strikePower = tag.getInt("SKP");
-        this.resistance = tag.getInt("RES");
-        this.vitality = tag.getInt("VIT");
-        this.kiPower = tag.getInt("PWR");
-        this.energy = tag.getInt("ENE");
+        setStrength(tag.getInt("STR"));
+        setStrikePower(tag.getInt("SKP"));
+        setResistance(tag.getInt("RES"));
+        setVitality(tag.getInt("VIT"));
+        setKiPower(tag.getInt("PWR"));
+        setEnergy(tag.getInt("ENE"));
     }
 
     public void copyFrom(Stats other) {
-        this.strength = other.strength;
-        this.strikePower = other.strikePower;
-        this.resistance = other.resistance;
-        this.vitality = other.vitality;
-        this.kiPower = other.kiPower;
-        this.energy = other.energy;
+        setStrength(other.strength);
+        setStrikePower(other.strikePower);
+        setResistance(other.resistance);
+        setVitality(other.vitality);
+        setKiPower(other.kiPower);
+        setEnergy(other.energy);
     }
 }
 

@@ -23,22 +23,22 @@ public class GenericAttributes {
 
 		if (armorAttribute instanceof RangedAttribute) {
 			RangedAttributeMixin accessor = (RangedAttributeMixin) armorAttribute;
-			accessor.setMaxValue(1000000.0);
+			accessor.setMaxValue(Float.MAX_VALUE);
 		}
 
 		if (armorToughnessAttribute instanceof RangedAttribute) {
 			RangedAttributeMixin accessor = (RangedAttributeMixin) armorToughnessAttribute;
-			accessor.setMaxValue(1000000.0);
+			accessor.setMaxValue(Float.MAX_VALUE);
 		}
 
 		if (maxHealth instanceof RangedAttribute) {
 			RangedAttributeMixin accessor = (RangedAttributeMixin) maxHealth;
-			accessor.setMaxValue(2000000000.0);
+			accessor.setMaxValue(Float.MAX_VALUE);
 		}
 
 		if (dmzHealth instanceof RangedAttribute) {
 			RangedAttributeMixin accessor = (RangedAttributeMixin) dmzHealth;
-			accessor.setMaxValue(2000000000.0);
+			accessor.setMaxValue(Float.MAX_VALUE);
 		}
 	}
 }
