@@ -139,7 +139,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			effectiveBufferSource = maskBufferSource.wrap(bufferSource);
 		}
 
-		if (FlySkillEvent.isFlyingFast()) {
+		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
 			float roll = FlightRollHandler.getRoll(partialTick);
 			float pitch = entity.getViewXRot(partialTick);
 			float pivotY = entity.getBbHeight() / 2f;

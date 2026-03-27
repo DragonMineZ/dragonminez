@@ -37,7 +37,7 @@ public class FlightRollHandler {
 		while (deltaYaw >= 180) deltaYaw -= 360;
 		while (deltaYaw < -180) deltaYaw += 360;
 
-		if (isPlayerFlying(player) && FlySkillEvent.isFlyingFast()) {
+		if (isPlayerFlying(player) && FlySkillEvent.getInstance().isFlyingFast(player)) {
 
 			float input = 0;
 			if (player.input.left) input += 1;
