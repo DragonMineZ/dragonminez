@@ -21,7 +21,14 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
     @Override
     public ResourceLocation getTextureResource(T animatable) {
         String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
-        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + ".png");
+
+        int variant = animatable.getTextureVariant();
+
+        // Si la variante es 0 no tiene sufijo
+        String variantSuffix = (variant == 0) ? "" : "_" + variant;
+
+        //saga_piccolo.png (si es 0) o saga_piccolo_1.png (si es 1)
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/" + name + variantSuffix + ".png");
     }
 
     @Override
