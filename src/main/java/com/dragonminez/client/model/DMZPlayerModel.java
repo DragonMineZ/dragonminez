@@ -187,7 +187,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         CoreGeoBone head = this.getAnimationProcessor().getBone("head");
         if (head != null) {
-            if (FlySkillEvent.isFlyingFast()) {
+            if (FlySkillEvent.getInstance().isFlyingFast(animatable)) {
                 head.setRotX(0.7854F);
                 head.setRotY(0);
             } else {

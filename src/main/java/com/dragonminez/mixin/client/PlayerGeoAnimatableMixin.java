@@ -148,7 +148,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		}
 
 		if (flySkillActive || player.isFallFlying() || animatable.dragonminez$isFlying()) {
-			if (FlySkillEvent.isFlyingFast()) return state.setAndContinue(FLY_FAST);
+			if (FlySkillEvent.getInstance().isFlyingFast(player)) return state.setAndContinue(FLY_FAST);
 			return state.setAndContinue(FLY);
 		}
 

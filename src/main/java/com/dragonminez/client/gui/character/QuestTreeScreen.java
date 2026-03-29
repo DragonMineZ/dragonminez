@@ -62,6 +62,8 @@ import java.util.UUID;
  *
  * @since 2.1
  */
+
+// TODO: Bruno limpia el código esto es un desastre xd
 @OnlyIn(Dist.CLIENT)
 public class QuestTreeScreen extends BaseMenuScreen {
 
@@ -111,6 +113,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final long PANEL_INTRO_DURATION_MS = 700L;
 	private static final int PANEL_INTRO_EXTRA_TRAVEL_PX = 22;
 	private static final float PANEL_INTRO_BACK_OVERSHOOT = 1.35f;
+	private static final int LEFT_PANEL_PEEK_PX = 24;
+	private static final int LEFT_PANEL_HOVER_ZONE_PX = 36;
+	private static final float PANEL_REVEAL_STEP = 0.07f;
+	private static final double CLICK_DRAG_THRESHOLD_SQ = 16.0;
 
 	// ========================================================================================
 	// Node Status Colors
@@ -215,6 +221,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private long panelIntroStartMs = 0L;
 	private boolean panelIntroActive = false;
+	private float leftPanelRevealProgress = 0.0f;
+	private float rightPanelRevealProgress = 0.0f;
+	private boolean treePressStarted = false;
+	private boolean treePressMoved = false;
+	private double treePressStartX = 0.0;
+	private double treePressStartY = 0.0;
 
 	private boolean invitePopupOpen = false;
 	private int invitePopupScroll = 0;
@@ -801,6 +813,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
+		updatePanelInteractionAnimations(uiMouseX, uiMouseY, partialTick);
 
 		beginUiScale(graphics);
 		syncActionButtonPosition();
@@ -904,7 +917,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void renderLeftNavigatorPanel(GuiGraphics graphics, int mouseX, int mouseY) {
 		PanelRect panel = getLeftPanelRect();
-		renderSidePanelBackground(graphics, panel, true, false);
+		renderSidePanelBackground(graphics, panel, true, false, false);
 
 		drawCenteredStringWithBorder(graphics,
 				tr("gui.dragonminez.quest_tree.title").copy().withStyle(ChatFormatting.BOLD),
@@ -1074,15 +1087,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	// ========================================================================================
 
 	private void renderRightDetailPanel(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (rightPanelRevealProgress <= 0.001f && selectedQuest == null) {
+			return;
+		}
+
 		PanelRect panel = getRightPanelRect();
-		renderSidePanelBackground(graphics, panel, false, true);
+		renderSidePanelBackground(graphics, panel, false, true, false);
 
 		if (selectedQuest == null || statsData == null || availableSagas.isEmpty()) {
-			drawCenteredStringWithBorder(graphics,
-					tr("gui.dragonminez.quest_tree.select_quest"),
-					panel.x + panel.width / 2,
-					panel.y + panel.height / 2,
-					0xFFAAAAAA);
 			return;
 		}
 
@@ -1335,8 +1347,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.drawString(this.font, text, tooltipX + 5, tooltipY + 3, 0xFFFFFFFF, false);
 	}
 
-	private void renderSidePanelBackground(GuiGraphics graphics, PanelRect panel, boolean flushLeft, boolean flushRight) {
-		graphics.fill(panel.x, panel.y, panel.right(), panel.bottom(), SIDE_PANEL_BG);
+	private void renderSidePanelBackground(GuiGraphics graphics, PanelRect panel, boolean flushLeft, boolean flushRight, boolean drawFrame) {
+		if (drawFrame) {
+			graphics.fill(panel.x, panel.y, panel.right(), panel.bottom(), SIDE_PANEL_BG);
+		}
 
 		int drawX = panel.x - (flushLeft ? PANEL_BORDER_BLEED_PX : 0);
 		int drawW = panel.width + (flushLeft ? PANEL_BORDER_BLEED_PX : 0) + (flushRight ? PANEL_BORDER_BLEED_PX : 0);
@@ -1368,13 +1382,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				QUEST_MENU_TEX_WIDTH,
 				QUEST_MENU_TEX_HEIGHT);
 
-		graphics.fill(panel.x, panel.y, panel.right(), panel.y + 1, SIDE_PANEL_BORDER);
-		graphics.fill(panel.x, panel.bottom() - 1, panel.right(), panel.bottom(), SIDE_PANEL_BORDER);
-		if (!flushLeft) {
-			graphics.fill(panel.x, panel.y, panel.x + 1, panel.bottom(), SIDE_PANEL_BORDER);
-		}
-		if (!flushRight) {
-			graphics.fill(panel.right() - 1, panel.y, panel.right(), panel.bottom(), SIDE_PANEL_BORDER);
+		if (drawFrame) {
+			graphics.fill(panel.x, panel.y, panel.right(), panel.y + 1, SIDE_PANEL_BORDER);
+			graphics.fill(panel.x, panel.bottom() - 1, panel.right(), panel.bottom(), SIDE_PANEL_BORDER);
+			if (!flushLeft) {
+				graphics.fill(panel.x, panel.y, panel.x + 1, panel.bottom(), SIDE_PANEL_BORDER);
+			}
+			if (!flushRight) {
+				graphics.fill(panel.right() - 1, panel.y, panel.right(), panel.bottom(), SIDE_PANEL_BORDER);
+			}
 		}
 	}
 
@@ -1770,7 +1786,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void renderInvitePopup(GuiGraphics graphics, int mouseX, int mouseY) {
 		graphics.fill(0, 0, getUiWidth(), getUiHeight(), 0x99000000);
 		PanelRect popup = getInvitePopupRect();
-		renderSidePanelBackground(graphics, popup, false, false);
+		renderSidePanelBackground(graphics, popup, false, false, true);
 
 		drawCenteredStringWithBorder(graphics,
 				tr("gui.dragonminez.party.invite_popup").copy().withStyle(ChatFormatting.BOLD),
@@ -1814,7 +1830,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void renderConfirmOverlay(GuiGraphics graphics, int mouseX, int mouseY) {
 		graphics.fill(0, 0, getUiWidth(), getUiHeight(), 0xAA000000);
 		PanelRect popup = getConfirmRect();
-		renderSidePanelBackground(graphics, popup, false, false);
+		renderSidePanelBackground(graphics, popup, false, false, true);
 
 		drawCenteredStringWithBorder(graphics,
 				confirmTitle.copy().withStyle(ChatFormatting.BOLD),
@@ -1972,6 +1988,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		dragStartY = uiMouseY;
 		dragStartPanX = panX;
 		dragStartPanY = panY;
+		treePressStarted = true;
+		treePressMoved = false;
+		treePressStartX = uiMouseX;
+		treePressStartY = uiMouseY;
 		return true;
 	}
 
@@ -2022,6 +2042,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (isDraggingTree && button == 0) {
 			double uiMouseX = toUiX(mouseX);
 			double uiMouseY = toUiY(mouseY);
+			double dx = uiMouseX - treePressStartX;
+			double dy = uiMouseY - treePressStartY;
+			if ((dx * dx) + (dy * dy) > CLICK_DRAG_THRESHOLD_SQ) {
+				treePressMoved = true;
+			}
 			panX = dragStartPanX + (float) (uiMouseX - dragStartX);
 			panY = dragStartPanY + (float) (uiMouseY - dragStartY);
 			return true;
@@ -2034,8 +2059,21 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (invitePopupOpen || confirmOverlayOpen) {
 			return true;
 		}
-		if (isDraggingTree) {
+		if (isDraggingTree && button == 0) {
+			double uiMouseX = toUiX(mouseX);
+			double uiMouseY = toUiY(mouseY);
+			double dx = uiMouseX - treePressStartX;
+			double dy = uiMouseY - treePressStartY;
+			boolean moved = treePressMoved || ((dx * dx) + (dy * dy) > CLICK_DRAG_THRESHOLD_SQ);
+
+			if (treePressStarted && !moved && selectedQuest != null) {
+				selectedQuest = null;
+				refreshButtons();
+			}
+
 			isDraggingTree = false;
+			treePressStarted = false;
+			treePressMoved = false;
 			return true;
 		}
 		return super.mouseReleased(mouseX, mouseY, button);
@@ -2415,13 +2453,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private PanelRect getLeftPanelRect() {
 		PanelRect base = getBaseLeftPanelRect();
-		int xOffset = getPanelSlideOffsetX(true, base.width);
+		int xOffset = getPanelIntroOffsetX(true, base.width) + getLeftPanelRevealOffset(base.width);
 		return new PanelRect(base.x + xOffset, base.y, base.width, base.height);
 	}
 
 	private PanelRect getRightPanelRect() {
 		PanelRect base = getBaseRightPanelRect();
-		int xOffset = getPanelSlideOffsetX(false, base.width);
+		int xOffset = getPanelIntroOffsetX(false, base.width) + getRightPanelRevealOffset(base.width);
 		return new PanelRect(base.x + xOffset, base.y, base.width, base.height);
 	}
 
@@ -2458,12 +2496,23 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return Math.max(0.0f, Math.min(1.0f, elapsed / (float) PANEL_INTRO_DURATION_MS));
 	}
 
-	private int getPanelSlideOffsetX(boolean isLeftPanel, int panelWidth) {
+	private int getPanelIntroOffsetX(boolean isLeftPanel, int panelWidth) {
 		float t = getPanelIntroProgress();
 		float eased = easeOutBack(t, PANEL_INTRO_BACK_OVERSHOOT);
 		float travel = (1.0f - eased) * (panelWidth + PANEL_INTRO_EXTRA_TRAVEL_PX);
 		int offset = Math.round(travel);
 		return isLeftPanel ? -offset : offset;
+	}
+
+	private int getLeftPanelRevealOffset(int panelWidth) {
+		int hiddenTravel = Math.max(0, panelWidth - LEFT_PANEL_PEEK_PX);
+		float eased = easeInOutCubic(leftPanelRevealProgress);
+		return -Math.round((1.0f - eased) * hiddenTravel);
+	}
+
+	private int getRightPanelRevealOffset(int panelWidth) {
+		float eased = easeInOutCubic(rightPanelRevealProgress);
+		return Math.round((1.0f - eased) * panelWidth);
 	}
 
 	private float easeOutBack(float t, float overshoot) {
@@ -2477,6 +2526,32 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		PanelRect right = getRightPanelRect();
 		actionButton.setX(right.x + (right.width - PARTY_BUTTON_WIDTH) / 2);
 		actionButton.setY(right.bottom() - 28);
+		actionButton.visible = selectedQuest != null && rightPanelRevealProgress > 0.15f;
+	}
+
+	private void updatePanelInteractionAnimations(int mouseX, int mouseY, float partialTick) {
+		float step = Math.max(0.01f, PANEL_REVEAL_STEP + (partialTick * 0.01f));
+
+		boolean nearLeftEdge = mouseX <= LEFT_PANEL_HOVER_ZONE_PX;
+		boolean overLeftPanel = getLeftPanelRect().contains(mouseX, mouseY);
+		boolean keepLeftOpen = invitePopupOpen || confirmOverlayOpen;
+		float leftTarget = (nearLeftEdge || overLeftPanel || keepLeftOpen) ? 1.0f : 0.0f;
+		leftPanelRevealProgress = approach01(leftPanelRevealProgress, leftTarget, step);
+
+		float rightTarget = selectedQuest != null ? 1.0f : 0.0f;
+		rightPanelRevealProgress = approach01(rightPanelRevealProgress, rightTarget, step);
+	}
+
+	private float approach01(float current, float target, float step) {
+		if (current < target) return Math.min(target, current + step);
+		if (current > target) return Math.max(target, current - step);
+		return current;
+	}
+
+	private float easeInOutCubic(float t) {
+		if (t <= 0.0f) return 0.0f;
+		if (t >= 1.0f) return 1.0f;
+		return t < 0.5f ? 4.0f * t * t * t : 1.0f - (float) Math.pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
 	}
 
 	private PanelRect getTreePanelRect() {

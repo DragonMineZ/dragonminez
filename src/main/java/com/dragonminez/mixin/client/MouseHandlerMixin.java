@@ -15,7 +15,7 @@ public class MouseHandlerMixin {
 	@Inject(method = "turn", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$onTurn(double yawDelta, double pitchDelta, CallbackInfo ci) {
 		if ((Object) this instanceof LocalPlayer player) {
-			if (FlySkillEvent.isFlyingFast()) {
+			if (FlySkillEvent.getInstance().isFlyingFast(player)) {
 				FlightOrientationHandler.applyMouseDelta(player, yawDelta, pitchDelta);
 				ci.cancel();
 			} else {

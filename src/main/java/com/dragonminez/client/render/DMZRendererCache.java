@@ -17,21 +17,24 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public final class DMZRendererCache {
 	private DMZRendererCache() {}
-	private static final Map<Integer, GeoEntityRenderer<?>> TP_RENDERERS = new HashMap<>();
-	private static final Map<Integer, GeoEntityRenderer<?>> POV_RENDERERS = new HashMap<>();
+	private static final Map<String, GeoEntityRenderer<?>> TP_RENDERERS = new HashMap<>();
+	private static final Map<String, GeoEntityRenderer<?>> POV_RENDERERS = new HashMap<>();
 
 	@Nullable
 	private static EntityRendererProvider.Context context;
 
 	public static void onResourceReload(EntityRendererProvider.Context ctx) {
 		context = ctx;
+		clear();
+		LogUtil.info(Env.CLIENT, "DMZRendererCache cleared on resource reload");
+	}
+
+	public static void clear() {
 		TP_RENDERERS.clear();
 		POV_RENDERERS.clear();
-		LogUtil.info(Env.CLIENT, "DMZRendererCache cleared on resource reload");
 	}
 
 	@Nullable
@@ -45,9 +48,9 @@ public final class DMZRendererCache {
 			String form = character.getActiveForm();
 
 			boolean pov = FirstPersonManager.shouldRenderFirstPerson(player);
-			int rendererId = Objects.hash(race, gender, form, pov);
+			String rendererId = buildRendererId(acp, race, gender, form, pov);
 
-			Map<Integer, GeoEntityRenderer<?>> cache = pov ? POV_RENDERERS : TP_RENDERERS;
+			Map<String, GeoEntityRenderer<?>> cache = pov ? POV_RENDERERS : TP_RENDERERS;
 			GeoEntityRenderer<?> renderer = cache.get(rendererId);
 
 			if (renderer == null) {
@@ -69,7 +72,7 @@ public final class DMZRendererCache {
 			String gender = character.getGender();
 			String form = character.getActiveForm();
 
-			int rendererId = Objects.hash(race, gender, form, false);
+			String rendererId = buildRendererId(acp, race, gender, form, false);
 
 			GeoEntityRenderer<?> renderer = TP_RENDERERS.get(rendererId);
 			if (renderer == null) {
@@ -84,6 +87,13 @@ public final class DMZRendererCache {
 	@Nullable
 	public static EntityRendererProvider.Context getContext() {
 		return context;
+	}
+
+	private static String buildRendererId(AbstractClientPlayer player, String race, String gender, String form, boolean pov) {
+		String safeRace = race != null ? race.toLowerCase() : "human";
+		String safeGender = gender != null ? gender.toLowerCase() : "male";
+		String safeForm = form != null ? form.toLowerCase() : "base";
+		return player.getUUID() + "|" + safeRace + "|" + safeGender + "|" + safeForm + "|" + (pov ? "pov" : "tp");
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})

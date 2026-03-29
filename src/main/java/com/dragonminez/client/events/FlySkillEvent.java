@@ -12,6 +12,7 @@ import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -23,6 +24,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class FlySkillEvent {
+	private static final FlySkillEvent INSTANCE = new FlySkillEvent();
 
 	private static boolean pendingFlightActivation = false;
 	private static Vec3 flightVector = Vec3.ZERO;
@@ -40,6 +42,10 @@ public class FlySkillEvent {
 
 	private static int kiConsumptionTicks = 0;
 	private static final int KI_CONSUMPTION_INTERVAL = 20;
+
+	public static FlySkillEvent getInstance() {
+		return INSTANCE;
+	}
 
 	@SubscribeEvent
 	public static void onKeyPress(InputEvent.Key event) {
@@ -83,7 +89,7 @@ public class FlySkillEvent {
 	}
 
 	@SubscribeEvent
-	public static void onClientTick(TickEvent.ClientTickEvent event) {
+	public void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
 
 		Minecraft mc = Minecraft.getInstance();
@@ -117,7 +123,7 @@ public class FlySkillEvent {
 		});
 	}
 
-	private static void handleFlightMovement(LocalPlayer player, int flyLevel) {
+	private void handleFlightMovement(LocalPlayer player, int flyLevel) {
 		prevHovering = hovering;
 		prevFlightVector = flightVector;
 
@@ -138,7 +144,7 @@ public class FlySkillEvent {
 		float currentMaxSpeed = isSprinting ? maxSprintSpeed : maxNormalSpeed;
 		float currentAccel = isSprinting ? ACCELERATION * 1.5F : ACCELERATION;
 
-		boolean isFastFlight = isFlyingFast();
+		boolean isFastFlight = this.isFlyingFast(player);
 		if (!isFastFlight) {
 			FlightOrientationHandler.reset();
 		}
@@ -298,7 +304,18 @@ public class FlySkillEvent {
 		return (float) flightVector.length();
 	}
 
-	public static boolean isFlyingFast() {
+	private boolean isFlyingFast() {
 		return flightVector.length() > NORMAL_MAX_SPEED;
+	}
+
+	public boolean isFlyingFast(AbstractClientPlayer player) {
+		if (player == null) return false;
+
+		LocalPlayer localPlayer = Minecraft.getInstance().player;
+		if (localPlayer != null && player == localPlayer) {
+			return isFlyingFast();
+		}
+
+		return player.getDeltaMovement().lengthSqr() > (NORMAL_MAX_SPEED * NORMAL_MAX_SPEED);
 	}
 }

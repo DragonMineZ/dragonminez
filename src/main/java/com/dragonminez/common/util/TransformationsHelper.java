@@ -8,6 +8,64 @@ import java.util.*;
 
 public class TransformationsHelper {
 
+	public static class OrderedFormEntry {
+		private final String groupName;
+		private final String formType;
+		private final FormConfig.FormData formData;
+
+		public OrderedFormEntry(String groupName, String formType, FormConfig.FormData formData) {
+			this.groupName = groupName;
+			this.formType = formType;
+			this.formData = formData;
+		}
+
+		public String getGroupName() {
+			return groupName;
+		}
+
+		public String getFormType() {
+			return formType;
+		}
+
+		public FormConfig.FormData getFormData() {
+			return formData;
+		}
+	}
+
+	public static List<OrderedFormEntry> getOrderedFormsForRace(String raceName, List<String> formTypeOrder) {
+		List<OrderedFormEntry> result = new ArrayList<>();
+		Map<String, FormConfig> allGroups = ConfigManager.getAllFormsForRace(raceName);
+		if (allGroups == null || allGroups.isEmpty()) return result;
+
+		Map<String, Integer> typeOrderIndex = new HashMap<>();
+		if (formTypeOrder != null) {
+			for (int i = 0; i < formTypeOrder.size(); i++) {
+				typeOrderIndex.put(formTypeOrder.get(i).toLowerCase(Locale.ROOT), i);
+			}
+		}
+
+		for (Map.Entry<String, FormConfig> entry : allGroups.entrySet()) {
+			String groupName = entry.getKey();
+			FormConfig formConfig = entry.getValue();
+			if (formConfig == null) continue;
+
+			String formType = formConfig.getFormType() != null ? formConfig.getFormType().toLowerCase(Locale.ROOT) : "";
+			if (!typeOrderIndex.isEmpty() && !typeOrderIndex.containsKey(formType)) continue;
+
+			for (FormConfig.FormData formData : formConfig.getForms().values()) {
+				if (formData == null) continue;
+				result.add(new OrderedFormEntry(groupName, formType, formData));
+			}
+		}
+
+		result.sort(Comparator
+				.comparingInt((OrderedFormEntry item) -> typeOrderIndex.getOrDefault(item.getFormType(), Integer.MAX_VALUE))
+				.thenComparingInt(item -> item.getFormData().getUnlockOnSkillLevel() != null ? item.getFormData().getUnlockOnSkillLevel() : 0)
+				.thenComparing(item -> item.getFormData().getName(), String.CASE_INSENSITIVE_ORDER));
+
+		return result;
+	}
+
 	public static List<FormConfig.FormData> getUnlockedForms(StatsData statsData, String raceName, String groupName) {
 		List<FormConfig.FormData> unlockedForms = new ArrayList<>();
 		FormConfig formConfig = ConfigManager.getFormGroup(raceName, groupName);
