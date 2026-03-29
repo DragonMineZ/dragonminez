@@ -17,14 +17,11 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaFriezaSoldier01Entity extends DBSagasEntity{
 
-    private static final int SKILL_KIBLAST = 1;
-
-    private int kiBlastCooldown = 0;
-
     public SagaFriezaSoldier01Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 
-        this.setFlySpeed(0.35D);
+        this.setCanFly(true);
+        this.setKiSmall(100, 0xE81E1E);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -36,29 +33,4 @@ public class SagaFriezaSoldier01Entity extends DBSagasEntity{
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
     }
 
-    @Override
-    public void stopCasting() {
-        if (getSkillType() == SKILL_KIBLAST) {
-            this.kiBlastCooldown = 10 * 20;
-        }
-        super.stopCasting();
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        super.registerControllers(controllers);
-        controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
-    }
-
-    private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        if (this.isCasting()) {
-            int skill = getSkillType();
-
-            if (skill == SKILL_KIBLAST) {
-                return event.setAndContinue(ANIM_KIBLAST);
-            }
-        }
-        event.getController().forceAnimationReset();
-        return PlayState.STOP;
-    }
 }

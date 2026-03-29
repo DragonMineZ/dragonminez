@@ -59,7 +59,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     // SETUP ITEMS & NPCS
     public void setupKiExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder, int castTime) {
         this.setSize(2.0F);
-        this.setMaxRadius(5.0f);
+        this.setMaxRadius(10.0f);
         this.setColors(colorMain, colorBorder);
         this.setKiDamage(damage);
         this.entityData.set(OWNER_ID, owner.getId());
@@ -234,7 +234,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
             }
         } else {
             int particlesPerTick = 4;
-            float gatherRadius = maxRadius * 1.5F;
+            float gatherRadius = maxRadius * 1.3F;
 
             for (int i = 0; i < particlesPerTick; i++) {
                 double offsetX = (this.random.nextDouble() - 0.5) * 2.0 * gatherRadius;

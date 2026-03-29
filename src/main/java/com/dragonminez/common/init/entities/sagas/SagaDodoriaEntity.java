@@ -18,42 +18,16 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaDodoriaEntity extends DBSagasEntity{
 
-    private static final int SKILL_KIBLAST = 1;
-    private int kiBlastCooldown = 0;
-
     public SagaDodoriaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(22000);
 		}
-    }
-    @Override
-    public void stopCasting() {
-        int usedSkill = getSkillType();
 
-        if (usedSkill == SKILL_KIBLAST) {
-            this.kiBlastCooldown = 10 * 20;
-        }
-
-        super.stopCasting();
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        super.registerControllers(controllers);
-        controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
-    }
-
-    private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        if (this.isCasting()) {
-            int skill = getSkillType();
-
-            if (skill == SKILL_KIBLAST) {
-                return event.setAndContinue(ANIM_KIWAVE);
-            }
-            return PlayState.CONTINUE;
-        }
-        event.getController().forceAnimationReset();
-        return PlayState.STOP;
+        this.setCanFly(true);
+        this.setKiBlastSpeed(1.3F);
+        this.setOozaruBeam(200, 0xFFFBE8, 0xFFE77A, 1.2f);
+        this.setAuraColor(0XFF52E2);
+        this.setDBZStyle(2);
     }
 }

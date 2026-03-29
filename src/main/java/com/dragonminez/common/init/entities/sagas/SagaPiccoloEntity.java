@@ -17,10 +17,11 @@ public class SagaPiccoloEntity extends DBSagasEntity{
         this.setCanFly(true);
         this.setDBZStyle(0);
         this.setAuraColor(0xFFFFFF);
-        this.setTextureVariant(0);
+        this.setTextureVariant(0); //Ejemplo para cambiar de variante de textura
 
-        this.setKiSmall(80, 8.0f, 0xFFFF00);
-        this.setSecondarySkill(3, 250, 30.0f, 1.0f);
+
+        this.setKiSmall(80, 0xFFFF00);
+        this.setSecondarySkill(3, 250, 1.0f);
         this.setEvade(true, 150);
     }
 

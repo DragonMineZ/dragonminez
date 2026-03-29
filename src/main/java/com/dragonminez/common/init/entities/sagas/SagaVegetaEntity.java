@@ -27,18 +27,11 @@ public class SagaVegetaEntity extends DBSagasEntity{
 
         this.setCanFly(true);
         this.setWildSense(true, 200);
-        this.setKiBlastDamage(12.0F);
         this.setKiBlastSpeed(1.3F);
         this.setAuraColor(0XF527AD);
         this.setDBZStyle(0);
 
         String entityName = ForgeRegistries.ENTITY_TYPES.getKey(pEntityType).getPath();
-
-        this.setCanFly(true);
-        this.setWildSense(true, 200);
-        this.setKiBlastSpeed(1.3F);
-        this.setAuraColor(0XF527AD);
-        this.setDBZStyle(0);
 
         if (entityName != null && entityName.contains("namek")) {
 
@@ -47,9 +40,9 @@ public class SagaVegetaEntity extends DBSagasEntity{
             }
             this.setCombo(0, 140);
 
-            this.setKiVolley(200, 10.0f, 0X00C0FF);
+            this.setKiVolley(200, 0X00C0FF);
 
-            this.setSecondarySkill(2, 400, 25.0f, 1.8f);
+            this.setSecondarySkill(2, 400, 1.8f);
 
         } else {
 
@@ -58,7 +51,7 @@ public class SagaVegetaEntity extends DBSagasEntity{
             }
             this.setCombo(1, 200);
 
-            this.setMainSkill(2, 300, 15.0f, 1.5f);
+            this.setMainSkill(2, 300, 1.5f);
         }
 
     }

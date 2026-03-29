@@ -27,6 +27,7 @@ public class MerusLaserItem extends Item {
             KiExplosionEntity kiexp = new KiExplosionEntity(pLevel, pPlayer);
             KiDiskEntity kidisc = new KiDiskEntity(pLevel, pPlayer);
             KiBarrierEntity kibarrier = new KiBarrierEntity(pLevel, pPlayer);
+            SPBlueHurricaneEntity spBlueHurricane = new SPBlueHurricaneEntity(pLevel, pPlayer);
 
 
             //kiBlast.setupKiSmall(pPlayer,7.2f, 0.2f, 0x00FFFF);
@@ -38,7 +39,7 @@ public class MerusLaserItem extends Item {
             //kiBlast.setupKiNova(pPlayer,10,0.6f, 100);
             //kiBlast.setupKiDeathBall(pPlayer,10,2.0f, 0xA927F5, 100);
             //kiBlast.setupSokidan(pPlayer,10,0.5f, 0xFFEF26, 1.0f, 100);
-            kiBlast.setupKiVolley(pPlayer, 10, 1.4f, 0xFFFFFF, 40);
+            //kiBlast.setupKiVolley(pPlayer, 10, 1.4f, 0xFFFFFF, 40);
             //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 1.0f, 100);
             //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 3.0f, 100);
             //kiWave.setupFinalFlash(pPlayer, 10.0f, 1.0f, 2.5f, 100);
@@ -46,8 +47,9 @@ public class MerusLaserItem extends Item {
             //kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
             //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);
             //kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
-            //kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
+            kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
             //kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
+            //spBlueHurricane.setupHurricane(pPlayer, 5.0f,2.0f, 60);
         }
 
 

@@ -13,43 +13,19 @@ import software.bernie.geckolib.core.object.PlayState;
 
 public class SagaCuiEntity extends DBSagasEntity {
 
-    private static final int SKILL_VOLLEY = 1;
-
-    private int kiVolleyCooldown = 0;
-
     public SagaCuiEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(18000);
 		}
+
+        this.setCanFly(true);
+        this.setKiBlastSpeed(1.2F);
+        this.setDBZStyle(0);
+        this.setEvade(true, 100);
+
+        this.setKiVolley(200, 0XAF52FF);
+
     }
 
-    @Override
-    public void stopCasting() {
-        int usedSkill = getSkillType();
-
-        if (usedSkill == SKILL_VOLLEY) {
-            this.kiVolleyCooldown = 10 * 20;
-        }
-
-        super.stopCasting();
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        super.registerControllers(controllers);
-        controllers.add(new AnimationController<>(this, "skill_controller", 0, this::skillPredicate));
-    }
-
-    private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        if (this.isCasting()) {
-            int skill = getSkillType();
-
-            if (skill == SKILL_VOLLEY) {
-                return event.setAndContinue(ANIM_KIWAVE);
-            }
-        }
-        event.getController().forceAnimationReset();
-        return PlayState.STOP;
-    }
 }

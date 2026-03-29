@@ -33,9 +33,6 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     private static final ResourceLocation NAPPA_NORMAL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa.png");
     private static final ResourceLocation NAPPA_DAMAGED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa2.png");
 
-    private static final ResourceLocation PICCOLO_NORMAL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo.png");
-    private static final ResourceLocation PICCOLO_DAMAGED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo_nocape.png");
-
     public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSagaModel<>());
         this.shadowRadius = 0.4f;
@@ -53,11 +50,11 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         poseStack.pushPose();
 
-        if (entity instanceof SagaFreezer1stEntity) {
+        if (entity instanceof SagaFriezaEntity.SagaFriezaFirstForm) {
             poseStack.scale(0.8f, 0.8f, 0.8f);
-        } else if(entity instanceof SagaFreezer2ndEntity){
+        } else if(entity instanceof SagaFriezaEntity.SagaFriezaSecondForm){
             poseStack.scale(1.2f, 1.2f, 1.2f);
-        } else if(entity instanceof SagaFreezer3rdEntity){
+        } else if(entity instanceof SagaFriezaEntity.SagaFriezaThirdForm){
             poseStack.scale(1.3f, 1.3f, 1.3f);
         } else if(entity instanceof SagaCellSemiPerfectEntity){
             poseStack.scale(1.2f, 1.2f, 1.2f);
@@ -117,17 +114,6 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             }
             return NAPPA_NORMAL;
 
-        }
-
-        if (animatable instanceof SagaPiccoloEntity piccolo) {
-            int variant = piccolo.getTextureVariant();
-
-            switch (variant) {
-                case 1:
-                    return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo.png");
-                default:
-                    return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo_nocape.png");
-            }
         }
 
         return super.getTextureLocation(animatable);

@@ -50,6 +50,8 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
+import java.util.List;
+
 public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -106,7 +108,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_KILASER = RawAnimation.begin().thenPlay("kilaser");
     protected static final RawAnimation ANIM_BARRIER = RawAnimation.begin().thenPlay("barrier");
     protected static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
-    protected static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("kiball");
+    protected static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("ki_ball");
     protected static final RawAnimation ANIM_KIBLAST = RawAnimation.begin().thenPlay("ki_blast");
     protected static final RawAnimation ANIM_TAIL = RawAnimation.begin().thenLoop("tail");
     protected static final RawAnimation ANIM_CAPE = RawAnimation.begin().thenLoop("cape");
@@ -121,7 +123,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_KI_GALICK = RawAnimation.begin().thenPlay("ki_galick");
     protected static final RawAnimation ANIM_KI_EXPLOSION = RawAnimation.begin().thenPlay("ki_explosion");
     protected static final RawAnimation ANIM_KI_FINALFLASH = RawAnimation.begin().thenPlay("ki_finalflash");
-    protected static final RawAnimation ANIM_KI_DISC = RawAnimation.begin().thenPlay("ki_finalflash");
+    protected static final RawAnimation ANIM_KI_DISC = RawAnimation.begin().thenPlay("ki_kienzan");
     protected static final RawAnimation ANIM_KI_LASER = RawAnimation.begin().thenPlay("ki_laser");
     protected static final RawAnimation ANIM_KIOZARU = RawAnimation.begin().thenPlay("ki_oozaru");
 
@@ -172,21 +174,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private int mainSkillType = 0;
     private int skillCooldownMax = 0;
     private int currentSkillCooldown = 0;
-    private float skillDamage = 0.0F;
     private float skillSize = 1.0F;
 
     private boolean canUseSecondarySkill = false;
     private int secondarySkillType = 0;
     private int secondarySkillCooldownMax = 0;
     private int currentSecondarySkillCooldown = 0;
-    private float secondarySkillDamage = 0.0F;
     private float secondarySkillSize = 1.0F;
 
     private boolean canUseTertiarySkill = false;
     private int tertiarySkillType = 0;
     private int tertiarySkillCooldownMax = 0;
     private int currentTertiarySkillCooldown = 0;
-    private float tertiarySkillDamage = 0.0F;
     private float tertiarySkillSize = 1.0F;
 
     private int genericColorMain = 0xFFFFFF;
@@ -236,66 +235,95 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
      * 9 = Oozaru Beam
      * 10 = Ki Volley (Varias Ki Small)
      * 11 = Ki Small (Bolita de Ki)
+     * 12 = Blue Hurricane
+     * 13 = Triple Laser
+     * 14 = Kienzan (Ki Disk)
+     * 15 = Death Ball
      */
-    public void setMainSkill(int skillId, int cooldown, float damage, float size) {
+    public void setMainSkill(int skillId, int cooldown, float size) {
         this.canUseSkill = true;
         this.mainSkillType = skillId;
         this.skillCooldownMax = cooldown;
         this.currentSkillCooldown = cooldown;
-        this.skillDamage = damage;
         this.skillSize = size;
     }
 
-    public void setMainSkill(int skillId, int cooldown, float damage) {
-        this.setMainSkill(skillId, cooldown, damage, 1.0F);
+    public void setMainSkill(int skillId, int cooldown) {
+        this.setMainSkill(skillId, cooldown, 1.0F);
     }
 
-    public void setGenericWave(int cooldown, float damage, int colorMain, int colorBorder, float size) {
-        this.setMainSkill(8, cooldown, damage, size);
+    public void setGenericWave(int cooldown, int colorMain, int colorBorder, float size) {
+        this.setMainSkill(8, cooldown, size);
         this.genericColorMain = colorMain;
         this.genericColorBorder = colorBorder;
     }
 
-    public void setOozaruBeam(int cooldown, float damage, int colorMain, int colorBorder, float size) {
-        this.setMainSkill(9, cooldown, damage, size);
+    public void setOozaruBeam(int cooldown, int colorMain, int colorBorder, float size) {
+        this.setMainSkill(9, cooldown, size);
         this.genericColorMain = colorMain;
         this.genericColorBorder = colorBorder;
     }
 
-    public void setKiVolley(int cooldown, float damage, int color) {
-        this.setMainSkill(10, cooldown, damage, 1.0F);
+    public void setKiVolley(int cooldown, int color) {
+        this.setMainSkill(10, cooldown, 1.0F);
         this.genericColorMain = color;
     }
 
-    public void setKiSmall(int cooldown, float damage, int color) {
-        this.setMainSkill(11, cooldown, damage, 1.0F);
+    public void setKiSmall(int cooldown, int color) {
+        this.setMainSkill(11, cooldown, 1.0F);
         this.genericColorMain = color;
     }
 
-    public void setSecondarySkill(int skillId, int cooldown, float damage, float size) {
+    public void setBlueHurricane(int cooldown, float speed) {
+        this.setMainSkill(12, cooldown, 1.0F);
+        this.setKiBlastSpeed(speed);
+    }
+
+    public void setTripleLaser(int cooldown, int colorMain, int colorBorder) {
+        this.setMainSkill(13, cooldown, 1.0F);
+        this.genericColorMain = colorMain;
+        this.genericColorBorder = colorBorder;
+    }
+
+    public void setKienzan(int cooldown, int color, float size) {
+        this.setMainSkill(14, cooldown, size);
+        this.genericColorMain = color;
+    }
+
+    public void setDeathBall(int cooldown, int colorMain, int colorBorder) {
+        this.setMainSkill(15, cooldown, 2.5F); // Siempre es gigante
+        this.genericColorMain = colorMain;
+        this.genericColorBorder = colorBorder;
+    }
+
+    public void setKiExplosion(int cooldown, int colorMain, int colorBorder, float size) {
+        this.setMainSkill(5, cooldown, size);
+        this.genericColorMain = colorMain;
+        this.genericColorBorder = colorBorder;
+    }
+
+    public void setSecondarySkill(int skillId, int cooldown, float size) {
         this.canUseSecondarySkill = true;
         this.secondarySkillType = skillId;
         this.secondarySkillCooldownMax = cooldown;
         this.currentSecondarySkillCooldown = cooldown;
-        this.secondarySkillDamage = damage;
         this.secondarySkillSize = size;
     }
 
-    public void setSecondarySkill(int skillId, int cooldown, float damage) {
-        this.setSecondarySkill(skillId, cooldown, damage, 1.0F);
+    public void setSecondarySkill(int skillId, int cooldown) {
+        this.setSecondarySkill(skillId, cooldown, 1.0F);
     }
 
-    public void setTertiarySkill(int skillId, int cooldown, float damage, float size) {
+    public void setTertiarySkill(int skillId, int cooldown, float size) {
         this.canUseTertiarySkill = true;
         this.tertiarySkillType = skillId;
         this.tertiarySkillCooldownMax = cooldown;
         this.currentTertiarySkillCooldown = cooldown;
-        this.tertiarySkillDamage = damage;
         this.tertiarySkillSize = size;
     }
 
-    public void setTertiarySkill(int skillId, int cooldown, float damage) {
-        this.setTertiarySkill(skillId, cooldown, damage, 1.0F);
+    public void setTertiarySkill(int skillId, int cooldown) {
+        this.setTertiarySkill(skillId, cooldown, 1.0F);
     }
 
     @Override
@@ -398,7 +426,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 }
 
                 if (this.castTimer == 1) {
-                    if (skill != 7) {
+                    if (skill != 7 && skill != 13) {
                         executeSkillEffect(skill);
                     }
                 }
@@ -407,7 +435,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                     executeSkillEffect(skill);
                 }
 
-                int maxCastDuration = (skill == 11) ? 12 : 60;
+                if (skill == 13) {
+                    if (this.castTimer == 10 || this.castTimer == 20 || this.castTimer == 30) {
+                        executeSkillEffect(13);
+                    }
+                }
+
+                // NUEVO AJUSTE: El Ki Laser (4) dura 10 ticks. Death Ball (15) dura 60.
+                int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14) ? 30 : (skill == 13) ? 40 : (skill == 15) ? 60 : 60;
 
                 if (this.castTimer >= maxCastDuration) {
                     this.stopCasting();
@@ -473,14 +508,38 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
     }
 
+
+    public float getCalculatedSkillDamage(int skillType) {
+        float kiDmg = this.getKiBlastDamage();
+        float meleeDmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+
+        switch (skillType) {
+            case 1:  return kiDmg;          // Kamehameha
+            case 2:  return kiDmg;          // Galick Gun
+            case 3:  return kiDmg;          // Makankosappo
+            case 4:  return kiDmg;          // Ki Laser
+            case 5:  return kiDmg;          // Explosión (masivo)
+            case 6:  return 0.0F;           // Barrier
+            case 7:  return meleeDmg;       // Oozaru Roar = Melee
+            case 8:  return kiDmg;          // Generic Wave
+            case 9:  return kiDmg;          // Oozaru Beam
+            case 10: return kiDmg / 4.0F;   // Volley = Ki / 4
+            case 11: return kiDmg / 4.0F;   // Ki Small = Ki / 4
+            case 12: return meleeDmg * 3.0F;// Blue Hurricane = Melee * 3
+            case 13: return kiDmg / 2.0F;   // Triple Laser
+            case 14: return kiDmg * 1.5F;   // Kienzan (Ataque cortante letal)
+            case 15: return kiDmg * 2.0F;   // Death Ball (Definitivo masivo)
+            default: return kiDmg;
+        }
+    }
+
     private void executeSkillEffect(int skillType) {
         if (this.getTarget() == null) return;
 
-        int syncCastTime = (skillType == 11) ? 10 : 35;
+        // NUEVO AJUSTE: El Ki Laser (4) tiene un syncCastTime de 0 para que se dispare AL INSTANTE.
+        int syncCastTime = (skillType == 4) ? 0 : (skillType == 11) ? 10 : (skillType == 15) ? 60 : 30;
 
-        float actualDamage = (skillType == this.mainSkillType) ? this.skillDamage :
-                (skillType == this.secondarySkillType) ? this.secondarySkillDamage :
-                        this.tertiarySkillDamage;
+        float actualDamage = getCalculatedSkillDamage(skillType);
 
         float actualSize = (skillType == this.mainSkillType) ? this.skillSize :
                 (skillType == this.secondarySkillType) ? this.secondarySkillSize :
@@ -505,7 +564,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 break;
             case 5:
                 KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
-                explosion.setupKiExplosion(this, actualDamage, this.getAuraColor(), this.getAuraColor(), syncCastTime);
+                explosion.setupKiExplosion(this, actualDamage, this.genericColorMain, this.genericColorBorder, syncCastTime);
                 break;
             case 6:
                 KiBarrierEntity barrier = new KiBarrierEntity(this.level(), this);
@@ -561,7 +620,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 smallBlast.setupKiSmall(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain);
                 smallBlast.shootFromRotation(this, this.getXRot(), this.getYRot(), 0.0F, this.getKiBlastSpeed(), 1.0F);
                 this.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.0F + (this.random.nextFloat() * 0.2F));
-
+                break;
+            case 12:
+                SPBlueHurricaneEntity hurricane = new SPBlueHurricaneEntity(this.level(), this);
+                hurricane.setupHurricane(this, actualDamage, this.getKiBlastSpeed(), syncCastTime);
+                break;
+            case 13:
+                if (this.getTarget() != null) {
+                    this.lookAt(this.getTarget(), 360, 360);
+                }
+                KiLaserEntity tripleLaser = new KiLaserEntity(this.level(), this);
+                tripleLaser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, this.genericColorMain, this.genericColorBorder, 0);
+                break;
+            case 14:
+                KiDiskEntity kienzan = new KiDiskEntity(this.level(), this);
+                kienzan.setupKiDisk(this, actualDamage, this.getKiBlastSpeed() * 1.2F, this.genericColorMain, actualSize, syncCastTime);
+                break;
+            case 15:
+                KiBlastEntity deathBall = new KiBlastEntity(this.level(), this);
+                deathBall.setupKiDeathBall(this, actualDamage, this.getKiBlastSpeed() * 0.7F, this.genericColorMain, this.genericColorBorder, syncCastTime);
                 break;
         }
     }
@@ -730,7 +807,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 case 8: return event.setAndContinue(ANIM_KIWAVE);
                 case 9: return event.setAndContinue(ANIM_KIOZARU);
                 case 10: return event.setAndContinue(ANIM_KI_BARRAGE);
-                case 11: return event.setAndContinue(ANIM_KIBLAST); // Rápido
+                case 11: return event.setAndContinue(ANIM_KIBLAST);
+                case 12: return event.setAndContinue(ANIM_KIATTACK);
+                case 13: return event.setAndContinue(ANIM_KILASER);
+                case 14: return event.setAndContinue(ANIM_KI_DISC);
+                case 15: return event.setAndContinue(ANIM_KIBALL);
                 default: return event.setAndContinue(ANIM_KIWAVE);
             }
         }
@@ -827,103 +908,43 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
     }
 
-    public void setCasting(boolean casting) {
-        this.entityData.set(IS_CASTING, casting);
-    }
+    public void setCasting(boolean casting) {this.entityData.set(IS_CASTING, casting);}
+    public boolean isCasting() {return this.entityData.get(IS_CASTING);}
 
-    public boolean isCasting() {
-        return this.entityData.get(IS_CASTING);
-    }
+    public void setFlying(boolean flying) {this.entityData.set(IS_FLYING, flying);}
+    public boolean isFlying() {return this.entityData.get(IS_FLYING);}
 
-    public void setFlying(boolean flying) {
-        this.entityData.set(IS_FLYING, flying);
-    }
+    public int getSkillType() {return this.entityData.get(SKILL_TYPE);}
+    public void setSkillType(int type) {this.entityData.set(SKILL_TYPE, type);}
 
-    public boolean isFlying() {
-        return this.entityData.get(IS_FLYING);
-    }
+    public int getBattlePower() {return this.entityData.get(BATTLE_POWER);}
+    public void setBattlePower(int type) {this.entityData.set(BATTLE_POWER, type);}
 
-    public int getSkillType() {
-        return this.entityData.get(SKILL_TYPE);
-    }
+    public int getAuraColor() {return this.entityData.get(AURA_COLOR);}
+    public void setAuraColor(int color) {this.entityData.set(AURA_COLOR, color);}
 
-    public void setSkillType(int type) {
-        this.entityData.set(SKILL_TYPE, type);
-    }
+    public String getAuraType() {return this.entityData.get(AURA_TYPE);}
+    public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
 
-    public int getBattlePower() {
-        return this.entityData.get(BATTLE_POWER);
-    }
+    public boolean isTransforming() {return this.entityData.get(TRANSFORMING);}
+    public void setTransforming(boolean transforming) {this.entityData.set(TRANSFORMING, transforming);}
 
-    public void setBattlePower(int type) {
-        this.entityData.set(BATTLE_POWER, type);
-    }
+    public boolean isCharge() {return this.entityData.get(KI_CHARGE);}
+    public void setKiCharge(boolean charge) {this.entityData.set(KI_CHARGE, charge);}
 
-    public int getAuraColor() {
-        return this.entityData.get(AURA_COLOR);
-    }
+    public boolean isLightning() {return this.entityData.get(IS_LIGHTNING);}
+    public void setLightning(boolean active) {this.entityData.set(IS_LIGHTNING, active);}
 
-    public void setAuraColor(int color) {
-        this.entityData.set(AURA_COLOR, color);
-    }
+    public int getLightningColor() {return this.entityData.get(LIGHTNING_COLOR);}
+    public void setLightningColor(int color) {this.entityData.set(LIGHTNING_COLOR, color);}
 
-    public String getAuraType() {
-        return this.entityData.get(AURA_TYPE);
-    }
+    public void setEvading(boolean evading) {this.entityData.set(IS_EVADING, evading);}
+    public boolean isEvading() {return this.entityData.get(IS_EVADING);}
 
-    public void setAuraType(String type) {
-        this.entityData.set(AURA_TYPE, type);
-    }
+    public void setComboing(boolean comboing) {this.entityData.set(IS_COMBOING, comboing);}
+    public boolean isComboing() {return this.entityData.get(IS_COMBOING);}
 
-    public boolean isTransforming() {
-        return this.entityData.get(TRANSFORMING);
-    }
-
-    public void setTransforming(boolean transforming) {
-        this.entityData.set(TRANSFORMING, transforming);
-    }
-
-    public boolean isCharge() {
-        return this.entityData.get(KI_CHARGE);
-    }
-
-    public void setKiCharge(boolean charge) {
-        this.entityData.set(KI_CHARGE, charge);
-    }
-
-    public boolean isLightning() {
-        return this.entityData.get(IS_LIGHTNING);
-    }
-
-    public void setLightning(boolean active) {
-        this.entityData.set(IS_LIGHTNING, active);
-    }
-
-    public int getLightningColor() {
-        return this.entityData.get(LIGHTNING_COLOR);
-    }
-
-    public void setLightningColor(int color) {
-        this.entityData.set(LIGHTNING_COLOR, color);
-    }
-
-    public void setEvading(boolean evading) {
-        this.entityData.set(IS_EVADING, evading);
-    }
-
-    public boolean isEvading() {
-        return this.entityData.get(IS_EVADING);
-    }
-
-    public void setComboing(boolean comboing) {
-        this.entityData.set(IS_COMBOING, comboing);
-    }
-
-    public boolean isComboing() {
-        return this.entityData.get(IS_COMBOING);
-    }
     public int getTextureVariant() {return this.entityData.get(TEXTURE_VARIANT);}
-
     public void setTextureVariant(int variant) {this.entityData.set(TEXTURE_VARIANT, variant);}
 
     private void stopCombo() {

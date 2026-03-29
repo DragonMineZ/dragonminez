@@ -29,15 +29,12 @@ public class SagaGokuEarlyEntity extends DBSagasEntity{
             this.setWildSense(true, 200);
             this.setAuraColor(0xF52727);
         }
-
-        //KiDamage
-        this.setKiBlastDamage(12.0F);
         //KiSpeed
         this.setKiBlastSpeed(1.0F);
 
         //Primer Estilo
         this.setDBZStyle(0);
-        this.setMainSkill(1, 200, 15.0f, 1.5f);
+        this.setMainSkill(1, 200, 1.5f);
     }
 
     @Override

@@ -17,8 +17,8 @@ public class SagaOzaruEntity extends DBSagasEntity{
 		}
         this.setKiBlastSpeed(1.5f);
         this.setDBZStyle(2);
-        this.setOozaruBeam(9, 400, 0xD627F5, 0xAA06C7, 1.5f);
-        this.setSecondarySkill(7, 200, 25.0f, 15.0f); //roar
+        this.setOozaruBeam(400, 0xD627F5, 0xAA06C7, 1.5f);
+        this.setSecondarySkill(7, 200, 15.0f); //roar
 
     }
 
