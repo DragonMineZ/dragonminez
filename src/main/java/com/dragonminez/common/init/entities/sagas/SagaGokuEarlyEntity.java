@@ -26,7 +26,7 @@ public class SagaGokuEarlyEntity extends DBSagasEntity{
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
             this.setCanFly(true);
             this.setCombo(2, 200);
-            this.setWildSense(true, 160);
+            this.setWildSense(true, 200);
             this.setAuraColor(0xF52727);
         }
 
@@ -37,8 +37,7 @@ public class SagaGokuEarlyEntity extends DBSagasEntity{
 
         //Primer Estilo
         this.setDBZStyle(0);
-        this.setKiHame(true, 160, 20f);
-
+        this.setMainSkill(1, 200, 15.0f, 1.5f);
     }
 
     @Override

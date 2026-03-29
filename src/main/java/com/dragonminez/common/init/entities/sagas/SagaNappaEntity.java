@@ -27,11 +27,12 @@ public class SagaNappaEntity extends DBSagasEntity{
         this.setWildSense(true, 200);
         this.setKiBlastDamage(12.0F);
         this.setKiBlastSpeed(1.3F);
-        this.setKiOozaru(true, 200, 12.0f);
+        this.setOozaruBeam(9, 200, 0xF527C2, 0xF5277D, 1.5f);
         this.setAuraColor(0XF527AD);
         this.setDBZStyle(1);
 
         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.20D);
+        this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
     }
 

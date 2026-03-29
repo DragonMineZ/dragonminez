@@ -16,17 +16,16 @@ public class SagaRaditzEntity extends DBSagasEntity {
 
         this.setKiBlastDamage(12.0F);
         this.setKiBlastSpeed(1.2F);
-        this.setFlySpeed(0.45D);
+        this.setFlySpeed(0.35D);
         this.setAuraColor(0xFF00FF);
 
         this.setEvade(true, 60);
-//        this.setCombo(10, 100);
-        this.setWildSense(true, 160);
+        this.setWildSense(true, 200);
 
         this.setDBZStyle(0);
         this.setCanFly(true);
 
-        this.setKiWave(true, 160, 18.0F, 0xFF00FF, 0x880088, 1.5F);
+        this.setGenericWave(200, 12f, 0xD22FF5, 0x8D0FA8, 1.0f);
 
     }
 

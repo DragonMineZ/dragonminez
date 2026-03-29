@@ -26,7 +26,6 @@ public class DBSagaModel<T extends DBSagasEntity> extends GeoModel<T> {
 
     @Override
     public ResourceLocation getAnimationResource(T animatable) {
-        String name = ForgeRegistries.ENTITY_TYPES.getKey(animatable.getType()).getPath();
         return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "animations/entity/sagas/saga_base.animation.json");
     }
 

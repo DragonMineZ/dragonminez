@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -294,7 +295,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         Vec3 look = owner.getLookAngle();
         Vec3 newPos;
 
-        if (isCasting) {
+        if (isCasting || this.isContinuousFollow()) {
             Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
             Vec3 up = right.cross(look).normalize();
 
@@ -311,10 +312,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
         this.setPos(newPos.x, newPos.y, newPos.z);
 
-        this.entityData.set(FIXED_YAW, owner.getYRot());
-        this.entityData.set(FIXED_PITCH, owner.getXRot());
-        this.setYRot(owner.getYRot());
-        this.setXRot(owner.getXRot());
+        float horizontalDistance = (float) Math.sqrt(look.x * look.x + look.z * look.z);
+        float exactPitch = (float) (-(Mth.atan2(look.y, horizontalDistance) * (180F / Math.PI)));
+        float exactYaw = (float) (Mth.atan2(look.z, look.x) * (180F / Math.PI) - 90.0F);
+
+        this.entityData.set(FIXED_YAW, exactYaw);
+        this.entityData.set(FIXED_PITCH, exactPitch);
+        this.setYRot(exactYaw);
+        this.setXRot(exactPitch);
     }
 
     @Override

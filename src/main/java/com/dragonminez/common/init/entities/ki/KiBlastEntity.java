@@ -444,7 +444,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         this.setFiring(false);
         this.setCastTime(castTime);
-        this.setMaxLife(castTime + 100);
+        this.setMaxLife(castTime*2);
         this.setCastOffsets(0.0f, 0.2f, 0.5f);
 
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());

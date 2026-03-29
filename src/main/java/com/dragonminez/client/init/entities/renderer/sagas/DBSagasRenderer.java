@@ -33,11 +33,12 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     private static final ResourceLocation NAPPA_NORMAL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa.png");
     private static final ResourceLocation NAPPA_DAMAGED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_nappa2.png");
 
+    private static final ResourceLocation PICCOLO_NORMAL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo.png");
+    private static final ResourceLocation PICCOLO_DAMAGED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo_nocape.png");
+
     public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSagaModel<>());
         this.shadowRadius = 0.4f;
-
-        //addRenderLayer(new DBSagasAuraLayer<>(this));
     }
 
     @Override
@@ -111,11 +112,22 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     public ResourceLocation getTextureLocation(T animatable) {
 
         if (animatable instanceof SagaNappaEntity nappa) {
-
             if (nappa.isBattleDamaged()) {
                 return NAPPA_DAMAGED;
             }
             return NAPPA_NORMAL;
+
+        }
+
+        if (animatable instanceof SagaPiccoloEntity piccolo) {
+            int variant = piccolo.getTextureVariant();
+
+            switch (variant) {
+                case 1:
+                    return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo.png");
+                default:
+                    return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/sagas/saga_piccolo_nocape.png");
+            }
         }
 
         return super.getTextureLocation(animatable);

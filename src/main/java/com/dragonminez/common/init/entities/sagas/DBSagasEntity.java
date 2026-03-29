@@ -6,6 +6,8 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
 import com.dragonminez.common.init.entities.ki.*;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -18,10 +20,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -37,6 +36,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -70,6 +70,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private static final EntityDataAccessor<Boolean> IS_LIGHTNING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> LIGHTNING_COLOR = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> TEXTURE_VARIANT = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
@@ -106,10 +107,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_BARRIER = RawAnimation.begin().thenPlay("barrier");
     protected static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
     protected static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("kiball");
-    protected static final RawAnimation ANIM_KIBLAST = RawAnimation.begin().thenPlay("kiblast");
+    protected static final RawAnimation ANIM_KIBLAST = RawAnimation.begin().thenPlay("ki_blast");
     protected static final RawAnimation ANIM_TAIL = RawAnimation.begin().thenLoop("tail");
+    protected static final RawAnimation ANIM_CAPE = RawAnimation.begin().thenLoop("cape");
     protected static final RawAnimation ANIM_TRANSFORM = RawAnimation.begin().thenLoop("transform");
     protected static final RawAnimation ANIM_GRAB = RawAnimation.begin().thenLoop("grab");
+    protected static final RawAnimation ANIM_KI_BARRAGE = RawAnimation.begin().thenPlay("ki_barrage");
 
     protected static final RawAnimation ANIM_KI_MAKKAKO = RawAnimation.begin().thenPlay("ki_makkako");
     protected static final RawAnimation ANIM_KI_KAME = RawAnimation.begin().thenPlay("ki_kame");
@@ -126,12 +129,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");
     protected static final RawAnimation ANIM_COMBO3 = RawAnimation.begin().thenPlay("combo3");
 
-    private double roarDamage = 50.0D;
-    private double roarRange = 15.0D;
-    private double flySpeed = 0.45D;
+    @Setter
+    @Getter
+    private double flySpeed = 0.35D;
+    @Getter
+    @Setter
     private float kiBlastDamage = 20.0F;
+    @Setter
+    @Getter
     private float kiBlastSpeed = 0.6F;
+    @Setter
     private boolean canFly = true;
+
     protected int castTimer = 0;
     private int chargeSoundTimer = 0;
     private static final int AURA_LIGHT_LEVEL = 12;
@@ -158,53 +167,31 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private boolean isAttacking = false;
 
-    private boolean canUseKiHame = false;
-    private int kiHameCooldownMax = 0;
-    private int currentKiHameCooldown = 0;
-    private float kiHameDamage = 0.0F;
 
-    private boolean canUseKiGalick = false;
-    private int kiGalickCooldownMax = 0;
-    private int currentKiGalickCooldown = 0;
-    private float kiGalickDamage = 0.0F;
+    private boolean canUseSkill = false;
+    private int mainSkillType = 0;
+    private int skillCooldownMax = 0;
+    private int currentSkillCooldown = 0;
+    private float skillDamage = 0.0F;
+    private float skillSize = 1.0F;
 
-    private boolean canUseKiMakkanko = false;
-    private int kiMakkankoCooldownMax = 0;
-    private int currentKiMakkankoCooldown = 0;
-    private float kiMakkankoDamage = 0.0F;
+    private boolean canUseSecondarySkill = false;
+    private int secondarySkillType = 0;
+    private int secondarySkillCooldownMax = 0;
+    private int currentSecondarySkillCooldown = 0;
+    private float secondarySkillDamage = 0.0F;
+    private float secondarySkillSize = 1.0F;
 
-    private boolean canUseKiLaser = false;
-    private int kiLaserCooldownMax = 0;
-    private int currentKiLaserCooldown = 0;
-    private float kiLaserDamage = 0.0F;
+    private boolean canUseTertiarySkill = false;
+    private int tertiarySkillType = 0;
+    private int tertiarySkillCooldownMax = 0;
+    private int currentTertiarySkillCooldown = 0;
+    private float tertiarySkillDamage = 0.0F;
+    private float tertiarySkillSize = 1.0F;
 
-    private boolean canUseKiExplosion = false;
-    private int kiExplosionCooldownMax = 0;
-    private int currentKiExplosionCooldown = 0;
-    private float kiExplosionDamage = 0.0F;
+    private int genericColorMain = 0xFFFFFF;
+    private int genericColorBorder = 0xFFFFFF;
 
-    private boolean canUseKiBarrier = false;
-    private int kiBarrierCooldownMax = 0;
-    private int currentKiBarrierCooldown = 0;
-    private float kiBarrierDamage = 0.0F;
-
-    private boolean canUseSKPRoar = false;
-    private int skpRoarCooldownMax = 0;
-    private int currentSkpRoarCooldown = 0;
-    private float skpRoarDamage = 0.0F;
-
-    private boolean canUseKiWave = false;
-    private int kiWaveCooldownMax = 0;
-    private int currentKiWaveCooldown = 0;
-    private float kiWaveDamage = 0.0F;
-    private int kiWaveColorMain = 0xFFFFFF;
-    private int kiWaveColorBorder = 0xFFFFFF;
-    private float kiWaveSize = 1.0F;
-
-    private boolean canUseKiOozaru = false;
-    private int kiOozaruCooldownMax = 0;
-    private int currentKiOozaruCooldown = 0;
-    private float kiOozaruDamage = 0.0F;
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
@@ -212,29 +199,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         super(pEntityType, pLevel);
     }
 
-    public void setDBZStyle(int style) {
-        this.entityData.set(DBZ_STYLE, style);
-    }
-
-    public int getDBZStyle() {
-        return this.entityData.get(DBZ_STYLE);
-    }
-
-    public void setCanFly(boolean canFly) {
-        this.canFly = canFly;
-    }
-
-    public boolean canFly() {
-        return this.canFly;
-    }
-
-    public void setFlyingFast(boolean flyingFast) {
-        this.entityData.set(IS_FLYING_FAST, flyingFast);
-    }
-
-    public boolean isFlyingFast() {
-        return this.entityData.get(IS_FLYING_FAST);
-    }
+    public void setDBZStyle(int style) { this.entityData.set(DBZ_STYLE, style); }
+    public int getDBZStyle() { return this.entityData.get(DBZ_STYLE); }
+    public boolean canFly() { return this.canFly; }
+    public void setFlyingFast(boolean flyingFast) { this.entityData.set(IS_FLYING_FAST, flyingFast); }
+    public boolean isFlyingFast() { return this.entityData.get(IS_FLYING_FAST); }
 
     public void setCombo(int id, int cooldown) {
         this.comboEnabled = true;
@@ -255,70 +224,78 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.currentWildSenseCooldown = cooldown;
     }
 
-    public void setKiHame(boolean active, int cooldown, float damage) {
-        this.canUseKiHame = active;
-        this.kiHameCooldownMax = cooldown;
-        this.currentKiHameCooldown = cooldown;
-        this.kiHameDamage = damage;
+    /**
+     * 1 = Kamehameha
+     * 2 = Galick Gun
+     * 3 = Makankosappo
+     * 4 = Ki Laser (ColorAura)
+     * 5 = Ki Explosion
+     * 6 = Ki Barrier
+     * 7 = SKP Roar
+     * 8 = Generic Ki Wave
+     * 9 = Oozaru Beam
+     * 10 = Ki Volley (Varias Ki Small)
+     * 11 = Ki Small (Bolita de Ki)
+     */
+    public void setMainSkill(int skillId, int cooldown, float damage, float size) {
+        this.canUseSkill = true;
+        this.mainSkillType = skillId;
+        this.skillCooldownMax = cooldown;
+        this.currentSkillCooldown = cooldown;
+        this.skillDamage = damage;
+        this.skillSize = size;
     }
 
-    public void setKiGalick(boolean active, int cooldown, float damage) {
-        this.canUseKiGalick = active;
-        this.kiGalickCooldownMax = cooldown;
-        this.currentKiGalickCooldown = cooldown;
-        this.kiGalickDamage = damage;
+    public void setMainSkill(int skillId, int cooldown, float damage) {
+        this.setMainSkill(skillId, cooldown, damage, 1.0F);
     }
 
-    public void setKiMakkanko(boolean active, int cooldown, float damage) {
-        this.canUseKiMakkanko = active;
-        this.kiMakkankoCooldownMax = cooldown;
-        this.currentKiMakkankoCooldown = cooldown;
-        this.kiMakkankoDamage = damage;
+    public void setGenericWave(int cooldown, float damage, int colorMain, int colorBorder, float size) {
+        this.setMainSkill(8, cooldown, damage, size);
+        this.genericColorMain = colorMain;
+        this.genericColorBorder = colorBorder;
     }
 
-    public void setKiLaser(boolean active, int cooldown, float damage) {
-        this.canUseKiLaser = active;
-        this.kiLaserCooldownMax = cooldown;
-        this.currentKiLaserCooldown = cooldown;
-        this.kiLaserDamage = damage;
+    public void setOozaruBeam(int cooldown, float damage, int colorMain, int colorBorder, float size) {
+        this.setMainSkill(9, cooldown, damage, size);
+        this.genericColorMain = colorMain;
+        this.genericColorBorder = colorBorder;
     }
 
-    public void setKiExplosion(boolean active, int cooldown, float damage) {
-        this.canUseKiExplosion = active;
-        this.kiExplosionCooldownMax = cooldown;
-        this.currentKiExplosionCooldown = cooldown;
-        this.kiExplosionDamage = damage;
+    public void setKiVolley(int cooldown, float damage, int color) {
+        this.setMainSkill(10, cooldown, damage, 1.0F);
+        this.genericColorMain = color;
     }
 
-    public void setKiBarrier(boolean active, int cooldown, float damage) {
-        this.canUseKiBarrier = active;
-        this.kiBarrierCooldownMax = cooldown;
-        this.currentKiBarrierCooldown = cooldown;
-        this.kiBarrierDamage = damage;
+    public void setKiSmall(int cooldown, float damage, int color) {
+        this.setMainSkill(11, cooldown, damage, 1.0F);
+        this.genericColorMain = color;
     }
 
-    public void setSKPRoar(boolean active, int cooldown, float damage) {
-        this.canUseSKPRoar = active;
-        this.skpRoarCooldownMax = cooldown;
-        this.currentSkpRoarCooldown = cooldown;
-        this.skpRoarDamage = damage;
+    public void setSecondarySkill(int skillId, int cooldown, float damage, float size) {
+        this.canUseSecondarySkill = true;
+        this.secondarySkillType = skillId;
+        this.secondarySkillCooldownMax = cooldown;
+        this.currentSecondarySkillCooldown = cooldown;
+        this.secondarySkillDamage = damage;
+        this.secondarySkillSize = size;
     }
 
-    public void setKiWave(boolean active, int cooldown, float damage, int colorMain, int colorBorder, float size) {
-        this.canUseKiWave = active;
-        this.kiWaveCooldownMax = cooldown;
-        this.currentKiWaveCooldown = cooldown;
-        this.kiWaveDamage = damage;
-        this.kiWaveColorMain = colorMain;
-        this.kiWaveColorBorder = colorBorder;
-        this.kiWaveSize = size;
+    public void setSecondarySkill(int skillId, int cooldown, float damage) {
+        this.setSecondarySkill(skillId, cooldown, damage, 1.0F);
     }
 
-    public void setKiOozaru(boolean active, int cooldown, float damage) {
-        this.canUseKiOozaru = active;
-        this.kiOozaruCooldownMax = cooldown;
-        this.currentKiOozaruCooldown = cooldown;
-        this.kiOozaruDamage = damage;
+    public void setTertiarySkill(int skillId, int cooldown, float damage, float size) {
+        this.canUseTertiarySkill = true;
+        this.tertiarySkillType = skillId;
+        this.tertiarySkillCooldownMax = cooldown;
+        this.currentTertiarySkillCooldown = cooldown;
+        this.tertiarySkillDamage = damage;
+        this.tertiarySkillSize = size;
+    }
+
+    public void setTertiarySkill(int skillId, int cooldown, float damage) {
+        this.setTertiarySkill(skillId, cooldown, damage, 1.0F);
     }
 
     @Override
@@ -336,7 +313,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         });
 
         this.goalSelector.addGoal(2, new SagasUseSkillGoal(this));
-
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false));
         this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 45.0F));
@@ -376,15 +352,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 if (this.canUseWildSense && this.currentWildSenseCooldown > 0) this.currentWildSenseCooldown--;
                 if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
 
-                if (this.canUseKiHame && this.currentKiHameCooldown > 0) this.currentKiHameCooldown--;
-                if (this.canUseKiGalick && this.currentKiGalickCooldown > 0) this.currentKiGalickCooldown--;
-                if (this.canUseKiMakkanko && this.currentKiMakkankoCooldown > 0) this.currentKiMakkankoCooldown--;
-                if (this.canUseKiLaser && this.currentKiLaserCooldown > 0) this.currentKiLaserCooldown--;
-                if (this.canUseKiExplosion && this.currentKiExplosionCooldown > 0) this.currentKiExplosionCooldown--;
-                if (this.canUseKiBarrier && this.currentKiBarrierCooldown > 0) this.currentKiBarrierCooldown--;
-                if (this.canUseSKPRoar && this.currentSkpRoarCooldown > 0) this.currentSkpRoarCooldown--;
-                if (this.canUseKiWave && this.currentKiWaveCooldown > 0) this.currentKiWaveCooldown--;
-                if (this.canUseKiOozaru && this.currentKiOozaruCooldown > 0) this.currentKiOozaruCooldown--;
+                if (this.canUseSkill && this.currentSkillCooldown > 0) {
+                    this.currentSkillCooldown--;
+                }
+
+                if (this.canUseSecondarySkill && this.currentSecondarySkillCooldown > 0) {
+                    this.currentSecondarySkillCooldown--;
+                }
+
+                if (this.canUseTertiarySkill && this.currentTertiarySkillCooldown > 0) {
+                    this.currentTertiarySkillCooldown--;
+                }
             }
 
             if (this.isCasting()) {
@@ -399,11 +377,39 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
                 int skill = this.getSkillType();
 
+                if (skill == 7 && this.level() instanceof ServerLevel serverLevel) {
+                    if (this.castTimer > 5 && this.castTimer < 30) {
+                        for (int i = 0; i < 25; i++) {
+                            double distance = 3.0D + this.random.nextDouble() * 2.0D;
+                            double angle = this.random.nextDouble() * Math.PI * 2.0D;
+                            double heightOffset = (this.random.nextDouble() - 0.5D) * this.getBbHeight();
+
+                            double spawnX = this.getX() + Math.cos(angle) * distance;
+                            double spawnY = this.getY() + (this.getBbHeight() / 2.0) + heightOffset;
+                            double spawnZ = this.getZ() + Math.sin(angle) * distance;
+
+                            double velX = (this.getX() - spawnX) * 0.15D;
+                            double velY = ((this.getY() + this.getBbHeight() * 0.8) - spawnY) * 0.15D;
+                            double velZ = (this.getZ() - spawnZ) * 0.15D;
+
+                            serverLevel.sendParticles(ParticleTypes.CLOUD, spawnX, spawnY, spawnZ, 0, velX, velY, velZ, 1.0D);
+                        }
+                    }
+                }
+
                 if (this.castTimer == 1) {
+                    if (skill != 7) {
+                        executeSkillEffect(skill);
+                    }
+                }
+
+                if (skill == 7 && this.castTimer == 30) {
                     executeSkillEffect(skill);
                 }
 
-                if (this.castTimer >= 60) {
+                int maxCastDuration = (skill == 11) ? 12 : 60;
+
+                if (this.castTimer >= maxCastDuration) {
                     this.stopCasting();
                 }
             }
@@ -437,7 +443,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                         this.setComboing(true);
 
                         if (this.activeComboId == 10) {
-                            this.entityData.set(CURRENT_COMBO_ID, this.random.nextInt(2));
+                            this.entityData.set(CURRENT_COMBO_ID, this.random.nextInt(3));
                         } else {
                             this.entityData.set(CURRENT_COMBO_ID, this.activeComboId);
                         }
@@ -470,44 +476,92 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private void executeSkillEffect(int skillType) {
         if (this.getTarget() == null) return;
 
-        int syncCastTime = 30;
+        int syncCastTime = (skillType == 11) ? 10 : 35;
+
+        float actualDamage = (skillType == this.mainSkillType) ? this.skillDamage :
+                (skillType == this.secondarySkillType) ? this.secondarySkillDamage :
+                        this.tertiarySkillDamage;
+
+        float actualSize = (skillType == this.mainSkillType) ? this.skillSize :
+                (skillType == this.secondarySkillType) ? this.secondarySkillSize :
+                        this.tertiarySkillSize;
 
         switch (skillType) {
             case 1:
                 KiWaveEntity kamehameha = new KiWaveEntity(this.level(), this);
-                kamehameha.setupKiHame(this, this.kiHameDamage, this.getKiBlastSpeed(), 2.0F, syncCastTime);
+                kamehameha.setupKiHame(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
                 break;
             case 2:
                 KiWaveEntity galick = new KiWaveEntity(this.level(), this);
-                galick.setupKiGalickGun(this, this.kiGalickDamage, this.getKiBlastSpeed(), 2.0F, syncCastTime);
+                galick.setupKiGalickGun(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
                 break;
             case 3:
                 KiLaserEntity makkanko = new KiLaserEntity(this.level(), this);
-                makkanko.setupKiMakkankosanpo(this, this.kiMakkankoDamage, this.getKiBlastSpeed() * 2.0F, syncCastTime);
+                makkanko.setupKiMakkankosanpo(this, actualDamage, this.getKiBlastSpeed() * 2.0F, syncCastTime);
                 break;
             case 4:
                 KiLaserEntity laser = new KiLaserEntity(this.level(), this);
-                laser.setupKiLaser(this, this.kiLaserDamage, this.getKiBlastSpeed() * 3.0F, this.getAuraColor(), this.getAuraColor(), syncCastTime);
+                laser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, this.getAuraColor(), this.getAuraColor(), syncCastTime);
                 break;
             case 5:
                 KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
-                explosion.setupKiExplosion(this, this.kiExplosionDamage, this.getAuraColor(), this.getAuraColor(), syncCastTime);
+                explosion.setupKiExplosion(this, actualDamage, this.getAuraColor(), this.getAuraColor(), syncCastTime);
                 break;
             case 6:
                 KiBarrierEntity barrier = new KiBarrierEntity(this.level(), this);
                 barrier.setupKiBarrier(this, this.getAuraColor(), this.getAuraColor(), syncCastTime);
                 break;
             case 7:
-                KiExplosionEntity roar = new KiExplosionEntity(this.level(), this);
-                roar.setupKiExplosion(this, this.skpRoarDamage, this.getAuraColor(), this.getAuraColor(), syncCastTime);
+                this.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.0F, 0.8F + this.random.nextFloat() * 0.4F);
+
+                if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+
+                    double fixedRoarRange = 8.0D;
+
+                    serverLevel.sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(), 100, fixedRoarRange / 1.5, fixedRoarRange / 1.5, fixedRoarRange / 1.5, 0.2D);
+                    serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK, this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(), 30, fixedRoarRange / 3, fixedRoarRange / 3, fixedRoarRange / 3, 0.0D);
+
+                    AABB roarBox = this.getBoundingBox().inflate(fixedRoarRange);
+
+                    for (LivingEntity target : serverLevel.getEntitiesOfClass(LivingEntity.class, roarBox)) {
+
+                        if (target != this && target.isAlive()) {
+
+                            target.invulnerableTime = 0;
+                            target.hurt(this.damageSources().mobAttack(this), actualDamage);
+
+                            target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
+
+                            double dx = target.getX() - this.getX();
+                            double dz = target.getZ() - this.getZ();
+
+                            Vec3 pushDir = new Vec3(dx, 0.5D, dz).normalize();
+                            double pushStrength = 3.5D;
+
+                            target.setDeltaMovement(pushDir.x * pushStrength, pushDir.y * pushStrength, pushDir.z * pushStrength);
+                            target.hasImpulse = true;
+                        }
+                    }
+                }
                 break;
             case 8:
                 KiWaveEntity genericWave = new KiWaveEntity(this.level(), this);
-                genericWave.setupKiWave(this, this.kiWaveDamage, this.getKiBlastSpeed(), this.kiWaveColorMain, this.kiWaveColorBorder, this.kiWaveSize, syncCastTime);
+                genericWave.setupKiWave(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain, this.genericColorBorder, actualSize, syncCastTime);
                 break;
             case 9:
                 KiWaveEntity oozaruBeam = new KiWaveEntity(this.level(), this);
-                oozaruBeam.setupKiOozaru(this, this.kiOozaruDamage, this.getKiBlastSpeed(), this.getAuraColor(), this.getAuraColor(), 1.5F, syncCastTime);
+                oozaruBeam.setupKiOozaru(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain, this.genericColorBorder, actualSize, syncCastTime);
+                break;
+            case 10:
+                KiBlastEntity volley = new KiBlastEntity(this.level(), this);
+                volley.setupKiVolley(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain, syncCastTime);
+                break;
+            case 11:
+                KiBlastEntity smallBlast = new KiBlastEntity(this.level(), this);
+                smallBlast.setupKiSmall(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain);
+                smallBlast.shootFromRotation(this, this.getXRot(), this.getYRot(), 0.0F, this.getKiBlastSpeed(), 1.0F);
+                this.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.0F + (this.random.nextFloat() * 0.2F));
+
                 break;
         }
     }
@@ -516,45 +570,23 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (this.getTarget() == null || this.distanceTo(this.getTarget()) <= 10.0D) {
             return false;
         }
-        return (this.canUseKiHame && this.currentKiHameCooldown <= 0) ||
-                (this.canUseKiGalick && this.currentKiGalickCooldown <= 0) ||
-                (this.canUseKiMakkanko && this.currentKiMakkankoCooldown <= 0) ||
-                (this.canUseKiLaser && this.currentKiLaserCooldown <= 0) ||
-                (this.canUseKiExplosion && this.currentKiExplosionCooldown <= 0) ||
-                (this.canUseKiBarrier && this.currentKiBarrierCooldown <= 0) ||
-                (this.canUseSKPRoar && this.currentSkpRoarCooldown <= 0) ||
-                (this.canUseKiOozaru && this.currentKiOozaruCooldown <= 0) ||
-                (this.canUseKiWave && this.currentKiWaveCooldown <= 0);
+        return (this.canUseSkill && this.currentSkillCooldown <= 0) ||
+                (this.canUseSecondarySkill && this.currentSecondarySkillCooldown <= 0) ||
+                (this.canUseTertiarySkill && this.currentTertiarySkillCooldown <= 0);
     }
 
     public void startFirstAvailableSkill() {
-        if (this.canUseKiHame && this.currentKiHameCooldown <= 0) {
-            this.startCasting(1);
-            this.currentKiHameCooldown = this.kiHameCooldownMax;
-        } else if (this.canUseKiGalick && this.currentKiGalickCooldown <= 0) {
-            this.startCasting(2);
-            this.currentKiGalickCooldown = this.kiGalickCooldownMax;
-        } else if (this.canUseKiMakkanko && this.currentKiMakkankoCooldown <= 0) {
-            this.startCasting(3);
-            this.currentKiMakkankoCooldown = this.kiMakkankoCooldownMax;
-        } else if (this.canUseKiLaser && this.currentKiLaserCooldown <= 0) {
-            this.startCasting(4);
-            this.currentKiLaserCooldown = this.kiLaserCooldownMax;
-        } else if (this.canUseKiExplosion && this.currentKiExplosionCooldown <= 0) {
-            this.startCasting(5);
-            this.currentKiExplosionCooldown = this.kiExplosionCooldownMax;
-        } else if (this.canUseKiBarrier && this.currentKiBarrierCooldown <= 0) {
-            this.startCasting(6);
-            this.currentKiBarrierCooldown = this.kiBarrierCooldownMax;
-        } else if (this.canUseSKPRoar && this.currentSkpRoarCooldown <= 0) {
-            this.startCasting(7);
-            this.currentSkpRoarCooldown = this.skpRoarCooldownMax;
-        }  else if (this.canUseKiWave && this.currentKiWaveCooldown <= 0) {
-            this.startCasting(8);
-            this.currentKiWaveCooldown = this.kiWaveCooldownMax;
-        } else if (this.canUseKiOozaru && this.currentKiOozaruCooldown <= 0) {
-            this.startCasting(9);
-            this.currentKiOozaruCooldown = this.kiOozaruCooldownMax;
+        if (this.canUseSkill && this.currentSkillCooldown <= 0) {
+            this.startCasting(this.mainSkillType);
+            this.currentSkillCooldown = this.skillCooldownMax;
+        }
+        else if (this.canUseSecondarySkill && this.currentSecondarySkillCooldown <= 0) {
+            this.startCasting(this.secondarySkillType);
+            this.currentSecondarySkillCooldown = this.secondarySkillCooldownMax;
+        }
+        else if (this.canUseTertiarySkill && this.currentTertiarySkillCooldown <= 0) {
+            this.startCasting(this.tertiarySkillType);
+            this.currentTertiarySkillCooldown = this.tertiarySkillCooldownMax;
         }
     }
 
@@ -636,6 +668,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         controllers.add(new AnimationController<>(this, "evasion_controller", 5, this::evasionPredicate));
         controllers.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
         controllers.add(new AnimationController<>(this, "tail_controller", 5, this::tailPredicate));
+        controllers.add(new AnimationController<>(this, "cape_controller", 5, this::capePredicate));
+
     }
 
     private <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
@@ -695,6 +729,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 case 7: return event.setAndContinue(ANIM_KI_EXPLOSION);
                 case 8: return event.setAndContinue(ANIM_KIWAVE);
                 case 9: return event.setAndContinue(ANIM_KIOZARU);
+                case 10: return event.setAndContinue(ANIM_KI_BARRAGE);
+                case 11: return event.setAndContinue(ANIM_KIBLAST); // Rápido
                 default: return event.setAndContinue(ANIM_KIWAVE);
             }
         }
@@ -763,6 +799,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
         return event.setAndContinue(ANIM_TAIL);
     }
+    private <T extends GeoAnimatable> PlayState capePredicate(AnimationState<T> event) {
+        return event.setAndContinue(ANIM_CAPE);
+    }
 
     @Override
     public void travel(Vec3 pTravelVector) {
@@ -776,7 +815,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             float waterSpeed = 0.15F;
 
             this.moveRelative(waterSpeed, pTravelVector);
-            this.move(net.minecraft.world.entity.MoverType.SELF, this.getDeltaMovement());
+            this.move(MoverType.SELF, this.getDeltaMovement());
 
             this.setDeltaMovement(this.getDeltaMovement().scale(0.9D));
 
@@ -883,6 +922,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public boolean isComboing() {
         return this.entityData.get(IS_COMBOING);
     }
+    public int getTextureVariant() {return this.entityData.get(TEXTURE_VARIANT);}
+
+    public void setTextureVariant(int variant) {this.entityData.set(TEXTURE_VARIANT, variant);}
 
     private void stopCombo() {
         this.setComboing(false);
@@ -916,13 +958,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.setDeltaMovement(new Vec3(-look.x * 1.5, 0.3, -look.z * 1.5));
         this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
     }
-    /*
-    COMBO LOGIC
-    0: Classic
-    1: Meteor Smash
-    2: Kaioken Attack
-    10: All
-     */
+
     private void handleComboLogic() {
         if (comboTarget == null || !comboTarget.isAlive()) {
             this.stopCombo();
@@ -1110,27 +1146,27 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
-        pCompound.putDouble("RoarDamage", this.roarDamage);
-        pCompound.putDouble("RoarRange", this.roarRange);
         pCompound.putDouble("FlySpeed", this.flySpeed);
         pCompound.putFloat("KiBlastDamage", this.kiBlastDamage);
         pCompound.putFloat("KiBlastSpeed", this.kiBlastSpeed);
         pCompound.putString("AuraType", this.getAuraType());
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("CanFly", this.canFly());
+        pCompound.putInt("TextureVariant", this.getTextureVariant());
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
-        if (pCompound.contains("RoarDamage")) this.roarDamage = pCompound.getDouble("RoarDamage");
-        if (pCompound.contains("RoarRange")) this.roarRange = pCompound.getDouble("RoarRange");
         if (pCompound.contains("FlySpeed")) this.flySpeed = pCompound.getDouble("FlySpeed");
         if (pCompound.contains("KiBlastDamage")) this.kiBlastDamage = pCompound.getFloat("KiBlastDamage");
         if (pCompound.contains("KiBlastSpeed")) this.kiBlastSpeed = pCompound.getFloat("KiBlastSpeed");
         if (pCompound.contains("AuraType")) this.setAuraType(pCompound.getString("AuraType"));
         if (pCompound.contains("DBZStyle")) this.setDBZStyle(pCompound.getInt("DBZStyle"));
         if (pCompound.contains("CanFly")) this.setCanFly(pCompound.getBoolean("CanFly"));
+        if (pCompound.contains("TextureVariant")) {
+            this.setTextureVariant(pCompound.getInt("TextureVariant"));
+        }
     }
 
     @Override
@@ -1151,46 +1187,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(IS_COMBOING, false);
         this.entityData.define(CURRENT_COMBO_ID, -1);
         this.entityData.define(DBZ_STYLE, 0);
-    }
-
-    public double getRoarDamage() {
-        return roarDamage;
-    }
-
-    public void setRoarDamage(double roarDamage) {
-        this.roarDamage = roarDamage;
-    }
-
-    public double getRoarRange() {
-        return roarRange;
-    }
-
-    public void setRoarRange(double roarRange) {
-        this.roarRange = roarRange;
-    }
-
-    public float getKiBlastDamage() {
-        return kiBlastDamage;
-    }
-
-    public void setKiBlastDamage(float kiBlastDamage) {
-        this.kiBlastDamage = kiBlastDamage;
-    }
-
-    public double getFlySpeed() {
-        return flySpeed;
-    }
-
-    public void setFlySpeed(double flySpeed) {
-        this.flySpeed = flySpeed;
-    }
-
-    public float getKiBlastSpeed() {
-        return kiBlastSpeed;
-    }
-
-    public void setKiBlastSpeed(float kiBlastSpeed) {
-        this.kiBlastSpeed = kiBlastSpeed;
+        this.entityData.define(TEXTURE_VARIANT, 0);
     }
 
     @Override
@@ -1388,9 +1385,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     @Override
-    public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {
-        return true;
-    }
+    public boolean checkSpawnRules(LevelAccessor pLevel, MobSpawnType reason) {return true;}
 
     public static boolean canSpawnHere(EntityType<? extends DBSagasEntity> entity, ServerLevelAccessor world, MobSpawnType spawn, BlockPos pos, RandomSource random) {
         if (world.getDifficulty() == Difficulty.PEACEFUL) return false;
@@ -1400,16 +1395,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         return solidGround && noCollision;
     }
 
-    protected boolean shouldTriggerTransformationOnDeath() {
-        return false;
-    }
-
+    protected boolean shouldTriggerTransformationOnDeath() {return false;}
     protected void startTransformation() {
         this.setTransforming(true);
-        this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);
-    }
+        this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);}
 
-    public String getGeckolibModelName() {
-        return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();
-    }
+    public String getGeckolibModelName() {return ForgeRegistries.ENTITY_TYPES.getKey(this.getType()).getPath();}
 }

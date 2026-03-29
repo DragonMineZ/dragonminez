@@ -39,6 +39,8 @@ public class SagaSaibamanEntity extends DBSagasEntity{
 		if (this instanceof IBattlePower bp) {
 			bp.setBattlePower(1200);
 		}
+
+        this.setCanFly(false);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
