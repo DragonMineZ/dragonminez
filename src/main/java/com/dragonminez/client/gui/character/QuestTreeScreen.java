@@ -52,26 +52,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Full-screen tree-like quest visualization.
- * <p>
- * The entire screen is the pannable/zoomable quest grid. A detail panel sits
- * on the LEFT side (like SkillsMenuScreen), with sliding saga-switch buttons
- * on its right edge. The saga title is centered at the top and the action
- * button is centered at the bottom.
- *
- * @since 2.1
- */
-
-// TODO: Bruno limpia el código esto es un desastre xd
 @OnlyIn(Dist.CLIENT)
 public class QuestTreeScreen extends BaseMenuScreen {
 
-	// ========================================================================================
-	// Textures
-	// ========================================================================================
-
-	// Shared panel texture used on both sides (placeholder until final left/right assets are delivered).
 	private static final ResourceLocation QUEST_MENU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/questmenu.png");
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
@@ -81,133 +64,35 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private static final ResourceLocation REWARD_GENERIC_ICON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/quest/reward_generic.png");
 
-	// ========================================================================================
-	// Constants
-	// ========================================================================================
-
-	/** Size of each quest node square in pixels. */
 	private static final int NODE_SIZE = 18;
-	/** Half the node size, for centering calculations. */
-	private static final int HALF_NODE = NODE_SIZE / 2;
-	/** Thickness of the connection lines between nodes. */
-	private static final int LINE_THICKNESS = 2;
-	/** Padding around the tree canvas edges. */
-	private static final int CANVAS_PADDING = 40;
-	/** Display width of the exclamation mark icon on claimable nodes. */
-	private static final int EXCLAMATION_DRAW_WIDTH = 6;
-	/** Display height of the exclamation mark icon on claimable nodes. */
-	private static final int EXCLAMATION_DRAW_HEIGHT = 15;
-	/** Actual pixel dimensions of the exclamation_mark_quest.png file. */
-	private static final int EXCLAMATION_TEX_WIDTH = 97;
-	private static final int EXCLAMATION_TEX_HEIGHT = 250;
-
-	private static final int QUEST_MENU_TEX_WIDTH = 512;
-	private static final int QUEST_MENU_TEX_HEIGHT = 512;
-	// questmenu.png stores the panel inside the atlas; visible frame is not full 512x512.
-	private static final int QUEST_MENU_PANEL_U = 1;
-	private static final int QUEST_MENU_PANEL_V = 1;
-	private static final int QUEST_MENU_PANEL_WIDTH = 282;
-	private static final int QUEST_MENU_PANEL_HEIGHT = 426;
-	private static final int PANEL_BORDER_BLEED_PX = 3;
-
-	private static final long PANEL_INTRO_DURATION_MS = 700L;
-	private static final int PANEL_INTRO_EXTRA_TRAVEL_PX = 22;
-	private static final float PANEL_INTRO_BACK_OVERSHOOT = 1.35f;
-	private static final int LEFT_PANEL_PEEK_PX = 24;
-	private static final int LEFT_PANEL_HOVER_ZONE_PX = 36;
-	private static final float PANEL_REVEAL_STEP = 0.07f;
-	private static final double CLICK_DRAG_THRESHOLD_SQ = 16.0;
-
-	// ========================================================================================
-	// Node Status Colors
-	// ========================================================================================
-
-	private static final int COLOR_COMPLETED = 0xFF00CC00;
-	private static final int COLOR_COMPLETED_BORDER = 0xFF009900;
-	private static final int COLOR_ACTIVE = 0xFF3399FF;
-	private static final int COLOR_ACTIVE_BORDER = 0xFF2266CC;
-	private static final int COLOR_AVAILABLE = 0xFFFFCC00;
-	private static final int COLOR_AVAILABLE_BORDER = 0xFFCC9900;
-	private static final int COLOR_LOCKED = 0xFF555555;
-	private static final int COLOR_LOCKED_BORDER = 0xFF333333;
-	private static final int COLOR_SELECTED_GLOW = 0xAAFFFFFF;
-
-	// Line colors
-	private static final int LINE_COLOR_COMPLETED = 0xFF00AA00;
-	private static final int LINE_COLOR_DEFAULT = 0xFF444444;
-	private static final int LINE_COLOR_FADED = 0x55444444;
-
-	// Background
-	private static final int GRID_COLOR = 0xFF222244;
-
-	// Navigator
-	private static final int NAV_ITEM_HEIGHT = 13;
-	private static final float SIDE_PANEL_HEIGHT_RATIO = 0.90f;
-	private static final float SIDE_PANEL_WIDTH_RATIO = 0.90f;
-	private static final int SIDE_PANEL_BG = 0xCC0F1020;
-	private static final int SIDE_PANEL_BORDER = 0xAA5A5F7A;
-
-	// Typewriter reveal
-	private static final long TYPEWRITER_COOLDOWN_MS = 5L * 60L * 1000L;
-	private static final int TYPEWRITER_CHARS_PER_SECOND = 55;
-
-	// Section keys for typewriter reveal
-	private static final String SECTION_DESC = "desc";
-	private static final String SECTION_REWARDS = "rewards";
-
-	// Party UI
-	private static final int PARTY_BUTTON_WIDTH = 74;
-	private static final int PARTY_BUTTON_HEIGHT = 20;
-	private static final int PARTY_FOOTER_TEXT_GAP = 10;
-	private static final int PARTY_FOOTER_PADDING = 8;
-	private static final int PARTY_POPUP_WIDTH = 188;
-	private static final int PARTY_POPUP_HEIGHT = 148;
-	private static final int PARTY_POPUP_ROW_HEIGHT = 18;
-	private static final int PARTY_CONFIRM_WIDTH = 188;
-	private static final int PARTY_CONFIRM_HEIGHT = 112;
-
-	// ========================================================================================
-	// State
-	// ========================================================================================
 
 	private StatsData statsData;
 	private int tickCount = 0;
 	private int pendingRefreshTicks = 0;
 
-	// Action button (start quest / claim rewards)
 	private TexturedTextButton actionButton;
 	private TexturedTextButton partyPrimaryButton;
 	private TexturedTextButton partySecondaryButton;
 	private long lastClickTime = 0;
 
-	// Saga navigation
 	private int currentSagaIndex = 0;
 	private final List<Saga> availableSagas = new ArrayList<>();
 
-	// Tree layout
 	private QuestTreeLayoutHelper.TreeLayout currentLayout;
 	private Quest selectedQuest = null;
 
-	// Panning
 	private float panX = 0;
 	private float panY = 0;
 	private boolean isDraggingTree = false;
 	private double dragStartX, dragStartY;
 	private float dragStartPanX, dragStartPanY;
 
-	// Smooth pan animation (slide to selected node)
 	private float targetPanX = 0;
 	private float targetPanY = 0;
 	private boolean isAnimatingPan = false;
 	private long lastPanAnimNanos = 0L;
-	private static final float PAN_SMOOTHING = 14.0f;
-	private static final float PAN_STOP_EPSILON = 0.35f;
 
-	// Zoom
 	private float zoom = 1.0f;
-	private static final float MIN_ZOOM = 0.25f;
-	private static final float MAX_ZOOM = 2.0f;
-	private static final float ZOOM_STEP = 0.1f;
 
 	// Navigator (left panel) scrolling
 	private final List<NavigatorEntry> navigatorEntries = new ArrayList<>();
@@ -236,10 +121,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private PartyConfirmAction confirmAction = PartyConfirmAction.NONE;
 	private Component confirmTitle = Component.empty();
 	private Component confirmBody = Component.empty();
-
-	// ========================================================================================
-	// Constructor
-	// ========================================================================================
 
 	public QuestTreeScreen() {
 		super(Component.translatable("gui.dragonminez.quest_tree.title"));
@@ -317,8 +198,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private static final Map<String, Integer> SAGA_UI_ORDER = Map.of(
 			"saiyan_saga", 0,
-			"android_saga", 1,
-			"frieza_saga", 2
+			"frieza_saga", 1,
+			"android_saga", 2,
+			"buu_saga", 3
 	);
 
 	private void loadAvailableSagas() {
@@ -394,27 +276,20 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		if (targetNode != null) {
 			// Center this node in the middle of the canvas
-			panX = (tree.x + tree.width / 2.0f) - targetNode.getPixelX() - HALF_NODE;
-			panY = (tree.y + tree.height / 2.0f) - targetNode.getPixelY() - HALF_NODE;
+			panX = (tree.x + tree.width / 2.0f) - targetNode.getPixelX() - (NODE_SIZE / 2);
+			panY = (tree.y + tree.height / 2.0f) - targetNode.getPixelY() - (NODE_SIZE / 2);
 		} else {
-			panX = tree.x + CANVAS_PADDING;
+			panX = tree.x + 40;
 			panY = tree.y + (tree.height - currentLayout.getTotalHeight()) / 2.0f;
 		}
 	}
 
-	/**
-	 * Starts a smooth pan animation that slides the view to center on the given node.
-	 */
 	private void slideToNode(QuestTreeLayoutHelper.NodePosition node) {
 		PanelRect tree = getTreePanelRect();
-		targetPanX = (tree.x + tree.width / 2.0f) - (node.getPixelX() * zoom) - HALF_NODE * zoom;
-		targetPanY = (tree.y + tree.height / 2.0f) - (node.getPixelY() * zoom) - HALF_NODE * zoom;
+		targetPanX = (tree.x + tree.width / 2.0f) - (node.getPixelX() * zoom) - (NODE_SIZE / 2) * zoom;
+		targetPanY = (tree.y + tree.height / 2.0f) - (node.getPixelY() * zoom) - (NODE_SIZE / 2) * zoom;
 		isAnimatingPan = true;
 		lastPanAnimNanos = System.nanoTime();
-	}
-
-	private static float expSmoothingAlpha(float smoothing, float dtSeconds) {
-		return (float) (1.0 - Math.exp(-smoothing * dtSeconds));
 	}
 
 	private void rebuildNavigatorEntries() {
@@ -436,7 +311,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			Map<String, List<Quest>> sideBranches = buildSideBranchesForSaga(currentSaga);
 			for (Quest mainQuest : currentSaga.getQuests()) {
 				NodeVisibility visibility = getNodeVisibility(mainQuest);
-				if (visibility == NodeVisibility.HIDDEN) {
+				if (visibility == NodeVisibility.HIDDEN || visibility == NodeVisibility.BLURRED) {
 					continue;
 				}
 				navigatorEntries.add(new NavigatorEntry(NavEntryType.MAIN_QUEST, 1, currentSaga, mainQuest));
@@ -446,7 +321,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		PanelRect left = getLeftPanelRect();
 		int usableHeight = Math.max(32, left.height - 40 - getPartyFooterHeight());
-		int visibleCount = Math.max(1, usableHeight / NAV_ITEM_HEIGHT);
+		int visibleCount = Math.max(1, usableHeight / 13);
 		navMaxScroll = Math.max(0, navigatorEntries.size() - visibleCount);
 		navScrollOffset = Math.max(0, Math.min(navScrollOffset, navMaxScroll));
 	}
@@ -532,8 +407,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		String selectedKey = questProgressKey(currentSaga, selectedQuest);
 		boolean isCompleted = isQuestCompleted(questData, currentSaga, selectedQuest);
 		boolean canStart = canStartQuest(selectedQuest);
-		boolean startBlockedByLocation = isQuestStartBlockedByLocation(selectedQuest);
-
 		Component buttonText;
 		boolean buttonActive = true;
 		boolean isClaimAction = false;
@@ -552,9 +425,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			} else {
 				return;
 			}
-		} else if (canStart || startBlockedByLocation) {
+		} else if (canStart) {
 			buttonText = tr("gui.dragonminez.quests.start");
-			buttonActive = !startBlockedByLocation;
+			buttonActive = !canStart;
 		} else {
 			return;
 		}
@@ -566,15 +439,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		boolean finalIsClaimAction = isClaimAction;
 		PanelRect right = getRightPanelRect();
-		int buttonX = right.x + (right.width - PARTY_BUTTON_WIDTH) / 2;
+		int buttonX = right.x + (right.width - 74) / 2;
 		int buttonY = right.bottom() - 28;
 
 		actionButton = new TexturedTextButton.Builder()
 				.position(buttonX, buttonY)
-				.size(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
+				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
-				.textureSize(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
+				.textureSize(74, 20)
 				.message(buttonText)
 				.onPress(btn -> {
 					long now = System.currentTimeMillis();
@@ -624,8 +497,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (invite != null) {
 			partyPrimaryButton = buildPartyButton(
 					tr("quest.dmz.party.invite.accept"),
-					footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
-					footer.bottom() - (PARTY_BUTTON_HEIGHT * 2) - 6,
+					footer.x + (footer.width - 74) / 2,
+					footer.bottom() - 46,
 					btn -> {
 						if (questData.isInParty()) {
 							requestConfirm(
@@ -642,8 +515,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 			partySecondaryButton = buildPartyButton(
 					tr("quest.dmz.party.invite.reject"),
-					footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
-					footer.bottom() - PARTY_BUTTON_HEIGHT,
+					footer.x + (footer.width - 74) / 2,
+					footer.bottom() - 20,
 					btn -> {
 						NetworkHandler.sendToServer(new RejectPartyInviteC2S());
 						queuePartyRefresh();
@@ -656,14 +529,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			if (isLeader) {
 				partyPrimaryButton = buildPartyButton(
 						tr("gui.dragonminez.party.invite_players"),
-						footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
-						footer.bottom() - (PARTY_BUTTON_HEIGHT * 2) - 6,
+						footer.x + (footer.width - 74) / 2,
+						footer.bottom() - 46,
 						btn -> openInvitePopup()
 				);
 				partySecondaryButton = buildPartyButton(
 						tr("gui.dragonminez.party.disband"),
-						footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
-						footer.bottom() - PARTY_BUTTON_HEIGHT,
+						footer.x + (footer.width - 74) / 2,
+						footer.bottom() - 20,
 						btn -> requestConfirm(
 								PartyConfirmAction.LEAVE_PARTY,
 								tr("gui.dragonminez.party.disband"),
@@ -673,8 +546,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			} else {
 				partyPrimaryButton = buildPartyButton(
 						tr("gui.dragonminez.party.leave"),
-						footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
-						footer.bottom() - PARTY_BUTTON_HEIGHT,
+						footer.x + (footer.width - 74) / 2,
+						footer.bottom() - 20,
 						btn -> requestConfirm(
 								PartyConfirmAction.LEAVE_PARTY,
 								tr("gui.dragonminez.party.leave"),
@@ -687,8 +560,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		partyPrimaryButton = buildPartyButton(
 				tr("gui.dragonminez.party.create"),
-				footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2,
-				footer.bottom() - PARTY_BUTTON_HEIGHT,
+				footer.x + (footer.width - 74) / 2,
+				footer.bottom() - 20,
 				btn -> {
 					NetworkHandler.sendToServer(new CreatePartyC2S());
 					openInvitePopup();
@@ -700,10 +573,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private TexturedTextButton buildPartyButton(Component label, int x, int y, net.minecraft.client.gui.components.Button.OnPress onPress) {
 		TexturedTextButton button = new TexturedTextButton.Builder()
 				.position(x, y)
-				.size(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
+				.size(74, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(0, 28, 0, 48)
-				.textureSize(PARTY_BUTTON_WIDTH, PARTY_BUTTON_HEIGHT)
+				.textureSize(74, 20)
 				.message(label)
 				.onPress(onPress)
 				.build();
@@ -777,11 +650,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			lastPanAnimNanos = now;
 			dt = Math.max(0.0f, Math.min(0.05f, dt));
 
-			float alpha = expSmoothingAlpha(PAN_SMOOTHING, dt);
+			//14.0f es smoothing var
+			float alpha = (float) (1.0 - Math.exp(-14.0f * dt));
 			panX += (targetPanX - panX) * alpha;
 			panY += (targetPanY - panY) * alpha;
 
-			if (Math.abs(targetPanX - panX) < PAN_STOP_EPSILON && Math.abs(targetPanY - panY) < PAN_STOP_EPSILON) {
+			if (Math.abs(targetPanX - panX) < 0.35f && Math.abs(targetPanY - panY) < 0.35f) {
 				panX = targetPanX;
 				panY = targetPanY;
 				isAnimatingPan = false;
@@ -849,6 +723,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void renderTreeCanvas(GuiGraphics graphics, int mouseX, int mouseY) {
 		if (currentLayout == null || availableSagas.isEmpty()) {
 			drawCenteredStringWithBorder(graphics,
+					//This shouldn't appear but we just have it in case anything breaks
 					tr("gui.dragonminez.quest_tree.no_sagas"),
 					getUiWidth() / 2, getUiHeight() / 2, 0xFFAAAAAA);
 			return;
@@ -904,10 +779,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int offsetY = ((int) panY) % spacing;
 
 		for (int x = tree.x + offsetX; x < tree.right(); x += spacing) {
-			graphics.fill(x, tree.y, x + 1, tree.bottom(), GRID_COLOR);
+			graphics.fill(x, tree.y, x + 1, tree.bottom(), 0xFF222244);
 		}
 		for (int y = tree.y + offsetY; y < tree.bottom(); y += spacing) {
-			graphics.fill(tree.x, y, tree.right(), y + 1, GRID_COLOR);
+			graphics.fill(tree.x, y, tree.right(), y + 1, 0xFF222244);
 		}
 	}
 
@@ -930,7 +805,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int listW = panel.width - 20;
 		int listH = Math.max(32, panel.height - 38 - getPartyFooterHeight());
 
-		int visibleCount = Math.max(1, listH / NAV_ITEM_HEIGHT);
+		int visibleCount = Math.max(1, listH / 13);
 		int visibleStart = navScrollOffset;
 		int visibleEnd = Math.min(navigatorEntries.size(), visibleStart + visibleCount);
 
@@ -938,8 +813,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		for (int i = visibleStart; i < visibleEnd; i++) {
 			NavigatorEntry entry = navigatorEntries.get(i);
-			int rowY = listY + ((i - visibleStart) * NAV_ITEM_HEIGHT);
-			boolean hovered = mouseX >= listX && mouseX <= listX + listW && mouseY >= rowY && mouseY <= rowY + NAV_ITEM_HEIGHT;
+			int rowY = listY + ((i - visibleStart) * 13);
+			boolean hovered = mouseX >= listX && mouseX <= listX + listW && mouseY >= rowY && mouseY <= rowY + 13;
 			renderNavigatorEntry(graphics, entry, listX, rowY, listW, hovered);
 		}
 
@@ -958,9 +833,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private void renderNavigatorEntry(GuiGraphics graphics, NavigatorEntry entry, int x, int y, int rowWidth, boolean hovered) {
-		int color = 0xFFE0E0E0;
+		int color;
 		Component text;
-		int textY = y + Math.max(0, (NAV_ITEM_HEIGHT - 8) / 2);
+		int textY = y + 2;
 
 		if (entry.type() == NavEntryType.SAGA) {
 			boolean selectedSaga = entry.saga() == availableSagas.get(currentSagaIndex);
@@ -983,7 +858,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 			QuestNodeStatus status = getNodeStatus(q);
 			color = getStatusColor(status);
-			if (selectedQuest != null && sameQuestIdentity(selectedQuest, q)) color = 0xFFFFFFFF;
+			if (sameQuestIdentity(selectedQuest, q)) color = 0xFFFFFFFF;
 			if (hovered) color = 0xFFFFD070;
 		}
 
@@ -1015,7 +890,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					footer.x + 6,
 					textY,
 					0xFFFFFFFF);
-			textY += PARTY_FOOTER_TEXT_GAP;
+			textY += 10;
 
 			if (questData.isInParty()) {
 				drawStringWithBorder(graphics,
@@ -1042,7 +917,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					footer.x + 6,
 					textY,
 					0xFFFFFFFF);
-			textY += PARTY_FOOTER_TEXT_GAP;
+			textY += 10;
 
 			drawStringWithBorder(graphics,
 					txt(fitSingleLineEllipsis(buildPartyMemberSummary(), textW)),
@@ -1058,7 +933,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					footer.x + 6,
 					textY,
 					0xFFFFFFFF);
-			textY += PARTY_FOOTER_TEXT_GAP;
+			textY += 10;
 			drawStringWithBorder(graphics,
 					txt(fitSingleLineEllipsis(tr("gui.dragonminez.party.create_hint").getString(), textW)),
 					footer.x + 6,
@@ -1079,7 +954,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int footerHeight = getPartyFooterHeight();
 		if (footerHeight <= 0) return null;
 		PanelRect panel = getLeftPanelRect();
-		return new PanelRect(panel.x + PARTY_FOOTER_PADDING, panel.bottom() - footerHeight, panel.width - (PARTY_FOOTER_PADDING * 2), footerHeight - 6);
+		return new PanelRect(panel.x + 8, panel.bottom() - footerHeight, panel.width - 16, footerHeight - 6);
 	}
 
 	// ========================================================================================
@@ -1160,7 +1035,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private int estimateRewardsSectionHeight(int width, String questKey) {
 		if (selectedQuest.getRewards().isEmpty()) return 28;
-		String visibleRewardsText = resolveTypewriterText(questKey, SECTION_REWARDS, buildRewardsText(selectedQuest.getRewards()));
+		String visibleRewardsText = resolveTypewriterText(questKey, "rewards", buildRewardsText(selectedQuest.getRewards()));
 		List<String> lines = wrapText(visibleRewardsText, width - 36);
 		int rows = Math.max(selectedQuest.getRewards().size(), lines.size());
 		return 24 + (rows * 10) + 6;
@@ -1212,7 +1087,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		String rawRewardsText = buildRewardsText(rewards);
-		String visibleRewardsText = resolveTypewriterText(questKey, SECTION_REWARDS, rawRewardsText);
+		String visibleRewardsText = resolveTypewriterText(questKey, "rewards", rawRewardsText);
 
 		int iconSize = 16;
 		int startY = y + 18;
@@ -1256,7 +1131,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				0xFFFFD700);
 
 		String fullDescription = tr(selectedQuest.getDescription()).getString();
-		String visibleDescription = resolveTypewriterText(questKey, SECTION_DESC, fullDescription);
+		String visibleDescription = resolveTypewriterText(questKey, "desc", fullDescription);
 		List<String> lines = wrapText(visibleDescription, width - 14);
 
 		int lineY = y + 18;
@@ -1349,26 +1224,27 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void renderSidePanelBackground(GuiGraphics graphics, PanelRect panel, boolean flushLeft, boolean flushRight, boolean drawFrame) {
 		if (drawFrame) {
-			graphics.fill(panel.x, panel.y, panel.right(), panel.bottom(), SIDE_PANEL_BG);
+			graphics.fill(panel.x, panel.y, panel.right(), panel.bottom(), 0xCC0F1020);
 		}
 
-		int drawX = panel.x - (flushLeft ? PANEL_BORDER_BLEED_PX : 0);
-		int drawW = panel.width + (flushLeft ? PANEL_BORDER_BLEED_PX : 0) + (flushRight ? PANEL_BORDER_BLEED_PX : 0);
+		int drawX = panel.x - (flushLeft ? 3 : 0);
+		int drawW = panel.width + (flushLeft ? 3 : 0) + (flushRight ? 3 : 0);
 
-		float srcPixelsPerDstPixel = panel.width <= 0 ? 1.0f : (QUEST_MENU_PANEL_WIDTH / (float) panel.width);
-		int srcBleed = Math.max(0, Math.round(PANEL_BORDER_BLEED_PX * srcPixelsPerDstPixel));
-		int srcU = QUEST_MENU_PANEL_U - (flushLeft ? srcBleed : 0);
-		int srcW = QUEST_MENU_PANEL_WIDTH + (flushLeft ? srcBleed : 0) + (flushRight ? srcBleed : 0);
-		int srcV = QUEST_MENU_PANEL_V;
-		int srcH = QUEST_MENU_PANEL_HEIGHT;
+		// questmenu atlas frame
+		float srcPixelsPerDstPixel = panel.width <= 0 ? 1.0f : (282 / (float) panel.width);
+		int srcBleed = Math.max(0, Math.round(3 * srcPixelsPerDstPixel));
+		int srcU = 1 - (flushLeft ? srcBleed : 0);
+		int srcW = 282 + (flushLeft ? srcBleed : 0) + (flushRight ? srcBleed : 0);
+		int srcV = 1;
+		int srcH = 426;
 
 		if (srcU < 0) {
 			srcW += srcU;
 			srcU = 0;
 		}
-		srcW = Math.max(1, Math.min(srcW, QUEST_MENU_TEX_WIDTH - srcU));
-		srcV = Math.max(0, Math.min(srcV, QUEST_MENU_TEX_HEIGHT - 1));
-		srcH = Math.max(1, Math.min(srcH, QUEST_MENU_TEX_HEIGHT - srcV));
+		srcW = Math.max(1, Math.min(srcW, 512 - srcU));
+		srcV = Math.max(0, Math.min(srcV, 511));
+		srcH = Math.max(1, Math.min(srcH, 512 - srcV));
 
 		graphics.blit(QUEST_MENU,
 				drawX,
@@ -1379,17 +1255,17 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				srcV,
 				srcW,
 				srcH,
-				QUEST_MENU_TEX_WIDTH,
-				QUEST_MENU_TEX_HEIGHT);
+				512,
+				512);
 
 		if (drawFrame) {
-			graphics.fill(panel.x, panel.y, panel.right(), panel.y + 1, SIDE_PANEL_BORDER);
-			graphics.fill(panel.x, panel.bottom() - 1, panel.right(), panel.bottom(), SIDE_PANEL_BORDER);
+			graphics.fill(panel.x, panel.y, panel.right(), panel.y + 1, 0xAA5A5F7A);
+			graphics.fill(panel.x, panel.bottom() - 1, panel.right(), panel.bottom(), 0xAA5A5F7A);
 			if (!flushLeft) {
-				graphics.fill(panel.x, panel.y, panel.x + 1, panel.bottom(), SIDE_PANEL_BORDER);
+				graphics.fill(panel.x, panel.y, panel.x + 1, panel.bottom(), 0xAA5A5F7A);
 			}
 			if (!flushRight) {
-				graphics.fill(panel.right() - 1, panel.y, panel.right(), panel.bottom(), SIDE_PANEL_BORDER);
+				graphics.fill(panel.right() - 1, panel.y, panel.right(), panel.bottom(), 0xAA5A5F7A);
 			}
 		}
 	}
@@ -1400,7 +1276,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		String key = questKey + "#" + section;
 		long now = System.currentTimeMillis();
 		long lastReveal = sectionLastReveal.getOrDefault(key, 0L);
-		boolean shouldAnimate = now - lastReveal >= TYPEWRITER_COOLDOWN_MS;
+		boolean shouldAnimate = now - lastReveal >= 5L * 60L * 1000L;
 
 		if (!shouldAnimate) {
 			sectionAnimationStart.remove(key);
@@ -1409,7 +1285,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		long start = sectionAnimationStart.computeIfAbsent(key, ignored -> now);
 		long elapsed = Math.max(0L, now - start);
-		int visibleChars = (int) ((elapsed / 1000.0f) * TYPEWRITER_CHARS_PER_SECOND);
+		// typewriter speed (55)
+		int visibleChars = (int) ((elapsed / 1000.0f) * 55);
 		if (visibleChars >= fullText.length()) {
 			sectionLastReveal.put(key, now);
 			sectionAnimationStart.remove(key);
@@ -1428,6 +1305,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return builder.toString();
 	}
 
+	//This is the literal lines that connect the a quest node to another quest node.
 	private void renderConnection(GuiGraphics graphics, QuestTreeLayoutHelper.NodeConnection conn) {
 		float zPanX = panX / zoom;
 		float zPanY = panY / zoom;
@@ -1436,27 +1314,27 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		NodeVisibility toVis = getNodeVisibility(conn.getTo().getQuest());
 		if (fromVis == NodeVisibility.HIDDEN || toVis == NodeVisibility.HIDDEN) return;
 
-		int x1 = (int) (conn.getFrom().getPixelX() + zPanX) + HALF_NODE;
-		int y1 = (int) (conn.getFrom().getPixelY() + zPanY) + HALF_NODE;
-		int x2 = (int) (conn.getTo().getPixelX() + zPanX) + HALF_NODE;
-		int y2 = (int) (conn.getTo().getPixelY() + zPanY) + HALF_NODE;
+		int x1 = (int) (conn.getFrom().getPixelX() + zPanX) + (NODE_SIZE / 2);
+		int y1 = (int) (conn.getFrom().getPixelY() + zPanY) + (NODE_SIZE / 2);
+		int x2 = (int) (conn.getTo().getPixelX() + zPanX) + (NODE_SIZE / 2);
+		int y2 = (int) (conn.getTo().getPixelY() + zPanY) + (NODE_SIZE / 2);
 
-		int color = LINE_COLOR_DEFAULT;
+		int color = 0xFF444444;
 		if (statsData != null && !availableSagas.isEmpty()) {
 			Saga saga = availableSagas.get(currentSagaIndex);
 			PlayerQuestData pqd = statsData.getPlayerQuestData();
 			boolean fromCompleted = isQuestCompleted(pqd, saga, conn.getFrom().getQuest());
 			boolean toCompleted = isQuestCompleted(pqd, saga, conn.getTo().getQuest());
 			if (fromCompleted && toCompleted) {
-				color = LINE_COLOR_COMPLETED;
+				color = 0xFF00AA00;
 			}
 		}
 
 		if (fromVis == NodeVisibility.BLURRED || toVis == NodeVisibility.BLURRED) {
-			color = LINE_COLOR_FADED;
+			color = 0x55444444;
 		}
 
-		drawThickLine(graphics, x1, y1, x2, y2, LINE_THICKNESS, color);
+		drawThickLine(graphics, x1, y1, x2, y2, 2, color);
 	}
 
 	private void drawThickLine(GuiGraphics graphics, int x1, int y1, int x2, int y2, int thickness, int color) {
@@ -1492,20 +1370,20 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		} else {
 			switch (status) {
 				case COMPLETED, CLAIMABLE -> {
-					bgColor = COLOR_COMPLETED;
-					borderColor = COLOR_COMPLETED_BORDER;
+					bgColor = 0xFF00CC00;
+					borderColor = 0xFF009900;
 				}
 				case ACTIVE -> {
-					bgColor = COLOR_ACTIVE;
-					borderColor = COLOR_ACTIVE_BORDER;
+					bgColor = 0xFF3399FF;
+					borderColor = 0xFF2266CC;
 				}
 				case AVAILABLE -> {
-					bgColor = COLOR_AVAILABLE;
-					borderColor = COLOR_AVAILABLE_BORDER;
+					bgColor = 0xFFFFCC00;
+					borderColor = 0xFFCC9900;
 				}
 				default -> {
-					bgColor = COLOR_LOCKED;
-					borderColor = COLOR_LOCKED_BORDER;
+					bgColor = 0xFF555555;
+					borderColor = 0xFF333333;
 				}
 			}
 		}
@@ -1513,7 +1391,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		// Selected glow
 		boolean isSelected = selectedQuest != null && sameQuestIdentity(selectedQuest, node.getQuest());
 		if (isSelected && !isBlurred) {
-			graphics.fill(x - 2, y - 2, x + NODE_SIZE + 2, y + NODE_SIZE + 2, COLOR_SELECTED_GLOW);
+			graphics.fill(x - 2, y - 2, x + NODE_SIZE + 2, y + NODE_SIZE + 2, 0xAAFFFFFF);
 		}
 
 		// Hover effect
@@ -1581,12 +1459,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			RenderSystem.defaultBlendFunc();
 			graphics.setColor(1.0f, 1.0f, 1.0f, alpha);
 			int iconDrawX = x + NODE_SIZE - 2;
-			int iconDrawY = y - EXCLAMATION_DRAW_HEIGHT + 4;
+			int iconDrawY = y - 15 + 4;
 			graphics.blit(EXCLAMATION_MARK, iconDrawX, iconDrawY,
-					EXCLAMATION_DRAW_WIDTH, EXCLAMATION_DRAW_HEIGHT,
+					6, 15,
 					0, 0,
-					EXCLAMATION_TEX_WIDTH, EXCLAMATION_TEX_HEIGHT,
-					EXCLAMATION_TEX_WIDTH, EXCLAMATION_TEX_HEIGHT);
+					97, 250,
+					97, 250);
 			graphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
@@ -1697,17 +1575,17 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void syncPartyButtonPositions() {
 		PanelRect footer = getPartyFooterRect();
 		if (footer == null) return;
-		int centerX = footer.x + (footer.width - PARTY_BUTTON_WIDTH) / 2;
+		int centerX = footer.x + (footer.width - 74) / 2;
 
 		if (partySecondaryButton != null) {
 			partySecondaryButton.setX(centerX);
-			partySecondaryButton.setY(footer.bottom() - PARTY_BUTTON_HEIGHT);
+			partySecondaryButton.setY(footer.bottom() - 20);
 		}
 		if (partyPrimaryButton != null) {
 			partyPrimaryButton.setX(centerX);
 			partyPrimaryButton.setY(partySecondaryButton != null
-					? footer.bottom() - (PARTY_BUTTON_HEIGHT * 2) - 6
-					: footer.bottom() - PARTY_BUTTON_HEIGHT);
+					? footer.bottom() - 46
+					: footer.bottom() - 20);
 		}
 	}
 
@@ -1772,15 +1650,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	}
 
 	private PanelRect getInvitePopupRect() {
-		return new PanelRect((getUiWidth() - PARTY_POPUP_WIDTH) / 2, (getUiHeight() - PARTY_POPUP_HEIGHT) / 2, PARTY_POPUP_WIDTH, PARTY_POPUP_HEIGHT);
+		return new PanelRect((getUiWidth() - 188) / 2, (getUiHeight() - 148) / 2, 188, 148);
 	}
 
 	private PanelRect getConfirmRect() {
-		return new PanelRect((getUiWidth() - PARTY_CONFIRM_WIDTH) / 2, (getUiHeight() - PARTY_CONFIRM_HEIGHT) / 2, PARTY_CONFIRM_WIDTH, PARTY_CONFIRM_HEIGHT);
+		return new PanelRect((getUiWidth() - 188) / 2, (getUiHeight() - 112) / 2, 188, 112);
 	}
 
 	private int getInvitePopupVisibleRows() {
-		return Math.max(1, (PARTY_POPUP_HEIGHT - 48) / PARTY_POPUP_ROW_HEIGHT);
+		return 5;
 	}
 
 	private void renderInvitePopup(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -1808,10 +1686,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		} else {
 			for (int i = 0; i < visibleRows && (i + invitePopupScroll) < inviteEntries.size(); i++) {
 				PartyInviteEntry entry = inviteEntries.get(i + invitePopupScroll);
-				int rowY = listY + (i * PARTY_POPUP_ROW_HEIGHT);
-				boolean hovered = mouseX >= listX && mouseX <= listX + listW && mouseY >= rowY && mouseY <= rowY + PARTY_POPUP_ROW_HEIGHT - 2;
-				graphics.fill(listX, rowY, listX + listW, rowY + PARTY_POPUP_ROW_HEIGHT - 2, hovered ? 0x66FFFFFF : 0x33000000);
-				graphics.renderOutline(listX, rowY, listW, PARTY_POPUP_ROW_HEIGHT - 2, hovered ? 0xFFCCDDFF : 0x55444466);
+				int rowY = listY + (i * 18);
+				boolean hovered = mouseX >= listX && mouseX <= listX + listW && mouseY >= rowY && mouseY <= rowY + 16;
+				graphics.fill(listX, rowY, listX + listW, rowY + 16, hovered ? 0x66FFFFFF : 0x33000000);
+				graphics.renderOutline(listX, rowY, listW, 16, hovered ? 0xFFCCDDFF : 0x55444466);
 				drawStringWithBorder(graphics,
 						txt(fitSingleLineEllipsis(entry.playerName(), listW - 10)),
 						listX + 5,
@@ -1906,8 +1784,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		for (int i = 0; i < visibleRows && (i + invitePopupScroll) < inviteEntries.size(); i++) {
-			int rowY = listY + (i * PARTY_POPUP_ROW_HEIGHT);
-			if (uiMouseY >= rowY && uiMouseY <= rowY + PARTY_POPUP_ROW_HEIGHT - 2) {
+			int rowY = listY + (i * 18);
+			if (uiMouseY >= rowY && uiMouseY <= rowY + 16) {
 				PartyInviteEntry entry = inviteEntries.get(i + invitePopupScroll);
 				NetworkHandler.sendToServer(new InvitePartyMemberC2S(entry.playerId()));
 				invitePopupOpen = false;
@@ -2005,8 +1883,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int listH = Math.max(32, panel.height - 38 - getPartyFooterHeight());
 		if (uiMouseX < listX || uiMouseX > listX + listW || uiMouseY < listY || uiMouseY > listY + listH) return false;
 
-		int visibleCount = Math.max(1, listH / NAV_ITEM_HEIGHT);
-		int index = navScrollOffset + (int) ((uiMouseY - listY) / NAV_ITEM_HEIGHT);
+		int visibleCount = Math.max(1, listH / 13);
+		int index = navScrollOffset + (int) ((uiMouseY - listY) / 13);
 		if (index < 0 || index >= navigatorEntries.size() || index >= navScrollOffset + visibleCount) return true;
 
 		NavigatorEntry entry = navigatorEntries.get(index);
@@ -2044,7 +1922,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			double uiMouseY = toUiY(mouseY);
 			double dx = uiMouseX - treePressStartX;
 			double dy = uiMouseY - treePressStartY;
-			if ((dx * dx) + (dy * dy) > CLICK_DRAG_THRESHOLD_SQ) {
+			if ((dx * dx) + (dy * dy) > 16.0) {
 				treePressMoved = true;
 			}
 			panX = dragStartPanX + (float) (uiMouseX - dragStartX);
@@ -2064,7 +1942,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			double uiMouseY = toUiY(mouseY);
 			double dx = uiMouseX - treePressStartX;
 			double dy = uiMouseY - treePressStartY;
-			boolean moved = treePressMoved || ((dx * dx) + (dy * dy) > CLICK_DRAG_THRESHOLD_SQ);
+			boolean moved = treePressMoved || ((dx * dx) + (dy * dy) > 16.0);
 
 			if (treePressStarted && !moved && selectedQuest != null) {
 				selectedQuest = null;
@@ -2111,8 +1989,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		float oldZoom = zoom;
-		float zoomDelta = scrollAmount * ZOOM_STEP;
-		zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + zoomDelta));
+		float zoomDelta = scrollAmount * 0.1f;
+		zoom = Math.max(0.25f, Math.min(2.0f, zoom + zoomDelta));
 
 		if (zoom != oldZoom) {
 			float scale = zoom / oldZoom;
@@ -2137,15 +2015,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (selectedQuest == null || availableSagas.isEmpty()) return;
 		Saga saga = availableSagas.get(currentSagaIndex);
 		String key = questProgressKey(saga, selectedQuest);
-		initializeTypewriterSection(key, SECTION_DESC);
-		initializeTypewriterSection(key, SECTION_REWARDS);
+		initializeTypewriterSection(key, "desc");
+		initializeTypewriterSection(key, "rewards");
 	}
 
 	private void initializeTypewriterSection(String questKey, String section) {
 		String key = questKey + "#" + section;
 		long now = System.currentTimeMillis();
 		long lastReveal = sectionLastReveal.getOrDefault(key, 0L);
-		if (now - lastReveal >= TYPEWRITER_COOLDOWN_MS) {
+		if (now - lastReveal >= 5L * 60L * 1000L) {
 			sectionAnimationStart.put(key, now);
 		} else {
 			sectionAnimationStart.remove(key);
@@ -2465,8 +2343,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private PanelRect getBaseLeftPanelRect() {
 		int third = getUiWidth() / 3;
-		int width = Math.max(140, (int) (third * SIDE_PANEL_WIDTH_RATIO));
-		int height = Math.min(getUiHeight(), Math.max(120, (int) (getUiHeight() * SIDE_PANEL_HEIGHT_RATIO)));
+		int width = Math.max(140, (int) (third * 0.90f));
+		int height = Math.min(getUiHeight(), Math.max(120, (int) (getUiHeight() * 0.90f)));
 		int x = 0;
 		int y = Math.max(0, (getUiHeight() - height) / 2);
 		return new PanelRect(x, y, width, height);
@@ -2474,8 +2352,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private PanelRect getBaseRightPanelRect() {
 		int third = getUiWidth() / 3;
-		int width = Math.max(140, (int) (third * SIDE_PANEL_WIDTH_RATIO));
-		int height = Math.min(getUiHeight(), Math.max(120, (int) (getUiHeight() * SIDE_PANEL_HEIGHT_RATIO)));
+		int width = Math.max(140, (int) (third * 0.90f));
+		int height = Math.min(getUiHeight(), Math.max(120, (int) (getUiHeight() * 0.90f)));
 		int x = getUiWidth() - width;
 		int y = Math.max(0, (getUiHeight() - height) / 2);
 		return new PanelRect(x, y, width, height);
@@ -2489,23 +2367,23 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private float getPanelIntroProgress() {
 		if (!panelIntroActive) return 1.0f;
 		long elapsed = System.currentTimeMillis() - panelIntroStartMs;
-		if (elapsed >= PANEL_INTRO_DURATION_MS) {
+		if (elapsed >= 700L) {
 			panelIntroActive = false;
 			return 1.0f;
 		}
-		return Math.max(0.0f, Math.min(1.0f, elapsed / (float) PANEL_INTRO_DURATION_MS));
+		return Math.max(0.0f, Math.min(1.0f, elapsed / 700.0f));
 	}
 
 	private int getPanelIntroOffsetX(boolean isLeftPanel, int panelWidth) {
 		float t = getPanelIntroProgress();
-		float eased = easeOutBack(t, PANEL_INTRO_BACK_OVERSHOOT);
-		float travel = (1.0f - eased) * (panelWidth + PANEL_INTRO_EXTRA_TRAVEL_PX);
+		float eased = easeOutBack(t, 1.35f);
+		float travel = (1.0f - eased) * (panelWidth + 22);
 		int offset = Math.round(travel);
 		return isLeftPanel ? -offset : offset;
 	}
 
 	private int getLeftPanelRevealOffset(int panelWidth) {
-		int hiddenTravel = Math.max(0, panelWidth - LEFT_PANEL_PEEK_PX);
+		int hiddenTravel = Math.max(0, panelWidth - 24);
 		float eased = easeInOutCubic(leftPanelRevealProgress);
 		return -Math.round((1.0f - eased) * hiddenTravel);
 	}
@@ -2524,15 +2402,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private void syncActionButtonPosition() {
 		if (actionButton == null) return;
 		PanelRect right = getRightPanelRect();
-		actionButton.setX(right.x + (right.width - PARTY_BUTTON_WIDTH) / 2);
+		actionButton.setX(right.x + (right.width - 74) / 2);
 		actionButton.setY(right.bottom() - 28);
 		actionButton.visible = selectedQuest != null && rightPanelRevealProgress > 0.15f;
 	}
 
 	private void updatePanelInteractionAnimations(int mouseX, int mouseY, float partialTick) {
-		float step = Math.max(0.01f, PANEL_REVEAL_STEP + (partialTick * 0.01f));
+		float step = Math.max(0.01f, 0.07f + (partialTick * 0.01f));
 
-		boolean nearLeftEdge = mouseX <= LEFT_PANEL_HOVER_ZONE_PX;
+		boolean nearLeftEdge = mouseX <= 36;
 		boolean overLeftPanel = getLeftPanelRect().contains(mouseX, mouseY);
 		boolean keepLeftOpen = invitePopupOpen || confirmOverlayOpen;
 		float leftTarget = (nearLeftEdge || overLeftPanel || keepLeftOpen) ? 1.0f : 0.0f;
