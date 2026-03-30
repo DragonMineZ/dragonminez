@@ -594,17 +594,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return getNodeStatus(quest) == QuestNodeStatus.AVAILABLE;
 	}
 
-	private boolean isQuestStartBlockedByLocation(Quest quest) {
-		if (statsData == null || availableSagas.isEmpty() || quest == null) return false;
-		Saga currentSaga = availableSagas.get(currentSagaIndex);
-		PlayerQuestData questData = statsData.getPlayerQuestData();
-		String questKey = questProgressKey(currentSaga, quest);
-		if (questData.isQuestCompleted(questKey)) return false;
-		if (questData.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) return false;
-		if (getNodeStatus(quest) != QuestNodeStatus.AVAILABLE) return false;
-		return !QuestLocationHelper.isQuestStartLocationSatisfied(Minecraft.getInstance().player, quest);
-	}
-
 	// ========================================================================================
 	// Tick
 	// ========================================================================================
