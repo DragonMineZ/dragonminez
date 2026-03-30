@@ -276,8 +276,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		if (targetNode != null) {
 			// Center this node in the middle of the canvas
-			panX = (tree.x + tree.width / 2.0f) - targetNode.getPixelX() - (NODE_SIZE / 2);
-			panY = (tree.y + tree.height / 2.0f) - targetNode.getPixelY() - (NODE_SIZE / 2);
+			panX = (tree.x + tree.width / 2.0f) - targetNode.getPixelX() - ((float) NODE_SIZE / 2);
+			panY = (tree.y + tree.height / 2.0f) - targetNode.getPixelY() - ((float) NODE_SIZE / 2);
 		} else {
 			panX = tree.x + 40;
 			panY = tree.y + (tree.height - currentLayout.getTotalHeight()) / 2.0f;
@@ -286,8 +286,8 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	private void slideToNode(QuestTreeLayoutHelper.NodePosition node) {
 		PanelRect tree = getTreePanelRect();
-		targetPanX = (tree.x + tree.width / 2.0f) - (node.getPixelX() * zoom) - (NODE_SIZE / 2) * zoom;
-		targetPanY = (tree.y + tree.height / 2.0f) - (node.getPixelY() * zoom) - (NODE_SIZE / 2) * zoom;
+		targetPanX = (tree.x + tree.width / 2.0f) - (node.getPixelX() * zoom) - ((float) NODE_SIZE / 2) * zoom;
+		targetPanY = (tree.y + tree.height / 2.0f) - (node.getPixelY() * zoom) - ((float) NODE_SIZE / 2) * zoom;
 		isAnimatingPan = true;
 		lastPanAnimNanos = System.nanoTime();
 	}
@@ -427,7 +427,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 		} else if (canStart) {
 			buttonText = tr("gui.dragonminez.quests.start");
-			buttonActive = !canStart;
 		} else {
 			return;
 		}

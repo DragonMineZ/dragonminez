@@ -28,6 +28,7 @@ public final class QuestLocationHelper {
 		return objective instanceof BiomeObjective || objective instanceof StructureObjective || objective instanceof CoordsObjective;
 	}
 
+	//Overloaded class para packets
 	public static boolean isQuestStartLocationSatisfied(ServerPlayer player, Quest quest) {
 		if (player == null || quest == null) return false;
 		for (QuestObjective objective : quest.getObjectives()) {
@@ -39,6 +40,7 @@ public final class QuestLocationHelper {
 		return true;
 	}
 
+	//Lo de arriba pero no para packets
 	public static boolean isQuestStartLocationSatisfied(Player player, Quest quest) {
 		if (player == null || quest == null) return false;
 		for (QuestObjective objective : quest.getObjectives()) {
