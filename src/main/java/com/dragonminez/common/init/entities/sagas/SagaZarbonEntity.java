@@ -10,14 +10,13 @@ import net.minecraft.world.level.Level;
 
 public class SagaZarbonEntity extends DBSagasEntity {
 
-    private int transformTick = 0;
-
     public SagaZarbonEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
 
         this.setCanFly(true);
         this.setDBZStyle(0);
         this.setAuraColor(0xFFFFFF);
+        this.setKiBlastSpeed(1.4F);
 
         if (this instanceof IBattlePower bp) {
             bp.setBattlePower(23000);
@@ -28,23 +27,18 @@ public class SagaZarbonEntity extends DBSagasEntity {
     }
 
     @Override
-    public void tick() {
-        super.tick();
-
-        if (this.isTransforming()) {
-            this.transformTick++;
-            boolean finished = this.handleTransformationLogic(this.transformTick, 80);
-
-            if (finished && !this.level().isClientSide) {
-                DBSagasEntity monsterForm = (DBSagasEntity) MainEntities.SAGA_ZARBON_TRANSF.get().create(this.level());
-                this.finishTransformationSpawn(monsterForm, true);
-            }
-        }
+    protected boolean hasTransformation() {
+        return true;
     }
 
     @Override
-    protected boolean shouldTriggerTransformationOnDeath() {
-        return true;
+    public EntityType<? extends DBSagasEntity> getNextTransform() {
+        return MainEntities.SAGA_ZARBON_TRANSF.get();
+    }
+
+    @Override
+    protected boolean spawnsNewFormFullHealth() {
+        return false;
     }
 
     @Override
@@ -60,6 +54,7 @@ public class SagaZarbonEntity extends DBSagasEntity {
             this.setCanFly(true);
             this.setDBZStyle(2);
             this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
 
             if (this instanceof IBattlePower bp) {
                 bp.setBattlePower(30000);

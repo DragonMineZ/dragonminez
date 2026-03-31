@@ -18,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
@@ -144,6 +145,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private boolean canFly = true;
 
     protected int castTimer = 0;
+    protected int transformTick = 0;
     private int chargeSoundTimer = 0;
     private static final int AURA_LIGHT_LEVEL = 12;
     private static final int AURA_LIGHT_INTERVAL = 2;
@@ -166,6 +168,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private int comboTimer = 0;
     private LivingEntity comboTarget = null;
     private int activeComboId = -1;
+    private int[] allowedCombos = new int[0];
 
     private boolean isAttacking = false;
 
@@ -209,6 +212,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.activeComboId = id;
         this.comboCooldownMax = cooldown;
         this.currentComboCooldown = cooldown;
+    }
+
+    public void setAllowedCombos(int cooldown, int... comboIds) {
+        this.comboEnabled = true;
+        this.comboCooldownMax = cooldown;
+        this.currentComboCooldown = cooldown;
+        this.allowedCombos = comboIds;
     }
 
     public void setEvade(boolean active, int cooldown) {
@@ -367,6 +377,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
         if (!this.level().isClientSide) {
 
+            if (!this.isAlive()) {
+                if (this.isCasting()) this.stopCasting();
+                if (this.isComboing()) this.stopCombo();
+                return;
+            }
+
             this.handleCommonCombatMovement(this.getTarget(), this.isCasting() || this.isComboing() || this.isTransforming());
 
             if (this.tickCount % AURA_LIGHT_INTERVAL == 0) updateAuraLight();
@@ -375,116 +391,134 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 this.setFlyingFast(false);
             }
 
-            if (!this.isCasting() && !this.isComboing()) {
-                if (this.canEvade && this.currentEvadeTimer > 0) this.currentEvadeTimer--;
-                if (this.canUseWildSense && this.currentWildSenseCooldown > 0) this.currentWildSenseCooldown--;
-                if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
+            if (!this.isTransforming()) {
 
-                if (this.canUseSkill && this.currentSkillCooldown > 0) {
-                    this.currentSkillCooldown--;
-                }
+                if (!this.isCasting() && !this.isComboing()) {
+                    if (this.canEvade && this.currentEvadeTimer > 0) this.currentEvadeTimer--;
+                    if (this.canUseWildSense && this.currentWildSenseCooldown > 0) this.currentWildSenseCooldown--;
+                    if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
 
-                if (this.canUseSecondarySkill && this.currentSecondarySkillCooldown > 0) {
-                    this.currentSecondarySkillCooldown--;
-                }
+                    if (this.canUseSkill && this.currentSkillCooldown > 0) {
+                        this.currentSkillCooldown--;
+                    }
 
-                if (this.canUseTertiarySkill && this.currentTertiarySkillCooldown > 0) {
-                    this.currentTertiarySkillCooldown--;
-                }
-            }
+                    if (this.canUseSecondarySkill && this.currentSecondarySkillCooldown > 0) {
+                        this.currentSecondarySkillCooldown--;
+                    }
 
-            if (this.isCasting()) {
-                this.castTimer++;
-
-                this.getNavigation().stop();
-                this.setDeltaMovement(0, 0, 0);
-
-                if (this.getTarget() != null) {
-                    this.lookAt(this.getTarget(), 360, 360);
-                }
-
-                int skill = this.getSkillType();
-
-                if (skill == 7 && this.level() instanceof ServerLevel serverLevel) {
-                    if (this.castTimer > 5 && this.castTimer < 30) {
-                        for (int i = 0; i < 25; i++) {
-                            double distance = 3.0D + this.random.nextDouble() * 2.0D;
-                            double angle = this.random.nextDouble() * Math.PI * 2.0D;
-                            double heightOffset = (this.random.nextDouble() - 0.5D) * this.getBbHeight();
-
-                            double spawnX = this.getX() + Math.cos(angle) * distance;
-                            double spawnY = this.getY() + (this.getBbHeight() / 2.0) + heightOffset;
-                            double spawnZ = this.getZ() + Math.sin(angle) * distance;
-
-                            double velX = (this.getX() - spawnX) * 0.15D;
-                            double velY = ((this.getY() + this.getBbHeight() * 0.8) - spawnY) * 0.15D;
-                            double velZ = (this.getZ() - spawnZ) * 0.15D;
-
-                            serverLevel.sendParticles(ParticleTypes.CLOUD, spawnX, spawnY, spawnZ, 0, velX, velY, velZ, 1.0D);
-                        }
+                    if (this.canUseTertiarySkill && this.currentTertiarySkillCooldown > 0) {
+                        this.currentTertiarySkillCooldown--;
                     }
                 }
 
-                if (this.castTimer == 1) {
-                    if (skill != 7 && skill != 13) {
+                if (this.isCasting()) {
+                    this.castTimer++;
+
+                    this.getNavigation().stop();
+                    this.setDeltaMovement(0, 0, 0);
+
+                    if (this.getTarget() != null) {
+                        this.lookAt(this.getTarget(), 360, 360);
+                    }
+
+                    int skill = this.getSkillType();
+
+                    if (skill == 7 && this.level() instanceof ServerLevel serverLevel) {
+                        if (this.castTimer > 5 && this.castTimer < 30) {
+                            for (int i = 0; i < 25; i++) {
+                                double distance = 3.0D + this.random.nextDouble() * 2.0D;
+                                double angle = this.random.nextDouble() * Math.PI * 2.0D;
+                                double heightOffset = (this.random.nextDouble() - 0.5D) * this.getBbHeight();
+
+                                double spawnX = this.getX() + Math.cos(angle) * distance;
+                                double spawnY = this.getY() + (this.getBbHeight() / 2.0) + heightOffset;
+                                double spawnZ = this.getZ() + Math.sin(angle) * distance;
+
+                                double velX = (this.getX() - spawnX) * 0.15D;
+                                double velY = ((this.getY() + this.getBbHeight() * 0.8) - spawnY) * 0.15D;
+                                double velZ = (this.getZ() - spawnZ) * 0.15D;
+
+                                serverLevel.sendParticles(ParticleTypes.CLOUD, spawnX, spawnY, spawnZ, 0, velX, velY, velZ, 1.0D);
+                            }
+                        }
+                    }
+
+                    if (this.castTimer == 1) {
+                        if (skill != 7 && skill != 13) {
+                            executeSkillEffect(skill);
+                        }
+                    }
+
+                    if (skill == 7 && this.castTimer == 30) {
                         executeSkillEffect(skill);
                     }
-                }
 
-                if (skill == 7 && this.castTimer == 30) {
-                    executeSkillEffect(skill);
-                }
+                    if (skill == 13) {
+                        if (this.castTimer == 10 || this.castTimer == 20 || this.castTimer == 30) {
+                            executeSkillEffect(13);
+                        }
+                    }
 
-                if (skill == 13) {
-                    if (this.castTimer == 10 || this.castTimer == 20 || this.castTimer == 30) {
-                        executeSkillEffect(13);
+                    int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14) ? 30 : (skill == 13) ? 40 : (skill == 15) ? 60 : 60;
+
+                    if (this.castTimer >= maxCastDuration) {
+                        this.stopCasting();
                     }
                 }
 
-                // NUEVO AJUSTE: El Ki Laser (4) dura 10 ticks. Death Ball (15) dura 60.
-                int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14) ? 30 : (skill == 13) ? 40 : (skill == 15) ? 60 : 60;
-
-                if (this.castTimer >= maxCastDuration) {
-                    this.stopCasting();
+                if (this.canUseWildSense && this.currentWildSenseCooldown <= 0 && this.getTarget() != null && !this.isCasting() && !this.isComboing()) {
+                    this.performTeleport(this.getTarget());
+                    this.currentWildSenseCooldown = this.wildSenseCooldownMax;
                 }
-            }
 
-            if (this.canUseWildSense && this.currentWildSenseCooldown <= 0 && this.getTarget() != null && !this.isCasting() && !this.isComboing()) {
-                this.performTeleport(this.getTarget());
-                this.currentWildSenseCooldown = this.wildSenseCooldownMax;
-            }
-
-            if (this.canEvade && !this.isCasting() && !this.isComboing()) {
-                if (this.hurtTime > 0 && this.currentEvadeTimer <= 0) {
-                    this.performEvasion();
+                if (this.canEvade && !this.isCasting() && !this.isComboing()) {
+                    if (this.hurtTime > 0 && this.currentEvadeTimer <= 0) {
+                        this.performEvasion();
+                    }
                 }
-            }
 
-            if (this.isEvading()) {
-                evasionStateTicks++;
-                if (evasionStateTicks > 12) {
-                    this.setEvading(false);
-                    this.evasionStateTicks = 0;
+                if (this.isEvading()) {
+                    evasionStateTicks++;
+                    if (evasionStateTicks > 12) {
+                        this.setEvading(false);
+                        this.evasionStateTicks = 0;
+                    }
                 }
-            }
 
-            if (this.comboEnabled) {
-                if (this.isComboing()) {
-                    this.comboTimer++;
-                    handleComboLogic();
-                } else if (this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null) {
-                    if (this.distanceTo(this.getTarget()) < 6.0D) {
-                        this.comboTarget = this.getTarget();
-                        this.setComboing(true);
+                if (this.comboEnabled) {
+                    if (this.isComboing()) {
+                        this.comboTimer++;
+                        handleComboLogic();
+                    } else if (this.currentComboCooldown <= 0 && !this.isCasting() && this.getTarget() != null) {
+                        if (this.distanceTo(this.getTarget()) < 6.0D) {
+                            this.comboTarget = this.getTarget();
+                            this.setComboing(true);
 
-                        if (this.activeComboId == 10) {
-                            this.entityData.set(CURRENT_COMBO_ID, this.random.nextInt(3));
-                        } else {
-                            this.entityData.set(CURRENT_COMBO_ID, this.activeComboId);
+                            if (this.allowedCombos != null && this.allowedCombos.length > 0) {
+                                int randomCombo = this.allowedCombos[this.random.nextInt(this.allowedCombos.length)];
+                                this.entityData.set(CURRENT_COMBO_ID, randomCombo);
+                            } else if (this.activeComboId == 10) {
+                                this.entityData.set(CURRENT_COMBO_ID, this.random.nextInt(3));
+                            } else {
+                                this.entityData.set(CURRENT_COMBO_ID, this.activeComboId);
+                            }
+
+                            this.comboTimer = 0;
+                            this.currentComboCooldown = comboCooldownMax;
                         }
+                    }
+                }
+            }
 
-                        this.comboTimer = 0;
-                        this.currentComboCooldown = comboCooldownMax;
+            if (this.isTransforming()) {
+                this.transformTick++;
+                if (this.handleTransformationLogic(this.transformTick, 80)) {
+                    if (!this.level().isClientSide) {
+                        EntityType<? extends DBSagasEntity> nextFormType = this.getNextTransform();
+                        if (nextFormType != null) {
+                            DBSagasEntity nextForm = nextFormType.create(this.level());
+                            this.finishTransformationSpawn(nextForm, this.spawnsNewFormFullHealth());
+                        }
                     }
                 }
             }
@@ -508,27 +542,26 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
     }
 
-
     public float getCalculatedSkillDamage(int skillType) {
         float kiDmg = this.getKiBlastDamage();
         float meleeDmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
 
         switch (skillType) {
-            case 1:  return kiDmg;          // Kamehameha
-            case 2:  return kiDmg;          // Galick Gun
-            case 3:  return kiDmg;          // Makankosappo
-            case 4:  return kiDmg;          // Ki Laser
-            case 5:  return kiDmg;          // Explosión (masivo)
-            case 6:  return 0.0F;           // Barrier
-            case 7:  return meleeDmg;       // Oozaru Roar = Melee
-            case 8:  return kiDmg;          // Generic Wave
-            case 9:  return kiDmg;          // Oozaru Beam
-            case 10: return kiDmg / 4.0F;   // Volley = Ki / 4
-            case 11: return kiDmg / 4.0F;   // Ki Small = Ki / 4
-            case 12: return meleeDmg * 3.0F;// Blue Hurricane = Melee * 3
-            case 13: return kiDmg / 2.0F;   // Triple Laser
-            case 14: return kiDmg * 1.5F;   // Kienzan (Ataque cortante letal)
-            case 15: return kiDmg * 2.0F;   // Death Ball (Definitivo masivo)
+            case 1:  return kiDmg;
+            case 2:  return kiDmg;
+            case 3:  return kiDmg;
+            case 4:  return kiDmg;
+            case 5:  return kiDmg;
+            case 6:  return 0.0F;
+            case 7:  return meleeDmg;
+            case 8:  return kiDmg;
+            case 9:  return kiDmg;
+            case 10: return kiDmg / 4.0F;
+            case 11: return kiDmg / 4.0F;
+            case 12: return meleeDmg * 3.0F;
+            case 13: return kiDmg / 2.0F;
+            case 14: return kiDmg * 1.5F;
+            case 15: return kiDmg * 2.0F;
             default: return kiDmg;
         }
     }
@@ -536,8 +569,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private void executeSkillEffect(int skillType) {
         if (this.getTarget() == null) return;
 
-        // NUEVO AJUSTE: El Ki Laser (4) tiene un syncCastTime de 0 para que se dispare AL INSTANTE.
-        int syncCastTime = (skillType == 4) ? 0 : (skillType == 11) ? 10 : (skillType == 15) ? 60 : 30;
+        int syncCastTime = (skillType == 4) ? 0 : (skillType == 11) ? 10 : (skillType == 15) ? 60 : 37;
 
         float actualDamage = getCalculatedSkillDamage(skillType);
 
@@ -640,6 +672,226 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 KiBlastEntity deathBall = new KiBlastEntity(this.level(), this);
                 deathBall.setupKiDeathBall(this, actualDamage, this.getKiBlastSpeed() * 0.7F, this.genericColorMain, this.genericColorBorder, syncCastTime);
                 break;
+        }
+    }
+
+    /**
+     * LISTA DE COMBOS DISPONIBLES:
+     * 0 = Combo Básico 1 (Golpes rápidos y empuje)
+     * 1 = Combo Aéreo (Lanza al aire, golpea y aplasta)
+     * 2 = Combo Ki
+     * 3 = Combinación de Meteoros
+     */
+    private void handleComboLogic() {
+        if (comboTarget == null || !comboTarget.isAlive() || !this.isAlive() || this.isTransforming()) {
+            this.stopCombo();
+            return;
+        }
+
+        this.getNavigation().stop();
+        this.lookAt(comboTarget, 360, 360);
+
+        int comboId = this.entityData.get(CURRENT_COMBO_ID);
+
+        if (comboId == 0) {
+            if (comboTimer == 1) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double posX = comboTarget.getX() + (targetLook.x * 1.5);
+                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
+                this.teleportTo(posX, comboTarget.getY(), posZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
+
+                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.2);
+                this.setDeltaMovement(dashDir);
+
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 3.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 0.7F, 1.4F);
+                spawnPunchParticles(comboTarget);
+            }
+
+            if (comboTimer == 12) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double posX = comboTarget.getX() - (targetLook.x * 1.5);
+                double posZ = comboTarget.getZ() - (targetLook.z * 1.5);
+                this.teleportTo(posX, comboTarget.getY(), posZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
+
+                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.2);
+                this.setDeltaMovement(dashDir);
+
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 4.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.5F);
+                spawnPunchParticles(comboTarget);
+            }
+
+            if (comboTimer == 22) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double posX = comboTarget.getX() + (targetLook.x * 1.5);
+                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
+                this.teleportTo(posX, comboTarget.getY() + 0.5, posZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.1F);
+
+                this.setDeltaMovement(0, 0, 0);
+            }
+
+            if (comboTimer == 31) {
+                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(2.0);
+                this.setDeltaMovement(dashDir);
+
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 10.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
+                spawnPunchParticles(comboTarget);
+
+                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
+                comboTarget.setDeltaMovement(pushDir.x * 2.5, 0.6, pushDir.z * 2.5);
+                comboTarget.hasImpulse = true;
+
+                this.stopCombo();
+            }
+        } else if (comboId == 1) {
+            if (comboTimer == 1) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double posX = comboTarget.getX() + (targetLook.x * 1.5);
+                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
+                this.teleportTo(posX, comboTarget.getY(), posZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
+
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 4.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
+                spawnPunchParticles(comboTarget);
+
+                comboTarget.setDeltaMovement(0, 1.2D, 0);
+                comboTarget.hasImpulse = true;
+            }
+
+            if (comboTimer == 12) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+
+                double destX = comboTarget.getX() + (targetLook.x * 0.5);
+                double destY = comboTarget.getY() + 2.5D;
+                double destZ = comboTarget.getZ() + (targetLook.z * 0.5);
+
+                this.moveTo(destX, destY, destZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
+                this.setDeltaMovement(0, 0, 0);
+                this.lookAt(comboTarget, 360, 360);
+            }
+
+            if (comboTimer == 20) {
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 12.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
+                spawnPunchParticles(comboTarget);
+
+                comboTarget.setDeltaMovement(0, -2.5D, 0);
+                comboTarget.hasImpulse = true;
+            }
+
+            if (comboTimer == 25) {
+                comboTarget.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
+
+                this.stopCombo();
+            }
+        } else if (comboId == 2) {
+            if (comboTimer == 1) {
+                this.setKiCharge(true);
+                this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.5F);
+
+                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.5);
+                this.setDeltaMovement(dashDir);
+            }
+
+            if (comboTimer == 6) {
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 6.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
+                spawnPunchParticles(comboTarget);
+
+                this.setDeltaMovement(0, 0, 0);
+                comboTarget.setDeltaMovement(0, 0, 0);
+            }
+
+            if (comboTimer == 11) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double destX = comboTarget.getX() - (targetLook.x * 1.5);
+                double destZ = comboTarget.getZ() - (targetLook.z * 1.5);
+                this.teleportTo(destX, comboTarget.getY(), destZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
+                this.lookAt(comboTarget, 360, 360);
+            }
+
+            if (comboTimer == 17) {
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), 12.0F);
+                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
+                spawnPunchParticles(comboTarget);
+
+                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
+                comboTarget.setDeltaMovement(pushDir.x * 3.0, 0.5, pushDir.z * 3.0);
+                comboTarget.hasImpulse = true;
+
+                this.setKiCharge(false);
+                this.stopCombo();
+            }
+        } else if (comboId == 3) {
+            if (comboTimer == 1) {
+                this.lookAt(comboTarget, 360, 360);
+                super.doHurtTarget(comboTarget);
+                this.swing(InteractionHand.MAIN_HAND);
+                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
+
+                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
+                comboTarget.setDeltaMovement(pushDir.x * 2.0, 0.3, pushDir.z * 2.0);
+                comboTarget.hasImpulse = true;
+            }
+
+            if (comboTimer == 10) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double destX = comboTarget.getX() + (targetLook.x * 1.5);
+                double destZ = comboTarget.getZ() + (targetLook.z * 1.5);
+                this.teleportTo(destX, comboTarget.getY(), destZ);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
+                this.lookAt(comboTarget, 360, 360);
+            }
+
+            if (comboTimer == 15 || comboTimer == 20 || comboTimer == 25 || comboTimer == 30) {
+                this.lookAt(comboTarget, 360, 360);
+                super.doHurtTarget(comboTarget);
+                this.swing(InteractionHand.MAIN_HAND);
+                this.playSound(MainSounds.CRITICO1.get(), 0.7F, 1.4F);
+            }
+
+            if (comboTimer == 35) {
+                this.lookAt(comboTarget, 360, 360);
+                super.doHurtTarget(comboTarget);
+                this.swing(InteractionHand.MAIN_HAND);
+                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
+                comboTarget.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
+            }
+
+            if (comboTimer == 45) {
+                this.teleportTo(comboTarget.getX(), comboTarget.getY() + 4.0D, comboTarget.getZ());
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
+                this.setDeltaMovement(0, 0, 0);
+                this.lookAt(comboTarget, 360, 360);
+
+                float comboKameDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.0F;
+                KiWaveEntity kamehameha = new KiWaveEntity(this.level(), this);
+                kamehameha.setupKiHame(this, comboKameDamage, this.getKiBlastSpeed(), 1.5F, 30);
+            }
+
+            if (comboTimer > 45 && comboTimer <= 75) {
+                this.setDeltaMovement(0, 0, 0);
+                this.lookAt(comboTarget, 360, 360);
+            }
+
+            if (comboTimer == 76) {
+                this.stopCombo();
+            }
         }
     }
 
@@ -792,6 +1044,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             if (comboId == 0) return event.setAndContinue(ANIM_COMBO1);
             if (comboId == 1) return event.setAndContinue(ANIM_COMBO2);
             if (comboId == 2) return event.setAndContinue(ANIM_COMBO3);
+            if (comboId == 3 && entity.comboTimer >= 45) return event.setAndContinue(ANIM_KI_KAME);
         }
 
         if (entity.isCasting()) {
@@ -956,6 +1209,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             this.setKiCharge(false);
         }
     }
+    protected boolean spawnsNewFormFullHealth() {
+        return true;
+    }
 
     @Override
     public boolean causeFallDamage(float pFallDistance, float pMultiplier, DamageSource pSource) {
@@ -978,164 +1234,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         Vec3 look = this.getLookAngle();
         this.setDeltaMovement(new Vec3(-look.x * 1.5, 0.3, -look.z * 1.5));
         this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
-    }
-
-    private void handleComboLogic() {
-        if (comboTarget == null || !comboTarget.isAlive()) {
-            this.stopCombo();
-            return;
-        }
-
-        this.getNavigation().stop();
-        this.lookAt(comboTarget, 360, 360);
-
-        int comboId = this.entityData.get(CURRENT_COMBO_ID);
-
-        if (comboId == 0) {
-            if (comboTimer == 1) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() + (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY(), posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
-
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.2);
-                this.setDeltaMovement(dashDir);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 3.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.7F, 1.4F);
-                spawnPunchParticles(comboTarget);
-            }
-
-            if (comboTimer == 12) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() - (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() - (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY(), posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
-
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.2);
-                this.setDeltaMovement(dashDir);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 4.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.5F);
-                spawnPunchParticles(comboTarget);
-            }
-
-            if (comboTimer == 22) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() + (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY() + 0.5, posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.1F);
-
-                this.setDeltaMovement(0, 0, 0);
-            }
-
-            if (comboTimer == 31) {
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(2.0);
-                this.setDeltaMovement(dashDir);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 10.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
-                spawnPunchParticles(comboTarget);
-
-                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
-                comboTarget.setDeltaMovement(pushDir.x * 2.5, 0.6, pushDir.z * 2.5);
-                comboTarget.hasImpulse = true;
-
-                this.stopCombo();
-            }
-        } else if (comboId == 1) {
-            if (comboTimer == 1) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() + (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY(), posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 4.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
-                spawnPunchParticles(comboTarget);
-
-                comboTarget.setDeltaMovement(0, 1.2D, 0);
-                comboTarget.hasImpulse = true;
-            }
-
-            if (comboTimer == 12) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-
-                double destX = comboTarget.getX() + (targetLook.x * 0.5);
-                double destY = comboTarget.getY() + 2.5D;
-                double destZ = comboTarget.getZ() + (targetLook.z * 0.5);
-
-                this.moveTo(destX, destY, destZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
-                this.setDeltaMovement(0, 0, 0);
-                this.lookAt(comboTarget, 360, 360);
-            }
-
-            if (comboTimer == 20) {
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 12.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
-                spawnPunchParticles(comboTarget);
-
-                comboTarget.setDeltaMovement(0, -2.5D, 0);
-                comboTarget.hasImpulse = true;
-            }
-
-            if (comboTimer == 25) {
-                comboTarget.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
-
-                this.stopCombo();
-            }
-        } else if (comboId == 2) {
-            if (comboTimer == 1) {
-                this.setKiCharge(true);
-                this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.5F);
-
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.5);
-                this.setDeltaMovement(dashDir);
-            }
-
-            if (comboTimer == 6) {
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 6.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
-                spawnPunchParticles(comboTarget);
-
-                this.setDeltaMovement(0, 0, 0);
-                comboTarget.setDeltaMovement(0, 0, 0);
-            }
-
-            if (comboTimer == 11) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double destX = comboTarget.getX() - (targetLook.x * 1.5);
-                double destZ = comboTarget.getZ() - (targetLook.z * 1.5);
-                this.teleportTo(destX, comboTarget.getY(), destZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
-                this.lookAt(comboTarget, 360, 360);
-            }
-
-            if (comboTimer == 17) {
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 12.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
-                spawnPunchParticles(comboTarget);
-
-                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
-                comboTarget.setDeltaMovement(pushDir.x * 3.0, 0.5, pushDir.z * 3.0);
-                comboTarget.hasImpulse = true;
-
-                this.setKiCharge(false);
-                this.stopCombo();
-            }
-        }
     }
 
     private void spawnPunchParticles(LivingEntity target) {
@@ -1218,7 +1316,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
 
         if (!this.level().isClientSide && pAmount >= this.getHealth()) {
-            if (shouldTriggerTransformationOnDeath()) {
+            if (this.hasTransformation()) {
                 this.setHealth(1.0F);
                 this.startTransformation();
                 return false;
@@ -1228,12 +1326,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         boolean actuallyHurt = super.hurt(pSource, pAmount);
 
         if (actuallyHurt && !this.level().isClientSide) {
+
+            if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() / 2.0F)) {
+                if (this.hasTransformation()) {
+                    this.startTransformation();
+                }
+            }
+
             Entity attacker = pSource.getEntity();
-
             if (attacker instanceof LivingEntity livingAttacker) {
-
                 if (!this.isCasting() && !this.isComboing()) {
-
                     if (this.getTarget() != livingAttacker) {
                         this.setTarget(livingAttacker);
                     }
@@ -1242,6 +1344,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
 
         return actuallyHurt;
+    }
+
+    protected boolean hasTransformation() {
+        return false;
     }
 
     @Override
@@ -1270,12 +1376,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (target != null && target.isAlive()) {
             double yDiff = target.getY() - this.getY();
 
-            double horizontalDistSqr = this.distanceToSqr(target.getX(), this.getY(), target.getZ());
-
-            if (this.canFly() && (yDiff > 2.0D || horizontalDistSqr > 64.0D) && !isFlying()) {
+            if (this.canFly() && yDiff >= 3.0D && !isFlying()) {
                 setFlying(true);
-            } else if (isFlying()) {
-                if (!this.canFly() || (yDiff <= 1.0D && horizontalDistSqr <= 64.0D && this.onGround())) {
+            }
+            else if (isFlying()) {
+                if (!this.canFly() || (yDiff < 1.0D && this.onGround())) {
                     setFlying(false);
                     this.setFlyingFast(false);
                     this.setNoGravity(false);
@@ -1377,7 +1482,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             if (fullHealth) {
                 newEntity.setHealth(newEntity.getMaxHealth());
             } else {
-                newEntity.setHealth(this.getHealth());
+                newEntity.setHealth(newEntity.getMaxHealth() / 2.0F);
             }
 
             newEntity.setKiBlastDamage(this.getKiBlastDamage() * 1.5F);
@@ -1400,6 +1505,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
     }
 
+    public EntityType<? extends DBSagasEntity> getNextTransform() {
+        return null;
+    }
+
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return geoCache;
@@ -1416,7 +1525,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         return solidGround && noCollision;
     }
 
-    protected boolean shouldTriggerTransformationOnDeath() {return false;}
     protected void startTransformation() {
         this.setTransforming(true);
         this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.2F);}

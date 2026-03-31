@@ -26,9 +26,4 @@ public class SagaRaditzEntity extends DBSagasEntity {
         this.setGenericWave(200, 0xD22FF5, 0x8D0FA8, 1.0f);
 
     }
-
-    @Override
-    protected boolean shouldTriggerTransformationOnDeath() {
-        return false;
-    }
 }

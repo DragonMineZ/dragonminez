@@ -564,14 +564,15 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
                 if (!this.level().isClientSide) {
                     if (!isCasting) {
-                        if (this.tickCount % 4 == 0) {
-                            KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
+                        if (this.tickCount % 4 == 0) { // Mantenemos el tiempo original
 
-                            bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
+                            for (int i = 0; i < 5; i++) {
+                                KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
+                                bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
 
-                            bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 15.0F);
-
-                            this.level().addFreshEntity(bullet);
+                                bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 15.0F);
+                                this.level().addFreshEntity(bullet);
+                            }
 
                             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                                     MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.5F + (this.random.nextFloat() * 0.5F));

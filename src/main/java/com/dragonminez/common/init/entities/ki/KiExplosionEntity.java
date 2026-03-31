@@ -36,8 +36,6 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> FIRE_TICK = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
 
-    public static final int DURATION = 240;
-
     public KiExplosionEntity(EntityType<? extends KiExplosionEntity> type, Level level) {
         super(type, level);
         this.setNoGravity(true);

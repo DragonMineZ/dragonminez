@@ -38,7 +38,7 @@ public class SagaGinyuForcesEntity {
             this.setKiBlastSpeed(1.3f);
 
             this.setCombo(1, 140);
-            this.setKiExplosion(200, 0xFF3BEA, 0xE23BFF, 5.0f);
+            this.setKiExplosion(100, 0xFF3BEA, 0xE23BFF, 5.0f);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.50D);
 
         }
