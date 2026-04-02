@@ -282,6 +282,28 @@ public class KiWaveEntity extends AbstractKiProjectile {
         updatePositionRelativeToOwner(owner, false);
     }
 
+    public void setupKiMasenko(LivingEntity owner, float damage, float speed, float size, int castTime) {
+        this.setKiRenderType(4);
+        this.setSize(size);
+        this.setCastSize(size / 2);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFF566, 0xFFF566);
+
+        this.setFiring(false);
+        this.setCastWave(castTime);
+        this.setMaxLife(castTime * 2);
+
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+
+        this.setCastOffsets(0.0F, 0.2F, 0.0F);
+        updatePositionRelativeToOwner(owner, true);
+
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
     public void fireHability(int finalMaxLife) {
         this.setFiring(true);
         this.setMaxLife(this.tickCount + finalMaxLife);

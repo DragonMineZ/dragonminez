@@ -66,6 +66,8 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             poseStack.scale(0.8f, 0.8f, 0.8f);
         } else if(entity instanceof SagaCellJrEntity){
             poseStack.scale(0.8f, 0.8f, 0.8f);
+        } else if(entity instanceof SagaZFightersEntity.SagaKrillinEntity){
+            poseStack.scale(0.8f, 0.8f, 0.8f);
         }
 
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);

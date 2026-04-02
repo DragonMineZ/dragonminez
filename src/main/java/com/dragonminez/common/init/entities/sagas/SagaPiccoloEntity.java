@@ -39,7 +39,7 @@ public class SagaPiccoloEntity{
             super(pEntityType, pLevel);
 
             if (this instanceof IBattlePower bp) {
-                bp.setBattlePower(230);
+                bp.setBattlePower(42000);
             }
             //GLOBAL
             this.setCanFly(true);

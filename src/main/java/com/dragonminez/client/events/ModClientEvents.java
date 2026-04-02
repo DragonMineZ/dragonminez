@@ -170,9 +170,9 @@ public class ModClientEvents {
                 MainEntities.SAGA_RADITZ, MainEntities.SAGA_NAPPA, MainEntities.SAGA_VEGETA, MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU,
                 MainEntities.SAGA_FRIEZA_SOLDIER, MainEntities.SAGA_FRIEZA_SOLDIER2, MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER,
                 MainEntities.SAGA_CUI, MainEntities.SAGA_DODORIA, MainEntities.SAGA_VEGETA_NAMEK, MainEntities.SAGA_ZARBON, MainEntities.SAGA_ZARBON_TRANSF,
-                MainEntities.SAGA_GULDO, MainEntities.SAGA_RECOOME, MainEntities.SAGA_BURTER, MainEntities.SAGA_JEICE, MainEntities.SAGA_GINYU, MainEntities.SAGA_GINYU_GOKU,
+                MainEntities.SAGA_GULDO, MainEntities.SAGA_RECOOME, MainEntities.SAGA_BURTER, MainEntities.SAGA_JEICE, MainEntities.SAGA_GINYU, MainEntities.SAGA_GINYU_GOKU, MainEntities.SAGA_NAIL,
                 MainEntities.SAGA_FREEZER_FIRST, MainEntities.SAGA_FREEZER_SECOND, MainEntities.SAGA_FREEZER_THIRD, MainEntities.SAGA_FREEZER_BASE, MainEntities.SAGA_FREEZER_FP,
-                MainEntities.SAGA_GOKU_MID_BASE, MainEntities.SAGA_GOKU_MID_SSJ,
+                MainEntities.SAGA_GOKU_MID_BASE, MainEntities.SAGA_GOKU_MID_SSJ, MainEntities.SAGA_KID_GOHAN, MainEntities.SAGA_KRILLIN,
                 MainEntities.SAGA_MECHA_FRIEZA, MainEntities.SAGA_KING_COLD, MainEntities.SAGA_DRGERO, MainEntities.SAGA_A19, MainEntities.SAGA_A18, MainEntities.SAGA_A17, MainEntities.SAGA_A16,
                 MainEntities.SAGA_CELL_IMPERFECT, MainEntities.SAGA_PICCOLO_KAMI, MainEntities.SAGA_CELL_SEMIPERFECT, MainEntities.SAGA_SUPER_VEGETA, MainEntities.SAGA_TRUNKS_SSJ, MainEntities.SAGA_CELL_PERFECT,
                 MainEntities.SAGA_GOHAN_SSJ, MainEntities.SAGA_CELL_SUPERPERFECT, MainEntities.SAGA_CELL_JR, MainEntities.SHADOW_DUMMY);

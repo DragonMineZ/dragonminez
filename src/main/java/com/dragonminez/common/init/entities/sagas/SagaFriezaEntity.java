@@ -131,5 +131,55 @@ public class SagaFriezaEntity {
         }
     }
 
+    public static class SagaMechaFrieza extends DBSagasEntity {
+
+        public SagaMechaFrieza(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(120000000);
+            }
+
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xBF0F0F);
+            this.setKiBlastSpeed(1.4f);
+
+            this.setDeathBall(250, 0xF52727, 0xBF0F0F);
+            this.setSecondarySkill(4, 60, 1.0f);
+
+            this.setCombo(1, 100);
+            this.setWildSense(true, 100);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_frieza_base";
+        }
+    }
+
+    public static class SagaKingCold extends DBSagasEntity {
+
+        public SagaKingCold(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(80000000);
+            }
+
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xBF0F0F);
+            this.setKiBlastSpeed(1.4f);
+
+            this.setTripleLaser(200, 0xFF0000, 0x990000);
+            this.setSecondarySkill(4, 60, 1.0f);
+
+            this.setCombo(1, 100);
+            this.setWildSense(true, 100);
+        }
+
+    }
+
 
 }

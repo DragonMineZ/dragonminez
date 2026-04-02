@@ -55,6 +55,10 @@ public class SagaGokuEntity{
         public SagaGokuMidBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(3000000);
+            }
+
             this.setCanFly(true);
             this.setAuraColor(0xFFFFFF);
             this.setKiBlastSpeed(1.4F);
@@ -92,6 +96,10 @@ public class SagaGokuEntity{
 
         public SagaGokuMidSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(150000000);
+            }
 
             this.setCanFly(true);
             this.setAuraColor(0xFFE657);

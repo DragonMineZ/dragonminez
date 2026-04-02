@@ -249,6 +249,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
      * 13 = Triple Laser
      * 14 = Kienzan (Ki Disk)
      * 15 = Death Ball
+     * 16 = Masenko
      */
     public void setMainSkill(int skillId, int cooldown, float size) {
         this.canUseSkill = true;
@@ -301,9 +302,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     public void setDeathBall(int cooldown, int colorMain, int colorBorder) {
-        this.setMainSkill(15, cooldown, 2.5F); // Siempre es gigante
+        this.setMainSkill(15, cooldown, 2.5F);
         this.genericColorMain = colorMain;
         this.genericColorBorder = colorBorder;
+    }
+
+    public void setMasenko(int cooldown, float size) {
+        this.setMainSkill(16, cooldown, size);
     }
 
     public void setKiExplosion(int cooldown, int colorMain, int colorBorder, float size) {
@@ -459,7 +464,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                         }
                     }
 
-                    int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14) ? 30 : (skill == 13) ? 40 : (skill == 15) ? 60 : 60;
+                    int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14) ? 30 : (skill == 13 || skill == 16) ? 40 : (skill == 15) ? 60 : 60;
 
                     if (this.castTimer >= maxCastDuration) {
                         this.stopCasting();
@@ -562,6 +567,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             case 13: return kiDmg / 2.0F;
             case 14: return kiDmg * 1.5F;
             case 15: return kiDmg * 2.0F;
+            case 16: return kiDmg;
             default: return kiDmg;
         }
     }
@@ -671,6 +677,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             case 15:
                 KiBlastEntity deathBall = new KiBlastEntity(this.level(), this);
                 deathBall.setupKiDeathBall(this, actualDamage, this.getKiBlastSpeed() * 0.7F, this.genericColorMain, this.genericColorBorder, syncCastTime);
+                break;
+            case 16:
+                KiWaveEntity masenko = new KiWaveEntity(this.level(), this);
+                masenko.setupKiMasenko(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
                 break;
         }
     }
@@ -896,6 +906,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     public boolean hasSkillReady() {
+        if (this.isComboing()) {
+            return false;
+        }
         if (this.getTarget() == null || this.distanceTo(this.getTarget()) <= 10.0D) {
             return false;
         }
@@ -1065,6 +1078,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 case 13: return event.setAndContinue(ANIM_KILASER);
                 case 14: return event.setAndContinue(ANIM_KI_DISC);
                 case 15: return event.setAndContinue(ANIM_KIBALL);
+                case 16: return event.setAndContinue(ANIM_KI_MASENKO);
                 default: return event.setAndContinue(ANIM_KIWAVE);
             }
         }
