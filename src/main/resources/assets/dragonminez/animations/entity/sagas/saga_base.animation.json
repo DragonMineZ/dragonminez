@@ -6736,7 +6736,7 @@
 			}
 		},
 		"grab_ki": {
-			"animation_length": 3,
+			"animation_length": 1.5,
 			"bones": {
 				"waist": {
 					"rotation": {

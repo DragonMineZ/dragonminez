@@ -23,7 +23,7 @@ public class SagaGohanEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 100);
             this.setCombo(1, 200);
-            this.setMainSkill(16, 200, 1.5f);
+            this.setMainSkill(16, 200, 1.1f);
         }
 
         @Override

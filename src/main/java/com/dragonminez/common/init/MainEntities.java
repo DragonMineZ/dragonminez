@@ -405,6 +405,7 @@ public class MainEntities {
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_mid_ssj").toString()));
 
+    //ANDROID SAGA
     public static final RegistryObject<EntityType<SagaFriezaEntity.SagaMechaFrieza>> SAGA_MECHA_FRIEZA =
             ENTITY_TYPES.register("saga_mecha_frieza",
                     () -> EntityType.Builder.of(SagaFriezaEntity.SagaMechaFrieza::new, MobCategory.MONSTER)
@@ -415,9 +416,9 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaFriezaEntity.SagaKingCold::new, MobCategory.MONSTER)
                             .sized(0.9f, 2.4f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_king_cold").toString()));
-    public static final RegistryObject<EntityType<SagaDrGeroEntity>> SAGA_DRGERO =
+    public static final RegistryObject<EntityType<SagaAndroidsEntity.SagaDrGeroEntity>> SAGA_DRGERO =
             ENTITY_TYPES.register("saga_drgero",
-                    () -> EntityType.Builder.of(SagaDrGeroEntity::new, MobCategory.MONSTER)
+                    () -> EntityType.Builder.of(SagaAndroidsEntity.SagaDrGeroEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_drgero").toString()));
     public static final RegistryObject<EntityType<SagaA19Entity>> SAGA_A19 =

@@ -6,6 +6,11 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
 import com.dragonminez.common.init.entities.ki.*;
 
+// Import de tu Capability (ajusta la ruta si es necesario)
+// import com.dragonminez.common.capabilities.StatsProvider;
+
+import com.dragonminez.common.stats.StatsCapability;
+import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -15,6 +20,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
@@ -50,8 +56,6 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
-
-import java.util.List;
 
 public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
@@ -115,6 +119,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_CAPE = RawAnimation.begin().thenLoop("cape");
     protected static final RawAnimation ANIM_TRANSFORM = RawAnimation.begin().thenLoop("transform");
     protected static final RawAnimation ANIM_GRAB = RawAnimation.begin().thenLoop("grab");
+    protected static final RawAnimation ANIM_GRAB_KI = RawAnimation.begin().thenLoop("grab_ki");
     protected static final RawAnimation ANIM_KI_BARRAGE = RawAnimation.begin().thenPlay("ki_barrage");
 
     protected static final RawAnimation ANIM_KI_MAKKAKO = RawAnimation.begin().thenPlay("ki_makkako");
@@ -172,7 +177,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private boolean isAttacking = false;
 
-
     private boolean canUseSkill = false;
     private int mainSkillType = 0;
     private int skillCooldownMax = 0;
@@ -193,7 +197,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private int genericColorMain = 0xFFFFFF;
     private int genericColorBorder = 0xFFFFFF;
-
 
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
@@ -233,24 +236,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.currentWildSenseCooldown = cooldown;
     }
 
-    /**
-     * 1 = Kamehameha
-     * 2 = Galick Gun
-     * 3 = Makankosappo
-     * 4 = Ki Laser (ColorAura)
-     * 5 = Ki Explosion
-     * 6 = Ki Barrier
-     * 7 = SKP Roar
-     * 8 = Generic Ki Wave
-     * 9 = Oozaru Beam
-     * 10 = Ki Volley (Varias Ki Small)
-     * 11 = Ki Small (Bolita de Ki)
-     * 12 = Blue Hurricane
-     * 13 = Triple Laser
-     * 14 = Kienzan (Ki Disk)
-     * 15 = Death Ball
-     * 16 = Masenko
-     */
     public void setMainSkill(int skillId, int cooldown, float size) {
         this.canUseSkill = true;
         this.mainSkillType = skillId;
@@ -691,6 +676,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
      * 1 = Combo Aéreo (Lanza al aire, golpea y aplasta)
      * 2 = Combo Ki
      * 3 = Combinación de Meteoros
+     * 4 = Absorción de Ki (Androide)
      */
     private void handleComboLogic() {
         if (comboTarget == null || !comboTarget.isAlive() || !this.isAlive() || this.isTransforming()) {
@@ -903,6 +889,56 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 this.stopCombo();
             }
         }
+        else if (comboId == 4) {
+            int durationTicks = 30;
+
+            if (comboTimer == 1) {
+                Vec3 targetLook = comboTarget.getLookAngle().normalize();
+                double posX = comboTarget.getX() + (targetLook.x * 0.8);
+                double posZ = comboTarget.getZ() + (targetLook.z * 0.8);
+                this.teleportTo(posX, comboTarget.getY(), posZ);
+
+                this.lookAt(comboTarget, 360, 360);
+                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
+            }
+
+            if (comboTimer > 0 && comboTimer < durationTicks && comboTimer % 10 == 0) {
+                float drainHp = comboTarget.getMaxHealth() * 0.05F;
+                comboTarget.invulnerableTime = 0;
+                comboTarget.hurt(this.damageSources().mobAttack(this), drainHp);
+                this.heal(drainHp);
+
+                if (comboTarget instanceof ServerPlayer serverPlayer) {
+                    StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+                        if (data.getStatus().isHasCreatedCharacter()) {
+                            double currentEnergy = data.getResources().getCurrentEnergy();
+                            double drainAmount = data.getMaxEnergy() * 0.05;
+                            data.getResources().setCurrentEnergy((float) Math.max(0, currentEnergy - drainAmount));
+                        }
+                    });
+                }
+                this.playSound(MainSounds.ABSORB1.get(), 0.5F, 0.8F);
+                spawnPunchParticles(comboTarget);
+            }
+
+            if (comboTimer < durationTicks) {
+                this.setDeltaMovement(0, 0, 0);
+                Vec3 grabPos = this.position().add(this.getLookAngle().scale(0.6));
+                comboTarget.setPos(grabPos.x, grabPos.y, grabPos.z);
+                comboTarget.setDeltaMovement(0, 0, 0);
+            }
+
+            if (comboTimer >= durationTicks) {
+
+                double pushPower = 1.5;
+
+                comboTarget.setDeltaMovement(pushPower, 0.5, pushPower);
+                comboTarget.hasImpulse = true;
+
+                this.playSound(MainSounds.CRITICO2.get(), 0.8F, 0.5F);
+                this.stopCombo();
+            }
+        }
     }
 
     public boolean hasSkillReady() {
@@ -1058,6 +1094,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             if (comboId == 1) return event.setAndContinue(ANIM_COMBO2);
             if (comboId == 2) return event.setAndContinue(ANIM_COMBO3);
             if (comboId == 3 && entity.comboTimer >= 45) return event.setAndContinue(ANIM_KI_KAME);
+            if (comboId == 4) return event.setAndContinue(ANIM_GRAB_KI); // Animación de Absorción
         }
 
         if (entity.isCasting()) {
@@ -1325,6 +1362,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
+
+        if (this.isComboing() && this.entityData.get(CURRENT_COMBO_ID) == 4) {
+            return false;
+        }
+
         if (this.isTransforming()) {
             return false;
         }
