@@ -48,6 +48,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
@@ -333,6 +334,10 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onLivingAttack(LivingAttackEvent event) {
 		LivingEntity victim = event.getEntity();
+		if (isCharacterCreationProtected(victim)) {
+			event.setCanceled(true);
+			return;
+		}
 		if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
 		if (!(victim instanceof Player) && !(victim instanceof DBSagasEntity)) return;
 
@@ -346,6 +351,23 @@ public class ForgeCommonEvents {
 				return;
 			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onLivingDamage(LivingDamageEvent event) {
+		if (isCharacterCreationProtected(event.getEntity())) {
+			event.setCanceled(true);
+		}
+	}
+
+	private static boolean isCharacterCreationProtected(LivingEntity entity) {
+		if (!ConfigManager.getServerConfig().getGameplay().getForceCharacterCreation()) return false;
+		if (!(entity instanceof ServerPlayer player)) return false;
+		final boolean[] protectedPlayer = {false};
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) protectedPlayer[0] = true;
+		});
+		return protectedPlayer[0];
 	}
 
 	public static void endFusionIfNeeded(ServerPlayer player) {

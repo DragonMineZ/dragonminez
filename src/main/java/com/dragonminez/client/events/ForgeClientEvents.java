@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
+import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.render.DMZRendererCache;
@@ -19,6 +20,8 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -34,6 +37,9 @@ public class ForgeClientEvents {
 	public static boolean isHasCreatedCharacterCache = false;
 	private static String lastLang = "";
 	private static boolean introToastShownThisSession = false;
+	private static boolean pendingCharacterCreationReopen = false;
+	private static int characterCreationOpenCooldownTicks = 0;
+	private static final int CHARACTER_CREATION_OPEN_COOLDOWN = 8;
 
 	@SubscribeEvent
 	public static void RenderHealthBar(RenderGuiOverlayEvent.Pre event) {
@@ -84,6 +90,39 @@ public class ForgeClientEvents {
 	private static int tickCounter = 0;
 	private static final int UPDATE_INTERVAL = 10;
 
+	public static void requestCharacterCreationReopen() {
+		if (!ConfigManager.getServerConfig().getGameplay().getForceCharacterCreation()) return;
+		pendingCharacterCreationReopen = true;
+	}
+
+	public static void markCharacterCreatedLocally() {
+		isHasCreatedCharacterCache = true;
+		pendingCharacterCreationReopen = false;
+		characterCreationOpenCooldownTicks = CHARACTER_CREATION_OPEN_COOLDOWN;
+	}
+
+	private static boolean isCharacterCreationScreen(Screen screen) {
+		return screen instanceof RaceSelectionScreen || screen instanceof CharacterCustomizationScreen;
+	}
+
+	private static boolean openCharacterCreationScreen(Minecraft mc) {
+		if (mc.player == null) return false;
+		if (!ConfigManager.getServerConfig().getGameplay().getForceCharacterCreation()) return false;
+		if (isHasCreatedCharacterCache) return false;
+		if (characterCreationOpenCooldownTicks > 0) return false;
+		final boolean[] opened = {false};
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (!data.isDataLoaded()) return;
+			if (data.getStatus().isHasCreatedCharacter()) return;
+			if (isCharacterCreationScreen(mc.screen)) return;
+			if (mc.screen instanceof PauseScreen) return;
+			mc.setScreen(new RaceSelectionScreen(data.getCharacter()));
+			characterCreationOpenCooldownTicks = CHARACTER_CREATION_OPEN_COOLDOWN;
+			opened[0] = true;
+		});
+		return opened[0];
+	}
+
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
@@ -91,6 +130,22 @@ public class ForgeClientEvents {
 		Minecraft mc = Minecraft.getInstance();
 		TransformationPostShaderManager.tick();
 		if (mc.player == null || mc.level == null) return;
+		if (characterCreationOpenCooldownTicks > 0) characterCreationOpenCooldownTicks--;
+
+		if (pendingCharacterCreationReopen && mc.screen == null) {
+			if (isHasCreatedCharacterCache) pendingCharacterCreationReopen = false;
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+				if (data.getStatus().isHasCreatedCharacter()) {
+					isHasCreatedCharacterCache = true;
+					pendingCharacterCreationReopen = false;
+				}
+			});
+			if (openCharacterCreationScreen(mc)) pendingCharacterCreationReopen = false;
+		}
+
+		if (mc.screen == null) {
+			openCharacterCreationScreen(mc);
+		}
 
 		if (KeyBinds.UTILITY_MENU.isDown()) {
 			if (mc.screen == null) {
@@ -142,5 +197,7 @@ public class ForgeClientEvents {
 		ConfigManager.clearServerSync();
 		DMZRendererCache.clear();
 		introToastShownThisSession = false;
+		pendingCharacterCreationReopen = false;
+		characterCreationOpenCooldownTicks = 0;
 	}
 }

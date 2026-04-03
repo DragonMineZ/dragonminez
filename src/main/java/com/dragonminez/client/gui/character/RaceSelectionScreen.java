@@ -1,6 +1,7 @@
 package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
@@ -16,6 +17,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
@@ -477,7 +479,10 @@ public class RaceSelectionScreen extends ScaledScreen {
         if (this.minecraft != null) {
             isSwitchingMenu = true;
             GLOBAL_SWITCHING = true;
-			startCloseTransition(new CharacterCustomizationScreen(this, character));
+			Screen nextScreen = hasShiftDown()
+					? new CharacterCustomizationScreen(this, character)
+					: new CharacterCustomizationScreen(this, character);
+			startCloseTransition(nextScreen);
         }
 
 		NetworkHandler.sendToServer(new StatsSyncC2S(character));
@@ -526,7 +531,12 @@ public class RaceSelectionScreen extends ScaledScreen {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (transitionState == TransitionState.CLOSING) return true;
         if (keyCode == 256 && this.minecraft != null) {
-			startCloseTransition(null);
+      if (ConfigManager.getServerConfig().getGameplay().getForceCharacterCreation()) {
+        ForgeClientEvents.requestCharacterCreationReopen();
+        this.minecraft.setScreen(new PauseScreen(true));
+      } else {
+        startCloseTransition(null);
+      }
             return true;
         }
 
