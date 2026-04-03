@@ -14,7 +14,7 @@ import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ki.KiBarrierEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -326,7 +326,7 @@ public class ForgeCommonEvents {
 			}
 			if (stats.getCharacter().getArmored() != shouldBeArmored) {
 				stats.getCharacter().setArmored(shouldBeArmored);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
 			}
 		});
 	}

@@ -49,7 +49,7 @@ public class ReloadCommand {
 					String raceName = data.getCharacter().getRaceName();
 					if (raceName != null && !raceName.isEmpty()) data.updateTransformationSkillLimits(raceName);
 					else data.getSkills().refreshNonFormSkillMaxLevels();
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 				});
 				// Sync quest registry (sagas + sidequests)
 				NetworkHandler.sendToPlayer(

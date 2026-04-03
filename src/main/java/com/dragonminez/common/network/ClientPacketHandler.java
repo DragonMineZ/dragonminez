@@ -33,7 +33,9 @@ public class ClientPacketHandler {
 		if (entity instanceof Player player) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				try {
-					data.load(nbt);
+					CompoundTag merged = data.save();
+					merged.merge(nbt);
+					data.load(merged);
 				} catch (ClassNotFoundException e) {
 					throw new RuntimeException(e);
 				}

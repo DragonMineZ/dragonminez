@@ -1,8 +1,8 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.PlayerQuestData;
@@ -150,7 +150,7 @@ public class StartQuestC2S {
 						}
 					}
 				} else {
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(controller), controller);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(controller), controller);
 				}
 			});
 		});

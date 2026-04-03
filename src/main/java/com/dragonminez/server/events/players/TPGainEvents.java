@@ -3,7 +3,7 @@ package com.dragonminez.server.events.players;
 import com.dragonminez.Reference;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -39,7 +39,7 @@ public class TPGainEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, partner).ifPresent(pData -> {
 			pData.getResources().addTrainingPoints(totalTP / 2);
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(partner), partner);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(partner), partner);
 		});
 	}
 }

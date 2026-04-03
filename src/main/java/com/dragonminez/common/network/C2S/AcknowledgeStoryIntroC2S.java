@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -32,7 +32,7 @@ public class AcknowledgeStoryIntroC2S {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (!data.getPlayerQuestData().isIntroPromptShown()) {
 					data.getPlayerQuestData().setIntroPromptShown(true);
-					NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+					NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 				}
 			});
 		});

@@ -2,7 +2,7 @@ package com.dragonminez.server.events.players.statuseffect;
 
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.IStatusEffectHandler;
 import net.minecraft.server.level.ServerPlayer;
@@ -74,7 +74,7 @@ public class FlyStatusHandler implements IStatusEffectHandler {
                 player.getAbilities().flying = false;
                 player.onUpdateAbilities();
             }
-            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+            NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
         }
     }
 }

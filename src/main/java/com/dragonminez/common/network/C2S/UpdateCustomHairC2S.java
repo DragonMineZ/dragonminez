@@ -2,7 +2,7 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.network.FriendlyByteBuf;
@@ -51,7 +51,7 @@ public class UpdateCustomHairC2S {
 					}
                     data.getCharacter().setHairId(0);
 
-                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                    					NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
                 }
             });
         });

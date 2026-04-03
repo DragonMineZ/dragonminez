@@ -3,7 +3,7 @@ package com.dragonminez.server.commands;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
@@ -96,7 +96,7 @@ public class StackMasteryCommand {
             } else {
                 masteries.setMastery(group, form, value);
             }
-            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(target), target);
+                  NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(target), target);
         });
 
         String modeKey = add ? "add" : "set";

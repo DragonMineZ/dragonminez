@@ -9,6 +9,7 @@ import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -440,7 +441,7 @@ public class CombatEvent {
 							1.0F,
 							1.2F + player.getRandom().nextFloat() * 0.2F);
 					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.EVASION, 0), player);
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
 					return;
 				}
 			}

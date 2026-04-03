@@ -1,8 +1,8 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsCapability;
@@ -86,7 +86,7 @@ public class TurnInSideQuestC2S {
 						}
 					}
 				} else {
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(controller), controller);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(controller), controller);
 				}
 			});
 		});

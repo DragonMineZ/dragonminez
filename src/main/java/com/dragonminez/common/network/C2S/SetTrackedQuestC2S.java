@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.StatsCapability;
@@ -44,7 +44,7 @@ public class SetTrackedQuestC2S {
 					pqd.setTrackedQuestId((exists && active) ? questId : null);
 				}
 
-				NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 			});
 		});
 		context.setPacketHandled(true);

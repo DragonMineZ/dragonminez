@@ -258,6 +258,24 @@ public class NetworkHandler {
 				.consumerMainThread(StatsSyncS2C::handle)
 				.add();
 
+		net.messageBuilder(ResourceSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ResourceSyncS2C::decode)
+				.encoder(ResourceSyncS2C::encode)
+				.consumerMainThread(ResourceSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(ProgressionSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(ProgressionSyncS2C::decode)
+				.encoder(ProgressionSyncS2C::encode)
+				.consumerMainThread(ProgressionSyncS2C::handle)
+				.add();
+
+		net.messageBuilder(AppearanceSyncS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(AppearanceSyncS2C::decode)
+				.encoder(AppearanceSyncS2C::encode)
+				.consumerMainThread(AppearanceSyncS2C::handle)
+				.add();
+
 		net.messageBuilder(PlayerAnimationsSync.class, id(), NetworkDirection.PLAY_TO_CLIENT)
 				.decoder(PlayerAnimationsSync::new)
 				.encoder(PlayerAnimationsSync::encode)

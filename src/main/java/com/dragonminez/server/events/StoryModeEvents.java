@@ -2,7 +2,7 @@ package com.dragonminez.server.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.*;
@@ -219,7 +219,7 @@ public class StoryModeEvents {
 					NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), player);
 				}
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			}
 		});
 	}

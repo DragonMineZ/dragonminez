@@ -3,7 +3,7 @@ package com.dragonminez.server.events;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.*;
@@ -273,7 +273,7 @@ public class SideQuestEvents {
 					NetworkHandler.sendToPlayer(StoryToastS2C.objectiveComplete(questId, objIndex, clampedProgress, objective.getRequired()), player);
 				}
 			}
-			NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 		}
 	}
 
@@ -292,7 +292,7 @@ public class SideQuestEvents {
 		pqd.completeQuest(questId);
 		if (questId.equals(pqd.getTrackedQuestId())) pqd.setTrackedQuestId(null);
 		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questId), player);
-		NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+		NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
 	}
 }
 
