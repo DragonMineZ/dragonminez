@@ -19,6 +19,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
+import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
@@ -37,6 +38,7 @@ import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fml.common.Mod;
@@ -185,16 +187,68 @@ public class StatsEvents {
 		});
 	}
 
-	@SubscribeEvent
+	@SubscribeEvent(priority = EventPriority.LOW)
 	public static void onEntityHit(LivingHurtEvent event) {
 		if (event.getEntity().level().isClientSide) return;
-		if (!(event.getSource().getEntity() instanceof Player attacker)) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
-			if (!data.getStatus().isHasCreatedCharacter()) return;
-			int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
-			data.getResources().addTrainingPoints(baseTps);
-		});
+		if (event.getSource().getEntity() instanceof Player attacker) {
+			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
+				if (attackerData.getStatus().isHasCreatedCharacter()) {
+					if (event.getAmount() >= 1) {
+						int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
+						attackerData.getResources().addTrainingPoints(baseTps);
+
+						if (attackerData.getCharacter().hasActiveForm()) {
+							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
+							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+								String formGroup = attackerData.getCharacter().getActiveFormGroup();
+								String formName = attackerData.getCharacter().getActiveForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+								attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit() * bonus, activeForm.getMaxMastery());
+							}
+						}
+
+						if (attackerData.getCharacter().hasActiveStackForm()) {
+							FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveFormData();
+							if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
+								String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
+								String stackForm = attackerData.getCharacter().getActiveStackForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
+								attackerData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, activeStackForm.getMasteryPerHit() * bonus, activeStackForm.getMaxMastery());
+							}
+						}
+					}
+				}
+			});
+		}
+
+		if (event.getEntity() instanceof Player victim) {
+			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
+				if (victimData.getStatus().isHasCreatedCharacter()) {
+					if (event.getAmount() >= 1) {
+						if (victimData.getCharacter().hasActiveForm()) {
+							FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
+							if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
+								String formGroup = victimData.getCharacter().getActiveFormGroup();
+								String formName = victimData.getCharacter().getActiveForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+								victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived() * bonus, activeForm.getMaxMastery());
+							}
+						}
+
+						if (victimData.getCharacter().hasActiveStackForm()) {
+							FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveFormData();
+							if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
+								String stackFormGroup = victimData.getCharacter().getActiveStackFormGroup();
+								String stackForm = victimData.getCharacter().getActiveStackForm();
+								double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
+								victimData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, activeStackForm.getMasteryPerDamageReceived() * bonus, activeStackForm.getMaxMastery());
+							}
+						}
+					}
+				}
+			});
+		}
 	}
 
 	private static final double HEAL_PERCENTAGE = 0.08;

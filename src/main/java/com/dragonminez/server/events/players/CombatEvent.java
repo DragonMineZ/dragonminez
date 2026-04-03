@@ -146,26 +146,6 @@ public class CombatEvent {
 					if (!attacker.isCreative()) attackerData.getResources().setCurrentStamina(0);
 				}
 
-				if (attackerData.getCharacter().hasActiveForm()) {
-					FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
-					if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {
-						String formGroup = attackerData.getCharacter().getActiveFormGroup();
-						String formName = attackerData.getCharacter().getActiveForm();
-						double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
-						attackerData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerHit() * bonus, activeForm.getMaxMastery() * bonus);
-					}
-				}
-
-				if (attackerData.getCharacter().hasActiveStackForm()) {
-					FormConfig.FormData activeStackForm = attackerData.getCharacter().getActiveFormData();
-					if (activeStackForm != null && attackerData.getResources().getPowerRelease() >= 50) {
-						String stackFormGroup = attackerData.getCharacter().getActiveStackFormGroup();
-						String stackForm = attackerData.getCharacter().getActiveStackForm();
-						double bonus = 1.0 + (GravityLogic.getBonusGravity(attacker) * 0.1);
-						attackerData.getCharacter().getStackFormMasteries().addMastery(stackFormGroup, stackForm, activeStackForm.getMasteryPerHit() * bonus, activeStackForm.getMaxMastery() * bonus);
-					}
-				}
-
 				if (isEmptyHandOrNoDamageItem(attacker)) {
 					currentDamage[0] = finalDmzDamage;
 				} else {
@@ -382,28 +362,7 @@ public class CombatEvent {
 
 					victim.getPersistentData().putDouble("dmz_exact_damage", currentDamage[0]);
 
-					if (victimData.getCharacter().hasActiveForm()) {
-						FormConfig.FormData activeForm = victimData.getCharacter().getActiveFormData();
-						if (activeForm != null && victimData.getResources().getPowerRelease() >= 50) {
-							String formGroup = victimData.getCharacter().getActiveFormGroup();
-							String formName = victimData.getCharacter().getActiveForm();
-							double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
-							victimData.getCharacter().getFormMasteries().addMastery(formGroup, formName, activeForm.getMasteryPerDamageReceived() * bonus, activeForm.getMaxMastery() * bonus);
-						}
-					}
-
-					if (victimData.getCharacter().hasActiveStackForm()) {
-						FormConfig.FormData activeStackForm = victimData.getCharacter().getActiveStackFormData();
-						if (activeStackForm != null && victimData.getResources().getPowerRelease() >= 50) {
-							String stackGroup = victimData.getCharacter().getActiveStackFormGroup();
-							String stackForm = victimData.getCharacter().getActiveStackForm();
-							double bonus = 1.0 + (GravityLogic.getBonusGravity(victim) * 0.1);
-							victimData.getCharacter().getStackFormMasteries().addMastery(stackGroup, stackForm, activeStackForm.getMasteryPerDamageReceived() * bonus, activeStackForm.getMaxMastery() * bonus);
-						}
-					}
-
-					if (victim instanceof ServerPlayer serverPlayer)
-						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+					if (victim instanceof ServerPlayer serverPlayer) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 				}
 			});
 		}
