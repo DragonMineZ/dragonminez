@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Defines prerequisites that must be met before a quest can be accepted.
+ * Reusable AND/OR condition tree used by both quest unlock prerequisites and quest start requirements.
  * <p>
- * Supports nested {@link Operator#AND}/{@link Operator#OR} logic trees with leaf conditions
- * that check saga progress, other quest completions, player stats, race, or level.
+ * Supports nested {@link Operator#AND}/{@link Operator#OR} logic groups with leaf conditions
+ * for progression, player stats, location, dimension, and elapsed time.
  * <p>
- * Prerequisites are parsed from JSON by {@link QuestParser#parsePrerequisites} and evaluated
+ * Conditions are parsed from JSON by {@link QuestParser#parsePrerequisites} and evaluated
  * at runtime by {@link QuestAvailabilityChecker}.
  *
  * <h3>JSON Example</h3>
@@ -24,8 +24,8 @@ import java.util.List;
  *     {
  *       "operator": "OR",
  *       "conditions": [
- *         { "type": "RACE", "race": "saiyan" },
- *         { "type": "RACE", "race": "human" }
+ *         { "type": "BIOME", "biome": "minecraft:plains" },
+ *         { "type": "STRUCTURE", "structure": "dragonminez:roshi_house" }
  *       ]
  *     }
  *   ]
@@ -60,13 +60,36 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		 */
 		STAT,
 		/**
-		 * Player must be a specific race
-		 */
-		RACE,
-		/**
 		 * Player level must meet a minimum threshold
 		 */
-		LEVEL
+		LEVEL,
+		/**
+		 * Player must currently be in a specific biome.
+		 */
+		BIOME,
+		/**
+		 * Player must currently be inside a specific structure.
+		 */
+		STRUCTURE,
+		/**
+		 * Player must currently be inside a specific dimension.
+		 */
+		DIMENSION,
+		/**
+		 * A duration must have elapsed since this quest first became start-eligible.
+		 */
+		TIME
+	}
+
+	public enum TimeMode {
+		GAME_TIME,
+		REAL_TIME
+	}
+
+	public record StructureHint(String dimensionId, Integer x, Integer y, Integer z) {
+		public boolean hasCoordinates() {
+			return x != null && y != null && z != null;
+		}
 	}
 
 	/**
@@ -83,33 +106,39 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		private final String sagaId;
 		private final Integer questId;
 
-		// QUEST fields (by string ID — replaces old SIDE_QUEST)
+		// QUEST fields
 		private final String requiredQuestId;
 
-		// STAT fields
 		private final String stat;
 		private final Integer minValue;
-
-		// RACE fields
-		private final String race;
-
-		// LEVEL fields
 		private final Integer minLevel;
+		private final String biomeId;
+		private final String structureId;
+		private final StructureHint structureHint;
+		private final String dimensionId;
+		private final TimeMode timeMode;
+		private final Long duration;
 
 		// Nested group
 		private final QuestPrerequisites nested;
 
 		private Condition(ConditionType type, String sagaId, Integer questId, String requiredQuestId,
-						  String stat, Integer minValue, String race, Integer minLevel,
-						  QuestPrerequisites nested) {
+						  String stat, Integer minValue, Integer minLevel, String biomeId,
+						  String structureId, StructureHint structureHint, String dimensionId,
+						  TimeMode timeMode, Long duration, QuestPrerequisites nested) {
 			this.type = type;
 			this.sagaId = sagaId;
 			this.questId = questId;
 			this.requiredQuestId = requiredQuestId;
 			this.stat = stat;
 			this.minValue = minValue;
-			this.race = race;
 			this.minLevel = minLevel;
+			this.biomeId = biomeId;
+			this.structureId = structureId;
+			this.structureHint = structureHint;
+			this.dimensionId = dimensionId;
+			this.timeMode = timeMode;
+			this.duration = duration;
 			this.nested = nested;
 		}
 
@@ -118,31 +147,69 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		}
 
 		public static Condition sagaQuest(String sagaId, int questId) {
-			return new Condition(ConditionType.SAGA_QUEST, sagaId, questId, null, null, null, null, null, null);
+			return new Condition(ConditionType.SAGA_QUEST, sagaId, questId, null,
+					null, null, null, null,
+					null, null, null, null, null,
+					null);
 		}
 
 		/**
-		 * Requires another quest (by string ID) to be completed. Replaces the old sideQuest() factory.
+		 * Requires another quest (by string ID) to be completed.
 		 */
 		public static Condition quest(String requiredQuestId) {
-			return new Condition(ConditionType.QUEST, null, null, requiredQuestId, null, null, null, null, null);
+			return new Condition(ConditionType.QUEST, null, null, requiredQuestId,
+					null, null, null, null,
+					null, null, null, null, null,
+					null);
 		}
-
 
 		public static Condition stat(String stat, int minValue) {
-			return new Condition(ConditionType.STAT, null, null, null, stat, minValue, null, null, null);
-		}
-
-		public static Condition race(String race) {
-			return new Condition(ConditionType.RACE, null, null, null, null, null, race, null, null);
+			return new Condition(ConditionType.STAT, null, null, null,
+					stat, minValue, null, null,
+					null, null, null, null, null,
+					null);
 		}
 
 		public static Condition level(int minLevel) {
-			return new Condition(ConditionType.LEVEL, null, null, null, null, null, null, minLevel, null);
+			return new Condition(ConditionType.LEVEL, null, null, null,
+					null, null, minLevel, null,
+					null, null, null, null, null,
+					null);
+		}
+
+		public static Condition biome(String biomeId) {
+			return new Condition(ConditionType.BIOME, null, null, null,
+					null, null, null, biomeId,
+					null, null, null, null, null,
+					null);
+		}
+
+		public static Condition structure(String structureId, StructureHint structureHint) {
+			return new Condition(ConditionType.STRUCTURE, null, null, null,
+					null, null, null, null,
+					structureId, structureHint, null, null, null,
+					null);
+		}
+
+		public static Condition dimension(String dimensionId) {
+			return new Condition(ConditionType.DIMENSION, null, null, null,
+					null, null, null, null,
+					null, null, dimensionId, null, null,
+					null);
+		}
+
+		public static Condition time(TimeMode timeMode, long duration) {
+			return new Condition(ConditionType.TIME, null, null, null,
+					null, null, null, null,
+					null, null, null, timeMode, duration,
+					null);
 		}
 
 		public static Condition nestedGroup(QuestPrerequisites nested) {
-			return new Condition(null, null, null, null, null, null, null, null, nested);
+			return new Condition(null, null, null, null,
+					null, null, null, null,
+					null, null, null, null, null,
+					nested);
 		}
 	}
 }

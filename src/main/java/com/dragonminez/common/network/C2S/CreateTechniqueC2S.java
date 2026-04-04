@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
@@ -108,7 +108,7 @@ public class CreateTechniqueC2S {
 				technique.calculateDerivedValues();
 
 				data.getTechniques().unlockTechnique(technique);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		});
 		context.setPacketHandled(true);

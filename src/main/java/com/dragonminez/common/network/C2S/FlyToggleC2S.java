@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -66,7 +66,7 @@ public class FlyToggleC2S {
                     }
                 }
 
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
             });
         });
         ctx.get().setPacketHandled(true);

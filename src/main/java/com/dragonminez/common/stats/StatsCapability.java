@@ -3,6 +3,7 @@ package com.dragonminez.common.stats;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.SyncQuestRegistryS2C;
 import com.dragonminez.common.network.S2C.SyncServerConfigS2C;
@@ -91,7 +92,7 @@ public class StatsCapability {
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				PlayerQuestData questData = data.getPlayerQuestData();
-				if (!questData.isSagaUnlocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
+				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
@@ -112,7 +113,7 @@ public class StatsCapability {
 				serverPlayer.setHealth(serverPlayer.getMaxHealth());
 				data.getResources().setCurrentEnergy(data.getMaxEnergy());
 				data.getResources().setCurrentStamina(data.getMaxStamina());
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(serverPlayer), serverPlayer);
 			});
 		}
 	}

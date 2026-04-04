@@ -2,6 +2,7 @@ package com.dragonminez.server.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.*;
@@ -41,11 +42,12 @@ public class StoryModeEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();
 			Map<String, Saga> allSagas = QuestRegistry.getAllSagas();
+			boolean timingChanged = false;
 
 			for (Map.Entry<String, Saga> entry : allSagas.entrySet()) {
 				String sagaId = entry.getKey();
 				Saga saga = entry.getValue();
-				if (!pqd.isSagaUnlocked(sagaId)) continue;
+				if (pqd.isSagaLocked(sagaId)) continue;
 
 				List<Quest> sagaQuests = saga.getQuests();
 				for (int questIndex = 0; questIndex < sagaQuests.size(); questIndex++) {
@@ -54,6 +56,9 @@ public class StoryModeEvents {
 
 					int questId = activeQuest.getId();
 					String questKey = PlayerQuestData.sagaQuestKey(sagaId, questId);
+					if (!pqd.isQuestAccepted(questKey) && !pqd.isQuestCompleted(questKey)) {
+						timingChanged |= QuestAvailabilityChecker.primeStartRequirementTiming(activeQuest, questKey, player, data);
+					}
 					int currentObjIndex = -1;
 					QuestObjective objective = null;
 
@@ -91,6 +96,10 @@ public class StoryModeEvents {
 					}
 				}
 			}
+
+			if (timingChanged) {
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			}
 		});
 	}
 
@@ -107,7 +116,7 @@ public class StoryModeEvents {
 				for (Map.Entry<String, Saga> entry : allSagas.entrySet()) {
 					String sagaId = entry.getKey();
 					Saga saga = entry.getValue();
-					if (!pqd.isSagaUnlocked(sagaId)) continue;
+					if (pqd.isSagaLocked(sagaId)) continue;
 
 					List<Quest> sagaQuests = saga.getQuests();
 					for (int questIndex = 0; questIndex < sagaQuests.size(); questIndex++) {
@@ -148,7 +157,7 @@ public class StoryModeEvents {
 				for (Map.Entry<String, Saga> entry : allSagas.entrySet()) {
 					String sagaId = entry.getKey();
 					Saga saga = entry.getValue();
-					if (!pqd.isSagaUnlocked(sagaId)) continue;
+					if (pqd.isSagaLocked(sagaId)) continue;
 
 					List<Quest> sagaQuests = saga.getQuests();
 					for (int questIndex = 0; questIndex < sagaQuests.size(); questIndex++) {
@@ -219,7 +228,7 @@ public class StoryModeEvents {
 					NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), player);
 				}
 
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			}
 		});
 	}

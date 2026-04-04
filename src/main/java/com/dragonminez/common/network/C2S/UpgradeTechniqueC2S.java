@@ -3,7 +3,7 @@ package com.dragonminez.common.network.C2S;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
@@ -55,7 +55,7 @@ public class UpgradeTechniqueC2S {
 								case "cast" -> tech.setCastTime(Math.max(0, tech.getCastTime() - 1));
 							}
 							if (tech instanceof KiAttackData ki) ki.calculateDerivedValues();
-							NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+							NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 						}
 					}
 				});

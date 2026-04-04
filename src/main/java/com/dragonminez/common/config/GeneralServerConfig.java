@@ -45,6 +45,7 @@ public class GeneralServerConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class GameplayConfig {
+		private Boolean forceCharacterCreation = true;
 		private Boolean commandOutputOnConsole = true;
 		private Integer reviveCooldownSeconds = 300;
 		private Double tpGainMultiplier = 1.0;
@@ -75,6 +76,10 @@ public class GeneralServerConfig {
 
 		public Integer getReviveCooldownSeconds() {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
+		}
+
+		public Boolean getForceCharacterCreation() {
+			return forceCharacterCreation != null ? forceCharacterCreation : true;
 		}
 
 		public Double getTpsGainMultiplier() {

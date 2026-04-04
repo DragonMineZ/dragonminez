@@ -7,6 +7,7 @@ import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
@@ -18,45 +19,58 @@ import com.dragonminez.common.network.C2S.CreateCharacterC2S;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.C2S.UpdateCharacterC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.resources.language.I18n;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.function.IntConsumer;
 
 @OnlyIn(Dist.CLIENT)
 public class CharacterCustomizationScreen extends ScaledScreen {
 	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/buttons/characterbuttons.png");
-
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
 			"textures/gui/menu/menubig.png");
-
 	private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
 	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
 	private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
 	private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
 	private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
 	private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
+
+	private static final int LEFT_PANEL_X = 12;
+	private static final int LEFT_PANEL_WIDTH = 141;
+	private static final int LEFT_PANEL_HEIGHT = 213;
+	private static final int LEFT_PANEL_PADDING = 12;
+	private static final int PREVIEW_GRID_COLUMNS = 3;
+	private static final int PREVIEW_GRID_VISIBLE_ROWS = 3;
+	private static final int PREVIEW_CARD_WIDTH = 34;
+	private static final int PREVIEW_CARD_HEIGHT = 44;
+	private static final int PREVIEW_CARD_GAP = 5;
+	private float displayedProgress = 0.0f;
+	private float displayedScale = 95.0f;
+	private float displayedBaseY = 0.0f;
+	private boolean initializedAnimations = false;
+	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("super", "android", "legendary", "god");
 
 	private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
 	private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
@@ -65,51 +79,54 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
 	private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
 
-	protected static boolean GLOBAL_SWITCHING = false;
-
 	private final Screen previousScreen;
 	private final Character character;
-	private int currentPage = 0;
+
 	private int currentClassIndex = 0;
-	private boolean isSwitchingMenu = false;
+
+	private final List<PreviewFormOption> previewFormOptions = new ArrayList<>();
+	private final Map<String, TexturedTextButton> colorButtons = new HashMap<>();
+	private int previewFormIndex = -1;
+
+	private int currentTabIndex = 0;
+	private int bodyTypePreviewScrollRows = 0;
+	private int hairPreviewScrollRows = 0;
+	private int eyesPreviewScrollRows = 0;
+	private int nosePreviewScrollRows = 0;
+	private int mouthPreviewScrollRows = 0;
+	private int tattooPreviewScrollRows = 0;
+	private float playerRotation = 180.0f;
+	private float playerPitch = 12.0f;
+	private boolean isDraggingModel = false;
+	private double lastMouseX = 0;
+	private double lastMouseY = 0;
 
 	private ColorSlider hueSlider;
 	private ColorSlider saturationSlider;
 	private ColorSlider valueSlider;
+	private EditBox hexColorField;
 	private boolean colorPickerVisible = false;
 	private String currentColorField = "";
-
-	private EditBox hexColorField;
 	private boolean isUpdatingFromCode = false;
 
-	private float playerRotation = 180.0f;
-	private boolean isDraggingModel = false;
-	private double lastMouseX = 0;
-	private final List<PreviewFormOption> previewFormOptions = new ArrayList<>();
-	private int previewFormIndex = -1;
+	private enum TabId { PRESET, HAIR, EYES, FACE, BODY, AURA_CLASS }
 
-	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("super", "android", "legendary", "god");
-
-	private enum TransitionState { NONE, OPENING, CLOSING }
-	private static final long OPEN_ANIMATION_DURATION = 200;
-	private static final long CLOSE_ANIMATION_DURATION = 120;
-	private long animationStartTime;
-	private TransitionState transitionState = TransitionState.NONE;
-	private Screen pendingScreen;
-	private boolean closeCommitted;
-	private boolean transitionInitialized;
+	private enum PreviewRenderMode {
+		FULL_BODY,
+		HAIR_ONLY,
+		EYES_ONLY,
+		NOSE_ONLY,
+		MOUTH_ONLY,
+		TATTOO_ONLY
+	}
 
 	private static final class PreviewFormOption {
 		private final String groupName;
 		private final String formName;
-		private final String formType;
-		private final int unlockLevel;
 
-		private PreviewFormOption(String groupName, String formName, String formType, int unlockLevel) {
+		private PreviewFormOption(String groupName, String formName) {
 			this.groupName = groupName;
 			this.formName = formName;
-			this.formType = formType;
-			this.unlockLevel = unlockLevel;
 		}
 	}
 
@@ -131,220 +148,80 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		super(Component.translatable("gui.dragonminez.customization.title"));
 		this.previousScreen = previousScreen;
 		this.character = character;
-
 		initializeDefaultColors();
-	}
-
-	private void initializeDefaultColors() {
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-		if (config == null) return;
-		boolean hasChanges = false;
-
-		if (character.getBodyColor() == null || character.getBodyColor().isEmpty()) {
-			character.setBodyColor(config.getDefaultBodyColor());
-			hasChanges = true;
-		}
-		if (character.getBodyColor2() == null || character.getBodyColor2().isEmpty()) {
-			character.setBodyColor2(config.getDefaultBodyColor2());
-			hasChanges = true;
-		}
-		if (character.getBodyColor3() == null || character.getBodyColor3().isEmpty()) {
-			character.setBodyColor3(config.getDefaultBodyColor3());
-			hasChanges = true;
-		}
-		if (character.getHairColor() == null || character.getHairColor().isEmpty()) {
-			character.setHairColor(config.getDefaultHairColor());
-			hasChanges = true;
-		}
-		if (character.getEye1Color() == null || character.getEye1Color().isEmpty()) {
-			character.setEye1Color(config.getDefaultEye1Color());
-			hasChanges = true;
-		}
-		if (character.getEye2Color() == null || character.getEye2Color().isEmpty()) {
-			character.setEye2Color(config.getDefaultEye2Color());
-			hasChanges = true;
-		}
-		if (character.getAuraColor() == null || character.getAuraColor().isEmpty()) {
-			character.setAuraColor(config.getDefaultAuraColor());
-			hasChanges = true;
-		}
-
-		if (hasChanges) {
-			NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		}
 	}
 
 	@Override
 	protected void init() {
 		super.init();
-		if (!transitionInitialized) {
-			startOpenTransition();
-			transitionInitialized = true;
-		}
-
-		if (this.character != null && this.character.getCharacterClass() != null) {
-			RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
-			if (statsConfig != null) {
-				java.util.List<String> classes = new java.util.ArrayList<>(statsConfig.getAllClasses());
-				int idx = classes.indexOf(this.character.getCharacterClass());
-				if (idx != -1) this.currentClassIndex = idx;
-			}
-		}
-
-		clearWidgets();
-		initPage();
-	}
-
-	@Override
-	public void tick() {
-		super.tick();
-		if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) transitionState = TransitionState.NONE;
-		if (transitionState != TransitionState.CLOSING || closeCommitted) return;
-		if (getTransitionProgress() >= 1.0f) {
-			closeCommitted = true;
-			if (this.minecraft != null) this.minecraft.setScreen(pendingScreen);
-		}
-	}
-
-	private void initPage() {
-		int centerY = getUiHeight() / 2;
-
-		if (currentPage == 0) initPage0(centerY);
-		else if (currentPage == 1) initPage1(centerY);
-
-		initNavigationButtons();
-		initColorPickerSliders(centerY);
-	}
-
-	private void initPage0(int centerY) {
-		int eyesPosX = 68;
-		int eyesPosY = centerY - 57;
-
-		addRenderableWidget(createArrowButton(eyesPosX - 55, eyesPosY, true,
-				btn -> changeEyes(-1)));
-		addRenderableWidget(createArrowButton(eyesPosX, eyesPosY, false,
-				btn -> changeEyes(1)));
-
-		int nosePosX = 138;
-		int nosePosY = centerY - 57;
-
-		addRenderableWidget(createArrowButton(nosePosX - 55, nosePosY, true,
-				btn -> changeNose(-1)));
-		addRenderableWidget(createArrowButton(nosePosX, nosePosY, false,
-				btn -> changeNose(1)));
-
-		int mouthPosX = 108;
-		int mouthPosY = centerY - 27;
-
-		addRenderableWidget(createArrowButton(mouthPosX - 65, mouthPosY, true,
-				btn -> changeMouth(-1)));
-		addRenderableWidget(createArrowButton(mouthPosX, mouthPosY, false,
-				btn -> changeMouth(1)));
-
-		if (canChangeBodyType()) {
-			int bodyPosX = 108;
-			int bodyPosY = centerY - 87;
-
-			addRenderableWidget(createArrowButton(bodyPosX - 65, bodyPosY, true,
-					btn -> changeBodyType(-1)));
-			addRenderableWidget(createArrowButton(bodyPosX, bodyPosY, false,
-					btn -> changeBodyType(1)));
-		}
-
-		int hairPosX = 108;
-		int hairPosY = centerY + 3;
-
-		addRenderableWidget(createArrowButton(hairPosX - 75, hairPosY, true,
-				btn -> changeHair(-1)));
-		addRenderableWidget(createArrowButton(hairPosX + 10, hairPosY, false,
-				btn -> changeHair(1)));
-
-		int tattooPosX = 108;
-		int tattooPosY = centerY + 33;
-
-		addRenderableWidget(createArrowButton(tattooPosX - 65, tattooPosY, true,
-				btn -> changeTattoo(-1)));
-		addRenderableWidget(createArrowButton(tattooPosX, tattooPosY, false,
-				btn -> changeTattoo(1)));
-
-		if (character.canHaveGender()) {
-			int genderPosX = 108;
-			int genderPosY = centerY + 63;
-
-			if (character.getGender().equals(Character.GENDER_MALE)) {
-				addRenderableWidget(createArrowButton(genderPosX, genderPosY, false,
-						btn -> {
-							character.setGender(Character.GENDER_FEMALE);
-							if (getEffectiveModelBase().equals("majin")) character.setHairId(0);
-							NetworkHandler.sendToServer(new StatsSyncC2S(character));
-							refreshButtons();
-						}));
-			} else {
-				addRenderableWidget(createArrowButton(genderPosX - 65, genderPosY, true,
-						btn -> {
-							character.setGender(Character.GENDER_MALE);
-							if (getEffectiveModelBase().equals("majin")) character.setHairId(0);
-							NetworkHandler.sendToServer(new StatsSyncC2S(character));
-							refreshButtons();
-						}));
-			}
-		}
-	}
-
-	private void initPage1(int centerY) {
+		resolveClassIndex();
 		reloadPreviewFormOptions();
+		refreshScreenWidgets();
+	}
 
-		int classPosX = 125;
-		int classPosY = centerY - 90;
+	protected void refreshScreenWidgets() {
+		colorButtons.clear();
+		clearWidgets();
+		initTabWidgets();
+		initNavigationButtons();
+		initColorPickerSliders();
+	}
 
-		String[] classes = ConfigManager.getAllRaceStats().get(character.getRace()).getAllClasses().toArray(new String[]{});
-		character.setCharacterClass(classes[currentClassIndex]);
-		if (currentClassIndex > 0) {
-			addRenderableWidget(createArrowButton(classPosX - 105, classPosY, true,
-					btn -> {
-						currentClassIndex--;
-						character.setCharacterClass(classes[currentClassIndex]);
-						NetworkHandler.sendToServer(new StatsSyncC2S(character));
-						refreshButtons();
-					}));
+	private void initTabWidgets() {
+		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
+		TabId tab = TabId.values()[currentTabIndex];
+		switch (tab) {
+			case PRESET -> initPresetTab(top);
+			case HAIR -> initHairTab(top);
+			case EYES -> initEyesTab(top);
+			case AURA_CLASS -> initAuraClassTab(top);
 		}
-		if (currentClassIndex < classes.length - 1) {
-			addRenderableWidget(createArrowButton(classPosX, classPosY, false,
-					btn -> {
-						currentClassIndex++;
-						character.setCharacterClass(classes[currentClassIndex]);
-						NetworkHandler.sendToServer(new StatsSyncC2S(character));
-						refreshButtons();
-					}));
-		}
+	}
 
-		int previewPosX = 125;
-		int previewPosY = centerY - 60;
+	private void initPresetTab(int top) {
+		int bodyColorY = top + 12;
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 30, bodyColorY, "bodyColor"));
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, bodyColorY, "bodyColor2"));
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 90, bodyColorY, "bodyColor3"));
+	}
+
+	private void initHairTab(int top) {
+		int y = top + 28;
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, y - 18, "hairColor"));
+		addRenderableWidget(new TexturedTextButton.Builder()
+				.position(LEFT_PANEL_X + 33, getUiHeight() - 40)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.customization.edit"))
+				.onPress(btn -> {
+					if (this.minecraft != null) {
+						this.minecraft.setScreen(new HairEditorScreen(this, character));
+					}
+				})
+				.build());
+
+		int arrowsY = top + 174;
 		if (previewFormIndex > 0) {
-			addRenderableWidget(createArrowButton(previewPosX - 105, previewPosY, true,
-					btn -> {
-						changePreviewTransformation(-1);
-						refreshButtons();
-					}));
+			addRenderableWidget(createArrowButton(LEFT_PANEL_X + 18, arrowsY, true, btn -> {
+				changePreviewTransformation(-1);
+				refreshScreenWidgets();
+			}));
 		}
 		if (previewFormIndex >= 0 && previewFormIndex < previewFormOptions.size() - 1) {
-			addRenderableWidget(createArrowButton(previewPosX, previewPosY, false,
-					btn -> {
-						changePreviewTransformation(1);
-						refreshButtons();
-					}));
+			addRenderableWidget(createArrowButton(LEFT_PANEL_X + LEFT_PANEL_WIDTH - 28, arrowsY, false, btn -> {
+				changePreviewTransformation(1);
+				refreshScreenWidgets();
+			}));
 		}
+	}
 
-		int colorPosX = 67;
-		int colorStartY = centerY - 25;
-
-		addRenderableWidget(createColorButton(colorPosX - 25, colorStartY, "bodyColor"));
-		addRenderableWidget(createColorButton(colorPosX, colorStartY, "bodyColor2"));
-		addRenderableWidget(createColorButton(colorPosX + 25, colorStartY, "bodyColor3"));
-
-		addRenderableWidget(createColorButton(colorPosX - 25, colorStartY + 30, "eye1Color"));
+	private void initEyesTab(int top) {
+		int y = top + 8;
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 33, y + 2, "eye1Color"));
 		addRenderableWidget(new CustomTextureButton.Builder()
-				.position(colorPosX + 5, colorStartY + 35)
+				.position(LEFT_PANEL_X + 65, y + 7)
 				.size(10, 10)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(102, 0, 102, 10)
@@ -352,82 +229,88 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.message(Component.empty())
 				.onPress(btn -> {
 					character.setEye2Color(character.getEye1Color());
-					NetworkHandler.sendToServer(new StatsSyncC2S(character));
-					refreshButtons();
+					syncCharacter();
+					refreshScreenWidgets();
 				})
 				.build());
-		addRenderableWidget(createColorButton(colorPosX + 25, colorStartY + 30, "eye2Color"));
-		addRenderableWidget(createColorButton(colorPosX, colorStartY + 60, "hairColor"));
-		addRenderableWidget(createColorButton(colorPosX, colorStartY + 90, "auraColor"));
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 85, y + 2, "eye2Color"));
 	}
 
-	private void initNavigationButtons() {
-		if (currentPage == 0) {
-			addRenderableWidget(new TexturedTextButton.Builder()
-					.position(20, getUiHeight() - 25)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(tr("gui.dragonminez.customization.back"))
-					.onPress(btn -> {
-						if (this.minecraft != null) {
-							isSwitchingMenu = true;
-							if (previousScreen instanceof RaceSelectionScreen) {
-								GLOBAL_SWITCHING = true;
-							}
-							startCloseTransition(previousScreen);
-						}
-					})
-					.build());
+	private void initAuraClassTab(int top) {
+		int y = top + 8;
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, top + 136, "auraColor"));
 
-			addRenderableWidget(new TexturedTextButton.Builder()
-					.position(getUiWidth() - 85, getUiHeight() - 25)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(tr("gui.dragonminez.customization.next"))
-					.onPress(btn -> {
-						currentPage = 1;
-						init();
-					})
-					.build());
-
-		} else if (currentPage == 1) {
-			addRenderableWidget(new TexturedTextButton.Builder()
-					.position(20, getUiHeight() - 25)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(tr("gui.dragonminez.customization.back"))
-					.onPress(btn -> {
-						currentPage = 0;
-						init();
-					})
-					.build());
-
-			boolean isEditing = (this.previousScreen == null);
-			Component buttonText = isEditing ?
-					tr("gui.dragonminez.customization.update") :
-					tr("gui.dragonminez.customization.confirm");
-
-			addRenderableWidget(new TexturedTextButton.Builder()
-					.position(getUiWidth() - 85, getUiHeight() - 25)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(buttonText)
-					.onPress(btn -> finish())
-					.build());
+		String[] classes = getRaceClasses();
+		if (classes.length > 0) {
+			character.setCharacterClass(classes[currentClassIndex]);
+			if (currentClassIndex > 0) {
+				addRenderableWidget(createArrowButton(LEFT_PANEL_X + 18, y + 6, true, btn -> {
+					currentClassIndex--;
+					character.setCharacterClass(classes[currentClassIndex]);
+					syncCharacter();
+					refreshScreenWidgets();
+				}));
+			}
+			if (currentClassIndex < classes.length - 1) {
+				addRenderableWidget(createArrowButton(LEFT_PANEL_X + LEFT_PANEL_WIDTH - 28, y + 6, false, btn -> {
+					currentClassIndex++;
+					character.setCharacterClass(classes[currentClassIndex]);
+					syncCharacter();
+					refreshScreenWidgets();
+				}));
+			}
 		}
 	}
 
-	private void initColorPickerSliders(int centerY) {
-		int sliderX = 180;
-		int sliderY = centerY - 50;
+	private void initNavigationButtons() {
+		int buttonY = getUiHeight() - 28;
+		int nextX = getUiWidth() - 86;
+		int backX = nextX - 78;
+
+		addRenderableWidget(new TexturedTextButton.Builder()
+				.position(backX, buttonY)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.customization.back"))
+				.onPress(btn -> {
+					if (currentTabIndex > 0) {
+						currentTabIndex--;
+						hideColorPicker();
+						refreshScreenWidgets();
+						return;
+					}
+					closeToPrevious();
+				})
+				.build());
+
+		Component rightText = currentTabIndex == TabId.values().length - 1
+				? (previousScreen == null ? tr("gui.dragonminez.customization.update") : tr("gui.dragonminez.customization.confirm"))
+				: tr("gui.dragonminez.customization.next");
+
+		addRenderableWidget(new TexturedTextButton.Builder()
+				.position(nextX, buttonY)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(rightText)
+				.onPress(btn -> {
+					if (currentTabIndex < TabId.values().length - 1) {
+						currentTabIndex++;
+						hideColorPicker();
+						refreshScreenWidgets();
+						return;
+					}
+					finish();
+				})
+				.build());
+	}
+
+	private void initColorPickerSliders() {
+		int sliderX = LEFT_PANEL_X + LEFT_PANEL_WIDTH + 8;
+		int sliderY = getUiHeight() / 2 - 40;
 		int sliderWidth = 80;
 
 		hueSlider = new ColorSlider.Builder()
@@ -469,10 +352,601 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		setSlidersVisible();
 	}
 
+	@Override
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		renderPanorama(partialTick);
+		renderCinematicBars(graphics);
+
+		int uiMouseX = (int) Math.round(toUiX(mouseX));
+		int uiMouseY = (int) Math.round(toUiY(mouseY));
+
+		beginUiScale(graphics);
+		renderLeftPanel(graphics);
+		renderProgress(graphics);
+		renderPlayerModel(graphics);
+		renderTabText(graphics);
+
+		if (colorPickerVisible) {
+			renderColorPickerBackground(graphics);
+			renderColorPreviewSquare(graphics);
+		}
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 400.0D);
+		super.render(graphics, uiMouseX, uiMouseY, partialTick);
+		graphics.pose().popPose();
+
+		endUiScale(graphics);
+	}
+
+	private void renderLeftPanel(GuiGraphics graphics) {
+		int panelY = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2;
+		RenderSystem.enableBlend();
+		graphics.blit(MENU_BIG, LEFT_PANEL_X, panelY, 0, 0, LEFT_PANEL_WIDTH, LEFT_PANEL_HEIGHT);
+		RenderSystem.disableBlend();
+	}
+
+	private void renderProgress(GuiGraphics graphics) {
+		int barW = 152;
+		int barX = getUiWidth() - 164;
+		int barY = getUiHeight() - 40;
+		int barH = 6;
+
+		float targetProgress = (currentTabIndex + 1) / (float) TabId.values().length;
+		displayedProgress = Mth.lerp(0.15f, displayedProgress, targetProgress);
+		int fillW = Mth.floor(barW * displayedProgress);
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 500.0D);
+
+		String text = (currentTabIndex + 1) + "/" + TabId.values().length;
+		drawCenteredStringWithBorder(graphics, text, barX + barW / 2, barY - 12, 0xFFFFFF);
+
+		graphics.fill(barX - 1, barY - 1, barX + barW + 1, barY + barH + 1, 0xFFFFFFFF);
+		graphics.fill(barX, barY, barX + barW, barY + barH, 0xFF111111);
+		graphics.fill(barX, barY, barX + fillW, barY + barH, 0xFF006400);
+
+		graphics.pose().popPose();
+	}
+
+	private void renderTabText(GuiGraphics graphics) {
+		int panelY = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2;
+		int centerX = LEFT_PANEL_X + LEFT_PANEL_WIDTH / 2;
+		int top = panelY + LEFT_PANEL_PADDING;
+		TabId tab = TabId.values()[currentTabIndex];
+
+		switch (tab) {
+			case PRESET -> renderPresetText(graphics, centerX, top);
+			case HAIR -> renderHairText(graphics, centerX, top);
+			case EYES -> renderEyesText(graphics, centerX, top);
+			case FACE -> renderFaceText(graphics, centerX, top);
+			case BODY -> renderBodyText(graphics, centerX, top);
+			case AURA_CLASS -> renderAuraClassText(graphics, centerX, top);
+		}
+	}
+
+	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.body_type").getString(), centerX, top + 2, 0xFF9B9B);
+		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
+	}
+
+	private void renderHairText(GuiGraphics graphics, int centerX, int top) {
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hair").getString(), centerX, top + 2, 0xFF9B9B);
+		renderPreviewGrid(graphics, top + 30, 1, getMaxHairForCurrentState(), character.getHairId(), PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
+		drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
+	}
+
+	private void renderEyesText(GuiGraphics graphics, int centerX, int top) {
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.eyes").getString(), centerX, top + 2, 0xFF9B9B);
+		renderPreviewGrid(graphics, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows);
+	}
+
+	private void renderFaceText(GuiGraphics graphics, int centerX, int top) {
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.nose").getString(), centerX, top + 2, 0xFF9B9B);
+		renderPreviewGrid(graphics, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), character.getNoseType(), PreviewRenderMode.NOSE_ONLY, true, 1, nosePreviewScrollRows);
+
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.mouth").getString(), centerX, top + 74, 0xFF9B9B);
+		renderPreviewGrid(graphics, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), character.getMouthType(), PreviewRenderMode.MOUTH_ONLY, true, 2, mouthPreviewScrollRows);
+	}
+
+	private void renderBodyText(GuiGraphics graphics, int centerX, int top) {
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.tattoo").getString(), centerX, top + 2, 0xFF9B9B);
+		renderPreviewGrid(graphics, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), character.getTattooType(), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
+	}
+
+	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top) {
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.class").getString(), centerX, top + 8, 0xFF9B9B);
+		Component className = tr("class.dragonminez." + character.getCharacterClass());
+		drawCenteredStringWithBorder2(graphics, className, centerX, top + 20, 0xFFFFFF);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.aura").getString(), centerX, top + 124, 0xFF9B9B);
+		renderBaseStatsInline(graphics, centerX, top + 44);
+	}
+
+	private void renderBaseStatsInline(GuiGraphics graphics, int centerX, int startY) {
+		RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
+		if (statsConfig == null) return;
+		RaceStatsConfig.ClassStats classStats = statsConfig.getClassStats(character.getCharacterClass());
+		if (classStats == null || classStats.getBaseStats() == null || classStats.getStatScaling() == null) return;
+
+		RaceStatsConfig.BaseStats base = classStats.getBaseStats();
+
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.base_stats").getString(), centerX, startY, 0xFF9B9B);
+		int rowY = startY + 16;
+
+		drawCenteredStringWithBorder(graphics, "STR", centerX - 40, rowY, 0x7CFDD6);
+		drawCenteredStringWithBorder(graphics, "SKP", centerX, rowY, 0x7CFDD6);
+		drawCenteredStringWithBorder(graphics, "RES", centerX + 40, rowY, 0x7CFDD6);
+		drawCenteredStringWithBorder(graphics, String.valueOf(base.getStrength()), centerX - 40, rowY + 12, 0xFFFFFF);
+		drawCenteredStringWithBorder(graphics, String.valueOf(base.getStrikePower()), centerX, rowY + 12, 0xFFFFFF);
+		drawCenteredStringWithBorder(graphics, String.valueOf(base.getResistance()), centerX + 40, rowY + 12, 0xFFFFFF);
+
+		rowY += 32;
+		drawCenteredStringWithBorder(graphics, "VIT", centerX - 40, rowY, 0x7CFDD6);
+		drawCenteredStringWithBorder(graphics, "PWR", centerX, rowY, 0x7CFDD6);
+		drawCenteredStringWithBorder(graphics, "ENE", centerX + 40, rowY, 0x7CFDD6);
+		drawCenteredStringWithBorder(graphics, String.valueOf(base.getVitality()), centerX - 40, rowY + 12, 0xFFFFFF);
+		drawCenteredStringWithBorder(graphics, String.valueOf(base.getKiPower()), centerX, rowY + 12, 0xFFFFFF);
+		drawCenteredStringWithBorder(graphics, String.valueOf(base.getEnergy()), centerX + 40, rowY + 12, 0xFFFFFF);
+	}
+
+	private void renderPlayerModel(GuiGraphics graphics) {
+		LivingEntity player = Minecraft.getInstance().player;
+		if (player == null) return;
+
+		ActiveFormSnapshot snapshot = captureLocalPlayerFormSnapshot(player);
+		boolean previewApplied = applyPreviewTransformationToPlayer(player);
+
+		int previewZoneLeft = LEFT_PANEL_X + LEFT_PANEL_WIDTH + 16;
+		int previewZoneRight = getUiWidth() - 16;
+		int baseX = previewZoneLeft + (previewZoneRight - previewZoneLeft) / 2;
+
+		float targetScale = 95.0f;
+		float targetBaseY = getUiHeight() / 2 + 112;
+
+		TabId tab = TabId.values()[currentTabIndex];
+		if (tab == TabId.HAIR || tab == TabId.EYES || tab == TabId.FACE) {
+			targetScale = 150.0f;
+			targetBaseY = getUiHeight() / 2 + 246;
+		}
+
+		if (!initializedAnimations) {
+			displayedScale = targetScale;
+			displayedBaseY = targetBaseY;
+			displayedProgress = (currentTabIndex + 1) / (float) TabId.values().length;
+			initializedAnimations = true;
+		}
+
+		displayedScale = Mth.lerp(0.15f, displayedScale, targetScale);
+		displayedBaseY = Mth.lerp(0.15f, displayedBaseY, targetBaseY);
+
+		int adjustedScale = getAdjustedModelScale((int) displayedScale);
+		int currentBaseY = (int) displayedBaseY;
+
+		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
+		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
+		pose.mul(cameraOrientation);
+
+		float yBodyRotO = player.yBodyRot;
+		float yRotO = player.getYRot();
+		float xRotO = player.getXRot();
+		float yHeadRotO = player.yHeadRotO;
+		float yHeadRot = player.yHeadRot;
+
+		player.yBodyRot = playerRotation;
+		player.yBodyRotO = playerRotation;
+		player.setYRot(playerRotation);
+		player.setXRot(playerPitch);
+		player.xRotO = playerPitch;
+		player.yHeadRot = playerRotation;
+		player.yHeadRotO = playerRotation;
+
+		InventoryScreen.renderEntityInInventory(graphics, baseX, currentBaseY, adjustedScale, pose, cameraOrientation, player);
+
+		if (previewApplied && snapshot != null) {
+			restoreLocalPlayerFormSnapshot(player, snapshot);
+		}
+
+		player.yBodyRot = yBodyRotO;
+		player.setYRot(yRotO);
+		player.setXRot(xRotO);
+		player.yHeadRotO = yHeadRotO;
+		player.yHeadRot = yHeadRot;
+	}
+
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (super.mouseClicked(mouseX, mouseY, button)) return true;
+
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
+
+		if (colorPickerVisible) {
+			int sliderX = LEFT_PANEL_X + LEFT_PANEL_WIDTH + 8;
+			int sliderY = getUiHeight() / 2 - 40;
+			int totalWidth = 126;
+			int totalHeight = 56;
+			boolean inside = uiMouseX >= sliderX - 5 && uiMouseX <= sliderX + totalWidth
+					&& uiMouseY >= sliderY - 5 && uiMouseY <= sliderY + totalHeight;
+			if (!inside) {
+				hideColorPicker();
+				return true;
+			}
+			return false;
+		}
+
+		if (button == 0 && handlePreviewGridClick(uiMouseX, uiMouseY)) {
+			return true;
+		}
+
+		int previewZoneLeft = LEFT_PANEL_X + LEFT_PANEL_WIDTH + 16;
+		int previewZoneRight = getUiWidth() - 16;
+		int centerX = previewZoneLeft + (previewZoneRight - previewZoneLeft) / 2;
+		int centerY = getUiHeight() / 2 + 112;
+		if (TabId.values()[currentTabIndex] == TabId.HAIR || TabId.values()[currentTabIndex] == TabId.EYES || TabId.values()[currentTabIndex] == TabId.FACE) {
+			centerY = getUiHeight() / 2 + 246;
+		}
+
+		if (uiMouseX >= centerX - 90 && uiMouseX <= centerX + 90 && uiMouseY >= centerY - 370 && uiMouseY <= centerY + 28) {
+			isDraggingModel = true;
+			lastMouseX = uiMouseX;
+			lastMouseY = uiMouseY;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		isDraggingModel = false;
+		return super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+		if (isDraggingModel && !colorPickerVisible) {
+			double uiMouseX = toUiX(mouseX);
+			double uiMouseY = toUiY(mouseY);
+			double deltaX = uiMouseX - lastMouseX;
+			double deltaY = uiMouseY - lastMouseY;
+			playerRotation -= (float) deltaX;
+			playerPitch = Mth.clamp(playerPitch + (float) deltaY, -90.0f, 90.0f);
+			lastMouseX = uiMouseX;
+			lastMouseY = uiMouseY;
+			return true;
+		}
+		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		double uiMouseX = toUiX(mouseX);
+		double uiMouseY = toUiY(mouseY);
+		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
+		int direction = delta < 0 ? 1 : -1;
+
+		TabId tab = TabId.values()[currentTabIndex];
+		switch (tab) {
+			case PRESET -> {
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, direction, bodyTypePreviewScrollRows)) {
+					bodyTypePreviewScrollRows = clampScrollRows(0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows + direction);
+					return true;
+				}
+			}
+			case HAIR -> {
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 1, getMaxHairForCurrentState(), PREVIEW_GRID_VISIBLE_ROWS, direction, hairPreviewScrollRows)) {
+					hairPreviewScrollRows = clampScrollRows(1, getMaxHairForCurrentState(), PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows + direction);
+					return true;
+				}
+			}
+			case EYES -> {
+				int maxEyes = Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase()));
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, maxEyes, PREVIEW_GRID_VISIBLE_ROWS, direction, eyesPreviewScrollRows)) {
+					eyesPreviewScrollRows = clampScrollRows(0, maxEyes, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows + direction);
+					return true;
+				}
+			}
+			case FACE -> {
+				int maxNose = Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase()));
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 20, 0, maxNose, 1, direction, nosePreviewScrollRows)) {
+					nosePreviewScrollRows = clampScrollRows(0, maxNose, 1, nosePreviewScrollRows + direction);
+					return true;
+				}
+				int maxMouth = Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase()));
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 94, 0, maxMouth, 2, direction, mouthPreviewScrollRows)) {
+					mouthPreviewScrollRows = clampScrollRows(0, maxMouth, 2, mouthPreviewScrollRows + direction);
+					return true;
+				}
+			}
+			case BODY -> {
+				int maxTattoo = Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase()));
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, direction, tattooPreviewScrollRows)) {
+					tattooPreviewScrollRows = clampScrollRows(0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows + direction);
+					return true;
+				}
+			}
+			default -> {
+			}
+		}
+
+		return super.mouseScrolled(mouseX, mouseY, delta);
+	}
+
+	@Override
+	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+		if (keyCode == 256
+				&& this.minecraft != null
+				&& this.minecraft.player != null
+				&& ConfigManager.getServerConfig().getGameplay().getForceCharacterCreation()) {
+			final boolean[] creationRequired = {false};
+			StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(data -> {
+				if (!data.getStatus().isHasCreatedCharacter()) creationRequired[0] = true;
+			});
+			if (creationRequired[0]) {
+				ForgeClientEvents.requestCharacterCreationReopen();
+				this.minecraft.setScreen(new PauseScreen(true));
+				return true;
+			}
+		}
+
+		if (keyCode == 256) {
+			if (colorPickerVisible) {
+				hideColorPicker();
+				return true;
+			}
+			if (currentTabIndex > 0) {
+				currentTabIndex--;
+				refreshScreenWidgets();
+				return true;
+			}
+			closeToPrevious();
+			return true;
+		}
+		return super.keyPressed(keyCode, scanCode, modifiers);
+	}
+
+	@Override
+	public void onClose() {
+		clearLocalPlayerTransformState();
+		previewFormIndex = -1;
+		previewFormOptions.clear();
+		closeToPrevious();
+	}
+
+	@Override
+	public boolean isPauseScreen() {
+		return false;
+	}
+
+	private void closeToPrevious() {
+		if (this.minecraft != null) this.minecraft.setScreen(previousScreen);
+	}
+
+	private void finish() {
+		if (this.minecraft != null) {
+			clearAllTransformSelections(character);
+			clearLocalPlayerTransformState();
+			previewFormIndex = -1;
+			previewFormOptions.clear();
+			if (this.previousScreen == null) {
+				ForgeClientEvents.markCharacterCreatedLocally();
+				NetworkHandler.sendToServer(new UpdateCharacterC2S(character));
+			} else {
+				ForgeClientEvents.markCharacterCreatedLocally();
+				NetworkHandler.sendToServer(new CreateCharacterC2S(character));
+			}
+			this.minecraft.setScreen(null);
+		}
+	}
+
+	private void initializeDefaultColors() {
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+		if (config == null) return;
+		boolean hasChanges = false;
+
+		if (character.getBodyColor() == null || character.getBodyColor().isEmpty()) {
+			character.setBodyColor(config.getDefaultBodyColor());
+			hasChanges = true;
+		}
+		if (character.getBodyColor2() == null || character.getBodyColor2().isEmpty()) {
+			character.setBodyColor2(config.getDefaultBodyColor2());
+			hasChanges = true;
+		}
+		if (character.getBodyColor3() == null || character.getBodyColor3().isEmpty()) {
+			character.setBodyColor3(config.getDefaultBodyColor3());
+			hasChanges = true;
+		}
+		if (character.getHairColor() == null || character.getHairColor().isEmpty()) {
+			character.setHairColor(config.getDefaultHairColor());
+			hasChanges = true;
+		}
+		if (character.getEye1Color() == null || character.getEye1Color().isEmpty()) {
+			character.setEye1Color(config.getDefaultEye1Color());
+			hasChanges = true;
+		}
+		if (character.getEye2Color() == null || character.getEye2Color().isEmpty()) {
+			character.setEye2Color(config.getDefaultEye2Color());
+			hasChanges = true;
+		}
+		if (character.getAuraColor() == null || character.getAuraColor().isEmpty()) {
+			character.setAuraColor(config.getDefaultAuraColor());
+			hasChanges = true;
+		}
+
+		if (hasChanges) syncCharacter();
+	}
+
+	private void resolveClassIndex() {
+		RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
+		if (statsConfig == null) return;
+		List<String> classes = new ArrayList<>(statsConfig.getAllClasses());
+		if (classes.isEmpty()) return;
+		if (character.getCharacterClass() == null || character.getCharacterClass().isEmpty()) {
+			character.setCharacterClass(classes.get(0));
+			currentClassIndex = 0;
+			return;
+		}
+		int idx = classes.indexOf(character.getCharacterClass());
+		currentClassIndex = idx >= 0 ? idx : 0;
+	}
+
+	private String[] getRaceClasses() {
+		RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
+		if (statsConfig == null) return new String[0];
+		return statsConfig.getAllClasses().toArray(new String[0]);
+	}
+
+	private int getCombinedBodyTypeCount() {
+		int maleCount = Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_MALE)) + 1;
+		int femaleCount = character.canHaveGender() ? Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_FEMALE)) + 1 : 0;
+		return maleCount + femaleCount - 1;
+	}
+
+	private int getCurrentCombinedBodyTypeValue() {
+		int maleCount = Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_MALE)) + 1;
+		if (character.getGender().equals(Character.GENDER_FEMALE)) {
+			return character.getBodyType() + maleCount;
+		}
+		return character.getBodyType();
+	}
+
+	private int getMaxHairForCurrentState() {
+		int maxHair = 0;
+		String baseModel = getEffectiveModelBase();
+		switch (baseModel) {
+			case "human", "saiyan" -> maxHair = HairManager.getPresetCount();
+			case "namekian" -> maxHair = 3;
+			case "frostdemon", "bioandroid" -> maxHair = 1;
+			case "majin" -> maxHair = character.getGender().equals(Character.GENDER_FEMALE) ? HairManager.getPresetCount() : 2;
+		}
+		if (!ConfigManager.isDefaultRace(character.getRace().toLowerCase(Locale.ROOT)) && HairManager.canUseHair(character)) {
+			maxHair = HairManager.getPresetCount();
+		}
+		return Math.max(0, maxHair);
+	}
+
+	private void syncCharacter() {
+		NetworkHandler.sendToServer(new StatsSyncC2S(character));
+	}
+
+	private void setBodyTypeFromPreview(int value) {
+		int maleCount = Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_MALE)) + 1;
+		String newGender = Character.GENDER_MALE;
+		int newBodyType = value;
+
+		if (character.canHaveGender() && value >= maleCount) {
+			newGender = Character.GENDER_FEMALE;
+			newBodyType = value - maleCount;
+		}
+
+		if (character.getGender().equals(newGender) && character.getBodyType() == newBodyType) return;
+		character.setGender(newGender);
+		character.setBodyType(newBodyType);
+		if (getEffectiveModelBase().equals("majin") && character.getHairId() != 0) character.setHairId(0);
+		syncCharacter();
+		refreshScreenWidgets();
+	}
+
+	private void setHairFromPreview(int value) {
+		if (character.getHairId() == value) return;
+		character.setHairId(value);
+		if (value == 0) {
+			character.setHairBase(new CustomHair());
+			character.setHairSSJ(new CustomHair());
+			character.setHairSSJ2(new CustomHair());
+			character.setHairSSJ3(new CustomHair());
+		}
+		syncCharacter();
+		refreshScreenWidgets();
+	}
+
+	private void setEyesFromPreview(int value) {
+		if (character.getEyesType() == value) return;
+		character.setEyesType(value);
+		syncCharacter();
+		refreshScreenWidgets();
+	}
+
+	private void setNoseFromPreview(int value) {
+		if (character.getNoseType() == value) return;
+		character.setNoseType(value);
+		syncCharacter();
+		refreshScreenWidgets();
+	}
+
+	private void setMouthFromPreview(int value) {
+		if (character.getMouthType() == value) return;
+		character.setMouthType(value);
+		syncCharacter();
+		refreshScreenWidgets();
+	}
+
+	private void setTattooFromPreview(int value) {
+		if (character.getTattooType() == value) return;
+		character.setTattooType(value);
+		syncCharacter();
+		refreshScreenWidgets();
+	}
+
+	private String getEffectiveModelBase() {
+		String race = character.getRace().toLowerCase(Locale.ROOT);
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
+		if (config != null && config.hasCustomModel()) return config.getCustomModel().toLowerCase(Locale.ROOT);
+		return race;
+	}
+
+	private String getBodyTypeText() {
+		String baseModel = getEffectiveModelBase();
+		int bodyType = character.getBodyType();
+		if (baseModel.equals("human") || baseModel.equals("saiyan")) {
+			return bodyType == 0
+					? tr("gui.dragonminez.customization.body_type.default").getString()
+					: tr("gui.dragonminez.customization.body_type.custom").getString();
+		}
+		return tr("gui.dragonminez.customization.type", bodyType + 1).getString();
+	}
+
+	private String getHairTypeText() {
+		if (HairManager.canUseHair(character)) {
+			return tr("gui.dragonminez.customization.hairtype." + character.getHairId()).getString();
+		}
+		return tr("gui.dragonminez.customization.type", character.getHairId() + 1).getString();
+	}
+
+	private CustomTextureButton createArrowButton(int x, int y, boolean isLeft, CustomTextureButton.OnPress onPress) {
+		return new CustomTextureButton.Builder()
+				.position(x, y)
+				.size(10, 15)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(isLeft ? 32 : 20, 0, isLeft ? 32 : 20, 14)
+				.textureSize(8, 14)
+				.message(Component.empty())
+				.onPress(onPress)
+				.build();
+	}
+
+	private TexturedTextButton createColorButton(int x, int y, String fieldName) {
+		String currentColor = getColorFromField(fieldName);
+		if (currentColor.isEmpty()) currentColor = "#FFFFFF";
+		int colorInt = ColorUtils.hexToInt(currentColor);
+
+		TexturedTextButton btn = new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(20, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(42, 15, 42, 15)
+				.textureSize(5, 5)
+				.message(Component.empty())
+				.backgroundColor(colorInt)
+				.onPress(b -> showColorPicker(fieldName))
+				.build();
+
+		colorButtons.put(fieldName, btn);
+		return btn;
+	}
+
 	private void onHexFieldChange(String hex) {
 		if (isUpdatingFromCode) return;
 		if (hex.startsWith("#")) hex = hex.substring(1);
-
 		if (hex.length() == 6) {
 			isUpdatingFromCode = true;
 			try {
@@ -499,32 +973,23 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void showColorPicker(String fieldName) {
 		currentColorField = fieldName;
 		colorPickerVisible = true;
-
 		String currentColor = getColorFromField(fieldName);
 		float[] hsv = ColorUtils.hexToHsv(currentColor);
-
 		if (hueSlider != null) hueSlider.setValue((int) hsv[0]);
 		if (saturationSlider != null) {
 			int satValue = (int) hsv[1];
-			if (satValue == 0) satValue = 100;
-			saturationSlider.setValue(satValue);
+			saturationSlider.setValue(satValue == 0 ? 100 : satValue);
+			saturationSlider.setCurrentHue(hsv[0]);
 		}
 		if (valueSlider != null) {
 			int valValue = (int) hsv[2];
-			if (valValue == 0) valValue = 100;
-			valueSlider.setValue(valValue);
-		}
-
-		if (saturationSlider != null) saturationSlider.setCurrentHue(hsv[0]);
-		if (valueSlider != null) {
+			valueSlider.setValue(valValue == 0 ? 100 : valValue);
 			valueSlider.setCurrentHue(hsv[0]);
 			valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
 		}
-
 		isUpdatingFromCode = true;
-		if (hexColorField != null) hexColorField.setValue(getColorFromField(fieldName));
+		if (hexColorField != null) hexColorField.setValue(currentColor);
 		isUpdatingFromCode = false;
-
 		setSlidersVisible();
 	}
 
@@ -532,7 +997,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		colorPickerVisible = false;
 		currentColorField = "";
 		setSlidersVisible();
-		refreshButtons();
 	}
 
 	private void setSlidersVisible() {
@@ -544,206 +1008,17 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void updateColorFromSliders() {
 		if (!colorPickerVisible || currentColorField.isEmpty()) return;
-
 		float h = hueSlider.getValue();
 		float s = saturationSlider.getValue();
 		float v = valueSlider.getValue();
-
 		saturationSlider.setCurrentHue(h);
 		valueSlider.setCurrentHue(h);
 		valueSlider.setCurrentSaturation(s);
-
 		String newColor = ColorUtils.hsvToHex(h, s, v);
-
 		isUpdatingFromCode = true;
 		if (hexColorField != null && !hexColorField.isFocused()) hexColorField.setValue(newColor);
 		isUpdatingFromCode = false;
 		applyColor(newColor);
-	}
-
-	private CustomTextureButton createArrowButton(int x, int y, boolean isLeft, CustomTextureButton.OnPress onPress) {
-		return new CustomTextureButton.Builder()
-				.position(x, y)
-				.size(10, 15)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(isLeft ? 32 : 20, 0, isLeft ? 32 : 20, 14)
-				.textureSize(8, 14)
-				.message(Component.empty())
-				.onPress(onPress)
-				.build();
-	}
-
-	private TexturedTextButton createColorButton(int x, int y, String fieldName) {
-		String currentColor = getColorFromField(fieldName);
-		if (currentColor == null || currentColor.isEmpty()) {
-			currentColor = "#FFFFFF";
-		}
-		int colorInt = ColorUtils.hexToInt(currentColor);
-
-		return new TexturedTextButton.Builder()
-				.position(x, y)
-				.size(20, 20)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(42, 15, 42, 15)
-				.textureSize(5, 5)
-				.message(Component.empty())
-				.backgroundColor(colorInt)
-				.onPress(btn -> showColorPicker(fieldName))
-				.build();
-	}
-
-	private void changeBodyType(int delta) {
-		String baseModel = getEffectiveModelBase();
-		int maxType = TextureCounter.getMaxBodyTypes(baseModel, character.getGender());
-
-		if (maxType < 0) {
-			if (baseModel.equals("human") || baseModel.equals("saiyan")) {
-				maxType = 1;
-			} else {
-				maxType = 0;
-			}
-		}
-
-		int currentType = character.getBodyType();
-		int newType = currentType + delta;
-
-		if (newType < 0) {
-			newType = maxType;
-		} else if (newType > maxType) {
-			newType = 0;
-		}
-
-		character.setBodyType(newType);
-		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		refreshButtons();
-	}
-
-	private void changeHair(int delta) {
-		int maxHair = 0;
-		String baseModel = getEffectiveModelBase();
-
-		switch (baseModel) {
-			case "human", "saiyan" -> maxHair = HairManager.getPresetCount();
-			case "namekian" -> maxHair = 3;
-			case "frostdemon", "bioandroid" -> maxHair = 1;
-			case "majin" -> {
-				if (character.getGender().equals(Character.GENDER_FEMALE)) maxHair = HairManager.getPresetCount();
-				else maxHair = 2;
-			}
-		}
-
-		if (!ConfigManager.isDefaultRace(character.getRace().toLowerCase()) && HairManager.canUseHair(character)) {
-			maxHair = HairManager.getPresetCount();
-		}
-
-		int newHair = character.getHairId() + delta;
-		if (newHair < 0) newHair = maxHair;
-		else if (newHair > maxHair) newHair = 0;
-
-		character.setHairId(newHair);
-
-		if (newHair == 0) {
-			character.setHairBase(new CustomHair());
-			character.setHairSSJ(new CustomHair());
-			character.setHairSSJ2(new CustomHair());
-			character.setHairSSJ3(new CustomHair());
-		}
-		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		refreshButtons();
-	}
-
-	private boolean canChangeBodyType() {
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-
-		if (config == null) {
-			return false;
-		}
-
-		if (config.getUseVanillaSkin()) {
-			return false;
-		}
-
-		return true;
-	}
-
-	private void changeEyes(int delta) {
-		int maxEyes = TextureCounter.getMaxEyesTypes(getEffectiveModelBase());
-		if (maxEyes == 0) maxEyes = 1;
-
-		int newEyes = character.getEyesType() + delta;
-		if (newEyes < 0) newEyes = maxEyes;
-		if (newEyes > maxEyes) newEyes = 0;
-		character.setEyesType(newEyes);
-		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		refreshButtons();
-	}
-
-	private void changeNose(int delta) {
-		int maxNose = TextureCounter.getMaxNoseTypes(getEffectiveModelBase());
-		if (maxNose == 0) maxNose = 1;
-
-		int newNose = character.getNoseType() + delta;
-		if (newNose < 0) newNose = maxNose;
-		if (newNose > maxNose) newNose = 0;
-		character.setNoseType(newNose);
-		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		refreshButtons();
-	}
-
-	private void changeMouth(int delta) {
-		int maxMouth = TextureCounter.getMaxMouthTypes(getEffectiveModelBase());
-		if (maxMouth == 0) maxMouth = 1;
-
-		int newMouth = character.getMouthType() + delta;
-		if (newMouth < 0) newMouth = maxMouth;
-		if (newMouth > maxMouth) newMouth = 0;
-		character.setMouthType(newMouth);
-		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		refreshButtons();
-	}
-
-	private void changeTattoo(int delta) {
-		int maxTattoo = TextureCounter.getMaxTattooTypes(getEffectiveModelBase());
-		if (maxTattoo == 0) maxTattoo = 1;
-
-		int newTattoo = character.getTattooType() + delta;
-		if (newTattoo < 0) newTattoo = maxTattoo;
-		if (newTattoo > maxTattoo) newTattoo = 0;
-		character.setTattooType(newTattoo);
-		NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		refreshButtons();
-	}
-
-	private void refreshButtons() {
-		String savedColorField = currentColorField;
-		boolean wasColorPickerVisible = colorPickerVisible;
-
-		float savedH = 0, savedS = 0, savedV = 0;
-		if (colorPickerVisible && hueSlider != null) {
-			savedH = hueSlider.getValue();
-			savedS = saturationSlider.getValue();
-			savedV = valueSlider.getValue();
-		}
-
-		clearWidgets();
-		initPage();
-
-		if (wasColorPickerVisible) {
-			currentColorField = savedColorField;
-			colorPickerVisible = true;
-
-			if (hueSlider != null) {
-				hueSlider.setValue((int) savedH);
-				saturationSlider.setValue((int) savedS);
-				valueSlider.setValue((int) savedV);
-
-				saturationSlider.setCurrentHue(savedH);
-				valueSlider.setCurrentHue(savedH);
-				valueSlider.setCurrentSaturation(savedS);
-			}
-
-			setSlidersVisible();
-		}
 	}
 
 	private String getColorFromField(String fieldName) {
@@ -757,9 +1032,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case "auraColor" -> character.getAuraColor();
 			default -> null;
 		};
-
-		String result = (color != null && !color.isEmpty()) ? color : "#FFFFFF";
-		return result;
+		return (color != null && !color.isEmpty()) ? color : "#FFFFFF";
 	}
 
 	private void applyColor(String color) {
@@ -773,105 +1046,47 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case "auraColor" -> character.setAuraColor(color);
 		}
 
-		NetworkHandler.sendToServer(new StatsSyncC2S(character));
+		TexturedTextButton btn = colorButtons.get(currentColorField);
+		if (btn != null) {
+			btn.setBackgroundColor(ColorUtils.hexToInt(color));
+		}
+
+		syncCharacter();
 	}
 
-	private void finish() {
-		if (this.minecraft != null) {
-			clearAllTransformSelections(character);
-			clearLocalPlayerTransformState();
-			previewFormIndex = -1;
-			previewFormOptions.clear();
-
-			if (this.previousScreen == null) {
-				NetworkHandler.sendToServer(new UpdateCharacterC2S(character));
-			} else {
-				NetworkHandler.sendToServer(new CreateCharacterC2S(character));
-				ForgeClientEvents.isHasCreatedCharacterCache = true;
-			}
-			startCloseTransition(null);
-		}
+	private void renderColorPickerBackground(GuiGraphics graphics) {
+		var poseStack = graphics.pose();
+		poseStack.pushPose();
+		poseStack.translate(0.0D, 0.0D, 200.0D);
+		int sliderX = LEFT_PANEL_X + LEFT_PANEL_WIDTH + 8;
+		int sliderY = getUiHeight() / 2 - 40;
+		graphics.fill(sliderX - 5, sliderY - 5, sliderX + 126, sliderY + 56, 0x88000000);
+		poseStack.popPose();
 	}
 
-	@Override
-	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		renderPanorama(partialTick);
-		this.renderCinematicBars(graphics);
+	private void renderColorPreviewSquare(GuiGraphics graphics) {
+		if (hueSlider == null) return;
+		var poseStack = graphics.pose();
+		poseStack.pushPose();
+		poseStack.translate(0.0D, 0.0D, 200.0D);
+		int sliderX = LEFT_PANEL_X + LEFT_PANEL_WIDTH + 8;
+		int sliderY = getUiHeight() / 2 - 40;
+		int previewX = sliderX + 85;
+		int previewSize = 34;
 
-		int uiMouseX = (int) Math.round(toUiX(mouseX));
-		int uiMouseY = (int) Math.round(toUiY(mouseY));
+		float h = hueSlider.getValue();
+		float s = saturationSlider.getValue();
+		float v = valueSlider.getValue();
+		int[] rgb = ColorUtils.hsvToRgb(h, s, v);
+		int color = ColorUtils.rgbToInt(rgb[0], rgb[1], rgb[2]);
 
-		beginUiScale(graphics);
-
-		int centerY = getUiHeight() / 2;
-		int panelX = 10;
-		int panelY = centerY - 110;
-
-		RenderSystem.enableBlend();
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, panelX, panelY, 0, 0, 141, 213);
-
-		if (currentPage == 1) {
-			int statsPanelX = getUiWidth() - 158;
-			int statsPanelY = centerY - 110;
-			graphics.blit(MENU_BIG, statsPanelX, statsPanelY, 0, 0, 141, 213);
-			graphics.blit(MENU_BIG, statsPanelX + 32, statsPanelY + 14, 141, 0, 79, 21);
-		}
-
-		RenderSystem.disableBlend();
-
-		renderPlayerModel(graphics, getUiWidth() / 2 + 5, getUiHeight() / 2 + 70, 75, uiMouseX, uiMouseY);
-
-		if (colorPickerVisible) {
-			renderColorPickerBackground(graphics);
-		}
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 400.0D);
-		super.render(graphics, uiMouseX, uiMouseY, partialTick);
-		graphics.pose().popPose();
-
-		renderPageContent(graphics, centerY);
-
-		if (colorPickerVisible) {
-			renderColorPreviewSquare(graphics);
-		}
-
-		if (currentPage == 1) {
-			renderBaseStats(graphics, centerY);
-		}
-
-		endUiScale(graphics);
-	}
-
-	private void renderCinematicBars(GuiGraphics guiGraphics) {
-		int totalBarHeight = (int) (this.height * 0.12);
-
-		int fadeSize = 60;
-
-		if (totalBarHeight <= fadeSize) {
-			totalBarHeight = fadeSize + 1;
-		}
-
-		int solidHeight = totalBarHeight - fadeSize;
-
-		int colorSolid = 0xFF000000;
-		int colorTransparent = 0x00000000;
-
-		guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
-
-		guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
-
-		int bottomBarStartY = this.height - totalBarHeight;
-
-		guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
-
-		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
+		graphics.fill(previewX - 1, sliderY - 1, previewX + previewSize + 1, sliderY + previewSize + 1, 0xFFFFFFFF);
+		graphics.fill(previewX, sliderY, previewX + previewSize, sliderY + previewSize, 0xFF000000 | color);
+		poseStack.popPose();
 	}
 
 	private void renderPanorama(float partialTick) {
 		String currentRace = character.getRace();
-
 		PanoramaRenderer panorama = switch (currentRace) {
 			case "saiyan" -> panoramaSaiyan;
 			case "namekian" -> panoramaNamek;
@@ -880,476 +1095,42 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case "majin" -> panoramaMajin;
 			default -> panoramaHuman;
 		};
-
 		panorama.render(partialTick, 1.0F);
 	}
 
-	private void renderPageContent(GuiGraphics graphics, int centerY) {
-		int textX = 79;
-		centerY = centerY - 15;
-
-		if (currentPage == 0) {
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.eyes").getString(), textX - 35, centerY - 50, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.type", character.getEyesType() + 1).getString(), textX - 35, centerY - 38, 0xFFFFFF);
-
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.nose").getString(), textX + 35, centerY - 50, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.type", character.getNoseType() + 1).getString(), textX + 35, centerY - 38, 0xFFFFFF);
-
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.mouth").getString(), textX, centerY - 20, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.type", character.getMouthType() + 1).getString(), textX, centerY - 8, 0xFFFFFF);
-
-			if (canChangeBodyType()) {
-				drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.body_type").getString(), textX, centerY - 80, 0xFF9B9B);
-				String baseModel = getEffectiveModelBase();
-				String race = character.getRace();
-				int bodyType = character.getBodyType();
-				String bodyTypeText;
-
-				if (baseModel.equals("human") || baseModel.equals("saiyan")) {
-					bodyTypeText = bodyType == 0 ? tr("gui.dragonminez.customization.body_type.default").getString() : tr("gui.dragonminez.customization.body_type.custom").getString();
-				} else {
-					bodyTypeText = tr("gui.dragonminez.customization.type", bodyType + 1).getString();
-				}
-
-				drawCenteredStringWithBorder(graphics, bodyTypeText, textX, centerY - 68, 0xFFFFFF);
-			}
-
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hair").getString(), textX, centerY + 10, 0xFF9B9B);
-
-			if (HairManager.canUseHair(character)) {
-				if (character.getHairId() == 0) {
-					drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hairtype." + character.getHairId()).getString(), textX, centerY + 22, 0x00FFFF);
-				} else {
-					drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hairtype." + character.getHairId()).getString(), textX, centerY + 22, 0xFFFFFF);
-				}
-			} else {
-				drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.type", character.getHairId() + 1).getString(), textX, centerY + 22, 0xFFFFFF);
-			}
-
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.tattoo").getString(), textX, centerY + 40, 0xFF9B9B);
-			if (character.getTattooType() == 2) {
-				drawCenteredStringWithBorder(graphics, txt("ezShokkoh").getString(), textX, centerY + 52, 0xFFFFFF);
-			} else {
-				drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.type", character.getTattooType() + 1).getString(), textX, centerY + 52, 0xFFFFFF);
-			}
-
-			if (character.canHaveGender()) {
-				drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.gender").getString(), textX, centerY + 70, 0xFF9B9B);
-				String genderText = tr("gender.dragonminez." + character.getGender()).getString();
-				int genderColor = character.getGender().equals(Character.GENDER_MALE) ? 0x2133A6 : 0xFC63D9;
-				drawCenteredStringWithBorder(graphics, genderText, textX, centerY + 82, 0xFFFFFF, genderColor);
-			}
-		} else if (currentPage == 1) {
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.class").getString(), textX, centerY - 80, 0xFF9B9B);
-
-			Component className = tr("class.dragonminez." + character.getCharacterClass());
-			drawCenteredStringWithBorder2(graphics, className, textX, centerY - 68, 0xFFFFFF);
-
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.transformation_preview").getString(), textX, centerY - 50, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), textX, centerY - 38, 0xFFFFFF);
-
-			int labelX = 79;
-			int labelStartY = centerY - 20;
-
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.body").getString(), labelX, labelStartY, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.eyes").getString(), labelX, labelStartY + 30, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hair").getString(), labelX, labelStartY + 60, 0xFF9B9B);
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.aura").getString(), labelX, labelStartY + 90, 0xFF9B9B);
-		}
-	}
-
-	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
-		LivingEntity player = Minecraft.getInstance().player;
-		if (player == null) return;
-
-		ActiveFormSnapshot snapshot = captureLocalPlayerFormSnapshot(player);
-		boolean previewApplied = applyPreviewTransformationToPlayer(player);
-
-		int adjustedScale = getAdjustedModelScale(scale);
-		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
-		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
-		pose.mul(cameraOrientation);
-
-		float yBodyRotO = player.yBodyRot;
-		float yRotO = player.getYRot();
-		float xRotO = player.getXRot();
-		float yHeadRotO = player.yHeadRotO;
-		float yHeadRot = player.yHeadRot;
-
-		player.yBodyRot = playerRotation;
-		player.setYRot(playerRotation);
-		player.setXRot(0);
-		player.yHeadRot = playerRotation;
-		player.yHeadRotO = playerRotation;
-
-		graphics.pose().pushPose();
-		graphics.pose().translate(0.0D, 0.0D, 0.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, adjustedScale, pose, cameraOrientation, player);
-		graphics.pose().popPose();
-
-		if (previewApplied && snapshot != null) {
-			restoreLocalPlayerFormSnapshot(player, snapshot);
-		}
-
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
-		player.yHeadRotO = yHeadRotO;
-		player.yHeadRot = yHeadRot;
+	private void renderCinematicBars(GuiGraphics guiGraphics) {
+		int totalBarHeight = (int) (this.height * 0.12);
+		int fadeSize = 60;
+		if (totalBarHeight <= fadeSize) totalBarHeight = fadeSize + 1;
+		int solidHeight = totalBarHeight - fadeSize;
+		int colorSolid = 0xFF000000;
+		int colorTransparent = 0x00000000;
+		guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
+		guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
+		int bottomBarStartY = this.height - totalBarHeight;
+		guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
+		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
 	}
 
 	protected int getAdjustedModelScale(int baseScale) {
 		var player = Minecraft.getInstance().player;
 		if (player == null) return baseScale;
-
 		final float[] inverseScale = {1.0f};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-			var character = stats.getCharacter();
-			var activeForm = character.getActiveFormData();
-
+			var localCharacter = stats.getCharacter();
+			var activeForm = localCharacter.getActiveFormData();
 			float currentScale;
 			if (activeForm != null) {
 				Float[] formScaling = activeForm.getModelScaling();
-				Float[] charScaling = character.getModelScaling();
+				Float[] charScaling = localCharacter.getModelScaling();
 				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
 			} else {
-				Float[] charScaling = character.getModelScaling();
+				Float[] charScaling = localCharacter.getModelScaling();
 				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
 			}
-
 			if (currentScale > 1.0f) inverseScale[0] = 0.9375f / currentScale;
 		});
-
 		return (int) (baseScale * inverseScale[0]);
-	}
-
-	private void renderColorPickerBackground(GuiGraphics graphics) {
-		var poseStack = graphics.pose();
-		poseStack.pushPose();
-		poseStack.translate(0.0D, 0.0D, 200.0D);
-
-		int sliderX = 180;
-		int sliderY = getUiHeight() / 2 - 50;
-		int sliderWidth = 80;
-		int sliderHeight = 34;
-		int previewSize = 34;
-
-		int totalWidth = sliderWidth + previewSize + 10;
-		int totalHeight = sliderHeight + 20;
-		graphics.fill(sliderX - 5, sliderY - 5, sliderX + totalWidth, sliderY + totalHeight, 0x66000000);
-
-		poseStack.popPose();
-	}
-
-	private void renderColorPreviewSquare(GuiGraphics graphics) {
-		if (hueSlider == null) return;
-
-		var poseStack = graphics.pose();
-		poseStack.pushPose();
-		poseStack.translate(0.0D, 0.0D, 200.0D);
-
-		int sliderX = 180;
-		int sliderY = getUiHeight() / 2 - 50;
-		int sliderWidth = 80;
-		int previewSize = 34;
-		int previewX = sliderX + sliderWidth + 5;
-
-		float h = hueSlider.getValue();
-		float s = saturationSlider.getValue();
-		float v = valueSlider.getValue();
-
-		int[] rgb = ColorUtils.hsvToRgb(h, s, v);
-		int color = ColorUtils.rgbToInt(rgb[0], rgb[1], rgb[2]);
-
-		graphics.fill(previewX - 1, sliderY - 1, previewX + previewSize + 1, sliderY + previewSize + 1, 0xFFFFFFFF);
-		graphics.fill(previewX, sliderY, previewX + previewSize, sliderY + previewSize, 0xFF000000 | color);
-
-		poseStack.popPose();
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, String text, int x, int y, int color) {
-		drawStringWithBorder(graphics, text, x, y, color, color);
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, String text, int x, int y, int textColor, int borderColor) {
-		graphics.drawString(this.font, text, x - 1, y, 0x000000);
-		graphics.drawString(this.font, text, x + 1, y, 0x000000);
-		graphics.drawString(this.font, text, x, y - 1, 0x000000);
-		graphics.drawString(this.font, text, x, y + 1, 0x000000);
-		graphics.drawString(this.font, text, x, y, textColor);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, String text, int centerX, int y, int color) {
-		drawCenteredStringWithBorder(graphics, text, centerX, y, color, color);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, String text, int centerX, int y, int textColor, int borderColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - textWidth / 2;
-		graphics.drawString(this.font, text, x - 1, y, 0x000000);
-		graphics.drawString(this.font, text, x + 1, y, 0x000000);
-		graphics.drawString(this.font, text, x, y - 1, 0x000000);
-		graphics.drawString(this.font, text, x, y + 1, 0x000000);
-		graphics.drawString(this.font, text, x, y, textColor);
-	}
-
-	private void drawCenteredStringWithBorder2(GuiGraphics graphics, Component text, int centerX, int y, int color) {
-		drawCenteredStringWithBorder2(graphics, text, centerX, y, color, 0x000000);
-	}
-
-	private void drawCenteredStringWithBorder2(GuiGraphics graphics, Component text, int centerX, int y, int textColor, int borderColor) {
-		String stripped = ChatFormatting.stripFormatting(text.getString());
-		Component borderComponent = txt(stripped != null ? stripped : text.getString());
-
-		if (text.getStyle().isBold()) {
-			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
-		}
-
-		int textWidth = this.font.width(borderComponent);
-		int x = centerX - textWidth / 2;
-
-		graphics.drawString(font, borderComponent, x + 1, y, borderColor, false);
-		graphics.drawString(font, borderComponent, x - 1, y, borderColor, false);
-		graphics.drawString(font, borderComponent, x, y + 1, borderColor, false);
-		graphics.drawString(font, borderComponent, x, y - 1, borderColor, false);
-
-		graphics.drawString(font, text, x, y, textColor, false);
-	}
-
-	private void renderBaseStats(GuiGraphics graphics, int centerY) {
-		RaceStatsConfig statsConfig = ConfigManager.getRaceStats(character.getRace());
-		if (statsConfig == null) return;
-
-		String currentClass = character.getCharacterClass();
-		RaceStatsConfig.ClassStats classStats = statsConfig.getClassStats(currentClass);
-
-		if (classStats == null || classStats.getBaseStats() == null || classStats.getStatScaling() == null) return;
-
-		RaceStatsConfig.BaseStats baseStats = classStats.getBaseStats();
-		RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
-
-		int statsPanelX = getUiWidth() - 158;
-		int centerX = statsPanelX + 72;
-		int startY = centerY - 90;
-
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.base_stats").getString(), centerX, startY, 0xFF9B9B);
-		startY += 20;
-
-		drawCenteredStringWithBorder(graphics, "STR", centerX - 40, startY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(baseStats.getStrength()), centerX - 40, startY + 12, 0xFFFFFF);
-
-		drawCenteredStringWithBorder(graphics, "SKP", centerX, startY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(baseStats.getStrikePower()), centerX, startY + 12, 0xFFFFFF);
-
-		drawCenteredStringWithBorder(graphics, "RES", centerX + 40, startY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(baseStats.getResistance()), centerX + 40, startY + 12, 0xFFFFFF);
-
-		startY += 35;
-
-		drawCenteredStringWithBorder(graphics, "VIT", centerX - 40, startY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(baseStats.getVitality()), centerX - 40, startY + 12, 0xFFFFFF);
-
-		drawCenteredStringWithBorder(graphics, "PWR", centerX, startY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(baseStats.getKiPower()), centerX, startY + 12, 0xFFFFFF);
-
-		drawCenteredStringWithBorder(graphics, "ENE", centerX + 40, startY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(baseStats.getEnergy()), centerX + 40, startY + 12, 0xFFFFFF);
-
-		startY += 35;
-
-		double maxMeleeDamage = baseStats.getStrength() * scaling.getStrengthScaling();
-		double maxStrikeDamage = baseStats.getStrikePower() * scaling.getStrikePowerScaling() + (baseStats.getStrength() * scaling.getStrengthScaling()) * 0.25;
-		int maxStamina = 100 + (int) (baseStats.getResistance() * scaling.getStaminaScaling());
-		double maxDefense = baseStats.getResistance() * scaling.getDefenseScaling();
-		double maxHealth = 20 + (baseStats.getVitality() * scaling.getVitalityScaling());
-		double maxKiDamage = baseStats.getKiPower() * scaling.getKiPowerScaling();
-		int maxEnergy = 100 + (int) (baseStats.getEnergy() * scaling.getEnergyScaling());
-
-		int rowY = startY;
-		int labelX = centerX - 55;
-		int valueX = centerX + 25;
-
-		drawStringWithBorder(graphics, "Melee Damage", labelX, rowY, 0x7CFDD6);
-		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxMeleeDamage), valueX, rowY, 0xFFFFFF);
-
-		rowY += 12;
-		drawStringWithBorder(graphics, "Strike Damage", labelX, rowY, 0x7CFDD6);
-		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxStrikeDamage), valueX, rowY, 0xFFFFFF);
-
-		rowY += 12;
-		drawStringWithBorder(graphics, "Defense", labelX, rowY, 0x7CFDD6);
-		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxDefense), valueX, rowY, 0xFFFFFF);
-
-		rowY += 12;
-		drawStringWithBorder(graphics, "Stamina", labelX, rowY, 0x7CFDD6);
-		drawStringWithBorder(graphics, String.valueOf(maxStamina), valueX, rowY, 0xFFFFFF);
-
-		rowY += 12;
-		drawStringWithBorder(graphics, "Health", labelX, rowY, 0x7CFDD6);
-		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxHealth), valueX, rowY, 0xFFFFFF);
-
-		rowY += 12;
-		drawStringWithBorder(graphics, "Ki Damage", labelX, rowY, 0x7CFDD6);
-		drawStringWithBorder(graphics, String.format(Locale.US, "%.1f", maxKiDamage), valueX, rowY, 0xFFFFFF);
-
-		rowY += 12;
-		drawStringWithBorder(graphics, "Energy", labelX, rowY, 0x7CFDD6);
-		drawStringWithBorder(graphics, String.valueOf(maxEnergy), valueX, rowY, 0xFFFFFF);
-	}
-
-	@Override
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (transitionState == TransitionState.CLOSING) return true;
-		double uiMouseX = toUiX(mouseX);
-		double uiMouseY = toUiY(mouseY);
-
-		if (colorPickerVisible) {
-			int sliderX = 180;
-			int sliderY = getUiHeight() / 2 - 50;
-			int sliderWidth = 80;
-			int previewSize = 34;
-			int totalWidth = sliderWidth + previewSize + 10;
-			int totalHeight = 55;
-
-			boolean isInsidePicker = uiMouseX >= sliderX - 5 && uiMouseX <= sliderX + totalWidth &&
-					uiMouseY >= sliderY - 5 && uiMouseY <= sliderY + totalHeight;
-
-			if (!isInsidePicker) {
-				hideColorPicker();
-				return true;
-			} else {
-				return super.mouseClicked(mouseX, mouseY, button);
-			}
-		}
-
-		int centerX = getUiWidth() / 2 + 5;
-		int centerY = getUiHeight() / 2 + 70;
-		int modelRadius = 60;
-
-		if (uiMouseX >= centerX - modelRadius && uiMouseX <= centerX + modelRadius &&
-				uiMouseY >= centerY - 100 && uiMouseY <= centerY + 20) {
-			isDraggingModel = true;
-			lastMouseX = uiMouseX;
-			return true;
-		}
-
-		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(stats -> {
-			if (HairManager.canUseHair(stats.getCharacter())) {
-				if (currentPage == 0 && character.getHairId() == 0) {
-					int centerYText = getUiHeight() / 2 - 15;
-					int textX = 79;
-					int hairTypeY = centerYText + 22;
-
-					String hairTypeText = tr("gui.dragonminez.customization.hairtype.0").getString();
-					int textWidth = this.font.width(hairTypeText);
-					int textHeight = this.font.lineHeight;
-
-					int textLeft = textX - textWidth / 2;
-					int textRight = textX + textWidth / 2;
-					int textTop = hairTypeY;
-					int textBottom = hairTypeY + textHeight;
-
-					if (uiMouseX >= textLeft && uiMouseX <= textRight && uiMouseY >= textTop && uiMouseY <= textBottom) {
-						if (this.minecraft != null) {
-							isSwitchingMenu = true;
-							GLOBAL_SWITCHING = true;
-							startCloseTransition(new HairEditorScreen(this, character));
-						}
-					}
-				}
-			}
-		});
-
-		return super.mouseClicked(mouseX, mouseY, button);
-	}
-
-	@Override
-	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (transitionState == TransitionState.CLOSING) return true;
-		isDraggingModel = false;
-		return super.mouseReleased(mouseX, mouseY, button);
-	}
-
-	@Override
-	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (transitionState == TransitionState.CLOSING) return true;
-		if (isDraggingModel && !colorPickerVisible) {
-			double uiMouseX = toUiX(mouseX);
-			double deltaX = uiMouseX - lastMouseX;
-			playerRotation += (float) (deltaX * 0.8);
-			lastMouseX = uiMouseX;
-			return true;
-		}
-		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-	}
-
-	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (transitionState == TransitionState.CLOSING) return true;
-		if (keyCode == 256) {
-			if (colorPickerVisible) {
-				hideColorPicker();
-				return true;
-			}
-			if (this.minecraft != null) {
-				if (this.previousScreen != null) {
-					isSwitchingMenu = true;
-					startCloseTransition(previousScreen);
-				} else startCloseTransition(null);
-			}
-			return true;
-		}
-
-		return super.keyPressed(keyCode, scanCode, modifiers);
-	}
-
-	@Override
-	public void onClose() {
-		clearLocalPlayerTransformState();
-		previewFormIndex = -1;
-		previewFormOptions.clear();
-
-		if (this.previousScreen != null) {
-			isSwitchingMenu = true;
-			startCloseTransition(previousScreen);
-		} else {
-			startCloseTransition(null);
-		}
-	}
-
-	@Override
-	public boolean isPauseScreen() {
-		return false;
-	}
-
-	private String getEffectiveModelBase() {
-		String race = character.getRace().toLowerCase(Locale.ROOT);
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-
-		if (config != null && config.hasCustomModel()) return config.getCustomModel().toLowerCase(Locale.ROOT);
-		return race;
-	}
-
-	private void startOpenTransition() {
-		transitionState = TransitionState.OPENING;
-		animationStartTime = System.currentTimeMillis();
-		pendingScreen = null;
-		closeCommitted = false;
-	}
-
-	private void startCloseTransition(Screen nextScreen) {
-		if (transitionState == TransitionState.CLOSING) return;
-		pendingScreen = nextScreen;
-		transitionState = TransitionState.CLOSING;
-		animationStartTime = System.currentTimeMillis();
-		closeCommitted = false;
-	}
-
-	private float getTransitionProgress() {
-		long duration = transitionState == TransitionState.CLOSING ? CLOSE_ANIMATION_DURATION : OPEN_ANIMATION_DURATION;
-		if (duration <= 0L) return 1.0f;
-		long elapsed = System.currentTimeMillis() - animationStartTime;
-		return net.minecraft.util.Mth.clamp(elapsed / (float) duration, 0.0f, 1.0f);
 	}
 
 	private void reloadPreviewFormOptions() {
@@ -1360,25 +1141,15 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			previousGroup = previous.groupName;
 			previousForm = previous.formName;
 		}
-
 		previewFormOptions.clear();
 		previewFormIndex = -1;
+		previewFormOptions.add(new PreviewFormOption("", ""));
 
-		previewFormOptions.add(new PreviewFormOption("", "", "base", 0));
-
-		List<TransformationsHelper.OrderedFormEntry> orderedForms =
-				TransformationsHelper.getOrderedFormsForRace(character.getRace(), PREVIEW_FORM_TYPE_ORDER);
+		List<TransformationsHelper.OrderedFormEntry> orderedForms = TransformationsHelper.getOrderedFormsForRace(character.getRace(), PREVIEW_FORM_TYPE_ORDER);
 		for (TransformationsHelper.OrderedFormEntry entry : orderedForms) {
 			if (entry == null || entry.getFormData() == null) continue;
-			previewFormOptions.add(new PreviewFormOption(
-					entry.getGroupName(),
-					entry.getFormData().getName(),
-					entry.getFormType(),
-					entry.getFormData().getUnlockOnSkillLevel() != null ? entry.getFormData().getUnlockOnSkillLevel() : 0
-			));
+			previewFormOptions.add(new PreviewFormOption(entry.getGroupName(), entry.getFormData().getName()));
 		}
-
-		if (previewFormOptions.isEmpty()) return;
 
 		if (previousGroup != null && previousForm != null) {
 			for (int i = 0; i < previewFormOptions.size(); i++) {
@@ -1389,49 +1160,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				}
 			}
 		}
-
-		previewFormIndex = 0;
+		previewFormIndex = previewFormOptions.isEmpty() ? -1 : 0;
 	}
 
-	private void changePreviewTransformation(int delta) {
-		if (previewFormOptions.isEmpty()) {
-			previewFormIndex = -1;
-			return;
-		}
-		int nextIndex = previewFormIndex + delta;
-		if (nextIndex < 0) nextIndex = previewFormOptions.size() - 1;
-		if (nextIndex >= previewFormOptions.size()) nextIndex = 0;
-		previewFormIndex = nextIndex;
-	}
-
-	private String getCurrentPreviewTransformationName() {
-		if (previewFormIndex < 0 || previewFormIndex >= previewFormOptions.size()) {
-			return tr("forms.dragonminez.base").getString();
-		}
-
-		PreviewFormOption option = previewFormOptions.get(previewFormIndex);
-		String rawName = option.formName != null ? option.formName : "";
-		if (rawName.isEmpty()) return tr("forms.dragonminez.base").getString();
-		String raceName = character.getRace() != null ? character.getRace().toLowerCase(Locale.ROOT) : "human";
-		String translationKey = "race.dragonminez." + raceName + ".form." + option.groupName + "." + rawName;
-		if (I18n.exists(translationKey)) {
-			return tr(translationKey).getString();
-		}
-
-		return formatPreviewFormName(rawName);
-	}
-
-	private String formatPreviewFormName(String rawName) {
-		String[] parts = rawName.replace('-', ' ').replace('_', ' ').split("\\s+");
-		StringBuilder builder = new StringBuilder();
-		for (String part : parts) {
-			if (part == null || part.isEmpty()) continue;
-			if (!builder.isEmpty()) builder.append(' ');
-			builder.append(java.lang.Character.toUpperCase(part.charAt(0)));
-			if (part.length() > 1) builder.append(part.substring(1).toLowerCase(Locale.ROOT));
-		}
-		return builder.isEmpty() ? rawName : builder.toString();
-	}
 
 	private ActiveFormSnapshot captureLocalPlayerFormSnapshot(LivingEntity player) {
 		final ActiveFormSnapshot[] snapshot = new ActiveFormSnapshot[1];
@@ -1485,4 +1216,316 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		targetCharacter.setSelectedStackForm("");
 	}
 
+	private boolean handlePreviewGridClick(double uiMouseX, double uiMouseY) {
+		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
+		TabId tab = TabId.values()[currentTabIndex];
+
+		return switch (tab) {
+			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows, this::setBodyTypeFromPreview);
+			case HAIR -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 1, getMaxHairForCurrentState(), PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows, this::setHairFromPreview);
+			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows, this::setEyesFromPreview);
+			case FACE -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), 1, nosePreviewScrollRows, this::setNoseFromPreview)
+					|| handlePreviewGridSelection(uiMouseX, uiMouseY, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), 2, mouthPreviewScrollRows, this::setMouthFromPreview);
+			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows, this::setTattooFromPreview);
+			default -> false;
+		};
+	}
+
+	private void changePreviewTransformation(int delta) {
+		if (previewFormOptions.isEmpty()) {
+			previewFormIndex = -1;
+			return;
+		}
+		int nextIndex = previewFormIndex + delta;
+		if (nextIndex < 0) nextIndex = previewFormOptions.size() - 1;
+		if (nextIndex >= previewFormOptions.size()) nextIndex = 0;
+		previewFormIndex = nextIndex;
+	}
+
+	private String getCurrentPreviewTransformationName() {
+		if (previewFormIndex < 0 || previewFormIndex >= previewFormOptions.size()) {
+			return tr("forms.dragonminez.base").getString();
+		}
+		PreviewFormOption option = previewFormOptions.get(previewFormIndex);
+		String rawName = option.formName != null ? option.formName : "";
+		if (rawName.isEmpty()) return tr("forms.dragonminez.base").getString();
+		String raceName = character.getRace() != null ? character.getRace().toLowerCase(java.util.Locale.ROOT) : "human";
+		String translationKey = "race.dragonminez." + raceName + ".form." + option.groupName + "." + rawName;
+		if (net.minecraft.client.resources.language.I18n.exists(translationKey)) {
+			return tr(translationKey).getString();
+		}
+		return formatPreviewFormName(rawName);
+	}
+
+	private String formatPreviewFormName(String rawName) {
+		String[] parts = rawName.replace('-', ' ').replace('_', ' ').split("\\s+");
+		StringBuilder builder = new StringBuilder();
+		for (String part : parts) {
+			if (part == null || part.isEmpty()) continue;
+			if (!builder.isEmpty()) builder.append(' ');
+			builder.append(java.lang.Character.toUpperCase(part.charAt(0)));
+			if (part.length() > 1) builder.append(part.substring(1).toLowerCase(java.util.Locale.ROOT));
+		}
+		return builder.isEmpty() ? rawName : builder.toString();
+	}
+
+	private boolean handlePreviewGridSelection(double uiMouseX, double uiMouseY, int startY, int minValue, int maxValue, int visibleRows, int scrollRows, IntConsumer onSelect) {
+		if (maxValue < minValue) return false;
+		int total = maxValue - minValue + 1;
+		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
+		int firstIndex = Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows)) * PREVIEW_GRID_COLUMNS;
+		int visible = Math.min(PREVIEW_GRID_COLUMNS * visibleRows, Math.max(0, total - firstIndex));
+
+		for (int i = 0; i < visible; i++) {
+			int value = minValue + firstIndex + i;
+			int col = i % PREVIEW_GRID_COLUMNS;
+			int row = i / PREVIEW_GRID_COLUMNS;
+			int cardX = startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP);
+			int cardY = startY + row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP);
+			if (uiMouseX >= cardX && uiMouseX <= cardX + PREVIEW_CARD_WIDTH && uiMouseY >= cardY && uiMouseY <= cardY + PREVIEW_CARD_HEIGHT) {
+				onSelect.accept(value);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private void renderPreviewGrid(GuiGraphics graphics, int startY, int minValue, int maxValue, int selectedValue, PreviewRenderMode mode, boolean headZoom, int visibleRows, int scrollRows) {
+		if (maxValue < minValue) return;
+		int total = maxValue - minValue + 1;
+		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
+		int firstIndex = Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows)) * PREVIEW_GRID_COLUMNS;
+		int visible = Math.min(PREVIEW_GRID_COLUMNS * visibleRows, Math.max(0, total - firstIndex));
+
+		for (int i = 0; i < visible; i++) {
+			int value = minValue + firstIndex + i;
+			int col = i % PREVIEW_GRID_COLUMNS;
+			int row = i / PREVIEW_GRID_COLUMNS;
+			int cardX = startX + col * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP);
+			int cardY = startY + row * (PREVIEW_CARD_HEIGHT + PREVIEW_CARD_GAP);
+			boolean selected = value == selectedValue;
+
+			int borderColor = selected ? 0xFFE8D0A1 : 0xFF2A2A2A;
+			graphics.fill(cardX - 1, cardY - 1, cardX + PREVIEW_CARD_WIDTH + 1, cardY + PREVIEW_CARD_HEIGHT + 1, borderColor);
+			graphics.fill(cardX, cardY, cardX + PREVIEW_CARD_WIDTH, cardY + PREVIEW_CARD_HEIGHT, 0xAA111111);
+
+			int previewScale = headZoom ? 42 : 23;
+			int previewY = headZoom ? cardY + PREVIEW_CARD_HEIGHT + 12 : cardY + PREVIEW_CARD_HEIGHT - 2;
+			renderPreviewModelVariant(graphics, cardX, cardY, cardX + PREVIEW_CARD_WIDTH / 2, previewY, previewScale, headZoom, mode, value);
+		}
+
+		int maxScrollRows = getMaxScrollRows(minValue, maxValue, visibleRows);
+		if (maxScrollRows > 0) {
+			int gridHeight = visibleRows * PREVIEW_CARD_HEIGHT + (visibleRows - 1) * PREVIEW_CARD_GAP;
+			int scrollbarX = startX + PREVIEW_GRID_COLUMNS * (PREVIEW_CARD_WIDTH + PREVIEW_CARD_GAP) - 4;
+			int scrollbarW = 3;
+
+			graphics.fill(scrollbarX, startY, scrollbarX + scrollbarW, startY + gridHeight, 0x88000000);
+
+			int thumbHeight = Math.max(8, gridHeight / (maxScrollRows + 1));
+			int clampedScrollRows = Mth.clamp(scrollRows, 0, maxScrollRows);
+			int thumbY = startY + (clampedScrollRows * (gridHeight - thumbHeight) / maxScrollRows);
+
+			graphics.fill(scrollbarX, thumbY, scrollbarX + scrollbarW, thumbY + thumbHeight, 0xFFFFFFFF);
+		}
+	}
+
+	private boolean tryScrollGrid(double uiMouseX, double uiMouseY, int startY, int minValue, int maxValue, int visibleRows, int direction, int currentScrollRows) {
+		int maxScrollRows = getMaxScrollRows(minValue, maxValue, visibleRows);
+		if (maxScrollRows <= 0) return false;
+		if (!isPointInsideGrid(uiMouseX, uiMouseY, startY, visibleRows)) return false;
+		int next = Mth.clamp(currentScrollRows + direction, 0, maxScrollRows);
+		return next != currentScrollRows;
+	}
+
+	private boolean isPointInsideGrid(double uiMouseX, double uiMouseY, int startY, int visibleRows) {
+		int startX = LEFT_PANEL_X + (LEFT_PANEL_WIDTH - (PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP)) / 2;
+		int width = PREVIEW_GRID_COLUMNS * PREVIEW_CARD_WIDTH + (PREVIEW_GRID_COLUMNS - 1) * PREVIEW_CARD_GAP;
+		int height = visibleRows * PREVIEW_CARD_HEIGHT + (visibleRows - 1) * PREVIEW_CARD_GAP;
+		return uiMouseX >= startX && uiMouseX <= startX + width && uiMouseY >= startY && uiMouseY <= startY + height;
+	}
+
+	private int getMaxScrollRows(int minValue, int maxValue, int visibleRows) {
+		if (maxValue < minValue) return 0;
+		int totalEntries = maxValue - minValue + 1;
+		int totalRows = Mth.ceil(totalEntries / (float) PREVIEW_GRID_COLUMNS);
+		return Math.max(0, totalRows - visibleRows);
+	}
+
+	private int clampScrollRows(int minValue, int maxValue, int visibleRows, int scrollRows) {
+		return Mth.clamp(scrollRows, 0, getMaxScrollRows(minValue, maxValue, visibleRows));
+	}
+
+	private void renderPreviewModelVariant(GuiGraphics graphics, int cardX, int cardY, int x, int y, int scale, boolean headZoom, PreviewRenderMode mode, int value) {
+		LivingEntity player = Minecraft.getInstance().player;
+		if (player == null) return;
+
+		int originalBody = character.getBodyType();
+		int originalHair = character.getHairId();
+		int originalEyes = character.getEyesType();
+		int originalNose = character.getNoseType();
+		int originalMouth = character.getMouthType();
+		int originalTattoo = character.getTattooType();
+		boolean oldHairPhysics = HairRenderer.PHYSICS_ENABLED;
+		boolean headOnlyPreview = mode == PreviewRenderMode.HAIR_ONLY || mode == PreviewRenderMode.EYES_ONLY
+				|| mode == PreviewRenderMode.NOSE_ONLY || mode == PreviewRenderMode.MOUTH_ONLY;
+		boolean[] hadTailState = {false};
+		boolean[] oldTailVisible = {true};
+
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
+			hadTailState[0] = true;
+			oldTailVisible[0] = stats.getStatus().isTailVisible();
+			stats.getStatus().setTailVisible(false);
+		});
+
+		String originalGender = character.getGender();
+
+		switch (mode) {
+			case FULL_BODY -> {
+				int maleCount = Math.max(0, TextureCounter.getMaxBodyTypes(getEffectiveModelBase(), Character.GENDER_MALE)) + 1;
+				if (character.canHaveGender() && value >= maleCount) {
+					character.setGender(Character.GENDER_FEMALE);
+					character.setBodyType(value - maleCount);
+				} else {
+					character.setGender(Character.GENDER_MALE);
+					character.setBodyType(value);
+				}
+			}
+			case HAIR_ONLY -> {
+				character.setHairId(value);
+				character.setEyesType(0);
+				character.setNoseType(0);
+				character.setMouthType(0);
+				character.setTattooType(0);
+			}
+			case EYES_ONLY -> {
+				character.setHairId(0);
+				character.setEyesType(value);
+				character.setNoseType(0);
+				character.setMouthType(0);
+			}
+			case NOSE_ONLY -> {
+				character.setHairId(0);
+				character.setEyesType(0);
+				character.setNoseType(value);
+				character.setMouthType(0);
+			}
+			case MOUTH_ONLY -> {
+				character.setHairId(0);
+				character.setEyesType(0);
+				character.setNoseType(0);
+				character.setMouthType(value);
+			}
+			case TATTOO_ONLY -> character.setTattooType(value);
+		}
+		HairRenderer.PHYSICS_ENABLED = false;
+
+		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
+		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
+		pose.mul(cameraOrientation);
+
+		float yBodyRotO = player.yBodyRot;
+		float yBodyRotOField = player.yBodyRotO;
+		float yRotO = player.getYRot();
+		float xRotO = player.getXRot();
+		float xRotOField = player.xRotO;
+		float yHeadRotO = player.yHeadRotO;
+		float yHeadRot = player.yHeadRot;
+		int tickCountO = player.tickCount;
+		var oldDeltaMovement = player.getDeltaMovement();
+
+		float previewYaw = 180.0f;
+		player.yBodyRot = previewYaw;
+		player.yBodyRotO = previewYaw;
+		player.setYRot(previewYaw);
+		float previewPitch = headZoom ? 18.0f : 8.0f;
+		player.setXRot(previewPitch);
+		player.xRotO = previewPitch;
+		player.yHeadRot = previewYaw;
+		player.yHeadRotO = previewYaw;
+
+		player.tickCount = 0;
+		player.setDeltaMovement(0.0D, 0.0D, 0.0D);
+		player.walkAnimation.setSpeed(0.0F);
+		player.walkAnimation.position(0.0F);
+		player.walkDist = 0.0F;
+		player.walkDistO = 0.0F;
+
+		int previewScale = switch (mode) {
+			case HAIR_ONLY -> Math.max(26, scale - 6);
+			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> scale + 16;
+			default -> scale;
+		};
+		int previewY = switch (mode) {
+			case HAIR_ONLY -> y + 42;
+			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> y + 58;
+			default -> y + 8;
+		};
+
+		graphics.enableScissor(
+				toScreenCoord(cardX + 1),
+				toScreenCoord(cardY + 1),
+				toScreenCoord(cardX + PREVIEW_CARD_WIDTH - 1),
+				toScreenCoord(cardY + PREVIEW_CARD_HEIGHT - 1)
+		);
+
+		graphics.pose().pushPose();
+		graphics.pose().translate(0.0D, 0.0D, 320.0D);
+		InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
+		graphics.pose().popPose();
+		graphics.disableScissor();
+
+		player.yBodyRot = yBodyRotO;
+		player.yBodyRotO = yBodyRotOField;
+		player.setYRot(yRotO);
+		player.setXRot(xRotO);
+		player.xRotO = xRotOField;
+		player.yHeadRotO = yHeadRotO;
+		player.yHeadRot = yHeadRot;
+		player.tickCount = tickCountO;
+		player.setDeltaMovement(oldDeltaMovement);
+		if (hadTailState[0]) {
+			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> stats.getStatus().setTailVisible(oldTailVisible[0]));
+		}
+
+		character.setGender(originalGender);
+		character.setBodyType(originalBody);
+		character.setHairId(originalHair);
+		character.setEyesType(originalEyes);
+		character.setNoseType(originalNose);
+		character.setMouthType(originalMouth);
+		character.setTattooType(originalTattoo);
+		HairRenderer.PHYSICS_ENABLED = oldHairPhysics;
+	}
+
+	private void drawStringWithBorder(GuiGraphics graphics, String text, int x, int y, int textColor) {
+		graphics.drawString(this.font, text, x - 1, y, 0x000000);
+		graphics.drawString(this.font, text, x + 1, y, 0x000000);
+		graphics.drawString(this.font, text, x, y - 1, 0x000000);
+		graphics.drawString(this.font, text, x, y + 1, 0x000000);
+		graphics.drawString(this.font, text, x, y, textColor);
+	}
+
+	private void drawCenteredStringWithBorder(GuiGraphics graphics, String text, int centerX, int y, int textColor) {
+		int textWidth = this.font.width(text);
+		int x = centerX - textWidth / 2;
+		drawStringWithBorder(graphics, text, x, y, textColor);
+	}
+
+	private void drawCenteredStringWithBorder2(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
+		String stripped = ChatFormatting.stripFormatting(text.getString());
+		Component borderComponent = txt(stripped != null ? stripped : text.getString());
+		if (text.getStyle().isBold()) borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
+
+		int textWidth = this.font.width(borderComponent);
+		int x = centerX - textWidth / 2;
+		graphics.drawString(font, borderComponent, x + 1, y, 0x000000, false);
+		graphics.drawString(font, borderComponent, x - 1, y, 0x000000, false);
+		graphics.drawString(font, borderComponent, x, y + 1, 0x000000, false);
+		graphics.drawString(font, borderComponent, x, y - 1, 0x000000, false);
+		graphics.drawString(font, text, x, y, textColor, false);
+	}
+
 }
+

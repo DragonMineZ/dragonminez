@@ -3,7 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.Reference;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.PartyInviteToastS2C;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -354,7 +354,7 @@ public final class PartyManager {
     }
 
     private static void syncSelf(ServerPlayer player) {
-        NetworkHandler.sendToPlayer(new StatsSyncS2C(player), player);
+        NetworkHandler.sendToPlayer(new ProgressionSyncS2C(player), player);
     }
 
     private static PlayerQuestData getQuestData(ServerPlayer player) {

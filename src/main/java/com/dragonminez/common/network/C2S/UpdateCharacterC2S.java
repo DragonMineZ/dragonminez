@@ -2,7 +2,7 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -137,7 +137,7 @@ public class UpdateCharacterC2S {
 				c.setEye2Color(msg.eye2Color);
 				c.setAuraColor(msg.auraColor);
 				player.refreshDimensions();
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new AppearanceSyncS2C(player), player);
 			});
 		});
 		ctx.get().setPacketHandled(true);

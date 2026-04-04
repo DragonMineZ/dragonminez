@@ -2,7 +2,7 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
@@ -64,7 +64,7 @@ public class PointsCommand {
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getResources().setTrainingPoints(normalizedAmount);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
 			});
 		}
 		String formatted = formatPoints(normalizedAmount);
@@ -85,7 +85,7 @@ public class PointsCommand {
 				float currentPoints = data.getResources().getTrainingPoints();
 				float newPoints = Math.min(Float.MAX_VALUE - 1, currentPoints + normalizedAmount);
 				data.getResources().setTrainingPoints(newPoints);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
 			});
 		}
 		String formatted = formatPoints(normalizedAmount);
@@ -106,7 +106,7 @@ public class PointsCommand {
 				float currentPoints = data.getResources().getTrainingPoints();
 				float newPoints = Math.max(0, currentPoints - normalizedAmount);
 				data.getResources().setTrainingPoints(newPoints);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
 			});
 		}
 		String formatted = formatPoints(normalizedAmount);

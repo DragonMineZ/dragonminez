@@ -4,7 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -216,7 +216,7 @@ public class StoryCommand {
                             performQuestCompletion(stats.getPlayerQuestData(), saga, quest, player);
                             changed = true;
                         }
-                        if (changed) NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                        if (changed) NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
                     });
                     successCount++;
                 }
@@ -240,7 +240,7 @@ public class StoryCommand {
                     for (ServerPlayer player : targetPlayers) {
                         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
                             performQuestCompletion(stats.getPlayerQuestData(), saga, quest, player);
-                            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                            NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
                         });
                         successCount++;
                     }
@@ -320,7 +320,7 @@ public class StoryCommand {
                         }
                     }
 
-                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                    NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
                 });
                 successCount++;
             }
@@ -359,7 +359,7 @@ public class StoryCommand {
 
                     if (sagaId.equalsIgnoreCase("all")) pqd.resetAll();
                     else pqd.resetSaga(sagaId);
-                    NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                    NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
                 });
                 successCount++;
             }
@@ -472,7 +472,7 @@ public class StoryCommand {
                 }
 
                 pqd.acceptQuest(questId);
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 
                 context.getSource().sendSuccess(() ->
                         Component.translatable("command.dragonminez.story.sidequest.accepted", questId, player.getName()), log);
@@ -512,7 +512,7 @@ public class StoryCommand {
                             Component.translatable("command.dragonminez.story.sidequest.finished", questId, player.getName()), log);
                 }
 
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
             });
 
             return 1;
@@ -554,7 +554,7 @@ public class StoryCommand {
                             Component.translatable("command.dragonminez.story.sidequest.reset", questId, player.getName()), log);
                 }
 
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+                NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
             });
 
             return 1;

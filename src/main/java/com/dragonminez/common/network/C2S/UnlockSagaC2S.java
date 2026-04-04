@@ -1,7 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
@@ -39,9 +39,9 @@ public class UnlockSagaC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 				PlayerQuestData pqd = stats.getPlayerQuestData();
-				if (!pqd.isSagaUnlocked(sagaId)) {
+				if (pqd.isSagaLocked(sagaId)) {
 					pqd.setSagaUnlocked(sagaId, true);
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 				}
 			});
 		});

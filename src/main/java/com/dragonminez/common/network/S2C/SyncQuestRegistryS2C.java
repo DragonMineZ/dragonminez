@@ -2,25 +2,46 @@ package com.dragonminez.common.network.S2C;
 
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
-import com.dragonminez.common.quest.*;
-import com.dragonminez.common.quest.objectives.*;
-import com.dragonminez.common.quest.rewards.*;
-import com.google.gson.*;
+import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestObjective;
+import com.dragonminez.common.quest.QuestParser;
+import com.dragonminez.common.quest.QuestPrerequisites;
+import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.QuestStructureHintHelper;
+import com.dragonminez.common.quest.Saga;
+import com.dragonminez.common.quest.objectives.BiomeObjective;
+import com.dragonminez.common.quest.objectives.CoordsObjective;
+import com.dragonminez.common.quest.objectives.DimensionObjective;
+import com.dragonminez.common.quest.objectives.InteractObjective;
+import com.dragonminez.common.quest.objectives.ItemObjective;
+import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.StructureObjective;
+import com.dragonminez.common.quest.objectives.TalkToObjective;
+import com.dragonminez.common.quest.rewards.CommandReward;
+import com.dragonminez.common.quest.rewards.ItemReward;
+import com.dragonminez.common.quest.rewards.SkillReward;
+import com.dragonminez.common.quest.rewards.TPSReward;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
  * Sync packet that sends the entire QuestRegistry state (sagas + quests) to the client.
- * <p>
- * Serialization uses the same JSON format as the disk files so that the existing
- * {@link QuestParser} methods can deserialize everything without a custom format.
- *
- * @since 2.1
  */
 public class SyncQuestRegistryS2C {
 
@@ -51,12 +72,7 @@ public class SyncQuestRegistryS2C {
 		ctx.get().setPacketHandled(true);
 	}
 
-	// ========================================================================================
-	// Client-side handling
-	// ========================================================================================
-
 	private void handleOnClient() {
-		// Deserialize sagas from packet format (saga metadata + embedded saga quests)
 		Map<String, Saga> sagas = new LinkedHashMap<>();
 		JsonObject sagasRoot = JsonParser.parseString(sagasJson).getAsJsonObject();
 		for (Map.Entry<String, JsonElement> entry : sagasRoot.entrySet()) {
@@ -64,10 +80,7 @@ public class SyncQuestRegistryS2C {
 			sagas.put(entry.getKey(), saga);
 		}
 
-		// Deserialize standalone quests (sidequests etc. — not embedded in sagas)
 		Map<String, Quest> allQuests = new LinkedHashMap<>();
-
-		// First, index all saga quests by composite key
 		for (Map.Entry<String, Saga> entry : sagas.entrySet()) {
 			String sagaId = entry.getKey();
 			for (Quest quest : entry.getValue().getQuests()) {
@@ -75,11 +88,12 @@ public class SyncQuestRegistryS2C {
 			}
 		}
 
-		// Then add standalone quests (sidequests)
 		JsonObject questsRoot = JsonParser.parseString(questsJson).getAsJsonObject();
 		for (Map.Entry<String, JsonElement> entry : questsRoot.entrySet()) {
 			Quest quest = QuestParser.parseQuest(entry.getValue().getAsJsonObject());
-			allQuests.put(entry.getKey(), quest);
+			if (quest != null) {
+				allQuests.put(entry.getKey(), quest);
+			}
 		}
 
 		QuestRegistry.applySyncedSagas(sagas);
@@ -101,31 +115,17 @@ public class SyncQuestRegistryS2C {
 		if (json.has("quests") && json.get("quests").isJsonArray()) {
 			for (JsonElement questElement : json.getAsJsonArray("quests")) {
 				if (!questElement.isJsonObject()) continue;
-				Quest parsed = parseSyncedSagaQuest(questElement.getAsJsonObject(), id);
+				Quest parsed = QuestParser.parseQuest(questElement.getAsJsonObject());
 				if (parsed != null) {
 					quests.add(parsed);
+				} else {
+					LogUtil.warn(Env.CLIENT, "SyncQuestRegistryS2C: failed to parse a saga quest in saga '{}'", id);
 				}
 			}
 		}
 
 		return new Saga(id, name, quests, requirements);
 	}
-
-	private static Quest parseSyncedSagaQuest(JsonObject questJson, String sagaId) {
-		try {
-			return QuestParser.parseSagaQuest(questJson);
-		} catch (Exception sagaFormatError) {
-			Quest fallback = QuestParser.parseQuest(questJson);
-			if (fallback == null) {
-				LogUtil.warn(Env.CLIENT, "SyncQuestRegistryS2C: failed to parse a saga quest in saga '{}'", sagaId);
-			}
-			return fallback;
-		}
-	}
-
-	// ========================================================================================
-	// Saga Serialization — reuses the same format as saga JSON files
-	// ========================================================================================
 
 	private static String serializeSagas(Map<String, Saga> sagas) {
 		JsonObject root = new JsonObject();
@@ -135,9 +135,6 @@ public class SyncQuestRegistryS2C {
 		return GSON.toJson(root);
 	}
 
-	/**
-	 * Serializes a saga in the packet format consumed by {@link #parseSyncedSagaFromJson(JsonObject)}.
-	 */
 	private static JsonObject serializeSaga(Saga saga) {
 		JsonObject obj = new JsonObject();
 		obj.addProperty("id", saga.getId());
@@ -149,78 +146,67 @@ public class SyncQuestRegistryS2C {
 			obj.add("requirements", req);
 		}
 
-		// Serialize quests in parseSagaQuest format
 		JsonArray questsArr = new JsonArray();
 		for (Quest quest : saga.getQuests()) {
-			questsArr.add(serializeSagaQuest(quest));
+			questsArr.add(serializeQuest(quest));
 		}
 		obj.add("quests", questsArr);
 		return obj;
 	}
 
-	/**
-	 * Serializes a saga quest in the format {@link QuestParser#parseSagaQuest} expects.
-	 */
-	private static JsonObject serializeSagaQuest(Quest quest) {
+	private static String serializeStandaloneQuests(Map<String, Quest> quests) {
+		JsonObject root = new JsonObject();
+		for (Map.Entry<String, Quest> entry : quests.entrySet()) {
+			Quest quest = entry.getValue();
+			if (quest.getType() == Quest.QuestType.SAGA) continue;
+			root.add(entry.getKey(), serializeQuest(quest));
+		}
+		return GSON.toJson(root);
+	}
+
+	private static JsonObject serializeQuest(Quest quest) {
 		JsonObject obj = new JsonObject();
-		obj.addProperty("id", quest.getId());
+		if (quest.getStringId() != null) obj.addProperty("id", quest.getStringId());
+		else obj.addProperty("id", quest.getId());
+
+		obj.addProperty("type", quest.getType().name());
 		obj.addProperty("title", quest.getTitle());
 		obj.addProperty("description", quest.getDescription());
+		obj.addProperty("category", quest.getCategory());
+		obj.addProperty("parallel_objectives", quest.isParallelObjectives());
+
+		if (quest.getQuestGiver() != null) obj.addProperty("quest_giver", quest.getQuestGiver());
+		else obj.add("quest_giver", JsonNull.INSTANCE);
+		if (quest.getTurnIn() != null) obj.addProperty("turn_in", quest.getTurnIn());
+		else obj.add("turn_in", JsonNull.INSTANCE);
+
+		if (quest.getSagaId() != null || quest.getChainOrder() >= 0 || quest.getNextQuestId() != null) {
+			JsonObject chain = new JsonObject();
+			if (quest.getSagaId() != null) chain.addProperty("saga", quest.getSagaId());
+			if (quest.getChainOrder() >= 0) chain.addProperty("order", quest.getChainOrder());
+			if (quest.getNextQuestId() != null) chain.addProperty("next", quest.getNextQuestId());
+			else chain.add("next", JsonNull.INSTANCE);
+			obj.add("chain", chain);
+		}
+
 		if (quest.isBranchingQuest()) {
 			JsonObject branch = new JsonObject();
 			branch.addProperty("group", quest.getBranchGroup());
 			branch.addProperty("path", quest.getBranchPath());
 			obj.add("branch", branch);
 		}
-		obj.add("objectives", serializeObjectives(quest.getObjectives()));
-		obj.add("rewards", serializeRewards(quest.getRewards()));
-		return obj;
-	}
 
-	// ========================================================================================
-	// Standalone Quest Serialization — only sidequests (not embedded in sagas)
-	// ========================================================================================
-
-	/**
-	 * Serializes only standalone (non-saga) quests. Saga quests are already embedded in the saga JSON.
-	 */
-	private static String serializeStandaloneQuests(Map<String, Quest> quests) {
-		JsonObject root = new JsonObject();
-		for (Map.Entry<String, Quest> entry : quests.entrySet()) {
-			Quest quest = entry.getValue();
-			// Skip saga quests — they're already embedded in the saga JSON
-			if (quest.getType() == Quest.QuestType.SAGA) continue;
-			root.add(entry.getKey(), serializeSideQuest(quest));
-		}
-		return GSON.toJson(root);
-	}
-
-	/**
-	 * Serializes a side-quest in the format {@link QuestParser#parseSideQuest} expects.
-	 */
-	private static JsonObject serializeSideQuest(Quest quest) {
-		JsonObject obj = new JsonObject();
-		obj.addProperty("id", quest.getStringId() != null ? quest.getStringId() : quest.getEffectiveId());
-		obj.addProperty("name", quest.getTitle());
-		obj.addProperty("description", quest.getDescription());
-		if (quest.getCategory() != null) obj.addProperty("category", quest.getCategory());
-		obj.addProperty("parallelObjectives", quest.isParallelObjectives());
-		if (quest.getQuestGiver() != null) obj.addProperty("questGiver", quest.getQuestGiver());
-		if (quest.getTurnIn() != null) obj.addProperty("turnIn", quest.getTurnIn());
-
-		// Prerequisites
 		if (quest.getPrerequisites() != null && !quest.getPrerequisites().conditions().isEmpty()) {
 			obj.add("prerequisites", serializePrerequisites(quest.getPrerequisites()));
 		}
+		if (quest.getStartRequirements() != null && !quest.getStartRequirements().conditions().isEmpty()) {
+			obj.add("requirements", serializePrerequisites(quest.getStartRequirements()));
+		}
 
 		obj.add("objectives", serializeObjectives(quest.getObjectives()));
 		obj.add("rewards", serializeRewards(quest.getRewards()));
 		return obj;
 	}
-
-	// ========================================================================================
-	// Objective Serialization — matches QuestParser.parseObjective format
-	// ========================================================================================
 
 	private static JsonArray serializeObjectives(List<QuestObjective> objectives) {
 		JsonArray arr = new JsonArray();
@@ -230,9 +216,6 @@ public class SyncQuestRegistryS2C {
 		return arr;
 	}
 
-	/**
-	 * Serializes a single objective back into the JSON format {@link QuestParser#parseObjective} expects.
-	 */
 	private static JsonObject serializeObjective(QuestObjective objective) {
 		JsonObject obj = new JsonObject();
 		obj.addProperty("type", objective.getType().name());
@@ -249,6 +232,8 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("count", item.getCount());
 		} else if (objective instanceof BiomeObjective biome) {
 			obj.addProperty("biome", biome.getBiomeId());
+		} else if (objective instanceof DimensionObjective dimension) {
+			obj.addProperty("dimension", dimension.getDimensionId());
 		} else if (objective instanceof StructureObjective structure) {
 			obj.addProperty("structure", structure.getStructureId());
 		} else if (objective instanceof TalkToObjective talkTo) {
@@ -266,10 +251,6 @@ public class SyncQuestRegistryS2C {
 		return obj;
 	}
 
-	// ========================================================================================
-	// Reward Serialization — matches QuestParser.parseReward format
-	// ========================================================================================
-
 	private static JsonArray serializeRewards(List<QuestReward> rewards) {
 		JsonArray arr = new JsonArray();
 		for (QuestReward reward : rewards) {
@@ -278,13 +259,9 @@ public class SyncQuestRegistryS2C {
 		return arr;
 	}
 
-	/**
-	 * Serializes a single reward back into the JSON format {@link QuestParser#parseReward} expects.
-	 */
 	private static JsonObject serializeReward(QuestReward reward) {
 		JsonObject obj = new JsonObject();
 
-		// Build type string with optional difficulty prefix
 		String typeStr = reward.getType().name();
 		if (reward.getDifficultyType() == QuestReward.DifficultyType.HARD) {
 			typeStr = "hard:" + typeStr;
@@ -308,10 +285,6 @@ public class SyncQuestRegistryS2C {
 		return obj;
 	}
 
-	// ========================================================================================
-	// Prerequisites Serialization — matches QuestParser.parsePrerequisites format
-	// ========================================================================================
-
 	private static JsonObject serializePrerequisites(QuestPrerequisites prereqs) {
 		JsonObject obj = new JsonObject();
 		obj.addProperty("operator", prereqs.operator().name());
@@ -325,13 +298,11 @@ public class SyncQuestRegistryS2C {
 	}
 
 	private static JsonObject serializeCondition(QuestPrerequisites.Condition condition) {
-		JsonObject obj = new JsonObject();
-
 		if (condition.getNested() != null) {
-			// Nested group — serialize as a nested prerequisites block
 			return serializePrerequisites(condition.getNested());
 		}
 
+		JsonObject obj = new JsonObject();
 		obj.addProperty("type", condition.getType().name());
 
 		switch (condition.getType()) {
@@ -339,18 +310,42 @@ public class SyncQuestRegistryS2C {
 				obj.addProperty("sagaId", condition.getSagaId());
 				obj.addProperty("questId", condition.getQuestId());
 			}
-			case QUEST -> {
-				obj.addProperty("questId", condition.getRequiredQuestId());
-			}
+			case QUEST -> obj.addProperty("questId", condition.getRequiredQuestId());
 			case STAT -> {
 				obj.addProperty("stat", condition.getStat());
 				obj.addProperty("minValue", condition.getMinValue());
 			}
-			case RACE -> {
-				obj.addProperty("race", condition.getRace());
+			case LEVEL -> obj.addProperty("minLevel", condition.getMinLevel());
+			case BIOME -> obj.addProperty("biome", condition.getBiomeId());
+			case STRUCTURE -> {
+				obj.addProperty("structure", condition.getStructureId());
+				QuestPrerequisites.StructureHint hint = condition.getStructureHint();
+				if (hint == null) {
+					hint = QuestStructureHintHelper.resolveHint(condition.getStructureId());
+				}
+				if (hint != null) {
+					JsonObject hintObj = new JsonObject();
+					if (hint.dimensionId() != null) hintObj.addProperty("dimension", hint.dimensionId());
+					if (hint.x() != null) hintObj.addProperty("x", hint.x());
+					if (hint.y() != null) hintObj.addProperty("y", hint.y());
+					if (hint.z() != null) hintObj.addProperty("z", hint.z());
+					if (!hintObj.entrySet().isEmpty()) {
+						obj.add("hint", hintObj);
+					}
+				}
 			}
-			case LEVEL -> {
-				obj.addProperty("minLevel", condition.getMinLevel());
+			case DIMENSION -> obj.addProperty("dimension", condition.getDimensionId());
+			case TIME -> {
+				if (condition.getTimeMode() != null) {
+					obj.addProperty("mode", condition.getTimeMode().name());
+				}
+				if (condition.getDuration() != null) {
+					if (condition.getTimeMode() == QuestPrerequisites.TimeMode.GAME_TIME) {
+						obj.addProperty("ticks", condition.getDuration());
+					} else {
+						obj.addProperty("milliseconds", condition.getDuration());
+					}
+				}
 			}
 		}
 

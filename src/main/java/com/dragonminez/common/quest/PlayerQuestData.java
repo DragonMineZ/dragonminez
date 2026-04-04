@@ -24,10 +24,6 @@ import java.util.UUID;
  * All quests are keyed by their string ID. Saga quests use the composite key
  * {@code "sagaId:numericId"} (e.g. {@code "saiyan_saga:1"}). Side-quests use their
  * natural string ID (e.g. {@code "roshi_basic_training"}).
- * <p>
- * On first load, this class automatically migrates legacy data from the old
- * {@code "QuestData"} and {@code "SideQuestData"} NBT keys for 2.0 worlds.
- * <p>
  * Serialized to/from NBT under the {@code "PlayerQuestData"} key in the player's stats compound.
  *
  * @since 2.0
@@ -59,11 +55,14 @@ public class PlayerQuestData {
     /** All quest progress, keyed by string quest ID. */
     private final Map<String, QuestProgress> quests = new LinkedHashMap<>();
 
-    /** Tracks which sagas the player has unlocked (legacy saga-unlock support). */
+    /** Tracks which sagas the player has unlocked */
     private final Map<String, Boolean> sagaUnlockState = new HashMap<>();
 
     /** Tracks selected branch path by key "sagaId|branchGroup". */
     private final Map<String, String> branchSelections = new HashMap<>();
+
+    /** Per-quest anchors used by elapsed start requirements. */
+    private final Map<String, QuestStartRequirementTiming> startRequirementTimings = new LinkedHashMap<>();
 
     /** Current tracked quest key (saga:questId or sidequestId) shown in client HUD. */
     @Getter
@@ -75,15 +74,18 @@ public class PlayerQuestData {
     private boolean introPromptShown = false;
 
     /** Active party identifier for synchronized story progress. */
+    @Getter
     private UUID activePartyId = null;
 
     /** Leader that owns the current synchronized quest state. */
+    @Getter
     private UUID partyLeaderId = null;
 
     /** Snapshot of the current online party composition for the local player UI. */
     private final List<UUID> partyMemberIds = new ArrayList<>();
 
     /** Pending invitation shown in the quest screen. */
+    @Setter
     private PartyInviteData pendingPartyInvite = null;
 
     /** Personal quest state to restore when leaving a synchronized party. */
@@ -100,6 +102,7 @@ public class PlayerQuestData {
      */
     public void acceptQuest(String questId) {
         getOrCreateProgress(questId).setStatus(QuestStatus.ACCEPTED);
+        clearStartRequirementTiming(questId);
     }
 
     /**
@@ -109,6 +112,7 @@ public class PlayerQuestData {
      */
     public void completeQuest(String questId) {
         getOrCreateProgress(questId).setStatus(QuestStatus.COMPLETED);
+        clearStartRequirementTiming(questId);
     }
 
     /**
@@ -140,6 +144,7 @@ public class PlayerQuestData {
      */
     public void resetQuest(String questId) {
         quests.remove(questId);
+        clearStartRequirementTiming(questId);
     }
 
     /**
@@ -149,6 +154,7 @@ public class PlayerQuestData {
         quests.clear();
         sagaUnlockState.clear();
         branchSelections.clear();
+        startRequirementTimings.clear();
         trackedQuestId = null;
     }
 
@@ -158,6 +164,7 @@ public class PlayerQuestData {
     public void resetSaga(String sagaId) {
         String prefix = sagaId + ":";
         quests.keySet().removeIf(key -> key.startsWith(prefix));
+        startRequirementTimings.keySet().removeIf(key -> key.startsWith(prefix));
         if (trackedQuestId != null && trackedQuestId.startsWith(prefix)) trackedQuestId = null;
         String branchPrefix = sagaId + "|";
         branchSelections.keySet().removeIf(key -> key.startsWith(branchPrefix));
@@ -169,6 +176,22 @@ public class PlayerQuestData {
             return;
         }
         this.trackedQuestId = trackedQuestId;
+    }
+
+    public QuestStartRequirementTiming getStartRequirementTiming(String questId) {
+        return questId == null ? null : startRequirementTimings.get(questId);
+    }
+
+    public boolean ensureStartRequirementTiming(String questId, long gameTimeStarted, long realTimeStartedMs) {
+        if (questId == null || questId.isBlank()) return false;
+        if (startRequirementTimings.containsKey(questId)) return false;
+        startRequirementTimings.put(questId, new QuestStartRequirementTiming(gameTimeStarted, realTimeStartedMs));
+        return true;
+    }
+
+    public void clearStartRequirementTiming(String questId) {
+        if (questId == null || questId.isBlank()) return;
+        startRequirementTimings.remove(questId);
     }
 
     /**
@@ -236,26 +259,25 @@ public class PlayerQuestData {
     }
 
     // ========================================================================================
-    // Saga Unlock State (legacy compatibility)
+    // Saga Unlock State
     // ========================================================================================
 
     /**
      * Sets the unlock state for a saga.
-     * Used during legacy migration and by the saga progression system.
      */
     public void setSagaUnlocked(String sagaId, boolean unlocked) {
         sagaUnlockState.put(sagaId, unlocked);
     }
 
     /**
-     * Returns whether a saga has been unlocked.
+     * Returns whether a saga is locked or not
      */
-    public boolean isSagaUnlocked(String sagaId) {
+    public boolean isSagaLocked(String sagaId) {
         return sagaUnlockState.getOrDefault(sagaId, false);
     }
 
     // ========================================================================================
-    // Legacy Compatibility - Saga Composite Keys
+    // Saga Quest Keys
     // ========================================================================================
 
     /**
@@ -310,12 +332,12 @@ public class PlayerQuestData {
         setObjectiveProgress(sagaQuestKey(sagaId, questId), objectiveIndex, progress);
     }
 
-    /** Checks if a reward is claimed for a saga quest. */
+    /** Checks if a reward is claimed for a saga quest. Usually done by packets. Can be forced with this. */
     public boolean isRewardClaimed(String sagaId, int questId, int rewardIndex) {
         return isRewardClaimed(sagaQuestKey(sagaId, questId), rewardIndex);
     }
 
-    /** Claims a reward for a saga quest. */
+    /** Claims a reward for a saga quest. Usually done automatically by packets. Can be forced with this. */
     public void claimReward(String sagaId, int questId, int rewardIndex) {
         claimReward(sagaQuestKey(sagaId, questId), rewardIndex);
     }
@@ -324,15 +346,7 @@ public class PlayerQuestData {
     // Party State
     // ========================================================================================
 
-    public UUID getActivePartyId() {
-        return activePartyId;
-    }
-
-    public UUID getPartyLeaderId() {
-        return partyLeaderId;
-    }
-
-    public List<UUID> getPartyMemberIds() {
+	public List<UUID> getPartyMemberIds() {
         return Collections.unmodifiableList(partyMemberIds);
     }
 
@@ -375,11 +389,7 @@ public class PlayerQuestData {
         return pendingPartyInvite != null;
     }
 
-    public void setPendingPartyInvite(PartyInviteData invite) {
-        this.pendingPartyInvite = invite;
-    }
-
-    public void clearPendingPartyInvite() {
+	public void clearPendingPartyInvite() {
         this.pendingPartyInvite = null;
     }
 
@@ -435,6 +445,14 @@ public class PlayerQuestData {
         }
         tag.put("branchSelections", branchTag);
 
+        if (!startRequirementTimings.isEmpty()) {
+            CompoundTag timingTag = new CompoundTag();
+            for (Map.Entry<String, QuestStartRequirementTiming> entry : startRequirementTimings.entrySet()) {
+                timingTag.put(entry.getKey(), entry.getValue().serializeNBT());
+            }
+            tag.put("startRequirementTimings", timingTag);
+        }
+
         if (trackedQuestId != null && !trackedQuestId.isBlank()) {
             tag.putString("trackedQuestId", trackedQuestId);
         }
@@ -447,6 +465,7 @@ public class PlayerQuestData {
         quests.clear();
         sagaUnlockState.clear();
         branchSelections.clear();
+        startRequirementTimings.clear();
         trackedQuestId = null;
         introPromptShown = false;
 
@@ -471,6 +490,14 @@ public class PlayerQuestData {
                 if (!path.isBlank()) {
                     branchSelections.put(key, path);
                 }
+            }
+        }
+
+        if (tag.contains("startRequirementTimings", Tag.TAG_COMPOUND)) {
+            CompoundTag timingTag = tag.getCompound("startRequirementTimings");
+            for (String key : timingTag.getAllKeys()) {
+                if (!timingTag.contains(key, Tag.TAG_COMPOUND)) continue;
+                startRequirementTimings.put(key, QuestStartRequirementTiming.deserialize(timingTag.getCompound(key)));
             }
         }
 
@@ -653,6 +680,31 @@ public class PlayerQuestData {
             }
 
             return progress;
+        }
+    }
+
+    @Getter
+    public static class QuestStartRequirementTiming {
+        private final long gameTimeStarted;
+        private final long realTimeStartedMs;
+
+        public QuestStartRequirementTiming(long gameTimeStarted, long realTimeStartedMs) {
+            this.gameTimeStarted = gameTimeStarted;
+            this.realTimeStartedMs = realTimeStartedMs;
+        }
+
+        public CompoundTag serializeNBT() {
+            CompoundTag tag = new CompoundTag();
+            tag.putLong("gameTimeStarted", gameTimeStarted);
+            tag.putLong("realTimeStartedMs", realTimeStartedMs);
+            return tag;
+        }
+
+        public static QuestStartRequirementTiming deserialize(CompoundTag tag) {
+            return new QuestStartRequirementTiming(
+                    tag.getLong("gameTimeStarted"),
+                    tag.getLong("realTimeStartedMs")
+            );
         }
     }
 

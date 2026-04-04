@@ -2,7 +2,7 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.brigadier.CommandDispatcher;
@@ -74,7 +74,7 @@ public class FormsCommand {
 		for (ServerPlayer player : targets) {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				data.getSkills().setSkillLevel(lowerName, level);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
 
@@ -100,7 +100,7 @@ public class FormsCommand {
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 				if (data.getSkills().hasSkill(lowerName)) {
 					data.getSkills().removeSkill(lowerName);
-					NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 				}
 			});
 		}

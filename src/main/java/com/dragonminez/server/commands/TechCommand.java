@@ -2,7 +2,7 @@ package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
+import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
@@ -67,7 +67,7 @@ public class TechCommand {
 				KiAttackData clone = new KiAttackData();
 				clone.load(template.save());
 				data.getTechniques().unlockTechnique(clone);
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
 
@@ -96,7 +96,7 @@ public class TechCommand {
 				for (int i = 0; i < slots.length; i++) {
 					if (id.equals(slots[i])) slots[i] = "";
 				}
-				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 			});
 		}
 
