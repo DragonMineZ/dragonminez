@@ -21,7 +21,8 @@ public class SagaZFightersEntity {
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(0);
             this.setEvade(true, 100);
-            this.setKienzan(100, 0xFFFB73, 1.2f);
+            this.addKiSkill(KiSkillType.KIENZAN, 100, 1.4F, 0xFFFB73, 0xFFFB73);
+
         }
 
         @Override

@@ -21,7 +21,7 @@ public class SagaFriezaSoldier01Entity extends DBSagasEntity{
         super(pEntityType, pLevel);
 
         this.setCanFly(true);
-        this.setKiSmall(100, 0xE81E1E);
+        this.addKiSkill(KiSkillType.KI_SMALL, 100, 1.0F, 0xAA00FF, 0x6C00A3);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

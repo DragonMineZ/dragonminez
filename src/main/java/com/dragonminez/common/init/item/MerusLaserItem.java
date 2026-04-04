@@ -47,8 +47,8 @@ public class MerusLaserItem extends Item {
             //kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
             //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);
             //kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
-            kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
-            //kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
+            //kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
+            kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
             //spBlueHurricane.setupHurricane(pPlayer, 5.0f,2.0f, 60);
         }
 

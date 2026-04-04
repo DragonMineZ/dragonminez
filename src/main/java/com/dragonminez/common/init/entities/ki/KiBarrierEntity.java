@@ -55,6 +55,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         this.setColors(color, colorBorder);
         this.setCastTime(castTime);
         this.setMaxLife(castTime + 100);
+        this.setSize(2.0f);
 
         this.setFiring(false);
         this.setFireTick(-1);

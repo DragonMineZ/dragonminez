@@ -26,7 +26,7 @@ public class SagaNappaEntity extends DBSagasEntity{
         this.setCanFly(true);
         this.setWildSense(true, 200);
         this.setKiBlastSpeed(1.3F);
-        this.setOozaruBeam(200, 0xF527C2, 0xF5277D, 1.5f);
+        this.addKiSkill(KiSkillType.OOZARU_BEAM, 200, 1.5F, 0xC523DE, 0XAF23DE);
         this.setAuraColor(0XF527AD);
         this.setDBZStyle(1);
 

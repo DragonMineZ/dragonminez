@@ -20,7 +20,8 @@ public class SagaGinyuForcesEntity {
             this.setAuraColor(0x55FF55);
 
             this.setEvade(true, 100);
-            this.setKiSmall(60, 0x55FF55);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.0F, 0x55FF55, 0x55FF55);
+
         }
 
     }
@@ -37,8 +38,9 @@ public class SagaGinyuForcesEntity {
             this.setAuraColor(0xFFFFFF);
             this.setKiBlastSpeed(1.3f);
 
-            this.setCombo(1, 140);
-            this.setKiExplosion(100, 0xFF3BEA, 0xE23BFF, 5.0f);
+            this.setAllowedCombos(140, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KI_EXPLOSION, 300, 5.0F, 0xFF3BEA, 0xE23BFF);
+
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.50D);
 
         }
@@ -61,7 +63,7 @@ public class SagaGinyuForcesEntity {
             this.setEvade(true, 120);
             this.setWildSense(true, 200);
 
-            this.setBlueHurricane(250, 12.0f);
+            this.addKiSkill(KiSkillType.BLUE_HURRICANE, 100, 5.0F, 0xFF3BEA, 0xE23BFF);
 
         }
 
@@ -81,8 +83,9 @@ public class SagaGinyuForcesEntity {
 
             this.setEvade(true, 180);
 
-            this.setKiVolley(200,0xFF3333);
-            this.setKiSmall(60,0xFF3333);
+            this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.0F, 0xFF3333, 0xFF3333);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 2.0F, 0xFF3333, 0xFF3333);
+
 
         }
 
@@ -99,13 +102,14 @@ public class SagaGinyuForcesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xAA00FF);
 
-            this.setCombo(2, 160);
+            this.setAllowedCombos(140, ComboType.KI_CHARGE_ATTACK);
+
             this.setEvade(true, 150);
             this.setWildSense(true, 200);
 
-            this.setGenericWave(180, 0xAA00FF, 0x6600AA, 1.5f);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 180, 1.5F, 0xAA00FF, 0x6600AA);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xAA00FF, 0x6600AA);
 
-            this.setSecondarySkill(11, 80);
         }
 
 
@@ -122,13 +126,13 @@ public class SagaGinyuForcesEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xAA00FF);
 
-            this.setCombo(2, 160);
+            this.setAllowedCombos(140, ComboType.KI_CHARGE_ATTACK);
             this.setEvade(true, 150);
             this.setWildSense(true, 200);
 
-            this.setGenericWave(180, 0xAA00FF, 0x6600AA, 1.5f);
+            this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 180, 1.5F, 0xAA00FF, 0x6600AA);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xAA00FF, 0x6600AA);
 
-            this.setSecondarySkill(11, 80);
         }
 
 

@@ -29,14 +29,15 @@ public class SagaGokuEntity{
             } else {
                 this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
                 this.setCanFly(true);
-                this.setCombo(2, 200);
+                this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK);
                 this.setWildSense(true, 200);
                 this.setAuraColor(0xF52727);
             }
             this.setKiBlastSpeed(1.0F);
 
             this.setDBZStyle(0);
-            this.setMainSkill(1, 200, 1.5f);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+
         }
 
         @Override
@@ -64,8 +65,9 @@ public class SagaGokuEntity{
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(0);
             this.setEvade(true, 100);
-            this.setCombo(2, 200);
-            this.setMainSkill(1, 200, 1.5f);
+            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+
             this.setWildSense(true, 200);
 
         }
@@ -106,8 +108,9 @@ public class SagaGokuEntity{
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(0);
             this.setEvade(true, 100);
-            this.setAllowedCombos(150, 1, 3);
-            this.setMainSkill(1, 200, 1.5f);
+            this.setAllowedCombos(150, ComboType.AIR, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+
             this.setWildSense(true, 100);
             this.setKiCharge(true);
         }

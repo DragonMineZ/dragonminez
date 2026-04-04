@@ -107,7 +107,7 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
         float ageInTicks = entity.tickCount + partialTick;
         float castTime = (float) entity.getCastExplosion();
         float halfCastTime = castTime / 2.0F;
-        float expansionTime = 60.0F;
+        float expansionTime = 10.0F;
 
         float maxRadius = entity.getMaxRadius();
         float baseScale = entity.getSize();

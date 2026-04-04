@@ -15,15 +15,14 @@ public class SagaPiccoloEntity{
             if (this instanceof IBattlePower bp) {
                 bp.setBattlePower(230);
             }
-            //GLOBAL
             this.setCanFly(true);
             this.setDBZStyle(0);
             this.setAuraColor(0xFFFFFF);
             this.setTextureVariant(0); //Ejemplo para cambiar de variante de textura
 
+            this.addKiSkill(KiSkillType.MAKANKOSAPPO, 250, 1.0F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFF554, 0xFFF554);
 
-            this.setKiSmall(80, 0xFFFF00);
-            this.setSecondarySkill(3, 250, 1.0f);
             this.setEvade(true, 150);
         }
 
@@ -41,13 +40,44 @@ public class SagaPiccoloEntity{
             if (this instanceof IBattlePower bp) {
                 bp.setBattlePower(42000);
             }
-            //GLOBAL
             this.setCanFly(true);
             this.setDBZStyle(0);
             this.setAuraColor(0xFFFFFF);
 
-            this.setKiVolley(200, 0xFFFF00);
-            this.setSecondarySkill(11, 80, 1.0f);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 250, 1.0F,0xFFF554, 0xFFF554 );
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFF554, 0xFFF554);
+
+
+            this.setEvade(true, 150);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_piccolo";
+        }
+    }
+
+    public static class SagaPiccoloKamiEntity extends DBSagasEntity {
+
+        public SagaPiccoloKamiEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(320000000);
+            }
+            this.setCanFly(true);
+            this.setDBZStyle(0);
+            this.setAuraColor(0xFFFFFF);
+            this.setLightning(true);
+            this.setTextureVariant(0);
+            this.setKiBlastSpeed(2.0f);
+
+            this.setAllowedCombos(150, ComboType.KI_CHARGE_ATTACK, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.MAKANKOSAPPO, 350, 1.0F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFF554, 0xFFF554);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.4F, 0xFFF554, 0xFFF554);
+
             this.setEvade(true, 150);
         }
 

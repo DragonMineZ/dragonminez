@@ -22,7 +22,8 @@ public class SagaZarbonEntity extends DBSagasEntity {
             bp.setBattlePower(23000);
         }
 
-        this.setKiSmall(60, 0xFFEB8A);
+        this.addKiSkill(KiSkillType.KI_SMALL, 60, 1.0F, 0xFFEB8A, 0xFFEB8A);
+
         this.setEvade(true, 150);
     }
 
@@ -59,9 +60,9 @@ public class SagaZarbonEntity extends DBSagasEntity {
             if (this instanceof IBattlePower bp) {
                 bp.setBattlePower(30000);
             }
+            this.setAllowedCombos(150, ComboType.AIR);
+            this.addKiSkill(KiSkillType.OOZARU_BEAM, 200, 1.5F, 0xFFEB8A, 0xFFEB8A);
 
-            this.setCombo(1, 150);
-            this.setOozaruBeam(200, 0xFFEB8A, 0xFFEB8A, 1.5f);
         }
 
         @Override

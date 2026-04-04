@@ -26,7 +26,7 @@ public class SagaDodoriaEntity extends DBSagasEntity{
 
         this.setCanFly(true);
         this.setKiBlastSpeed(1.3F);
-        this.setOozaruBeam(200, 0xFFFBE8, 0xFFE77A, 1.2f);
+        this.addKiSkill(KiSkillType.OOZARU_BEAM, 200, 1.1F, 0xFFFBE8, 0xFFFBE8);
         this.setAuraColor(0XFF52E2);
         this.setDBZStyle(2);
     }

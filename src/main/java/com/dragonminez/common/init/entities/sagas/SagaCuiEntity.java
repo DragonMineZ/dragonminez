@@ -24,7 +24,7 @@ public class SagaCuiEntity extends DBSagasEntity {
         this.setDBZStyle(0);
         this.setEvade(true, 100);
 
-        this.setKiVolley(200, 0XAF52FF);
+        this.addKiSkill(KiSkillType.KI_VOLLEY, 150, 1.2F, 0xAD27F5, 0xAD27F5);
 
     }
 

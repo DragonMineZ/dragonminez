@@ -6,9 +6,6 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
 import com.dragonminez.common.init.entities.ki.*;
 
-// Import de tu Capability (ajusta la ruta si es necesario)
-// import com.dragonminez.common.capabilities.StatsProvider;
-
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
@@ -57,8 +54,45 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
+    public enum KiSkillType {
+        KAMEHAMEHA(1),
+        GALICK_GUN(2),
+        MAKANKOSAPPO(3),
+        KI_LASER(4),
+        KI_EXPLOSION(5),
+        KI_BARRIER(6),
+        OOZARU_ROAR(7),
+        GENERIC_KI_WAVE(8),
+        OOZARU_BEAM(9),
+        KI_VOLLEY(10),
+        KI_SMALL(11),
+        BLUE_HURRICANE(12),
+        TRIPLE_LASER(13),
+        KIENZAN(14),
+        DEATH_BALL(15),
+        MASENKO(16),
+        BIG_BANG(17),
+        FINAL_FLASH(18); // NUEVO: FINAL FLASH AÑADIDO
+
+        private final int id;
+        KiSkillType(int id) { this.id = id; }
+        public int getId() { return id; }
+    }
+
+    public enum ComboType {
+        BASIC(0), AIR(1), KI_CHARGE_ATTACK(2), METEOR_COMBINATION(3), ANDROID_ABSORPTION(4);
+
+        private final int id;
+        ComboType(int id) { this.id = id; }
+        public int getId() { return id; }
+    }
+
+    // --- DATA ACCESSORS ---
     private static final EntityDataAccessor<Boolean> IS_CASTING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_FLYING = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_FLYING_FAST = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
@@ -128,6 +162,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_KI_BARRIER = RawAnimation.begin().thenPlay("ki_barrier");
     protected static final RawAnimation ANIM_KI_GALICK = RawAnimation.begin().thenPlay("ki_galick");
     protected static final RawAnimation ANIM_KI_EXPLOSION = RawAnimation.begin().thenPlay("ki_explosion");
+    protected static final RawAnimation ANIM_KI_BIG_BANG = RawAnimation.begin().thenPlay("ki_bigbang");
     protected static final RawAnimation ANIM_KI_FINALFLASH = RawAnimation.begin().thenPlay("ki_finalflash");
     protected static final RawAnimation ANIM_KI_DISC = RawAnimation.begin().thenPlay("ki_kienzan");
     protected static final RawAnimation ANIM_KI_LASER = RawAnimation.begin().thenPlay("ki_laser");
@@ -198,6 +233,30 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private int genericColorMain = 0xFFFFFF;
     private int genericColorBorder = 0xFFFFFF;
 
+    // --- ARSENAL SYSTEM (SKILL POOL) ---
+    private final List<KiSkill> skillPool = new ArrayList<>();
+    private float currentPoolSkillSize = 1.0F;
+    private int currentPoolColorMain = 0xFFFFFF;
+    private int currentPoolColorBorder = 0xFFFFFF;
+
+    public static class KiSkill {
+        public int id;
+        public int cooldownMax;
+        public int currentCooldown;
+        public float size;
+        public int colorMain;
+        public int colorBorder;
+
+        public KiSkill(int id, int cooldown, float size, int colorMain, int colorBorder) {
+            this.id = id;
+            this.cooldownMax = cooldown;
+            this.currentCooldown = 0;
+            this.size = size;
+            this.colorMain = colorMain;
+            this.colorBorder = colorBorder;
+        }
+    }
+
     private final AnimatableInstanceCache geoCache = new SingletonAnimatableInstanceCache(this);
 
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
@@ -209,6 +268,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public boolean canFly() { return this.canFly; }
     public void setFlyingFast(boolean flyingFast) { this.entityData.set(IS_FLYING_FAST, flyingFast); }
     public boolean isFlyingFast() { return this.entityData.get(IS_FLYING_FAST); }
+    public String getAuraType() {return this.entityData.get(AURA_TYPE);}
+    public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
 
     public void setCombo(int id, int cooldown) {
         this.comboEnabled = true;
@@ -220,8 +281,20 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public void setAllowedCombos(int cooldown, int... comboIds) {
         this.comboEnabled = true;
         this.comboCooldownMax = cooldown;
-        this.currentComboCooldown = cooldown;
+        this.currentComboCooldown = 10;
         this.allowedCombos = comboIds;
+    }
+
+    public void setAllowedCombos(int cooldown, ComboType... combos) {
+        this.comboEnabled = true;
+        this.comboCooldownMax = cooldown;
+        this.currentComboCooldown = 10;
+
+        int[] ids = new int[combos.length];
+        for (int i = 0; i < combos.length; i++) {
+            ids[i] = combos[i].getId();
+        }
+        this.allowedCombos = ids;
     }
 
     public void setEvade(boolean active, int cooldown) {
@@ -302,6 +375,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.genericColorBorder = colorBorder;
     }
 
+    public void setBigBang(int cooldown, int colorMain, int colorBorder) {
+        this.setMainSkill(17, cooldown, 1.5F);
+        this.genericColorMain = colorMain;
+        this.genericColorBorder = colorBorder;
+    }
+
+    // NUEVO MÉTODO LEGACY: FINAL FLASH
+    public void setFinalFlash(int cooldown, float size) {
+        this.setMainSkill(18, cooldown, size);
+    }
+
     public void setSecondarySkill(int skillId, int cooldown, float size) {
         this.canUseSecondarySkill = true;
         this.secondarySkillType = skillId;
@@ -324,6 +408,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     public void setTertiarySkill(int skillId, int cooldown) {
         this.setTertiarySkill(skillId, cooldown, 1.0F);
+    }
+
+    public void addKiSkill(KiSkillType type, int cooldown, float size, int colorMain, int colorBorder) {
+        this.skillPool.add(new KiSkill(type.getId(), cooldown, size, colorMain, colorBorder));
+    }
+
+    public void addKiSkill(KiSkillType type, int cooldown, float size) {
+        this.addKiSkill(type, cooldown, size, 0xFFFFFF, 0xFFFFFF);
+    }
+
+    public void addKiSkill(KiSkillType type, int cooldown) {
+        this.addKiSkill(type, cooldown, 1.0F);
     }
 
     @Override
@@ -388,6 +484,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                     if (this.canUseWildSense && this.currentWildSenseCooldown > 0) this.currentWildSenseCooldown--;
                     if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
 
+                    // Cooldowns Legacy
                     if (this.canUseSkill && this.currentSkillCooldown > 0) {
                         this.currentSkillCooldown--;
                     }
@@ -398,6 +495,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
                     if (this.canUseTertiarySkill && this.currentTertiarySkillCooldown > 0) {
                         this.currentTertiarySkillCooldown--;
+                    }
+
+                    // Cooldowns del Skill Pool
+                    for (KiSkill skill : this.skillPool) {
+                        if (skill.currentCooldown > 0) {
+                            skill.currentCooldown--;
+                        }
                     }
                 }
 
@@ -449,7 +553,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                         }
                     }
 
-                    int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14) ? 30 : (skill == 13 || skill == 16) ? 40 : (skill == 15) ? 60 : 60;
+                    // AÑADIDO: Final Flash (18) ajustado al timer correspondiente (usamos 40 ticks como masenko/laser)
+                    int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14 || skill == 17) ? 30 : (skill == 13 || skill == 16 || skill == 18) ? 40 : (skill == 15) ? 60 : 60;
 
                     if (this.castTimer >= maxCastDuration) {
                         this.stopCasting();
@@ -553,6 +658,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             case 14: return kiDmg * 1.5F;
             case 15: return kiDmg * 2.0F;
             case 16: return kiDmg;
+            case 17: return kiDmg * 1.8F;
+            case 18: return kiDmg * 2.0F; // NUEVO: Final Flash es poderoso, lo igualamos a la Death Ball
             default: return kiDmg;
         }
     }
@@ -560,13 +667,26 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private void executeSkillEffect(int skillType) {
         if (this.getTarget() == null) return;
 
-        int syncCastTime = (skillType == 4) ? 0 : (skillType == 11) ? 10 : (skillType == 15) ? 60 : 37;
+        // AÑADIDO: Sync cast time para Final Flash (18) ajustado a 40 ticks
+        int syncCastTime = (skillType == 4) ? 0 : (skillType == 11) ? 10 : (skillType == 17) ? 30 : (skillType == 15) ? 60 : (skillType == 18) ? 40 : 37;
 
         float actualDamage = getCalculatedSkillDamage(skillType);
 
-        float actualSize = (skillType == this.mainSkillType) ? this.skillSize :
-                (skillType == this.secondarySkillType) ? this.secondarySkillSize :
-                        this.tertiarySkillSize;
+        float actualSize = 1.0F;
+        int usedColorMain = this.genericColorMain;
+        int usedColorBorder = this.genericColorBorder;
+
+        if (skillType == this.mainSkillType) {
+            actualSize = this.skillSize;
+        } else if (skillType == this.secondarySkillType) {
+            actualSize = this.secondarySkillSize;
+        } else if (skillType == this.tertiarySkillType) {
+            actualSize = this.tertiarySkillSize;
+        } else {
+            actualSize = this.currentPoolSkillSize;
+            usedColorMain = this.currentPoolColorMain;
+            usedColorBorder = this.currentPoolColorBorder;
+        }
 
         switch (skillType) {
             case 1:
@@ -587,11 +707,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 break;
             case 5:
                 KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
-                explosion.setupKiExplosion(this, actualDamage, this.genericColorMain, this.genericColorBorder, syncCastTime);
+                explosion.setupKiExplosion(this, actualDamage, usedColorMain, usedColorBorder, syncCastTime);
                 break;
             case 6:
                 KiBarrierEntity barrier = new KiBarrierEntity(this.level(), this);
-                barrier.setupKiBarrier(this, this.getAuraColor(), this.getAuraColor(), syncCastTime);
+                barrier.setupKiBarrier(this, usedColorMain, usedColorBorder, syncCastTime);
                 break;
             case 7:
                 this.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.0F, 0.8F + this.random.nextFloat() * 0.4F);
@@ -628,19 +748,19 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 break;
             case 8:
                 KiWaveEntity genericWave = new KiWaveEntity(this.level(), this);
-                genericWave.setupKiWave(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain, this.genericColorBorder, actualSize, syncCastTime);
+                genericWave.setupKiWave(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, usedColorBorder, actualSize, syncCastTime);
                 break;
             case 9:
                 KiWaveEntity oozaruBeam = new KiWaveEntity(this.level(), this);
-                oozaruBeam.setupKiOozaru(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain, this.genericColorBorder, actualSize, syncCastTime);
+                oozaruBeam.setupKiOozaru(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, usedColorBorder, actualSize, syncCastTime);
                 break;
             case 10:
                 KiBlastEntity volley = new KiBlastEntity(this.level(), this);
-                volley.setupKiVolley(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain, syncCastTime);
+                volley.setupKiVolley(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, syncCastTime);
                 break;
             case 11:
                 KiBlastEntity smallBlast = new KiBlastEntity(this.level(), this);
-                smallBlast.setupKiSmall(this, actualDamage, this.getKiBlastSpeed(), this.genericColorMain);
+                smallBlast.setupKiSmall(this, actualDamage, this.getKiBlastSpeed(), usedColorMain);
                 smallBlast.shootFromRotation(this, this.getXRot(), this.getYRot(), 0.0F, this.getKiBlastSpeed(), 1.0F);
                 this.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.0F + (this.random.nextFloat() * 0.2F));
                 break;
@@ -653,31 +773,31 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                     this.lookAt(this.getTarget(), 360, 360);
                 }
                 KiLaserEntity tripleLaser = new KiLaserEntity(this.level(), this);
-                tripleLaser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, this.genericColorMain, this.genericColorBorder, 0);
+                tripleLaser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, usedColorMain, usedColorBorder, 0);
                 break;
             case 14:
                 KiDiskEntity kienzan = new KiDiskEntity(this.level(), this);
-                kienzan.setupKiDisk(this, actualDamage, this.getKiBlastSpeed() * 1.2F, this.genericColorMain, actualSize, syncCastTime);
+                kienzan.setupKiDisk(this, actualDamage, this.getKiBlastSpeed() * 1.2F, usedColorMain, actualSize, syncCastTime);
                 break;
             case 15:
                 KiBlastEntity deathBall = new KiBlastEntity(this.level(), this);
-                deathBall.setupKiDeathBall(this, actualDamage, this.getKiBlastSpeed() * 0.7F, this.genericColorMain, this.genericColorBorder, syncCastTime);
+                deathBall.setupKiDeathBall(this, actualDamage, this.getKiBlastSpeed() * 0.7F, usedColorMain, usedColorBorder, syncCastTime);
                 break;
             case 16:
                 KiWaveEntity masenko = new KiWaveEntity(this.level(), this);
                 masenko.setupKiMasenko(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
                 break;
+            case 17:
+                KiBlastEntity bigBang = new KiBlastEntity(this.level(), this);
+                bigBang.setupKiBlast(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, actualSize, syncCastTime);
+                break;
+            case 18:
+                KiWaveEntity finalFlash = new KiWaveEntity(this.level(), this);
+                finalFlash.setupFinalFlash(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
+                break;
         }
     }
 
-    /**
-     * LISTA DE COMBOS DISPONIBLES:
-     * 0 = Combo Básico 1 (Golpes rápidos y empuje)
-     * 1 = Combo Aéreo (Lanza al aire, golpea y aplasta)
-     * 2 = Combo Ki
-     * 3 = Combinación de Meteoros
-     * 4 = Absorción de Ki (Androide)
-     */
     private void handleComboLogic() {
         if (comboTarget == null || !comboTarget.isAlive() || !this.isAlive() || this.isTransforming()) {
             this.stopCombo();
@@ -945,15 +1065,32 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (this.isComboing()) {
             return false;
         }
-        if (this.getTarget() == null || this.distanceTo(this.getTarget()) <= 10.0D) {
+
+        if (this.getTarget() == null || this.distanceTo(this.getTarget()) <= 4.0D) {
             return false;
         }
+
+        for (KiSkill skill : skillPool) {
+            if (skill.currentCooldown <= 0) return true;
+        }
+
         return (this.canUseSkill && this.currentSkillCooldown <= 0) ||
                 (this.canUseSecondarySkill && this.currentSecondarySkillCooldown <= 0) ||
                 (this.canUseTertiarySkill && this.currentTertiarySkillCooldown <= 0);
     }
 
     public void startFirstAvailableSkill() {
+        for (KiSkill skill : this.skillPool) {
+            if (skill.currentCooldown <= 0) {
+                this.currentPoolSkillSize = skill.size;
+                this.currentPoolColorMain = skill.colorMain;
+                this.currentPoolColorBorder = skill.colorBorder;
+                this.startCasting(skill.id);
+                skill.currentCooldown = skill.cooldownMax;
+                return;
+            }
+        }
+
         if (this.canUseSkill && this.currentSkillCooldown <= 0) {
             this.startCasting(this.mainSkillType);
             this.currentSkillCooldown = this.skillCooldownMax;
@@ -1092,9 +1229,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             int comboId = entity.entityData.get(CURRENT_COMBO_ID);
             if (comboId == 0) return event.setAndContinue(ANIM_COMBO1);
             if (comboId == 1) return event.setAndContinue(ANIM_COMBO2);
+
+            if (comboId == 3) {
+                if (entity.comboTimer >= 45) return event.setAndContinue(ANIM_KI_KAME);
+                return event.setAndContinue(ANIM_COMBO3);
+            }
             if (comboId == 2) return event.setAndContinue(ANIM_COMBO3);
-            if (comboId == 3 && entity.comboTimer >= 45) return event.setAndContinue(ANIM_KI_KAME);
-            if (comboId == 4) return event.setAndContinue(ANIM_GRAB_KI); // Animación de Absorción
+            if (comboId == 4) return event.setAndContinue(ANIM_GRAB_KI);
         }
 
         if (entity.isCasting()) {
@@ -1116,6 +1257,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 case 14: return event.setAndContinue(ANIM_KI_DISC);
                 case 15: return event.setAndContinue(ANIM_KIBALL);
                 case 16: return event.setAndContinue(ANIM_KI_MASENKO);
+                case 17: return event.setAndContinue(ANIM_KI_BIG_BANG); // NUEVO BIG BANG
+                case 18: return event.setAndContinue(ANIM_KI_FINALFLASH); // NUEVO FINAL FLASH
                 default: return event.setAndContinue(ANIM_KIWAVE);
             }
         }
@@ -1227,9 +1370,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public int getAuraColor() {return this.entityData.get(AURA_COLOR);}
     public void setAuraColor(int color) {this.entityData.set(AURA_COLOR, color);}
 
-    public String getAuraType() {return this.entityData.get(AURA_TYPE);}
-    public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
-
     public boolean isTransforming() {return this.entityData.get(TRANSFORMING);}
     public void setTransforming(boolean transforming) {this.entityData.set(TRANSFORMING, transforming);}
 
@@ -1253,6 +1393,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private void stopCombo() {
         this.setComboing(false);
+        this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
         this.comboTarget = null;
 
@@ -1383,6 +1524,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
         if (actuallyHurt && !this.level().isClientSide) {
 
+            if (this.getHealth() <= 0.0F && this.hasTransformation()) {
+                this.setHealth(1.0F);
+                this.deathTime = 0;
+                this.startTransformation();
+                return false;
+            }
+
             if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() / 2.0F)) {
                 if (this.hasTransformation()) {
                     this.startTransformation();
@@ -1404,6 +1552,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     protected boolean hasTransformation() {
         return false;
+    }
+
+    @Override
+    public void die(DamageSource pCause) {
+        if (this.hasTransformation() && !this.isTransforming()) {
+            this.setHealth(1.0F);
+            this.deathTime = 0;
+            this.startTransformation();
+            return;
+        }
+        super.die(pCause);
     }
 
     @Override
@@ -1477,9 +1636,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         double flyspeed = this.getFlySpeed();
 
         double distance = this.distanceTo(target);
-        if (distance > 8.0D) {
+        if (distance > 15.0D) {
             if (!this.isFlyingFast()) this.setFlyingFast(true);
-        } else if (distance < 4.0D) {
+        } else if (distance < 7.0D) {
             if (this.isFlyingFast()) this.setFlyingFast(false);
         }
 

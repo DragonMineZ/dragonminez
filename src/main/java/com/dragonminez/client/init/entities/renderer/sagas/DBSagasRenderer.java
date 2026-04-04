@@ -2,6 +2,7 @@ package com.dragonminez.client.init.entities.renderer.sagas;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.init.entities.model.sagas.DBSagaModel;
+import com.dragonminez.client.init.entities.renderer.sagas.layer.ItemInHandLayer;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.AuraMeshFactory;
@@ -36,6 +37,8 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
     public DBSagasRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new DBSagaModel<>());
         this.shadowRadius = 0.4f;
+
+        this.addRenderLayer(new ItemInHandLayer(this));
     }
 
     @Override
@@ -56,15 +59,16 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             poseStack.scale(1.2f, 1.2f, 1.2f);
         } else if(entity instanceof SagaFriezaEntity.SagaFriezaThirdForm){
             poseStack.scale(1.3f, 1.3f, 1.3f);
-        } else if(entity instanceof SagaCellSemiPerfectEntity){
+        } else if(entity instanceof SagaCellEntity.SagaSemiPerfectCellEntity){
             poseStack.scale(1.2f, 1.2f, 1.2f);
-        } else if(entity instanceof SagaVegetaSSJEntity){
+        } else if(entity instanceof SagaVegetaEntity.SagaVegetaMidSSG2Entity){
             poseStack.scale(1.1f, 1.0f, 1.1f);
-        } else if(entity instanceof SagaTrunksSSJEntity){
+        } else if(entity instanceof SagaTrunksEntity.SagaFutureTrunksSSG3Entity){
             poseStack.scale(1.3f, 1.1f, 1.3f);
-        } else if(entity instanceof SagaGohanSSJEntity){
+        } else if(entity instanceof SagaTrunksEntity.SagaFutureTrunksKidBaseEntity || entity instanceof SagaTrunksEntity.SagaFutureTrunksKidSSJEntity
+                || entity instanceof SagaGohanEntity.SagaGohanMidBaseEntity || entity instanceof SagaGohanEntity.SagaGohanMidSSJEntity  || entity instanceof SagaGohanEntity.SagaGohanMidSSJ2Entity){
             poseStack.scale(0.8f, 0.8f, 0.8f);
-        } else if(entity instanceof SagaCellJrEntity){
+        } else if(entity instanceof SagaCellEntity.SagaCellJREntity){
             poseStack.scale(0.8f, 0.8f, 0.8f);
         } else if(entity instanceof SagaZFightersEntity.SagaKrillinEntity){
             poseStack.scale(0.8f, 0.8f, 0.8f);

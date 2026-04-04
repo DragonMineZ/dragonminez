@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import net.minecraft.util.Mth;
@@ -17,48 +18,190 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.object.PlayState;
 
-public class SagaVegetaEntity extends DBSagasEntity{
+public class SagaVegetaEntity{
 
-    public SagaVegetaEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
-        super(pEntityType, pLevel);
-		if (this instanceof IBattlePower bp) {
-			bp.setBattlePower(18000);
-		}
+    public static class SagaVegetaExplorerEntity extends DBSagasEntity {
 
-        this.setCanFly(true);
-        this.setWildSense(true, 200);
-        this.setKiBlastSpeed(1.3F);
-        this.setAuraColor(0XF527AD);
-        this.setDBZStyle(0);
-
-        String entityName = ForgeRegistries.ENTITY_TYPES.getKey(pEntityType).getPath();
-
-        if (entityName != null && entityName.contains("namek")) {
-
-            if (this instanceof IBattlePower bp) {
-                bp.setBattlePower(24000);
-            }
-            this.setCombo(0, 140);
-
-            this.setKiVolley(200, 0X00C0FF);
-
-            this.setSecondarySkill(2, 400, 1.8f);
-
-        } else {
+        public SagaVegetaExplorerEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
 
             if (this instanceof IBattlePower bp) {
                 bp.setBattlePower(18000);
             }
-            this.setCombo(1, 200);
 
-            this.setMainSkill(2, 300, 1.5f);
+            this.setCanFly(true);
+            this.setAuraColor(0xFFF48A);
+            this.setKiBlastSpeed(1.2F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.KI_SMALL, 50, 1.2F, 0xFFF48A, 0xFFF48A);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 400, 1.2F);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta";
         }
 
     }
 
-    @Override
-    public String getGeckolibModelName() {
-        return "saga_vegeta";
+    public static class SagaVegetaNamekEntity extends DBSagasEntity {
+
+        public SagaVegetaNamekEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(24000);
+            }
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFF48A);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 400, 1.2F);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta";
+        }
+
+    }
+
+    public static class SagaVegetaMidBaseEntity extends DBSagasEntity {
+
+        public SagaVegetaMidBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(13000000);
+            }
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.AIR);
+
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x00C0FF, 0x00C0FF);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 400, 1.2F);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta";
+        }
+
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_MID_SSJ.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {
+            return true;
+        }
+
+
+    }
+
+    public static class SagaVegetaMidSSJEntity extends DBSagasEntity {
+
+        public SagaVegetaMidSSJEntity   (EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(650000000);
+            }
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.GALICK_GUN, 200, 1.2F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 400, 1.5F, 0xE3FFFF, 0xE3FFFF);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta";
+        }
+
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_VEGETA_MID_SSG2.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {
+            return false;
+        }
+    }
+
+    public static class SagaVegetaMidSSG2Entity extends DBSagasEntity {
+
+        public SagaVegetaMidSSG2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            if (this instanceof IBattlePower bp) {
+                bp.setBattlePower(650000000);
+            }
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
+
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.BIG_BANG, 200, 1.5F, 0xE3FFFF, 0xE3FFFF);
+            this.addKiSkill(KiSkillType.FINAL_FLASH, 400, 2.0F);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_vegeta_ssj2";
+        }
+
     }
 
 }
