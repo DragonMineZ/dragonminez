@@ -96,7 +96,7 @@ public class StorageManager {
 				throw new RuntimeException(e);
 			}
 
-			if (!stats.getPlayerQuestData().isSagaUnlocked("saiyan_saga")) {
+			if (stats.getPlayerQuestData().isSagaLocked("saiyan_saga")) {
 				stats.getPlayerQuestData().setSagaUnlocked("saiyan_saga", true);
 			}
 

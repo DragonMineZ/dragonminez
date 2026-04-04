@@ -19,9 +19,9 @@ import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
-import com.dragonminez.common.quest.QuestLocationHelper;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.SagaBranchingHelper;
 import com.dragonminez.common.quest.rewards.ItemReward;
@@ -73,6 +73,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private TexturedTextButton actionButton;
 	private TexturedTextButton partyPrimaryButton;
 	private TexturedTextButton partySecondaryButton;
+	private List<Component> actionButtonTooltip = List.of();
 	private long lastClickTime = 0;
 
 	private int currentSagaIndex = 0;
@@ -394,6 +395,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		actionButton = null;
 		partyPrimaryButton = null;
 		partySecondaryButton = null;
+		actionButtonTooltip = List.of();
 		initNavigationButtons();
 		initPartyButtons();
 		initActionButton();
@@ -407,9 +409,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		String selectedKey = questProgressKey(currentSaga, selectedQuest);
 		boolean isCompleted = isQuestCompleted(questData, currentSaga, selectedQuest);
 		boolean canStart = canStartQuest(selectedQuest);
+		boolean showDisabledStart = !canStart && getNodeStatus(selectedQuest) == QuestNodeStatus.AVAILABLE;
 		Component buttonText;
 		boolean buttonActive = true;
 		boolean isClaimAction = false;
+		List<Component> tooltipLines = List.of();
 
 		if (isCompleted) {
 			boolean hasUnclaimedRewards = false;
@@ -425,8 +429,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			} else {
 				return;
 			}
-		} else if (canStart) {
+		} else if (canStart || showDisabledStart) {
 			buttonText = tr("gui.dragonminez.quests.start");
+			buttonActive = canStart;
 		} else {
 			return;
 		}
@@ -434,6 +439,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (isClaimAction && isInSharedPartyAsMember()) {
 			buttonText = tr("gui.dragonminez.party.leader_only");
 			buttonActive = false;
+			tooltipLines = List.of(tr("gui.dragonminez.party.leader_only"));
+		} else if (!buttonActive) {
+			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
 		}
 
 		boolean finalIsClaimAction = isClaimAction;
@@ -474,6 +482,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				.build();
 
 		actionButton.active = buttonActive;
+		actionButtonTooltip = tooltipLines;
 		this.addRenderableWidget(actionButton);
 	}
 
@@ -588,10 +597,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		Saga currentSaga = availableSagas.get(currentSagaIndex);
 		PlayerQuestData questData = statsData.getPlayerQuestData();
 		String questKey = questProgressKey(currentSaga, quest);
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) return false;
 		if (questData.isQuestCompleted(questKey)) return false;
 		if (questData.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) return false;
-		if (!QuestLocationHelper.isQuestStartLocationSatisfied(Minecraft.getInstance().player, quest)) return false;
-		return getNodeStatus(quest) == QuestNodeStatus.AVAILABLE;
+		if (getNodeStatus(quest) != QuestNodeStatus.AVAILABLE) return false;
+		return QuestAvailabilityChecker.areStartRequirementsMet(quest, questKey, mc.player, statsData);
 	}
 
 	// ========================================================================================
@@ -699,7 +710,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			renderConfirmOverlay(graphics, uiMouseX, uiMouseY);
 		}
 		if (!invitePopupOpen && !confirmOverlayOpen) {
-			renderRewardTooltips(graphics, uiMouseX, uiMouseY);
+			if (!renderActionButtonTooltip(graphics, uiMouseX, uiMouseY)) {
+				renderRewardTooltips(graphics, uiMouseX, uiMouseY);
+			}
 		}
 		endUiScale(graphics);
 	}
@@ -1132,18 +1145,19 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.renderOutline(x, y, width, height, 0x88444466);
 
 		drawStringWithBorder(graphics,
-				tr("gui.dragonminez.quests.objectives").copy().withStyle(ChatFormatting.BOLD),
+				tr(selectedQuest.hasStartRequirements()
+						? "gui.dragonminez.quests.objectives_requirements"
+						: "gui.dragonminez.quests.objectives").copy().withStyle(ChatFormatting.BOLD),
 				x + 6,
 				y + 4,
 				0xFFFFD700);
 
-		List<QuestObjective> objectives = selectedQuest.getObjectives();
-		if (objectives.isEmpty()) {
+		List<String> lines = buildObjectiveRenderLines(saga, width - 24);
+		if (lines.isEmpty()) {
 			drawStringWithBorder(graphics, txt("-"), x + 8, y + 18, 0xFF999999);
 			return;
 		}
 
-		List<String> lines = buildObjectiveRenderLines(saga, width - 24);
 		int maxLines = Math.max(1, (height - 24) / 10);
 		int drawY = y + 18;
 		for (int i = 0; i < Math.min(maxLines, lines.size()); i++) {
@@ -1155,6 +1169,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private List<String> buildObjectiveRenderLines(Saga saga, int textWidth) {
 		List<String> lines = new ArrayList<>();
 		if (statsData == null || selectedQuest == null) return lines;
+
+		if (selectedQuest.hasStartRequirements()) {
+			lines.add(tr("gui.dragonminez.quests.requirements").getString() + ":");
+			appendRequirementLines(lines, selectedQuest.getStartRequirements(), questProgressKey(saga, selectedQuest), 0, textWidth);
+			if (!selectedQuest.getObjectives().isEmpty()) {
+				lines.add(tr("gui.dragonminez.quests.objectives").getString() + ":");
+			}
+		}
 
 		PlayerQuestData pqd = statsData.getPlayerQuestData();
 		String questKey = questProgressKey(saga, selectedQuest);
@@ -1189,25 +1211,292 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return description;
 	}
 
+	private void appendRequirementLines(List<String> lines, QuestPrerequisites requirements, String questKey, int depth, int textWidth) {
+		if (requirements == null || requirements.conditions() == null || requirements.conditions().isEmpty()) {
+			return;
+		}
+
+		boolean showGroupLabel = depth > 0 || requirements.conditions().size() > 1;
+		if (showGroupLabel) {
+			String groupLabel = requirements.operator() == QuestPrerequisites.Operator.AND
+					? tr("gui.dragonminez.quests.requirements_all").getString()
+					: tr("gui.dragonminez.quests.requirements_any").getString();
+			addWrappedRequirementLine(lines, indent(depth), groupLabel, textWidth);
+			depth++;
+		}
+
+		for (QuestPrerequisites.Condition condition : requirements.conditions()) {
+			if (condition == null) continue;
+			if (condition.isNestedGroup()) {
+				appendRequirementLines(lines, condition.getNested(), questKey, depth, textWidth);
+				continue;
+			}
+
+			List<String> conditionLines = describeRequirementLines(condition, questKey);
+			if (conditionLines.isEmpty()) continue;
+
+			String bulletPrefix = indent(depth) + "- ";
+			String continuationPrefix = indent(depth + 1);
+			for (int i = 0; i < conditionLines.size(); i++) {
+				addWrappedRequirementLine(lines, i == 0 ? bulletPrefix : continuationPrefix, conditionLines.get(i), textWidth);
+			}
+		}
+	}
+
+	private List<String> describeRequirementLines(QuestPrerequisites.Condition condition, String questKey) {
+		List<String> lines = new ArrayList<>();
+		if (condition == null || condition.getType() == null) return lines;
+
+		switch (condition.getType()) {
+			case SAGA_QUEST -> lines.add(tr("gui.dragonminez.quests.requirement.complete_saga",
+					resolveSagaQuestName(condition.getSagaId(), condition.getQuestId())).getString());
+			case QUEST -> lines.add(tr("gui.dragonminez.quests.requirement.complete_quest",
+					resolveQuestName(condition.getRequiredQuestId())).getString());
+			case STAT -> lines.add(tr("gui.dragonminez.quests.requirement.stat",
+					condition.getMinValue(),
+					humanizeIdentifier(condition.getStat())).getString());
+			case LEVEL -> lines.add(tr("gui.dragonminez.quests.requirement.level",
+					condition.getMinLevel()).getString());
+			case BIOME -> lines.add(tr("gui.dragonminez.quests.requirement.biome",
+					humanizeResourceIdentifier(condition.getBiomeId())).getString());
+			case STRUCTURE -> {
+				lines.add(tr("gui.dragonminez.quests.requirement.structure",
+						humanizeResourceIdentifier(condition.getStructureId())).getString());
+				QuestPrerequisites.StructureHint hint = condition.getStructureHint();
+				if (hint != null) {
+					if (hint.dimensionId() != null) {
+						lines.add(tr("gui.dragonminez.quests.requirement.dimension",
+								humanizeResourceIdentifier(hint.dimensionId())).getString());
+					}
+					if (hint.hasCoordinates()) {
+						lines.add(tr("gui.dragonminez.quests.requirement.coords",
+								hint.x(), hint.y(), hint.z()).getString());
+					}
+				}
+			}
+			case DIMENSION -> lines.add(tr("gui.dragonminez.quests.requirement.dimension",
+					humanizeResourceIdentifier(condition.getDimensionId())).getString());
+			case TIME -> lines.add(buildTimeRequirementText(condition, questKey));
+		}
+
+		return lines;
+	}
+
+	private String buildTimeRequirementText(QuestPrerequisites.Condition condition, String questKey) {
+		long duration = condition.getDuration() != null ? condition.getDuration() : 0L;
+		String base = condition.getTimeMode() == QuestPrerequisites.TimeMode.REAL_TIME
+				? tr("gui.dragonminez.quests.requirement.time_real", formatRealTimeDuration(duration)).getString()
+				: tr("gui.dragonminez.quests.requirement.time_game", formatGameTimeDuration(duration)).getString();
+
+		if (statsData == null || questKey == null || questKey.isBlank()) {
+			return base;
+		}
+
+		PlayerQuestData.QuestStartRequirementTiming timing = statsData.getPlayerQuestData().getStartRequirementTiming(questKey);
+		Minecraft mc = Minecraft.getInstance();
+		if (timing == null || mc.player == null || duration <= 0L) {
+			return base;
+		}
+
+		long remaining;
+		if (condition.getTimeMode() == QuestPrerequisites.TimeMode.REAL_TIME) {
+			long elapsed = Math.max(0L, System.currentTimeMillis() - timing.getRealTimeStartedMs());
+			remaining = Math.max(0L, duration - elapsed);
+			if (remaining > 0L) {
+				return base + " (" + tr("gui.dragonminez.quests.requirement.remaining",
+						formatRealTimeDuration(remaining)).getString() + ")";
+			}
+			return base + " (" + tr("gui.dragonminez.quests.requirement.ready").getString() + ")";
+		}
+
+		long elapsed = Math.max(0L, mc.player.level().getGameTime() - timing.getGameTimeStarted());
+		remaining = Math.max(0L, duration - elapsed);
+		if (remaining > 0L) {
+			return base + " (" + tr("gui.dragonminez.quests.requirement.remaining",
+					formatGameTimeDuration(remaining)).getString() + ")";
+		}
+		return base + " (" + tr("gui.dragonminez.quests.requirement.ready").getString() + ")";
+	}
+
+	private void addWrappedRequirementLine(List<String> lines, String prefix, String text, int textWidth) {
+		int wrapWidth = Math.max(12, textWidth - this.font.width(prefix));
+		List<String> wrapped = wrapText(text, wrapWidth);
+		if (wrapped.isEmpty()) {
+			lines.add(prefix.trim());
+			return;
+		}
+
+		String continuationPrefix = indentFromPrefix(prefix);
+		lines.add(prefix + wrapped.get(0));
+		for (int i = 1; i < wrapped.size(); i++) {
+			lines.add(continuationPrefix + wrapped.get(i));
+		}
+	}
+
+	//hace lo mismo q los embeds de Discord
+	private String indent(int depth) {
+		return "  ".repeat(Math.max(0, depth));
+	}
+
+	private String indentFromPrefix(String prefix) {
+		if (prefix.endsWith("- ")) {
+			return prefix.substring(0, prefix.length() - 2) + "  ";
+		}
+		return prefix;
+	}
+
+	private String resolveSagaQuestName(String sagaId, Integer questId) {
+		if (sagaId == null || questId == null) {
+			return "?";
+		}
+
+		Saga saga = QuestRegistry.getClientSaga(sagaId);
+		if (saga != null) {
+			Quest quest = saga.getQuestById(questId);
+			if (quest != null) {
+				return LocalizationUtil.localizedOrReadableText(quest.getTitle());
+			}
+		}
+		return humanizeIdentifier(sagaId) + " " + questId;
+	}
+
+	private String resolveQuestName(String questId) {
+		if (questId == null || questId.isBlank()) {
+			return "?";
+		}
+
+		Quest quest = QuestRegistry.getClientQuest(questId);
+		if (quest != null) {
+			return LocalizationUtil.localizedOrReadableText(quest.getTitle());
+		}
+		return humanizeResourceIdentifier(questId);
+	}
+
+	private String humanizeResourceIdentifier(String raw) {
+		if (raw == null || raw.isBlank()) return "?";
+		String value = raw.startsWith("#") ? raw.substring(1) : raw;
+		int colon = value.indexOf(':');
+		String token = colon >= 0 ? value.substring(colon + 1) : value;
+		return humanizeIdentifier(token);
+	}
+
+	private String humanizeIdentifier(String raw) {
+		if (raw == null || raw.isBlank()) return "?";
+		String normalized = raw.replace('_', ' ').replace('-', ' ');
+		String[] parts = normalized.split("\\s+");
+		StringBuilder builder = new StringBuilder();
+		for (String part : parts) {
+			if (part.isBlank()) continue;
+			if (!builder.isEmpty()) builder.append(' ');
+			builder.append(Character.toUpperCase(part.charAt(0)));
+			if (part.length() > 1) {
+				builder.append(part.substring(1).toLowerCase());
+			}
+		}
+		return builder.toString();
+	}
+
+	//juro que esto es util y no esta hardcoded
+	private String formatGameTimeDuration(long ticks) {
+		if (ticks <= 0L) return "0s";
+		long totalSeconds = Math.max(1L, ticks / 20L);
+		return formatSeconds(totalSeconds);
+	}
+
+	private String formatRealTimeDuration(long millis) {
+		if (millis <= 0L) return "0s";
+		long totalSeconds = Math.max(1L, millis / 1000L);
+		return formatSeconds(totalSeconds);
+	}
+
+	private String formatSeconds(long totalSeconds) {
+		long hours = totalSeconds / 3600L;
+		long minutes = (totalSeconds % 3600L) / 60L;
+		long seconds = totalSeconds % 60L;
+
+		if (hours > 0L) {
+			return minutes > 0L ? hours + "h " + minutes + "m" : hours + "h";
+		}
+		if (minutes > 0L) {
+			return seconds > 0L ? minutes + "m " + seconds + "s" : minutes + "m";
+		}
+		return seconds + "s";
+	}
+
 	private void renderRewardTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
 		for (RewardHitbox hitbox : rewardHitboxes) {
 			if (!hitbox.contains(mouseX, mouseY)) continue;
 			if (hitbox.stack != null && !hitbox.stack.isEmpty()) {
 				graphics.renderTooltip(this.font, hitbox.stack, mouseX, mouseY);
 			} else {
-				renderSimpleTooltip(graphics, hitbox.tooltip.getString(), mouseX, mouseY);
+				renderSimpleTooltip(graphics, List.of(hitbox.tooltip), mouseX, mouseY);
 			}
 			return;
 		}
 	}
 
-	private void renderSimpleTooltip(GuiGraphics graphics, String text, int mouseX, int mouseY) {
-		int tooltipWidth = this.font.width(text) + 10;
+	private boolean renderActionButtonTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+		if (actionButton == null || actionButtonTooltip.isEmpty() || actionButton.active || !actionButton.visible) {
+			return false;
+		}
+		if (!actionButton.isMouseOver(mouseX, mouseY)) {
+			return false;
+		}
+		renderSimpleTooltip(graphics, actionButtonTooltip, mouseX, mouseY);
+		return true;
+	}
+
+	private void renderSimpleTooltip(GuiGraphics graphics, List<Component> lines, int mouseX, int mouseY) {
+		if (lines == null || lines.isEmpty()) {
+			return;
+		}
+
+		int tooltipWidth = 0;
+		for (Component line : lines) {
+			tooltipWidth = Math.max(tooltipWidth, this.font.width(line));
+		}
+		tooltipWidth += 10;
 		int tooltipX = mouseX + 8;
-		int tooltipY = mouseY - 14;
-		graphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + 14, 0xEE111122);
-		graphics.renderOutline(tooltipX, tooltipY, tooltipWidth, 14, 0xFF555577);
-		graphics.drawString(this.font, text, tooltipX + 5, tooltipY + 3, 0xFFFFFFFF, false);
+		int tooltipHeight = 6 + (lines.size() * 10);
+		int tooltipY = mouseY - tooltipHeight;
+		graphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, 0xEE111122);
+		graphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 0xFF555577);
+		for (int i = 0; i < lines.size(); i++) {
+			graphics.drawString(this.font, lines.get(i), tooltipX + 5, tooltipY + 3 + (i * 10), 0xFFFFFFFF, false);
+		}
+	}
+
+	private List<Component> buildQuestBlockerTooltip(Quest quest, Saga saga, boolean includePartyNote) {
+		List<Component> lines = new ArrayList<>();
+		if (quest == null || statsData == null) {
+			return lines;
+		}
+
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) {
+			return lines;
+		}
+
+		Component availabilityFailure = QuestAvailabilityChecker.describeAvailabilityFailure(quest, statsData);
+		if (availabilityFailure != null) {
+			lines.add(availabilityFailure);
+			return lines;
+		}
+
+		if (saga == null && !quest.isSideQuest()) {
+			return lines;
+		}
+
+		String questKey = questProgressKey(saga, quest);
+		Component startFailure = QuestAvailabilityChecker.describeStartRequirementFailure(quest, questKey, mc.player, statsData);
+		if (startFailure != null) {
+			lines.add(startFailure);
+			if (includePartyNote && statsData.getPlayerQuestData().isInParty()) {
+				lines.add(tr("gui.dragonminez.party.start_requirements_all"));
+			}
+		}
+
+		return lines;
 	}
 
 	private void renderSidePanelBackground(GuiGraphics graphics, PanelRect panel, boolean flushLeft, boolean flushRight, boolean drawFrame) {
@@ -1463,16 +1752,22 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		String title;
 		String statusText;
+		List<Component> extraLines = new ArrayList<>();
 		if (vis == NodeVisibility.BLURRED) {
 			title = "§kUnknown Quest§r";
 			statusText = tr("gui.dragonminez.quest_tree.status.locked").getString();
 		} else {
 			title = LocalizationUtil.localizedOrReadableText(quest.getTitle());
 			statusText = getStatusText(getNodeStatus(quest));
+			extraLines.addAll(buildQuestBlockerTooltip(quest, availableSagas.isEmpty() ? null : availableSagas.get(currentSagaIndex), false));
 		}
 
-		int tooltipWidth = Math.max(this.font.width(title), this.font.width(statusText)) + 12;
-		int tooltipHeight = 26;
+		int tooltipWidth = Math.max(this.font.width(title), this.font.width(statusText));
+		for (Component line : extraLines) {
+			tooltipWidth = Math.max(tooltipWidth, this.font.width(line));
+		}
+		tooltipWidth += 12;
+		int tooltipHeight = 26 + (extraLines.size() * 11);
 		int tooltipX = mouseX + 10;
 		int tooltipY = mouseY - tooltipHeight - 5;
 
@@ -1481,6 +1776,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.drawString(this.font, title, tooltipX + 5, tooltipY + 3, 0xFFFFFFFF, false);
 		int statusColor = vis == NodeVisibility.BLURRED ? 0xFF888888 : getStatusColor(getNodeStatus(quest));
 		graphics.drawString(this.font, statusText, tooltipX + 5, tooltipY + 14, statusColor, false);
+		for (int i = 0; i < extraLines.size(); i++) {
+			graphics.drawString(this.font, extraLines.get(i), tooltipX + 5, tooltipY + 25 + (i * 11), 0xFFCCCCCC, false);
+		}
 	}
 
 	// ========================================================================================

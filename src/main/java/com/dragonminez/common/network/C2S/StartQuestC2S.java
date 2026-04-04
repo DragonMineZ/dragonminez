@@ -7,7 +7,7 @@ import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.PartyManager;
-import com.dragonminez.common.quest.QuestLocationHelper;
+import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.quest.SagaBranchingHelper;
@@ -87,11 +87,27 @@ public class StartQuestC2S {
 					return;
 				}
 				if (!SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, data)) {
-					notifyStartFailure(player, "message.dragonminez.quest.start.locked");
+					Component reason = QuestAvailabilityChecker.describeAvailabilityFailure(quest, data);
+					notifyStartFailure(player, reason != null ? reason : Component.translatable("message.dragonminez.quest.start.locked"));
 					return;
 				}
-				if (!QuestLocationHelper.isQuestStartLocationSatisfied(player, quest)) {
-					notifyStartFailure(player, "message.dragonminez.quest.start.location");
+				Component controllerBlocker = QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, controller, data);
+				if (controllerBlocker != null) {
+					if (player.getUUID().equals(controller.getUUID())) {
+						notifyStartFailure(player, controllerBlocker);
+					} else {
+						notifyStartFailure(player, Component.translatable(
+								"message.dragonminez.quest.start.party_member_requirement",
+								controller.getGameProfile().getName(),
+								controllerBlocker
+						));
+					}
+					return;
+				}
+
+				Component partyBlocker = getPartyRequirementFailure(player, controller, quest, questKey);
+				if (partyBlocker != null) {
+					notifyStartFailure(player, partyBlocker);
 					return;
 				}
 
@@ -157,7 +173,38 @@ public class StartQuestC2S {
 		context.setPacketHandled(true);
 	}
 
+	private static Component getPartyRequirementFailure(ServerPlayer requester, ServerPlayer controller, Quest quest, String questKey) {
+		if (!PartyManager.isInParty(controller)) {
+			return null;
+		}
+
+		for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+			Component blocker = StatsProvider.get(StatsCapability.INSTANCE, member)
+					.map(data -> QuestAvailabilityChecker.describeQuestStartBlocker(quest, questKey, member, data))
+					.orElse(Component.translatable("message.dragonminez.quest.start.unavailable"));
+			if (blocker == null) {
+				continue;
+			}
+
+			if (member.getUUID().equals(requester.getUUID())) {
+				return blocker;
+			}
+
+			return Component.translatable(
+					"message.dragonminez.quest.start.party_member_requirement",
+					member.getGameProfile().getName(),
+					blocker
+			);
+		}
+
+		return null;
+	}
+
 	private static void notifyStartFailure(ServerPlayer player, String translationKey) {
-		player.displayClientMessage(Component.translatable(translationKey).withStyle(ChatFormatting.RED), true);
+		notifyStartFailure(player, Component.translatable(translationKey));
+	}
+
+	private static void notifyStartFailure(ServerPlayer player, Component message) {
+		player.displayClientMessage(message.copy().withStyle(ChatFormatting.RED), true);
 	}
 }

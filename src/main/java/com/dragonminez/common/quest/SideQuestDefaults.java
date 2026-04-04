@@ -17,6 +17,9 @@ import java.nio.file.Path;
  * Side-quests use the same schema as saga quests — only the {@code "type"} field
  * is set to {@code "SIDEQUEST"} and there is no {@code "chain"} block.
  * <p>
+ * Default generation also supports optional start-only {@code "requirements"} blocks
+ * separate from unlock {@code "prerequisites"}.
+ * <p>
  * Called by {@link QuestRegistry} during side-quest loading.
  *
  * @since 2.1
@@ -54,13 +57,33 @@ final class SideQuestDefaults {
 										JsonObject prerequisites,
 										JsonObject[] objectives, JsonObject[] rewards) {
 		return sidequest(id, title, desc, category, parallelObjectives, questGiver, turnIn,
-				prerequisites, objectives, rewards, null, null);
+				prerequisites, null, objectives, rewards, null, null);
+	}
+
+	private static JsonObject sidequest(String id, String title, String desc, String category,
+										boolean parallelObjectives,
+										String questGiver, String turnIn,
+										JsonObject prerequisites, JsonObject startRequirements,
+										JsonObject[] objectives, JsonObject[] rewards) {
+		return sidequest(id, title, desc, category, parallelObjectives, questGiver, turnIn,
+				prerequisites, startRequirements, objectives, rewards, null, null);
 	}
 
 	private static JsonObject sidequest(String id, String title, String desc, String category,
 										boolean parallelObjectives,
 										String questGiver, String turnIn,
 										JsonObject prerequisites,
+										JsonObject[] objectives, JsonObject[] rewards,
+										String branchGroup, String branchPath) {
+		return sidequest(id, title, desc, category, parallelObjectives, questGiver, turnIn,
+				prerequisites, null, objectives, rewards, branchGroup, branchPath);
+	}
+
+	private static JsonObject sidequest(String id, String title, String desc, String category,
+										boolean parallelObjectives,
+										String questGiver, String turnIn,
+										JsonObject prerequisites,
+										JsonObject startRequirements,
 										JsonObject[] objectives, JsonObject[] rewards,
 										String branchGroup, String branchPath) {
 		JsonObject q = new JsonObject();
@@ -83,6 +106,7 @@ final class SideQuestDefaults {
 		}
 
 		if (prerequisites != null) q.add("prerequisites", prerequisites);
+		if (startRequirements != null) q.add("requirements", startRequirements);
 
 		JsonArray objArr = new JsonArray(); for (JsonObject o : objectives) objArr.add(o);
 		q.add("objectives", objArr);
@@ -143,6 +167,10 @@ final class SideQuestDefaults {
 		p.add("conditions", arr); return p;
 	}
 
+	private static JsonObject requirements(String op, JsonObject... conditions) {
+		return prereqs(op, conditions);
+	}
+
 	private static JsonObject condSaga(String sagaId, int questId) {
 		JsonObject c = new JsonObject(); c.addProperty("type", "SAGA_QUEST"); c.addProperty("sagaId", sagaId); c.addProperty("questId", questId); return c;
 	}
@@ -154,6 +182,37 @@ final class SideQuestDefaults {
 	private static JsonObject condLevel(int minLevel) {
 		JsonObject c = new JsonObject(); c.addProperty("type", "LEVEL"); c.addProperty("minLevel", minLevel); return c;
 	}
+
+	private static JsonObject condStat(String stat, int minValue) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "STAT"); c.addProperty("stat", stat); c.addProperty("minValue", minValue); return c;
+	}
+
+	private static JsonObject condBiome(String biomeId) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "BIOME"); c.addProperty("biome", biomeId); return c;
+	}
+
+	private static JsonObject condStructure(String structureId) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "STRUCTURE"); c.addProperty("structure", structureId); return c;
+	}
+
+	private static JsonObject condDimension(String dimensionId) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "DIMENSION"); c.addProperty("dimension", dimensionId); return c;
+	}
+
+	private static JsonObject condGameTimeMinutes(long minutes) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "GAME_TIME"); c.addProperty("minutes", minutes); return c;
+	}
+
+	private static JsonObject condRealTimeMinutes(long minutes) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "REAL_TIME"); c.addProperty("minutes", minutes); return c;
+	}
+
+	/*
+	 * Start requirement format for sidequests:
+	 * sidequest(..., prereqs("AND", ...), requirements("AND", condBiome("minecraft:plains"), condStructure("dragonminez:roshi_house"),
+	 *     condDimension("minecraft:overworld"), condQuest("other_sidequest"), condSaga("saiyan_saga", 3),
+	 *     condLevel(10), condStat("STRENGTH", 25), condGameTimeMinutes(10), condRealTimeMinutes(5)), objectives, rewards)
+	 */
 
 	// ========================================================================================
 	// Training Side-Quests

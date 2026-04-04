@@ -92,7 +92,7 @@ public class StatsCapability {
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
 				PlayerQuestData questData = data.getPlayerQuestData();
-				if (!questData.isSagaUnlocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
+				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
 			});
 		}

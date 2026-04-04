@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.*;
 import com.dragonminez.common.quest.objectives.*;
@@ -44,12 +45,26 @@ public class SideQuestEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			PlayerQuestData pqd = data.getPlayerQuestData();
+			boolean timingChanged = false;
+
+			for (Quest sideQuest : QuestRegistry.getQuestsByType(Quest.QuestType.SIDEQUEST)) {
+				String questId = sideQuest.getStringId() != null ? sideQuest.getStringId() : sideQuest.getEffectiveId();
+				if (pqd.isQuestAccepted(questId) || pqd.isQuestCompleted(questId)) continue;
+				if (!QuestAvailabilityChecker.isAvailable(sideQuest, data)) continue;
+				timingChanged |= QuestAvailabilityChecker.primeStartRequirementTiming(sideQuest, questId, player, data);
+			}
+
+			if (timingChanged) {
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+			}
+
 			Set<String> acceptedIds = pqd.getAcceptedQuestIds();
 			if (acceptedIds.isEmpty()) return;
 
 			Set<String> tickRelevant = new HashSet<>();
 			for (QuestObjective.ObjectiveType type : new QuestObjective.ObjectiveType[]{
 					QuestObjective.ObjectiveType.BIOME,
+					QuestObjective.ObjectiveType.DIMENSION,
 					QuestObjective.ObjectiveType.STRUCTURE,
 					QuestObjective.ObjectiveType.COORDS,
 					QuestObjective.ObjectiveType.ITEM

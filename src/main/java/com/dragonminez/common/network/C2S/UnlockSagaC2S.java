@@ -39,7 +39,7 @@ public class UnlockSagaC2S {
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 				PlayerQuestData pqd = stats.getPlayerQuestData();
-				if (!pqd.isSagaUnlocked(sagaId)) {
+				if (pqd.isSagaLocked(sagaId)) {
 					pqd.setSagaUnlocked(sagaId, true);
 					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 				}

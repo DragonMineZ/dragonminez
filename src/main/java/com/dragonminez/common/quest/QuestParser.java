@@ -1,6 +1,13 @@
 package com.dragonminez.common.quest;
 
-import com.dragonminez.common.quest.objectives.*;
+import com.dragonminez.common.quest.objectives.BiomeObjective;
+import com.dragonminez.common.quest.objectives.CoordsObjective;
+import com.dragonminez.common.quest.objectives.DimensionObjective;
+import com.dragonminez.common.quest.objectives.InteractObjective;
+import com.dragonminez.common.quest.objectives.ItemObjective;
+import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.StructureObjective;
+import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
@@ -20,253 +27,99 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Central JSON parser for all quest types (saga quests and side-quests).
- * <p>
- * <b>Saga quests</b> are parsed via {@link #parseSagaQuest(JsonObject)} from saga definition files.
- * <b>Side-quests</b> are parsed via {@link #parseSideQuest(JsonObject)} from world-folder JSON files.
- * <p>
- * Both types share the same {@link #parseObjective(JsonObject)} and {@link #parseReward(JsonObject)}
- * methods for their objectives and rewards.
- *
- * @since 2.0
+ * Central parser for the unified quest JSON format.
  */
 public class QuestParser {
 
-	// ========================================================================================
-	// Quest Parsing — Unified Format (new individual quest files)
-	// ========================================================================================
-
 	/**
-	 * Parses a quest from a JSON file used by individual quest files.
-	 * <p>
-	 * This is the format for files in {@code dragonminez/quests/}. It supports all quest types
-	 * and optional chain membership. The {@code "type"} field determines the quest type.
-	 * If {@code "type"} is absent, it defaults to {@code SIDEQUEST}.
-	 * <p>
-	 * Expected JSON format:
-	 * <pre>{@code
-	 * {
-	 *   "id": "unique_string_id",
-	 *   "title": "translation.key.or.literal",
-	 *   "description": "translation.key.or.literal",
-	 *   "type": "SAGA",
-	 *   "category": "saga_saiyan",
-	 *   "parallelObjectives": false,
-	 *   "questGiver": null,
-	 *   "turnIn": null,
-	 *   "chain": {
-	 *     "saga": "saiyan_saga",
-	 *     "order": 1,
-	 *     "next": "saga_saiyan_train_with_king_kai"
-	 *   },
-	 *   "prerequisites": { ... },
-	 *   "objectives": [ ... ],
-	 *   "rewards": [ ... ]
-	 * }
-	 * }</pre>
-	 *
-	 * @param json the JSON object from an individual quest file
-	 * @return the parsed {@link Quest}, or {@code null} if parsing fails
+	 * Parses a quest from the unified quest JSON format.
 	 */
 	public static Quest parseQuest(JsonObject json) {
-		// ID — can be numeric (saga quests) or string (sidequests)
+		if (json == null || !json.has("id") || !json.has("title") || !json.has("type")) {
+			return null;
+		}
+
 		int numericId = -1;
 		String stringId = null;
-		if (json.has("id")) {
-			JsonElement idElement = json.get("id");
-			if (idElement.getAsJsonPrimitive().isNumber()) {
-				numericId = idElement.getAsInt();
-			} else {
-				stringId = idElement.getAsString();
-			}
+		JsonElement idElement = json.get("id");
+		if (idElement.getAsJsonPrimitive().isNumber()) {
+			numericId = idElement.getAsInt();
+		} else {
+			stringId = idElement.getAsString();
 		}
-		if (numericId == -1 && stringId == null) return null;
 
-		// Display name — support "title" and "name" keys
-		String title = json.has("title") ? json.get("title").getAsString()
-				: (json.has("name") ? json.get("name").getAsString() : (stringId != null ? stringId : String.valueOf(numericId)));
+		if (numericId == -1 && (stringId == null || stringId.isBlank())) {
+			return null;
+		}
 
+		Quest.QuestType type;
+		try {
+			type = Quest.QuestType.valueOf(json.get("type").getAsString().toUpperCase());
+		} catch (IllegalArgumentException ignored) {
+			return null;
+		}
+
+		String title = json.get("title").getAsString();
 		String description = json.has("description") ? json.get("description").getAsString() : "";
-
-		// Quest type — defaults to SIDEQUEST if absent
-		Quest.QuestType type = Quest.QuestType.SIDEQUEST;
-		if (json.has("type")) {
-			try {
-				type = Quest.QuestType.valueOf(json.get("type").getAsString().toUpperCase());
-			} catch (IllegalArgumentException ignored) {
-				// Unknown type, default to SIDEQUEST
-			}
-		}
-
 		String category = json.has("category") ? json.get("category").getAsString() : "general";
+		boolean parallelObjectives = json.has("parallel_objectives") && json.get("parallel_objectives").getAsBoolean();
+		String questGiver = json.has("quest_giver") && !json.get("quest_giver").isJsonNull()
+				? json.get("quest_giver").getAsString()
+				: null;
+		String turnIn = json.has("turn_in") && !json.get("turn_in").isJsonNull()
+				? json.get("turn_in").getAsString()
+				: null;
 
-		// Support both snake_case and camelCase field names
-		boolean parallelObjectives = getBool(json, "parallel_objectives", "parallelObjectives");
-		String questGiver = getStr(json, "quest_giver", "questGiver");
-		String turnIn = getStr(json, "turn_in", "turnIn");
-
-		// Chain (optional — if present, this quest is part of a saga chain)
 		String sagaId = null;
 		int chainOrder = -1;
 		String nextQuestId = null;
-		if (json.has("chain")) {
+		if (json.has("chain") && json.get("chain").isJsonObject()) {
 			JsonObject chain = json.getAsJsonObject("chain");
-			sagaId = chain.has("saga") ? chain.get("saga").getAsString() : null;
+			sagaId = chain.has("saga") && !chain.get("saga").isJsonNull() ? chain.get("saga").getAsString() : null;
 			chainOrder = chain.has("order") ? chain.get("order").getAsInt() : -1;
-			nextQuestId = chain.has("next") && !chain.get("next").isJsonNull()
-					? chain.get("next").getAsString() : null;
+			nextQuestId = chain.has("next") && !chain.get("next").isJsonNull() ? chain.get("next").getAsString() : null;
 		}
 
 		String branchGroup = null;
 		String branchPath = null;
 		if (json.has("branch") && json.get("branch").isJsonObject()) {
 			JsonObject branch = json.getAsJsonObject("branch");
-			branchGroup = getStr(branch, "group", "group");
-			branchPath = getStr(branch, "path", "path");
+			branchGroup = branch.has("group") && !branch.get("group").isJsonNull() ? branch.get("group").getAsString() : null;
+			branchPath = branch.has("path") && !branch.get("path").isJsonNull() ? branch.get("path").getAsString() : null;
 		}
 
-		// Prerequisites (optional)
-		QuestPrerequisites prerequisites = null;
-		if (json.has("prerequisites")) {
-			prerequisites = parsePrerequisites(json.getAsJsonObject("prerequisites"));
-		}
+		QuestPrerequisites prerequisites = parseConditionsBlock(json, "prerequisites");
+		QuestPrerequisites startRequirements = parseConditionsBlock(json, "requirements");
 
 		List<QuestObjective> objectives = parseObjectiveList(json);
 		List<QuestReward> rewards = parseRewardList(json);
 
 		return new Quest(numericId, stringId, type, title, description, category, parallelObjectives,
-				objectives, rewards, prerequisites, questGiver, turnIn,
+				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn,
 				sagaId, chainOrder, nextQuestId, branchGroup, branchPath);
 	}
 
-	/** Gets a boolean from JSON, trying snake_case key first, then camelCase key. */
-	private static boolean getBool(JsonObject json, String snakeKey, String camelKey) {
-		if (json.has(snakeKey)) return json.get(snakeKey).getAsBoolean();
-		if (json.has(camelKey)) return json.get(camelKey).getAsBoolean();
-		return false;
-	}
-
-	/** Gets a string from JSON, trying snake_case key first, then camelCase key. Returns null if absent. */
-	private static String getStr(JsonObject json, String snakeKey, String camelKey) {
-		if (json.has(snakeKey) && !json.get(snakeKey).isJsonNull()) return json.get(snakeKey).getAsString();
-		if (json.has(camelKey) && !json.get(camelKey).isJsonNull()) return json.get(camelKey).getAsString();
+	private static QuestPrerequisites parseConditionsBlock(JsonObject json, String key) {
+		if (json.has(key) && json.get(key).isJsonObject()) {
+			return parsePrerequisites(json.getAsJsonObject(key));
+		}
 		return null;
 	}
 
-	// ========================================================================================
-	// Quest Parsing — Legacy Formats
-	// ========================================================================================
-
 	/**
-	 * Parses a saga quest from a JSON object.
-	 * <p>
-	 * Expected JSON format:
-	 * <pre>{@code
-	 * {
-	 *   "id": 1,
-	 *   "title": "translation.key.or.literal",
-	 *   "description": "translation.key.or.literal",
-	 *   "objectives": [ ... ],
-	 *   "rewards": [ ... ]
-	 * }
-	 * }</pre>
-	 *
-	 * @param json the JSON object representing the saga quest
-	 * @return a {@link Quest} with {@link Quest.QuestType#SAGA}
-	 */
-	public static Quest parseSagaQuest(JsonObject json) {
-		int id = json.get("id").getAsInt();
-		String title = json.get("title").getAsString();
-		String description = json.get("description").getAsString();
-
-		List<QuestObjective> objectives = parseObjectiveList(json);
-		List<QuestReward> rewards = parseRewardList(json);
-
-		String branchGroup = null;
-		String branchPath = null;
-		if (json.has("branch") && json.get("branch").isJsonObject()) {
-			JsonObject branch = json.getAsJsonObject("branch");
-			if (branch.has("group") && !branch.get("group").isJsonNull()) {
-				branchGroup = branch.get("group").getAsString();
-			}
-			if (branch.has("path") && !branch.get("path").isJsonNull()) {
-				branchPath = branch.get("path").getAsString();
-			}
-		}
-
-		return new Quest(id, null, Quest.QuestType.SAGA, title, description,
-				"general", false, objectives, rewards,
-				null, null, null, null, -1, null, branchGroup, branchPath);
-	}
-
-	/**
-	 * Parses a side-quest from a JSON object (data-driven, loaded from world folder).
-	 * <p>
-	 * Supports both {@code "name"} and {@code "title"} keys for the display name.
-	 * Expected JSON format:
-	 * <pre>{@code
-	 * {
-	 *   "id": "unique_string_id",
-	 *   "name": "translation.key.or.literal",
-	 *   "description": "translation.key.or.literal",
-	 *   "category": "training",
-	 *   "parallelObjectives": false,
-	 *   "questGiver": "npc_id",
-	 *   "turnIn": "npc_id",
-	 *   "prerequisites": { ... },
-	 *   "objectives": [ ... ],
-	 *   "rewards": [ ... ]
-	 * }
-	 * }</pre>
-	 *
-	 * @param json the JSON object representing the side-quest
-	 * @return a {@link Quest} with {@link Quest.QuestType#SIDEQUEST}
-	 */
-	public static Quest parseSideQuest(JsonObject json) {
-		String id = json.get("id").getAsString();
-
-		// Support both "name" and "title" keys for backward compatibility
-		String name = json.has("name") ? json.get("name").getAsString()
-				: (json.has("title") ? json.get("title").getAsString() : id);
-
-		String description = json.get("description").getAsString();
-		String category = json.has("category") ? json.get("category").getAsString() : "general";
-		boolean parallelObjectives = json.has("parallelObjectives") && json.get("parallelObjectives").getAsBoolean();
-		String questGiver = json.has("questGiver") ? json.get("questGiver").getAsString() : null;
-		String turnIn = json.has("turnIn") ? json.get("turnIn").getAsString() : null;
-
-		QuestPrerequisites prerequisites = null;
-		if (json.has("prerequisites")) {
-			prerequisites = parsePrerequisites(json.getAsJsonObject("prerequisites"));
-		}
-
-		List<QuestObjective> objectives = parseObjectiveList(json);
-		List<QuestReward> rewards = parseRewardList(json);
-
-		return new Quest(id, name, description, category, parallelObjectives, objectives, rewards,
-				prerequisites, questGiver, turnIn);
-	}
-
-
-	// ========================================================================================
-	// Objective Parsing
-	// ========================================================================================
-
-	/**
-	 * Parses an {@code "objectives"} JSON array from a quest JSON object.
-	 *
-	 * @param questJson the parent quest JSON containing an "objectives" array
-	 * @return list of parsed objectives (never null)
+	 * Parses the {@code objectives} array from a quest JSON object.
 	 */
 	public static List<QuestObjective> parseObjectiveList(JsonObject questJson) {
 		List<QuestObjective> objectives = new ArrayList<>();
-		if (questJson.has("objectives")) {
-			JsonArray objArray = questJson.getAsJsonArray("objectives");
-			for (JsonElement element : objArray) {
-				QuestObjective obj = parseObjective(element.getAsJsonObject());
-				if (obj != null) {
-					objectives.add(obj);
-				}
+		if (!questJson.has("objectives")) {
+			return objectives;
+		}
+
+		JsonArray objArray = questJson.getAsJsonArray("objectives");
+		for (JsonElement element : objArray) {
+			QuestObjective obj = parseObjective(element.getAsJsonObject());
+			if (obj != null) {
+				objectives.add(obj);
 			}
 		}
 		return objectives;
@@ -274,16 +127,14 @@ public class QuestParser {
 
 	/**
 	 * Parses a single objective from a JSON object.
-	 * <p>
-	 * Supported types: {@code ITEM}, {@code KILL}, {@code BIOME}, {@code COORDS},
-	 * {@code INTERACT}, {@code STRUCTURE}, {@code TALK_TO}.
-	 *
-	 * @param json the JSON object representing the objective
-	 * @return the parsed {@link QuestObjective}, or {@code null} if the type is unknown
 	 */
 	public static QuestObjective parseObjective(JsonObject json) {
+		if (json == null || !json.has("type")) {
+			return null;
+		}
+
 		String type = json.get("type").getAsString();
-		String description = json.get("description").getAsString();
+		String description = json.has("description") ? json.get("description").getAsString() : "";
 
 		return switch (type.toUpperCase()) {
 			case "ITEM" -> {
@@ -301,10 +152,8 @@ public class QuestParser {
 				double kiDamage = json.has("kiDamage") ? json.get("kiDamage").getAsDouble() : 1.0;
 				yield new KillObjective(description, entityType, killCount, health, meleeDamage, kiDamage);
 			}
-			case "BIOME" -> {
-				String biomeId = json.get("biome").getAsString();
-				yield new BiomeObjective(description, biomeId);
-			}
+			case "BIOME" -> new BiomeObjective(description, json.get("biome").getAsString());
+			case "DIMENSION" -> new DimensionObjective(description, json.get("dimension").getAsString());
 			case "COORDS" -> {
 				int x = json.get("x").getAsInt();
 				int y = json.get("y").getAsInt();
@@ -316,40 +165,33 @@ public class QuestParser {
 				String interactEntity = json.has("entity") ? json.get("entity").getAsString() : null;
 				String entityName = json.has("entityName") ? json.get("entityName").getAsString() : null;
 				EntityType<?> interactType = interactEntity != null
-						? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity)) : null;
+						? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity))
+						: null;
 				yield new InteractObjective(description, interactType, entityName);
 			}
-			case "STRUCTURE" -> {
-				String structureId = json.get("structure").getAsString();
-				yield new StructureObjective(description, structureId);
-			}
+			case "STRUCTURE" -> new StructureObjective(description, json.get("structure").getAsString());
 			case "TALK_TO" -> {
 				String npcId = json.has("npcId") ? json.get("npcId").getAsString() : null;
-				yield (npcId != null) ? new TalkToObjective(description, npcId) : null;
+				yield npcId != null ? new TalkToObjective(description, npcId) : null;
 			}
 			default -> null;
 		};
 	}
 
-	// ========================================================================================
-	// Reward Parsing
-	// ========================================================================================
-
 	/**
-	 * Parses a {@code "rewards"} JSON array from a quest JSON object.
-	 *
-	 * @param questJson the parent quest JSON containing a "rewards" array
-	 * @return list of parsed rewards (never null)
+	 * Parses the {@code rewards} array from a quest JSON object.
 	 */
 	public static List<QuestReward> parseRewardList(JsonObject questJson) {
 		List<QuestReward> rewards = new ArrayList<>();
-		if (questJson.has("rewards")) {
-			JsonArray rewardArray = questJson.getAsJsonArray("rewards");
-			for (JsonElement element : rewardArray) {
-				QuestReward reward = parseReward(element.getAsJsonObject());
-				if (reward != null) {
-					rewards.add(reward);
-				}
+		if (!questJson.has("rewards")) {
+			return rewards;
+		}
+
+		JsonArray rewardArray = questJson.getAsJsonArray("rewards");
+		for (JsonElement element : rewardArray) {
+			QuestReward reward = parseReward(element.getAsJsonObject());
+			if (reward != null) {
+				rewards.add(reward);
 			}
 		}
 		return rewards;
@@ -357,17 +199,13 @@ public class QuestParser {
 
 	/**
 	 * Parses a single reward from a JSON object.
-	 * <p>
-	 * Supported types: {@code ITEM}, {@code TPS}, {@code COMMAND}, {@code SKILL}.
-	 * Type strings may be prefixed with {@code "hard:"} or {@code "normal:"} for difficulty filtering.
-	 *
-	 * @param json the JSON object representing the reward
-	 * @return the parsed {@link QuestReward}, or {@code null} if the type is unknown
 	 */
 	public static QuestReward parseReward(JsonObject json) {
-		String type = json.get("type").getAsString();
+		if (json == null || !json.has("type")) {
+			return null;
+		}
 
-		// Parse optional difficulty prefix (e.g. "hard:ITEM", "normal:TPS")
+		String type = json.get("type").getAsString();
 		QuestReward.DifficultyType difficultyType = QuestReward.DifficultyType.ALL;
 		if (type.toLowerCase().startsWith("hard:")) {
 			difficultyType = QuestReward.DifficultyType.HARD;
@@ -384,20 +222,13 @@ public class QuestParser {
 				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
 				yield (item != Items.AIR) ? new ItemReward(new ItemStack(item, count)) : null;
 			}
-			case "TPS" -> {
-				int amount = json.get("amount").getAsInt();
-				yield new TPSReward(amount);
-			}
+			case "TPS" -> new TPSReward(json.get("amount").getAsInt());
 			case "COMMAND" -> {
 				String command = json.get("command").getAsString();
 				JsonElement translationKeyElement = json.get("translationKey");
 				yield new CommandReward(command, translationKeyElement != null ? translationKeyElement.getAsString() : null);
 			}
-			case "SKILL" -> {
-				String skill = json.get("skill").getAsString();
-				int level = json.get("level").getAsInt();
-				yield new SkillReward(skill, level);
-			}
+			case "SKILL" -> new SkillReward(json.get("skill").getAsString(), json.get("level").getAsInt());
 			default -> null;
 		};
 
@@ -407,38 +238,13 @@ public class QuestParser {
 		return reward;
 	}
 
-	// ========================================================================================
-	// Prerequisites Parsing
-	// ========================================================================================
-
 	/**
-	 * Parses a prerequisites block from a JSON object.
-	 * <p>
-	 * Expected format example:
-	 * <pre>{@code
-	 * {
-	 *   "operator": "AND", // Can be "AND" or "OR"
-	 *   "conditions": [
-	 *     { "type": "SAGA_QUEST", "sagaId": "saiyan_saga", "questId": 2 },
-	 *     { "type": "QUEST", "questId": "some_sidequest_id" },
-	 *     { "type": "LEVEL", "minLevel": 10 },
-	 *     { "type": "STAT", "stat": "STR", "minValue": 100 },
-	 *     { "type": "RACE", "race": "saiyan" },
-	 *     { "operator": "OR", "conditions": [ ... ] }
-	 *   ]
-	 * }
-	 * }</pre>
-	 *
-	 * @param json the prerequisites JSON object
-	 * @return the parsed {@link QuestPrerequisites}
+	 * Parses a prerequisites or requirements block.
 	 */
 	public static QuestPrerequisites parsePrerequisites(JsonObject json) {
 		QuestPrerequisites.Operator operator = QuestPrerequisites.Operator.AND;
-		if (json.has("operator")) {
-			String op = json.get("operator").getAsString().toUpperCase();
-			if (op.equals("OR")) {
-				operator = QuestPrerequisites.Operator.OR;
-			}
+		if (json.has("operator") && "OR".equalsIgnoreCase(json.get("operator").getAsString())) {
+			operator = QuestPrerequisites.Operator.OR;
 		}
 
 		List<QuestPrerequisites.Condition> conditions = new ArrayList<>();
@@ -455,45 +261,104 @@ public class QuestParser {
 		return new QuestPrerequisites(operator, conditions);
 	}
 
-	/**
-	 * Parses a single prerequisite condition from a JSON object.
-	 * If the JSON contains an {@code "operator"} key, it is treated as a nested group.
-	 */
 	private static QuestPrerequisites.Condition parseCondition(JsonObject json) {
-		// Nested group (has "operator" instead of "type")
 		if (json.has("operator")) {
-			QuestPrerequisites nested = parsePrerequisites(json);
-			return QuestPrerequisites.Condition.nestedGroup(nested);
+			return QuestPrerequisites.Condition.nestedGroup(parsePrerequisites(json));
+		}
+		if (!json.has("type")) {
+			return null;
 		}
 
-		if (!json.has("type")) return null;
 		String type = json.get("type").getAsString().toUpperCase();
-
 		return switch (type) {
-			case "SAGA_QUEST" -> {
-				String sagaId = json.get("sagaId").getAsString();
-				int questId = json.get("questId").getAsInt();
-				yield QuestPrerequisites.Condition.sagaQuest(sagaId, questId);
-			}
-			// For Quests that are not default from our Sagas
-			case "QUEST" -> {
-				String reqId = json.get("questId").getAsString();
-				yield QuestPrerequisites.Condition.quest(reqId);
-			}
-			case "STAT" -> {
-				String stat = json.get("stat").getAsString().toUpperCase();
-				int minValue = json.get("minValue").getAsInt();
-				yield QuestPrerequisites.Condition.stat(stat, minValue);
-			}
-			case "RACE" -> {
-				String race = json.get("race").getAsString().toLowerCase();
-				yield QuestPrerequisites.Condition.race(race);
-			}
-			case "LEVEL" -> {
-				int minLevel = json.get("minLevel").getAsInt();
-				yield QuestPrerequisites.Condition.level(minLevel);
+			case "SAGA_QUEST" -> QuestPrerequisites.Condition.sagaQuest(
+					json.get("sagaId").getAsString(),
+					json.get("questId").getAsInt()
+			);
+			case "QUEST" -> QuestPrerequisites.Condition.quest(json.get("questId").getAsString());
+			case "STAT" -> QuestPrerequisites.Condition.stat(
+					json.get("stat").getAsString().toUpperCase(),
+					json.get("minValue").getAsInt()
+			);
+			case "LEVEL" -> QuestPrerequisites.Condition.level(json.get("minLevel").getAsInt());
+			case "BIOME" -> QuestPrerequisites.Condition.biome(json.get("biome").getAsString());
+			case "STRUCTURE" -> QuestPrerequisites.Condition.structure(
+					json.get("structure").getAsString(),
+					parseStructureHint(json)
+			);
+			case "DIMENSION" -> QuestPrerequisites.Condition.dimension(json.get("dimension").getAsString());
+			case "TIME" -> {
+				QuestPrerequisites.TimeMode timeMode = parseTimeMode(json);
+				yield QuestPrerequisites.Condition.time(timeMode, parseTimeDuration(json, timeMode));
 			}
 			default -> null;
 		};
+	}
+
+	private static QuestPrerequisites.StructureHint parseStructureHint(JsonObject json) {
+		if (!json.has("hint") || !json.get("hint").isJsonObject()) {
+			return null;
+		}
+
+		JsonObject hintJson = json.getAsJsonObject("hint");
+		String dimensionId = hintJson.has("dimension") && !hintJson.get("dimension").isJsonNull()
+				? hintJson.get("dimension").getAsString()
+				: null;
+		Integer x = hintJson.has("x") ? hintJson.get("x").getAsInt() : null;
+		Integer y = hintJson.has("y") ? hintJson.get("y").getAsInt() : null;
+		Integer z = hintJson.has("z") ? hintJson.get("z").getAsInt() : null;
+		if (dimensionId == null && x == null && y == null && z == null) {
+			return null;
+		}
+		return new QuestPrerequisites.StructureHint(dimensionId, x, y, z);
+	}
+
+	private static QuestPrerequisites.TimeMode parseTimeMode(JsonObject json) {
+		String rawMode = json.has("mode") ? json.get("mode").getAsString() : "GAME_TIME";
+		if (rawMode == null) {
+			return QuestPrerequisites.TimeMode.GAME_TIME;
+		}
+
+		String normalized = rawMode.trim().toUpperCase().replace('-', '_').replace(' ', '_');
+		if ("REAL".equals(normalized) || "REALTIME".equals(normalized)) {
+			normalized = "REAL_TIME";
+		} else if ("GAME".equals(normalized) || "GAMETIME".equals(normalized)) {
+			normalized = "GAME_TIME";
+		}
+
+		try {
+			return QuestPrerequisites.TimeMode.valueOf(normalized);
+		} catch (IllegalArgumentException ignored) {
+			return QuestPrerequisites.TimeMode.GAME_TIME;
+		}
+	}
+
+	private static long parseTimeDuration(JsonObject json, QuestPrerequisites.TimeMode mode) {
+		if (json.has("ticks")) {
+			return Math.max(0L, json.get("ticks").getAsLong());
+		}
+		if (json.has("milliseconds")) {
+			return Math.max(0L, json.get("milliseconds").getAsLong());
+		}
+		if (json.has("seconds")) {
+			long seconds = Math.max(0L, json.get("seconds").getAsLong());
+			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? seconds * 20L : seconds * 1000L;
+		}
+		if (json.has("minutes")) {
+			long minutes = Math.max(0L, json.get("minutes").getAsLong());
+			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? minutes * 20L * 60L : minutes * 60L * 1000L;
+		}
+		if (json.has("hours")) {
+			long hours = Math.max(0L, json.get("hours").getAsLong());
+			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? hours * 20L * 60L * 60L : hours * 60L * 60L * 1000L;
+		}
+		if (json.has("days")) {
+			long days = Math.max(0L, json.get("days").getAsLong());
+			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? days * 24000L : days * 24L * 60L * 60L * 1000L;
+		}
+		if (json.has("duration")) {
+			return Math.max(0L, json.get("duration").getAsLong());
+		}
+		return 0L;
 	}
 }
