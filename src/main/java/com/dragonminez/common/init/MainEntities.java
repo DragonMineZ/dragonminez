@@ -536,6 +536,32 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaCellEntity.SagaCellJREntity::new, MobCategory.MONSTER)
                             .sized(0.8f, 1.7f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_jr").toString()));
+
+    /*
+     BUU SAGA ENTITIES
+     */
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinBaseEntity>> SAGA_GOKU_FIN_BASE =
+            ENTITY_TYPES.register("saga_goku_fin_base",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_base").toString()));
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinSSJEntity>> SAGA_GOKU_FIN_SSJ =
+            ENTITY_TYPES.register("saga_goku_fin_ssj",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinSSJ2Entity>> SAGA_GOKU_FIN_SSJ2 =
+            ENTITY_TYPES.register("saga_goku_fin_ssj2",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinSSJ2Entity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_ssj2").toString()));
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinSSJ3Entity>> SAGA_GOKU_FIN_SSJ3 =
+            ENTITY_TYPES.register("saga_goku_fin_ssj3",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinSSJ3Entity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_ssj3").toString()));
+
+
     public static final RegistryObject<EntityType<ShadowDummyEntity>> SHADOW_DUMMY =
             ENTITY_TYPES.register("shadow_dummy",
                     () -> EntityType.Builder.of(ShadowDummyEntity::new, MobCategory.MONSTER)
