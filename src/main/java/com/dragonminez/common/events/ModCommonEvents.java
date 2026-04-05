@@ -75,7 +75,9 @@ public class ModCommonEvents {
                 MainEntities.SAGA_CELL_IMPERFECT, MainEntities.SAGA_PICCOLO_KAMI, MainEntities.SAGA_VEGETA_MID, MainEntities.SAGA_VEGETA_MID_SSJ, MainEntities.SAGA_VEGETA_MID_SSG2,
                 MainEntities.SAGA_FUTURE_TRUNKS_KID_BASE, MainEntities.SAGA_FUTURE_TRUNKS_KID_SSJ, MainEntities.SAGA_FUTURE_TRUNKS_BASE, MainEntities.SAGA_FUTURE_TRUNKS_SSJ,
                 MainEntities.SAGA_FUTURE_TRUNKS_SSG3, MainEntities.SAGA_GOHAN_MID_BASE, MainEntities.SAGA_GOHAN_MID_SSJ, MainEntities.SAGA_GOHAN_MID_SSJ2, MainEntities.SAGA_FUTURE_GOHAN_BASE, MainEntities.SAGA_FUTURE_GOHAN_SSJ,
-                MainEntities.SAGA_CELL_SEMIPERFECT, MainEntities.SAGA_CELL_PERFECT, MainEntities.SAGA_CELL_SUPERPERFECT, MainEntities.SAGA_CELL_JR, MainEntities.SHADOW_DUMMY);
+                MainEntities.SAGA_CELL_SEMIPERFECT, MainEntities.SAGA_CELL_PERFECT, MainEntities.SAGA_CELL_SUPERPERFECT, MainEntities.SAGA_CELL_JR,
+                MainEntities.SAGA_GOKU_FIN_BASE, MainEntities.SAGA_GOKU_FIN_SSJ, MainEntities.SAGA_GOKU_FIN_SSJ2, MainEntities.SAGA_GOKU_FIN_SSJ3,
+                MainEntities.SHADOW_DUMMY);
 
 
         event.put(MainEntities.DINOSAUR1.get(), Dino1Entity.createAttributes().build());

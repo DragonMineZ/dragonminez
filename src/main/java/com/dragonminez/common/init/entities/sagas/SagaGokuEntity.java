@@ -123,7 +123,160 @@ public class SagaGokuEntity{
 
     }
 
+        /*
+        GOKU FIN [ BASE - SSJ - SSJ2 - SSJ3]
+     */
 
+    public static class SagaGokuFinBaseEntity extends DBSagasEntity {
+
+        public SagaGokuFinBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 50, 1.5F, 0x75FFFF, 0x75FFFF);
+
+            this.setWildSense(true, 150);
+
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_FIN_SSJ.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {
+            return true;
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku";
+        }
+
+    }
+
+    public static class SagaGokuFinSSJEntity extends DBSagasEntity {
+
+        public SagaGokuFinSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.5F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
+
+            this.setWildSense(true, 150);
+            this.setZanzoken(true, 300);
+
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_FIN_SSJ2.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {return true;}
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku_ssj";
+        }
+
+    }
+
+    public static class SagaGokuFinSSJ2Entity extends DBSagasEntity {
+
+        public SagaGokuFinSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 1.5F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.5F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
+
+            this.setWildSense(true, 150);
+            this.setZanzoken(true, 300);
+
+        }
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOKU_FIN_SSJ3.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {return true;}
+
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku_ssj2";
+        }
+
+    }
+
+    public static class SagaGokuFinSSJ3Entity extends DBSagasEntity {
+
+        public SagaGokuFinSSJ3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setLightning(true);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 40);
+            this.setAllowedCombos(200, ComboType.KI_CHARGE_ATTACK, ComboType.AIR, ComboType.METEOR_COMBINATION, ComboType.BASIC);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 3.0F);
+            this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.5F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.5F, 0xFFE657, 0xFFE657);
+
+            this.setWildSense(true, 70);
+            this.setZanzoken(true, 200);
+
+        }
+
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_goku_ssj3";
+        }
+
+    }
 
 
 }

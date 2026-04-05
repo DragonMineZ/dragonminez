@@ -199,7 +199,7 @@ public class SagaVegetaEntity{
 
         @Override
         public String getGeckolibModelName() {
-            return "saga_vegeta_ssj2";
+            return "saga_vegeta_ssg2";
         }
 
     }
