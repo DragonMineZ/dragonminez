@@ -77,7 +77,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         DEATH_BALL(15),
         MASENKO(16),
         BIG_BANG(17),
-        FINAL_FLASH(18); // NUEVO: FINAL FLASH AÑADIDO
+        FINAL_FLASH(18);
 
         private final int id;
         KiSkillType(int id) { this.id = id; }
@@ -114,6 +114,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private static final EntityDataAccessor<Integer> TEXTURE_VARIANT = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     protected static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("walk");
@@ -198,6 +199,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private int currentEvadeTimer = 0;
     private int evasionStateTicks = 0;
 
+    @Getter @Setter private boolean canUseZanzoken = false;
+    @Getter @Setter private int zanzokenCooldownMax = 0;
+    @Getter @Setter private int currentZanzokenCooldown = 0;
+    @Getter @Setter private int zanzokenTicks = 0;
+
     private boolean canUseWildSense = false;
     private int wildSenseCooldownMax = 0;
     private int currentWildSenseCooldown = 0;
@@ -212,28 +218,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private boolean isAttacking = false;
 
-    private boolean canUseSkill = false;
-    private int mainSkillType = 0;
-    private int skillCooldownMax = 0;
-    private int currentSkillCooldown = 0;
-    private float skillSize = 1.0F;
-
-    private boolean canUseSecondarySkill = false;
-    private int secondarySkillType = 0;
-    private int secondarySkillCooldownMax = 0;
-    private int currentSecondarySkillCooldown = 0;
-    private float secondarySkillSize = 1.0F;
-
-    private boolean canUseTertiarySkill = false;
-    private int tertiarySkillType = 0;
-    private int tertiarySkillCooldownMax = 0;
-    private int currentTertiarySkillCooldown = 0;
-    private float tertiarySkillSize = 1.0F;
-
     private int genericColorMain = 0xFFFFFF;
     private int genericColorBorder = 0xFFFFFF;
 
-    // --- ARSENAL SYSTEM (SKILL POOL) ---
     private final List<KiSkill> skillPool = new ArrayList<>();
     private float currentPoolSkillSize = 1.0F;
     private int currentPoolColorMain = 0xFFFFFF;
@@ -261,6 +248,68 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+    }
+
+    public boolean isZanzoken() {
+        return this.entityData.get(IS_ZANZOKEN);
+    }
+
+    public void setZanzokenState(boolean active) {
+        this.entityData.set(IS_ZANZOKEN, active);
+    }
+
+    private boolean isSafeTeleportLocation(double targetX, double targetY, double targetZ) {
+        AABB targetBox = this.getBoundingBox().move(targetX - this.getX(), targetY - this.getY(), targetZ - this.getZ());
+        return this.level().noCollision(this, targetBox);
+    }
+
+    public void performZanzoken() {
+        this.setZanzokenState(true);
+        this.zanzokenTicks = 0;
+        this.currentZanzokenCooldown = this.zanzokenCooldownMax;
+        executeZanzokenJump();
+    }
+
+    private void executeZanzokenJump() {
+        this.playSound(MainSounds.ZANZOKEN.get(), 1.0F, 1.0F);
+        boolean teleported = false;
+
+        if (this.getTarget() != null) {
+            for (int i = 0; i < 10; i++) {
+                double angle = this.random.nextDouble() * Math.PI * 2.0D;
+                double distance = 4.0D + this.random.nextDouble() * 2.0D;
+                double newX = this.getTarget().getX() + Math.cos(angle) * distance;
+                double newZ = this.getTarget().getZ() + Math.sin(angle) * distance;
+                double newY = this.getTarget().getY();
+
+                if (isSafeTeleportLocation(newX, newY, newZ)) {
+                    this.teleportTo(newX, newY, newZ);
+                    teleported = true;
+                    break;
+                } else if (isSafeTeleportLocation(newX, newY + 1.0D, newZ)) {
+                    this.teleportTo(newX, newY + 1.0D, newZ);
+                    teleported = true;
+                    break;
+                } else if (isSafeTeleportLocation(newX, newY - 1.0D, newZ)) {
+                    this.teleportTo(newX, newY - 1.0D, newZ);
+                    teleported = true;
+                    break;
+                }
+            }
+
+            if (teleported) {
+                this.lookAt(this.getTarget(), 360, 360);
+            }
+        }
+
+        if (!teleported) {
+            Vec3 look = this.getLookAngle();
+            this.setDeltaMovement(new Vec3(-look.x * 2.0, 0.2, -look.z * 2.0));
+        }
+
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.CLOUD, this.getX(), this.getY() + 1, this.getZ(), 5, 0.2, 0.5, 0.2, 0.0);
+        }
     }
 
     public void setDBZStyle(int style) { this.entityData.set(DBZ_STYLE, style); }
@@ -309,105 +358,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.currentWildSenseCooldown = cooldown;
     }
 
-    public void setMainSkill(int skillId, int cooldown, float size) {
-        this.canUseSkill = true;
-        this.mainSkillType = skillId;
-        this.skillCooldownMax = cooldown;
-        this.currentSkillCooldown = cooldown;
-        this.skillSize = size;
-    }
-
-    public void setMainSkill(int skillId, int cooldown) {
-        this.setMainSkill(skillId, cooldown, 1.0F);
-    }
-
-    public void setGenericWave(int cooldown, int colorMain, int colorBorder, float size) {
-        this.setMainSkill(8, cooldown, size);
-        this.genericColorMain = colorMain;
-        this.genericColorBorder = colorBorder;
-    }
-
-    public void setOozaruBeam(int cooldown, int colorMain, int colorBorder, float size) {
-        this.setMainSkill(9, cooldown, size);
-        this.genericColorMain = colorMain;
-        this.genericColorBorder = colorBorder;
-    }
-
-    public void setKiVolley(int cooldown, int color) {
-        this.setMainSkill(10, cooldown, 1.0F);
-        this.genericColorMain = color;
-    }
-
-    public void setKiSmall(int cooldown, int color) {
-        this.setMainSkill(11, cooldown, 1.0F);
-        this.genericColorMain = color;
-    }
-
-    public void setBlueHurricane(int cooldown, float speed) {
-        this.setMainSkill(12, cooldown, 1.0F);
-        this.setKiBlastSpeed(speed);
-    }
-
-    public void setTripleLaser(int cooldown, int colorMain, int colorBorder) {
-        this.setMainSkill(13, cooldown, 1.0F);
-        this.genericColorMain = colorMain;
-        this.genericColorBorder = colorBorder;
-    }
-
-    public void setKienzan(int cooldown, int color, float size) {
-        this.setMainSkill(14, cooldown, size);
-        this.genericColorMain = color;
-    }
-
-    public void setDeathBall(int cooldown, int colorMain, int colorBorder) {
-        this.setMainSkill(15, cooldown, 2.5F);
-        this.genericColorMain = colorMain;
-        this.genericColorBorder = colorBorder;
-    }
-
-    public void setMasenko(int cooldown, float size) {
-        this.setMainSkill(16, cooldown, size);
-    }
-
-    public void setKiExplosion(int cooldown, int colorMain, int colorBorder, float size) {
-        this.setMainSkill(5, cooldown, size);
-        this.genericColorMain = colorMain;
-        this.genericColorBorder = colorBorder;
-    }
-
-    public void setBigBang(int cooldown, int colorMain, int colorBorder) {
-        this.setMainSkill(17, cooldown, 1.5F);
-        this.genericColorMain = colorMain;
-        this.genericColorBorder = colorBorder;
-    }
-
-    // NUEVO MÉTODO LEGACY: FINAL FLASH
-    public void setFinalFlash(int cooldown, float size) {
-        this.setMainSkill(18, cooldown, size);
-    }
-
-    public void setSecondarySkill(int skillId, int cooldown, float size) {
-        this.canUseSecondarySkill = true;
-        this.secondarySkillType = skillId;
-        this.secondarySkillCooldownMax = cooldown;
-        this.currentSecondarySkillCooldown = cooldown;
-        this.secondarySkillSize = size;
-    }
-
-    public void setSecondarySkill(int skillId, int cooldown) {
-        this.setSecondarySkill(skillId, cooldown, 1.0F);
-    }
-
-    public void setTertiarySkill(int skillId, int cooldown, float size) {
-        this.canUseTertiarySkill = true;
-        this.tertiarySkillType = skillId;
-        this.tertiarySkillCooldownMax = cooldown;
-        this.currentTertiarySkillCooldown = cooldown;
-        this.tertiarySkillSize = size;
-    }
-
-    public void setTertiarySkill(int skillId, int cooldown) {
-        this.setTertiarySkill(skillId, cooldown, 1.0F);
+    public void setZanzoken(boolean active, int cooldown) {
+        this.canUseZanzoken = active;
+        this.zanzokenCooldownMax = cooldown;
+        this.currentZanzokenCooldown = cooldown;
     }
 
     public void addKiSkill(KiSkillType type, int cooldown, float size, int colorMain, int colorBorder) {
@@ -483,25 +437,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                     if (this.canEvade && this.currentEvadeTimer > 0) this.currentEvadeTimer--;
                     if (this.canUseWildSense && this.currentWildSenseCooldown > 0) this.currentWildSenseCooldown--;
                     if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
+                    if (this.canUseZanzoken && this.currentZanzokenCooldown > 0) this.currentZanzokenCooldown--;
 
-                    // Cooldowns Legacy
-                    if (this.canUseSkill && this.currentSkillCooldown > 0) {
-                        this.currentSkillCooldown--;
-                    }
-
-                    if (this.canUseSecondarySkill && this.currentSecondarySkillCooldown > 0) {
-                        this.currentSecondarySkillCooldown--;
-                    }
-
-                    if (this.canUseTertiarySkill && this.currentTertiarySkillCooldown > 0) {
-                        this.currentTertiarySkillCooldown--;
-                    }
-
-                    // Cooldowns del Skill Pool
-                    for (KiSkill skill : this.skillPool) {
-                        if (skill.currentCooldown > 0) {
-                            skill.currentCooldown--;
+                    if (this.getTarget() != null && this.distanceTo(this.getTarget()) >= 10.0D) {
+                        for (KiSkill skill : this.skillPool) {
+                            if (skill.currentCooldown > 0) {
+                                skill.currentCooldown--;
+                            }
                         }
+                    }
+                }
+
+                if (this.isZanzoken()) {
+                    this.zanzokenTicks++;
+                    if (this.zanzokenTicks % 5 == 0) {
+                        executeZanzokenJump();
+                    }
+                    if (this.zanzokenTicks >= 40) {
+                        this.setZanzokenState(false);
+                        this.zanzokenTicks = 0;
                     }
                 }
 
@@ -553,7 +507,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                         }
                     }
 
-                    // AÑADIDO: Final Flash (18) ajustado al timer correspondiente (usamos 40 ticks como masenko/laser)
                     int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14 || skill == 17) ? 30 : (skill == 13 || skill == 16 || skill == 18) ? 40 : (skill == 15) ? 60 : 60;
 
                     if (this.castTimer >= maxCastDuration) {
@@ -566,8 +519,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                     this.currentWildSenseCooldown = this.wildSenseCooldownMax;
                 }
 
-                if (this.canEvade && !this.isCasting() && !this.isComboing()) {
-                    if (this.hurtTime > 0 && this.currentEvadeTimer <= 0) {
+                if (this.hurtTime > 0 && !this.isCasting() && !this.isComboing() && !this.isZanzoken()) {
+                    if (this.canUseZanzoken && this.currentZanzokenCooldown <= 0 && !this.isZanzoken()) {
+                        this.performZanzoken();
+                    }
+                    else if (this.canEvade && this.currentEvadeTimer <= 0 && !this.isEvading()) {
                         this.performEvasion();
                     }
                 }
@@ -659,7 +615,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             case 15: return kiDmg * 2.0F;
             case 16: return kiDmg;
             case 17: return kiDmg * 1.8F;
-            case 18: return kiDmg * 2.0F; // NUEVO: Final Flash es poderoso, lo igualamos a la Death Ball
+            case 18: return kiDmg * 2.0F;
             default: return kiDmg;
         }
     }
@@ -667,26 +623,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private void executeSkillEffect(int skillType) {
         if (this.getTarget() == null) return;
 
-        // AÑADIDO: Sync cast time para Final Flash (18) ajustado a 40 ticks
         int syncCastTime = (skillType == 4) ? 0 : (skillType == 11) ? 10 : (skillType == 17) ? 30 : (skillType == 15) ? 60 : (skillType == 18) ? 40 : 37;
 
         float actualDamage = getCalculatedSkillDamage(skillType);
 
-        float actualSize = 1.0F;
-        int usedColorMain = this.genericColorMain;
-        int usedColorBorder = this.genericColorBorder;
-
-        if (skillType == this.mainSkillType) {
-            actualSize = this.skillSize;
-        } else if (skillType == this.secondarySkillType) {
-            actualSize = this.secondarySkillSize;
-        } else if (skillType == this.tertiarySkillType) {
-            actualSize = this.tertiarySkillSize;
-        } else {
-            actualSize = this.currentPoolSkillSize;
-            usedColorMain = this.currentPoolColorMain;
-            usedColorBorder = this.currentPoolColorBorder;
-        }
+        float actualSize = this.currentPoolSkillSize;
+        int usedColorMain = this.currentPoolColorMain;
+        int usedColorBorder = this.currentPoolColorBorder;
 
         switch (skillType) {
             case 1:
@@ -1062,7 +1005,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     public boolean hasSkillReady() {
-        if (this.isComboing()) {
+        if (this.isComboing() || this.isZanzoken()) {
             return false;
         }
 
@@ -1074,9 +1017,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             if (skill.currentCooldown <= 0) return true;
         }
 
-        return (this.canUseSkill && this.currentSkillCooldown <= 0) ||
-                (this.canUseSecondarySkill && this.currentSecondarySkillCooldown <= 0) ||
-                (this.canUseTertiarySkill && this.currentTertiarySkillCooldown <= 0);
+        return false;
     }
 
     public void startFirstAvailableSkill() {
@@ -1091,18 +1032,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             }
         }
 
-        if (this.canUseSkill && this.currentSkillCooldown <= 0) {
-            this.startCasting(this.mainSkillType);
-            this.currentSkillCooldown = this.skillCooldownMax;
-        }
-        else if (this.canUseSecondarySkill && this.currentSecondarySkillCooldown <= 0) {
-            this.startCasting(this.secondarySkillType);
-            this.currentSecondarySkillCooldown = this.secondarySkillCooldownMax;
-        }
-        else if (this.canUseTertiarySkill && this.currentTertiarySkillCooldown <= 0) {
-            this.startCasting(this.tertiarySkillType);
-            this.currentTertiarySkillCooldown = this.tertiarySkillCooldownMax;
-        }
     }
 
     private void updateAuraLight() {
@@ -1190,7 +1119,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
-        if (this.isEvading() || this.isCasting() || this.isComboing()) {
+        if (this.isEvading() || this.isCasting() || this.isComboing() || this.isZanzoken()) {
             return PlayState.STOP;
         }
 
@@ -1277,7 +1206,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
-        if (isCasting() || isTransforming() || isComboing() || isEvading()) {
+        if (isCasting() || isTransforming() || isComboing() || isEvading() || isZanzoken()) {
             return PlayState.STOP;
         }
 
@@ -1316,7 +1245,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     private <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event) {
-        if (this.isEvading()) {
+        if (this.isEvading() || this.isZanzoken()) {
             return event.setAndContinue(ANIM_EVADE);
         }
 
@@ -1333,7 +1262,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     @Override
     public void travel(Vec3 pTravelVector) {
-        if (this.isCasting() || this.isComboing() || this.isTransforming()) {
+        if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken()) {
             this.setDeltaMovement(0, 0, 0);
             super.travel(Vec3.ZERO);
             return;
@@ -1464,6 +1393,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("CanFly", this.canFly());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
+        pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
+        pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
     }
 
     @Override
@@ -1478,6 +1409,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (pCompound.contains("TextureVariant")) {
             this.setTextureVariant(pCompound.getInt("TextureVariant"));
         }
+        if (pCompound.contains("CanUseZanzoken")) this.canUseZanzoken = pCompound.getBoolean("CanUseZanzoken");
+        if (pCompound.contains("ZanzokenCooldownMax")) this.zanzokenCooldownMax = pCompound.getInt("ZanzokenCooldownMax");
     }
 
     @Override
@@ -1499,16 +1432,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(CURRENT_COMBO_ID, -1);
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
+        this.entityData.define(IS_ZANZOKEN, false);
     }
 
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
 
-        if (this.isComboing() && this.entityData.get(CURRENT_COMBO_ID) == 4) {
+        if (this.isTransforming() || this.isZanzoken()) {
             return false;
         }
 
-        if (this.isTransforming()) {
+        if (this.isComboing() && this.entityData.get(CURRENT_COMBO_ID) == 4) {
             return false;
         }
 
@@ -1632,7 +1566,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     public void moveTowardsTargetInAir(LivingEntity target) {
-        if (this.isCasting() || this.isComboing() || this.isEvading()) return;
+        if (this.isCasting() || this.isComboing() || this.isEvading() || this.isZanzoken()) return;
         double flyspeed = this.getFlySpeed();
 
         double distance = this.distanceTo(target);

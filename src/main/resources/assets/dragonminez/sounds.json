@@ -382,5 +382,11 @@
     "sounds": [
       "dragonminez:fusion"
     ]
+  },
+  "zanzoken": {
+    "subtitle": "sounds.dragonminez.zanzoken",
+    "sounds": [
+      "dragonminez:zanzoken"
+    ]
   }
 }

@@ -31,6 +31,7 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> EVASION1 = registerSoundEvent("evasion1");
 	public static final RegistryObject<SoundEvent> EVASION2 = registerSoundEvent("evasion2");
 	public static final RegistryObject<SoundEvent> KNOCKBACK_CHARACTER = registerSoundEvent("knockback_character");
+    public static final RegistryObject<SoundEvent> ZANZOKEN = registerSoundEvent("zanzoken");
 
     public static final RegistryObject<SoundEvent> DRAGONRADAR = registerSoundEvent("dragonradar");
 	public static final RegistryObject<SoundEvent> NUBE = registerSoundEvent("nube");
