@@ -100,6 +100,7 @@ public class ClientPacketHandler {
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
 				case COMBO -> animatable.dragonminez$triggerCombo(variant);
+				case MELEE -> animatable.dragonminez$triggerMeleeAttack(variant);
 			}
 		}
 	}

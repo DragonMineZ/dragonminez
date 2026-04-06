@@ -209,11 +209,16 @@ public class GeneralServerConfig {
 		private Integer poiseRegenCooldown = 100;
 		private Integer blockBreakStunDurationTicks = 60;
 		private Integer perfectEvasionWindowMs = 150;
+		private Boolean enableHitstun = true;
+		private Integer hitstunDurationTicks = 10;
+		private String[] hitstunSources = {"player", "saga_npc"};
 		private Integer dashCooldownSeconds = 4;
 		private Integer doubleDashCooldownSeconds = 12;
 		private Double[] kiBladeConfig = {1.0, 0.05};
 		private Double[] kiScytheConfig = {1.5, 0.075};
 		private Double[] kiClawLanceConfig = {2.0, 0.125};
+		private String[] allowedCombatItems = {};
+		private String[] twoHandedCombatItems = {};
 
 		public Double getStaminaConsumptionRatio() {
 			return Math.max(0, Math.min(staminaConsumptionRatio, Double.MAX_VALUE));
@@ -251,6 +256,18 @@ public class GeneralServerConfig {
 			return Math.max(0, Math.min(perfectEvasionWindowMs, Integer.MAX_VALUE));
 		}
 
+		public Boolean getEnableHitstun() {
+			return enableHitstun != null ? enableHitstun : true;
+		}
+
+		public Integer getHitstunDurationTicks() {
+			return Math.max(0, Math.min(hitstunDurationTicks, Integer.MAX_VALUE));
+		}
+
+		public String[] getHitstunSources() {
+			return hitstunSources != null ? hitstunSources : new String[0];
+		}
+
 		public Integer getDashCooldownSeconds() {
 			return Math.max(0, Math.min(dashCooldownSeconds, Integer.MAX_VALUE));
 		}
@@ -269,6 +286,14 @@ public class GeneralServerConfig {
 
 		public Double[] getKiClawLanceConfig() {
 			return new Double[]{Math.max(0, Math.min(kiClawLanceConfig[0], Double.MAX_VALUE)), Math.max(0, Math.min(kiClawLanceConfig[1], Double.MAX_VALUE))};
+		}
+
+		public String[] getAllowedCombatItems() {
+			return allowedCombatItems != null ? allowedCombatItems : new String[0];
+		}
+
+		public String[] getTwoHandedCombatItems() {
+			return twoHandedCombatItems != null ? twoHandedCombatItems : new String[0];
 		}
 	}
 

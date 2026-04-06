@@ -56,6 +56,7 @@ public class ExecuteActionC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player != null) {
+				if (player.hasEffect(MainEffects.STUN.get())) return;
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					boolean needsSync = false;
 					switch (action) {

@@ -6,6 +6,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.server.events.players.CombatEvent;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -16,6 +17,7 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
@@ -46,6 +48,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
@@ -66,10 +70,15 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeCommonEvents {
+	private static final double DMZ_MELEE_HITBOX_RANGE = 2.75;
+	private static final double DMZ_MELEE_HITBOX_HORIZONTAL_ANGLE = 95.0;
+	private static final int DMZ_MELEE_HITBOX_MAX_TARGETS = 4;
 
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
@@ -172,6 +181,39 @@ public class ForgeCommonEvents {
 		Level level = attacker.level();
 
 		if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
+			boolean customCombat = CombatEvent.canUseCustomCombat(attacker);
+			CombatEvent.AttackIntentData attackIntent = CombatEvent.peekAttackIntent(attacker);
+			DMZEvent.PlayerAttackStartEvent.AttackType attackType = attackIntent.attackType();
+			List<LivingEntity> extraTargets = customCombat
+					? collectHitboxMeleeAdditionalTargets(attacker, target)
+					: List.of();
+
+			if (attacker instanceof ServerPlayer serverAttacker) {
+				DMZEvent.PlayerAttackStartEvent startEvent = new DMZEvent.PlayerAttackStartEvent(
+						serverAttacker,
+						target,
+						customCombat,
+						attackType,
+						DMZEvent.PlayerAttackStartEvent.AttackPhase.STARTUP,
+						0,
+						false,
+						false
+				);
+				MinecraftForge.EVENT_BUS.post(startEvent);
+				if (startEvent.isCanceled()) {
+					event.setCanceled(true);
+					return;
+				}
+
+				if (customCombat) {
+					int meleeVariant = attackType == DMZEvent.PlayerAttackStartEvent.AttackType.HEAVY ? 1 : 0;
+					NetworkHandler.sendToTrackingEntityAndSelf(
+							new TriggerAnimationS2C(serverAttacker.getUUID(), TriggerAnimationS2C.AnimationType.MELEE, meleeVariant, serverAttacker.getId()),
+							serverAttacker
+					);
+				}
+			}
+
 			double x = target.getX();
 			double y = target.getY() + (target.getBbHeight() * 0.65);
 			double z = target.getZ();
@@ -208,6 +250,49 @@ public class ForgeCommonEvents {
 						1.0F
 				);
 			}
+
+			applyHitboxMeleeToAdditionalTargets(attacker, extraTargets);
+		}
+	}
+
+	private static List<LivingEntity> collectHitboxMeleeAdditionalTargets(Player attacker, Entity primaryTarget) {
+		double range = DMZ_MELEE_HITBOX_RANGE;
+		double minDot = Math.cos(Math.toRadians(DMZ_MELEE_HITBOX_HORIZONTAL_ANGLE * 0.5));
+
+		Vec3 attackerPos = attacker.position();
+		Vec3 look = attacker.getLookAngle();
+		AABB searchArea = attacker.getBoundingBox().inflate(range, 1.25, range);
+
+		List<LivingEntity> candidates = attacker.level().getEntitiesOfClass(LivingEntity.class, searchArea, target -> {
+			if (target == attacker || target == primaryTarget || !target.isAlive()) return false;
+			if (attacker.isAlliedTo(target)) return false;
+			if (target instanceof Player playerTarget && playerTarget.isCreative()) return false;
+			if (target instanceof MastersEntity || target instanceof PunchMachineEntity) return false;
+
+			Vec3 toTarget = target.position().subtract(attackerPos);
+			double horizontalDistSq = toTarget.x * toTarget.x + toTarget.z * toTarget.z;
+			if (horizontalDistSq > (range * range)) return false;
+
+			Vec3 horizontalDir = new Vec3(toTarget.x, 0, toTarget.z).normalize();
+			Vec3 horizontalLook = new Vec3(look.x, 0, look.z).normalize();
+			if (!Double.isFinite(horizontalDir.x) || !Double.isFinite(horizontalLook.x)) return false;
+
+			return horizontalLook.dot(horizontalDir) >= minDot;
+		});
+
+		if (candidates.isEmpty()) return List.of();
+
+		List<LivingEntity> sortedTargets = new ArrayList<>(candidates);
+		sortedTargets.sort(Comparator.comparingDouble(attacker::distanceToSqr));
+		if (sortedTargets.size() > DMZ_MELEE_HITBOX_MAX_TARGETS) {
+			return new ArrayList<>(sortedTargets.subList(0, DMZ_MELEE_HITBOX_MAX_TARGETS));
+		}
+		return sortedTargets;
+	}
+
+	private static void applyHitboxMeleeToAdditionalTargets(Player attacker, List<LivingEntity> extraTargets) {
+		for (LivingEntity extraTarget : extraTargets) {
+			extraTarget.hurt(attacker.damageSources().playerAttack(attacker), 1.0F);
 		}
 	}
 

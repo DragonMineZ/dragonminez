@@ -1,5 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -29,6 +30,7 @@ public class SwitchActionC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player != null) {
+				if (player.hasEffect(MainEffects.STUN.get())) return;
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					if (data.getStatus().getSelectedAction() != mode) {
 						data.getStatus().setSelectedAction(mode);

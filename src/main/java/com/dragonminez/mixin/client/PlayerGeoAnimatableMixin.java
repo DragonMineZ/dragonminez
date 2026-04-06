@@ -51,6 +51,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private boolean dragonminez$isEvading = false;
 	@Unique private int dragonminez$evasionVariant = 0;
 	@Unique private int dragonminez$attackAnimTicks = 0;
+	@Unique private int dragonminez$queuedMeleeVariant = -1;
 	@Unique private int dragonminez$miningAnimTicks = 0;
 	@Unique private boolean dragonminez$isShootingKi = false;
 
@@ -222,22 +223,19 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			if (dragonminez$attackAnimTicks > 0) dragonminez$attackAnimTicks--;
 		}
 
-		boolean isValidAttackContext = player.swinging && !isPlacingBlock(player) && !isBlocking(player) && !isUsingTool(player);
-
-		if (isValidAttackContext) {
-			boolean isNewAttackFrame = player.swingTime == 0;
-			boolean alreadyProcessedThisTick = player.tickCount == dragonminez$lastAttackTick;
-
-			if (isNewAttackFrame && !alreadyProcessedThisTick) {
-				dragonminez$lastAttackTick = player.tickCount;
-				animatable.dragonminez$setPlayingAttack(true);
+		if (dragonminez$queuedMeleeVariant >= 0 && !isPlacingBlock(player) && !isBlocking(player) && !isUsingTool(player)) {
+			int variant = dragonminez$queuedMeleeVariant;
+			dragonminez$queuedMeleeVariant = -1;
+			animatable.dragonminez$setPlayingAttack(true);
+			if (variant == 1) {
+				animatable.dragonminez$setUseAttack2(true);
+			} else {
 				animatable.dragonminez$setUseAttack2(!animatable.dragonminez$useAttack2());
-				ctl.setAnimation(animatable.dragonminez$useAttack2() ? ATTACK2 : ATTACK);
-				ctl.forceAnimationReset();
-				dragonminez$attackAnimTicks = 12;
-
-				return PlayState.CONTINUE;
 			}
+			ctl.setAnimation(dragonminez$selectAttackAnimation(variant, animatable.dragonminez$useAttack2()));
+			ctl.forceAnimationReset();
+			dragonminez$attackAnimTicks = 12;
+			return PlayState.CONTINUE;
 		}
 
 		if (dragonminez$attackAnimTicks > 0) return PlayState.CONTINUE;
@@ -246,11 +244,30 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Unique
+	private static RawAnimation dragonminez$selectAttackAnimation(int variant, boolean alternateAttack) {
+		if (variant == 1) {
+			return ATTACK2;
+		}
+		return alternateAttack ? ATTACK2 : ATTACK;
+	}
+
+	@Unique
 	private <T extends GeoAnimatable> PlayState miningPredicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 		AnimationController<T> ctl = state.getController();
+		boolean hasMiningSwing = player.attackAnim > 0.0F || player.swinging || player.swingTime > 0;
 
-		if (player.attackAnim > 0 && isUsingTool(player) && !isPlacingBlock(player) && !isBlocking(player)) {
+		if (isPlacingBlock(player) && !isBlocking(player)) {
+			if (ctl.getAnimationState() == AnimationController.State.STOPPED) {
+				RawAnimation placeAnim = isMainHandBlock(player) ? ATTACK : ATTACK2;
+				ctl.setAnimation(placeAnim);
+				ctl.forceAnimationReset();
+			}
+			dragonminez$miningAnimTicks = 8;
+			return PlayState.CONTINUE;
+		}
+
+		if (hasMiningSwing && isUsingTool(player) && !isPlacingBlock(player) && !isBlocking(player)) {
 			if (ctl.getAnimationState() == AnimationController.State.STOPPED) {
 				if (isMainHandTool(player)) {
 					ctl.setAnimation(MINING1);
@@ -385,14 +402,20 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Unique
+	private static boolean isMainHandBlock(AbstractClientPlayer player) {
+		return player.getMainHandItem().getItem() instanceof BlockItem;
+	}
+
+	@Unique
 	private static boolean isPlacingBlock(AbstractClientPlayer player) {
 		ItemStack mainHand = player.getMainHandItem();
 		ItemStack offHand = player.getOffhandItem();
 
 		boolean hasBlockInMainHand = mainHand.getItem() instanceof BlockItem;
 		boolean hasBlockInOffHand = offHand.getItem() instanceof BlockItem;
+		boolean hasPlaceActionFrame = player.isUsingItem() || player.swinging || player.swingTime > 0;
 
-		return (hasBlockInMainHand || hasBlockInOffHand) && player.isUsingItem();
+		return (hasBlockInMainHand || hasBlockInOffHand) && hasPlaceActionFrame;
 	}
 
 	@Unique
@@ -461,6 +484,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	public void dragonminez$triggerCombo(int variant) {
 		this.dragonminez$comboVariant = variant;
 		this.dragonminez$comboAnimTicks = 10;
+	}
+
+	@Override
+	public void dragonminez$triggerMeleeAttack(int variant) {
+		this.dragonminez$queuedMeleeVariant = Math.max(0, variant);
 	}
 
 	@Override

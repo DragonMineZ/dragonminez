@@ -135,6 +135,24 @@ public class NetworkHandler {
 				.consumerMainThread(ComboAttackC2S::handle)
 				.add();
 
+		net.messageBuilder(MeleeAttackIntentC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MeleeAttackIntentC2S::new)
+				.encoder(MeleeAttackIntentC2S::encode)
+				.consumerMainThread(MeleeAttackIntentC2S::handle)
+				.add();
+
+		net.messageBuilder(CombatStylePreferenceC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(CombatStylePreferenceC2S::new)
+				.encoder(CombatStylePreferenceC2S::encode)
+				.consumerMainThread(CombatStylePreferenceC2S::handle)
+				.add();
+
+		net.messageBuilder(MeleeManualAttackC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(MeleeManualAttackC2S::new)
+				.encoder(MeleeManualAttackC2S::encode)
+				.consumerMainThread(MeleeManualAttackC2S::handle)
+				.add();
+
 		net.messageBuilder(NPCActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(NPCActionC2S::new)
 				.encoder(NPCActionC2S::toBytes)

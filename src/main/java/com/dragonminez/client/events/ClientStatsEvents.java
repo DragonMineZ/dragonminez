@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.TrainingScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
+import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.config.ConfigManager;
@@ -26,6 +27,7 @@ import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -40,7 +42,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.List;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -56,26 +57,40 @@ public class ClientStatsEvents {
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
 	private static boolean wasDashKeyDown = false;
+	private static boolean wasLeftClickDown = false;
 	private static boolean wasRightClickDown = false;
+	private static int lightAttackHoldTicks = 0;
+	private static int heavyAttackHoldTicks = 0;
+	private static boolean lightManualReleasedDuringHold = false;
+	private static boolean heavyManualReleasedDuringHold = false;
+	private static Boolean lastSentCombatStylePreference = null;
 	private static boolean wasDescendActionDown = false;
 	private static boolean wasTechniqueChargeDown = false;
 	private static int lockedVanillaHotbarSlot = -1;
 	private static int lockedTechniqueSlot = -1;
 
 	@SubscribeEvent
-	public static void onMouseInput(InputEvent.MouseButton.Pre event) {
-		if (Minecraft.getInstance().player == null) return;
-		if (!ConfigManager.getServerConfig().getCombat().getEnableComboAttacks()) return;
+	public static void onClickInput(InputEvent.InteractionKeyMappingTriggered event) {
+		if (!event.isAttack()) return;
 
-		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
+		Minecraft mc = Minecraft.getInstance();
+		LocalPlayer player = mc.player;
+		if (player == null || mc.screen != null) return;
+		if (!ConfigManager.getUserConfig().getCombat().getUseDMZCombatStyle()) return;
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			if (data.getStatus().isStunned()) return;
-			if (data.getCooldowns().hasCooldown(Cooldowns.COMBO_ATTACK_CD)) return;
+			if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) return;
 
-			if (event.getButton() == 0 && event.getAction() == 1) {
-				if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) {
-					NetworkHandler.sendToServer(new ComboAttackC2S());
-				}
+			if (mc.hitResult instanceof EntityHitResult) {
+				// Entity hits are released manually; do not play vanilla swing at hold start.
+				event.setCanceled(true);
+				return;
+			}
+
+			// Air swing feedback stays client-side for responsiveness.
+			if (player instanceof IPlayerAnimatable animatable) {
+				animatable.dragonminez$triggerMeleeAttack(0);
 			}
 		});
 	}
@@ -186,6 +201,11 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
+			boolean useDMZCombatStyle = ConfigManager.getUserConfig().getCombat().getUseDMZCombatStyle();
+			if (lastSentCombatStylePreference == null || lastSentCombatStylePreference != useDMZCombatStyle) {
+				NetworkHandler.sendToServer(new CombatStylePreferenceC2S(useDMZCombatStyle));
+				lastSentCombatStylePreference = useDMZCombatStyle;
+			}
 
 			if (data.getTechniques().getSelectedSlot() >= TECHNIQUE_VISIBLE_SLOTS) {
 				data.getTechniques().selectSlot(0);
@@ -217,17 +237,87 @@ public class ClientStatsEvents {
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
-			boolean mainHandEmpty = localPlayer.getMainHandItem().isEmpty();
-			boolean offHandEmpty = localPlayer.getOffhandItem().isEmpty();
 			boolean isRightClickDown = mc.options.keyUse.isDown();
+			boolean isLeftClickDown = mc.options.keyAttack.isDown();
 
-			boolean shouldBlock = isRightClickDown && mainHandEmpty && offHandEmpty && !isStunned && !isDescendKeyPressed;
+			boolean shouldBlock = isDescendKeyPressed && isRightClickDown && !isStunned;
 			if (shouldBlock != data.getStatus().isBlocking()) {
 				data.getStatus().setBlocking(shouldBlock);
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, shouldBlock));
 			}
 
-			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && mainHandEmpty && !hasSelectedKiTechnique) {
+			boolean canPrimeHeavyAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned && !localPlayer.isUsingItem();
+			if (canPrimeHeavyAttack && isRightClickDown) {
+				heavyAttackHoldTicks = Math.min(heavyAttackHoldTicks + 1, MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS);
+				if (!wasRightClickDown || (heavyAttackHoldTicks % 4 == 0)) {
+					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.HEAVY, heavyAttackHoldTicks));
+				}
+				if (heavyAttackHoldTicks >= MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS && !heavyManualReleasedDuringHold) {
+					if (mc.hitResult instanceof EntityHitResult entityHitResult) {
+						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
+								entityHitResult.getEntity().getId(),
+								MeleeAttackIntentC2S.IntentType.HEAVY,
+								heavyAttackHoldTicks
+						));
+						heavyManualReleasedDuringHold = true;
+					}
+				}
+			} else {
+				if (wasRightClickDown && heavyAttackHoldTicks > 0) {
+					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.HEAVY, heavyAttackHoldTicks));
+					if (!heavyManualReleasedDuringHold && mc.hitResult instanceof EntityHitResult entityHitResult) {
+						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
+								entityHitResult.getEntity().getId(),
+								MeleeAttackIntentC2S.IntentType.HEAVY,
+								heavyAttackHoldTicks
+						));
+					}
+				}
+				heavyAttackHoldTicks = 0;
+				heavyManualReleasedDuringHold = false;
+			}
+			wasRightClickDown = isRightClickDown;
+
+			boolean canPrimeLightAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned;
+			if (canPrimeLightAttack && isLeftClickDown) {
+				lightAttackHoldTicks = Math.min(lightAttackHoldTicks + 1, MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS);
+				if (!wasLeftClickDown || (lightAttackHoldTicks % 4 == 0)) {
+					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.LIGHT, lightAttackHoldTicks));
+				}
+				if (lightAttackHoldTicks >= MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS && !lightManualReleasedDuringHold) {
+					if (mc.hitResult instanceof EntityHitResult entityHitResult) {
+						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
+								entityHitResult.getEntity().getId(),
+								MeleeAttackIntentC2S.IntentType.LIGHT,
+								lightAttackHoldTicks
+						));
+						lightManualReleasedDuringHold = true;
+					}
+				}
+			} else {
+				if (wasLeftClickDown && lightAttackHoldTicks > 0) {
+					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.LIGHT, lightAttackHoldTicks));
+					if (!lightManualReleasedDuringHold
+							&& mc.hitResult instanceof EntityHitResult entityHitResult) {
+						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
+								entityHitResult.getEntity().getId(),
+								MeleeAttackIntentC2S.IntentType.LIGHT,
+								lightAttackHoldTicks
+						));
+					}
+				}
+				lightAttackHoldTicks = 0;
+				lightManualReleasedDuringHold = false;
+			}
+
+			if (!useDMZCombatStyle) {
+				lightAttackHoldTicks = 0;
+				heavyAttackHoldTicks = 0;
+				lightManualReleasedDuringHold = false;
+				heavyManualReleasedDuringHold = false;
+			}
+
+			if (isDescendKeyPressed && isLeftClickDown && !wasLeftClickDown && !hasSelectedKiTechnique) {
 				String kiHex;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
@@ -247,9 +337,9 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
 			}
-			wasRightClickDown = isRightClickDown;
+			wasLeftClickDown = isLeftClickDown;
 
-			boolean techniqueChargeDown = isDescendKeyPressed && isRightClickDown && mainHandEmpty && offHandEmpty && hasSelectedKiTechnique;
+			boolean techniqueChargeDown = isDescendKeyPressed && isLeftClickDown && hasSelectedKiTechnique;
 
 			if (techniqueChargeDown && !wasTechniqueChargeDown) {
 				NetworkHandler.sendToServer(new TechniqueChargeC2S(true));
@@ -431,7 +521,13 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
 		wasTechniqueChargeDown = false;
+		wasLeftClickDown = false;
 		wasRightClickDown = false;
+		lightAttackHoldTicks = 0;
+		heavyAttackHoldTicks = 0;
+		lightManualReleasedDuringHold = false;
+		heavyManualReleasedDuringHold = false;
+		lastSentCombatStylePreference = null;
 		lockedVanillaHotbarSlot = -1;
 		lockedTechniqueSlot = -1;
 		StatsCapability.clearClientCache();

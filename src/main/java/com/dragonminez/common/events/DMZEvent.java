@@ -4,6 +4,7 @@ import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.Saga;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Cancelable;
@@ -162,6 +163,96 @@ public abstract class DMZEvent extends Event {
 		public void setParry(boolean parry) { isParry = parry; }
 		public float getPoiseDamage() { return poiseDamage; }
 		public void setPoiseDamage(float poiseDamage) { this.poiseDamage = poiseDamage; }
+	}
+
+	/**
+	 * Event fired when a melee attack starts.
+	 * Canceling this event prevents the attack from continuing.
+	 */
+	@Cancelable
+	public static class PlayerAttackStartEvent extends Event {
+		public enum AttackType {
+			LIGHT,
+			HEAVY
+		}
+
+		public enum AttackPhase {
+			STARTUP,
+			ACTIVE,
+			RECOVERY
+		}
+
+		private final ServerPlayer attacker;
+		private final Entity primaryTarget;
+		private final boolean customCombat;
+		private final AttackType attackType;
+		private final AttackPhase attackPhase;
+		private final int attackIndex;
+		private final boolean offhandAttack;
+		private final boolean finisher;
+
+		public PlayerAttackStartEvent(ServerPlayer attacker, Entity primaryTarget, boolean customCombat, AttackType attackType, AttackPhase attackPhase, int attackIndex, boolean offhandAttack, boolean finisher) {
+			this.attacker = attacker;
+			this.primaryTarget = primaryTarget;
+			this.customCombat = customCombat;
+			this.attackType = attackType;
+			this.attackPhase = attackPhase;
+			this.attackIndex = attackIndex;
+			this.offhandAttack = offhandAttack;
+			this.finisher = finisher;
+		}
+
+		public ServerPlayer getAttacker() { return attacker; }
+		public Entity getPrimaryTarget() { return primaryTarget; }
+		public boolean isCustomCombat() { return customCombat; }
+		public AttackType getAttackType() { return attackType; }
+		public AttackPhase getAttackPhase() { return attackPhase; }
+		public int getAttackIndex() { return attackIndex; }
+		public boolean isOffhandAttack() { return offhandAttack; }
+		public boolean isFinisher() { return finisher; }
+	}
+
+	/**
+	 * Event fired when a melee attack hit is resolved.
+	 * Canceling this event prevents damage application for this hit.
+	 */
+	@Cancelable
+	public static class PlayerAttackHitEvent extends Event {
+		private final ServerPlayer attacker;
+		private final LivingEntity victim;
+		private final float originalDamage;
+		private float finalDamage;
+		private final int attackIndex;
+		private final boolean offhandAttack;
+		private final boolean customCombat;
+		private final PlayerAttackStartEvent.AttackType attackType;
+		private final PlayerAttackStartEvent.AttackPhase attackPhase;
+		private final boolean finisher;
+
+		public PlayerAttackHitEvent(ServerPlayer attacker, LivingEntity victim, float originalDamage, float finalDamage, int attackIndex, boolean offhandAttack, boolean customCombat, PlayerAttackStartEvent.AttackType attackType, PlayerAttackStartEvent.AttackPhase attackPhase, boolean finisher) {
+			this.attacker = attacker;
+			this.victim = victim;
+			this.originalDamage = originalDamage;
+			this.finalDamage = finalDamage;
+			this.attackIndex = attackIndex;
+			this.offhandAttack = offhandAttack;
+			this.customCombat = customCombat;
+			this.attackType = attackType;
+			this.attackPhase = attackPhase;
+			this.finisher = finisher;
+		}
+
+		public ServerPlayer getAttacker() { return attacker; }
+		public LivingEntity getVictim() { return victim; }
+		public float getOriginalDamage() { return originalDamage; }
+		public float getFinalDamage() { return finalDamage; }
+		public void setFinalDamage(float finalDamage) { this.finalDamage = finalDamage; }
+		public int getAttackIndex() { return attackIndex; }
+		public boolean isOffhandAttack() { return offhandAttack; }
+		public boolean isCustomCombat() { return customCombat; }
+		public PlayerAttackStartEvent.AttackType getAttackType() { return attackType; }
+		public PlayerAttackStartEvent.AttackPhase getAttackPhase() { return attackPhase; }
+		public boolean isFinisher() { return finisher; }
 	}
 
 	/**

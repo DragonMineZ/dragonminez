@@ -410,6 +410,15 @@ public class StatsEvents {
 			entity.setDeltaMovement(0, entity.getDeltaMovement().y, 0);
 			entity.setJumping(false);
 			entity.setSprinting(false);
+			if (entity instanceof ServerPlayer serverPlayer) {
+				if (serverPlayer.getAbilities().flying) {
+					serverPlayer.getAbilities().flying = false;
+					serverPlayer.onUpdateAbilities();
+				}
+				if (serverPlayer.isFallFlying()) {
+					serverPlayer.stopFallFlying();
+				}
+			}
 
 			if (entity.getPose() != Pose.CROUCHING) entity.setPose(Pose.CROUCHING);
 
