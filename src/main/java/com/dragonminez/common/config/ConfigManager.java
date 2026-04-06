@@ -637,7 +637,7 @@ public class ConfigManager {
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
-		config.setCanUseHair(true);
+		config.setCanUseHair(false);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);

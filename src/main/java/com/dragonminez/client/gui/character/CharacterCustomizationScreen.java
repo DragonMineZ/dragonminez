@@ -187,20 +187,22 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void initHairTab(int top) {
 		int y = top + 28;
-		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, y - 18, "hairColor"));
-		addRenderableWidget(new TexturedTextButton.Builder()
-				.position(LEFT_PANEL_X + 33, getUiHeight() - 40)
-				.size(74, 20)
-				.texture(BUTTONS_TEXTURE)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.customization.edit"))
-				.onPress(btn -> {
-					if (this.minecraft != null) {
-						this.minecraft.setScreen(new HairEditorScreen(this, character));
-					}
-				})
-				.build());
+		if (HairManager.canUseHair(character)) {
+			addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, y - 18, "hairColor"));
+			addRenderableWidget(new TexturedTextButton.Builder()
+					.position(LEFT_PANEL_X + 33, getUiHeight() - 40)
+					.size(74, 20)
+					.texture(BUTTONS_TEXTURE)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr("gui.dragonminez.customization.edit"))
+					.onPress(btn -> {
+						if (this.minecraft != null) {
+							this.minecraft.setScreen(new HairEditorScreen(this, character));
+						}
+					})
+					.build());
+		}
 
 		int arrowsY = top + 174;
 		if (previewFormIndex > 0) {
@@ -526,15 +528,19 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
 		pose.mul(cameraOrientation);
 
-		float yBodyRotO = player.yBodyRot;
-		float yRotO = player.getYRot();
-		float xRotO = player.getXRot();
+		float yBodyRot = player.yBodyRot;
+		float yBodyRotO = player.yBodyRotO;
+		float yRot = player.getYRot();
+		float yRotO = player.yRotO;
+		float xRot = player.getXRot();
+		float xRotO = player.xRotO;
 		float yHeadRotO = player.yHeadRotO;
 		float yHeadRot = player.yHeadRot;
 
 		player.yBodyRot = playerRotation;
 		player.yBodyRotO = playerRotation;
 		player.setYRot(playerRotation);
+		player.yRotO = playerRotation;
 		player.setXRot(playerPitch);
 		player.xRotO = playerPitch;
 		player.yHeadRot = playerRotation;
@@ -546,9 +552,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			restoreLocalPlayerFormSnapshot(player, snapshot);
 		}
 
-		player.yBodyRot = yBodyRotO;
-		player.setYRot(yRotO);
-		player.setXRot(xRotO);
+		player.yBodyRot = yBodyRot;
+		player.yBodyRotO = yBodyRotO;
+		player.setYRot(yRot);
+		player.yRotO = yRotO;
+		player.setXRot(xRot);
+		player.xRotO = xRotO;
 		player.yHeadRotO = yHeadRotO;
 		player.yHeadRot = yHeadRot;
 	}

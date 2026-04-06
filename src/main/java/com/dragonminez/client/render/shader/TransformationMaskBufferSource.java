@@ -30,6 +30,30 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 	);
 	@Nullable
 	private MultiBufferSource delegate;
+	private boolean maskCaptureEnabled = true;
+	private boolean includeOriginal = true;
+	private static final VertexConsumer EMPTY_CONSUMER = new VertexConsumer() {
+		@Override
+		public VertexConsumer vertex(double x, double y, double z) { return this; }
+		@Override
+		public VertexConsumer color(int red, int green, int blue, int alpha) { return this; }
+		@Override
+		public VertexConsumer uv(float u, float v) { return this; }
+		@Override
+		public VertexConsumer overlayCoords(int u, int v) { return this; }
+		@Override
+		public VertexConsumer uv2(int u, int v) { return this; }
+		@Override
+		public VertexConsumer normal(float x, float y, float z) { return this; }
+		@Override
+		public void endVertex() {}
+		@Override
+		public void defaultColor(int defaultR, int defaultG, int defaultB, int defaultA) {}
+		@Override
+		public void unsetDefaultColor() {}
+		@Override
+		public void vertex(float x, float y, float z, float red, float green, float blue, float alpha, float texU, float texV, int overlayUV, int lightmapUV, float normalX, float normalY, float normalZ) {}
+	};
 	private int packedR = 255;
 	private int packedG = 255;
 	private int packedB = 255;
@@ -40,7 +64,17 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	public TransformationMaskBufferSource wrap(MultiBufferSource delegate) {
 		this.delegate = delegate;
+		this.maskCaptureEnabled = true;
+		this.includeOriginal = true;
 		return this;
+	}
+
+	public void setMaskCaptureEnabled(boolean enabled) {
+		this.maskCaptureEnabled = enabled;
+	}
+
+	public void setIncludeOriginal(boolean includeOriginal) {
+		this.includeOriginal = includeOriginal;
 	}
 
 	public void setEntityColors(float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB) {
@@ -58,6 +92,13 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 
 	@Override
 	public VertexConsumer getBuffer(RenderType renderType) {
+		if (!this.maskCaptureEnabled) {
+			if (this.delegate == null || !this.includeOriginal) {
+				return EMPTY_CONSUMER;
+			}
+			return this.delegate.getBuffer(renderType);
+		}
+
 		RenderType maskRenderType = ModRenderTypes.transformationMask(renderType);
 		RenderType paramsRenderType = ModRenderTypes.transformationParams(renderType);
 		if (this.delegate == null) {
@@ -77,12 +118,17 @@ public final class TransformationMaskBufferSource implements MultiBufferSource {
 		VertexConsumer paramsDelegate = this.maskBufferSource.getBuffer(paramsRenderType);
 		VertexConsumer packedMask = new TransformationMaskVertexConsumer(maskDelegate, this.packedR, this.packedG, this.packedB, 255);
 		VertexConsumer packedParams = new TransformationMaskVertexConsumer(paramsDelegate, this.packedNoiseScaleAndMix, this.packedNoiseIntensity, this.packedNoiseScrollX, this.packedNoiseScrollY);
+		if (!this.includeOriginal) {
+			return VertexMultiConsumer.create(packedMask, packedParams);
+		}
 		return VertexMultiConsumer.create(packedMask, packedParams, original);
 	}
 
 	public void endMaskBatch() {
 		this.maskBufferSource.endBatch();
 		this.delegate = null;
+		this.maskCaptureEnabled = true;
+		this.includeOriginal = true;
 	}
 
 	private static int packChannel(float primary, float secondary) {

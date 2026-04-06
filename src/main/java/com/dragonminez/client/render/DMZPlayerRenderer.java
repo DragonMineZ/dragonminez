@@ -33,6 +33,7 @@ import java.util.Objects;
 public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoEntityRenderer<T> {
 
 	protected GeoRenderLayer<T> caller = null;
+	private boolean renderingMaskPass = false;
 
 	public DMZPlayerRenderer(EntityRendererProvider.Context renderManager, GeoModel<T> model) {
 		super(renderManager, model);
@@ -117,10 +118,10 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 		poseStack.pushPose();
 
-		MultiBufferSource effectiveBufferSource = bufferSource;
 		TransformationPostShaderManager.MaskData maskData = TransformationPostShaderManager.getEntityMaskData(entity);
+		TransformationMaskBufferSource maskBufferSource = null;
 		if (maskData != null) {
-			TransformationMaskBufferSource maskBufferSource = TransformationPostShaderManager.getMaskBufferSource();
+			maskBufferSource = TransformationPostShaderManager.getMaskBufferSource();
 			maskBufferSource.setEntityColors(
 					maskData.primaryR(),
 					maskData.primaryG(),
@@ -136,7 +137,6 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 					maskData.noiseScrollY(),
 					maskData.colorMixSpeed()
 			);
-			effectiveBufferSource = maskBufferSource.wrap(bufferSource);
 		}
 
 		if (FlySkillEvent.getInstance().isFlyingFast(entity)) {
@@ -163,7 +163,23 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 		}
 
-		super.render(entity, entityYaw, partialTick, poseStack, effectiveBufferSource, packedLight);
+		// Pass visible normal (sin escribir a mascara)
+		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+
+		// Pass de mascara separado (sin escribir color al target principal)
+		if (maskBufferSource != null) {
+			try {
+				this.renderingMaskPass = true;
+				maskBufferSource.wrap(bufferSource);
+				maskBufferSource.setIncludeOriginal(false);
+				maskBufferSource.setMaskCaptureEnabled(true);
+				super.render(entity, entityYaw, partialTick, poseStack, maskBufferSource, packedLight);
+			} finally {
+				this.renderingMaskPass = false;
+				maskBufferSource.setIncludeOriginal(true);
+				maskBufferSource.setMaskCaptureEnabled(true);
+			}
+		}
 
 		if (isAuraActive) {
 			if (bufferSource instanceof MultiBufferSource.BufferSource bs) bs.endBatch();
@@ -178,8 +194,25 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void applyRenderLayers(PoseStack poseStack, T animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		TransformationMaskBufferSource maskBufferSource = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
+
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
-			renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			boolean captureInMask = this.renderingMaskPass && (renderLayer instanceof DMZHairLayer<?> || renderLayer instanceof DMZRacePartsLayer<?>);
+			if (this.renderingMaskPass && !captureInMask) {
+				continue;
+			}
+
+			if (maskBufferSource != null) {
+				maskBufferSource.setMaskCaptureEnabled(captureInMask);
+			}
+
+			try {
+				renderLayer.render(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+			} finally {
+				if (maskBufferSource != null) {
+					maskBufferSource.setMaskCaptureEnabled(true);
+				}
+			}
 		}
 	}
 

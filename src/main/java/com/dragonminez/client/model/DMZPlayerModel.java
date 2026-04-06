@@ -216,6 +216,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         }
     }
 
+
     private boolean fileExists(ResourceLocation location) {
         return FILE_EXISTS_CACHE.computeIfAbsent(location, loc ->
                 Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()

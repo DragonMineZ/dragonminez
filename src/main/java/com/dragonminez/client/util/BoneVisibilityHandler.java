@@ -108,6 +108,24 @@ public class BoneVisibilityHandler {
 
 		setBonesHidden(model, true, "armorHead", "armorBody", "armorBody2", "armorLeggingsBody", "armorRightArm", "armorLeftArm",
 				"armorLeftLeg", "armorLeftBoot", "armorRightLeg", "armorRightBoot");
+		hideAllArmorPrefixBones(model);
+	}
+
+	private static void hideAllArmorPrefixBones(BakedGeoModel model) {
+		for (GeoBone topLevelBone : model.topLevelBones()) {
+			hideArmorPrefixRecursively(topLevelBone);
+		}
+	}
+
+	private static void hideArmorPrefixRecursively(GeoBone bone) {
+		String name = bone.getName();
+		if (name != null && name.startsWith("armor")) {
+			bone.setHidden(true);
+		}
+
+		for (GeoBone child : bone.getChildBones()) {
+			hideArmorPrefixRecursively(child);
+		}
 	}
 
 	public static boolean shouldShowBodyOnly(GeoRenderLayer<?> renderLayer, AbstractClientPlayer player) {

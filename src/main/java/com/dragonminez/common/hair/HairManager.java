@@ -305,8 +305,7 @@ public class HairManager {
 
 		for (String defaultRace : DEFAULT_HAIR_RACES) if (race.equals(defaultRace)) return true;
 
-		if (race.equals("majin")) return gender.equals(Character.GENDER_FEMALE);
-		if (race.equals("bioandroid") || race.equals("frostdemon") || race.equals("namekian")) return false;
+		if (race.equals("majin") && gender.equals("female")) return true;
 
 		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 		return config != null && config.getCanUseHair();

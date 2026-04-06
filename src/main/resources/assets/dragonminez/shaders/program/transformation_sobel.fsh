@@ -37,7 +37,7 @@ void main() {
     float gy = -tl - 2.0 * tc - tr + bl + 2.0 * bc + br;
 
     float edge = length(vec2(gx, gy));
-    float edgeMask = smoothstep(EdgeThreshold, EdgeThreshold + 0.2, edge);
+    float edgeMask = smoothstep(EdgeThreshold, EdgeThreshold + 0.08, edge);
     edgeMask = clamp(edgeMask * max(0.0, EdgeStrength), 0.0, 1.0);
 
     fragColor = vec4(edgeMask, edgeMask, edgeMask, edgeMask);

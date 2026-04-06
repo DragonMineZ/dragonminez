@@ -37,11 +37,11 @@ public final class TransformationPostShaderManager {
 	private static final String MASK_TARGET = "entity_mask";
 	private static final String PARAMS_TARGET = "entity_params";
 
-	private static final float FIXED_OUTLINE_THICKNESS = 0.75f;
-	private static final float FIXED_EDGE_THRESHOLD = 0.12f;
-	private static final float FIXED_EDGE_STRENGTH = 1.0f;
-	private static final float FIXED_GLOW_STRENGTH = 2.2f;
-	private static final float FIXED_BLOOM_STRENGTH = 2.8f;
+	private static final float FIXED_OUTLINE_THICKNESS = 0.7f;
+	private static final float FIXED_EDGE_THRESHOLD = 0.16f;
+	private static final float FIXED_EDGE_STRENGTH = 1.35f;
+	private static final float FIXED_GLOW_STRENGTH = 1.35f;
+	private static final float FIXED_BLOOM_STRENGTH = 0.95f;
 
 	private static final float FIXED_NOISE_INTENSITY = 0.25f;
 	private static final float FIXED_NOISE_SCROLL_X = 0.2f;

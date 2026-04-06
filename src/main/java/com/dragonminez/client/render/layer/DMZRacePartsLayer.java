@@ -5,7 +5,6 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.init.MainItems;
-import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -18,7 +17,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -28,7 +26,6 @@ import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,8 +56,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 	@Override
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 
-		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
-		if (stats == null) return;
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 
@@ -86,13 +82,26 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 		AURA_TINT_PROGRESS.put(playerId, tintProgress);
 
-		renderRaceParts(poseStack, animatable, playerModel, bufferSource, stats, partialTick, packedLight, alpha, tintProgress);
-
 		if (!animatable.isSpectator()) {
 			renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 			renderSword(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
 		}
+	}
+
+	@Override
+	public void renderForBone(PoseStack poseStack, T animatable, GeoBone playerBone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+		String anchor = playerBone.getName();
+		if (!"head".equals(anchor) && !"body".equals(anchor)) {
+			return;
+		}
+
+		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
+		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(animatable.getId(), 0.0f);
+
+		renderRacePartsForAnchor(poseStack, animatable, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
+		bufferSource.getBuffer(renderType);
 	}
 
 	private String resolveAccessoryBone(String accessoryName) {
@@ -110,7 +119,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		};
 	}
 
-	private void renderRaceParts(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, float partialTick, int packedLight, float alpha, float tintProgress) {
+	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
 		var character = stats.getCharacter();
 		String race = character.getRaceName().toLowerCase();
 
@@ -135,8 +144,11 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				final int index = i;
 				String configName = accessories[index];
 				String boneName = resolveAccessoryBone(configName);
+				if (!anchor.equals(resolveAnchorForRacePart(boneName))) {
+					continue;
+				}
+
 				partsModel.getBone(boneName).ifPresent(targetBone -> {
-					syncTargetBoneAndParents(targetBone, playerModel);
 					float[] rgb = formHasAccessories ? character.getActiveFormData().getRgbAccessoryColor(index) : raceConfig.getRgbAccessoryColor(index);
 					float[] tintedColor = applyAuraTint(rgb[0], rgb[1], rgb[2], phase, topAuraColor, tintProgress);
 					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
@@ -145,9 +157,9 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		} else {
 			String fallbackBone = resolveFallbackBone(stats);
 			if (fallbackBone == null) return;
+			if (!anchor.equals(resolveAnchorForRacePart(fallbackBone))) return;
 
 			partsModel.getBone(fallbackBone).ifPresent(targetBone -> {
-				syncTargetBoneAndParents(targetBone, playerModel);
 				float[] renderColor = setupPartsAndColor(partsModel, stats);
 
 				if (renderColor != null) {
@@ -156,6 +168,14 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				}
 			});
 		}
+	}
+
+	private String resolveAnchorForRacePart(String racePartBone) {
+		if ("tailenrolled".equals(racePartBone)) {
+			return "body";
+		}
+
+		return "head";
 	}
 
 	private String resolveFallbackBone(StatsData stats) {

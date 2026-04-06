@@ -17,11 +17,12 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public final class DMZRendererCache {
 	private DMZRendererCache() {}
-	private static final Map<String, GeoEntityRenderer<?>> TP_RENDERERS = new HashMap<>();
-	private static final Map<String, GeoEntityRenderer<?>> POV_RENDERERS = new HashMap<>();
+	private static final Map<UUID, CachedRendererEntry> TP_RENDERERS = new HashMap<>();
+	private static final Map<UUID, CachedRendererEntry> POV_RENDERERS = new HashMap<>();
 
 	@Nullable
 	private static EntityRendererProvider.Context context;
@@ -48,14 +49,15 @@ public final class DMZRendererCache {
 			String form = character.getActiveForm();
 
 			boolean pov = FirstPersonManager.shouldRenderFirstPerson(player);
-			String rendererId = buildRendererId(acp, race, gender, form, pov);
+			String stateSignature = buildStateSignature(race, gender, form);
 
-			Map<String, GeoEntityRenderer<?>> cache = pov ? POV_RENDERERS : TP_RENDERERS;
-			GeoEntityRenderer<?> renderer = cache.get(rendererId);
+			Map<UUID, CachedRendererEntry> cache = pov ? POV_RENDERERS : TP_RENDERERS;
+			CachedRendererEntry entry = cache.get(acp.getUUID());
+			GeoEntityRenderer<?> renderer = (entry != null && entry.matches(stateSignature)) ? entry.renderer() : null;
 
 			if (renderer == null) {
 				renderer = createRenderer(race, gender, form, pov);
-				cache.put(rendererId, renderer);
+				cache.put(acp.getUUID(), new CachedRendererEntry(stateSignature, renderer));
 			}
 
 			return (renderer instanceof DMZPlayerRenderer<?> dmz) ? dmz : null;
@@ -72,12 +74,13 @@ public final class DMZRendererCache {
 			String gender = character.getGender();
 			String form = character.getActiveForm();
 
-			String rendererId = buildRendererId(acp, race, gender, form, false);
+			String stateSignature = buildStateSignature(race, gender, form);
 
-			GeoEntityRenderer<?> renderer = TP_RENDERERS.get(rendererId);
+			CachedRendererEntry entry = TP_RENDERERS.get(acp.getUUID());
+			GeoEntityRenderer<?> renderer = (entry != null && entry.matches(stateSignature)) ? entry.renderer() : null;
 			if (renderer == null) {
 				renderer = createRenderer(race, gender, form, false);
-				TP_RENDERERS.put(rendererId, renderer);
+				TP_RENDERERS.put(acp.getUUID(), new CachedRendererEntry(stateSignature, renderer));
 			}
 
 			return (renderer instanceof DMZPlayerRenderer<?> dmz) ? dmz : null;
@@ -89,11 +92,11 @@ public final class DMZRendererCache {
 		return context;
 	}
 
-	private static String buildRendererId(AbstractClientPlayer player, String race, String gender, String form, boolean pov) {
+	private static String buildStateSignature(String race, String gender, String form) {
 		String safeRace = race != null ? race.toLowerCase() : "human";
 		String safeGender = gender != null ? gender.toLowerCase() : "male";
 		String safeForm = form != null ? form.toLowerCase() : "base";
-		return player.getUUID() + "|" + safeRace + "|" + safeGender + "|" + safeForm + "|" + (pov ? "pov" : "tp");
+		return safeRace + "|" + safeGender + "|" + safeForm;
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
@@ -111,6 +114,12 @@ public final class DMZRendererCache {
 			LogUtil.error(Env.CLIENT, "Error creating renderer for: {} (pov={})", safeRace, pov);
 			DMZPlayerModel fallbackModel = new DMZPlayerModel<>("human", "");
 			return pov ? new DMZPOVPlayerRenderer(context, fallbackModel) : new DMZPlayerRenderer(context, fallbackModel);
+		}
+	}
+
+	private record CachedRendererEntry(String stateSignature, GeoEntityRenderer<?> renderer) {
+		private boolean matches(String otherSignature) {
+			return stateSignature.equals(otherSignature);
 		}
 	}
 }
