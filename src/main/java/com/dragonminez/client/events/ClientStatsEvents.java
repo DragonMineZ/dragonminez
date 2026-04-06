@@ -28,6 +28,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -68,6 +69,7 @@ public class ClientStatsEvents {
 	private static boolean wasTechniqueChargeDown = false;
 	private static int lockedVanillaHotbarSlot = -1;
 	private static int lockedTechniqueSlot = -1;
+	private static int blockMeleeVisualCooldownTicks = 0;
 
 	@SubscribeEvent
 	public static void onClickInput(InputEvent.InteractionKeyMappingTriggered event) {
@@ -83,16 +85,24 @@ public class ClientStatsEvents {
 			if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) return;
 
 			if (mc.hitResult instanceof EntityHitResult) {
-				// Entity hits are released manually; do not play vanilla swing at hold start.
 				event.setCanceled(true);
 				return;
 			}
 
-			// Air swing feedback stays client-side for responsiveness.
+			if (mc.hitResult instanceof BlockHitResult) {
+				// El loop visual para bloques se maneja en onClientTick para repetir mientras se mantiene click.
+				return;
+			}
+
 			if (player instanceof IPlayerAnimatable animatable) {
 				animatable.dragonminez$triggerMeleeAttack(0);
 			}
 		});
+	}
+
+	private static boolean isToolLikeItem(String descriptionId) {
+		if (descriptionId == null) return false;
+		return descriptionId.contains("pickaxe") || descriptionId.contains("axe") || descriptionId.contains("shovel") || descriptionId.contains("hoe");
 	}
 
 	@SubscribeEvent
@@ -239,6 +249,26 @@ public class ClientStatsEvents {
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
 			boolean isRightClickDown = mc.options.keyUse.isDown();
 			boolean isLeftClickDown = mc.options.keyAttack.isDown();
+			boolean isTargetingBlock = mc.hitResult instanceof BlockHitResult;
+			boolean hasToolLikeItem = isToolLikeItem(localPlayer.getMainHandItem().getDescriptionId()) || isToolLikeItem(localPlayer.getOffhandItem().getDescriptionId());
+
+			if (blockMeleeVisualCooldownTicks > 0) {
+				blockMeleeVisualCooldownTicks--;
+			}
+
+			boolean shouldLoopBlockMeleeVisual = useDMZCombatStyle
+					&& isLeftClickDown
+					&& isTargetingBlock
+					&& !hasToolLikeItem
+					&& !isDescendKeyPressed
+					&& !isStunned;
+
+			if (shouldLoopBlockMeleeVisual && blockMeleeVisualCooldownTicks <= 0 && localPlayer instanceof IPlayerAnimatable animatable) {
+				animatable.dragonminez$triggerMeleeAttack(0);
+				blockMeleeVisualCooldownTicks = 8;
+			} else if (!shouldLoopBlockMeleeVisual) {
+				blockMeleeVisualCooldownTicks = 0;
+			}
 
 			boolean shouldBlock = isDescendKeyPressed && isRightClickDown && !isStunned;
 			if (shouldBlock != data.getStatus().isBlocking()) {
@@ -246,7 +276,7 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, shouldBlock));
 			}
 
-			boolean canPrimeHeavyAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned && !localPlayer.isUsingItem();
+			boolean canPrimeHeavyAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned && !localPlayer.isUsingItem() && !isTargetingBlock;
 			if (canPrimeHeavyAttack && isRightClickDown) {
 				heavyAttackHoldTicks = Math.min(heavyAttackHoldTicks + 1, MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS);
 				if (!wasRightClickDown || (heavyAttackHoldTicks % 4 == 0)) {
@@ -278,7 +308,7 @@ public class ClientStatsEvents {
 			}
 			wasRightClickDown = isRightClickDown;
 
-			boolean canPrimeLightAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned;
+			boolean canPrimeLightAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned && !isTargetingBlock;
 			if (canPrimeLightAttack && isLeftClickDown) {
 				lightAttackHoldTicks = Math.min(lightAttackHoldTicks + 1, MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS);
 				if (!wasLeftClickDown || (lightAttackHoldTicks % 4 == 0)) {

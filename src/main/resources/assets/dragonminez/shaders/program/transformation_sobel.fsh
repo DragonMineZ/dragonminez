@@ -10,8 +10,21 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 float sampleMask(vec2 uv) {
-    float alpha = texture(DiffuseSampler, clamp(uv, vec2(0.0), vec2(1.0))).a;
-    return step(0.01, alpha);
+    vec2 clampedUv = clamp(uv, vec2(0.0), vec2(1.0));
+    vec2 texel = 1.0 / max(InSize, vec2(1.0));
+
+    float alphaMax = 0.0;
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2(-1.0, -1.0), 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2( 0.0, -1.0), 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2( 1.0, -1.0), 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2(-1.0,  0.0), 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv, 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2( 1.0,  0.0), 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2(-1.0,  1.0), 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2( 0.0,  1.0), 0.0, 1.0)).a);
+    alphaMax = max(alphaMax, texture(DiffuseSampler, clamp(clampedUv + texel * vec2( 1.0,  1.0), 0.0, 1.0)).a);
+
+    return step(0.01, alphaMax);
 }
 
 void main() {

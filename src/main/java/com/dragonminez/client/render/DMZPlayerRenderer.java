@@ -163,16 +163,14 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			RenderSystem.stencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
 		}
 
-		// Pass visible normal (sin escribir a mascara)
 		super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 
-		// Pass de mascara separado (sin escribir color al target principal)
 		if (maskBufferSource != null) {
 			try {
 				this.renderingMaskPass = true;
 				maskBufferSource.wrap(bufferSource);
 				maskBufferSource.setIncludeOriginal(false);
-				maskBufferSource.setMaskCaptureEnabled(true);
+				maskBufferSource.setMaskCaptureEnabled(false);
 				super.render(entity, entityYaw, partialTick, poseStack, maskBufferSource, packedLight);
 			} finally {
 				this.renderingMaskPass = false;
@@ -197,7 +195,7 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 		TransformationMaskBufferSource maskBufferSource = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
 
 		for (GeoRenderLayer<T> renderLayer : getRenderLayers()) {
-			boolean captureInMask = this.renderingMaskPass && (renderLayer instanceof DMZHairLayer<?> || renderLayer instanceof DMZRacePartsLayer<?>);
+			boolean captureInMask = this.renderingMaskPass && (renderLayer instanceof DMZSkinLayer<?> || renderLayer instanceof DMZHairLayer<?> || renderLayer instanceof DMZRacePartsLayer<?>);
 			if (this.renderingMaskPass && !captureInMask) {
 				continue;
 			}

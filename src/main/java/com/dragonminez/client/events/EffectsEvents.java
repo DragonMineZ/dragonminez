@@ -36,9 +36,7 @@ public class EffectsEvents {
 		} else isBioAndroidDrainingCache = false;
 
 		isChargingFormCache = StatsProvider.get(StatsCapability.INSTANCE, player)
-				.map(data -> (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.FORM)
-				|| (data.getStatus().isActionCharging() && data.getStatus().getSelectedAction() == ActionMode.STACK))
-				.orElse(false);
+				.map(data -> (data.getStatus().isAuraActive() && !data.getStatus().isPermanentAura())).orElse(false);
 	}
 
 	@SubscribeEvent

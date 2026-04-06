@@ -1370,6 +1370,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		LivingEntity player = Minecraft.getInstance().player;
 		if (player == null) return;
 
+		ActiveFormSnapshot snapshot = captureLocalPlayerFormSnapshot(player);
+		boolean previewApplied = applyPreviewTransformationToPlayer(player);
+
 		int originalBody = character.getBodyType();
 		int originalHair = character.getHairId();
 		int originalEyes = character.getEyesType();
@@ -1484,6 +1487,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		InventoryScreen.renderEntityInInventory(graphics, x, previewY, previewScale, pose, cameraOrientation, player);
 		graphics.pose().popPose();
 		graphics.disableScissor();
+
+		if (previewApplied && snapshot != null) {
+			restoreLocalPlayerFormSnapshot(player, snapshot);
+		}
 
 		player.yBodyRot = yBodyRotO;
 		player.yBodyRotO = yBodyRotOField;

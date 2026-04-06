@@ -53,6 +53,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$attackAnimTicks = 0;
 	@Unique private int dragonminez$queuedMeleeVariant = -1;
 	@Unique private int dragonminez$miningAnimTicks = 0;
+	@Unique private int dragonminez$lastMiningTickRun = -1;
 	@Unique private boolean dragonminez$isShootingKi = false;
 
 	@Unique
@@ -257,6 +258,11 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		AnimationController<T> ctl = state.getController();
 		boolean hasMiningSwing = player.attackAnim > 0.0F || player.swinging || player.swingTime > 0;
 
+		if (player.tickCount != dragonminez$lastMiningTickRun) {
+			dragonminez$lastMiningTickRun = player.tickCount;
+			if (dragonminez$miningAnimTicks > 0) dragonminez$miningAnimTicks--;
+		}
+
 		if (isPlacingBlock(player) && !isBlocking(player)) {
 			if (ctl.getAnimationState() == AnimationController.State.STOPPED) {
 				RawAnimation placeAnim = isMainHandBlock(player) ? ATTACK : ATTACK2;
@@ -274,13 +280,13 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 				} else if (isOffHandTool(player)) {
 					ctl.setAnimation(MINING2);
 				}
+				ctl.forceAnimationReset();
 			}
 			dragonminez$miningAnimTicks = 10;
 			return PlayState.CONTINUE;
 		}
 
 		if (dragonminez$miningAnimTicks > 0) {
-			dragonminez$miningAnimTicks--;
 			return PlayState.CONTINUE;
 		}
 
