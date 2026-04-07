@@ -49,21 +49,18 @@ public class ShadowDummyEntity extends DBSagasEntity {
 	public void copyStatsFromPlayer(ServerPlayer player) {
 		this.setOwner(player);
 
-		double playerMaxHP = player.getAttributeValue(Attributes.MAX_HEALTH);
-		if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
-			this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(playerMaxHP);
-			this.setHealth((float) playerMaxHP * 2);
-		}
-
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			double playerMaxHP = player.getAttributeValue(Attributes.MAX_HEALTH);
+			if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+				this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(playerMaxHP);
+				this.setHealth((float) ((float) playerMaxHP * 2 + data.getDefense() * 0.75f));
+			}
 			if (this instanceof IBattlePower bpEntity) bpEntity.setBattlePower(data.getBattlePower());
 			double playerDmg = data.getMeleeDamage() * 0.5;
 			if (this.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE))
 				this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(playerDmg);
 			float calculatedKiDamage = (float) ((float) data.getKiDamage() * 0.5);
 			this.setKiBlastDamage(calculatedKiDamage);
-			if (this.getAttributes().hasAttribute(Attributes.ARMOR))
-				this.getAttribute(Attributes.ARMOR).setBaseValue(data.getDefense() * 0.75);
 		});
 		this.getPersistentData().putBoolean("dmz_stats_configured", true);
 	}
