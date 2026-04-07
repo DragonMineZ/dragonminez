@@ -3,6 +3,7 @@ package com.dragonminez.client.util;
 import com.dragonminez.Reference;
 import com.dragonminez.client.render.layer.DMZSkinLayer;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.character.Character;
@@ -86,24 +87,16 @@ public class SkinGathererProvider {
 		}
 
 		if (stats.getStatus().isActionCharging()) {
-			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
-				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
-				if (nextForm != null) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					if (nextForm.getRgbBodyColor1() != null) b1 = DMZSkinLayer.lerpColor(factor, b1, nextForm.getRgbBodyColor1());
-					if (nextForm.getRgbBodyColor2() != null) b2 = DMZSkinLayer.lerpColor(factor, b2, nextForm.getRgbBodyColor2());
-					if (nextForm.getRgbBodyColor3() != null) b3 = DMZSkinLayer.lerpColor(factor, b3, nextForm.getRgbBodyColor3());
-					if (nextForm.getRgbHairColor() != null) hair = DMZSkinLayer.lerpColor(factor, hair, nextForm.getRgbHairColor());
-				}
-			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
-				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
-				if (nextForm != null) {
-					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
-					if (nextForm.getRgbBodyColor1() != null) b1 = DMZSkinLayer.lerpColor(factor, b1, nextForm.getRgbBodyColor1());
-					if (nextForm.getRgbBodyColor2() != null) b2 = DMZSkinLayer.lerpColor(factor, b2, nextForm.getRgbBodyColor2());
-					if (nextForm.getRgbBodyColor3() != null) b3 = DMZSkinLayer.lerpColor(factor, b3, nextForm.getRgbBodyColor3());
-					if (nextForm.getRgbHairColor() != null) hair = DMZSkinLayer.lerpColor(factor, hair, nextForm.getRgbHairColor());
-				}
+			FormConfig.FormData nextForm = null;
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) nextForm = TransformationsHelper.getNextAvailableForm(stats);
+			else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+
+			if (nextForm != null) {
+				float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+				if (nextForm.getRgbBodyColor1() != null) b1 = DMZSkinLayer.lerpColor(factor, b1, nextForm.getRgbBodyColor1());
+				if (nextForm.getRgbBodyColor2() != null) b2 = DMZSkinLayer.lerpColor(factor, b2, nextForm.getRgbBodyColor2());
+				if (nextForm.getRgbBodyColor3() != null) b3 = DMZSkinLayer.lerpColor(factor, b3, nextForm.getRgbBodyColor3());
+				if (nextForm.getRgbHairColor() != null) hair = DMZSkinLayer.lerpColor(factor, hair, nextForm.getRgbHairColor());
 			}
 		}
 
@@ -145,42 +138,9 @@ public class SkinGathererProvider {
 			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
 			default -> {
 				String gender = raceConfig.getHasGender() ? "_" + character.getGender().toLowerCase() : "";
-				boolean isFormLayered = hasForm && Boolean.TRUE.equals(character.getActiveFormData().getIsLayered());
-				boolean isBaseLayered = Boolean.TRUE.equals(raceConfig.getIsLayered());
-
-				if (isFormLayered || isBaseLayered) {
-					String prefix = "textures/entity/races/" + logicKey + gender + "_";
-					resolveDynamicLayers(character, raceConfig, prefix, prefix, b1, b2, b3, consumer);
-				} else {
-					ResourceLocation customTex = getCachedTexture("textures/entity/races/" + logicKey + gender + ".png");
-					consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
-				}
+				ResourceLocation customTex = getCachedTexture("textures/entity/races/" + logicKey + gender + ".png");
+				consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
 			}
-		}
-	}
-
-	protected void resolveDynamicLayers(Character character, RaceCharacterConfig raceConfig, String prefix, String fallbackPrefix, float[] b1, float[] b2, float[] b3, BiConsumer<ResourceLocation, float[]> consumer) {
-		if (raceConfig == null) return;
-
-		boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
-		boolean isFormLayered = hasForm && Boolean.TRUE.equals(character.getActiveFormData().getIsLayered());
-
-		int layerAmount = isFormLayered ? character.getActiveFormData().getLayerAmount() : raceConfig.getLayerAmount();
-
-		for (int i = 1; i <= layerAmount; i++) {
-			float[] color;
-			if (i == 1) color = b1;
-			else if (i == 2) color = b2;
-			else if (i == 3) color = b3;
-			else {
-				color = isFormLayered ? character.getActiveFormData().getRgbExtraLayerColor(i - 4) : raceConfig.getRgbExtraLayerColor(i - 4);
-			}
-
-			ResourceLocation texture = DMZSkinLayer.getSafeTexture(
-					getCachedTexture(prefix + "layer" + i + ".png"),
-					getCachedTexture(fallbackPrefix + "layer" + i + ".png")
-			);
-			consumer.accept(texture, color);
 		}
 	}
 

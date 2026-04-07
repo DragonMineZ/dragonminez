@@ -48,6 +48,7 @@ public class Character {
 	private CustomHair hairSSJ = new CustomHair();
 	private CustomHair hairSSJ2 = new CustomHair();
 	private CustomHair hairSSJ3 = new CustomHair();
+	private String activeHeadBone = "";
     private int bodyType;
     private int eyesType;
     private int noseType;
@@ -86,6 +87,7 @@ public class Character {
 		RaceCharacterConfig config = ConfigManager.getRaceCharacter("human");
 		if (config != null) {
 			this.hairId = config.getDefaultHairType();
+			this.activeHeadBone = (config.getHeadBones().length > 0) ? config.getHeadBones()[0] : "";
 			this.bodyType = config.getDefaultBodyType();
 			this.eyesType = config.getDefaultEyesType();
 			this.noseType = config.getDefaultNoseType();
@@ -100,6 +102,7 @@ public class Character {
 			this.auraColor = config.getDefaultAuraColor() != null ? config.getDefaultAuraColor() : "#FFFFFF";
 		} else {
 			this.hairId = 0;
+			this.activeHeadBone = "";
 			this.bodyType = 0;
 			this.eyesType = 0;
 			this.noseType = 0;
@@ -265,18 +268,13 @@ public class Character {
 		tag.put("HairSSJ", hairSSJ.save());
 		tag.put("HairSSJ2", hairSSJ2.save());
 		tag.put("HairSSJ3", hairSSJ3.save());
+		tag.putString("ActiveHeadBone", activeHeadBone != null ? activeHeadBone : "");
         tag.putInt("BodyType", bodyType);
         tag.putInt("EyesType", eyesType);
         tag.putInt("NoseType", noseType);
         tag.putInt("MouthType", mouthType);
         tag.putInt("TattooType", tattooType);
-		tag.putString("BodyColor", safeString(bodyColor));
-		tag.putString("BodyColor2", safeString(bodyColor2));
-		tag.putString("BodyColor3", safeString(bodyColor3));
-		tag.putString("HairColor", safeString(hairColor));
-		tag.putString("Eye1Color", safeString(eye1Color));
-		tag.putString("Eye2Color", safeString(eye2Color));
-		tag.putString("AuraColor", safeString(auraColor));
+		saveAppearance(tag);
 		tag.putString("SelectedMaster",  safeString(selectedMaster));
 		tag.putString("SelectedFormGroup", safeString(selectedFormGroup));
 		tag.putString("CurrentFormGroup", safeString(activeFormGroup));
@@ -310,6 +308,7 @@ public class Character {
 		if (tag.contains("HairSSJ")) this.hairSSJ.load(tag.getCompound("HairSSJ"));
 		if (tag.contains("HairSSJ2")) this.hairSSJ2.load(tag.getCompound("HairSSJ2"));
 		if (tag.contains("HairSSJ3")) this.hairSSJ3.load(tag.getCompound("HairSSJ3"));
+		this.activeHeadBone = tag.getString("ActiveHeadBone");
         this.bodyType = tag.getInt("BodyType");
         this.eyesType = tag.getInt("EyesType");
         this.noseType = tag.getInt("NoseType");
@@ -409,6 +408,7 @@ public class Character {
 		this.hairSSJ = other.hairSSJ.copy();
 		this.hairSSJ2 = other.hairSSJ2.copy();
 		this.hairSSJ3 = other.hairSSJ3.copy();
+		this.activeHeadBone = other.activeHeadBone;
         this.bodyType = other.bodyType;
         this.eyesType = other.eyesType;
         this.noseType = other.noseType;

@@ -517,10 +517,10 @@ public class ConfigManager {
 
 	private static void setupHumanCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("human");
+		config.setHeadBones(new String[]{"hair"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);
-		config.setCanUseHair(true);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
@@ -541,11 +541,11 @@ public class ConfigManager {
 
 	private static void setupSaiyanCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("saiyan");
+		config.setHeadBones(new String[]{"hair"});
 		config.setHasSaiyanTail(true);
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(1);
-		config.setCanUseHair(true);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
@@ -565,10 +565,10 @@ public class ConfigManager {
 
 	private static void setupNamekianCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("namekian");
+		config.setHeadBones(new String[]{"ears1", "ears2", "ears3"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
-		config.setCanUseHair(false);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
@@ -588,10 +588,10 @@ public class ConfigManager {
 
 	private static void setupFrostDemonCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("frostdemon");
+		config.setHeadBones(new String[]{"horns1"});
 		config.setDefaultModelScaling(new Float[]{0.7375f, 0.7375f, 0.7375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
-		config.setCanUseHair(false);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
@@ -614,7 +614,6 @@ public class ConfigManager {
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
-		config.setCanUseHair(false);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
@@ -634,10 +633,10 @@ public class ConfigManager {
 
 	private static void setupMajinCharacter(RaceCharacterConfig config) {
 		config.setRacialSkill("majin");
+		config.setHeadBones(new String[]{"majin1"});
 		config.setDefaultModelScaling(new Float[]{0.9375f, 0.9375f, 0.9375f});
 		config.setDefaultBodyType(0);
 		config.setDefaultHairType(0);
-		config.setCanUseHair(false);
 		config.setDefaultEyesType(0);
 		config.setDefaultNoseType(0);
 		config.setDefaultMouthType(0);
