@@ -31,6 +31,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -68,6 +69,10 @@ public class HairEditorScreen extends ScaledScreen {
 	private boolean isDraggingModel = false;
 	private double lastMouseX = 0;
 	private double lastMouseY = 0;
+
+	// Variables para controlar el zoom suave
+	private float targetZoom = 150.0f;
+	private float currentZoom = 150.0f;
 
 	private EditBox fullCodeBox;
 	private EditBox individualCodeBox;
@@ -705,12 +710,14 @@ public class HairEditorScreen extends ScaledScreen {
 
 		beginUiScale(graphics);
 
+		currentZoom = Mth.lerp(0.3f, currentZoom, targetZoom);
+
 		int previewZoneLeft = 12 + 141 + 16;
 		int previewZoneRight = getUiWidth() - 16;
 		int baseX = previewZoneLeft + (previewZoneRight - previewZoneLeft) / 2;
-		int baseY = getUiHeight() / 2 + 112;
+		int baseY = (int) (getUiHeight() / 2 + 112 + (currentZoom - 95.0f) * 2.436f);
 
-		renderPlayerModel(graphics, baseX, baseY, 95);
+		renderPlayerModel(graphics, baseX, baseY, (int) currentZoom);
 
 		renderPanelBackground(graphics);
 
@@ -915,6 +922,8 @@ public class HairEditorScreen extends ScaledScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (super.mouseClicked(mouseX, mouseY, button)) return true;
+
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
@@ -926,6 +935,7 @@ public class HairEditorScreen extends ScaledScreen {
 				colorPickerVisible = false;
 				return true;
 			}
+			return false;
 		}
 
 		if (currentTab == Tab.STYLE) {
@@ -935,16 +945,15 @@ public class HairEditorScreen extends ScaledScreen {
 
 		int previewZoneLeft = 12 + 141 + 16;
 		int previewZoneRight = getUiWidth() - 16;
-		int baseY = getUiHeight() / 2 + 112;
 
-		if (uiMouseX >= previewZoneLeft && uiMouseX <= previewZoneRight && uiMouseY >= 45 && uiMouseY <= baseY + 28) {
+		if (uiMouseX >= previewZoneLeft && uiMouseX <= previewZoneRight && uiMouseY >= 45) {
 			isDraggingModel = true;
 			lastMouseX = uiMouseX;
 			lastMouseY = uiMouseY;
 			return true;
 		}
 
-		return super.mouseClicked(mouseX, mouseY, button);
+		return false;
 	}
 
 	@Override
@@ -965,6 +974,20 @@ public class HairEditorScreen extends ScaledScreen {
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+		double uiMouseX = toUiX(mouseX);
+		int previewZoneLeft = 12 + 141 + 16;
+
+		if (uiMouseX >= previewZoneLeft && !colorPickerVisible) {
+			targetZoom += (float) delta * 20.0f;
+			targetZoom = Mth.clamp(targetZoom, 95.0f, 250.0f);
+			return true;
+		}
+
+		return super.mouseScrolled(mouseX, mouseY, delta);
 	}
 
 	private boolean handleFaceSelectorClick(double mouseX, double mouseY) {
