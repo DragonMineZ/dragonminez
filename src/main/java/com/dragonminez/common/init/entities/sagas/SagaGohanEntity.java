@@ -217,4 +217,146 @@ public class SagaGohanEntity {
         }
 
     }
+    /*
+    SAGA BUU GOHAN
+    [ BASE - ULTIMATE ]
+     */
+    public static class SagaGohanEndBaseEntity extends DBSagasEntity {
+
+        public SagaGohanEndBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 50);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.BASIC);
+
+            this.addKiSkill(KiSkillType.MASENKO, 100, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 300, 1.2F);
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_gohan_end";
+        }
+
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOHAN_MID_SSJ.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {
+            return true;
+        }
+    }
+
+    public static class SagaGohanEndSSJEntity extends DBSagasEntity {
+
+        public SagaGohanEndSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
+
+            this.addKiSkill(KiSkillType.MASENKO, 200, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 280, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 400);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_gohan_end_ssj";
+        }
+
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_GOHAN_MID_SSJ2.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {
+            return true;
+        }
+    }
+
+    public static class SagaGohanEndSSJ2Entity extends DBSagasEntity {
+
+        public SagaGohanEndSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(1.4F);
+            this.setLightning(true);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setWildSense(true, 100);
+
+            this.setAllowedCombos(120, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
+
+            this.addKiSkill(KiSkillType.MASENKO, 200, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 280, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 400, 1.4f);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_gohan_end_ssj2";
+        }
+
+    }
+
+    public static class SagaGohanEndUltimateEntity extends DBSagasEntity {
+
+        public SagaGohanEndUltimateEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.7F);
+            this.setLightning(true);
+            this.setDBZStyle(0);
+            this.setEvade(true, 30);
+            this.setWildSense(true, 60);
+            this.setZanzoken(true,100);
+
+            this.setAllowedCombos(120, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION);
+
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 280, 1.2F, 0xFFFFFF, 0xFFFFFF);
+            this.addKiSkill(KiSkillType.KAMEHAMEHA, 200, 2.2f);
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_gohan_end_ssj2";
+        }
+
+    }
+
 }

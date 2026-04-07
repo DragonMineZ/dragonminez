@@ -540,26 +540,66 @@ public class MainEntities {
     /*
      BUU SAGA ENTITIES
      */
-    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinBaseEntity>> SAGA_GOKU_FIN_BASE =
-            ENTITY_TYPES.register("saga_goku_fin_base",
-                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinBaseEntity::new, MobCategory.MONSTER)
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEndBaseEntity>> SAGA_GOKU_END_BASE =
+            ENTITY_TYPES.register("saga_goku_end_base",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuEndBaseEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_base").toString()));
-    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinSSJEntity>> SAGA_GOKU_FIN_SSJ =
-            ENTITY_TYPES.register("saga_goku_fin_ssj",
-                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinSSJEntity::new, MobCategory.MONSTER)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_end_base").toString()));
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEndSSJEntity>> SAGA_GOKU_END_SSJ =
+            ENTITY_TYPES.register("saga_goku_end_ssj",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuEndSSJEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_ssj").toString()));
-    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinSSJ2Entity>> SAGA_GOKU_FIN_SSJ2 =
-            ENTITY_TYPES.register("saga_goku_fin_ssj2",
-                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinSSJ2Entity::new, MobCategory.MONSTER)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_end_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEndSSJ2Entity>> SAGA_GOKU_END_SSJ2 =
+            ENTITY_TYPES.register("saga_goku_end_ssj2",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuEndSSJ2Entity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_ssj2").toString()));
-    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuFinSSJ3Entity>> SAGA_GOKU_FIN_SSJ3 =
-            ENTITY_TYPES.register("saga_goku_fin_ssj3",
-                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuFinSSJ3Entity::new, MobCategory.MONSTER)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_end_ssj2").toString()));
+    public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuEndSSJ3Entity>> SAGA_GOKU_END_SSJ3 =
+            ENTITY_TYPES.register("saga_goku_end_ssj3",
+                    () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuEndSSJ3Entity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_fin_ssj3").toString()));
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_end_ssj3").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaEntity.SagaVegetaEndBaseEntity>> SAGA_VEGETA_END_BASE =
+            ENTITY_TYPES.register("saga_vegeta_end_base",
+                    () -> EntityType.Builder.of(SagaVegetaEntity.SagaVegetaEndBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_vegeta_end_base").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaEntity.SagaVegetaEndSSJEntity>> SAGA_VEGETA_END_SSJ =
+            ENTITY_TYPES.register("saga_vegeta_end_ssj",
+                    () -> EntityType.Builder.of(SagaVegetaEntity.SagaVegetaEndSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_vegeta_end_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaEntity.SagaVegetaEndSSJ2Entity>> SAGA_VEGETA_END_SSJ2 =
+            ENTITY_TYPES.register("saga_vegeta_end_ssj2",
+                    () -> EntityType.Builder.of(SagaVegetaEntity.SagaVegetaEndSSJ2Entity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_vegeta_end_ssj2").toString()));
+    public static final RegistryObject<EntityType<SagaVegetaEntity.SagaMajinVegetaEntity>> SAGA_VEGETA_MAJIN =
+            ENTITY_TYPES.register("saga_vegeta_majin",
+                    () -> EntityType.Builder.of(SagaVegetaEntity.SagaMajinVegetaEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_vegeta_majin").toString()));
+    public static final RegistryObject<EntityType<SagaGohanEntity.SagaGohanEndBaseEntity>> SAGA_GOHAN_END_BASE =
+            ENTITY_TYPES.register("saga_gohan_end_base",
+                    () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanEndBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_end_base").toString()));
+    public static final RegistryObject<EntityType<SagaGohanEntity.SagaGohanEndSSJEntity>> SAGA_GOHAN_END_SSJ =
+            ENTITY_TYPES.register("saga_gohan_end_ssj",
+                    () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanEndSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_end_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaGohanEntity.SagaGohanEndSSJ2Entity>> SAGA_GOHAN_END_SSJ2 =
+            ENTITY_TYPES.register("saga_gohan_end_ssj2",
+                    () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanEndSSJ2Entity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_end_ssj2").toString()));
+    public static final RegistryObject<EntityType<SagaGohanEntity.SagaGohanEndUltimateEntity>> SAGA_GOHAN_END_ULTIMATE =
+            ENTITY_TYPES.register("saga_gohan_end_ultimate",
+                    () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanEndUltimateEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_end_ultimate").toString()));
 
 
     public static final RegistryObject<EntityType<ShadowDummyEntity>> SHADOW_DUMMY =

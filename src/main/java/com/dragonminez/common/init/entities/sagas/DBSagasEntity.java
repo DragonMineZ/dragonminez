@@ -218,8 +218,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private boolean isAttacking = false;
 
-    private int genericColorMain = 0xFFFFFF;
-    private int genericColorBorder = 0xFFFFFF;
 
     private final List<KiSkill> skillPool = new ArrayList<>();
     private float currentPoolSkillSize = 1.0F;
@@ -248,6 +246,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     protected DBSagasEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
+    }
+
+    public void setSkillColors(int mainColor, int borderColor) {
+        this.currentPoolColorMain = mainColor;
+        this.currentPoolColorBorder = borderColor;
     }
 
     public boolean isZanzoken() {
@@ -397,7 +400,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, false));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
     }
@@ -1473,7 +1476,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
             Entity attacker = pSource.getEntity();
             if (attacker instanceof LivingEntity livingAttacker) {
-                if (!this.isCasting() && !this.isComboing()) {
+
+                boolean isUntouchablePlayer = livingAttacker instanceof Player player && (player.isCreative() || player.isSpectator());
+
+                if (!this.isCasting() && !this.isComboing() && !isUntouchablePlayer) {
                     if (this.getTarget() != livingAttacker) {
                         this.setTarget(livingAttacker);
                     }
@@ -1487,6 +1493,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected boolean hasTransformation() {
         return false;
     }
+
+
 
     @Override
     public void die(DamageSource pCause) {

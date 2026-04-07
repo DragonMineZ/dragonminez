@@ -127,9 +127,9 @@ public class SagaGokuEntity{
         GOKU FIN [ BASE - SSJ - SSJ2 - SSJ3]
      */
 
-    public static class SagaGokuFinBaseEntity extends DBSagasEntity {
+    public static class SagaGokuEndBaseEntity extends DBSagasEntity {
 
-        public SagaGokuFinBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+        public SagaGokuEndBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
             this.setCanFly(true);
@@ -152,7 +152,7 @@ public class SagaGokuEntity{
 
         @Override
         public EntityType<? extends DBSagasEntity> getNextTransform() {
-            return MainEntities.SAGA_GOKU_FIN_SSJ.get();
+            return MainEntities.SAGA_GOKU_END_SSJ.get();
         }
 
         @Override
@@ -167,9 +167,9 @@ public class SagaGokuEntity{
 
     }
 
-    public static class SagaGokuFinSSJEntity extends DBSagasEntity {
+    public static class SagaGokuEndSSJEntity extends DBSagasEntity {
 
-        public SagaGokuFinSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+        public SagaGokuEndSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
             this.setCanFly(true);
@@ -194,7 +194,7 @@ public class SagaGokuEntity{
 
         @Override
         public EntityType<? extends DBSagasEntity> getNextTransform() {
-            return MainEntities.SAGA_GOKU_FIN_SSJ2.get();
+            return MainEntities.SAGA_GOKU_END_SSJ2.get();
         }
 
         @Override
@@ -207,9 +207,9 @@ public class SagaGokuEntity{
 
     }
 
-    public static class SagaGokuFinSSJ2Entity extends DBSagasEntity {
+    public static class SagaGokuEndSSJ2Entity extends DBSagasEntity {
 
-        public SagaGokuFinSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+        public SagaGokuEndSSJ2Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
             this.setCanFly(true);
@@ -235,7 +235,7 @@ public class SagaGokuEntity{
 
         @Override
         public EntityType<? extends DBSagasEntity> getNextTransform() {
-            return MainEntities.SAGA_GOKU_FIN_SSJ3.get();
+            return MainEntities.SAGA_GOKU_END_SSJ3.get();
         }
 
         @Override
@@ -249,9 +249,9 @@ public class SagaGokuEntity{
 
     }
 
-    public static class SagaGokuFinSSJ3Entity extends DBSagasEntity {
+    public static class SagaGokuEndSSJ3Entity extends DBSagasEntity {
 
-        public SagaGokuFinSSJ3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+        public SagaGokuEndSSJ3Entity(EntityType<? extends Monster> pEntityType, Level pLevel) {
             super(pEntityType, pLevel);
 
             this.setCanFly(true);
