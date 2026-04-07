@@ -1161,16 +1161,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int maxLines = Math.max(1, (height - 24) / 10);
 		int drawY = y + 18;
 		for (int i = 0; i < Math.min(maxLines, lines.size()); i++) {
-			String line = lines.get(i);
-			if (line.startsWith("✓ ") || line.startsWith("✕ ")) {
-				String marker = line.substring(0, 2);
-				String rest = line.substring(2);
-				int markerColor = marker.startsWith("✓") ? 0xFF55FF55 : 0xFFFF5555;
-				drawPlainStringWithBorder(graphics, marker, x + 8, drawY, markerColor);
-				drawStringWithBorder(graphics, txt(rest), x + 8 + this.font.width(marker), drawY, 0xFFCCCCCC);
-			} else {
-				drawStringWithBorder(graphics, txt(line), x + 8, drawY, 0xFFCCCCCC);
-			}
+			drawObjectiveLineWithSymbolColors(graphics, lines.get(i), x + 8, drawY);
 			drawY += 10;
 		}
 	}
@@ -1699,7 +1690,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		} else {
 			iconColor = 0xFFFFFFFF;
 			switch (status) {
-				case COMPLETED, CLAIMABLE -> icon = "✓";
+				case COMPLETED, CLAIMABLE -> {
+					icon = "✓";
+					iconColor = 0xFF55FF55;
+				}
 				case ACTIVE -> {
 					icon = "!";
 					iconColor = 0xFFFFFF00;
@@ -1707,14 +1701,18 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				case AVAILABLE -> icon = "?";
 				default -> {
 					icon = "✕";
-					iconColor = 0xFF999999;
+					iconColor = 0xFFFF5555;
 				}
 			}
 		}
 
 		int iconX = x + (NODE_SIZE - this.font.width(icon)) / 2;
 		int iconY = y + (NODE_SIZE - 8) / 2;
-		graphics.drawString(this.font, icon, iconX, iconY, iconColor, false);
+		if ("✓".equals(icon) || "✕".equals(icon) || "!".equals(icon) || "-".equals(icon)) {
+			graphics.drawString(this.font, Component.literal(icon).withStyle(ChatFormatting.BOLD), iconX, iconY, iconColor, false);
+		} else {
+			graphics.drawString(this.font, icon, iconX, iconY, iconColor, false);
+		}
 
 		// Label below node — use quest title for saga quests, "S" badge label for sidequests
 		if (!isBlurred) {
@@ -2482,7 +2480,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (a == null || b == null) return false;
 		if (a.isSideQuest() || b.isSideQuest()) {
 			return a.isSideQuest() == b.isSideQuest() && a.getStringId() != null && a.getStringId().equals(b.getStringId());
-					}
+		}
 		return a.getId() == b.getId();
 	}
 
@@ -2731,6 +2729,66 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return new PanelRect(0, 0, getUiWidth(), getUiHeight());
 	}
 
+	private void drawObjectiveLineWithSymbolColors(GuiGraphics graphics, String line, int x, int y) {
+		int symbolIndex = -1;
+		for (int i = 0; i < line.length(); i++) {
+			char c = line.charAt(i);
+			if (!Character.isWhitespace(c)) {
+				symbolIndex = i;
+				break;
+			}
+		}
+
+		if (symbolIndex < 0) {
+			drawStringWithBorder(graphics, txt(line), x, y, 0xFFCCCCCC);
+			return;
+		}
+
+		char symbol = line.charAt(symbolIndex);
+		int symbolColor = symbolColor(symbol);
+		if (symbolColor == -1) {
+			drawStringWithBorder(graphics, txt(line), x, y, 0xFFCCCCCC);
+			return;
+		}
+
+		int symbolEnd = symbolIndex + 1;
+		if (symbolEnd < line.length() && line.charAt(symbolEnd) == ' ') symbolEnd++;
+
+		String prefix = line.substring(0, symbolIndex);
+		String marker = line.substring(symbolIndex, symbolEnd);
+		String rest = line.substring(symbolEnd);
+
+		if (!prefix.isEmpty()) {
+			drawStringWithBorder(graphics, txt(prefix), x, y, 0xFFCCCCCC);
+		}
+
+		int markerX = x + this.font.width(prefix);
+		drawPlainBoldStringWithBorder(graphics, marker, markerX, y, symbolColor);
+
+		if (!rest.isEmpty()) {
+			drawStringWithBorder(graphics, txt(rest), markerX + this.font.width(marker), y, 0xFFCCCCCC);
+		}
+	}
+
+	private int symbolColor(char symbol) {
+		return switch (symbol) {
+			case '✓' -> 0xFF55FF55;
+			case '✕' -> 0xFFFF5555;
+			case '!', '-' -> 0xFFFFFF00;
+			default -> -1;
+		};
+	}
+
+	private void drawPlainBoldStringWithBorder(GuiGraphics graphics, String text, int x, int y, int textColor) {
+		int borderColor = 0xFF000000;
+		Component marker = Component.literal(text).withStyle(ChatFormatting.BOLD);
+		graphics.drawString(this.font, marker, x + 1, y, borderColor, false);
+		graphics.drawString(this.font, marker, x - 1, y, borderColor, false);
+		graphics.drawString(this.font, marker, x, y + 1, borderColor, false);
+		graphics.drawString(this.font, marker, x, y - 1, borderColor, false);
+		graphics.drawString(this.font, marker, x, y, textColor, false);
+	}
+
 	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
 		int borderColor = 0xFF000000;
 		String stripped = ChatFormatting.stripFormatting(text.getString());
@@ -2743,16 +2801,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.drawString(this.font, borderComponent, x, y + 1, borderColor, false);
 		graphics.drawString(this.font, borderComponent, x, y - 1, borderColor, false);
 		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawPlainStringWithBorder(GuiGraphics graphics, String text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		Component marker = Component.literal(text).withStyle(ChatFormatting.BOLD);
-		graphics.drawString(this.font, marker, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, marker, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, marker, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, marker, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, marker, x, y, textColor, false);
 	}
 
 	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
