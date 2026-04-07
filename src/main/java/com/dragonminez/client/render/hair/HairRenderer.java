@@ -275,12 +275,17 @@ public class HairRenderer {
 			float cubeH = baseH * sizeFactor * stretchFactor;
 			float cubeD = baseD * sizeFactor;
 
+			float overlap = 0.0f;
 			if (i > 0) {
 				poseStack.translate(0, accumulatedHeight, 0);
 				applyRotation(poseStack, curveX, curveY, curveZ);
+
+				float radX = Math.abs(curveX) * ((float) Math.PI / 180.0f);
+				float radZ = Math.abs(curveZ) * ((float) Math.PI / 180.0f);
+				overlap = (cubeW / 2.0f) * Mth.sin(radZ) + (cubeD / 2.0f) * Mth.sin(radX) + 0.015f;
 			}
 
-			renderCube(poseStack, strandBuffer, cubeW, cubeH, cubeD, r, g, b, packedLight, packedOverlay, alpha);
+			renderCube(poseStack, strandBuffer, cubeW, cubeH, cubeD, overlap, r, g, b, packedLight, packedOverlay, alpha);
 			accumulatedHeight = cubeH;
 			sizeFactor *= SIZE_DECAY;
 		}
@@ -294,20 +299,21 @@ public class HairRenderer {
 		if (rotZ != 0) poseStack.mulPose(Axis.ZP.rotationDegrees(rotZ));
 	}
 
-	private static void renderCube(PoseStack poseStack, VertexConsumer buffer, float width, float height, float depth, float r, float g, float b, int packedLight, int packedOverlay, float alpha) {
+	private static void renderCube(PoseStack poseStack, VertexConsumer buffer, float width, float height, float depth, float overlap, float r, float g, float b, int packedLight, int packedOverlay, float alpha) {
 		Matrix4f pose = poseStack.last().pose();
 		Matrix3f normal = poseStack.last().normal();
 
 		float hw = width / 2.0f;
 		float hd = depth / 2.0f;
 		float h = height;
+		float bottom = -overlap;
 
-		addQuad(buffer, pose, normal, -hw, 0, -hd, hw, 0, -hd, hw, 0, hd, -hw, 0, hd, 0, -1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, bottom, -hd, hw, bottom, -hd, hw, bottom, hd, -hw, bottom, hd, 0, -1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
 		addQuad(buffer, pose, normal, -hw, h, hd, hw, h, hd, hw, h, -hd, -hw, h, -hd, 0, 1, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, 0, -hd, -hw, h, -hd, hw, h, -hd, hw, 0, -hd, 0, 0, -1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, hw, 0, hd, hw, h, hd, -hw, h, hd, -hw, 0, hd, 0, 0, 1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, hw, 0, -hd, hw, h, -hd, hw, h, hd, hw, 0, hd, 1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
-		addQuad(buffer, pose, normal, -hw, 0, hd, -hw, h, hd, -hw, h, -hd, -hw, 0, -hd, -1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, bottom, -hd, -hw, h, -hd, hw, h, -hd, hw, bottom, -hd, 0, 0, -1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, hw, bottom, hd, hw, h, hd, -hw, h, hd, -hw, bottom, hd, 0, 0, 1, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, hw, bottom, -hd, hw, h, -hd, hw, h, hd, hw, bottom, hd, 1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
+		addQuad(buffer, pose, normal, -hw, bottom, hd, -hw, h, hd, -hw, h, -hd, -hw, bottom, -hd, -1, 0, 0, r, g, b, 0.0f, 0.0f, 1.0f, 1.0f, packedLight, packedOverlay, alpha);
 	}
 
 	private static void addQuad(VertexConsumer buffer, Matrix4f pose, Matrix3f normal, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float nx, float ny, float nz, float r, float g, float b, float u0, float v0, float u1, float v1, int packedLight, int packedOverlay, float alpha) {
