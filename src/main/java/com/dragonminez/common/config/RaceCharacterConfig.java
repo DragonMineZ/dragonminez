@@ -19,17 +19,13 @@ public class RaceCharacterConfig {
 	private Boolean useVanillaSkin = false;
 	private String customModel = "";
 	private Boolean isLayered = false;
-	private Integer layerAmount = 3;
-	private String[] extraLayersColor = new String[0];
-	private String[] racialAccessories = new String[0];
-	private String[] accessoriesColors = new String[0];
+	private String[] headBones = new String[0];
 	private String racialSkill = "human";
 	private Boolean hasSaiyanTail = false;
 	private String auraType = "kakarot";
 	private Float[] defaultModelScaling = {0.9375f, 0.9375f, 0.9375f};
 	private Integer defaultBodyType = 0;
 	private Integer defaultHairType = 0;
-	private Boolean canUseHair = true;
 	private Integer defaultEyesType = 0;
 	private Integer defaultNoseType = 0;
 	private Integer defaultMouthType = 0;
@@ -42,9 +38,6 @@ public class RaceCharacterConfig {
 	private String defaultEye2Color = null;
 	private String defaultAuraColor = null;
 	private Map<String, List<Integer>> formSkillsCosts = new HashMap<>();
-
-	private transient float[][] rgbAccessoriesColors;
-	private transient float[][] rgbExtraLayersColor;
 
 	public Integer[] getFormSkillTpCosts(String form) {
 		List<Integer> list = formSkillsCosts.getOrDefault(form, new ArrayList<>());
@@ -61,41 +54,5 @@ public class RaceCharacterConfig {
 
 	public Boolean hasCustomModel() {
 		return this.customModel != null && !this.customModel.isEmpty();
-	}
-
-	public String getAccessoryColor(int index) {
-		if (accessoriesColors == null || accessoriesColors.length == 0) return "#FFFFFF";
-		if (index < accessoriesColors.length) return accessoriesColors[index];
-		return accessoriesColors[accessoriesColors.length - 1];
-	}
-
-	public String getExtraLayerColor(int index) {
-		if (extraLayersColor == null || extraLayersColor.length == 0) return "#FFFFFF";
-		if (index < extraLayersColor.length) return extraLayersColor[index];
-		return extraLayersColor[extraLayersColor.length - 1];
-	}
-
-	public float[] getRgbAccessoryColor(int index) {
-		if (rgbAccessoriesColors == null || rgbAccessoriesColors.length != accessoriesColors.length) {
-			rgbAccessoriesColors = new float[accessoriesColors.length][];
-			for (int i = 0; i < accessoriesColors.length; i++) {
-				rgbAccessoriesColors[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(accessoriesColors[i]);
-			}
-		}
-		if (rgbAccessoriesColors.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
-		if (index < rgbAccessoriesColors.length) return rgbAccessoriesColors[index];
-		return rgbAccessoriesColors[rgbAccessoriesColors.length - 1];
-	}
-
-	public float[] getRgbExtraLayerColor(int index) {
-		if (rgbExtraLayersColor == null || rgbExtraLayersColor.length != extraLayersColor.length) {
-			rgbExtraLayersColor = new float[extraLayersColor.length][];
-			for (int i = 0; i < extraLayersColor.length; i++) {
-				rgbExtraLayersColor[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(extraLayersColor[i]);
-			}
-		}
-		if (rgbExtraLayersColor.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
-		if (index < rgbExtraLayersColor.length) return rgbExtraLayersColor[index];
-		return rgbExtraLayersColor[rgbExtraLayersColor.length - 1];
 	}
 }

@@ -8,6 +8,7 @@ import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Character;
@@ -461,6 +462,9 @@ public class RaceSelectionScreen extends ScaledScreen {
             character.setAuraColor(config.getDefaultAuraColor());
             character.setBodyType(config.getDefaultBodyType());
             character.setHairId(config.getDefaultHairType());
+			if (HairManager.canUseHair(character)) character.setActiveHeadBone("hair");
+			else if (config.getHeadBones() != null && config.getHeadBones().length > 0)character.setActiveHeadBone(config.getHeadBones()[0]);
+			else character.setActiveHeadBone("");
             character.setEyesType(config.getDefaultEyesType());
             character.setNoseType(config.getDefaultNoseType());
             character.setMouthType(config.getDefaultMouthType());

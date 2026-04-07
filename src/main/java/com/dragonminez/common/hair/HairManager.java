@@ -308,7 +308,10 @@ public class HairManager {
 		if (race.equals("majin") && gender.equals("female")) return true;
 
 		RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
-		return config != null && config.getCanUseHair();
+		if (config != null && config.getHeadBones() != null) {
+			for (String bone : config.getHeadBones()) if (bone.equals("hair")) return true;
+		}
+		return false;
 	}
 
 	public static CustomHair getEffectiveHair(Character character) {

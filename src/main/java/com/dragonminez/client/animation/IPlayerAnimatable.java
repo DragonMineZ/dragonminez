@@ -1,6 +1,9 @@
 package com.dragonminez.client.animation;
 
 public interface IPlayerAnimatable {
+  int CHARGE_ATTACK_NONE = 0;
+  int CHARGE_ATTACK_LIGHT = 1;
+  int CHARGE_ATTACK_HEAVY = 2;
 
     void dragonminez$setUseAttack2(boolean useAttack2);
 
@@ -25,5 +28,11 @@ public interface IPlayerAnimatable {
 	void dragonminez$triggerCombo(int comboNumber);
 
 	void dragonminez$triggerMeleeAttack(int variant);
+
+  void dragonminez$setChargeAttackState(int attackType, boolean charging, boolean charged);
+
+  void dragonminez$triggerChargeAttackFire(int attackType, boolean charged);
+
+  void dragonminez$clearChargeAttackState();
 }
 

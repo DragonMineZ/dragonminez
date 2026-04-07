@@ -90,12 +90,7 @@ public class ClientStatsEvents {
 			}
 
 			if (mc.hitResult instanceof BlockHitResult) {
-				// El loop visual para bloques se maneja en onClientTick para repetir mientras se mantiene click.
 				return;
-			}
-
-			if (player instanceof IPlayerAnimatable animatable) {
-				animatable.dragonminez$triggerMeleeAttack(0);
 			}
 		});
 	}
@@ -265,7 +260,7 @@ public class ClientStatsEvents {
 
 			if (shouldLoopBlockMeleeVisual && blockMeleeVisualCooldownTicks <= 0 && localPlayer instanceof IPlayerAnimatable animatable) {
 				animatable.dragonminez$triggerMeleeAttack(0);
-				blockMeleeVisualCooldownTicks = 8;
+				blockMeleeVisualCooldownTicks = 10;
 			} else if (!shouldLoopBlockMeleeVisual) {
 				blockMeleeVisualCooldownTicks = 0;
 			}
@@ -283,17 +278,25 @@ public class ClientStatsEvents {
 					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.HEAVY, heavyAttackHoldTicks));
 				}
 				if (heavyAttackHoldTicks >= MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS && !heavyManualReleasedDuringHold) {
+					if (localPlayer instanceof IPlayerAnimatable animatable) {
+						boolean wasCharged = heavyAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
+						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_HEAVY, wasCharged);
+					}
 					if (mc.hitResult instanceof EntityHitResult entityHitResult) {
 						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
 								entityHitResult.getEntity().getId(),
 								MeleeAttackIntentC2S.IntentType.HEAVY,
 								heavyAttackHoldTicks
 						));
-						heavyManualReleasedDuringHold = true;
 					}
+					heavyManualReleasedDuringHold = true;
 				}
 			} else {
 				if (wasRightClickDown && heavyAttackHoldTicks > 0) {
+					if (localPlayer instanceof IPlayerAnimatable animatable) {
+						boolean wasCharged = heavyAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
+						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_HEAVY, wasCharged);
+					}
 					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.HEAVY, heavyAttackHoldTicks));
 					if (!heavyManualReleasedDuringHold && mc.hitResult instanceof EntityHitResult entityHitResult) {
 						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
@@ -315,17 +318,25 @@ public class ClientStatsEvents {
 					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.LIGHT, lightAttackHoldTicks));
 				}
 				if (lightAttackHoldTicks >= MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS && !lightManualReleasedDuringHold) {
+					if (localPlayer instanceof IPlayerAnimatable animatable) {
+						boolean wasCharged = lightAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
+						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_LIGHT, wasCharged);
+					}
 					if (mc.hitResult instanceof EntityHitResult entityHitResult) {
 						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
 								entityHitResult.getEntity().getId(),
 								MeleeAttackIntentC2S.IntentType.LIGHT,
 								lightAttackHoldTicks
 						));
-						lightManualReleasedDuringHold = true;
 					}
+					lightManualReleasedDuringHold = true;
 				}
 			} else {
 				if (wasLeftClickDown && lightAttackHoldTicks > 0) {
+					if (localPlayer instanceof IPlayerAnimatable animatable) {
+						boolean wasCharged = lightAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
+						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_LIGHT, wasCharged);
+					}
 					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.LIGHT, lightAttackHoldTicks));
 					if (!lightManualReleasedDuringHold
 							&& mc.hitResult instanceof EntityHitResult entityHitResult) {
@@ -345,6 +356,24 @@ public class ClientStatsEvents {
 				heavyAttackHoldTicks = 0;
 				lightManualReleasedDuringHold = false;
 				heavyManualReleasedDuringHold = false;
+				if (localPlayer instanceof IPlayerAnimatable animatable) {
+					animatable.dragonminez$clearChargeAttackState();
+				}
+			}
+
+			if (useDMZCombatStyle && localPlayer instanceof IPlayerAnimatable animatable) {
+				boolean heavyCharging = canPrimeHeavyAttack && isRightClickDown && heavyAttackHoldTicks > 0 && !heavyManualReleasedDuringHold;
+				boolean lightCharging = canPrimeLightAttack && isLeftClickDown && lightAttackHoldTicks > 0 && !lightManualReleasedDuringHold;
+
+				if (heavyCharging) {
+					boolean charged = heavyAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
+					animatable.dragonminez$setChargeAttackState(IPlayerAnimatable.CHARGE_ATTACK_HEAVY, true, charged);
+				} else if (lightCharging) {
+					boolean charged = lightAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
+					animatable.dragonminez$setChargeAttackState(IPlayerAnimatable.CHARGE_ATTACK_LIGHT, true, charged);
+				} else {
+					animatable.dragonminez$setChargeAttackState(IPlayerAnimatable.CHARGE_ATTACK_NONE, false, false);
+				}
 			}
 
 			if (isDescendKeyPressed && isLeftClickDown && !wasLeftClickDown && !hasSelectedKiTechnique) {

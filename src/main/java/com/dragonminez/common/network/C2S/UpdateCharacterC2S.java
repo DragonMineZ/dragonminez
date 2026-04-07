@@ -21,6 +21,7 @@ public class UpdateCharacterC2S {
 	private final int noseType;
 	private final int mouthType;
 	private final int tattooType;
+	private final String activeHeadBone;
 	private final String hairColor;
 	private final String bodyColor;
 	private final String bodyColor2;
@@ -38,6 +39,7 @@ public class UpdateCharacterC2S {
 		this.noseType = character.getNoseType();
 		this.mouthType = character.getMouthType();
 		this.tattooType = character.getTattooType();
+		this.activeHeadBone = character.getActiveHeadBone();
 		this.hairColor = character.getHairColor();
 		this.bodyColor = character.getBodyColor();
 		this.bodyColor2 = character.getBodyColor2();
@@ -48,7 +50,7 @@ public class UpdateCharacterC2S {
 	}
 
 	public UpdateCharacterC2S(String className, int hairId, CustomHair customHair, int bodyType, int eyesType,
-							  int noseType, int mouthType, int tattooType, String hairColor, String bodyColor,
+							  int noseType, int mouthType, int tattooType, String activeHeadBone, String hairColor, String bodyColor,
 							  String bodyColor2, String bodyColor3, String eye1Color, String eye2Color, String auraColor) {
 		this.className = className;
 		this.hairId = hairId;
@@ -58,6 +60,7 @@ public class UpdateCharacterC2S {
 		this.noseType = noseType;
 		this.mouthType = mouthType;
 		this.tattooType = tattooType;
+		this.activeHeadBone = activeHeadBone;
 		this.hairColor = hairColor;
 		this.bodyColor = bodyColor;
 		this.bodyColor2 = bodyColor2;
@@ -78,6 +81,7 @@ public class UpdateCharacterC2S {
 		buf.writeInt(msg.noseType);
 		buf.writeInt(msg.mouthType);
 		buf.writeInt(msg.tattooType);
+		buf.writeUtf(msg.activeHeadBone);
 		buf.writeUtf(msg.hairColor);
 		buf.writeUtf(msg.bodyColor);
 		buf.writeUtf(msg.bodyColor2);
@@ -110,6 +114,7 @@ public class UpdateCharacterC2S {
 				buf.readUtf(),
 				buf.readUtf(),
 				buf.readUtf(),
+				buf.readUtf(),
 				buf.readUtf()
 		);
 	}
@@ -129,6 +134,7 @@ public class UpdateCharacterC2S {
 				c.setNoseType(msg.noseType);
 				c.setMouthType(msg.mouthType);
 				c.setTattooType(msg.tattooType);
+				c.setActiveHeadBone(msg.activeHeadBone);
 				c.setHairColor(msg.hairColor);
 				c.setBodyColor(msg.bodyColor);
 				c.setBodyColor2(msg.bodyColor2);

@@ -46,10 +46,8 @@ import java.util.function.IntConsumer;
 
 @OnlyIn(Dist.CLIENT)
 public class CharacterCustomizationScreen extends ScaledScreen {
-	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-			"textures/gui/buttons/characterbuttons.png");
-	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID,
-			"textures/gui/menu/menubig.png");
+	private static final ResourceLocation BUTTONS_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
+	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
 	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
 	private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
@@ -71,6 +69,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private float displayedBaseY = 0.0f;
 	private boolean initializedAnimations = false;
 	private static final List<String> PREVIEW_FORM_TYPE_ORDER = List.of("super", "android", "legendary", "god");
+	private final List<TabId> activeTabs = new ArrayList<>();
 
 	private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
 	private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
@@ -112,18 +111,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private enum TabId { PRESET, HAIR, EYES, FACE, BODY, AURA_CLASS }
 
 	private enum PreviewRenderMode {
-		FULL_BODY,
-		HAIR_ONLY,
-		EYES_ONLY,
-		NOSE_ONLY,
-		MOUTH_ONLY,
-		TATTOO_ONLY
+		FULL_BODY, HAIR_ONLY, EYES_ONLY, NOSE_ONLY, MOUTH_ONLY, TATTOO_ONLY
 	}
 
 	private static final class PreviewFormOption {
 		private final String groupName;
 		private final String formName;
-
 		private PreviewFormOption(String groupName, String formName) {
 			this.groupName = groupName;
 			this.formName = formName;
@@ -154,6 +147,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	@Override
 	protected void init() {
 		super.init();
+		activeTabs.clear();
+		activeTabs.add(TabId.PRESET);
+		if (getMaxHairForCurrentState() > 0) activeTabs.add(TabId.HAIR);
+		activeTabs.add(TabId.EYES);
+		activeTabs.add(TabId.FACE);
+		activeTabs.add(TabId.BODY);
+		activeTabs.add(TabId.AURA_CLASS);
+
 		resolveClassIndex();
 		reloadPreviewFormOptions();
 		refreshScreenWidgets();
@@ -169,7 +170,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void initTabWidgets() {
 		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
-		TabId tab = TabId.values()[currentTabIndex];
+		TabId tab = activeTabs.get(currentTabIndex);
 		switch (tab) {
 			case PRESET -> initPresetTab(top);
 			case HAIR -> initHairTab(top);
@@ -187,8 +188,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private void initHairTab(int top) {
 		int y = top + 28;
+		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, y - 18, "hairColor"));
 		if (HairManager.canUseHair(character)) {
-			addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, y - 18, "hairColor"));
 			addRenderableWidget(new TexturedTextButton.Builder()
 					.position(LEFT_PANEL_X + 33, getUiHeight() - 40)
 					.size(74, 20)
@@ -287,7 +288,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				})
 				.build());
 
-		Component rightText = currentTabIndex == TabId.values().length - 1
+		Component rightText = currentTabIndex == activeTabs.size() - 1
 				? (previousScreen == null ? tr("gui.dragonminez.customization.update") : tr("gui.dragonminez.customization.confirm"))
 				: tr("gui.dragonminez.customization.next");
 
@@ -299,7 +300,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				.textureSize(74, 20)
 				.message(rightText)
 				.onPress(btn -> {
-					if (currentTabIndex < TabId.values().length - 1) {
+					if (currentTabIndex < activeTabs.size() - 1) {
 						currentTabIndex++;
 						hideColorPicker();
 						refreshScreenWidgets();
@@ -394,14 +395,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int barY = getUiHeight() - 40;
 		int barH = 6;
 
-		float targetProgress = (currentTabIndex + 1) / (float) TabId.values().length;
+		float targetProgress = (currentTabIndex + 1) / (float) activeTabs.size();
 		displayedProgress = Mth.lerp(0.15f, displayedProgress, targetProgress);
 		int fillW = Mth.floor(barW * displayedProgress);
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 500.0D);
 
-		String text = (currentTabIndex + 1) + "/" + TabId.values().length;
+		String text = (currentTabIndex + 1) + "/" + activeTabs.size();
 		drawCenteredStringWithBorder(graphics, text, barX + barW / 2, barY - 12, 0xFFFFFF);
 
 		graphics.fill(barX - 1, barY - 1, barX + barW + 1, barY + barH + 1, 0xFFFFFFFF);
@@ -415,7 +416,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int panelY = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2;
 		int centerX = LEFT_PANEL_X + LEFT_PANEL_WIDTH / 2;
 		int top = panelY + LEFT_PANEL_PADDING;
-		TabId tab = TabId.values()[currentTabIndex];
+		TabId tab = activeTabs.get(currentTabIndex);
 
 		switch (tab) {
 			case PRESET -> renderPresetText(graphics, centerX, top);
@@ -432,9 +433,34 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
 	}
 
+	// Helper metod para identificar visualmente la opcion correcta
+	private int getCurrentHairOrBoneValue() {
+		String activeBone = character.getActiveHeadBone();
+		boolean supportsHair = HairManager.canUseHair(character);
+		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+
+		if (activeBone == null || activeBone.isEmpty() || activeBone.equals("hair")) {
+			return character.getHairId();
+		}
+
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+		if (config != null && config.getHeadBones() != null) {
+			int currentBoneIdx = 0;
+			for (String bone : config.getHeadBones()) {
+				if (bone.equals("hair")) continue;
+				if (bone.equals(activeBone)) {
+					return hairPresets + currentBoneIdx;
+				}
+				currentBoneIdx++;
+			}
+		}
+		return 0;
+	}
+
 	private void renderHairText(GuiGraphics graphics, int centerX, int top) {
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hair").getString(), centerX, top + 2, 0xFF9B9B);
-		renderPreviewGrid(graphics, top + 30, 1, getMaxHairForCurrentState(), character.getHairId(), PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
+		int maxHairIndex = Math.max(0, getMaxHairForCurrentState() - 1);
+		renderPreviewGrid(graphics, top + 30, 0, maxHairIndex, getCurrentHairOrBoneValue(), PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
 		drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
 	}
 
@@ -505,7 +531,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		float targetScale = 95.0f;
 		float targetBaseY = getUiHeight() / 2 + 112;
 
-		TabId tab = TabId.values()[currentTabIndex];
+		TabId tab = activeTabs.get(currentTabIndex);
 		if (tab == TabId.HAIR || tab == TabId.EYES || tab == TabId.FACE) {
 			targetScale = 150.0f;
 			targetBaseY = getUiHeight() / 2 + 246;
@@ -514,7 +540,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		if (!initializedAnimations) {
 			displayedScale = targetScale;
 			displayedBaseY = targetBaseY;
-			displayedProgress = (currentTabIndex + 1) / (float) TabId.values().length;
+			displayedProgress = (currentTabIndex + 1) / (float) activeTabs.size();
 			initializedAnimations = true;
 		}
 
@@ -591,7 +617,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int previewZoneRight = getUiWidth() - 16;
 		int centerX = previewZoneLeft + (previewZoneRight - previewZoneLeft) / 2;
 		int centerY = getUiHeight() / 2 + 112;
-		if (TabId.values()[currentTabIndex] == TabId.HAIR || TabId.values()[currentTabIndex] == TabId.EYES || TabId.values()[currentTabIndex] == TabId.FACE) {
+		if (activeTabs.get(currentTabIndex) == TabId.HAIR || activeTabs.get(currentTabIndex) == TabId.EYES || activeTabs.get(currentTabIndex) == TabId.FACE) {
 			centerY = getUiHeight() / 2 + 246;
 		}
 
@@ -633,7 +659,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
 		int direction = delta < 0 ? 1 : -1;
 
-		TabId tab = TabId.values()[currentTabIndex];
+		TabId tab = activeTabs.get(currentTabIndex);
 		switch (tab) {
 			case PRESET -> {
 				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, direction, bodyTypePreviewScrollRows)) {
@@ -642,14 +668,15 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				}
 			}
 			case HAIR -> {
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 1, getMaxHairForCurrentState(), PREVIEW_GRID_VISIBLE_ROWS, direction, hairPreviewScrollRows)) {
-					hairPreviewScrollRows = clampScrollRows(1, getMaxHairForCurrentState(), PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows + direction);
+				int maxHair = Math.max(0, getMaxHairForCurrentState() - 1);
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 30, 0, maxHair, PREVIEW_GRID_VISIBLE_ROWS, direction, hairPreviewScrollRows)) {
+					hairPreviewScrollRows = clampScrollRows(0, maxHair, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows + direction);
 					return true;
 				}
 			}
 			case EYES -> {
 				int maxEyes = Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase()));
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, maxEyes, PREVIEW_GRID_VISIBLE_ROWS, direction, eyesPreviewScrollRows)) {
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 30, 0, maxEyes, PREVIEW_GRID_VISIBLE_ROWS, direction, eyesPreviewScrollRows)) {
 					eyesPreviewScrollRows = clampScrollRows(0, maxEyes, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows + direction);
 					return true;
 				}
@@ -668,7 +695,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			}
 			case BODY -> {
 				int maxTattoo = Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase()));
-				if (tryScrollGrid(uiMouseX, uiMouseY, top + 40, 0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, direction, tattooPreviewScrollRows)) {
+				if (tryScrollGrid(uiMouseX, uiMouseY, top + 30, 0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, direction, tattooPreviewScrollRows)) {
 					tattooPreviewScrollRows = clampScrollRows(0, maxTattoo, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows + direction);
 					return true;
 				}
@@ -819,18 +846,12 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private int getMaxHairForCurrentState() {
-		int maxHair = 0;
-		String baseModel = getEffectiveModelBase();
-		switch (baseModel) {
-			case "human", "saiyan" -> maxHair = HairManager.getPresetCount();
-			case "namekian" -> maxHair = 3;
-			case "frostdemon", "bioandroid" -> maxHair = 1;
-			case "majin" -> maxHair = character.getGender().equals(Character.GENDER_FEMALE) ? HairManager.getPresetCount() : 2;
-		}
-		if (!ConfigManager.isDefaultRace(character.getRace().toLowerCase(Locale.ROOT)) && HairManager.canUseHair(character)) {
-			maxHair = HairManager.getPresetCount();
-		}
-		return Math.max(0, maxHair);
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+		if (config == null || config.getHeadBones() == null) return 0;
+		int count = 0;
+		if (HairManager.canUseHair(character)) count += HairManager.getPresetCount();
+		for (String bone : config.getHeadBones()) if (!bone.equals("hair")) count++;
+		return count;
 	}
 
 	private void syncCharacter() {
@@ -856,14 +877,45 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void setHairFromPreview(int value) {
-		if (character.getHairId() == value) return;
-		character.setHairId(value);
-		if (value == 0) {
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+		if (config == null || config.getHeadBones() == null) return;
+
+		boolean supportsHair = HairManager.canUseHair(character);
+		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+
+		String newActiveBone = null;
+		int newHairId = character.getHairId();
+
+		if (supportsHair && value < hairPresets) {
+			newActiveBone = "hair";
+			newHairId = value;
+		} else {
+			int boneIdxTarget = value - hairPresets;
+			int currentBoneIdx = 0;
+
+			for (String bone : config.getHeadBones()) {
+				if (bone.equals("hair")) continue;
+				if (currentBoneIdx == boneIdxTarget) {
+					newActiveBone = bone;
+					break;
+				}
+				currentBoneIdx++;
+			}
+		}
+
+		if (newActiveBone == null) return;
+		if (character.getHairId() == newHairId && newActiveBone.equals(character.getActiveHeadBone())) return;
+
+		character.setHairId(newActiveBone.equals("hair") ? newHairId : 0);
+		character.setActiveHeadBone(newActiveBone);
+
+		if (newHairId == 0 && newActiveBone.equals("hair")) {
 			character.setHairBase(new CustomHair());
 			character.setHairSSJ(new CustomHair());
 			character.setHairSSJ2(new CustomHair());
 			character.setHairSSJ3(new CustomHair());
 		}
+
 		syncCharacter();
 		refreshScreenWidgets();
 	}
@@ -1227,15 +1279,15 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 	private boolean handlePreviewGridClick(double uiMouseX, double uiMouseY) {
 		int top = getUiHeight() / 2 - LEFT_PANEL_HEIGHT / 2 + LEFT_PANEL_PADDING;
-		TabId tab = TabId.values()[currentTabIndex];
+		TabId tab = activeTabs.get(currentTabIndex);
 
 		return switch (tab) {
 			case PRESET -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, getCombinedBodyTypeCount(), PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows, this::setBodyTypeFromPreview);
-			case HAIR -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 1, getMaxHairForCurrentState(), PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows, this::setHairFromPreview);
-			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows, this::setEyesFromPreview);
+			case HAIR -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(0, getMaxHairForCurrentState() - 1), PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows, this::setHairFromPreview);
+			case EYES -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows, this::setEyesFromPreview);
 			case FACE -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), 1, nosePreviewScrollRows, this::setNoseFromPreview)
 					|| handlePreviewGridSelection(uiMouseX, uiMouseY, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), 2, mouthPreviewScrollRows, this::setMouthFromPreview);
-			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 40, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows, this::setTattooFromPreview);
+			case BODY -> handlePreviewGridSelection(uiMouseX, uiMouseY, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows, this::setTattooFromPreview);
 			default -> false;
 		};
 	}
@@ -1379,9 +1431,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int originalNose = character.getNoseType();
 		int originalMouth = character.getMouthType();
 		int originalTattoo = character.getTattooType();
+		String originalActiveBone = character.getActiveHeadBone(); // Guardado del hueso original
 		boolean oldHairPhysics = HairRenderer.PHYSICS_ENABLED;
-		boolean headOnlyPreview = mode == PreviewRenderMode.HAIR_ONLY || mode == PreviewRenderMode.EYES_ONLY
-				|| mode == PreviewRenderMode.NOSE_ONLY || mode == PreviewRenderMode.MOUTH_ONLY;
+
 		boolean[] hadTailState = {false};
 		boolean[] oldTailVisible = {true};
 
@@ -1405,7 +1457,28 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				}
 			}
 			case HAIR_ONLY -> {
-				character.setHairId(value);
+				boolean supportsHair = HairManager.canUseHair(character);
+				int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+
+				if (supportsHair && value < hairPresets) {
+					character.setHairId(value);
+					character.setActiveHeadBone("hair");
+				} else {
+					character.setHairId(0);
+					int boneIdxTarget = value - hairPresets;
+					int currentBoneIdx = 0;
+					RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+					if (config != null && config.getHeadBones() != null) {
+						for (String bone : config.getHeadBones()) {
+							if (bone.equals("hair")) continue;
+							if (currentBoneIdx == boneIdxTarget) {
+								character.setActiveHeadBone(bone);
+								break;
+							}
+							currentBoneIdx++;
+						}
+					}
+				}
 				character.setEyesType(0);
 				character.setNoseType(0);
 				character.setMouthType(0);
@@ -1488,9 +1561,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().popPose();
 		graphics.disableScissor();
 
-		if (previewApplied && snapshot != null) {
-			restoreLocalPlayerFormSnapshot(player, snapshot);
-		}
+		if (previewApplied && snapshot != null) restoreLocalPlayerFormSnapshot(player, snapshot);
 
 		player.yBodyRot = yBodyRotO;
 		player.yBodyRotO = yBodyRotOField;
@@ -1501,9 +1572,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		player.yHeadRot = yHeadRot;
 		player.tickCount = tickCountO;
 		player.setDeltaMovement(oldDeltaMovement);
-		if (hadTailState[0]) {
-			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> stats.getStatus().setTailVisible(oldTailVisible[0]));
-		}
+		if (hadTailState[0]) StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> stats.getStatus().setTailVisible(oldTailVisible[0]));
 
 		character.setGender(originalGender);
 		character.setBodyType(originalBody);
@@ -1512,6 +1581,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		character.setNoseType(originalNose);
 		character.setMouthType(originalMouth);
 		character.setTattooType(originalTattoo);
+		character.setActiveHeadBone(originalActiveBone); // Restaurado del hueso original
 		HairRenderer.PHYSICS_ENABLED = oldHairPhysics;
 	}
 
@@ -1542,6 +1612,4 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.drawString(font, borderComponent, x, y - 1, 0x000000, false);
 		graphics.drawString(font, text, x, y, textColor, false);
 	}
-
 }
-

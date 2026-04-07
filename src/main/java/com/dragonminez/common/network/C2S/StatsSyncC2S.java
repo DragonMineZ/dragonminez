@@ -24,6 +24,7 @@ public class StatsSyncC2S {
 	private final int noseType;
 	private final int mouthType;
 	private final int tattooType;
+	private final String activeHeadBone;
 	private final String hairColor;
 	private final String bodyColor;
 	private final String bodyColor2;
@@ -43,6 +44,7 @@ public class StatsSyncC2S {
 		this.noseType = character.getNoseType();
 		this.mouthType = character.getMouthType();
 		this.tattooType = character.getTattooType();
+		this.activeHeadBone = character.getActiveHeadBone();
 		this.hairColor = character.getHairColor();
 		this.bodyColor = character.getBodyColor();
 		this.bodyColor2 = character.getBodyColor2();
@@ -67,6 +69,7 @@ public class StatsSyncC2S {
 		buf.writeInt(msg.noseType);
 		buf.writeInt(msg.mouthType);
 		buf.writeInt(msg.tattooType);
+		buf.writeUtf(msg.activeHeadBone);
 		buf.writeUtf(msg.hairColor);
 		buf.writeUtf(msg.bodyColor);
 		buf.writeUtf(msg.bodyColor2);
@@ -90,6 +93,7 @@ public class StatsSyncC2S {
 		int noseType = buf.readInt();
 		int mouthType = buf.readInt();
 		int tattooType = buf.readInt();
+		String activeHeadBone = buf.readUtf();
 		String hairColor = buf.readUtf();
 		String bodyColor = buf.readUtf();
 		String bodyColor2 = buf.readUtf();
@@ -100,13 +104,13 @@ public class StatsSyncC2S {
 
 		return new StatsSyncC2S(
 			raceName, gender, characterClass, hairId, customHair, bodyType, eyesType,
-			noseType, mouthType, tattooType, hairColor, bodyColor, bodyColor2, bodyColor3,
+			noseType, mouthType, tattooType, activeHeadBone, hairColor, bodyColor, bodyColor2, bodyColor3,
 			eye1Color, eye2Color, auraColor
 		);
 	}
 
 	private StatsSyncC2S(String raceName, String gender, String characterClass, int hairId, CustomHair customHair, int bodyType, int eyesType,
-	                     int noseType, int mouthType, int tattooType, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
+	                     int noseType, int mouthType, int tattooType, String activeHeadBone, String hairColor, String bodyColor, String bodyColor2, String bodyColor3,
 	                     String eye1Color, String eye2Color, String auraColor) {
 		this.raceName = raceName;
 		this.gender = gender;
@@ -118,6 +122,7 @@ public class StatsSyncC2S {
 		this.noseType = noseType;
 		this.mouthType = mouthType;
 		this.tattooType = tattooType;
+		this.activeHeadBone = activeHeadBone;
 		this.hairColor = hairColor;
 		this.bodyColor = bodyColor;
 		this.bodyColor2 = bodyColor2;
@@ -145,6 +150,7 @@ public class StatsSyncC2S {
 				character.setNoseType(msg.noseType);
 				character.setMouthType(msg.mouthType);
 				character.setTattooType(msg.tattooType);
+				character.setActiveHeadBone(msg.activeHeadBone);
 				character.setHairColor(msg.hairColor);
 				character.setBodyColor(msg.bodyColor);
 				character.setBodyColor2(msg.bodyColor2);

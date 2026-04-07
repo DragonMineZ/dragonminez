@@ -8,8 +8,8 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
-import com.dragonminez.common.util.lists.FrostDemonForms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -55,10 +56,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 
 	@Override
 	public void render(PoseStack poseStack, T animatable, BakedGeoModel playerModel, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
-
-		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 
 		int playerId = animatable.getId();
 		long gameTime = animatable.level().getGameTime();
@@ -100,28 +98,19 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(animatable.getId(), 0.0f);
 
-		renderRacePartsForAnchor(poseStack, animatable, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
+		BakedGeoModel playerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
+
+		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
 		bufferSource.getBuffer(renderType);
 	}
 
-	private String resolveAccessoryBone(String accessoryName) {
-		if (accessoryName == null || accessoryName.isEmpty()) return "";
-		return switch (accessoryName.toLowerCase()) {
-			case "saiyan_tail" -> "tailenrolled";
-			case "majin_tail" -> "colamajin";
-			case "namek_antennas", "antennas" -> "antenas";
-			case "namek_ears", "namek_ears1", "majin_ears", "majin_ears1", "ears", "ears1" -> "orejas1";
-			case "namek_ears2", "majin_ears2", "ears2" -> "orejas2";
-			case "namek_ears3", "majin_ears3", "female_ears", "ears3" -> "orejas3";
-			case "frost_horns", "horns", "horns1" -> "cuernos";
-			case "frost_horns2", "horns2" -> "cuernos2";
-			default -> accessoryName;
-		};
-	}
-
-	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
+	private void renderRacePartsForAnchor(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, StatsData stats, String anchor, float partialTick, int packedLight, float alpha, float tintProgress) {
 		var character = stats.getCharacter();
 		String race = character.getRaceName().toLowerCase();
+		String currentForm = character.getActiveForm();
+
+		boolean isOozaru = currentForm != null && currentForm.toLowerCase().contains("oozaru");
+		if (isOozaru) return;
 
 		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
 		if (raceConfig == null) return;
@@ -133,66 +122,114 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		int phase = TransformationsHelper.getKaiokenPhase(stats);
 		float[] topAuraColor = getTopAuraColor(stats);
 
-		boolean hasForm = character.hasActiveForm() && character.getActiveFormData() != null;
-		boolean formHasAccessories = hasForm && character.getActiveFormData().getRacialAccessories() != null && character.getActiveFormData().getRacialAccessories().length > 0;
-		boolean baseHasAccessories = raceConfig.getRacialAccessories() != null && raceConfig.getRacialAccessories().length > 0;
+		float[] accessoryColor = character.getRgbHairColor();
 
-		if (formHasAccessories || baseHasAccessories) {
-			String[] accessories = formHasAccessories ? character.getActiveFormData().getRacialAccessories() : raceConfig.getRacialAccessories();
+		if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getHairColor().isEmpty()) {
+			accessoryColor = character.getActiveFormData().getRgbHairColor();
+		}
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getHairColor().isEmpty()) {
+			accessoryColor = character.getActiveStackFormData().getRgbHairColor();
+		}
 
-			for (int i = 0; i < accessories.length; i++) {
-				final int index = i;
-				String configName = accessories[index];
-				String boneName = resolveAccessoryBone(configName);
-				if (!anchor.equals(resolveAnchorForRacePart(boneName))) {
-					continue;
+		if (stats.getStatus().isActionCharging()) {
+			if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+				var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
+					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
+				}
+			} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+				var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+				if (nextForm != null && !nextForm.getHairColor().isEmpty()) {
+					float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+					accessoryColor = DMZSkinLayer.lerpColor(factor, accessoryColor, nextForm.getRgbHairColor());
+				}
+			}
+		}
+
+		if (anchor.equals("head")) {
+			String activeBone = character.getActiveHeadBone();
+
+			if (activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
+
+				GeoBone targetBone = partsModel.getBone(activeBone).orElse(null);
+				boolean fromPlayerModel = false;
+
+				if (targetBone == null) {
+					targetBone = playerModel.getBone(activeBone).orElse(null);
+					fromPlayerModel = true;
 				}
 
-				partsModel.getBone(boneName).ifPresent(targetBone -> {
-					float[] rgb = formHasAccessories ? character.getActiveFormData().getRgbAccessoryColor(index) : raceConfig.getRgbAccessoryColor(index);
-					float[] tintedColor = applyAuraTint(rgb[0], rgb[1], rgb[2], phase, topAuraColor, tintProgress);
+				if (targetBone != null) {
+					if (!fromPlayerModel) {
+						syncTargetBoneAndParents(targetBone, playerModel);
+					}
+					float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
+					if (activeBone.contains("horn") && character.getRaceName().equals("frostdemon")) tintedColor = ColorUtils.hexToRgb("#1A1A1A");
+					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				}
+			}
+
+			if (race.equals("namekian") || race.equals("namekian_orange")) {
+
+				GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
+				boolean antennaFromPlayerModel = false;
+
+				if (antennaBone == null) {
+					antennaBone = playerModel.getBone("antennas1").orElse(null);
+					antennaFromPlayerModel = true;
+				}
+
+				if (antennaBone != null) {
+					if (!antennaFromPlayerModel) {
+						syncTargetBoneAndParents(antennaBone, playerModel);
+					}
+					float[] tintedColor = applyAuraTint(accessoryColor[0], accessoryColor[1], accessoryColor[2], phase, topAuraColor, tintProgress);
+					renderTargetedBone(antennaBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
+				}
+			}
+		}
+
+		if (anchor.equals("body")) {
+			boolean isSaiyanLogic = race.equals("saiyan");
+			boolean hasSaiyanTail = raceConfig.getHasSaiyanTail() != null && raceConfig.getHasSaiyanTail();
+
+			if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) {
+				partsModel.getBone("tailenrolled").ifPresent(targetBone -> {
+					syncTargetBoneAndParents(targetBone, playerModel);
+					float[] tailColor = ColorUtils.hexToRgb("#572117");
+
+					if (character.getBodyColor2() != null && !character.getBodyColor2().isEmpty()) {
+						tailColor = character.getRgbBodyColor2();
+					}
+					if (character.hasActiveForm() && character.getActiveFormData() != null && !character.getActiveFormData().getBodyColor2().isEmpty()) {
+						tailColor = character.getActiveFormData().getRgbBodyColor2();
+					}
+					if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && !character.getActiveStackFormData().getBodyColor2().isEmpty()) {
+						tailColor = character.getActiveStackFormData().getRgbBodyColor2();
+					}
+
+					if (stats.getStatus().isActionCharging()) {
+						if (stats.getStatus().getSelectedAction() == ActionMode.FORM) {
+							var nextForm = TransformationsHelper.getNextAvailableForm(stats);
+							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
+								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
+							}
+						} else if (stats.getStatus().getSelectedAction() == ActionMode.STACK) {
+							var nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
+							if (nextForm != null && !nextForm.getBodyColor2().isEmpty()) {
+								float factor = Mth.clamp(stats.getResources().getActionCharge() / 100.0f, 0.0f, 1.0f);
+								tailColor = DMZSkinLayer.lerpColor(factor, tailColor, nextForm.getRgbBodyColor2());
+							}
+						}
+					}
+
+					float[] tintedColor = applyAuraTint(tailColor[0], tailColor[1], tailColor[2], phase, topAuraColor, tintProgress);
 					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
 				});
 			}
-		} else {
-			String fallbackBone = resolveFallbackBone(stats);
-			if (fallbackBone == null) return;
-			if (!anchor.equals(resolveAnchorForRacePart(fallbackBone))) return;
-
-			partsModel.getBone(fallbackBone).ifPresent(targetBone -> {
-				float[] renderColor = setupPartsAndColor(partsModel, stats);
-
-				if (renderColor != null) {
-					float[] tintedColor = applyAuraTint(renderColor[0], renderColor[1], renderColor[2], phase, topAuraColor, tintProgress);
-					renderTargetedBone(targetBone, poseStack, bufferSource, animatable, partsRenderType, tintedColor[0], tintedColor[1], tintedColor[2], alpha, partialTick, packedLight);
-				}
-			});
 		}
-	}
-
-	private String resolveAnchorForRacePart(String racePartBone) {
-		if ("tailenrolled".equals(racePartBone)) {
-			return "body";
-		}
-
-		return "head";
-	}
-
-	private String resolveFallbackBone(StatsData stats) {
-		var character = stats.getCharacter();
-		String race = character.getRaceName().toLowerCase();
-		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-		RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
-
-		boolean isSaiyanLogic = race.equals("saiyan");
-		boolean hasSaiyanTail = raceConfig != null && raceConfig.getHasSaiyanTail();
-		if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && character.isHasSaiyanTail()) return "tailenrolled";
-
-		if (race.equals("namekian") || race.equals("namekian_orange")) return "antenas";
-		if (race.equals("majin")) return character.getGender().toLowerCase().contains("female") ? "orejas3" : "colamajin";
-		if (race.startsWith("frostdemon")) return currentForm.equals(FrostDemonForms.SECOND_FORM) ? "cuernos2" : "cuernos";
-
-		return null;
 	}
 
 	private void renderTargetedBone(GeoBone targetBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float alpha, float partialTick, int packedLight) {
@@ -225,58 +262,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		float newB = b * (1.0f - intensity) + (auraColor[2] * intensity);
 
 		return new float[]{newR, newG, newB};
-	}
-
-	private float[] setupPartsAndColor(BakedGeoModel partsModel, StatsData stats) {
-		var character = stats.getCharacter();
-		String race = character.getRaceName().toLowerCase();
-		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
-		String currentStackForm = character.getActiveStackForm() != null ? character.getActiveStackForm().toLowerCase() : "";
-		boolean hasForm = (character.hasActiveForm() && !currentForm.equals("base") && !currentForm.isEmpty());
-		boolean hasStackForm = (character.hasActiveStackForm() && !currentStackForm.equals("base") && !currentStackForm.isEmpty());
-
-		float[] colorBody1 = character.getRgbBodyColor();
-		float[] colorBody2 = character.getRgbBodyColor2();
-
-		if (hasForm && character.getActiveFormData() != null) {
-			String formBody = character.getActiveFormData().getBodyColor1();
-			if (formBody != null && !formBody.isEmpty()) colorBody1 = character.getActiveFormData().getRgbBodyColor1();
-
-			String formBody2 = character.getActiveFormData().getBodyColor2();
-			if (formBody2 != null && !formBody2.isEmpty()) colorBody2 = character.getActiveFormData().getRgbBodyColor2();
-		}
-
-		if (hasStackForm && character.getActiveStackFormData() != null) {
-			String formBody = character.getActiveStackFormData().getBodyColor1();
-			if (formBody != null && !formBody.isEmpty()) colorBody1 = character.getActiveStackFormData().getRgbBodyColor1();
-
-			String formBody2 = character.getActiveStackFormData().getBodyColor2();
-			if (formBody2 != null && !formBody2.isEmpty()) colorBody2 = character.getActiveStackFormData().getRgbBodyColor2();
-		}
-
-		boolean isSaiyanLogic = race.equals("saiyan");
-		boolean isOozaru = currentForm.contains("oozaru");
-		boolean hasSaiyanTail = ConfigManager.getRaceCharacter(race) != null && ConfigManager.getRaceCharacter(race).getHasSaiyanTail();
-
-		if ((isSaiyanLogic || hasSaiyanTail) && !stats.getStatus().isTailVisible() && !isOozaru && character.isHasSaiyanTail()) {
-			boolean hasBodyColor2 = character.getBodyColor2() != null && !character.getBodyColor2().isEmpty();
-			return (hasBodyColor2 || hasForm || hasStackForm || stats.getStatus().isActionCharging()) ? colorBody2 : ColorUtils.hexToRgb("#572117");
-		}
-
-		if (race.equals("namekian") || race.equals("namekian_orange")) return colorBody1;
-		if (race.startsWith("majin")) return colorBody1;
-
-		if (race.startsWith("frostdemon")) {
-			boolean isSpecialForm = currentForm.equals(FrostDemonForms.FINAL_FORM) ||
-					currentForm.equals(FrostDemonForms.FULLPOWER) ||
-					currentForm.equals(FrostDemonForms.THIRD_FORM) ||
-					currentForm.contains("fifth");
-
-			if (isSpecialForm) return null;
-			return ColorUtils.rgbIntToFloat(0x1A1A1A);
-		}
-
-		return null;
 	}
 
 	private void syncModelToPlayer(BakedGeoModel partsModel, BakedGeoModel playerModel) {

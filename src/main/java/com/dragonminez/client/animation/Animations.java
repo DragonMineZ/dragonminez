@@ -25,6 +25,10 @@ public class Animations {
 	public static final RawAnimation DRAIN = RawAnimation.begin().thenPlay("animation.base.absorb");
 	public static final RawAnimation MINING1 = RawAnimation.begin().thenPlay("animation.base.mining1");
 	public static final RawAnimation MINING2 = RawAnimation.begin().thenPlay("animation.base.mining2");
+	public static final RawAnimation CHARGE_HEAVY_PUNCH = RawAnimation.begin().thenLoop("animation.base.charge_heavy_punch");
+	public static final RawAnimation CHARGE_HEAVY_PUNCH_FIRE = RawAnimation.begin().thenPlay("animation.base.charge_heavy_punch_fire");
+	public static final RawAnimation CHARGE_LIGHT_PUNCH = RawAnimation.begin().thenLoop("animation.base.charge_light_punch");
+	public static final RawAnimation CHARGE_LIGHT_PUNCH_FIRE = RawAnimation.begin().thenPlay("animation.base.charge_light_punch_fire");
 	public static final RawAnimation KI_CHARGE = RawAnimation.begin().thenLoop("animation.base.ki_charge");
 	public static final RawAnimation TRANSFORMATION = RawAnimation.begin().thenLoop("animation.base.transformation");
 	public static final RawAnimation OOZARU_TRANSFORMATION = RawAnimation.begin().thenLoop("animation.base.ozaru_tr");
