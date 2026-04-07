@@ -9,6 +9,7 @@ import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
 import com.dragonminez.client.render.DMZRendererCache;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
+import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
 import com.dragonminez.common.config.ConfigManager;
@@ -54,6 +55,7 @@ public class ForgeClientEvents {
 
 	@SubscribeEvent
 	public static void onPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+		TextureCounter.clearCache();
 		if (Minecraft.getInstance().player == null) return;
 		StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(data -> {
 			isHasCreatedCharacterCache = data.getStatus().isHasCreatedCharacter();
@@ -196,6 +198,7 @@ public class ForgeClientEvents {
 	public static void onClientDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
 		ConfigManager.clearServerSync();
 		DMZRendererCache.clear();
+		TextureCounter.clearCache();
 		introToastShownThisSession = false;
 		pendingCharacterCreationReopen = false;
 		characterCreationOpenCooldownTicks = 0;

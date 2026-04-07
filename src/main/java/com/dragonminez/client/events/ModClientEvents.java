@@ -20,6 +20,7 @@ import com.dragonminez.client.model.KiBladeModel;
 import com.dragonminez.client.model.KiScytheModel;
 import com.dragonminez.client.model.KiTridentModel;
 import com.dragonminez.client.util.KeyBinds;
+import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.armor.client.model.ArmorBaseModel;
 import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
@@ -36,6 +37,9 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
@@ -65,6 +69,21 @@ public class ModClientEvents {
 		e.registerAboveAll("tracked_quest_hud", TrackedQuestHUD.HUD_TRACKED_QUEST);
 		e.registerAboveAll("techniquehud", TechniqueHotbarHUD.HUD_TECHNIQUES);
 	}
+
+  @SubscribeEvent
+  public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
+    event.registerReloadListener(new SimplePreparableReloadListener<Void>() {
+      @Override
+      protected Void prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+        return null;
+      }
+
+      @Override
+      protected void apply(Void unused, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+        TextureCounter.clearCache();
+      }
+    });
+  }
 
     @SubscribeEvent
     public static void onKeyRegister(RegisterKeyMappingsEvent event) {

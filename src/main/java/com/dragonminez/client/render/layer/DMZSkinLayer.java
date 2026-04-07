@@ -288,28 +288,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 		}
 
-		if (faceKey.equals("human") || faceKey.equals("saiyan") || faceKey.equals("saiyan_ssj4") || faceKey.equals("buffed")) {
-			renderHumanFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, hair, pt, pl, po, alpha);
-			return;
-		}
-		if (faceKey.equals("namekian") || faceKey.equals("namekian_orange")) {
-			renderNamekianFace(model, poseStack, animatable, bufferSource, character, eye1, eye2, skin, pt, pl, po, alpha);
-			return;
-		}
-		if (faceKey.startsWith("frostdemon")) {
-			renderFrostFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, skin, b2, pt, pl, po, alpha);
-			return;
-		}
-		if (faceKey.startsWith("bioandroid")) {
-			renderBioFace(model, poseStack, animatable, bufferSource, character, faceKey, isModelEmpty, race, eye1, eye2, pt, pl, po, alpha);
-			return;
-		}
-		if (faceKey.equals("majin") || faceKey.equals("majin_super") || faceKey.equals("majin_ultra") || faceKey.equals("majin_evil") || faceKey.equals("majin_kid")) {
-			renderMajinFace(model, poseStack, animatable, bufferSource, character, eye1, skin, pt, pl, po, alpha);
-			return;
-		}
+		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("saiyan_ssj4") && !faceKey.equals("buffed")
+				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange")
+				&& !faceKey.startsWith("frostdemon") && !faceKey.startsWith("bioandroid")
+				&& !faceKey.startsWith("majin")) {
 
-		renderCustomFace(model, poseStack, animatable, bufferSource, character, race, eye1, eye2, skin, hair, pt, pl, po, alpha);
+			var rConfig = ConfigManager.getRaceCharacter(race);
+			if (rConfig != null && Boolean.TRUE.equals(rConfig.getIsLayered())) {
+				renderCustomFace(model, poseStack, animatable, bufferSource, character, faceKey, race, eye1, eye2, skin, hair, pt, pl, po, alpha);
+			}
+			return;
+		}
 
 		switch (race) {
 			case "human", "saiyan" ->
@@ -323,6 +312,20 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			case "majin" ->
 					renderMajinFace(model, poseStack, animatable, bufferSource, character, eye1, skin, pt, pl, po, alpha);
 		}
+	}
+
+	private void renderCustomFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, String race, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
+		String folder = "textures/entity/races/" + race + "/faces/";
+		String prefix = faceKey + "_";
+		float[] white = {1.0f, 1.0f, 1.0f};
+
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_" + character.getEyesType() + "_0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_0_0.png")).getPath(), white, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_" + character.getEyesType() + "_1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_0_1.png")).getPath(), eye1, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_" + character.getEyesType() + "_2.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_0_2.png")).getPath(), eye2, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_" + character.getEyesType() + "_3.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "eye_0_3.png")).getPath(), hair, pt, pl, po, alpha);
+
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "nose_" + character.getNoseType() + ".png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "nose_0.png")).getPath(), skin, pt, pl, po, alpha);
+		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "mouth_" + character.getMouthType() + ".png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + prefix + "mouth_0.png")).getPath(), skin, pt, pl, po, alpha);
 	}
 
 	private void renderHumanFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
@@ -404,20 +407,6 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "0.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer0.png")).getPath(), eye2, pt, pl, po, alpha);
 		renderColoredLayer(model, poseStack, animatable, bufferSource, getSafeTexture(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, textureBase + "1.png"), ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, folder + "base_eye_layer1.png")).getPath(), eye1, pt, pl, po, alpha);
-	}
-
-	private void renderCustomFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, String faceKey, float[] eye1, float[] eye2, float[] skin, float[] hair, float pt, int pl, int po, float alpha) {
-		String folder = "textures/entity/races/" + faceKey + "/faces/";
-		String prefix = faceKey + "_";
-		float[] white = {1.0f, 1.0f, 1.0f};
-
-		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_0.png", white, pt, pl, po, alpha);
-		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_1.png", eye1, pt, pl, po, alpha);
-		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_2.png", eye2, pt, pl, po, alpha);
-		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "eye_" + character.getEyesType() + "_3.png", hair, pt, pl, po, alpha);
-
-		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "nose_" + character.getNoseType() + ".png", skin, pt, pl, po, alpha);
-		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + prefix + "mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
 	}
 
 	private void renderMajinFace(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, Character character, float[] eye1, float[] skin, float pt, int pl, int po, float alpha) {

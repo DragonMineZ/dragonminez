@@ -38,11 +38,6 @@ public class FormConfig {
 		private String name = "";
 		private Integer unlockOnSkillLevel = 0;
 		private String customModel = "";
-		private Boolean isLayered = false;
-		private Integer layerAmount = 3;
-		private String[] extraLayersColor = new String[0];
-		private String[] racialAccessories = new String[0];
-		private String[] accessoriesColors = new String[0];
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";
@@ -89,8 +84,6 @@ public class FormConfig {
 		private transient float[] rgbEye1Color;
 		private transient float[] rgbEye2Color;
 		private transient float[] rgbAuraColor;
-		private transient float[][] rgbAccessoriesColors;
-		private transient float[][] rgbExtraLayersColor;
 
 		public Double getStrMultiplier() {
 			return Math.max(0.01, strMultiplier);
@@ -172,18 +165,6 @@ public class FormConfig {
 			return customModel != null && !customModel.isEmpty();
 		}
 
-		public String getAccessoryColor(int index) {
-			if (accessoriesColors == null || accessoriesColors.length == 0) return "#FFFFFF";
-			if (index < accessoriesColors.length) return accessoriesColors[index];
-			return accessoriesColors[accessoriesColors.length - 1];
-		}
-
-		public String getExtraLayerColor(int index) {
-			if (extraLayersColor == null || extraLayersColor.length == 0) return "#FFFFFF";
-			if (index < extraLayersColor.length) return extraLayersColor[index];
-			return extraLayersColor[extraLayersColor.length - 1];
-		}
-
 		public Boolean hasBodyColorOverride() {
 			return !bodyColor1.isEmpty() || !bodyColor2.isEmpty() || !bodyColor3.isEmpty();
 		}
@@ -210,30 +191,6 @@ public class FormConfig {
 
 		public TransformationPostShaderConfig getTransformationPostShader() {
 			return transformationPostShader != null ? transformationPostShader : new TransformationPostShaderConfig();
-		}
-
-		public float[] getRgbAccessoryColor(int index) {
-			if (rgbAccessoriesColors == null || rgbAccessoriesColors.length != accessoriesColors.length) {
-				rgbAccessoriesColors = new float[accessoriesColors.length][];
-				for (int i = 0; i < accessoriesColors.length; i++) {
-					rgbAccessoriesColors[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(accessoriesColors[i]);
-				}
-			}
-			if (rgbAccessoriesColors.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
-			if (index < rgbAccessoriesColors.length) return rgbAccessoriesColors[index];
-			return rgbAccessoriesColors[rgbAccessoriesColors.length - 1];
-		}
-
-		public float[] getRgbExtraLayerColor(int index) {
-			if (rgbExtraLayersColor == null || rgbExtraLayersColor.length != extraLayersColor.length) {
-				rgbExtraLayersColor = new float[extraLayersColor.length][];
-				for (int i = 0; i < extraLayersColor.length; i++) {
-					rgbExtraLayersColor[i] = com.dragonminez.client.util.ColorUtils.hexToRgb(extraLayersColor[i]);
-				}
-			}
-			if (rgbExtraLayersColor.length == 0) return new float[]{1.0f, 1.0f, 1.0f};
-			if (index < rgbExtraLayersColor.length) return rgbExtraLayersColor[index];
-			return rgbExtraLayersColor[rgbExtraLayersColor.length - 1];
 		}
 
 		public float[] getRgbBodyColor1() {

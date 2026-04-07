@@ -137,9 +137,20 @@ public class SkinGathererProvider {
 			case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
 			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
 			default -> {
-				String gender = raceConfig.getHasGender() ? "_" + character.getGender().toLowerCase() : "";
-				ResourceLocation customTex = getCachedTexture("textures/entity/races/" + logicKey + gender + ".png");
-				consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
+				boolean hasGender = Boolean.TRUE.equals(raceConfig.getHasGender());
+				String genSuffix = hasGender ? ((character.getGender().equalsIgnoreCase("female") || character.getGender().equalsIgnoreCase("mujer")) ? "_female" : "_male") : "";
+
+				if (Boolean.TRUE.equals(raceConfig.getIsLayered())) {
+					String prefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_" + bodyType + "_";
+					String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
+
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+				} else {
+					ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
+					consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);
+				}
 			}
 		}
 	}

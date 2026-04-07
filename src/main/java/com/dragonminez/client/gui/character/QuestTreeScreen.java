@@ -1161,7 +1161,16 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int maxLines = Math.max(1, (height - 24) / 10);
 		int drawY = y + 18;
 		for (int i = 0; i < Math.min(maxLines, lines.size()); i++) {
-			drawStringWithBorder(graphics, txt(lines.get(i)), x + 8, drawY, 0xFFCCCCCC);
+			String line = lines.get(i);
+			if (line.startsWith("✓ ") || line.startsWith("✕ ")) {
+				String marker = line.substring(0, 2);
+				String rest = line.substring(2);
+				int markerColor = marker.startsWith("✓") ? 0xFF55FF55 : 0xFFFF5555;
+				drawPlainStringWithBorder(graphics, marker, x + 8, drawY, markerColor);
+				drawStringWithBorder(graphics, txt(rest), x + 8 + this.font.width(marker), drawY, 0xFFCCCCCC);
+			} else {
+				drawStringWithBorder(graphics, txt(line), x + 8, drawY, 0xFFCCCCCC);
+			}
 			drawY += 10;
 		}
 	}
@@ -2734,6 +2743,16 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		graphics.drawString(this.font, borderComponent, x, y + 1, borderColor, false);
 		graphics.drawString(this.font, borderComponent, x, y - 1, borderColor, false);
 		graphics.drawString(this.font, text, x, y, textColor, false);
+	}
+
+	private void drawPlainStringWithBorder(GuiGraphics graphics, String text, int x, int y, int textColor) {
+		int borderColor = 0xFF000000;
+		Component marker = Component.literal(text).withStyle(ChatFormatting.BOLD);
+		graphics.drawString(this.font, marker, x + 1, y, borderColor, false);
+		graphics.drawString(this.font, marker, x - 1, y, borderColor, false);
+		graphics.drawString(this.font, marker, x, y + 1, borderColor, false);
+		graphics.drawString(this.font, marker, x, y - 1, borderColor, false);
+		graphics.drawString(this.font, marker, x, y, textColor, false);
 	}
 
 	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
