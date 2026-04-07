@@ -4,8 +4,8 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.AxisSlider;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
+import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.hair.CustomHair;
@@ -13,7 +13,6 @@ import com.dragonminez.common.hair.CustomHair.HairFace;
 import com.dragonminez.common.hair.HairManager;
 import com.dragonminez.common.hair.HairStrand;
 import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.network.C2S.StatsSyncC2S;
 import com.dragonminez.common.network.C2S.UpdateCustomHairC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.character.Character;
@@ -22,14 +21,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -38,9 +35,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
@@ -48,753 +42,127 @@ public class HairEditorScreen extends ScaledScreen {
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
-
-	private static final ResourceLocation PANORAMA_HUMAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/panorama");
 	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
-	private static final ResourceLocation PANORAMA_NAMEK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/n_panorama");
-	private static final ResourceLocation PANORAMA_BIO = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/bio_panorama");
-	private static final ResourceLocation PANORAMA_FROST = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/c_panorama");
-	private static final ResourceLocation PANORAMA_MAJIN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/buu_panorama");
-
-	private final PanoramaRenderer panoramaHuman = new PanoramaRenderer(new CubeMap(PANORAMA_HUMAN));
-	private final PanoramaRenderer panoramaSaiyan = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
-	private final PanoramaRenderer panoramaNamek = new PanoramaRenderer(new CubeMap(PANORAMA_NAMEK));
-	private final PanoramaRenderer panoramaBio = new PanoramaRenderer(new CubeMap(PANORAMA_BIO));
-	private final PanoramaRenderer panoramaFrost = new PanoramaRenderer(new CubeMap(PANORAMA_FROST));
-	private final PanoramaRenderer panoramaMajin = new PanoramaRenderer(new CubeMap(PANORAMA_MAJIN));
-
-	protected static boolean GLOBAL_SWITCHING = false;
 
 	private static final Set<String> DEV_NAMES = Set.of("Dev", "ImYuseix", "ezShokkoh", "narukebaransu");
+	private final PanoramaRenderer panorama = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
 
 	private final Screen previousScreen;
 	private final Character character;
-	private CustomHair editingHair;
-	private final CustomHair backupBase;
-	private final CustomHair backupSSJ;
-	private final CustomHair backupSSJ2;
-	private final CustomHair backupSSJ3;
-	private final int originalHairId;
-	private final boolean usePanorama;
-	private boolean isSwitchingMenu = false;
 
+	private enum Tab { OVERVIEW, STYLE, STRAND }
+	private Tab currentTab = Tab.OVERVIEW;
+
+	private final CustomHair[] workingHairs = new CustomHair[4];
+	private final CustomHair[] backupHairs = new CustomHair[4];
+
+	private int selectedStyle = 0;
 	private HairFace currentFace = HairFace.FRONT;
 	private int selectedStrandIndex = 0;
 
-	private EditMode editMode = EditMode.LENGTH;
+	private boolean physicsEnabled = true;
+	private boolean mirrorEnabled = false;
 
 	private float playerRotation = 180.0f;
 	private float playerPitch = 0.0f;
-	private double lastMouseY = 0;
 	private boolean isDraggingModel = false;
 	private double lastMouseX = 0;
+	private double lastMouseY = 0;
 
-	private EditBox codeField;
+	private EditBox fullCodeBox;
+	private EditBox individualCodeBox;
 
-	private final List<CustomTextureButton> controlButtons = new ArrayList<>();
+	private AxisSlider lengthSlider;
+	private AxisSlider widthSlider;
+	private AxisSlider xAxisSlider;
+	private AxisSlider zAxisSlider;
+	private AxisSlider xBendSlider;
+	private AxisSlider zBendSlider;
 
+	private boolean colorPickerVisible = false;
 	private ColorSlider hueSlider;
 	private ColorSlider saturationSlider;
 	private ColorSlider valueSlider;
-	private boolean colorPickerVisible = false;
-	private TexturedTextButton colorButton;
-
-	private int editorMode = 0;
-	private boolean physicsEnabled = true;
-	private CustomTextureButton modeButton;
-	private CustomTextureButton physicsButton;
-	private TexturedTextButton exportButton;
-	private TexturedTextButton importButton;
-
 	private EditBox hexColorField;
+	private TexturedTextButton colorButton;
 	private boolean isUpdatingFromCode = false;
 
-	public enum EditMode {
-		LENGTH("gui.dragonminez.hair_editor.mode.length"),
-		ROTATION("gui.dragonminez.hair_editor.mode.rotation"),
-		CURVE("gui.dragonminez.hair_editor.mode.curve"),
-		SCALE("gui.dragonminez.hair_editor.mode.scale");
-
-		private final String translationKey;
-
-		EditMode(String translationKey) {
-			this.translationKey = translationKey;
-		}
-
-		public String getTranslationKey() {
-			return translationKey;
-		}
-	}
-
 	public HairEditorScreen(Screen previousScreen, Character character) {
-		super(Component.literal("Hair Editor").withStyle(Style.EMPTY.withFont(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth"))));
+		super(Component.translatable("gui.dragonminez.hair_editor.title").withStyle(Style.EMPTY.withFont(DMZ_FONT)));
 		this.previousScreen = previousScreen;
 		this.character = character;
-
-		this.usePanorama = previousScreen instanceof CharacterCustomizationScreen;
-
-		this.originalHairId = character.getHairId();
 
 		if (character.getHairId() > 0) {
 			int id = character.getHairId();
 			String color = character.getHairColor();
-
 			character.setHairBase(HairManager.getPresetHair(id, color).copy());
 			character.setHairSSJ(HairManager.getPresetHairSSJ(id, color).copy());
 			character.setHairSSJ2(HairManager.getPresetHairSSJ2(id, color).copy());
 			character.setHairSSJ3(HairManager.getPresetHairSSJ3(id, color).copy());
-
 			character.setHairId(0);
-
-			NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, character.getHairBase()));
-			NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, character.getHairSSJ()));
-			NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, character.getHairSSJ2()));
-			NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, character.getHairSSJ3()));
 		}
 
-		if (character.getHairBase() == null) character.setHairBase(new CustomHair());
-		if (character.getHairSSJ() == null) character.setHairSSJ(character.getHairBase().copy());
-		if (character.getHairSSJ2() == null) character.setHairSSJ2(character.getHairBase().copy());
-		if (character.getHairSSJ3() == null) character.setHairSSJ3(character.getHairBase().copy());
+		workingHairs[0] = character.getHairBase() != null ? character.getHairBase().copy() : new CustomHair();
+		workingHairs[1] = character.getHairSSJ() != null ? character.getHairSSJ().copy() : workingHairs[0].copy();
+		workingHairs[2] = character.getHairSSJ2() != null ? character.getHairSSJ2().copy() : workingHairs[1].copy();
+		workingHairs[3] = character.getHairSSJ3() != null ? character.getHairSSJ3().copy() : workingHairs[2].copy();
 
-		this.editorMode = 0;
-		this.editingHair = character.getHairBase();
+		for (int i = 0; i < 4; i++) {
+			backupHairs[i] = workingHairs[i].copy();
+		}
 
-		this.backupBase = character.getHairBase().copy();
-		this.backupSSJ = character.getHairSSJ().copy();
-		this.backupSSJ2 = character.getHairSSJ2().copy();
-		this.backupSSJ3 = character.getHairSSJ3().copy();
+		HairRenderer.EDITING_STRAND_ID = -1;
 	}
 
 	@Override
 	protected void init() {
 		super.init();
+		clearWidgets();
+		initGlobalUI();
 
-		initLeftPanelButtons();
-		initControlButtons();
-		initColorPicker();
-		initBottomButtons();
-
-		updateEditingHairReference();
-	}
-
-	private void initLeftPanelButtons() {
-		int leftPanelX = 12;
-		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
-
-		int buttonY = leftPanelY + 165;
-
-		int modeX = leftPanelX + 10;
-		for (EditMode mode : EditMode.values()) {
-			final EditMode m = mode;
-			addRenderableWidget(Button.builder(
-					tr(mode.getTranslationKey()),
-					btn -> {
-						editMode = m;
-						rebuildWidgets();
-					}
-			).bounds(modeX, buttonY, 28, 16).build());
-			modeX += 30;
-		}
-
-		modeButton = new CustomTextureButton.Builder()
-				.position(leftPanelX + 50, leftPanelY + 185)
-				.size(10, 15)
-				.texture(STAT_BUTTONS)
-				.textureCoords(20, 0, 20, 14)
-				.textureSize(8, 14)
-				.message(Component.empty())
-				.onPress(btn -> cycleEditorMode())
-				.build();
-		addRenderableWidget(modeButton);
-
-		physicsButton = new CustomTextureButton.Builder()
-				.position(leftPanelX + 105, leftPanelY + 185)
-				.size(10, 15)
-				.texture(STAT_BUTTONS)
-				.textureCoords(20, 0, 20, 14)
-				.textureSize(8, 14)
-				.message(Component.empty())
-				.onPress(btn -> physicsEnabled = !physicsEnabled)
-				.build();
-		addRenderableWidget(physicsButton);
-	}
-
-	private void cycleEditorMode() {
-		editorMode++;
-		if (editorMode > 3) editorMode = 0;
-
-		updateEditingHairReference();
-		selectedStrandIndex = 0;
-		rebuildWidgets();
-	}
-
-	private void updateEditingHairReference() {
-		switch (editorMode) {
-			case 0 -> this.editingHair = character.getHairBase();
-			case 1 -> {
-				if (character.getHairSSJ() == null || character.getHairSSJ().isEmpty()) character.setHairSSJ(character.getHairBase().copy());
-				this.editingHair = character.getHairSSJ();
-			}
-			case 2 -> {
-				if (character.getHairSSJ2() == null || character.getHairSSJ2().isEmpty()) character.setHairSSJ2(character.getHairBase().copy());
-				this.editingHair = character.getHairSSJ2();
-			}
-			case 3 -> {
-				if (character.getHairSSJ3() == null || character.getHairSSJ3().isEmpty()) character.setHairSSJ3(character.getHairBase().copy());
-				this.editingHair = character.getHairSSJ3();
-			}
+		switch (currentTab) {
+			case OVERVIEW -> initOverviewTab();
+			case STYLE -> initStyleTab();
+			case STRAND -> initStrandTab();
 		}
 	}
 
-	private void modifyLength(int direction) {
-		if (editingHair == null || selectedStrandIndex == -1) return;
-		HairStrand strand = getSelectedStrand();
-		if (strand == null) return;
-
-		String username = this.minecraft.getUser().getName();
-		boolean isDev = DEV_NAMES.contains(username);
-		boolean isSSJ3 = (this.editorMode == 3);
-
-		int maxCubes = 4;
-		if (isDev) maxCubes = 12;
-		else if (isSSJ3) maxCubes = 8;
-
-		int len = strand.getLength();
-		float scale = Math.round(strand.getLengthScale() * 10.0f) / 10.0f;
-
-		if (direction > 0) {
-			if (len < 4) {
-				len++;
-				scale = 1.0f;
-			} else if (len == 4) {
-				if (scale < 1.5f) {
-					scale += 0.1f;
-				} else if (maxCubes > 4) {
-					len++;
-					scale = 1.5f;
-				}
-			} else if (len > 4 && len < maxCubes) {
-				len++;
-				if (scale < 1.5f) scale = 1.5f;
-			} else if (len == maxCubes && scale < 2.0f) {
-				scale += 0.1f;
-			} else if (isDev && scale >= 2.0f) {
-				len++;
-			}
-		} else {
-			if (len > maxCubes) {
-				len--;
-			} else if (len == maxCubes && scale > 1.5f) {
-				scale -= 0.1f;
-			} else if (len > 4) {
-				len--;
-				if (len == 4) scale = 1.5f;
-			} else if (len == 4 && scale > 1.0f) {
-				scale -= 0.1f;
-			} else if (len > 0 && scale <= 1.05f) {
-				len--;
-				scale = 1.0f;
-			}
-		}
-
-		scale = Math.round(scale * 10.0f) / 10.0f;
-		if (scale < 1.0f) scale = 1.0f;
-		if (scale > 2.0f) scale = 2.0f;
-
-		strand.setLength(len);
-		strand.setLengthScale(scale);
-
-		syncHairToServer();
-	}
-
-	private void initControlButtons() {
-		clearControlButtons();
-
-		int leftPanelX = 12;
-		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
-		int startY = leftPanelY + 40 + 35 + 15;
-
-		HairStrand strand = getSelectedStrand();
-		if (strand == null) return;
-
-		switch (editMode) {
-			case LENGTH -> {
-				CustomTextureButton decreaseBtn = new CustomTextureButton.Builder()
-						.position(leftPanelX + 30, startY)
-						.size(14, 11)
-						.texture(STAT_BUTTONS)
-						.textureCoords(142, 0, 142, 10)
-						.textureSize(10, 10)
-						.onPress(button -> {
-							HairStrand s = getSelectedStrand();
-							if (s != null) {
-								modifyLength(-1);
-							}
-						})
-						.sound(MainSounds.UI_MENU_SWITCH.get())
-						.build();
-				controlButtons.add(decreaseBtn);
-				this.addRenderableWidget(decreaseBtn);
-
-				CustomTextureButton increaseBtn = new CustomTextureButton.Builder()
-						.position(leftPanelX + 95, startY)
-						.size(14, 11)
-						.texture(STAT_BUTTONS)
-						.textureCoords(0, 0, 0, 10)
-						.textureSize(10, 10)
-						.onPress(button -> {
-							HairStrand s = getSelectedStrand();
-							if (s != null) {
-								modifyLength(1);
-							}
-						})
-						.sound(MainSounds.UI_MENU_SWITCH.get())
-						.build();
-				controlButtons.add(increaseBtn);
-				this.addRenderableWidget(increaseBtn);
-			}
-			case ROTATION, CURVE -> {
-				int btnY = startY + 20;
-				createAxisButtons(leftPanelX, btnY - 38);
-			}
-			case SCALE -> {
-				int btnY = startY + 20;
-				createScaleButtons(leftPanelX, btnY - 38);
-			}
-		}
-	}
-
-	private void createAxisButtons(int panelX, int btnY) {
-		int sliderX = panelX + 30;
-		int sliderWidth = 79;
-		int sliderHeight = 11;
-
-		HairStrand strand = getSelectedStrand();
-		if (strand == null) return;
-
-		float minValue, maxValue;
-		if (editMode == EditMode.ROTATION) {
-			minValue = -180f;
-			maxValue = 180f;
-		} else {
-			minValue = -50f;
-			maxValue = 50f;
-		}
-
-		AxisSlider sliderX_axis = new AxisSlider.Builder()
-				.position(sliderX, btnY)
-				.size(sliderWidth, sliderHeight)
-				.range(minValue, maxValue)
-				.value(editMode == EditMode.ROTATION ? strand.getRotationX() : strand.getCurveX())
-				.axis(AxisSlider.Axis.X)
-				.onValueChange(value -> {
-					HairStrand s = getSelectedStrand();
-					if (s != null) {
-						if (editMode == EditMode.ROTATION) {
-							s.setRotation(value, s.getRotationY(), s.getRotationZ());
-						} else {
-							s.setCurve(value, s.getCurveY(), s.getCurveZ());
-						}
-						syncHairToServer();
-					}
-				})
-				.build();
-		this.addRenderableWidget(sliderX_axis);
-
-		AxisSlider sliderY = new AxisSlider.Builder()
-				.position(sliderX, btnY + 26)
-				.size(sliderWidth, sliderHeight)
-				.range(minValue, maxValue)
-				.value(editMode == EditMode.ROTATION ? strand.getRotationY() : strand.getCurveY())
-				.axis(AxisSlider.Axis.Y)
-				.onValueChange(value -> {
-					HairStrand s = getSelectedStrand();
-					if (s != null) {
-						if (editMode == EditMode.ROTATION) {
-							s.setRotation(s.getRotationX(), value, s.getRotationZ());
-						} else {
-							s.setCurve(s.getCurveX(), value, s.getCurveZ());
-						}
-						syncHairToServer();
-					}
-				})
-				.build();
-		this.addRenderableWidget(sliderY);
-
-		AxisSlider sliderZ = new AxisSlider.Builder()
-				.position(sliderX, btnY + 52)
-				.size(sliderWidth, sliderHeight)
-				.range(minValue, maxValue)
-				.value(editMode == EditMode.ROTATION ? strand.getRotationZ() : strand.getCurveZ())
-				.axis(AxisSlider.Axis.Z)
-				.onValueChange(value -> {
-					HairStrand s = getSelectedStrand();
-					if (s != null) {
-						if (editMode == EditMode.ROTATION) {
-							s.setRotation(s.getRotationX(), s.getRotationY(), value);
-						} else {
-							s.setCurve(s.getCurveX(), s.getCurveY(), value);
-						}
-						syncHairToServer();
-					}
-				})
-				.build();
-		this.addRenderableWidget(sliderZ);
-	}
-
-	private void createScaleButtons(int panelX, int btnY) {
-		int sliderX = panelX + 30;
-		int sliderWidth = 79;
-		int sliderHeight = 11;
-
-		HairStrand strand = getSelectedStrand();
-		if (strand == null) return;
-
-		float minValue = 0.5f;
-		float maxValue = 3.0f;
-
-		AxisSlider sliderX_axis = new AxisSlider.Builder()
-				.position(sliderX, btnY)
-				.size(sliderWidth, sliderHeight)
-				.range(minValue, maxValue)
-				.value(strand.getScaleX())
-				.axis(AxisSlider.Axis.X)
-				.onValueChange(value -> {
-					HairStrand s = getSelectedStrand();
-					if (s != null) {
-						s.setScale(value, s.getScaleY(), s.getScaleZ());
-						syncHairToServer();
-					}
-				})
-				.build();
-		this.addRenderableWidget(sliderX_axis);
-
-		AxisSlider sliderY = new AxisSlider.Builder()
-				.position(sliderX, btnY + 26)
-				.size(sliderWidth, sliderHeight)
-				.range(minValue, maxValue)
-				.value(strand.getScaleY())
-				.axis(AxisSlider.Axis.Y)
-				.onValueChange(value -> {
-					HairStrand s = getSelectedStrand();
-					if (s != null) {
-						s.setScale(s.getScaleX(), value, s.getScaleZ());
-						syncHairToServer();
-					}
-				})
-				.build();
-		this.addRenderableWidget(sliderY);
-
-		AxisSlider sliderZ = new AxisSlider.Builder()
-				.position(sliderX, btnY + 52)
-				.size(sliderWidth, sliderHeight)
-				.range(minValue, maxValue)
-				.value(strand.getScaleZ())
-				.axis(AxisSlider.Axis.Z)
-				.onValueChange(value -> {
-					HairStrand s = getSelectedStrand();
-					if (s != null) {
-						s.setScale(s.getScaleX(), s.getScaleY(), value);
-						syncHairToServer();
-					}
-				})
-				.build();
-		this.addRenderableWidget(sliderZ);
-	}
-
-	private void clearControlButtons() {
-		for (CustomTextureButton btn : controlButtons) {
-			this.removeWidget(btn);
-		}
-		controlButtons.clear();
-	}
-
-	private void initColorPicker() {
-		int leftPanelX = 12;
-		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
-
-		int colorBtnX = leftPanelX + 105;
-		int colorBtnY = leftPanelY + 140;
-
-		String currentColor = getCurrentStrandColor();
-		int colorInt = ColorUtils.hexToInt(currentColor);
-
-		colorButton = new TexturedTextButton.Builder()
-				.position(colorBtnX, colorBtnY)
-				.size(20, 20)
-				.texture(STAT_BUTTONS)
-				.textureCoords(42, 15, 42, 15)
-				.textureSize(5, 5)
-				.message(Component.empty())
-				.backgroundColor(colorInt)
-				.onPress(btn -> toggleColorPicker())
-				.build();
-		addRenderableWidget(colorButton);
-
-		int sliderX = leftPanelX + 10;
-		int sliderY = leftPanelY + 105;
-		int sliderWidth = 115;
-
-		hueSlider = new ColorSlider.Builder()
-				.position(sliderX, sliderY)
-				.size(sliderWidth, 10)
-				.range(0, 360)
-				.value(0)
-				.message(txt("H"))
-				.onValueChange(val -> updateColorFromSliders())
-				.build();
-
-		saturationSlider = new ColorSlider.Builder()
-				.position(sliderX, sliderY + 12)
-				.size(sliderWidth, 10)
-				.range(100, 0)
-				.value(100)
-				.message(txt("S"))
-				.onValueChange(val -> updateColorFromSliders())
-				.build();
-
-		valueSlider = new ColorSlider.Builder()
-				.position(sliderX, sliderY + 24)
-				.size(sliderWidth, 10)
-				.range(100, 0)
-				.value(100)
-				.message(txt("V"))
-				.onValueChange(val -> updateColorFromSliders())
-				.build();
-
-		addRenderableWidget(hueSlider);
-		addRenderableWidget(saturationSlider);
-		addRenderableWidget(valueSlider);
-
-		hexColorField = new EditBox(this.font, sliderX, sliderY + 36, sliderWidth, 12, txt("Hex"));
-		hexColorField.setMaxLength(7);
-		hexColorField.setResponder(this::onHexFieldChange);
-		addRenderableWidget(hexColorField);
-
-		setSlidersVisible(false);
-	}
-
-	private void onHexFieldChange(String hex) {
-		if (isUpdatingFromCode) return;
-		if (hex.startsWith("#")) hex = hex.substring(1);
-
-		if (hex.length() == 6) {
-			isUpdatingFromCode = true;
-			try {
-				float[] hsv = ColorUtils.hexToHsv("#" + hex);
-				if (hueSlider != null) hueSlider.setValue((int) hsv[0]);
-				if (saturationSlider != null) {
-					int satValue = (int) hsv[1];
-					saturationSlider.setValue(satValue == 0 ? 100 : satValue);
-					saturationSlider.setCurrentHue(hsv[0]);
-				}
-				if (valueSlider != null) {
-					int valValue = (int) hsv[2];
-					valueSlider.setValue(valValue == 0 ? 100 : valValue);
-					valueSlider.setCurrentHue(hsv[0]);
-					valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
-				}
-
-				applyColorToStrand("#" + hex);
-
-				character.setHairId(0);
-				switch (editorMode) {
-					case 1 -> character.setHairSSJ(editingHair);
-					case 2 -> character.setHairSSJ2(editingHair);
-					case 3 -> character.setHairSSJ3(editingHair);
-					default -> character.setHairBase(editingHair);
-				}
-				NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
-
-			} catch (Exception ignored) {}
-			isUpdatingFromCode = false;
-		}
-	}
-
-	private String getCurrentStrandColor() {
-		HairStrand strand = getSelectedStrand();
-		if (strand != null && strand.hasCustomColor()) {
-			return strand.getColor();
-		}
-		if (!character.hasActiveForm()) {
-			String hairColor = character.getHairColor();
-			if (hairColor != null && !hairColor.isEmpty()) {
-				return hairColor;
-			}
-		}
-		return editingHair.getGlobalColor();
-	}
-
-	private void toggleColorPicker() {
-		colorPickerVisible = !colorPickerVisible;
-
-		if (colorPickerVisible) {
-			String currentColor = getCurrentStrandColor();
-			float[] hsv = ColorUtils.hexToHsv(currentColor);
-
-			if (hueSlider != null) hueSlider.setValue((int) hsv[0]);
-			if (saturationSlider != null) {
-				int satValue = (int) hsv[1];
-				if (satValue == 0) satValue = 100;
-				saturationSlider.setValue(satValue);
-			}
-			if (valueSlider != null) {
-				int valValue = (int) hsv[2];
-				if (valValue == 0) valValue = 100;
-				valueSlider.setValue(valValue);
-			}
-
-			if (saturationSlider != null) saturationSlider.setCurrentHue(hsv[0]);
-			if (valueSlider != null) {
-				valueSlider.setCurrentHue(hsv[0]);
-				valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
-			}
-
-			isUpdatingFromCode = true;
-			if (hexColorField != null) hexColorField.setValue(getCurrentStrandColor());
-			isUpdatingFromCode = false;
-		}
-
-		setSlidersVisible(colorPickerVisible);
-	}
-
-	private void setSlidersVisible(boolean visible) {
-		if (hueSlider != null) hueSlider.visible = visible;
-		if (saturationSlider != null) saturationSlider.visible = visible;
-		if (valueSlider != null) valueSlider.visible = visible;
-		if (hexColorField != null) hexColorField.visible = visible;
-	}
-
-	private void updateColorFromSliders() {
-		if (!colorPickerVisible) return;
-
-		float h = hueSlider.getValue();
-		float s = saturationSlider.getValue();
-		float v = valueSlider.getValue();
-
-		saturationSlider.setCurrentHue(h);
-		valueSlider.setCurrentHue(h);
-		valueSlider.setCurrentSaturation(s);
-
-		String newColor = ColorUtils.hsvToHex(h, s, v);
-
-		isUpdatingFromCode = true;
-		if (hexColorField != null && !hexColorField.isFocused()) hexColorField.setValue(newColor);
-		isUpdatingFromCode = false;
-
-		applyColorToStrand(newColor);
-		character.setHairId(0);
-		switch (editorMode) {
-			case 1 -> character.setHairSSJ(editingHair);
-			case 2 -> character.setHairSSJ2(editingHair);
-			case 3 -> character.setHairSSJ3(editingHair);
-			default -> character.setHairBase(editingHair);
-		}
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
-	}
-
-	private void applyColorToStrand(String color) {
-		HairStrand strand = getSelectedStrand();
-		if (strand != null) {
-			strand.setColor(color);
-			updateColorButton();
-		}
-	}
-
-	private void updateColorButton() {
-		if (colorButton != null) {
-			this.removeWidget(colorButton);
-		}
-
-		int leftPanelX = 12;
-		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
-		int colorBtnX = leftPanelX + 105;
-		int colorBtnY = leftPanelY + 140;
-
-		String currentColor = getCurrentStrandColor();
-		int colorInt = ColorUtils.hexToInt(currentColor);
-
-		colorButton = new TexturedTextButton.Builder()
-				.position(colorBtnX, colorBtnY)
-				.size(20, 20)
-				.texture(STAT_BUTTONS)
-				.textureCoords(42, 15, 42, 15)
-				.textureSize(5, 5)
-				.message(Component.empty())
-				.backgroundColor(colorInt)
-				.onPress(btn -> toggleColorPicker())
-				.build();
-		addRenderableWidget(colorButton);
-	}
-
-	private void initBottomButtons() {
-		int bottomY = getUiHeight() - 30;
-		int centerX = getUiWidth() / 2;
-
-		codeField = new EditBox(this.font, centerX - 70, bottomY - 25, 140, 18,
-				tr("gui.dragonminez.hair_editor.code"));
-		codeField.setMaxLength(65536);
-		addRenderableWidget(codeField);
-
-		exportButton = new TexturedTextButton.Builder()
-				.position(centerX - 70 - 84, bottomY - 25)
-				.size(74, 20)
-				.texture(STAT_BUTTONS)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.hair_editor.export"))
-				.onPress(btn -> exportCode())
-				.build();
-		addRenderableWidget(exportButton);
-
-		importButton = new TexturedTextButton.Builder()
-				.position(centerX + 70 + 14, bottomY - 25)
-				.size(74, 20)
-				.texture(STAT_BUTTONS)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.hair_editor.import"))
-				.onPress(btn -> importCode())
-				.build();
-		addRenderableWidget(importButton);
-
+	private void initGlobalUI() {
 		addRenderableWidget(new TexturedTextButton.Builder()
-				.position(centerX - 163, bottomY)
+				.position(12, 12)
 				.size(74, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.hair_editor.reset"))
-				.onPress(btn -> resetHair())
+				.message(currentTab == Tab.OVERVIEW ? tr("gui.dragonminez.hair_editor.cancel") : tr("gui.dragonminez.customization.back"))
+				.onPress(btn -> navigateBack())
 				.build());
 
+		int rightEdge = getUiWidth() - 12;
+
+		addRenderableWidget(new SwitchButton(rightEdge - 30, 15, mirrorEnabled, Component.empty(), btn -> {
+			mirrorEnabled = !mirrorEnabled;
+			((SwitchButton) btn).toggle();
+			Minecraft.getInstance().player.playSound(mirrorEnabled ? MainSounds.SWITCH_ON.get() : MainSounds.SWITCH_OFF.get());
+		}));
+		addRenderableWidget(new SwitchButton(rightEdge - 90, 15, physicsEnabled, Component.empty(), btn -> {
+			physicsEnabled = !physicsEnabled;
+			((SwitchButton) btn).toggle();
+			Minecraft.getInstance().player.playSound(physicsEnabled ? MainSounds.SWITCH_ON.get() : MainSounds.SWITCH_OFF.get());
+		}));
+
 		addRenderableWidget(new TexturedTextButton.Builder()
-				.position(centerX - 79, bottomY)
+				.position(rightEdge - 156, getUiHeight() - 32)
 				.size(74, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(0, 28, 0, 48)
 				.textureSize(74, 20)
 				.message(tr("gui.dragonminez.hair_editor.save"))
-				.onPress(btn -> saveAndClose())
+				.onPress(btn -> saveChanges())
 				.build());
 
 		addRenderableWidget(new TexturedTextButton.Builder()
-				.position(centerX + 5, bottomY)
-				.size(74, 20)
-				.texture(STAT_BUTTONS)
-				.textureCoords(0, 28, 0, 48)
-				.textureSize(74, 20)
-				.message(tr("gui.dragonminez.hair_editor.cancel"))
-				.onPress(btn -> cancelAndClose())
-				.build());
-
-		addRenderableWidget(new TexturedTextButton.Builder()
-				.position(centerX + 89, bottomY)
+				.position(rightEdge - 74, getUiHeight() - 32)
 				.size(74, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(0, 28, 0, 48)
@@ -804,275 +172,712 @@ public class HairEditorScreen extends ScaledScreen {
 				.build());
 	}
 
-	private void resetHair() {
-		editingHair.clear();
-		selectedStrandIndex = 0;
-		colorPickerVisible = false;
+	private void initOverviewTab() {
+		HairRenderer.EDITING_STRAND_ID = -1;
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int panelY = centerY - 105;
+
+		String[] styleNames = {"gui.dragonminez.hair_editor.style.0", "gui.dragonminez.hair_editor.style.1", "gui.dragonminez.hair_editor.style.2", "gui.dragonminez.hair_editor.style.3"};
+		for (int i = 0; i < 4; i++) {
+			int finalI = i;
+			int yOffset = panelY + 40 + (i * 25);
+
+			addRenderableWidget(new TexturedTextButton.Builder()
+					.position(leftPanelX + 15, yOffset)
+					.size(74, 20)
+					.texture(STAT_BUTTONS)
+					.textureCoords(0, 28, 0, 48)
+					.textureSize(74, 20)
+					.message(tr(styleNames[i]))
+					.onPress(btn -> {
+						selectedStyle = finalI;
+						currentTab = Tab.STYLE;
+						rebuildWidgets();
+					})
+					.build());
+
+			addRenderableWidget(new CustomTextureButton.Builder()
+					.position(leftPanelX + 105, yOffset + 4)
+					.size(14, 11)
+					.texture(STAT_BUTTONS)
+					.textureCoords(10, 0, 10, 10)
+					.textureSize(10, 10)
+					.onPress(btn -> {
+						workingHairs[finalI].clear();
+						updateFullCodeBox();
+					})
+					.build());
+		}
+
+		fullCodeBox = new EditBox(font, leftPanelX + 15, panelY + 150, 110, 16, txt(""));
+		fullCodeBox.setMaxLength(65536);
+		addRenderableWidget(fullCodeBox);
+		updateFullCodeBox();
+
+		addRenderableWidget(new CustomTextureButton.Builder()
+				.position(leftPanelX + 45, panelY + 175)
+				.size(20, 20)
+				.texture(STAT_BUTTONS)
+				.textureCoords(182, 0, 182, 20)
+				.textureSize(20, 20)
+				.message(Component.empty())
+				.onPress(btn -> {
+					fillEmptyStyles(workingHairs);
+					updateFullCodeBox();
+					Minecraft.getInstance().keyboardHandler.setClipboard(fullCodeBox.getValue());
+				})
+				.build());
+
+		addRenderableWidget(new CustomTextureButton.Builder()
+				.position(leftPanelX + 75, panelY + 175)
+				.size(20, 20)
+				.texture(STAT_BUTTONS)
+				.textureCoords(162, 0, 162, 20)
+				.textureSize(20, 20)
+				.message(Component.empty())
+				.onPress(btn -> {
+					String code = fullCodeBox.getValue();
+					if (HairManager.isFullSetCode(code)) {
+						CustomHair[] set = HairManager.fromFullSetCode(code);
+						if (set != null) {
+							System.arraycopy(set, 0, workingHairs, 0, 4);
+							syncHairToServer();
+						}
+					}
+				})
+				.build());
+	}
+
+	private void initStyleTab() {
+		HairRenderer.EDITING_STRAND_ID = -1;
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int panelY = centerY - 82;
+
+		individualCodeBox = new EditBox(font, leftPanelX + 15, panelY + 150, 110, 16, txt(""));
+		individualCodeBox.setMaxLength(65536);
+		addRenderableWidget(individualCodeBox);
+		updateIndividualCodeBox();
+
+		addRenderableWidget(new CustomTextureButton.Builder()
+				.position(leftPanelX + 45, panelY + 175)
+				.size(20, 20)
+				.texture(STAT_BUTTONS)
+				.textureCoords(182, 0, 182, 20)
+				.textureSize(20, 20)
+				.message(Component.empty())
+				.onPress(btn -> Minecraft.getInstance().keyboardHandler.setClipboard(individualCodeBox.getValue()))
+				.build());
+
+		addRenderableWidget(new CustomTextureButton.Builder()
+				.position(leftPanelX + 75, panelY + 175)
+				.size(20, 20)
+				.texture(STAT_BUTTONS)
+				.textureCoords(162, 0, 162, 20)
+				.textureSize(20, 20)
+				.message(Component.empty())
+				.onPress(btn -> {
+					String code = individualCodeBox.getValue();
+					CustomHair imported = HairManager.fromCode(code);
+					if (imported != null) {
+						workingHairs[selectedStyle] = imported;
+						syncHairToServer();
+						rebuildWidgets();
+					}
+				})
+				.build());
+	}
+
+	private void initStrandTab() {
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int panelY = centerY - 105;
+
+		HairStrand strand = getSelectedStrand();
+		if (strand != null) {
+			HairRenderer.EDITING_STRAND_ID = strand.getId();
+		}
+
+		int startY = panelY + 44;
+		int sliderX = leftPanelX + 16;
+		int sliderWidth = 85;
+
+		boolean isDev = DEV_NAMES.contains(minecraft.getUser().getName());
+		boolean isSSJ3 = (selectedStyle == 3);
+		int maxCubes = isDev ? 10 : (isSSJ3 ? 8 : 4);
+		float maxWidth = isDev ? 3.0f : 1.5f;
+
+		float curLenMap = strand != null ? strand.getLength() + (strand.getLengthScale() - 1.0f) * 2.0f : 0;
+
+		lengthSlider = new AxisSlider.Builder()
+				.position(sliderX, startY)
+				.size(sliderWidth, 11)
+				.range(0, maxCubes + 1)
+				.value(curLenMap)
+				.axis(AxisSlider.Axis.Y)
+				.onValueChange(val -> {
+					HairStrand s = getSelectedStrand();
+					if (s == null) return;
+					int len = Math.min(maxCubes, (int) Math.floor(val));
+					float scale = val > maxCubes ? 1.0f + (val - maxCubes) * 0.5f : 1.0f;
+					s.setLength(len);
+					s.setLengthScale(scale);
+					applyMirror();
+					syncHairToServer();
+				})
+				.build();
+
+		widthSlider = new AxisSlider.Builder()
+				.position(sliderX, startY + 25)
+				.size(sliderWidth, 11)
+				.range(0.5f, maxWidth)
+				.value(strand != null ? strand.getScaleX() : 1.0f)
+				.axis(AxisSlider.Axis.Y)
+				.onValueChange(val -> {
+					HairStrand s = getSelectedStrand();
+					if (s != null) {
+						s.setScale(val, s.getScaleY(), val);
+						applyMirror();
+						syncHairToServer();
+					}
+				})
+				.build();
+
+		xAxisSlider = new AxisSlider.Builder()
+				.position(sliderX, startY + 50)
+				.size(sliderWidth, 11)
+				.range(-180f, 180f)
+				.value(strand != null ? strand.getRotationX() : 0)
+				.axis(AxisSlider.Axis.X)
+				.onValueChange(val -> {
+					HairStrand s = getSelectedStrand();
+					if (s != null) {
+						s.setRotation(val, s.getRotationY(), s.getRotationZ());
+						applyMirror();
+						syncHairToServer();
+					}
+				})
+				.build();
+
+		zAxisSlider = new AxisSlider.Builder()
+				.position(sliderX, startY + 75)
+				.size(sliderWidth, 11)
+				.range(-180f, 180f)
+				.value(strand != null ? strand.getRotationZ() : 0)
+				.axis(AxisSlider.Axis.Z)
+				.onValueChange(val -> {
+					HairStrand s = getSelectedStrand();
+					if (s != null) {
+						s.setRotation(s.getRotationX(), s.getRotationY(), val);
+						applyMirror();
+						syncHairToServer();
+					}
+				})
+				.build();
+
+		xBendSlider = new AxisSlider.Builder()
+				.position(sliderX, startY + 100)
+				.size(sliderWidth, 11)
+				.range(-180f, 180f)
+				.value(strand != null ? strand.getCurveX() : 0)
+				.axis(AxisSlider.Axis.X)
+				.onValueChange(val -> {
+					HairStrand s = getSelectedStrand();
+					if (s != null) {
+						s.setCurve(val, s.getCurveY(), s.getCurveZ());
+						applyMirror();
+						syncHairToServer();
+					}
+				})
+				.build();
+
+		zBendSlider = new AxisSlider.Builder()
+				.position(sliderX, startY + 125)
+				.size(sliderWidth, 11)
+				.range(-180f, 180f)
+				.value(strand != null ? strand.getCurveZ() : 0)
+				.axis(AxisSlider.Axis.Z)
+				.onValueChange(val -> {
+					HairStrand s = getSelectedStrand();
+					if (s != null) {
+						s.setCurve(s.getCurveX(), s.getCurveY(), val);
+						applyMirror();
+						syncHairToServer();
+					}
+				})
+				.build();
+
+		addRenderableWidget(lengthSlider);
+		addRenderableWidget(widthSlider);
+		addRenderableWidget(xAxisSlider);
+		addRenderableWidget(zAxisSlider);
+		addRenderableWidget(xBendSlider);
+		addRenderableWidget(zBendSlider);
+
+		String currentColor = getCurrentStrandColor();
+		colorButton = new TexturedTextButton.Builder()
+				.position(sliderX + 30, startY + 140)
+				.size(20, 20)
+				.texture(STAT_BUTTONS)
+				.textureCoords(42, 15, 42, 15)
+				.textureSize(5, 5)
+				.message(Component.empty())
+				.backgroundColor(ColorUtils.hexToInt(currentColor))
+				.onPress(btn -> toggleColorPicker())
+				.build();
+		addRenderableWidget(colorButton);
+
+		addRenderableWidget(new CustomTextureButton.Builder()
+				.position(sliderX + 60, startY + 145)
+				.size(14, 11)
+				.texture(STAT_BUTTONS)
+				.textureCoords(10, 0, 10, 10)
+				.textureSize(10, 10)
+				.onPress(btn -> {
+					HairStrand s = getSelectedStrand();
+					if (s != null) {
+						s.setColor(null);
+						applyMirrorColor(null);
+						colorButton.setBackgroundColor(ColorUtils.hexToInt(getCurrentStrandColor()));
+						syncHairToServer();
+					}
+				})
+				.build());
+
+		initColorPicker();
+	}
+
+	private void applyMirror() {
+		if (!mirrorEnabled) return;
+		HairStrand source = getSelectedStrand();
+		if (source == null) return;
+
+		HairFace mirrorFace = currentFace;
+		int mirrorIndex = selectedStrandIndex;
+
+		if (currentFace == HairFace.FRONT || currentFace == HairFace.BACK || currentFace == HairFace.TOP) {
+			int col = selectedStrandIndex % currentFace.cols;
+			int row = selectedStrandIndex / currentFace.cols;
+			int mirrorCol = (currentFace.cols - 1) - col;
+			if (mirrorCol == col) return;
+			mirrorIndex = row * currentFace.cols + mirrorCol;
+		} else if (currentFace == HairFace.LEFT) {
+			mirrorFace = HairFace.RIGHT;
+		} else if (currentFace == HairFace.RIGHT) {
+			mirrorFace = HairFace.LEFT;
+		}
+
+		HairStrand target = workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
+		if (target != null) {
+			target.setLength(source.getLength());
+			target.setLengthScale(source.getLengthScale());
+			target.setScale(source.getScaleX(), source.getScaleY(), source.getScaleZ());
+			target.setRotation(source.getRotationX(), source.getRotationY(), -source.getRotationZ());
+			target.setCurve(source.getCurveX(), source.getCurveY(), -source.getCurveZ());
+			target.setColor(source.getColor());
+		}
+	}
+
+	private void applyMirrorColor(String color) {
+		if (!mirrorEnabled) return;
+		HairFace mirrorFace = currentFace;
+		int mirrorIndex = selectedStrandIndex;
+
+		if (currentFace == HairFace.FRONT || currentFace == HairFace.BACK || currentFace == HairFace.TOP) {
+			int col = selectedStrandIndex % currentFace.cols;
+			int row = selectedStrandIndex / currentFace.cols;
+			int mirrorCol = (currentFace.cols - 1) - col;
+			if (mirrorCol == col) return;
+			mirrorIndex = row * currentFace.cols + mirrorCol;
+		} else if (currentFace == HairFace.LEFT) {
+			mirrorFace = HairFace.RIGHT;
+		} else if (currentFace == HairFace.RIGHT) {
+			mirrorFace = HairFace.LEFT;
+		}
+
+		HairStrand target = workingHairs[selectedStyle].getStrand(mirrorFace, mirrorIndex);
+		if (target != null) {
+			target.setColor(color);
+		}
+	}
+
+	private void initColorPicker() {
+		int leftPanelX = 12;
+		int sliderX = leftPanelX + 150;
+		int sliderY = getUiHeight() / 2 - 40;
+
+		hueSlider = new ColorSlider.Builder()
+				.position(sliderX, sliderY)
+				.size(100, 10)
+				.range(0, 360)
+				.value(0)
+				.message(txt("H"))
+				.onValueChange(val -> updateColorFromSliders())
+				.build();
+
+		saturationSlider = new ColorSlider.Builder()
+				.position(sliderX, sliderY + 12)
+				.size(100, 10)
+				.range(100, 0)
+				.value(100)
+				.message(txt("S"))
+				.onValueChange(val -> updateColorFromSliders())
+				.build();
+
+		valueSlider = new ColorSlider.Builder()
+				.position(sliderX, sliderY + 24)
+				.size(100, 10)
+				.range(100, 0)
+				.value(100)
+				.message(txt("V"))
+				.onValueChange(val -> updateColorFromSliders())
+				.build();
+
+		hexColorField = new EditBox(font, sliderX, sliderY + 36, 100, 12, txt("Hex"));
+		hexColorField.setMaxLength(7);
+		hexColorField.setResponder(hex -> {
+			if (isUpdatingFromCode) return;
+			if (hex.startsWith("#")) hex = hex.substring(1);
+			if (hex.length() == 6) {
+				isUpdatingFromCode = true;
+				try {
+					float[] hsv = ColorUtils.hexToHsv("#" + hex);
+					hueSlider.setValue((int) hsv[0]);
+					saturationSlider.setValue(hsv[1] == 0 ? 100 : (int) hsv[1]);
+					valueSlider.setValue(hsv[2] == 0 ? 100 : (int) hsv[2]);
+					applyColorToStrand("#" + hex);
+				} catch (Exception ignored) {}
+				isUpdatingFromCode = false;
+			}
+		});
+
+		addRenderableWidget(hueSlider);
+		addRenderableWidget(saturationSlider);
+		addRenderableWidget(valueSlider);
+		addRenderableWidget(hexColorField);
+
 		setSlidersVisible(false);
-		updateColorButton();
-		initControlButtons();
-		syncHairToServer();
+	}
+
+	private void toggleColorPicker() {
+		colorPickerVisible = !colorPickerVisible;
+		if (colorPickerVisible) {
+			String currentColor = getCurrentStrandColor();
+			float[] hsv = ColorUtils.hexToHsv(currentColor);
+			hueSlider.setValue((int) hsv[0]);
+			saturationSlider.setValue(hsv[1] == 0 ? 100 : (int) hsv[1]);
+			valueSlider.setValue(hsv[2] == 0 ? 100 : (int) hsv[2]);
+			isUpdatingFromCode = true;
+			hexColorField.setValue(currentColor);
+			isUpdatingFromCode = false;
+		}
+		setSlidersVisible(colorPickerVisible);
+	}
+
+	private void updateColorFromSliders() {
+		if (!colorPickerVisible) return;
+		float h = hueSlider.getValue();
+		float s = saturationSlider.getValue();
+		float v = valueSlider.getValue();
+		String newColor = ColorUtils.hsvToHex(h, s, v);
+
+		isUpdatingFromCode = true;
+		if (!hexColorField.isFocused()) hexColorField.setValue(newColor);
+		isUpdatingFromCode = false;
+
+		applyColorToStrand(newColor);
+	}
+
+	private void applyColorToStrand(String color) {
+		HairStrand strand = getSelectedStrand();
+		if (strand != null) {
+			strand.setColor(color);
+			colorButton.setBackgroundColor(ColorUtils.hexToInt(color));
+			applyMirrorColor(color);
+			syncHairToServer();
+		}
+	}
+
+	private void setSlidersVisible(boolean visible) {
+		if (hueSlider != null) hueSlider.visible = visible;
+		if (saturationSlider != null) saturationSlider.visible = visible;
+		if (valueSlider != null) valueSlider.visible = visible;
+		if (hexColorField != null) hexColorField.visible = visible;
+	}
+
+	private HairStrand getSelectedStrand() {
+		return workingHairs[selectedStyle].getStrand(currentFace, selectedStrandIndex);
+	}
+
+	private String getCurrentStrandColor() {
+		HairStrand strand = getSelectedStrand();
+		if (strand != null && strand.hasCustomColor()) return strand.getColor();
+		return workingHairs[selectedStyle].getGlobalColor();
+	}
+
+	private void fillEmptyStyles(CustomHair[] set) {
+		if (set[0] == null || set[0].isEmpty()) set[0] = new CustomHair();
+		if (set[1] == null || set[1].isEmpty()) set[1] = set[0].copy();
+		if (set[2] == null || set[2].isEmpty()) set[2] = set[1].copy();
+		if (set[3] == null || set[3].isEmpty()) set[3] = set[2].copy();
+	}
+
+	private void updateFullCodeBox() {
+		if (fullCodeBox != null) {
+			CustomHair[] temp = new CustomHair[4];
+			for (int i = 0; i < 4; i++) temp[i] = workingHairs[i].copy();
+			fillEmptyStyles(temp);
+			fullCodeBox.setValue(HairManager.toFullSetCode(temp[0], temp[1], temp[2], temp[3]));
+		}
+	}
+
+	private void updateIndividualCodeBox() {
+		if (individualCodeBox != null) {
+			individualCodeBox.setValue(HairManager.toCode(workingHairs[selectedStyle]));
+		}
 	}
 
 	private void syncHairToServer() {
 		character.setHairId(0);
-		switch (editorMode) {
-			case 0 -> character.setHairBase(editingHair);
-			case 1 -> character.setHairSSJ(editingHair);
-			case 2 -> character.setHairSSJ2(editingHair);
-			case 3 -> character.setHairSSJ3(editingHair);
+		for (int i = 0; i < 4; i++) {
+			switch (i) {
+				case 0 -> character.setHairBase(workingHairs[i]);
+				case 1 -> character.setHairSSJ(workingHairs[i]);
+				case 2 -> character.setHairSSJ2(workingHairs[i]);
+				case 3 -> character.setHairSSJ3(workingHairs[i]);
+			}
+			NetworkHandler.sendToServer(new UpdateCustomHairC2S(i, workingHairs[i]));
 		}
+	}
 
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(editorMode, editingHair));
+	private void navigateBack() {
+		if (currentTab == Tab.STRAND) {
+			currentTab = Tab.STYLE;
+			colorPickerVisible = false;
+			HairRenderer.EDITING_STRAND_ID = -1;
+			rebuildWidgets();
+		} else if (currentTab == Tab.STYLE) {
+			currentTab = Tab.OVERVIEW;
+			rebuildWidgets();
+		} else {
+			for (int i = 0; i < 4; i++) {
+				workingHairs[i] = backupHairs[i].copy();
+			}
+			syncHairToServer();
+			Minecraft.getInstance().setScreen(previousScreen);
+		}
+	}
+
+	private void saveChanges() {
+		if (currentTab != Tab.OVERVIEW) {
+			syncHairToServer();
+			updateFullCodeBox();
+		} else {
+			syncHairToServer();
+			Minecraft.getInstance().setScreen(previousScreen);
+		}
+	}
+
+	private void openHairSalon() {
+		if (this.minecraft != null) {
+			this.minecraft.setScreen(new ConfirmLinkScreen(
+					confirmed -> {
+						if (confirmed) Util.getPlatform().openUri("https://dragonminez.com/hairsalon");
+						this.minecraft.setScreen(this);
+					},
+					"https://dragonminez.com/hairsalon", true));
+		}
+	}
+
+	@Override
+	public boolean isPauseScreen() {
+		return false;
 	}
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		panorama.render(partialTick, 1.0F);
+		renderCinematicBars(graphics);
+
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 
-		if (usePanorama) {
-			renderPanorama(partialTick);
-			this.renderCinematicBars(graphics);
-		} else {
-			this.renderBackground(graphics);
-			this.renderBackground(graphics);
-		}
-
 		beginUiScale(graphics);
-		renderLeftPanel(graphics);
-		renderRightPanel(graphics, uiMouseX, uiMouseY);
-		renderPlayerModel(graphics, getUiWidth() / 2, getUiHeight() / 2 + 220, 150);
+
+		int previewZoneLeft = 12 + 141 + 16;
+		int previewZoneRight = getUiWidth() - 16;
+		int baseX = previewZoneLeft + (previewZoneRight - previewZoneLeft) / 2;
+		int baseY = getUiHeight() / 2 + 112;
+
+		renderPlayerModel(graphics, baseX, baseY, 95);
+
+		renderPanelBackground(graphics);
+
+		if (currentTab == Tab.OVERVIEW) renderOverviewContent(graphics);
+		else if (currentTab == Tab.STYLE) renderStyleContent(graphics, uiMouseX, uiMouseY);
+		else renderStrandContent(graphics);
+
+		if (colorPickerVisible) renderColorPickerBackground(graphics);
+
+		drawTopRightLabels(graphics);
+
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 400.0D);
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
-
-		if (exportButton != null && exportButton.isHovered()) {
-			graphics.renderTooltip(font, font.split(tr("gui.dragonminez.hair_editor.export.desc"), 200), uiMouseX, uiMouseY);
-		} else if (importButton != null && importButton.isHovered()) {
-			graphics.renderTooltip(font, font.split(tr("gui.dragonminez.hair_editor.import.desc"), 200), uiMouseX, uiMouseY);
-		}
-
 		graphics.pose().popPose();
+
 		endUiScale(graphics);
 	}
 
-	private void renderCinematicBars(GuiGraphics guiGraphics) {
-		int totalBarHeight = (int) (this.height * 0.12);
-
-		int fadeSize = 60;
-
-		if (totalBarHeight <= fadeSize) {
-			totalBarHeight = fadeSize + 1;
-		}
-
-		int solidHeight = totalBarHeight - fadeSize;
-
-		int colorSolid = 0xFF000000;
-		int colorTransparent = 0x00000000;
-
-		guiGraphics.fill(0, 0, this.width, solidHeight, colorSolid);
-
-		guiGraphics.fillGradient(0, solidHeight, this.width, solidHeight + fadeSize, colorSolid, colorTransparent);
-
-		int bottomBarStartY = this.height - totalBarHeight;
-
-		guiGraphics.fillGradient(0, bottomBarStartY, this.width, bottomBarStartY + fadeSize, colorTransparent, colorSolid);
-
-		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
+	private void renderCinematicBars(GuiGraphics graphics) {
+		int barH = (int) (height * 0.12);
+		graphics.fill(0, 0, width, barH - 60, 0xFF000000);
+		graphics.fillGradient(0, barH - 60, width, barH, 0xFF000000, 0x00000000);
+		graphics.fillGradient(0, height - barH, width, height - barH + 60, 0x00000000, 0xFF000000);
+		graphics.fill(0, height - barH + 60, width, height, 0xFF000000);
 	}
 
-	private void renderPanorama(float partialTick) {
-		String currentRace = character.getRace();
-
-		PanoramaRenderer panorama = switch (currentRace) {
-			case "saiyan" -> panoramaSaiyan;
-			case "namekian" -> panoramaNamek;
-			case "bioandroid" -> panoramaBio;
-			case "frostdemon" -> panoramaFrost;
-			case "majin" -> panoramaMajin;
-			default -> panoramaHuman;
-		};
-
-		panorama.render(partialTick, 1.0F);
-	}
-
-	private void renderLeftPanel(GuiGraphics graphics) {
+	private void renderPanelBackground(GuiGraphics graphics) {
 		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
-		int leftPanelY = centerY - 105;
+		int panelY = centerY - 105;
 
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, leftPanelX, leftPanelY, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, leftPanelX + 17, leftPanelY + 10, 142, 22, 107, 21, 256, 256);
-
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.edit_values").withStyle(ChatFormatting.BOLD),
-				leftPanelX + 70, leftPanelY + 17, 0xFFFFD700);
-
-		renderEditInfo(graphics, leftPanelX, leftPanelY);
-
-		graphics.pose().pushPose();
-		graphics.pose().scale(0.75f, 0.75f, 0.75f);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.color"), (int)((leftPanelX + 80) / 0.75f), (int)((leftPanelY + 149) / 0.75f), 0xFFFFFF);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.mode." + editorMode), (int)((leftPanelX + 20) / 0.75f), (int)(((getUiHeight() / 2) + 83) / 0.75f), 0xFFFFFF);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.physics"), (int)((leftPanelX + 70) / 0.75f), (int)(((getUiHeight() / 2) + 83) / 0.75f), physicsEnabled ? 0x00FF00 : 0xFF5555);
-		graphics.pose().popPose();
+		graphics.blit(MENU_BIG, leftPanelX, panelY, 0, 0, 141, 213, 256, 256);
+		graphics.blit(MENU_BIG, leftPanelX + 17, panelY + 10, 142, 22, 107, 21, 256, 256);
 	}
 
-	private void renderEditInfo(GuiGraphics graphics, int panelX, int panelY) {
-		int startY = panelY + 40;
-		HairStrand strand = getSelectedStrand();
-
-		if (strand == null) {
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.no_strand"),
-					panelX + 70, startY + 20, 0xFF5555);
-			return;
-		}
-
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.mode",
-						tr(editMode.getTranslationKey())),
-				panelX + 15, startY, 0x00FF00);
-		startY += 15;
-
-		switch (editMode) {
-			case LENGTH -> {
-				int cubeCount = strand.getLength();
-				float stretchFactor = strand.getStretchFactor();
-				Component lengthText;
-				if (stretchFactor > 1.0f) {
-					lengthText = tr("gui.dragonminez.hair_editor.length_stretch",
-							strand.getLength(), cubeCount, String.format("%.2f", stretchFactor));
-				} else {
-					lengthText = tr("gui.dragonminez.hair_editor.length",
-							strand.getLength(), cubeCount);
-				}
-				drawStringWithBorder(graphics, lengthText, panelX + 15, startY, 0xFFFFFF);
-			}
-			case ROTATION, CURVE, SCALE -> {}
-		}
+	private void drawTopRightLabels(GuiGraphics graphics) {
+		int rightEdge = getUiWidth() - 12;
+		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.mirror"), rightEdge - 30 - font.width(tr("gui.dragonminez.hair_editor.mirror")) - 5, 17, 0xFFFFFF);
+		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.physics"), rightEdge - 90 - font.width(tr("gui.dragonminez.hair_editor.physics")) - 5, 17, 0xFFFFFF);
 	}
 
-	private void renderRightPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-		int rightPanelX = getUiWidth() - 158;
+	private void renderOverviewContent(GuiGraphics graphics) {
+		int leftPanelX = 12;
 		int centerY = getUiHeight() / 2;
-		int rightPanelY = centerY - 105;
+		int panelY = centerY - 105;
 
-		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		graphics.blit(MENU_BIG, rightPanelX, rightPanelY, 0, 0, 141, 213, 256, 256);
-		graphics.blit(MENU_BIG, rightPanelX + 17, rightPanelY + 10, 142, 22, 107, 21, 256, 256);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.styles").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
+		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.fullcode"), leftPanelX + 15, panelY + 138, 0xFFFFFF);
+	}
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.hair_strands").withStyle(ChatFormatting.BOLD),
-				rightPanelX + 70, rightPanelY + 17, 0xFFFFD700);
-		renderFaceSelector(graphics, rightPanelX, rightPanelY, mouseX, mouseY);
-		renderStrandsGrid(graphics, rightPanelX, rightPanelY, mouseX, mouseY);
+	private void renderStyleContent(GuiGraphics graphics, int mouseX, int mouseY) {
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int panelY = centerY - 105;
+
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.hair_strands").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
+		renderFaceSelector(graphics, leftPanelX, panelY, mouseX, mouseY);
+		renderStrandsGrid(graphics, leftPanelX, panelY, mouseX, mouseY);
+
+		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.stylecode"), leftPanelX + 15, panelY + 162, 0xFFFFFF);
+	}
+
+	private void renderStrandContent(GuiGraphics graphics) {
+		int leftPanelX = 12;
+		int centerY = getUiHeight() / 2;
+		int panelY = centerY - 105;
+
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.edit_values").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
+
+		if (lengthSlider != null) {
+			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.length"), lengthSlider.getX(), lengthSlider.getY() - 10, 0xFFFFFF);
+			drawStringWithBorder(graphics, txt(String.format("%.1f", lengthSlider.getValue())), lengthSlider.getX() + lengthSlider.getWidth() + 2, lengthSlider.getY() + 2, 0xFFFFFF);
+		}
+		if (widthSlider != null) {
+			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.width"), widthSlider.getX(), widthSlider.getY() - 10, 0xFFFFFF);
+			drawStringWithBorder(graphics, txt(String.format("%.1f", widthSlider.getValue())), widthSlider.getX() + widthSlider.getWidth() + 2, widthSlider.getY() + 2, 0xFFFFFF);
+		}
+		if (xAxisSlider != null) {
+			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.x_axis"), xAxisSlider.getX(), xAxisSlider.getY() - 10, 0xFFFFFF);
+			drawStringWithBorder(graphics, txt(String.format("%.1f", xAxisSlider.getValue())), xAxisSlider.getX() + xAxisSlider.getWidth() + 2, xAxisSlider.getY() + 2, 0xFFFFFF);
+		}
+		if (zAxisSlider != null) {
+			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.z_axis"), zAxisSlider.getX(), zAxisSlider.getY() - 10, 0xFFFFFF);
+			drawStringWithBorder(graphics, txt(String.format("%.1f", zAxisSlider.getValue())), zAxisSlider.getX() + zAxisSlider.getWidth() + 2, zAxisSlider.getY() + 2, 0xFFFFFF);
+		}
+		if (xBendSlider != null) {
+			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.x_bend"), xBendSlider.getX(), xBendSlider.getY() - 10, 0xFFFFFF);
+			drawStringWithBorder(graphics, txt(String.format("%.1f", xBendSlider.getValue())), xBendSlider.getX() + xBendSlider.getWidth() + 2, xBendSlider.getY() + 2, 0xFFFFFF);
+		}
+		if (zBendSlider != null) {
+			drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.z_bend"), zBendSlider.getX(), zBendSlider.getY() - 10, 0xFFFFFF);
+			drawStringWithBorder(graphics, txt(String.format("%.1f", zBendSlider.getValue())), zBendSlider.getX() + zBendSlider.getWidth() + 2, zBendSlider.getY() + 2, 0xFFFFFF);
+		}
 	}
 
 	private void renderFaceSelector(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
 		int btnY = panelY + 35;
 		int btnX = panelX + 28;
-
-		String[] faceShortNames = {"F", "B", "L", "R", "T"};
+		String[] faceNames = {"F", "B", "L", "R", "T"};
 		HairFace[] faces = HairFace.values();
 
 		for (int i = 0; i < faces.length; i++) {
-			HairFace face = faces[i];
-			boolean isSelected = currentFace == face;
-			String shortName = faceShortNames[i];
-			int width = font.width(shortName) + 6;
-			int height = 14;
-
-			boolean hovered = mouseX >= btnX && mouseX < btnX + width && mouseY >= btnY && mouseY < btnY + height;
+			boolean isSelected = currentFace == faces[i];
+			int width = font.width(faceNames[i]) + 6;
+			boolean hovered = mouseX >= btnX && mouseX < btnX + width && mouseY >= btnY && mouseY < btnY + 14;
 			int bgColor = isSelected ? 0xFF00AA00 : (hovered ? 0xFF555555 : 0xFF333333);
 
-			graphics.fill(btnX, btnY, btnX + width, btnY + height, bgColor);
-			graphics.fill(btnX + 1, btnY + 1, btnX + width - 1, btnY + height - 1, isSelected ? 0xFF005500 : 0xFF222222);
-
-			int textX = btnX + 3;
-			int textY = btnY + 3;
-			graphics.drawString(font, shortName, textX, textY, isSelected ? 0xFFFFFF : (hovered ? 0xFFFFFF : 0xAAAAAA), false);
-
+			graphics.fill(btnX, btnY, btnX + width, btnY + 14, bgColor);
+			graphics.fill(btnX + 1, btnY + 1, btnX + width - 1, btnY + 13, isSelected ? 0xFF005500 : 0xFF222222);
+			graphics.drawString(font, faceNames[i], btnX + 3, btnY + 3, isSelected ? 0xFFFFFF : 0xAAAAAA, false);
 			btnX += width + 6;
 		}
 	}
 
 	private void renderStrandsGrid(GuiGraphics graphics, int panelX, int panelY, int mouseX, int mouseY) {
 		int startY = panelY + 55;
-		HairStrand[] strands = editingHair.getStrands(currentFace);
+		HairStrand[] strands = workingHairs[selectedStyle].getStrands(currentFace);
 		if (strands == null) return;
 
 		int cols = currentFace.cols;
-		int rows = currentFace.rows;
-		int boxSize = 24;
-		int spacing = 3;
-
-		int gridWidth = cols * boxSize + (cols - 1) * spacing;
-		int gridStartX = panelX + (141 - gridWidth) / 2;
+		int boxSize = 24, spacing = 3;
+		int gridStartX = panelX + (141 - (cols * boxSize + (cols - 1) * spacing)) / 2;
 
 		for (int i = 0; i < strands.length; i++) {
-			HairStrand strand = strands[i];
-			int col = i % cols;
-			int row = i / cols;
-
-			int boxX = gridStartX + col * (boxSize + spacing);
-			int boxY = startY + row * (boxSize + spacing);
-
+			int boxX = gridStartX + (i % cols) * (boxSize + spacing);
+			int boxY = startY + (i / cols) * (boxSize + spacing);
 			boolean isSelected = i == selectedStrandIndex;
-			boolean isVisible = strand.isVisible();
+			boolean isVisible = strands[i].isVisible();
+			boolean hovered = mouseX >= boxX && mouseX < boxX + boxSize && mouseY >= boxY && mouseY < boxY + boxSize;
 
-			boolean hovered = mouseX >= boxX && mouseX < boxX + boxSize &&
-					mouseY >= boxY && mouseY < boxY + boxSize;
-
-			int bgColor;
-			if (isSelected) {
-				bgColor = 0xFF00AA00;
-			} else if (hovered) {
-				bgColor = 0xFF555555;
-			} else if (isVisible) {
-				bgColor = 0xFF666600;
-			} else {
-				bgColor = 0xFF333333;
-			}
-
+			int bgColor = isSelected ? 0xFF00AA00 : (hovered ? 0xFF555555 : (isVisible ? 0xFF666600 : 0xFF333333));
 			graphics.fill(boxX, boxY, boxX + boxSize, boxY + boxSize, bgColor);
 			graphics.fill(boxX + 1, boxY + 1, boxX + boxSize - 1, boxY + boxSize - 1, isSelected ? 0xFF005500 : 0xFF222222);
 
 			String numText = String.valueOf(i);
-			int textColor = isSelected ? 0x00FF00 : (isVisible ? 0xFFFF00 : 0x888888);
-
-			int textX = boxX + (boxSize - font.width(numText)) / 2;
-			int textY = boxY + (boxSize - font.lineHeight) / 2;
-			graphics.drawString(font, numText, textX, textY, textColor, false);
+			graphics.drawString(font, numText, boxX + (boxSize - font.width(numText)) / 2, boxY + (boxSize - font.lineHeight) / 2, isSelected ? 0x00FF00 : (isVisible ? 0xFFFF00 : 0x888888), false);
 		}
+	}
 
-		int infoY = startY + rows * (boxSize + spacing) + 10;
-
+	private void renderColorPickerBackground(GuiGraphics graphics) {
+		int sliderX = 12 + 150;
+		int sliderY = getUiHeight() / 2 - 40;
 		graphics.pose().pushPose();
-		graphics.pose().scale(0.75f, 0.75f, 0.75f);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.visible", editingHair.getVisibleStrandCount()),
-				(int)((panelX + 25) / 0.75f), (int)(infoY / 0.75f), 0xFFFFFF);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.cubes", editingHair.getTotalCubeCount()),
-				(int)((panelX + 75) / 0.75f), (int)(infoY / 0.75f), 0xFFFFFF);
+		graphics.pose().translate(0.0D, 0.0D, 200.0D);
+		graphics.fill(sliderX - 5, sliderY - 5, sliderX + 110, sliderY + 56, 0x88000000);
 		graphics.pose().popPose();
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale) {
-		LivingEntity player = this.minecraft.player;
+		LivingEntity player = minecraft.player;
 		if (player == null) return;
 
 		boolean oldPhysics = HairRenderer.PHYSICS_ENABLED;
-		HairRenderer.PHYSICS_ENABLED = this.physicsEnabled;
+		HairRenderer.PHYSICS_ENABLED = physicsEnabled;
 		int originalHairId = character.getHairId();
 		CustomHair originalBaseHair = character.getHairBase();
 
 		character.setHairId(0);
-		if (editorMode == 1) character.setHairBase(character.getHairSSJ());
-		else if (editorMode == 2) character.setHairBase(character.getHairSSJ2());
-		else if (editorMode == 3) character.setHairBase(character.getHairSSJ3());
-		else character.setHairBase(this.editingHair);
+		if (currentTab == Tab.OVERVIEW) {
+			character.setHairBase(workingHairs[0]);
+		} else {
+			character.setHairBase(workingHairs[selectedStyle]);
+		}
 
-		Quaternionf pose = (new Quaternionf()).rotateZ((float)Math.PI);
-		Quaternionf cameraOrientation = (new Quaternionf()).rotateX(0);
-		pose.mul(cameraOrientation);
+		Quaternionf pose = new Quaternionf().rotateZ((float) Math.PI).mul(new Quaternionf().rotateX(0));
 
 		float yBodyRotO = player.yBodyRot;
 		float yBodyRotO_field = player.yBodyRotO;
@@ -1085,14 +890,14 @@ public class HairEditorScreen extends ScaledScreen {
 		player.yBodyRot = playerRotation;
 		player.yBodyRotO = playerRotation;
 		player.setYRot(playerRotation);
-		player.setXRot(this.playerPitch);
-		player.xRotO = this.playerPitch;
+		player.setXRot(playerPitch);
+		player.xRotO = playerPitch;
 		player.yHeadRot = playerRotation;
 		player.yHeadRotO = playerRotation;
 
 		graphics.pose().pushPose();
 		graphics.pose().translate(0.0D, 0.0D, 150.0D);
-		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, cameraOrientation, player);
+		InventoryScreen.renderEntityInInventory(graphics, x, y, scale, pose, new Quaternionf().rotateX(0), player);
 		graphics.pose().popPose();
 
 		player.yBodyRot = yBodyRotO;
@@ -1113,17 +918,26 @@ public class HairEditorScreen extends ScaledScreen {
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
-		if (handleStrandGridClick(uiMouseX, uiMouseY)) return true;
-		if (handleFaceSelectorClick(uiMouseX, uiMouseY)) return true;
+		if (colorPickerVisible) {
+			int sliderX = 12 + 150;
+			int sliderY = getUiHeight() / 2 - 40;
+			if (uiMouseX < sliderX - 5 || uiMouseX > sliderX + 110 || uiMouseY < sliderY - 5 || uiMouseY > sliderY + 56) {
+				setSlidersVisible(false);
+				colorPickerVisible = false;
+				return true;
+			}
+		}
 
-		int centerX = getUiWidth() / 2;
-		int centerY = getUiHeight() / 2 + 20;
-		int modelRadius = 100;
-		int bottomY = getUiHeight() - 30;
-		int maxDragY = bottomY - 25 - 10;
+		if (currentTab == Tab.STYLE) {
+			if (handleFaceSelectorClick(uiMouseX, uiMouseY)) return true;
+			if (handleStrandGridClick(uiMouseX, uiMouseY)) return true;
+		}
 
-		if (uiMouseX >= centerX - modelRadius && uiMouseX <= centerX + modelRadius &&
-				uiMouseY >= centerY - 400 && uiMouseY <= maxDragY) {
+		int previewZoneLeft = 12 + 141 + 16;
+		int previewZoneRight = getUiWidth() - 16;
+		int baseY = getUiHeight() / 2 + 112;
+
+		if (uiMouseX >= previewZoneLeft && uiMouseX <= previewZoneRight && uiMouseY >= 45 && uiMouseY <= baseY + 28) {
 			isDraggingModel = true;
 			lastMouseX = uiMouseX;
 			lastMouseY = uiMouseY;
@@ -1142,234 +956,62 @@ public class HairEditorScreen extends ScaledScreen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (isDraggingModel && !colorPickerVisible) {
-			double uiMouseX = toUiX(mouseX);
-			double uiMouseY = toUiY(mouseY);
-			double deltaX = uiMouseX - lastMouseX;
-			double deltaY = uiMouseY - this.lastMouseY;
-
-			this.playerRotation -= (float)deltaX;
-			this.playerPitch += (float)deltaY;
-
-			this.playerPitch = Math.max(-90.0f, Math.min(90.0f, this.playerPitch));
-			playerRotation += (float)(deltaX * 0.8);
-			lastMouseX = uiMouseX;
-			lastMouseY = uiMouseY;
+			double deltaX = toUiX(mouseX) - lastMouseX;
+			double deltaY = toUiY(mouseY) - lastMouseY;
+			playerRotation -= (float) deltaX;
+			playerPitch = Math.max(-90.0f, Math.min(90.0f, playerPitch + (float) deltaY));
+			lastMouseX = toUiX(mouseX);
+			lastMouseY = toUiY(mouseY);
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
-	private boolean handleStrandGridClick(double mouseX, double mouseY) {
-		int rightPanelX = getUiWidth() - 158;
-		int centerY = getUiHeight() / 2;
-		int rightPanelY = centerY - 105;
-		int startY = rightPanelY + 55;
+	private boolean handleFaceSelectorClick(double mouseX, double mouseY) {
+		int btnY = (getUiHeight() / 2 - 105) + 35;
+		int btnX = 12 + 28;
+		HairFace[] faces = HairFace.values();
+		String[] names = {"F", "B", "L", "R", "T"};
 
-		HairStrand[] strands = editingHair.getStrands(currentFace);
+		for (int i = 0; i < faces.length; i++) {
+			int width = font.width(names[i]) + 6;
+			if (mouseX >= btnX && mouseX < btnX + width && mouseY >= btnY && mouseY < btnY + 14) {
+				currentFace = faces[i];
+				selectedStrandIndex = 0;
+				rebuildWidgets();
+				return true;
+			}
+			btnX += width + 6;
+		}
+		return false;
+	}
+
+	private boolean handleStrandGridClick(double mouseX, double mouseY) {
+		HairStrand[] strands = workingHairs[selectedStyle].getStrands(currentFace);
 		if (strands == null) return false;
 
 		int cols = currentFace.cols;
-		int boxSize = 24;
-		int spacing = 3;
-		int gridWidth = cols * boxSize + (cols - 1) * spacing;
-		int gridStartX = rightPanelX + (141 - gridWidth) / 2;
+		int boxSize = 24, spacing = 3;
+		int gridStartX = 12 + (141 - (cols * boxSize + (cols - 1) * spacing)) / 2;
+		int startY = (getUiHeight() / 2 - 105) + 55;
 
 		for (int i = 0; i < strands.length; i++) {
-			int col = i % cols;
-			int row = i / cols;
-
-			int boxX = gridStartX + col * (boxSize + spacing);
-			int boxY = startY + row * (boxSize + spacing);
-
-			if (mouseX >= boxX && mouseX < boxX + boxSize &&
-					mouseY >= boxY && mouseY < boxY + boxSize) {
+			int boxX = gridStartX + (i % cols) * (boxSize + spacing);
+			int boxY = startY + (i / cols) * (boxSize + spacing);
+			if (mouseX >= boxX && mouseX < boxX + boxSize && mouseY >= boxY && mouseY < boxY + boxSize) {
 				selectedStrandIndex = i;
-				colorPickerVisible = false;
-				setSlidersVisible(false);
-				updateColorButton();
-				initControlButtons();
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private boolean handleFaceSelectorClick(double mouseX, double mouseY) {
-		int rightPanelX = getUiWidth() - 158;
-		int centerY = getUiHeight() / 2;
-		int rightPanelY = centerY - 105;
-		int btnY = rightPanelY + 35;
-		int btnX = rightPanelX + 28;
-
-		String[] faceShortNames = {"F", "B", "L", "R", "T"};
-		HairFace[] faces = HairFace.values();
-
-		for (int i = 0; i < faces.length; i++) {
-			HairFace face = faces[i];
-			String shortName = faceShortNames[i];
-			int width = font.width(shortName) + 6;
-			int height = 14;
-
-			if (mouseX >= btnX && mouseX < btnX + width && mouseY >= btnY && mouseY < btnY + height) {
-				currentFace = face;
-				selectedStrandIndex = 0;
-				colorPickerVisible = false;
-				setSlidersVisible(false);
-				updateColorButton();
-				initControlButtons();
-				return true;
-			}
-
-			btnX += width + 6;
-		}
-
-		return false;
-	}
-
-	private HairStrand getSelectedStrand() {
-		return editingHair.getStrand(currentFace, selectedStrandIndex);
-	}
-
-	private void exportCode() {
-		String code;
-
-		if (hasShiftDown()) code = HairManager.toFullSetCode(character.getHairBase(), character.getHairSSJ(), character.getHairSSJ2(), character.getHairSSJ3());
-		else code = HairManager.toCode(editingHair);
-
-		if (code != null && !code.isEmpty()) {
-			codeField.setValue(code);
-			Minecraft.getInstance().keyboardHandler.setClipboard(code);
-			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(MainSounds.UI_MENU_SWITCH.get(), 1.0F));
-		}
-	}
-
-	private void importCode() {
-		String rawCode = this.codeField.getValue();
-		if (rawCode == null || rawCode.isEmpty()) return;
-		String code = rawCode.trim().replaceAll("\\s+", "");
-
-		if (hasShiftDown() && HairManager.isFullSetCode(code)) {
-			CustomHair[] fullSet = HairManager.fromFullSetCode(code);
-			if (fullSet != null) {
-				character.setHairBase(fullSet[0]);
-				character.setHairSSJ(fullSet[1]);
-				character.setHairSSJ2(fullSet[2]);
-				character.setHairSSJ3(fullSet[3]);
-
-				updateEditingHairReference();
-
-				NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, fullSet[0]));
-				NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, fullSet[1]));
-				NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, fullSet[2]));
-				NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, fullSet[3]));
-
+				currentTab = Tab.STRAND;
 				rebuildWidgets();
-			}
-			return;
-		}
-
-		CustomHair imported = null;
-
-		if (HairManager.isFullSetCode(code)) {
-			CustomHair[] fullSet = HairManager.fromFullSetCode(code);
-			if (fullSet != null && this.editorMode >= 0 && this.editorMode < fullSet.length) imported = fullSet[this.editorMode];
-		}
-
-		if (imported == null) imported = HairManager.fromCode(code);
-
-
-		if (imported != null) {
-			this.editingHair = imported;
-
-			if (this.editorMode == 1) character.setHairSSJ(imported);
-			else if (this.editorMode == 2) character.setHairSSJ2(imported);
-			else if (this.editorMode == 3) character.setHairSSJ3(imported);
-			else character.setHairBase(imported);
-
-			NetworkHandler.sendToServer(new UpdateCustomHairC2S(this.editorMode, this.editingHair));
-			rebuildWidgets();
-		}
-	}
-
-	private void copyHairData(CustomHair source, CustomHair dest) {
-		dest.setGlobalColor(source.getGlobalColor());
-		dest.setName(source.getName());
-
-		for (HairFace face : HairFace.values()) {
-			HairStrand[] srcStrands = source.getStrands(face);
-			HairStrand[] dstStrands = dest.getStrands(face);
-			for (int i = 0; i < srcStrands.length && i < dstStrands.length; i++) {
-				HairStrand src = srcStrands[i];
-				HairStrand dst = dstStrands[i];
-				dst.setLength(src.getLength());
-				dst.setRotation(src.getRotationX(), src.getRotationY(), src.getRotationZ());
-				dst.setCurve(src.getCurveX(), src.getCurveY(), src.getCurveZ());
-				dst.setScale(src.getScaleX(), src.getScaleY(), src.getScaleZ());
-				dst.setColor(src.getColor());
+				return true;
 			}
 		}
-	}
-
-	private void saveAndClose() {
-		character.setHairId(0);
-
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, character.getHairBase()));
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, character.getHairSSJ()));
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, character.getHairSSJ2()));
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, character.getHairSSJ3()));
-
-		if (previousScreen != null) {
-			isSwitchingMenu = true;
-			GLOBAL_SWITCHING = true;
-		}
-		Minecraft.getInstance().setScreen(previousScreen);
-	}
-
-	private void cancelAndClose() {
-		character.setHairBase(backupBase.copy());
-		character.setHairSSJ(backupSSJ.copy());
-		character.setHairSSJ2(backupSSJ2.copy());
-		character.setHairSSJ3(backupSSJ3.copy());
-
-		character.setHairId(originalHairId);
-
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(0, backupBase));
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(1, backupSSJ));
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(2, backupSSJ2));
-		NetworkHandler.sendToServer(new UpdateCustomHairC2S(3, backupSSJ3));
-
-		if (originalHairId != 0) {
-			character.setHairId(originalHairId);
-			NetworkHandler.sendToServer(new StatsSyncC2S(character));
-		}
-
-		if (previousScreen != null) {
-			isSwitchingMenu = true;
-			GLOBAL_SWITCHING = true;
-		}
-		Minecraft.getInstance().setScreen(previousScreen);
-	}
-
-	private void openHairSalon() {
-		if (this.minecraft != null) {
-			this.minecraft.setScreen(new ConfirmLinkScreen(
-					confirmed -> {
-						if (confirmed) {
-							Util.getPlatform().openUri("https://dragonminez.com/hairsalon");
-						}
-						this.minecraft.setScreen(this);
-					},
-					"https://dragonminez.com/hairsalon",
-					true
-			));
-		}
+		return false;
 	}
 
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		if (keyCode == 256) {
-			cancelAndClose();
+			navigateBack();
 			return true;
 		}
 		return super.keyPressed(keyCode, scanCode, modifiers);
@@ -1377,22 +1019,20 @@ public class HairEditorScreen extends ScaledScreen {
 
 	@Override
 	public void onClose() {
-		cancelAndClose();
+		navigateBack();
 	}
 
 	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
+		graphics.drawString(font, text, x + 1, y, 0xFF000000, false);
+		graphics.drawString(font, text, x - 1, y, 0xFF000000, false);
+		graphics.drawString(font, text, x, y + 1, 0xFF000000, false);
+		graphics.drawString(font, text, x, y - 1, 0xFF000000, false);
+		graphics.drawString(font, text, x, y, textColor, false);
 	}
 
 	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
+		int textWidth = font.width(text);
+		drawStringWithBorder(graphics, text, centerX - (textWidth / 2), y, textColor);
 	}
 
 	public MutableComponent tr(String key, Object... args) {

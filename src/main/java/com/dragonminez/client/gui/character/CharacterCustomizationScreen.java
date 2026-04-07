@@ -433,14 +433,14 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
 	}
 
-	// Helper metod para identificar visualmente la opcion correcta
 	private int getCurrentHairOrBoneValue() {
 		String activeBone = character.getActiveHeadBone();
 		boolean supportsHair = HairManager.canUseHair(character);
 		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
 
 		if (activeBone == null || activeBone.isEmpty() || activeBone.equals("hair")) {
-			return character.getHairId();
+			int hairId = character.getHairId();
+			return hairId > 0 ? hairId - 1 : -1;
 		}
 
 		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
@@ -888,7 +888,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		if (supportsHair && value < hairPresets) {
 			newActiveBone = "hair";
-			newHairId = value;
+			newHairId = value + 1;
 		} else {
 			int boneIdxTarget = value - hairPresets;
 			int currentBoneIdx = 0;
@@ -1461,7 +1461,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
 
 				if (supportsHair && value < hairPresets) {
-					character.setHairId(value);
+					character.setHairId(value + 1);
 					character.setActiveHeadBone("hair");
 				} else {
 					character.setHairId(0);

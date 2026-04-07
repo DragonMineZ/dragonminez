@@ -12,6 +12,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -29,6 +30,12 @@ import java.util.Map;
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
 	private final Map<Integer, Float> progressMap = new HashMap<>();
 	private final Map<Integer, Long> tickMap = new HashMap<>();
+	private final Map<Integer, Long> lastSeenMsMap = new HashMap<>();
+	private static final double PHYSICS_LOD_NEAR_DISTANCE_SQR = 24.0 * 24.0;
+	private static final double PHYSICS_LOD_FAR_DISTANCE_SQR = 48.0 * 48.0;
+	private static final long TRACKING_TTL_MS = 30_000L;
+	private static final long CLEANUP_INTERVAL_MS = 5_000L;
+	private long lastCleanupMs = 0L;
 
 	public DMZHairLayer(GeoRenderer<T> renderer) {
 		super(renderer);
@@ -50,8 +57,10 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) return;
 
 		var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
-		if (!headItem.isEmpty() && !headItem.getItem().getDescriptionId().contains("pothala") && !headItem.getItem().getDescriptionId().contains("scouter") && !headItem.getItem().getDescriptionId().contains("invencible"))
-			return;
+		if (!headItem.isEmpty()) {
+			String headDescId = headItem.getItem().getDescriptionId();
+			if (!headDescId.contains("pothala") && !headDescId.contains("scouter") && !headDescId.contains("invencible")) return;
+		}
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
@@ -62,24 +71,26 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		if (effectiveHair == null || effectiveHair.isEmpty()) return;
 
 		CustomHair hairFrom = character.getHairBase();
-		float[] rgbFrom = character.getRgbHairColor().clone();
+		float[] rgbFrom = character.getRgbHairColor();
 
 		if (character.hasActiveForm()) {
 			hairFrom = getHairForForm(character, character.getActiveFormGroup(), character.getActiveForm());
-			rgbFrom = getRgbForForm(character, character.getActiveFormGroup(), character.getActiveForm()).clone();
+			rgbFrom = getRgbForForm(character, character.getActiveFormGroup(), character.getActiveForm());
 			if (character.isOozaruCached()) return;
 		}
 
 		if (character.hasActiveStackForm()) {
 			hairFrom = getHairForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm(), hairFrom);
-			rgbFrom = getRgbForStackForm(character, character.getActiveStackFormGroup(), character.getActiveStackForm(), rgbFrom).clone();
+			rgbFrom = getRgbForStackForm(character.getActiveStackFormGroup(), character.getActiveStackForm(), rgbFrom);
 		}
 
 		CustomHair hairTo = hairFrom;
-		float[] rgbTo = rgbFrom.clone();
+		float[] rgbTo = rgbFrom;
 		float factor = 0.0f;
 
 		int entityId = animatable.getId();
+		long nowMs = System.currentTimeMillis();
+		lastSeenMsMap.put(entityId, nowMs);
 		float lastHairProgress = progressMap.getOrDefault(entityId, 0.0f);
 		long lastUpdateTick = tickMap.getOrDefault(entityId, 0L);
 
@@ -101,7 +112,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				nextForm = TransformationsHelper.getNextAvailableStackForm(stats);
 				if (nextForm != null) {
 					targetHair = getHairForStackForm(character, targetGroup, nextForm.getName(), hairFrom);
-					targetRgb = getRgbForStackForm(character, targetGroup, nextForm.getName(), rgbFrom);
+					targetRgb = getRgbForStackForm(targetGroup, nextForm.getName(), rgbFrom);
 				}
 			}
 
@@ -120,27 +131,37 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				smoothProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
 
 				hairTo = targetHair;
-				rgbTo = targetRgb.clone();
+				rgbTo = targetRgb;
 				factor = smoothProgress;
 			}
 		} else {
-			progressMap.put(entityId, 0.0f);
+			progressMap.remove(entityId);
+			tickMap.remove(entityId);
+		}
+		if (nowMs - lastCleanupMs >= CLEANUP_INTERVAL_MS) {
+			cleanupStaleTracking(nowMs);
+			lastCleanupMs = nowMs;
 		}
 
 		int phase = TransformationsHelper.getKaiokenPhase(stats);
+		boolean auraActive = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		if (phase > 0 || auraActive) {
+			float[] baseFrom = rgbFrom;
+			float[] baseTo = rgbTo;
+			rgbFrom = baseFrom.clone();
+			rgbTo = baseTo == baseFrom ? rgbFrom : baseTo.clone();
+		}
+
 		if (phase > 0) {
 			applyKaiokenToRgb(rgbFrom, phase);
 			applyKaiokenToRgb(rgbTo, phase);
 		} else {
-			boolean isCharging = stats.getStatus().isChargingKi();
-			if (isCharging || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura()) {
+			if (auraActive) {
 				float[] rgbAura = character.getRgbAuraColor();
-				if (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().getRgbAuraColor() != null) {
-					rgbAura = character.getActiveFormData().getRgbAuraColor();
-				}
-				if (character.hasActiveStackForm() && character.getActiveStackFormData() != null && character.getActiveStackFormData().getRgbAuraColor() != null) {
-					rgbAura = character.getActiveStackFormData().getRgbAuraColor();
-				}
+				FormConfig.FormData activeFormData = character.hasActiveForm() ? character.getActiveFormData() : null;
+				FormConfig.FormData activeStackFormData = character.hasActiveStackForm() ? character.getActiveStackFormData() : null;
+				if (activeFormData != null && activeFormData.getRgbAuraColor() != null) rgbAura = activeFormData.getRgbAuraColor();
+				if (activeStackFormData != null && activeStackFormData.getRgbAuraColor() != null) rgbAura = activeStackFormData.getRgbAuraColor();
 
 				float intensity = 0.2f;
 				applyAuraTintToRgb(rgbFrom, rgbAura, intensity);
@@ -149,10 +170,36 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		}
 
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
+		float physicsLodMultiplier = getPhysicsLodMultiplier(animatable);
 
 		poseStack.pushPose();
-		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, partialTick, packedLight, packedOverlay, alpha);
+		HairRenderer.render(poseStack, bufferSource, hairFrom, hairTo, factor, character, stats, animatable, rgbFrom, rgbTo, partialTick, packedLight, packedOverlay, alpha, physicsLodMultiplier);
 		poseStack.popPose();
+	}
+
+	private float getPhysicsLodMultiplier(AbstractClientPlayer animatable) {
+		var cameraEntity = Minecraft.getInstance().getCameraEntity();
+		if (cameraEntity == null) return 1.0f;
+
+		double distanceSqr = animatable.distanceToSqr(cameraEntity);
+		if (distanceSqr <= PHYSICS_LOD_NEAR_DISTANCE_SQR) return 1.0f;
+		if (distanceSqr >= PHYSICS_LOD_FAR_DISTANCE_SQR) return 0.0f;
+
+		double t = (distanceSqr - PHYSICS_LOD_NEAR_DISTANCE_SQR) / (PHYSICS_LOD_FAR_DISTANCE_SQR - PHYSICS_LOD_NEAR_DISTANCE_SQR);
+		return (float) (1.0 - t);
+	}
+
+	private void cleanupStaleTracking(long nowMs) {
+		if (lastSeenMsMap.size() < 64) return;
+		lastSeenMsMap.entrySet().removeIf(entry -> {
+			boolean stale = nowMs - entry.getValue() > TRACKING_TTL_MS;
+			if (stale) {
+				int id = entry.getKey();
+				progressMap.remove(id);
+				tickMap.remove(id);
+			}
+			return stale;
+		});
 	}
 
 	private CustomHair getHairForForm(Character character, String group, String formName) {
@@ -204,7 +251,7 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		return character.getRgbHairColor();
 	}
 
-	private float[] getRgbForStackForm(Character character, String group, String formName, float[] fallback) {
+	private float[] getRgbForStackForm(String group, String formName, float[] fallback) {
 		FormConfig config = ConfigManager.getStackFormGroup(group);
 		if (config != null) {
 			var formData = config.getForm(formName);
