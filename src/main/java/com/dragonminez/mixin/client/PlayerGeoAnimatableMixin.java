@@ -55,6 +55,13 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private int dragonminez$miningAnimTicks = 0;
 	@Unique private int dragonminez$lastMiningTickRun = -1;
 	@Unique private boolean dragonminez$isShootingKi = false;
+	@Unique private int dragonminez$chargeAttackType = IPlayerAnimatable.CHARGE_ATTACK_NONE;
+	@Unique private boolean dragonminez$isChargeAttackCharging = false;
+	@Unique private boolean dragonminez$isChargeAttackCharged = false;
+	@Unique private boolean dragonminez$chargeAttackFireQueued = false;
+	@Unique private int dragonminez$chargeAttackFireTicks = 0;
+	@Unique private int dragonminez$lastChargeAttackTickRun = -1;
+	@Unique private int dragonminez$suppressQueuedMeleeTicks = 0;
 
 	@Unique
 	private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
@@ -96,6 +103,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		registrar.add(new AnimationController<>(this, "controller", 4, this::predicate));
 		registrar.add(new AnimationController<>(this, "combo_controller", 0, this::comboPredicate));
 		registrar.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
+		registrar.add(new AnimationController<>(this, "charge_attack_controller", 0, this::chargeAttackPredicate));
 		registrar.add(new AnimationController<>(this, "mining_controller", 0, this::miningPredicate));
 		registrar.add(new AnimationController<>(this, "block_controller", 3, this::blockPredicate));
 		registrar.add(new AnimationController<>(this, "shield_controller", 3, this::shieldPredicate));
@@ -213,16 +221,25 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> state) {
-		if (dragonminez$comboAnimTicks > 0) return PlayState.STOP;
-
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
-		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
-		AnimationController<T> ctl = state.getController();
-
 		if (player.tickCount != dragonminez$lastAttackTickRun) {
 			dragonminez$lastAttackTickRun = player.tickCount;
+			if (dragonminez$suppressQueuedMeleeTicks > 0) dragonminez$suppressQueuedMeleeTicks--;
 			if (dragonminez$attackAnimTicks > 0) dragonminez$attackAnimTicks--;
 		}
+
+		if (dragonminez$suppressQueuedMeleeTicks > 0) {
+			dragonminez$queuedMeleeVariant = -1;
+			return PlayState.STOP;
+		}
+
+		if (dragonminez$isChargeAttackCharging || dragonminez$chargeAttackFireQueued || dragonminez$chargeAttackFireTicks > 0) {
+			return PlayState.STOP;
+		}
+
+		if (dragonminez$comboAnimTicks > 0) return PlayState.STOP;
+		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
+		AnimationController<T> ctl = state.getController();
 
 		if (dragonminez$queuedMeleeVariant >= 0 && !isPlacingBlock(player) && !isBlocking(player) && !isUsingTool(player)) {
 			int variant = dragonminez$queuedMeleeVariant;
@@ -245,6 +262,45 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	}
 
 	@Unique
+	private <T extends GeoAnimatable> PlayState chargeAttackPredicate(AnimationState<T> state) {
+		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+		AnimationController<T> ctl = state.getController();
+
+		if (player.tickCount != dragonminez$lastChargeAttackTickRun) {
+			dragonminez$lastChargeAttackTickRun = player.tickCount;
+			if (dragonminez$chargeAttackFireTicks > 0) dragonminez$chargeAttackFireTicks--;
+		}
+
+		if (dragonminez$chargeAttackFireQueued) {
+			RawAnimation fireAnim = dragonminez$chargeAttackType == IPlayerAnimatable.CHARGE_ATTACK_HEAVY
+					? CHARGE_HEAVY_PUNCH_FIRE
+					: CHARGE_LIGHT_PUNCH_FIRE;
+			ctl.setAnimation(fireAnim);
+			ctl.forceAnimationReset();
+			dragonminez$chargeAttackFireQueued = false;
+			dragonminez$chargeAttackFireTicks = 10;
+			return PlayState.CONTINUE;
+		}
+
+		if (dragonminez$chargeAttackFireTicks > 0) {
+			return PlayState.CONTINUE;
+		}
+
+		if (dragonminez$isChargeAttackCharging) {
+			RawAnimation chargeAnim = dragonminez$chargeAttackType == IPlayerAnimatable.CHARGE_ATTACK_HEAVY
+					? CHARGE_HEAVY_PUNCH
+					: CHARGE_LIGHT_PUNCH;
+			if (ctl.getAnimationState() == AnimationController.State.STOPPED || !chargeAnim.equals(ctl.getCurrentRawAnimation())) {
+				ctl.setAnimation(chargeAnim);
+				ctl.forceAnimationReset();
+			}
+			return PlayState.CONTINUE;
+		}
+
+		return PlayState.STOP;
+	}
+
+	@Unique
 	private static RawAnimation dragonminez$selectAttackAnimation(int variant, boolean alternateAttack) {
 		if (variant == 1) {
 			return ATTACK2;
@@ -254,6 +310,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 
 	@Unique
 	private <T extends GeoAnimatable> PlayState miningPredicate(AnimationState<T> state) {
+		if (dragonminez$isChargeAttackCharging || dragonminez$chargeAttackFireQueued || dragonminez$chargeAttackFireTicks > 0) {
+			return PlayState.STOP;
+		}
+
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
 		AnimationController<T> ctl = state.getController();
 		boolean hasMiningSwing = player.attackAnim > 0.0F || player.swinging || player.swingTime > 0;
@@ -495,6 +555,37 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Override
 	public void dragonminez$triggerMeleeAttack(int variant) {
 		this.dragonminez$queuedMeleeVariant = Math.max(0, variant);
+	}
+
+	@Override
+	public void dragonminez$setChargeAttackState(int attackType, boolean charging, boolean charged) {
+		if (charging) {
+			this.dragonminez$chargeAttackType = attackType;
+		} else if (!this.dragonminez$chargeAttackFireQueued && this.dragonminez$chargeAttackFireTicks <= 0) {
+			this.dragonminez$chargeAttackType = IPlayerAnimatable.CHARGE_ATTACK_NONE;
+		}
+		this.dragonminez$isChargeAttackCharging = charging;
+		this.dragonminez$isChargeAttackCharged = charged;
+	}
+
+	@Override
+	public void dragonminez$triggerChargeAttackFire(int attackType, boolean charged) {
+		this.dragonminez$chargeAttackType = attackType;
+		this.dragonminez$isChargeAttackCharged = charged;
+		this.dragonminez$isChargeAttackCharging = false;
+		this.dragonminez$chargeAttackFireQueued = true;
+		this.dragonminez$queuedMeleeVariant = -1;
+		this.dragonminez$suppressQueuedMeleeTicks = 12;
+	}
+
+	@Override
+	public void dragonminez$clearChargeAttackState() {
+		this.dragonminez$chargeAttackType = IPlayerAnimatable.CHARGE_ATTACK_NONE;
+		this.dragonminez$isChargeAttackCharging = false;
+		this.dragonminez$isChargeAttackCharged = false;
+		this.dragonminez$chargeAttackFireQueued = false;
+		this.dragonminez$chargeAttackFireTicks = 0;
+		this.dragonminez$suppressQueuedMeleeTicks = 0;
 	}
 
 	@Override

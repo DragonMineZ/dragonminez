@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 public class MeleeAttackIntentC2S {
 	public static final int MIN_EFFECTIVE_CHARGE_TICKS = 5; // 0.25s
 	public static final int MAX_EFFECTIVE_CHARGE_TICKS = 25; // 1.25s
-	public static final int MAX_TOTAL_HOLD_TICKS = 65; // 2.0s
+	public static final int MAX_TOTAL_HOLD_TICKS = 45; // 2.0s
 
 	public enum IntentType {
 		LIGHT,
