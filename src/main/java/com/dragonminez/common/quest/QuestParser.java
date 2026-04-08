@@ -320,11 +320,6 @@ public class QuestParser {
 		}
 
 		String normalized = rawMode.trim().toUpperCase().replace('-', '_').replace(' ', '_');
-		if ("REAL".equals(normalized) || "REALTIME".equals(normalized)) {
-			normalized = "REAL_TIME";
-		} else if ("GAME".equals(normalized) || "GAMETIME".equals(normalized)) {
-			normalized = "GAME_TIME";
-		}
 
 		try {
 			return QuestPrerequisites.TimeMode.valueOf(normalized);
@@ -334,31 +329,9 @@ public class QuestParser {
 	}
 
 	private static long parseTimeDuration(JsonObject json, QuestPrerequisites.TimeMode mode) {
-		if (json.has("ticks")) {
-			return Math.max(0L, json.get("ticks").getAsLong());
-		}
-		if (json.has("milliseconds")) {
-			return Math.max(0L, json.get("milliseconds").getAsLong());
-		}
-		if (json.has("seconds")) {
-			long seconds = Math.max(0L, json.get("seconds").getAsLong());
-			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? seconds * 20L : seconds * 1000L;
-		}
-		if (json.has("minutes")) {
-			long minutes = Math.max(0L, json.get("minutes").getAsLong());
-			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? minutes * 20L * 60L : minutes * 60L * 1000L;
-		}
-		if (json.has("hours")) {
-			long hours = Math.max(0L, json.get("hours").getAsLong());
-			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? hours * 20L * 60L * 60L : hours * 60L * 60L * 1000L;
-		}
-		if (json.has("days")) {
-			long days = Math.max(0L, json.get("days").getAsLong());
-			return mode == QuestPrerequisites.TimeMode.GAME_TIME ? days * 24000L : days * 24L * 60L * 60L * 1000L;
-		}
-		if (json.has("duration")) {
-			return Math.max(0L, json.get("duration").getAsLong());
-		}
-		return 0L;
+		return switch (mode) {
+			case GAME_TIME -> json.has("ticks") ? Math.max(0L, json.get("ticks").getAsLong()) : 0L;
+			case REAL_TIME -> json.has("milliseconds") ? Math.max(0L, json.get("milliseconds").getAsLong()) : 0L;
+		};
 	}
 }

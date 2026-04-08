@@ -200,11 +200,11 @@ final class SideQuestDefaults {
 	}
 
 	private static JsonObject condGameTimeMinutes(long minutes) {
-		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "GAME_TIME"); c.addProperty("minutes", minutes); return c;
+		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "GAME_TIME"); c.addProperty("ticks", minutes); return c;
 	}
 
 	private static JsonObject condRealTimeMinutes(long minutes) {
-		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "REAL_TIME"); c.addProperty("minutes", minutes); return c;
+		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "REAL_TIME"); c.addProperty("milliseconds", minutes * 60L * 1000L); return c;
 	}
 
 	/*
