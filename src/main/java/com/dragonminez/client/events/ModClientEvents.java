@@ -252,6 +252,7 @@ public class ModClientEvents {
         e.registerLayerDefinition(KiWave2DModel.LAYER_LOCATION, KiWave2DModel::createBodyLayer);
         e.registerLayerDefinition(KiWaveExplodeModel.LAYER_LOCATION, KiWaveExplodeModel::createBodyLayer);
         e.registerLayerDefinition(KiBallModel.LAYER_LOCATION, KiBallModel::createBodyLayer);
+        e.registerLayerDefinition(KiBlockModel.LAYER_LOCATION, KiBlockModel::createBodyLayer);
 
 
         e.registerLayerDefinition(KiScytheModel.LAYER_LOCATION, KiScytheModel::createBodyLayer);

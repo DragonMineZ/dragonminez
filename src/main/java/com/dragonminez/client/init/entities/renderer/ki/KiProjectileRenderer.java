@@ -1,7 +1,9 @@
 package com.dragonminez.client.init.entities.renderer.ki;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.init.entities.model.ki.KiBallModel;
 import com.dragonminez.client.init.entities.model.ki.KiBallPlaneModel;
+import com.dragonminez.client.init.entities.model.ki.KiBlockModel;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.render.util.ModRenderTypes;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
@@ -22,6 +24,9 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
     private static final ResourceLocation TEXTURE_KI = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast.png");
 
+    private static final ResourceLocation TEXTURE_KI_BLOCK = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_block1.png");
+    private static final ResourceLocation TEXTURE_KI_BLOCK2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_block2.png");
+
     private static final ResourceLocation TEXTURE_NOVA = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_nova.png");
     private static final ResourceLocation TEXTURE_NOVA2 = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_nova_2.png");
     private static final ResourceLocation TEXTURE_NOVA_FIRE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kiblast_novafire.png");
@@ -34,11 +39,13 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
     private static final float HALF_SQRT_3 = (float)(Math.sqrt(3.0D) / 2.0D);
 
     private final KiBallPlaneModel model;
+    private final KiBlockModel model2;
 
     public KiProjectileRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
 
         this.model = new KiBallPlaneModel(pContext.bakeLayer(KiBallPlaneModel.LAYER_LOCATION));
+        this.model2 = new KiBlockModel(pContext.bakeLayer(KiBlockModel.LAYER_LOCATION));
 
     }
 
@@ -79,7 +86,10 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
                 break;
             case 1: // Medium
                 brightAuraColor = ColorUtils.lightenColor(coreColor, 0.5f);
-                renderKiBlast(poseStack, entity, buffer, scale, ageInTicks, coreColor, brightAuraColor, borderColor);
+                //renderKiBlast(poseStack, entity, buffer, scale, ageInTicks, coreColor, brightAuraColor, borderColor);
+                brightAuraColor = ColorUtils.lightenColor(coreColor, 1.0f);
+                renderKiBlock(poseStack, entity, buffer, scale, ageInTicks, coreColor, brightAuraColor, borderColor);
+
                 break;
             case 2: // Large
                 renderKiLargeBlast(poseStack, entity, buffer, scale, ageInTicks, coreColor, brightAuraColor, borderColor);
@@ -182,6 +192,62 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
         poseStack.popPose();
     }
+
+
+    private void renderKiBlock(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float scale, float ageInTicks, float[] coreColor, float[] brightAuraColor, float[] borderColor) {
+        poseStack.pushPose();
+
+        float jitterSpeed = ageInTicks * 20.0F;
+        float intensity = 0.03F;
+
+        float shakeX = (float) (Math.sin(jitterSpeed) * intensity);
+        float shakeY = (float) (Math.cos(jitterSpeed * 1.2) * intensity);
+        float shakeZ = (float) (Math.sin(jitterSpeed * 0.8) * intensity);
+
+        poseStack.scale(scale + shakeX, scale + shakeY, scale + shakeZ);
+
+        //poseStack.scale(scale, scale, scale);
+        poseStack.translate(0, -0.2, 0.0f);
+
+        this.model2.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
+
+        VertexConsumer solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI));
+        VertexConsumer borderBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
+
+//        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+//        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0.15, 0.000f);
+        poseStack.scale(1.0f, 1.0f, 1.0f);
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI_BLOCK));
+        this.model2.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 1.0F);
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0.15, 0.000f);
+        poseStack.scale(1.0f, 1.0f, 1.0f);
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_KI_BLOCK2));
+        this.model2.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F);
+        poseStack.popPose();
+
+//        poseStack.pushPose();
+//        poseStack.translate(0, 0.15, 0.000f);
+//        poseStack.scale(1.0f, 1.0f, 1.0f);
+//        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
+//        this.model2.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, brightAuraColor[0], brightAuraColor[1], brightAuraColor[2], 1.0F);
+//        poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0, -0.3, 0.000f);
+        poseStack.scale(1.3f, 1.3f, 1.3f);
+        solidBuffer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_CORE));
+        this.model2.renderToBuffer(poseStack, solidBuffer, 15728880, OverlayTexture.NO_OVERLAY, borderColor[0], borderColor[1], borderColor[2], 0.15F);
+        poseStack.popPose();
+
+        poseStack.popPose();
+    }
+
 
     private void renderKiBlast(PoseStack poseStack, AbstractKiProjectile entity, MultiBufferSource buffer, float scale, float ageInTicks, float[] coreColor, float[] brightAuraColor, float[] borderColor) {
         poseStack.pushPose();
