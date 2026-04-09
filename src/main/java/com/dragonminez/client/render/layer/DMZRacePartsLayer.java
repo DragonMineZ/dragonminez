@@ -79,12 +79,6 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			}
 		}
 		AURA_TINT_PROGRESS.put(playerId, tintProgress);
-
-		if (!animatable.isSpectator()) {
-			renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-			renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-			renderSword(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
-		}
 	}
 
 	@Override
@@ -101,6 +95,16 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		BakedGeoModel playerModel = getGeoModel().getBakedModel(getGeoModel().getModelResource(animatable));
 
 		renderRacePartsForAnchor(poseStack, animatable, playerModel, bufferSource, stats, anchor, partialTick, packedLight, alpha, tintProgress);
+
+		if (!animatable.isSpectator()) {
+			if ("head".equals(anchor)) {
+				renderAccessories(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+				renderScouter(poseStack, animatable, playerModel, bufferSource, partialTick, packedLight);
+			} else if ("body".equals(anchor)) {
+				renderSword(poseStack, animatable, playerBone, bufferSource, partialTick, packedLight);
+			}
+		}
+
 		bufferSource.getBuffer(renderType);
 	}
 
@@ -356,7 +360,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		});
 	}
 
-	private void renderSword(PoseStack poseStack, T animatable, BakedGeoModel playerModel, MultiBufferSource bufferSource, float partialTick, int packedLight) {
+	private void renderSword(PoseStack poseStack, T animatable, GeoBone playerBodyBone, MultiBufferSource bufferSource, float partialTick, int packedLight) {
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
 
@@ -367,8 +371,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
 			if (yajirobeModel != null) {
 				RenderType type = RenderType.entityCutoutNoCull(YAJIROBE_SWORD_TEXTURE);
-				syncModelToPlayer(yajirobeModel, playerModel);
-				renderFullWeapon(yajirobeModel, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+				renderWeaponFromBodyAnchor(yajirobeModel, "katana", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
 			}
 		}
 
@@ -378,23 +381,45 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			BakedGeoModel powerpole = getGeoModel().getBakedModel(POWER_POLE_MODEL);
 			if (powerpole != null) {
 				RenderType type = RenderType.entityCutoutNoCull(POWER_POLE_TEXTURE);
-				syncModelToPlayer(powerpole, playerModel);
-				renderFullWeapon(powerpole, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+				renderWeaponFromBodyAnchor(powerpole, "baculo", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
 			}
 		} else if (stats.getStatus().getBackWeapon().equals(MainItems.Z_SWORD.get().getDescriptionId())) {
 			BakedGeoModel zModel = getGeoModel().getBakedModel(Z_SWORD_MODEL);
 			if (zModel != null) {
 				RenderType type = RenderType.entityCutoutNoCull(Z_SWORD_TEXTURE);
-				syncModelToPlayer(zModel, playerModel);
-				renderFullWeapon(zModel, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+				renderWeaponFromBodyAnchor(zModel, "espada", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
 			}
 		} else if (stats.getStatus().getBackWeapon().equals(MainItems.BRAVE_SWORD.get().getDescriptionId())) {
 			BakedGeoModel braveModel = getGeoModel().getBakedModel(BRAVE_SWORD_MODEL);
 			if (braveModel != null) {
 				RenderType type = RenderType.entityCutoutNoCull(BRAVE_SWORD_TEXTURE);
-				syncModelToPlayer(braveModel, playerModel);
-				renderFullWeapon(braveModel, poseStack, bufferSource, animatable, type, partialTick, packedLight, 0.9f);
+				renderWeaponFromBodyAnchor(braveModel, "espadatrunks", playerBodyBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 0.9f);
 			}
+		}
+	}
+
+	private void renderWeaponFromBodyAnchor(BakedGeoModel weaponModel, String anchorBoneName, GeoBone playerBodyBone, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType type, float partialTick, int packedLight, float scale) {
+		GeoBone weaponAnchor = weaponModel.getBone(anchorBoneName).orElse(null);
+		if (weaponAnchor == null) return;
+
+		syncBoneAndParentsByHierarchy(weaponAnchor.getParent(), playerBodyBone);
+
+		poseStack.pushPose();
+		if (scale != 1.0f) poseStack.scale(scale, scale, scale);
+
+		VertexConsumer vertexConsumer = bufferSource.getBuffer(type);
+		getRenderer().renderRecursively(poseStack, animatable, weaponAnchor, type, bufferSource, vertexConsumer, true, partialTick, packedLight, OverlayTexture.NO_OVERLAY, 1.0f, 1.0f, 1.0f, 1.0f);
+
+		poseStack.popPose();
+	}
+
+	private void syncBoneAndParentsByHierarchy(GeoBone destBone, GeoBone sourceBone) {
+		GeoBone currentDest = destBone;
+		GeoBone currentSource = sourceBone;
+		while (currentDest != null && currentSource != null) {
+			copyBoneData(currentSource, currentDest);
+			currentDest = currentDest.getParent();
+			currentSource = currentSource.getParent();
 		}
 	}
 
