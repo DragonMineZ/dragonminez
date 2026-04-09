@@ -147,6 +147,11 @@ public class NPCActionC2S {
 
 	private static void handleEnma(ServerPlayer player, StatsData data, int action) {
 		if (action == 1) {
+			if (data.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA)) {
+				int seconds = data.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20;
+				player.sendSystemMessage(Component.translatable("gui.dragonminez.lines.enma.revive", player.getName(), seconds));
+				return;
+			}
 			ServerLevel targetLevel = player.server.getLevel(Level.OVERWORLD);
 			if (targetLevel == null) return;
 			if (player.getRespawnPosition() != null)

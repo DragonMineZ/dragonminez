@@ -166,8 +166,8 @@ public class MasterTextScreen extends Screen {
 	}
 
 	private void initEnma(int x, int y, StatsData stats) {
-		boolean hasCd = stats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
-		this.currentDialogue = tr("gui.dragonminez.lines.enma.main", Minecraft.getInstance().player.getName());
+		int cdTime = (int) (stats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20.0f);
+		this.currentDialogue = tr("gui.dragonminez.lines.enma.main", Minecraft.getInstance().player.getName(), cdTime);
 
 		this.addRenderableWidget(new TexturedTextButton.Builder()
 				.position(x, y)
@@ -177,12 +177,16 @@ public class MasterTextScreen extends Screen {
 				.textureSize(74, 20)
 				.message(tr("gui.dragonminez.button.enma.earth"))
 				.onPress(b -> {
-					if (hasCd) {
-						this.currentDialogue = tr("gui.dragonminez.lines.enma.revive", Minecraft.getInstance().player.getName());
-					} else {
-						NetworkHandler.sendToServer(new NPCActionC2S("enma", 1));
-						this.onClose();
-					}
+					StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(currentStats -> {
+						boolean hasCdNow = currentStats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA);
+						if (hasCdNow) {
+							int seconds = (int) (currentStats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20.0f);
+							this.currentDialogue = tr("gui.dragonminez.lines.enma.revive", Minecraft.getInstance().player.getName(), seconds);
+						} else {
+							NetworkHandler.sendToServer(new NPCActionC2S("enma", 1));
+							this.onClose();
+						}
+					});
 				})
 				.build());
 	}
@@ -192,20 +196,28 @@ public class MasterTextScreen extends Screen {
 		int cdTime = hasCd ? (int) stats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20 : 0;
 		this.currentDialogue = tr("gui.dragonminez.lines.baba.main", Minecraft.getInstance().player.getName(), cdTime);
 
-		if (!hasCd) {
-			this.addRenderableWidget(new TexturedTextButton.Builder()
-					.position(x, y)
-					.size(74, 20)
-					.texture(BUTTONS_TEXTURE)
-					.textureCoords(0, 28, 0, 48)
-					.textureSize(74, 20)
-					.message(tr("gui.dragonminez.button.baba.revive"))
-					.onPress(b -> {
-						NetworkHandler.sendToServer(new NPCActionC2S("baba", 1));
-						this.onClose();
-					})
-					.build());
-		}
+		TexturedTextButton babaButton = new TexturedTextButton.Builder()
+				.position(x, y)
+				.size(74, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(0, 28, 0, 48)
+				.textureSize(74, 20)
+				.message(tr("gui.dragonminez.button.baba.revive"))
+				.onPress(b -> {
+					StatsProvider.get(StatsCapability.INSTANCE, Minecraft.getInstance().player).ifPresent(currentStats -> {
+						if (!currentStats.getCooldowns().hasCooldown(Cooldowns.REVIVE_BABA)) {
+							NetworkHandler.sendToServer(new NPCActionC2S("baba", 1));
+							this.onClose();
+						} else {
+							int seconds = (int) (currentStats.getCooldowns().getCooldown(Cooldowns.REVIVE_BABA) / 20.0f);
+							this.currentDialogue = tr("gui.dragonminez.lines.baba.main", Minecraft.getInstance().player.getName(), seconds);
+							refreshButtons();
+						}
+					});
+				})
+				.build();
+		babaButton.active = !hasCd;
+		this.addRenderableWidget(babaButton);
 	}
 
 	private void initPopo(int x, int y, StatsData stats) {

@@ -89,7 +89,7 @@ public class FlySkillEvent {
 	}
 
 	@SubscribeEvent
-	public void onClientTick(TickEvent.ClientTickEvent event) {
+	public static void onClientTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
 
 		Minecraft mc = Minecraft.getInstance();
@@ -123,7 +123,7 @@ public class FlySkillEvent {
 		});
 	}
 
-	private void handleFlightMovement(LocalPlayer player, int flyLevel) {
+	private static void handleFlightMovement(LocalPlayer player, int flyLevel) {
 		prevHovering = hovering;
 		prevFlightVector = flightVector;
 
@@ -144,7 +144,7 @@ public class FlySkillEvent {
 		float currentMaxSpeed = isSprinting ? maxSprintSpeed : maxNormalSpeed;
 		float currentAccel = isSprinting ? ACCELERATION * 1.5F : ACCELERATION;
 
-		boolean isFastFlight = this.isFlyingFast(player);
+		boolean isFastFlight = INSTANCE.isFlyingFast(player);
 		if (!isFastFlight) {
 			FlightOrientationHandler.reset();
 		}
