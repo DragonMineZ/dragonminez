@@ -37,15 +37,17 @@ public class PlayerQuestData {
 
     /**
      * The status of a quest for a given player.
-     * Can return NOT_STARTED (default), ACCEPTED (in progress), or COMPLETED.
+     * Can return NOT_STARTED (default), ACCEPTED (in progress), FAILED (waiting restart), or SUCCESS.
      */
     public enum QuestStatus {
         /** Quest has not been started. */
         NOT_STARTED,
         /** Quest has been accepted and is in progress. */
         ACCEPTED,
-        /** Quest has been completed. */
-        COMPLETED
+        /** Quest failed and is waiting restart conditions. */
+        FAILED,
+        /** Quest has been completed successfully. */
+        SUCCESS
     }
 
     // ========================================================================================
@@ -57,9 +59,6 @@ public class PlayerQuestData {
 
     /** Tracks which sagas the player has unlocked */
     private final Map<String, Boolean> sagaUnlockState = new HashMap<>();
-
-    /** Tracks selected branch path by key "sagaId|branchGroup". */
-    private final Map<String, String> branchSelections = new HashMap<>();
 
     /** Per-quest anchors used by elapsed start requirements. */
     private final Map<String, QuestStartRequirementTiming> startRequirementTimings = new LinkedHashMap<>();
@@ -106,21 +105,42 @@ public class PlayerQuestData {
     }
 
     /**
+     * Marks a quest as failed and resets objective/reward progress for restart.
+     */
+    public void failQuest(String questId) {
+        QuestProgress progress = getOrCreateProgress(questId);
+        progress.markFailed();
+        progress.resetForRestart();
+        progress.setStatus(QuestStatus.FAILED);
+        clearStartRequirementTiming(questId);
+    }
+
+    /**
+     * Restarts a previously failed quest back to in-progress.
+     */
+    public void restartFailedQuest(String questId) {
+        QuestProgress progress = getOrCreateProgress(questId);
+        progress.resetForRestart();
+        progress.setStatus(QuestStatus.ACCEPTED);
+        clearStartRequirementTiming(questId);
+    }
+
+    /**
      * Completes a quest, marking it as finished.
      *
      * @param questId the string quest ID
      */
     public void completeQuest(String questId) {
-        getOrCreateProgress(questId).setStatus(QuestStatus.COMPLETED);
+        getOrCreateProgress(questId).setStatus(QuestStatus.SUCCESS);
         clearStartRequirementTiming(questId);
     }
 
     /**
-     * Returns whether the given quest has been accepted (in progress or completed).
+     * Returns whether the given quest is currently in progress.
      */
     public boolean isQuestAccepted(String questId) {
         QuestProgress progress = quests.get(questId);
-        return progress != null && progress.getStatus() != QuestStatus.NOT_STARTED;
+        return progress != null && progress.getStatus() == QuestStatus.ACCEPTED;
     }
 
     /**
@@ -128,7 +148,7 @@ public class PlayerQuestData {
      */
     public boolean isQuestCompleted(String questId) {
         QuestProgress progress = quests.get(questId);
-        return progress != null && progress.getStatus() == QuestStatus.COMPLETED;
+        return progress != null && progress.getStatus() == QuestStatus.SUCCESS;
     }
 
     /**
@@ -137,6 +157,16 @@ public class PlayerQuestData {
     public QuestStatus getQuestStatus(String questId) {
         QuestProgress progress = quests.get(questId);
         return progress != null ? progress.getStatus() : QuestStatus.NOT_STARTED;
+    }
+
+    public Set<String> getFailedQuestIds() {
+        Set<String> failed = new LinkedHashSet<>();
+        for (Map.Entry<String, QuestProgress> entry : quests.entrySet()) {
+            if (entry.getValue().getStatus() == QuestStatus.FAILED) {
+                failed.add(entry.getKey());
+            }
+        }
+        return failed;
     }
 
     /**
@@ -153,7 +183,6 @@ public class PlayerQuestData {
     public void resetAll() {
         quests.clear();
         sagaUnlockState.clear();
-        branchSelections.clear();
         startRequirementTimings.clear();
         trackedQuestId = null;
     }
@@ -166,8 +195,6 @@ public class PlayerQuestData {
         quests.keySet().removeIf(key -> key.startsWith(prefix));
         startRequirementTimings.keySet().removeIf(key -> key.startsWith(prefix));
         if (trackedQuestId != null && trackedQuestId.startsWith(prefix)) trackedQuestId = null;
-        String branchPrefix = sagaId + "|";
-        branchSelections.keySet().removeIf(key -> key.startsWith(branchPrefix));
     }
 
     public void setTrackedQuestId(String trackedQuestId) {
@@ -213,7 +240,7 @@ public class PlayerQuestData {
     public Set<String> getCompletedQuestIds() {
         Set<String> completed = new LinkedHashSet<>();
         for (Map.Entry<String, QuestProgress> entry : quests.entrySet()) {
-            if (entry.getValue().getStatus() == QuestStatus.COMPLETED) {
+            if (entry.getValue().getStatus() == QuestStatus.SUCCESS) {
                 completed.add(entry.getKey());
             }
         }
@@ -229,6 +256,29 @@ public class PlayerQuestData {
      */
     public void setObjectiveProgress(String questId, int objectiveIndex, int progress) {
         getOrCreateProgress(questId).setObjectiveProgress(objectiveIndex, progress);
+    }
+
+    public void setObjectiveRequired(String questId, int objectiveIndex, int required) {
+        getOrCreateProgress(questId).setObjectiveRequired(objectiveIndex, required);
+    }
+
+    public int getObjectiveRequired(String questId, int objectiveIndex, int fallbackRequired) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getObjectiveRequired(objectiveIndex, fallbackRequired) : fallbackRequired;
+    }
+
+    public void setQuestHardMode(String questId, boolean hardMode) {
+        getOrCreateProgress(questId).setHardMode(hardMode);
+    }
+
+    public boolean isQuestHardMode(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null && progress.isHardMode();
+    }
+
+    public int getQuestFailureCount(String questId) {
+        QuestProgress progress = quests.get(questId);
+        return progress != null ? progress.getFailureCount() : 0;
     }
 
     /**
@@ -289,25 +339,6 @@ public class PlayerQuestData {
      */
     public static String sagaQuestKey(String sagaId, int questId) {
         return sagaId + ":" + questId;
-    }
-
-    public static String branchSelectionKey(String sagaId, String branchGroup) {
-        return sagaId + "|" + branchGroup;
-    }
-
-    public void setBranchSelection(String sagaId, String branchGroup, String branchPath) {
-        if (sagaId == null || branchGroup == null || branchGroup.isBlank()) return;
-        String key = branchSelectionKey(sagaId, branchGroup);
-        if (branchPath == null || branchPath.isBlank()) {
-            branchSelections.remove(key);
-        } else {
-            branchSelections.put(key, branchPath);
-        }
-    }
-
-    public String getBranchSelection(String sagaId, String branchGroup) {
-        if (sagaId == null || branchGroup == null || branchGroup.isBlank()) return null;
-        return branchSelections.get(branchSelectionKey(sagaId, branchGroup));
     }
 
     // ---- Saga convenience overloads (auto-build composite key) ----
@@ -439,12 +470,6 @@ public class PlayerQuestData {
         }
         tag.put("sagaUnlocks", sagaUnlocks);
 
-        CompoundTag branchTag = new CompoundTag();
-        for (Map.Entry<String, String> entry : branchSelections.entrySet()) {
-            branchTag.putString(entry.getKey(), entry.getValue());
-        }
-        tag.put("branchSelections", branchTag);
-
         if (!startRequirementTimings.isEmpty()) {
             CompoundTag timingTag = new CompoundTag();
             for (Map.Entry<String, QuestStartRequirementTiming> entry : startRequirementTimings.entrySet()) {
@@ -464,7 +489,6 @@ public class PlayerQuestData {
     private void deserializeCoreQuestState(CompoundTag tag) {
         quests.clear();
         sagaUnlockState.clear();
-        branchSelections.clear();
         startRequirementTimings.clear();
         trackedQuestId = null;
         introPromptShown = false;
@@ -480,16 +504,6 @@ public class PlayerQuestData {
             CompoundTag sagaUnlocks = tag.getCompound("sagaUnlocks");
             for (String key : sagaUnlocks.getAllKeys()) {
                 sagaUnlockState.put(key, sagaUnlocks.getBoolean(key));
-            }
-        }
-
-        if (tag.contains("branchSelections")) {
-            CompoundTag branchTag = tag.getCompound("branchSelections");
-            for (String key : branchTag.getAllKeys()) {
-                String path = branchTag.getString(key);
-                if (!path.isBlank()) {
-                    branchSelections.put(key, path);
-                }
             }
         }
 
@@ -616,7 +630,13 @@ public class PlayerQuestData {
         private QuestStatus status;
 
         private final Map<Integer, Integer> objectiveProgress = new HashMap<>();
+        private final Map<Integer, Integer> objectiveRequired = new HashMap<>();
         private final Map<Integer, Boolean> rewardsClaimed = new HashMap<>();
+        @Getter
+        private int failureCount = 0;
+        @Getter
+        @Setter
+        private boolean hardMode = false;
 
         public QuestProgress(String questId) {
             this.questId = questId;
@@ -631,12 +651,29 @@ public class PlayerQuestData {
             return objectiveProgress.getOrDefault(index, 0);
         }
 
+        public void setObjectiveRequired(int index, int required) {
+            objectiveRequired.put(index, required);
+        }
+
+        public int getObjectiveRequired(int index, int fallbackRequired) {
+            return objectiveRequired.getOrDefault(index, fallbackRequired);
+        }
+
         public void claimReward(int index) {
             rewardsClaimed.put(index, true);
         }
 
         public boolean isRewardClaimed(int index) {
             return rewardsClaimed.getOrDefault(index, false);
+        }
+
+        public void markFailed() {
+            failureCount++;
+        }
+
+        public void resetForRestart() {
+            objectiveProgress.clear();
+            rewardsClaimed.clear();
         }
 
         public CompoundTag serializeNBT() {
@@ -649,6 +686,14 @@ public class PlayerQuestData {
                 objectivesTag.putInt(String.valueOf(entry.getKey()), entry.getValue());
             }
             tag.put("objectives", objectivesTag);
+
+            CompoundTag objectiveRequirementsTag = new CompoundTag();
+            for (Map.Entry<Integer, Integer> entry : objectiveRequired.entrySet()) {
+                objectiveRequirementsTag.putInt(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            tag.put("objectiveRequirements", objectiveRequirementsTag);
+            tag.putInt("failureCount", failureCount);
+            tag.putBoolean("hardMode", hardMode);
 
             CompoundTag rewardsTag = new CompoundTag();
             for (Map.Entry<Integer, Boolean> entry : rewardsClaimed.entrySet()) {
@@ -672,6 +717,17 @@ public class PlayerQuestData {
             CompoundTag objectivesTag = tag.getCompound("objectives");
             for (String key : objectivesTag.getAllKeys()) {
                 progress.objectiveProgress.put(Integer.parseInt(key), objectivesTag.getInt(key));
+            }
+
+            CompoundTag objectiveRequirementsTag = tag.getCompound("objectiveRequirements");
+            for (String key : objectiveRequirementsTag.getAllKeys()) {
+                progress.objectiveRequired.put(Integer.parseInt(key), objectiveRequirementsTag.getInt(key));
+            }
+            if (tag.contains("failureCount", Tag.TAG_INT)) {
+                progress.failureCount = tag.getInt("failureCount");
+            }
+            if (tag.contains("hardMode", Tag.TAG_BYTE)) {
+                progress.hardMode = tag.getBoolean("hardMode");
             }
 
             CompoundTag rewardsTag = tag.getCompound("rewards");

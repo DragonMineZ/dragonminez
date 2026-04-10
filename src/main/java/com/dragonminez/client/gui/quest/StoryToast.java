@@ -10,6 +10,7 @@ public class StoryToast implements Toast {
 	public enum Tone {
 		INFO,
 		PROGRESS,
+		FAILURE,
 		SUCCESS
 	}
 
@@ -32,11 +33,13 @@ public class StoryToast implements Toast {
 		int backgroundColor = switch (tone) {
 			case INFO -> 0xCC10212B;
 			case PROGRESS -> 0xCC1D2338;
+			case FAILURE -> 0xCC321717;
 			case SUCCESS -> 0xCC173122;
 		};
 		int borderColor = switch (tone) {
 			case INFO -> 0xFF58B3FF;
 			case PROGRESS -> 0xFF7E8BFF;
+			case FAILURE -> 0xFFFF6D6D;
 			case SUCCESS -> 0xFF4CDB8D;
 		};
 

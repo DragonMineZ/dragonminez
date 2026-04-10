@@ -145,8 +145,8 @@ public class SkinGathererProvider {
 					String fallbackPrefix = "textures/entity/races/" + raceName + "/" + logicKey + genSuffix + "_0_";
 
 					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer1.png"), getCachedTexture(fallbackPrefix + "layer1.png")), b1);
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png"), getCachedTexture(fallbackPrefix + "layer2.png")), b2);
-					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png"), getCachedTexture(fallbackPrefix + "layer3.png")), b3);
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer2.png")), b2);
+					consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer3.png")), b3);
 				} else {
 					ResourceLocation customTex = getCachedTexture("textures/entity/races/" + raceName + "/" + logicKey + genSuffix + ".png");
 					consumer.accept(DMZSkinLayer.getSafeTexture(customTex), b1);

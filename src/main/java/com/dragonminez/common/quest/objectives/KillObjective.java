@@ -16,8 +16,8 @@ public class KillObjective extends QuestObjective {
 	private final double meleeDamage;
 	private final double kiDamage;
 
-	public KillObjective(String description, EntityType<?> entityType, int count, double health, double meleeDamage, double kiDamage) {
-		super(ObjectiveType.KILL, description, count);
+	public KillObjective(EntityType<?> entityType, int count, double health, double meleeDamage, double kiDamage) {
+		super(ObjectiveType.KILL, count);
 		this.entityId = ForgeRegistries.ENTITY_TYPES.getKey(entityType).toString();
 		this.count = count;
 		this.health = health;

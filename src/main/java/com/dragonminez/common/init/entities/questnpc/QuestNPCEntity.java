@@ -7,6 +7,7 @@ import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -174,7 +175,7 @@ public class QuestNPCEntity extends MastersEntity {
 
 			if (pqd.isQuestAccepted(questId)) {
 				inProgress.add(questId);
-			} else if (QuestAvailabilityChecker.isAvailable(quest, data)) {
+			} else if (isOfferableQuest(questId, quest, data)) {
 				offerable.add(questId);
 			}
 		}
@@ -188,22 +189,24 @@ public class QuestNPCEntity extends MastersEntity {
 			if (!pqd.isQuestAccepted(questId)) continue;
 			if (pqd.isQuestCompleted(questId)) continue;
 
-			// Check if all non-TALK_TO objectives are complete
-			boolean allNonTalkDone = true;
-			for (int i = 0; i < quest.getObjectives().size(); i++) {
-				var obj = quest.getObjectives().get(i);
-				if (obj.getType() == com.dragonminez.common.quest.QuestObjective.ObjectiveType.TALK_TO) continue;
-				int progress = pqd.getObjectiveProgress(questId, i);
-				if (progress < obj.getRequired()) {
-					allNonTalkDone = false;
-					break;
-				}
-			}
-
-			if (allNonTalkDone && !turnIn.contains(questId)) {
+			if (QuestService.isTurnInReady(pqd, questId, quest) && !turnIn.contains(questId)) {
 				turnIn.add(questId);
 			}
 		}
+	}
+
+	private static boolean isOfferableQuest(String questId, Quest quest, StatsData data) {
+		if (!quest.isSagaQuest()) {
+			return QuestAvailabilityChecker.isAvailable(quest, data);
+		}
+
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questId);
+		if (resolved == null || resolved.saga() == null) {
+			return false;
+		}
+
+		int questIndex = resolved.saga().getQuests().indexOf(quest);
+		return questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, resolved.saga(), questIndex, data);
 	}
 }
 

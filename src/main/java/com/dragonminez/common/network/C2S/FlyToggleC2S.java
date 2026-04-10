@@ -13,18 +13,18 @@ import java.util.function.Supplier;
 
 public class FlyToggleC2S {
 
-    private final boolean fromGround;
+    private final boolean enable;
 
-    public FlyToggleC2S(boolean fromGround) {
-        this.fromGround = fromGround;
+    public FlyToggleC2S(boolean enable) {
+        this.enable = enable;
     }
 
     public FlyToggleC2S(FriendlyByteBuf buf) {
-        this.fromGround = buf.readBoolean();
+        this.enable = buf.readBoolean();
     }
 
     public static void encode(FlyToggleC2S msg, FriendlyByteBuf buf) {
-        buf.writeBoolean(msg.fromGround);
+        buf.writeBoolean(msg.enable);
     }
 
     public static FlyToggleC2S decode(FriendlyByteBuf buf) {
@@ -40,23 +40,26 @@ public class FlyToggleC2S {
                 Skill flySkill = data.getSkills().getSkill("fly");
                 if (flySkill == null || flySkill.getLevel() <= 0) return;
 
+                if (flySkill.isActive() == msg.enable) return;
+
                 int flyLevel = flySkill.getLevel();
                 int maxEnergy = data.getMaxEnergy();
 
                 double energyCostPercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
                 int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
-                if (!flySkill.isActive()) {
+                if (msg.enable) {
                     if (data.getResources().getCurrentEnergy() < energyCost) {
                         return;
                     }
                 }
 
-                flySkill.setActive(!flySkill.isActive());
+                flySkill.setActive(msg.enable);
 
                 if (flySkill.isActive()) {
                     player.getAbilities().mayfly = true;
-                    player.getAbilities().flying = true;
+                    // Keep vanilla creative-flight movement disabled; DMZ handles motion client-side.
+                    player.getAbilities().flying = false;
                     player.onUpdateAbilities();
                 } else {
                     if (!player.isCreative() && !player.isSpectator()) {
@@ -66,7 +69,7 @@ public class FlyToggleC2S {
                     }
                 }
 
-                				NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+                NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
             });
         });
         ctx.get().setPacketHandled(true);

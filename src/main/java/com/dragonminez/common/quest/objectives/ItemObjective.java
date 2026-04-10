@@ -13,8 +13,8 @@ public class ItemObjective extends QuestObjective {
     private final String itemId;
     private final int count;
 
-    public ItemObjective(String description, Item item, int count) {
-        super(ObjectiveType.ITEM, description, count);
+    public ItemObjective(Item item, int count) {
+        super(ObjectiveType.ITEM, count);
         this.itemId = ForgeRegistries.ITEMS.getKey(item).toString();
         this.count = count;
     }

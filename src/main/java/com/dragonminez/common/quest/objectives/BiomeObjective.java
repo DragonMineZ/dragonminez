@@ -9,8 +9,8 @@ import net.minecraft.world.level.biome.Biome;
 public class BiomeObjective extends QuestObjective {
     private final String biomeId;
 
-    public BiomeObjective(String description, String biomeId) {
-        super(ObjectiveType.BIOME, description, 1);
+    public BiomeObjective(String biomeId) {
+        super(ObjectiveType.BIOME, 1);
         this.biomeId = biomeId;
     }
 

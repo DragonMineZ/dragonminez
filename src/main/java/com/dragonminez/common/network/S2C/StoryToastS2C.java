@@ -15,6 +15,7 @@ public class StoryToastS2C {
 	public enum ToastEventType {
 		INTRO_HINT,
 		QUEST_STARTED,
+		QUEST_FAILED,
 		OBJECTIVE_COMPLETE,
 		QUEST_COMPLETE
 	}
@@ -39,6 +40,10 @@ public class StoryToastS2C {
 
 	public static StoryToastS2C questStarted(String questId) {
 		return new StoryToastS2C(ToastEventType.QUEST_STARTED, questId, -1, -1, -1);
+	}
+
+	public static StoryToastS2C questFailed(String questId) {
+		return new StoryToastS2C(ToastEventType.QUEST_FAILED, questId, -1, -1, -1);
 	}
 
 	public static StoryToastS2C objectiveComplete(String questId, int objectiveIndex, int objectiveProgress, int objectiveRequired) {

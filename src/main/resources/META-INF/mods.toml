@@ -11,7 +11,7 @@ credits="${mod_credits}"
 authors="${mod_authors}"
 description='''${mod_description}'''
 displayTest = "MATCH_VERSION"
-displayURL="https://discord.dragonminez.com/"
+displayURL="https://dragonminez.com/"
 updateJSONURL="https://raw.githubusercontent.com/DragonMineZ/dragonminez/main/update.json"
 
 [[mixins]]

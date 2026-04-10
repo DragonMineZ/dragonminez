@@ -305,7 +305,15 @@ public class AuraRenderer {
 				ConfigManager.getRaceCharacter(character.getRace()).getAuraType() : "kakarot";
 		int normalLayerId = 0;
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+			var sfd = character.getActiveStackFormData();
+			if (sfd.getAuraColor() != null && !sfd.getAuraColor().isEmpty()) {
+				normalHex = sfd.getAuraColor();
+				normalColor = sfd.getRgbAuraColor();
+			}
+			if (sfd.getAuraType() != null && !sfd.getAuraType().isEmpty()) normalType = sfd.getAuraType();
+			normalLayerId = sfd.getAuraLayer() != null ? sfd.getAuraLayer() : 0;
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			var fd = character.getActiveFormData();
 			if (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) {
 				normalHex = fd.getAuraColor();

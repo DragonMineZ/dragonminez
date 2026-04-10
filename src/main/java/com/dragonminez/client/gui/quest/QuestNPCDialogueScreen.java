@@ -4,13 +4,13 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.network.C2S.AcceptSideQuestC2S;
-import com.dragonminez.common.network.C2S.TurnInSideQuestC2S;
+import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.quest.QuestObjective;
-import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.Quest;
+import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.QuestTextFormatter;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -137,13 +137,13 @@ public class QuestNPCDialogueScreen extends Screen {
 						.onPress(btn -> {
 							if (actionType == EntryType.OFFER) {
 								boolean isHard = ConfigManager.getUserConfig().getHud().getStoryHardDifficulty();
-								NetworkHandler.sendToServer(new AcceptSideQuestC2S(questId, isHard));
+								NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, questId, isHard, ""));
 								if (Minecraft.getInstance().player != null) {
 									Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());
 								}
 								this.onClose();
 							} else if (actionType == EntryType.TURN_IN) {
-								NetworkHandler.sendToServer(new TurnInSideQuestC2S(questId, npcId));
+								NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.TURN_IN, questId, false, npcId));
 								if (Minecraft.getInstance().player != null) {
 									Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());
 								}
@@ -229,7 +229,7 @@ public class QuestNPCDialogueScreen extends Screen {
 
 			// Show objectives
 			for (QuestObjective obj : selected.quest.getObjectives()) {
-				guiGraphics.drawString(this.font, txt("• ").withStyle(ChatFormatting.GRAY).append(tr(obj.getDescription()).withStyle(ChatFormatting.WHITE)), listX + 4, detailY, 0xCCCCCC);
+				guiGraphics.drawString(this.font, txt("• ").withStyle(ChatFormatting.GRAY).append(QuestTextFormatter.describeObjective(obj).copy().withStyle(ChatFormatting.WHITE)), listX + 4, detailY, 0xCCCCCC);
 				detailY += 10;
 			}
 
@@ -239,7 +239,7 @@ public class QuestNPCDialogueScreen extends Screen {
 				guiGraphics.drawString(this.font, tr("gui.dragonminez.sidequest.rewards").withStyle(ChatFormatting.GOLD), listX, detailY, 0xFFFFFF);
 				detailY += 10;
 				for (QuestReward reward : selected.quest.getRewards()) {
-					guiGraphics.drawString(this.font, txt("  " + reward.getDescription()).withStyle(ChatFormatting.GREEN), listX + 4, detailY, 0xAAFFAA);
+					guiGraphics.drawString(this.font, txt("  ").append(reward.getDescription()).withStyle(ChatFormatting.GREEN), listX + 4, detailY, 0xAAFFAA);
 					detailY += 10;
 				}
 			}

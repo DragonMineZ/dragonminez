@@ -57,16 +57,16 @@ public class NetworkHandler {
 				.consumerMainThread(UpdateSkillC2S::handle)
 				.add();
 
-		net.messageBuilder(StartQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(StartQuestC2S::new)
-				.encoder(StartQuestC2S::encode)
-				.consumerMainThread(StartQuestC2S::handle)
+		net.messageBuilder(QuestActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(QuestActionC2S::new)
+				.encoder(QuestActionC2S::encode)
+				.consumerMainThread(QuestActionC2S::handle)
 				.add();
 
-		net.messageBuilder(ClaimRewardC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(ClaimRewardC2S::new)
-				.encoder(ClaimRewardC2S::encode)
-				.consumerMainThread(ClaimRewardC2S::handle)
+		net.messageBuilder(ClaimQuestRewardC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(ClaimQuestRewardC2S::new)
+				.encoder(ClaimQuestRewardC2S::encode)
+				.consumerMainThread(ClaimQuestRewardC2S::handle)
 				.add();
 
 		net.messageBuilder(UnlockSagaC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
@@ -163,24 +163,6 @@ public class NetworkHandler {
 				.decoder(TrainingRewardC2S::new)
 				.encoder(TrainingRewardC2S::toBytes)
 				.consumerMainThread(TrainingRewardC2S::handle)
-				.add();
-
-		net.messageBuilder(AcceptSideQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(AcceptSideQuestC2S::new)
-				.encoder(AcceptSideQuestC2S::encode)
-				.consumerMainThread(AcceptSideQuestC2S::handle)
-				.add();
-
-		net.messageBuilder(ClaimSideQuestRewardC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(ClaimSideQuestRewardC2S::new)
-				.encoder(ClaimSideQuestRewardC2S::encode)
-				.consumerMainThread(ClaimSideQuestRewardC2S::handle)
-				.add();
-
-		net.messageBuilder(TurnInSideQuestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(TurnInSideQuestC2S::new)
-				.encoder(TurnInSideQuestC2S::encode)
-				.consumerMainThread(TurnInSideQuestC2S::handle)
 				.add();
 
 		net.messageBuilder(UpdateCharacterC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)

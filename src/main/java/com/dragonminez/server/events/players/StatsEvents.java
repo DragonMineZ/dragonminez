@@ -22,6 +22,7 @@ import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.DragonBallsHandler;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.util.GravityLogic;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
@@ -32,6 +33,7 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.event.TickEvent;
@@ -317,8 +319,10 @@ public class StatsEvents {
 
 		Player player = event.getEntity();
 		ItemStack stack = event.getItemStack();
-		String itemId = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).toString();
-		String namespace = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).getNamespace();
+		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		if (itemKey == null) return;
+		String itemId = itemKey.toString();
+		String namespace = itemKey.getNamespace();
 
 		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
 		boolean isModWhitelisted = foodConfig.getWhitelistedNamespaces().isEmpty() || foodConfig.getWhitelistedNamespaces().contains(namespace);
@@ -338,8 +342,10 @@ public class StatsEvents {
 		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
 		ItemStack stack = event.getItem();
-		String itemId = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).toString();
-		String namespace = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).getNamespace();
+		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		if (itemKey == null) return;
+		String itemId = itemKey.toString();
+		String namespace = itemKey.getNamespace();
 
 		FoodConfig foodConfig = ConfigManager.getServerConfig().getGameplay().getFood();
 		boolean isModWhitelisted = foodConfig.getWhitelistedNamespaces().isEmpty() || foodConfig.getWhitelistedNamespaces().contains(namespace);
@@ -355,9 +361,12 @@ public class StatsEvents {
 
 				if ((isSenzu || isHeartMedicine) && player.getCooldowns().isOnCooldown(stack.getItem())) return;
 
+				FoodProperties foodProperties = stack.getFoodProperties(player);
+				if (foodProperties == null) return;
+
 				// Retrieve food item hunger points and saturation points
-				int foodGain = Objects.requireNonNull(stack.getFoodProperties(player)).getNutrition();
-				float saturationGain = Objects.requireNonNull(stack.getFoodProperties(player)).getSaturationModifier();
+				int foodGain = foodProperties.getNutrition();
+				float saturationGain = foodProperties.getSaturationModifier();
 
 
 				// Calculate recovery percentages based on hunger points
@@ -419,7 +428,9 @@ public class StatsEvents {
 		if (event.getEntity().level().isClientSide || !(event.getEntity() instanceof ServerPlayer player)) return;
 
 		ItemStack stack = event.getItem();
-		String itemId = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+		ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(stack.getItem());
+		if (itemKey == null) return;
+		String itemId = itemKey.toString();
 
 		if (itemId.equals("dragonminez:senzu_bean") || itemId.equals("dragonminez:heart_medicine")) {
 			if (player.getCooldowns().isOnCooldown(stack.getItem()) || player.hasEffect(MainEffects.STUN.get()))

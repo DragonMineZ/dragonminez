@@ -9,8 +9,8 @@ import net.minecraft.world.level.Level;
 public class StructureObjective extends QuestObjective {
     private final String structureId;
 
-    public StructureObjective(String description, String structureId) {
-        super(ObjectiveType.STRUCTURE, description, 1);
+    public StructureObjective(String structureId) {
+        super(ObjectiveType.STRUCTURE, 1);
         this.structureId = structureId;
     }
 

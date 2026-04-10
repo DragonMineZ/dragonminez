@@ -95,7 +95,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		float alpha = player.isSpectator() ? 0.15f : 1.0f;
 		TransformationMaskBufferSource maskBuffer = bufferSource instanceof TransformationMaskBufferSource mask ? mask : null;
 
-		BiConsumer<ResourceLocation, float[]> geoConsumer = (texture, color) -> renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
+		BiConsumer<ResourceLocation, float[]> geoConsumer = (texture, color) -> renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(texture), color[0], color[1], color[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, true);
 
 		SkinGathererProvider.INSTANCE.gatherBodyLayers(player, stats, partialTick, geoConsumer);
 		SkinGathererProvider.INSTANCE.gatherAndroidLayers(player, stats, partialTick, geoConsumer);
@@ -164,7 +164,7 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 			}
 		}
 
-		final float[] hairTint = finalTint;
+		final float[] hairTint = applyColorTint(finalTint, stats);
 
 		model.getBone("head").ifPresent(headBone -> {
 			float originalZ = headBone.getPosZ();
@@ -287,6 +287,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 				}
 			}
 		}
+
+		skin = applyColorTint(skin, stats);
+		hair = applyColorTint(hair, stats);
+		b2 = applyColorTint(b2, stats);
 
 		if (!faceKey.equals("human") && !faceKey.equals("saiyan") && !faceKey.equals("saiyan_ssj4") && !faceKey.equals("buffed")
 				&& !faceKey.equals("namekian") && !faceKey.equals("namekian_orange")
@@ -424,15 +428,17 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		renderColoredLayer(model, poseStack, animatable, bufferSource, folder + "majin_mouth_" + character.getMouthType() + ".png", skin, pt, pl, po, alpha);
 	}
 
-	private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha) {
-		float intensity;
-		if (this.currentKaiokenPhase > 0) intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
-		else intensity = 0.2f * this.currentTintProgress;
+	private void renderLayerWholeModel(BakedGeoModel model, PoseStack poseStack, MultiBufferSource bufferSource, T animatable, RenderType renderType, float r, float g, float b, float scaleInflation, float partialTick, int packedLight, int packedOverlay, float alpha, boolean applyTransformationTint) {
+		if (applyTransformationTint) {
+			float intensity;
+			if (this.currentKaiokenPhase > 0) intensity = Math.min(0.6f, this.currentKaiokenPhase * 0.1f);
+			else intensity = 0.2f * this.currentTintProgress;
 
-		if (intensity > 0.001f) {
-			r = r * (1.0f - intensity) + (this.currentAuraColor[0] * intensity);
-			g = g * (1.0f - intensity) + (this.currentAuraColor[1] * intensity);
-			b = b * (1.0f - intensity) + (this.currentAuraColor[2] * intensity);
+			if (intensity > 0.001f) {
+				r = r * (1.0f - intensity) + (this.currentAuraColor[0] * intensity);
+				g = g * (1.0f - intensity) + (this.currentAuraColor[1] * intensity);
+				b = b * (1.0f - intensity) + (this.currentAuraColor[2] * intensity);
+			}
 		}
 
 		poseStack.pushPose();
@@ -457,7 +463,39 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 	private void renderColoredLayer(BakedGeoModel model, PoseStack poseStack, T animatable, MultiBufferSource bufferSource, String path, float[] rgb, float partialTick, int packedLight, int packedOverlay, float alpha) {
 		ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
-		renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(loc)), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha);
+		renderLayerWholeModel(model, poseStack, bufferSource, animatable, RenderType.entityTranslucent(getSafeTexture(loc)), rgb[0], rgb[1], rgb[2], 1.0f, partialTick, packedLight, packedOverlay, alpha, false);
+	}
+
+	private float[] applyColorTint(float[] rgb, StatsData stats) {
+		if (rgb == null || rgb.length < 3) return rgb;
+
+		int phase = TransformationsHelper.getKaiokenPhase(stats);
+		boolean auraActive = stats.getStatus().isChargingKi() || stats.getStatus().isAuraActive() || stats.getStatus().isPermanentAura();
+		if (phase <= 0 && !auraActive) return rgb;
+
+		float[] tinted = rgb.clone();
+		if (phase > 0) {
+			applyKaiokenToRgb(tinted, phase);
+		} else {
+			float intensity = 0.2f;
+			float[] auraRgb = getTopAuraColor(stats);
+			applyAuraTintToRgb(tinted, auraRgb, intensity);
+		}
+
+		return tinted;
+	}
+
+	private void applyKaiokenToRgb(float[] rgb, int phase) {
+		float intensity = Math.min(0.6f, phase * 0.1f);
+		rgb[0] = Mth.clamp(rgb[0] * (1.0f - intensity) + intensity, 0.0f, 1.0f);
+		rgb[1] = Mth.clamp(rgb[1] * (1.0f - intensity), 0.0f, 1.0f);
+		rgb[2] = Mth.clamp(rgb[2] * (1.0f - intensity), 0.0f, 1.0f);
+	}
+
+	private void applyAuraTintToRgb(float[] rgb, float[] auraRgb, float intensity) {
+		rgb[0] = rgb[0] * (1.0f - intensity) + (auraRgb[0] * intensity);
+		rgb[1] = rgb[1] * (1.0f - intensity) + (auraRgb[1] * intensity);
+		rgb[2] = rgb[2] * (1.0f - intensity) + (auraRgb[2] * intensity);
 	}
 
 	private void unhideParents(GeoBone bone) {

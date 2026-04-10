@@ -6,6 +6,7 @@ import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -84,14 +85,15 @@ public class TrackedQuestHUD {
 		for (int i = 0; i < objectives.size(); i++) {
 			QuestObjective objective = objectives.get(i);
 			int progress = pqd.getObjectiveProgress(questId, i);
+			int required = quest.getObjectiveRequired(pqd, questId, i);
 			if (!quest.isParallelObjectives()) {
-				if (progress >= objective.getRequired()) continue;
-				lines.addAll(splitObjectiveLine(font, objective, progress));
+				if (progress >= required) continue;
+				lines.addAll(splitObjectiveLine(font, objective, progress, required));
 				return lines;
 			}
 
-			if (progress < objective.getRequired()) {
-				lines.addAll(splitObjectiveLine(font, objective, progress));
+			if (progress < required) {
+				lines.addAll(splitObjectiveLine(font, objective, progress, required));
 			}
 		}
 
@@ -102,10 +104,10 @@ public class TrackedQuestHUD {
 		return lines;
 	}
 
-	private static List<FormattedCharSequence> splitObjectiveLine(Font font, QuestObjective objective, int progress) {
+	private static List<FormattedCharSequence> splitObjectiveLine(Font font, QuestObjective objective, int progress, int required) {
 		Component text = Component.literal("- ")
-				.append(toComponent(objective.getDescription()))
-				.append(Component.literal(" (" + progress + "/" + objective.getRequired() + ")"));
+				.append(QuestTextFormatter.describeObjective(objective))
+				.append(Component.literal(" (" + progress + "/" + required + ")"));
 		return font.split(text, MAX_TEXT_WIDTH);
 	}
 

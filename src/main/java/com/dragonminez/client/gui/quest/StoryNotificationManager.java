@@ -6,6 +6,7 @@ import com.dragonminez.common.network.S2C.StoryToastS2C;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.client.Minecraft;
@@ -38,6 +39,14 @@ public final class StoryNotificationManager {
 						? toComponent(quest.getTitle())
 						: Component.literal(message.getQuestId());
 				tone = StoryToast.Tone.PROGRESS;
+			}
+			case QUEST_FAILED -> {
+				Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
+				title = Component.translatable("toast.dragonminez.story.quest_failed.title");
+				description = quest != null
+						? Component.translatable("toast.dragonminez.story.quest_failed.desc", toComponent(quest.getTitle()))
+						: Component.translatable("toast.dragonminez.story.quest_failed.desc", Component.literal(message.getQuestId()));
+				tone = StoryToast.Tone.FAILURE;
 			}
 			case OBJECTIVE_COMPLETE -> {
 				Quest quest = QuestRegistry.getClientQuest(message.getQuestId());
@@ -73,16 +82,19 @@ public final class StoryNotificationManager {
 		}
 
 		QuestObjective objective = quest.getObjectives().get(idx);
-		Component objectiveText = toComponent(objective.getDescription());
+		Component objectiveText = QuestTextFormatter.describeObjective(objective);
 		int progress = message.getObjectiveProgress();
 		int required = message.getObjectiveRequired();
 
 		if (progress < 0 || required < 0) {
 			final int[] fallbackProgress = {0};
-			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data ->
-					fallbackProgress[0] = data.getPlayerQuestData().getObjectiveProgress(message.getQuestId(), idx));
+			final int[] fallbackRequired = {objective.getRequired()};
+			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+				fallbackProgress[0] = data.getPlayerQuestData().getObjectiveProgress(message.getQuestId(), idx);
+				fallbackRequired[0] = quest.getObjectiveRequired(data.getPlayerQuestData(), message.getQuestId(), idx);
+			});
 			progress = fallbackProgress[0];
-			required = objective.getRequired();
+			required = fallbackRequired[0];
 		}
 
 		return Component.translatable(
