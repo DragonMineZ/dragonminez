@@ -336,7 +336,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public void setupKiSouls(LivingEntity owner, float damage, float speed, int color, int castTime) {
         this.setOwner(owner);
         this.setKiRenderType(4);
-        this.setSize(0.6F);
+        this.setSize(0.8F);
         this.setKiSpeed(speed);
         this.setKiDamage(damage);
         this.setColors(color, color);

@@ -35,8 +35,8 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
 
         float currentScale = entity.getMaxSize() * (0.5F + (progress * 0.5F));
 
-        float fadeStart = 0.75F;
-        float maxAlpha = 0.4F;
+        float fadeStart = 0.55F;
+        float maxAlpha = 0.25F;
         float currentAlpha = maxAlpha;
 
         if (progress > fadeStart) {
@@ -49,9 +49,8 @@ public class KiExplosionVisualRenderer extends EntityRenderer<KiExplosionVisualE
         poseStack.pushPose();
         this.model.setupAnim(entity, 0.0F, 0.0F, ageInTicks, 0.0F, 0.0F);
 
-
         poseStack.scale(currentScale, currentScale, currentScale);
-        poseStack.translate(0.0D, -1.0D, 0.0D);
+        poseStack.translate(0.0D, -1.25D, 0.0D);
 
         VertexConsumer vertexConsumer = buffer.getBuffer(ModRenderTypes.glow_ki(TEXTURE_EXPLOSION));
         this.model.renderToBuffer(poseStack, vertexConsumer, 15728880, OverlayTexture.NO_OVERLAY, color[0], color[1], color[2], currentAlpha);

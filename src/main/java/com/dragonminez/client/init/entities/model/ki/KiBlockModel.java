@@ -56,11 +56,11 @@ public class KiBlockModel<T extends Entity> extends EntityModel<T> {
 
 	@Override
 	public void setupAnim(Entity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        float velocidadGlobal = 4.8f;
+        float velocidadGlobal = 1.0f;
 
-        this.ball.xRot = ageInTicks * velocidadGlobal * 4.5f;
-        this.ball.yRot = ageInTicks * velocidadGlobal * 4.5f;
-        this.ball.zRot = ageInTicks * velocidadGlobal * 4.5f;
+        this.ball.xRot = ageInTicks * velocidadGlobal * 1.1f;
+        this.ball.yRot = ageInTicks * velocidadGlobal * 1.7f;
+        this.ball.zRot = ageInTicks * velocidadGlobal * 2.3f;
 	}
 
 	@Override
