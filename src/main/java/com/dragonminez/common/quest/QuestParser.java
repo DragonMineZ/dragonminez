@@ -63,6 +63,7 @@ public class QuestParser {
 		String description = json.has("description") ? json.get("description").getAsString() : "";
 		String category = json.has("category") ? json.get("category").getAsString() : "general";
 		boolean parallelObjectives = json.has("parallel_objectives") && json.get("parallel_objectives").getAsBoolean();
+		boolean partyScaling = json.has("party_scaling") && json.get("party_scaling").getAsBoolean();
 		String questGiver = json.has("quest_giver") && !json.get("quest_giver").isJsonNull()
 				? json.get("quest_giver").getAsString()
 				: null;
@@ -70,33 +71,14 @@ public class QuestParser {
 				? json.get("turn_in").getAsString()
 				: null;
 
-		String sagaId = null;
-		int chainOrder = -1;
-		String nextQuestId = null;
-		if (json.has("chain") && json.get("chain").isJsonObject()) {
-			JsonObject chain = json.getAsJsonObject("chain");
-			sagaId = chain.has("saga") && !chain.get("saga").isJsonNull() ? chain.get("saga").getAsString() : null;
-			chainOrder = chain.has("order") ? chain.get("order").getAsInt() : -1;
-			nextQuestId = chain.has("next") && !chain.get("next").isJsonNull() ? chain.get("next").getAsString() : null;
-		}
-
-		String branchGroup = null;
-		String branchPath = null;
-		if (json.has("branch") && json.get("branch").isJsonObject()) {
-			JsonObject branch = json.getAsJsonObject("branch");
-			branchGroup = branch.has("group") && !branch.get("group").isJsonNull() ? branch.get("group").getAsString() : null;
-			branchPath = branch.has("path") && !branch.get("path").isJsonNull() ? branch.get("path").getAsString() : null;
-		}
-
 		QuestPrerequisites prerequisites = parseConditionsBlock(json, "prerequisites");
 		QuestPrerequisites startRequirements = parseConditionsBlock(json, "requirements");
 
 		List<QuestObjective> objectives = parseObjectiveList(json);
 		List<QuestReward> rewards = parseRewardList(json);
 
-		return new Quest(numericId, stringId, type, title, description, category, parallelObjectives,
-				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn,
-				sagaId, chainOrder, nextQuestId, branchGroup, branchPath);
+		return new Quest(numericId, stringId, type, title, description, category, parallelObjectives, partyScaling,
+				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn);
 	}
 
 	private static QuestPrerequisites parseConditionsBlock(JsonObject json, String key) {
@@ -134,14 +116,13 @@ public class QuestParser {
 		}
 
 		String type = json.get("type").getAsString();
-		String description = json.has("description") ? json.get("description").getAsString() : "";
 
 		return switch (type.toUpperCase()) {
 			case "ITEM" -> {
 				String itemId = json.get("item").getAsString();
 				int count = json.get("count").getAsInt();
 				Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
-				yield (item != Items.AIR) ? new ItemObjective(description, item, count) : null;
+				yield (item != Items.AIR) ? new ItemObjective(item, count) : null;
 			}
 			case "KILL" -> {
 				String entityId = json.get("entity").getAsString();
@@ -150,16 +131,16 @@ public class QuestParser {
 				double health = json.has("health") ? json.get("health").getAsDouble() : 20.0;
 				double meleeDamage = json.has("meleeDamage") ? json.get("meleeDamage").getAsDouble() : 1.0;
 				double kiDamage = json.has("kiDamage") ? json.get("kiDamage").getAsDouble() : 1.0;
-				yield new KillObjective(description, entityType, killCount, health, meleeDamage, kiDamage);
+				yield new KillObjective(entityType, killCount, health, meleeDamage, kiDamage);
 			}
-			case "BIOME" -> new BiomeObjective(description, json.get("biome").getAsString());
-			case "DIMENSION" -> new DimensionObjective(description, json.get("dimension").getAsString());
+			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
+			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());
 			case "COORDS" -> {
 				int x = json.get("x").getAsInt();
 				int y = json.get("y").getAsInt();
 				int z = json.get("z").getAsInt();
 				int radius = json.has("radius") ? json.get("radius").getAsInt() : 10;
-				yield new CoordsObjective(description, new BlockPos(x, y, z), radius);
+				yield new CoordsObjective(new BlockPos(x, y, z), radius);
 			}
 			case "INTERACT" -> {
 				String interactEntity = json.has("entity") ? json.get("entity").getAsString() : null;
@@ -167,12 +148,12 @@ public class QuestParser {
 				EntityType<?> interactType = interactEntity != null
 						? BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(interactEntity))
 						: null;
-				yield new InteractObjective(description, interactType, entityName);
+				yield new InteractObjective(interactType, entityName);
 			}
-			case "STRUCTURE" -> new StructureObjective(description, json.get("structure").getAsString());
+			case "STRUCTURE" -> new StructureObjective(json.get("structure").getAsString());
 			case "TALK_TO" -> {
 				String npcId = json.has("npcId") ? json.get("npcId").getAsString() : null;
-				yield npcId != null ? new TalkToObjective(description, npcId) : null;
+				yield npcId != null ? new TalkToObjective(npcId) : null;
 			}
 			default -> null;
 		};

@@ -1,5 +1,8 @@
 package com.dragonminez.common.quest;
 
+import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.quest.objectives.ItemObjective;
+import com.dragonminez.common.quest.objectives.KillObjective;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -37,26 +40,20 @@ public class Quest {
 
 	private final String category;
 	private final boolean parallelObjectives;
+	private final boolean partyScaling;
 	private final String questGiver;
 	private final String turnIn;
 	private final QuestPrerequisites prerequisites;
 	private final QuestPrerequisites startRequirements;
-	private final String branchGroup;
-	private final String branchPath;
-	private final String sagaId;
-	private final int chainOrder;
-	private final String nextQuestId;
 
 	/**
-	 * Universal constructor for the unified quest model.
+	 * Universal constructor for quests.
 	 */
 	public Quest(int id, String stringId, QuestType type, String title, String description,
-				 String category, boolean parallelObjectives,
+				 String category, boolean parallelObjectives, boolean partyScaling,
 				 List<QuestObjective> objectives, List<QuestReward> rewards,
 				 QuestPrerequisites prerequisites, QuestPrerequisites startRequirements,
-				 String questGiver, String turnIn,
-				 String sagaId, int chainOrder, String nextQuestId,
-				 String branchGroup, String branchPath) {
+				 String questGiver, String turnIn) {
 		this.id = id;
 		this.stringId = stringId;
 		this.type = type != null ? type : QuestType.SAGA;
@@ -68,15 +65,11 @@ public class Quest {
 		this.currentObjectiveIndex = 0;
 		this.category = category != null ? category : "general";
 		this.parallelObjectives = parallelObjectives;
+		this.partyScaling = partyScaling;
 		this.questGiver = questGiver;
 		this.turnIn = turnIn;
 		this.prerequisites = prerequisites;
 		this.startRequirements = startRequirements;
-		this.sagaId = sagaId;
-		this.chainOrder = chainOrder;
-		this.nextQuestId = nextQuestId;
-		this.branchGroup = branchGroup;
-		this.branchPath = branchPath;
 	}
 
 	public boolean hasPrerequisites() {
@@ -97,11 +90,105 @@ public class Quest {
 
 	public String getEffectiveId() {
 		if (stringId != null) return stringId;
-		if (sagaId != null) return sagaId + ":" + id;
 		return String.valueOf(id);
 	}
 
-	public boolean isBranchingQuest() {
-		return branchGroup != null && !branchGroup.isBlank() && branchPath != null && !branchPath.isBlank();
+	public int getObjectiveRequired(PlayerQuestData pqd, String questId, int objectiveIndex) {
+		if (objectiveIndex < 0 || objectiveIndex >= objectives.size()) {
+			return 0;
+		}
+
+		QuestObjective objective = objectives.get(objectiveIndex);
+		if (pqd == null) {
+			return objective.getRequired();
+		}
+
+		return pqd.getObjectiveRequired(questId, objectiveIndex, objective.getRequired());
+	}
+
+	public void initializeObjectiveRequirements(PlayerQuestData pqd, String questId, int partySize) {
+		if (pqd == null || questId == null || questId.isBlank()) {
+			return;
+		}
+
+		int safePartySize = Math.max(1, partySize);
+		for (int i = 0; i < objectives.size(); i++) {
+			pqd.setObjectiveRequired(questId, i, getScaledObjectiveRequired(objectives.get(i), safePartySize));
+		}
+	}
+
+	public double getScaledKillHealth(KillObjective objective, int partySize) {
+		return scaleKillStat(objective.getHealth(), partySize, 0.85, objective.getHealth() >= 50.0 ? 5.0 : 1.0);
+	}
+
+	public double getScaledKillMeleeDamage(KillObjective objective, int partySize) {
+		return scaleKillStat(objective.getMeleeDamage(), partySize, 0.45, 0.25);
+	}
+
+	public double getScaledKillKiDamage(KillObjective objective, int partySize) {
+		return scaleKillStat(objective.getKiDamage(), partySize, 0.45, 0.25);
+	}
+
+	private int getScaledObjectiveRequired(QuestObjective objective, int partySize) {
+		int baseRequired = objective.getRequired();
+		if (!partyScaling || partySize <= 1 || baseRequired <= 0) {
+			return baseRequired;
+		}
+
+		int extraMembers = partySize - 1;
+		double configuredMultiplier = ConfigManager.getServerConfig().getGameplay().getDefaultQuestPartyMultiplier();
+
+		if (objective instanceof ItemObjective) {
+			double scaled = baseRequired * Math.pow(configuredMultiplier, extraMembers);
+			return roundUpCount(Math.max(baseRequired, scaled), resolveItemCountStep(baseRequired));
+		}
+
+		if (objective instanceof KillObjective) {
+			if (baseRequired <= 1) {
+				return baseRequired;
+			}
+			double scaled = baseRequired * Math.pow(configuredMultiplier, extraMembers * 0.75);
+			return Math.max(baseRequired, (int) Math.ceil(scaled));
+		}
+
+		return baseRequired;
+	}
+
+	private double scaleKillStat(double baseValue, int partySize, double exponentWeight, double roundingStep) {
+		if (!partyScaling || partySize <= 1 || baseValue <= 0.0) {
+			return baseValue;
+		}
+
+		int extraMembers = partySize - 1;
+		double configuredMultiplier = ConfigManager.getServerConfig().getGameplay().getDefaultQuestPartyMultiplier();
+		double scaled = baseValue * Math.pow(configuredMultiplier, extraMembers * exponentWeight);
+		return roundUpValue(Math.max(baseValue, scaled), roundingStep);
+	}
+
+	private static int resolveItemCountStep(int baseRequired) {
+		if (baseRequired >= 96) {
+			return 10;
+		}
+		if (baseRequired >= 24) {
+			return 5;
+		}
+		if (baseRequired >= 8) {
+			return 2;
+		}
+		return 1;
+	}
+
+	private static int roundUpCount(double value, int step) {
+		if (step <= 1) {
+			return (int) Math.ceil(value);
+		}
+		return (int) (Math.ceil(value / step) * step);
+	}
+
+	private static double roundUpValue(double value, double step) {
+		if (step <= 0.0) {
+			return value;
+		}
+		return Math.ceil(value / step) * step;
 	}
 }

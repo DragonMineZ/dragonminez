@@ -3,10 +3,11 @@ package com.dragonminez.common.quest;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+
+import java.util.List;
 
 /**
  * Shared evaluator for quest unlock prerequisites and quest start requirements.
@@ -76,6 +77,33 @@ public class QuestAvailabilityChecker {
 			return availabilityFailure;
 		}
 		return describeStartRequirementFailure(quest, questKey, player, statsData);
+	}
+
+	public static boolean isSagaQuestAvailable(Quest quest, Saga saga, int questIndex, StatsData statsData) {
+		if (quest == null || saga == null || statsData == null) {
+			return false;
+		}
+
+		if (!isSequentiallyReachable(saga, questIndex, statsData.getPlayerQuestData())) {
+			return false;
+		}
+
+		return !quest.hasPrerequisites() || isAvailable(quest, statsData);
+	}
+
+	private static boolean isSequentiallyReachable(Saga saga, int questIndex, PlayerQuestData pqd) {
+		if (questIndex <= 0) {
+			return true;
+		}
+
+		List<Quest> sagaQuests = saga.getQuests();
+		if (questIndex >= sagaQuests.size()) {
+			return false;
+		}
+
+		Quest previous = sagaQuests.get(questIndex - 1);
+		String previousKey = PlayerQuestData.sagaQuestKey(saga.getId(), previous.getId());
+		return pqd.isQuestCompleted(previousKey);
 	}
 
 	private static boolean containsTimeCondition(QuestPrerequisites prereqs) {
@@ -151,7 +179,7 @@ public class QuestAvailabilityChecker {
 		if (evaluateCondition(condition, context, ignoreTimeConditions)) {
 			return null;
 		}
-		return describeCondition(condition, context);
+		return QuestTextFormatter.describeRequirement(condition, context.toRequirementContext());
 	}
 
 	private static boolean evaluateCondition(QuestPrerequisites.Condition condition, EvaluationContext context, boolean ignoreTimeConditions) {
@@ -229,197 +257,6 @@ public class QuestAvailabilityChecker {
 		};
 	}
 
-	private static Component describeCondition(QuestPrerequisites.Condition condition, EvaluationContext context) {
-		return switch (condition.getType()) {
-			case SAGA_QUEST -> Component.translatable(
-					"gui.dragonminez.quests.requirement.complete_saga",
-					resolveSagaQuestName(condition.getSagaId(), condition.getQuestId())
-			);
-			case QUEST -> Component.translatable(
-					"gui.dragonminez.quests.requirement.complete_quest",
-					resolveQuestName(condition.getRequiredQuestId())
-			);
-			case STAT -> Component.translatable(
-					"gui.dragonminez.quests.requirement.stat",
-					condition.getMinValue(),
-					humanizeIdentifier(condition.getStat())
-			);
-			case LEVEL -> Component.translatable(
-					"gui.dragonminez.quests.requirement.level",
-					condition.getMinLevel()
-			);
-			case BIOME -> Component.translatable(
-					"gui.dragonminez.quests.requirement.biome",
-					humanizeResourceIdentifier(condition.getBiomeId())
-			);
-			case STRUCTURE -> buildStructureRequirement(condition);
-			case DIMENSION -> Component.translatable(
-					"gui.dragonminez.quests.requirement.dimension",
-					humanizeResourceIdentifier(condition.getDimensionId())
-			);
-			case TIME -> buildTimeRequirement(condition, context);
-		};
-	}
-
-	private static Component buildStructureRequirement(QuestPrerequisites.Condition condition) {
-		MutableComponent base = Component.translatable(
-				"gui.dragonminez.quests.requirement.structure",
-				humanizeResourceIdentifier(condition.getStructureId())
-		);
-
-		QuestPrerequisites.StructureHint hint = condition.getStructureHint();
-		if (hint == null || (!hint.hasCoordinates() && hint.dimensionId() == null)) {
-			return base;
-		}
-
-		if (hint.dimensionId() != null) {
-			base.append(Component.literal(" ("))
-					.append(Component.translatable("gui.dragonminez.quests.requirement.dimension", humanizeResourceIdentifier(hint.dimensionId())))
-					.append(Component.literal(")"));
-		}
-
-		if (hint.hasCoordinates()) {
-			base.append(Component.literal(" - "))
-					.append(Component.translatable("gui.dragonminez.quests.requirement.coords", hint.x(), hint.y(), hint.z()));
-		}
-
-		return base;
-	}
-
-	private static Component buildTimeRequirement(QuestPrerequisites.Condition condition, EvaluationContext context) {
-		long duration = condition.getDuration() != null ? condition.getDuration() : 0L;
-		MutableComponent base = condition.getTimeMode() == QuestPrerequisites.TimeMode.REAL_TIME
-				? Component.translatable("gui.dragonminez.quests.requirement.time_real", formatRealTimeDuration(duration))
-				: Component.translatable("gui.dragonminez.quests.requirement.time_game", formatGameTimeDuration(duration));
-
-		if (context.questKey() == null || context.questKey().isBlank() || duration <= 0L) {
-			return base;
-		}
-
-		PlayerQuestData.QuestStartRequirementTiming timing = context.data().getPlayerQuestData().getStartRequirementTiming(context.questKey());
-		if (timing == null) {
-			return base;
-		}
-
-		long remaining;
-		if (condition.getTimeMode() == QuestPrerequisites.TimeMode.REAL_TIME) {
-			long elapsed = Math.max(0L, context.realTimeMs() - timing.getRealTimeStartedMs());
-			remaining = Math.max(0L, duration - elapsed);
-			if (remaining > 0L) {
-				return base.append(Component.literal(" ("))
-						.append(Component.translatable("gui.dragonminez.quests.requirement.remaining", formatRealTimeDuration(remaining)))
-						.append(Component.literal(")"));
-			}
-			return base.append(Component.literal(" ("))
-					.append(Component.translatable("gui.dragonminez.quests.requirement.ready"))
-					.append(Component.literal(")"));
-		}
-
-		long elapsed = Math.max(0L, context.gameTime() - timing.getGameTimeStarted());
-		remaining = Math.max(0L, duration - elapsed);
-		if (remaining > 0L) {
-			return base.append(Component.literal(" ("))
-					.append(Component.translatable("gui.dragonminez.quests.requirement.remaining", formatGameTimeDuration(remaining)))
-					.append(Component.literal(")"));
-		}
-		return base.append(Component.literal(" ("))
-				.append(Component.translatable("gui.dragonminez.quests.requirement.ready"))
-				.append(Component.literal(")"));
-	}
-
-	private static Component resolveSagaQuestName(String sagaId, Integer questId) {
-		if (sagaId == null || questId == null) {
-			return Component.literal("?");
-		}
-
-		Saga saga = QuestRegistry.getSaga(sagaId);
-		if (saga == null) {
-			saga = QuestRegistry.getClientSaga(sagaId);
-		}
-		if (saga != null) {
-			Quest quest = saga.getQuestById(questId);
-			if (quest != null) {
-				return displayText(quest.getTitle());
-			}
-		}
-		return Component.literal(humanizeIdentifier(sagaId) + " " + questId);
-	}
-
-	private static Component resolveQuestName(String questId) {
-		if (questId == null || questId.isBlank()) {
-			return Component.literal("?");
-		}
-
-		Quest quest = QuestRegistry.getQuest(questId);
-		if (quest == null) {
-			quest = QuestRegistry.getClientQuest(questId);
-		}
-		if (quest != null) {
-			return displayText(quest.getTitle());
-		}
-		return Component.literal(humanizeResourceIdentifier(questId));
-	}
-
-	private static Component displayText(String raw) {
-		if (raw == null || raw.isBlank()) {
-			return Component.literal("?");
-		}
-		if (!raw.contains(" ") && raw.contains(".")) {
-			return Component.translatable(raw);
-		}
-		return Component.literal(raw);
-	}
-
-	private static String humanizeResourceIdentifier(String raw) {
-		if (raw == null || raw.isBlank()) return "?";
-		String value = raw.startsWith("#") ? raw.substring(1) : raw;
-		int colon = value.indexOf(':');
-		String token = colon >= 0 ? value.substring(colon + 1) : value;
-		return humanizeIdentifier(token);
-	}
-
-	private static String humanizeIdentifier(String raw) {
-		if (raw == null || raw.isBlank()) return "?";
-		String normalized = raw.replace('_', ' ').replace('-', ' ');
-		String[] parts = normalized.split("\\s+");
-		StringBuilder builder = new StringBuilder();
-		for (String part : parts) {
-			if (part.isBlank()) continue;
-			if (!builder.isEmpty()) builder.append(' ');
-			builder.append(Character.toUpperCase(part.charAt(0)));
-			if (part.length() > 1) {
-				builder.append(part.substring(1).toLowerCase());
-			}
-		}
-		return builder.toString();
-	}
-
-	private static String formatGameTimeDuration(long ticks) {
-		if (ticks <= 0L) return "0s";
-		long totalSeconds = Math.max(1L, ticks / 20L);
-		return formatSeconds(totalSeconds);
-	}
-
-	private static String formatRealTimeDuration(long millis) {
-		if (millis <= 0L) return "0s";
-		long totalSeconds = Math.max(1L, millis / 1000L);
-		return formatSeconds(totalSeconds);
-	}
-
-	private static String formatSeconds(long totalSeconds) {
-		long hours = totalSeconds / 3600L;
-		long minutes = (totalSeconds % 3600L) / 60L;
-		long seconds = totalSeconds % 60L;
-
-		if (hours > 0L) {
-			return minutes > 0L ? hours + "h " + minutes + "m" : hours + "h";
-		}
-		if (minutes > 0L) {
-			return seconds > 0L ? minutes + "m " + seconds + "s" : minutes + "m";
-		}
-		return seconds + "s";
-	}
-
 	private record EvaluationContext(StatsData data, Player player, String questKey) {
 		Level level() {
 			return player != null ? player.level() : null;
@@ -435,6 +272,10 @@ public class QuestAvailabilityChecker {
 
 		long realTimeMs() {
 			return System.currentTimeMillis();
+		}
+
+		QuestTextFormatter.RequirementContext toRequirementContext() {
+			return new QuestTextFormatter.RequirementContext(data, player, questKey);
 		}
 	}
 }

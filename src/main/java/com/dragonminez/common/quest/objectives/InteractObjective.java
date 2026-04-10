@@ -12,8 +12,8 @@ public class InteractObjective extends QuestObjective {
     private final String entityTypeId;
     private final String entityName;
 
-    public InteractObjective(String description, EntityType<?> entityType, String entityName) {
-        super(ObjectiveType.INTERACT, description, 1);
+    public InteractObjective(EntityType<?> entityType, String entityName) {
+        super(ObjectiveType.INTERACT, 1);
         this.entityTypeId = entityType != null ? BuiltInRegistries.ENTITY_TYPE.getKey(entityType).toString() : null;
         this.entityName = entityName;
     }

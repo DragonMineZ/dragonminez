@@ -8,8 +8,8 @@ import net.minecraft.world.level.Level;
 public class DimensionObjective extends QuestObjective {
     private final String dimensionId;
 
-    public DimensionObjective(String description, String dimensionId) {
-        super(ObjectiveType.DIMENSION, description, 1);
+    public DimensionObjective(String dimensionId) {
+        super(ObjectiveType.DIMENSION, 1);
         this.dimensionId = dimensionId;
     }
 

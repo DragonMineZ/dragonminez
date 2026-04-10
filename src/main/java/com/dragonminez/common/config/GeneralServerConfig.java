@@ -16,7 +16,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
@@ -65,6 +65,7 @@ public class GeneralServerConfig {
 		private Boolean createDefaultSagas = true;
 		private Boolean sideQuestsEnabled = true;
 		private Boolean createDefaultSideQuests = true;
+		private Double defaultQuestPartyMultiplier = 1.45;
 		private Integer senzuCooldownTicks = 240;
 		private Integer senzuGiftCooldownTicks = 18000;
 		private Integer senzuGiftAmount = 5;
@@ -115,6 +116,10 @@ public class GeneralServerConfig {
 
 		public Integer getSenzuCooldownTicks() {
 			return Math.max(0, Math.min(senzuCooldownTicks, Integer.MAX_VALUE));
+		}
+
+		public Double getDefaultQuestPartyMultiplier() {
+			return Math.max(1.0, Math.min(defaultQuestPartyMultiplier, 5.0));
 		}
 
 		public Double getMightFruitPower() {

@@ -7,14 +7,12 @@ import com.dragonminez.client.util.LocalizationUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.AcceptPartyInviteC2S;
-import com.dragonminez.common.network.C2S.AcceptSideQuestC2S;
+import com.dragonminez.common.network.C2S.ClaimQuestRewardC2S;
 import com.dragonminez.common.network.C2S.CreatePartyC2S;
-import com.dragonminez.common.network.C2S.ClaimRewardC2S;
-import com.dragonminez.common.network.C2S.ClaimSideQuestRewardC2S;
 import com.dragonminez.common.network.C2S.InvitePartyMemberC2S;
 import com.dragonminez.common.network.C2S.LeavePartyC2S;
+import com.dragonminez.common.network.C2S.QuestActionC2S;
 import com.dragonminez.common.network.C2S.RejectPartyInviteC2S;
-import com.dragonminez.common.network.C2S.StartQuestC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
@@ -23,9 +21,9 @@ import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestReward;
 import com.dragonminez.common.quest.QuestPrerequisites;
 import com.dragonminez.common.quest.Saga;
-import com.dragonminez.common.quest.SagaBranchingHelper;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.QuestAvailabilityChecker;
+import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
@@ -540,20 +538,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					lastClickTime = now;
 
 					if (finalIsClaimAction) {
-						if (selectedQuest.isSideQuest()) {
-							NetworkHandler.sendToServer(new ClaimSideQuestRewardC2S(selectedKey));
-						} else {
-							NetworkHandler.sendToServer(new ClaimRewardC2S(currentSaga.getId(), selectedQuest.getId()));
-						}
+						NetworkHandler.sendToServer(new ClaimQuestRewardC2S(selectedKey));
 						btn.visible = false;
 						pendingRefreshTicks = 5;
 					} else {
 						boolean isHard = ConfigManager.getUserConfig().getHud().getStoryHardDifficulty();
-						if (selectedQuest.isSideQuest()) {
-							NetworkHandler.sendToServer(new AcceptSideQuestC2S(selectedKey, isHard));
-						} else {
-							NetworkHandler.sendToServer(new StartQuestC2S(currentSaga.getId(), selectedQuest.getId(), isHard));
-						}
+						NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, selectedKey, isHard, ""));
 						this.onClose();
 					}
 				})
@@ -678,7 +668,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) return false;
 		if (questData.isQuestCompleted(questKey)) return false;
-		if (questData.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) return false;
+		PlayerQuestData.QuestStatus status = questData.getQuestStatus(questKey);
+		if (status == PlayerQuestData.QuestStatus.ACCEPTED) return false;
+		if (status == PlayerQuestData.QuestStatus.FAILED) return true;
 		if (getNodeStatus(quest) != QuestNodeStatus.AVAILABLE) return false;
 		return QuestAvailabilityChecker.areStartRequirementsMet(quest, questKey, mc.player, statsData);
 	}
@@ -914,7 +906,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 		if (hoveredEntry != null && hoveredEntry.comingSoon()) {
 			renderSimpleTooltip(graphics,
-					List.of(txt("Coming soon... Follow development in discord!")),
+					List.of(txt("Coming soon... Follow development in Discord!")),
 					mouseX,
 					mouseY);
 		}
@@ -1312,9 +1304,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		for (int i = 0; i < objectives.size(); i++) {
 			QuestObjective objective = objectives.get(i);
 			int progress = pqd.getObjectiveProgress(questKey, i);
-			boolean completed = progress >= objective.getRequired();
+			boolean completed = progress >= selectedQuest.getObjectiveRequired(pqd, questKey, i);
 			String marker = completed ? "✓ " : "✕ ";
-			String baseText = getObjectiveText(objective, progress);
+			String baseText = getObjectiveText(pqd, questKey, objective, i, progress);
 			marker = completed ? "+ " : "x ";
 			List<String> wrapped = wrapText(baseText, Math.max(12, textWidth - this.font.width(marker)));
 			if (wrapped.isEmpty()) {
@@ -1330,9 +1322,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return lines;
 	}
 
-	private String getObjectiveText(QuestObjective objective, int currentProgress) {
-		String description = tr(objective.getDescription()).getString();
-		int required = objective.getRequired();
+	private String getObjectiveText(PlayerQuestData pqd, String questKey, QuestObjective objective, int objectiveIndex, int currentProgress) {
+		String description = QuestTextFormatter.describeObjective(objective).getString();
+		int required = selectedQuest != null ? selectedQuest.getObjectiveRequired(pqd, questKey, objectiveIndex) : objective.getRequired();
 		if (objective.getType() == QuestObjective.ObjectiveType.KILL || objective.getType() == QuestObjective.ObjectiveType.ITEM) {
 			return description + " (" + currentProgress + "/" + required + ")";
 		}
@@ -1375,75 +1367,12 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		List<String> lines = new ArrayList<>();
 		if (condition == null || condition.getType() == null) return lines;
 
-		switch (condition.getType()) {
-			case SAGA_QUEST -> lines.add(tr("gui.dragonminez.quests.requirement.complete_saga",
-					resolveSagaQuestName(condition.getSagaId(), condition.getQuestId())).getString());
-			case QUEST -> lines.add(tr("gui.dragonminez.quests.requirement.complete_quest",
-					resolveQuestName(condition.getRequiredQuestId())).getString());
-			case STAT -> lines.add(tr("gui.dragonminez.quests.requirement.stat",
-					condition.getMinValue(),
-					humanizeIdentifier(condition.getStat())).getString());
-			case LEVEL -> lines.add(tr("gui.dragonminez.quests.requirement.level",
-					condition.getMinLevel()).getString());
-			case BIOME -> lines.add(tr("gui.dragonminez.quests.requirement.biome",
-					humanizeResourceIdentifier(condition.getBiomeId())).getString());
-			case STRUCTURE -> {
-				lines.add(tr("gui.dragonminez.quests.requirement.structure",
-						humanizeResourceIdentifier(condition.getStructureId())).getString());
-				QuestPrerequisites.StructureHint hint = condition.getStructureHint();
-				if (hint != null) {
-					if (hint.dimensionId() != null) {
-						lines.add(tr("gui.dragonminez.quests.requirement.dimension",
-								humanizeResourceIdentifier(hint.dimensionId())).getString());
-					}
-					if (hint.hasCoordinates()) {
-						lines.add(tr("gui.dragonminez.quests.requirement.coords",
-								hint.x(), hint.y(), hint.z()).getString());
-					}
-				}
-			}
-			case DIMENSION -> lines.add(tr("gui.dragonminez.quests.requirement.dimension",
-					humanizeResourceIdentifier(condition.getDimensionId())).getString());
-			case TIME -> lines.add(buildTimeRequirementText(condition, questKey));
-		}
-
-		return lines;
-	}
-
-	private String buildTimeRequirementText(QuestPrerequisites.Condition condition, String questKey) {
-		long duration = condition.getDuration() != null ? condition.getDuration() : 0L;
-		String base = condition.getTimeMode() == QuestPrerequisites.TimeMode.REAL_TIME
-				? tr("gui.dragonminez.quests.requirement.time_real", formatRealTimeDuration(duration)).getString()
-				: tr("gui.dragonminez.quests.requirement.time_game", formatGameTimeDuration(duration)).getString();
-
-		if (statsData == null || questKey == null || questKey.isBlank()) {
-			return base;
-		}
-
-		PlayerQuestData.QuestStartRequirementTiming timing = statsData.getPlayerQuestData().getStartRequirementTiming(questKey);
 		Minecraft mc = Minecraft.getInstance();
-		if (timing == null || mc.player == null || duration <= 0L) {
-			return base;
-		}
-
-		long remaining;
-		if (condition.getTimeMode() == QuestPrerequisites.TimeMode.REAL_TIME) {
-			long elapsed = Math.max(0L, System.currentTimeMillis() - timing.getRealTimeStartedMs());
-			remaining = Math.max(0L, duration - elapsed);
-			if (remaining > 0L) {
-				return base + " (" + tr("gui.dragonminez.quests.requirement.remaining",
-						formatRealTimeDuration(remaining)).getString() + ")";
-			}
-			return base + " (" + tr("gui.dragonminez.quests.requirement.ready").getString() + ")";
-		}
-
-		long elapsed = Math.max(0L, mc.player.level().getGameTime() - timing.getGameTimeStarted());
-		remaining = Math.max(0L, duration - elapsed);
-		if (remaining > 0L) {
-			return base + " (" + tr("gui.dragonminez.quests.requirement.remaining",
-					formatGameTimeDuration(remaining)).getString() + ")";
-		}
-		return base + " (" + tr("gui.dragonminez.quests.requirement.ready").getString() + ")";
+		lines.add(QuestTextFormatter.describeRequirement(
+				condition,
+				new QuestTextFormatter.RequirementContext(statsData, mc.player, questKey)
+		).getString());
+		return lines;
 	}
 
 	private void addWrappedRequirementLine(List<String> lines, String prefix, String text, int textWidth) {
@@ -1471,84 +1400,6 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return prefix.substring(0, prefix.length() - 2) + "  ";
 		}
 		return prefix;
-	}
-
-	private String resolveSagaQuestName(String sagaId, Integer questId) {
-		if (sagaId == null || questId == null) {
-			return "?";
-		}
-
-		Saga saga = QuestRegistry.getClientSaga(sagaId);
-		if (saga != null) {
-			Quest quest = saga.getQuestById(questId);
-			if (quest != null) {
-				return LocalizationUtil.localizedOrReadableText(quest.getTitle());
-			}
-		}
-		return humanizeIdentifier(sagaId) + " " + questId;
-	}
-
-	private String resolveQuestName(String questId) {
-		if (questId == null || questId.isBlank()) {
-			return "?";
-		}
-
-		Quest quest = QuestRegistry.getClientQuest(questId);
-		if (quest != null) {
-			return LocalizationUtil.localizedOrReadableText(quest.getTitle());
-		}
-		return humanizeResourceIdentifier(questId);
-	}
-
-	private String humanizeResourceIdentifier(String raw) {
-		if (raw == null || raw.isBlank()) return "?";
-		String value = raw.startsWith("#") ? raw.substring(1) : raw;
-		int colon = value.indexOf(':');
-		String token = colon >= 0 ? value.substring(colon + 1) : value;
-		return humanizeIdentifier(token);
-	}
-
-	private String humanizeIdentifier(String raw) {
-		if (raw == null || raw.isBlank()) return "?";
-		String normalized = raw.replace('_', ' ').replace('-', ' ');
-		String[] parts = normalized.split("\\s+");
-		StringBuilder builder = new StringBuilder();
-		for (String part : parts) {
-			if (part.isBlank()) continue;
-			if (!builder.isEmpty()) builder.append(' ');
-			builder.append(Character.toUpperCase(part.charAt(0)));
-			if (part.length() > 1) {
-				builder.append(part.substring(1).toLowerCase());
-			}
-		}
-		return builder.toString();
-	}
-
-	//juro que esto es util y no esta hardcoded
-	private String formatGameTimeDuration(long ticks) {
-		if (ticks <= 0L) return "0s";
-		long totalSeconds = Math.max(1L, ticks / 20L);
-		return formatSeconds(totalSeconds);
-	}
-
-	private String formatRealTimeDuration(long millis) {
-		if (millis <= 0L) return "0s";
-		long totalSeconds = Math.max(1L, millis / 1000L);
-		return formatSeconds(totalSeconds);
-	}
-
-	private String formatSeconds(long totalSeconds) {
-		long hours = totalSeconds / 3600L;
-		long minutes = (totalSeconds % 3600L) / 60L;
-		long seconds = totalSeconds % 60L;
-
-		if (hours > 0L) {
-			return minutes > 0L ? hours + "h " + minutes + "m" : hours + "h";
-		}
-		if (minutes > 0L) {
-			return seconds > 0L ? minutes + "m " + seconds + "s" : minutes + "m";
-		}
-		return seconds + "s";
 	}
 
 	private void renderRewardTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -2500,13 +2351,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (isQuestCompleted(pqd, saga, quest)) return NodeVisibility.VISIBLE;
 
 		String questKey = questProgressKey(saga, quest);
-		if (pqd.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) {
+		PlayerQuestData.QuestStatus status = pqd.getQuestStatus(questKey);
+		if (status == PlayerQuestData.QuestStatus.ACCEPTED || status == PlayerQuestData.QuestStatus.FAILED) {
 			return NodeVisibility.VISIBLE;
 		}
 
 		if (quest.isSagaQuest()) {
 			int questIndex = findSagaQuestIndex(saga, quest);
-			if (questIndex >= 0 && SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, statsData)) {
+			if (questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, saga, questIndex, statsData)) {
 				return NodeVisibility.VISIBLE;
 			}
 
@@ -2535,8 +2387,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			if (isQuestCompleted(pqd, saga, q)) continue;
 
 			String qKey = questProgressKey(saga, q);
-			if (pqd.getQuestStatus(qKey) == PlayerQuestData.QuestStatus.ACCEPTED) continue;
-			if (SagaBranchingHelper.isSagaQuestAvailable(q, saga, i, statsData)) continue;
+			PlayerQuestData.QuestStatus status = pqd.getQuestStatus(qKey);
+			if (status == PlayerQuestData.QuestStatus.ACCEPTED || status == PlayerQuestData.QuestStatus.FAILED) continue;
+			if (QuestAvailabilityChecker.isSagaQuestAvailable(q, saga, i, statsData)) continue;
 
 			return i;
 		}
@@ -2558,18 +2411,18 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return QuestNodeStatus.COMPLETED;
 		}
 
-		if (SagaBranchingHelper.isQuestLockedByBranch(pqd, saga.getId(), quest)) {
-			return QuestNodeStatus.LOCKED;
-		}
-
 		String questKey = questProgressKey(saga, quest);
-		if (pqd.getQuestStatus(questKey) == PlayerQuestData.QuestStatus.ACCEPTED) {
+		PlayerQuestData.QuestStatus status = pqd.getQuestStatus(questKey);
+		if (status == PlayerQuestData.QuestStatus.ACCEPTED) {
 			return QuestNodeStatus.ACTIVE;
+		}
+		if (status == PlayerQuestData.QuestStatus.FAILED) {
+			return QuestNodeStatus.AVAILABLE;
 		}
 
 		if (quest.isSagaQuest()) {
 			int questIndex = findSagaQuestIndex(saga, quest);
-			if (questIndex >= 0 && SagaBranchingHelper.isSagaQuestAvailable(quest, saga, questIndex, statsData)) {
+			if (questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, saga, questIndex, statsData)) {
 				return QuestNodeStatus.AVAILABLE;
 			}
 			return QuestNodeStatus.LOCKED;

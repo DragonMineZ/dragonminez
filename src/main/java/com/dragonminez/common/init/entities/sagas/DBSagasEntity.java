@@ -5,7 +5,7 @@ import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
 import com.dragonminez.common.init.entities.ki.*;
-
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
@@ -1647,19 +1647,27 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 newEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue() * 1.5D);
             }
 
-            if (this.getPersistentData().contains("dmz_is_hardmode")) {
-                boolean isHardMode = this.getPersistentData().getBoolean("dmz_is_hardmode");
-                newEntity.getPersistentData().putBoolean("dmz_is_hardmode", isHardMode);
-            }
+			if (this.getPersistentData().contains("dmz_is_hardmode")) {
+				boolean isHardMode = this.getPersistentData().getBoolean("dmz_is_hardmode");
+				newEntity.getPersistentData().putBoolean("dmz_is_hardmode", isHardMode);
+			}
 
-            if (this.getPersistentData().contains("dmz_quest_owner")) {
-                String questOwner = this.getPersistentData().getString("dmz_quest_owner");
-                newEntity.getPersistentData().putString("dmz_quest_owner", questOwner);
-            }
+			if (this.getPersistentData().contains("dmz_saga_id")) {
+				newEntity.getPersistentData().putString("dmz_saga_id", this.getPersistentData().getString("dmz_saga_id"));
+			}
+			if (this.getPersistentData().contains("dmz_quest_owner")) {
+				newEntity.getPersistentData().putString("dmz_quest_owner", this.getPersistentData().getString("dmz_quest_owner"));
+			}
+			if (this.getPersistentData().contains(QuestService.QUEST_KEY_TAG)) {
+				newEntity.getPersistentData().putString(QuestService.QUEST_KEY_TAG, this.getPersistentData().getString(QuestService.QUEST_KEY_TAG));
+			}
+			if (this.getPersistentData().contains(QuestService.QUEST_OBJECTIVE_INDEX_TAG)) {
+				newEntity.getPersistentData().putInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG, this.getPersistentData().getInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG));
+			}
 
-            level.addFreshEntity(newEntity);
-            this.discard();
-        }
+			level.addFreshEntity(newEntity);
+			this.discard();
+		}
     }
 
     public EntityType<? extends DBSagasEntity> getNextTransform() {
