@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.SpacePodScreen;
+import com.dragonminez.client.gui.character.BaseMenuScreen;
 import com.dragonminez.client.gui.character.CharacterCustomizationScreen;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import com.dragonminez.client.gui.quest.StoryNotificationManager;
@@ -65,16 +66,30 @@ public class ForgeClientEvents {
 	@SubscribeEvent
 	public static void onKeyInput(InputEvent.Key event) {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player == null || mc.screen != null) return;
+		if (mc.player == null) return;
 
 		if (KeyBinds.STATS_MENU.consumeClick()) {
-			if (mc.player == null || mc.screen != null) return;
+			if (mc.screen instanceof BaseMenuScreen) return;
+			if (mc.screen != null) return;
+			if (!BaseMenuScreen.isStatsMenuReopenBlocked()) {
+				StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+					if (data.getStatus().isHasCreatedCharacter()) {
+						mc.setScreen(new CharacterStatsScreen());
+					} else {
+						mc.setScreen(new RaceSelectionScreen(data.getCharacter()));
+					}
+					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+				});
+			}
+			return;
+		}
+
+		if (mc.screen != null) return;
+
+		if (KeyBinds.UTILITY_MENU.consumeClick() && !UtilityMenuScreen.isUtilityMenuReopenBlocked()) {
 			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-				if (data.getStatus().isHasCreatedCharacter()) {
-					mc.setScreen(new CharacterStatsScreen());
-				} else {
-					mc.setScreen(new RaceSelectionScreen(data.getCharacter()));
-				}
+				if (!data.getStatus().isHasCreatedCharacter()) return;
+				mc.setScreen(new UtilityMenuScreen());
 				mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
 			});
 		}
@@ -147,16 +162,6 @@ public class ForgeClientEvents {
 
 		if (mc.screen == null) {
 			openCharacterCreationScreen(mc);
-		}
-
-		if (KeyBinds.UTILITY_MENU.isDown()) {
-			if (mc.screen == null) {
-				StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-					if (!data.getStatus().isHasCreatedCharacter()) return;
-					mc.setScreen(new UtilityMenuScreen());
-					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
-				});
-			}
 		}
 
 		tickCounter++;

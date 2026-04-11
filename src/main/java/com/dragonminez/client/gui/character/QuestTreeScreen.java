@@ -752,13 +752,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(@NonNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
 		updatePanelInteractionAnimations(uiMouseX, uiMouseY, partialTick);
 
 		beginUiScale(graphics);
+		applyZoom(graphics);
 		syncActionButtonPosition();
 		syncPartyButtonPositions();
 		rewardHitboxes.clear();

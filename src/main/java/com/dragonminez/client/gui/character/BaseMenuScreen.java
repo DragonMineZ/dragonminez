@@ -3,6 +3,7 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
+import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -25,8 +26,10 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	private static final long PANEL_EXIT_ANIMATION_DURATION = 140;
 	private static final int PANEL_SWITCH_DISTANCE = 190;
 	private static final int TOP_PANEL_SWITCH_DISTANCE = 90;
+	private static final long STATS_MENU_REOPEN_COOLDOWN_MS = 450L;
+	private static long statsMenuReopenBlockedUntilMs = 0L;
 
-	private enum TransitionState { NONE, OPENING }
+	private enum TransitionState { NONE, OPENING, CLOSING }
 
 	private long animationStartTime;
 	private TransitionState transitionState = TransitionState.NONE;
@@ -72,6 +75,12 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 		if (transitionState == TransitionState.OPENING && getTransitionProgress() >= 1.0f) {
 			transitionState = TransitionState.NONE;
+		}
+
+		if (transitionState == TransitionState.CLOSING && getTransitionProgress() >= 1.0f) {
+			if (this.minecraft != null) {
+				this.minecraft.setScreen(null);
+			}
 		}
 	}
 
@@ -146,17 +155,23 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		return false;
 	}
 
-	public boolean isAnimating() {
-		return transitionState == TransitionState.OPENING && getTransitionProgress() < 1.0f;
+	public boolean isNotAnimating() {
+		return transitionState == TransitionState.NONE || !(getTransitionProgress() < 1.0f);
+	}
+
+	public static boolean isStatsMenuReopenBlocked() {
+		return System.currentTimeMillis() < statsMenuReopenBlockedUntilMs;
 	}
 
 	protected void applyZoom(GuiGraphics graphics) {
-		if (transitionState != TransitionState.OPENING) return;
+		if (transitionState == TransitionState.NONE) return;
 
 		float progress = getTransitionProgress();
 		if (progress >= 1.0f) return;
 
-		float scale = easeOutBack(progress);
+		float scale = transitionState == TransitionState.OPENING
+				? easeOutBack(progress)
+				: easeOutBack(1.0f - progress);
 		scale = Math.max(0.001f, scale);
 
 		PoseStack pose = graphics.pose();
@@ -205,6 +220,14 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		if (panelSwitchState == PanelSwitchState.EXITING) {
 			return true;
 		}
+		if (transitionState == TransitionState.CLOSING) {
+			return true;
+		}
+		int statsMenuKeyCode = KeyBinds.STATS_MENU.getKey().getValue();
+		if (keyCode == statsMenuKeyCode) {
+			onClose();
+			return true;
+		}
 		if (keyCode == 256) {
 			onClose();
 			return true;
@@ -214,9 +237,7 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 
 	@Override
 	public void onClose() {
-		if (this.minecraft != null) {
-			this.minecraft.setScreen(null);
-		}
+		startCloseTransition();
 	}
 
 	@Override
@@ -267,6 +288,17 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 	private void startOpenTransition() {
 		transitionState = TransitionState.OPENING;
 		animationStartTime = System.currentTimeMillis();
+	}
+
+	private void startCloseTransition() {
+		if (transitionState == TransitionState.CLOSING) return;
+		long now = System.currentTimeMillis();
+		transitionState = TransitionState.CLOSING;
+		animationStartTime = now;
+		statsMenuReopenBlockedUntilMs = Math.max(statsMenuReopenBlockedUntilMs, now + STATS_MENU_REOPEN_COOLDOWN_MS);
+		while (KeyBinds.STATS_MENU.consumeClick()) {
+			// Drain click queue so the close key press cannot reopen the menu.
+		}
 	}
 
 	private float getTransitionProgress() {

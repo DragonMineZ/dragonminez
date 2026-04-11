@@ -260,7 +260,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (!isAnimating()) this.renderBackground(graphics);
+		if (isNotAnimating()) this.renderBackground(graphics);
 
 		int uiMouseX = (int) Math.round(toUiX(mouseX));
 		int uiMouseY = (int) Math.round(toUiY(mouseY));
