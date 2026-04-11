@@ -20,6 +20,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.ComboManager;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -1042,6 +1043,7 @@ public class CombatEvent {
 			distance = dashEvent.getDistance();
 			kiCost = dashEvent.getKiCost();
 			float currentEnergy = data.getResources().getCurrentEnergy();
+			if (player.isCreative() || player.isSpectator()) kiCost = 0;
 			if (currentEnergy < kiCost) return;
 			if (player.getFoodData().getFoodLevel() <= 3) return;
 			data.getResources().addEnergy(-kiCost);
@@ -1056,9 +1058,9 @@ public class CombatEvent {
 			player.setDeltaMovement(player.getDeltaMovement().add(velocity.x, yVel, velocity.z));
 			player.hurtMarked = true;
 
-			if (player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+			if (player.level() instanceof ServerLevel serverLevel) {
 				serverLevel.sendParticles(
-						net.minecraft.core.particles.ParticleTypes.EXPLOSION,
+						ParticleTypes.EXPLOSION,
 						player.getX(), player.getY() + 0.5, player.getZ(),
 						1,
 						0.0,

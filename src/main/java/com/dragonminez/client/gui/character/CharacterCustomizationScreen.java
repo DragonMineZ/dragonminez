@@ -184,6 +184,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 30, bodyColorY, "bodyColor"));
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, bodyColorY, "bodyColor2"));
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 90, bodyColorY, "bodyColor3"));
+
+		if (shouldRenderFormPreviewInPreset()) {
+			initPreviewTransformationArrows(top + 174);
+		}
 	}
 
 	private void initHairTab(int top) {
@@ -205,7 +209,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 					.build());
 		}
 
-		int arrowsY = top + 174;
+		initPreviewTransformationArrows(top + 174);
+	}
+
+	private void initPreviewTransformationArrows(int arrowsY) {
 		if (previewFormIndex > 0) {
 			addRenderableWidget(createArrowButton(LEFT_PANEL_X + 18, arrowsY, true, btn -> {
 				changePreviewTransformation(-1);
@@ -218,6 +225,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				refreshScreenWidgets();
 			}));
 		}
+	}
+
+	private boolean shouldRenderFormPreviewInPreset() {
+		return !activeTabs.contains(TabId.HAIR);
 	}
 
 	private void initEyesTab(int top) {
@@ -431,6 +442,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.body_type").getString(), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
+		if (shouldRenderFormPreviewInPreset()) {
+			drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
+		}
 	}
 
 	private int getCurrentHairOrBoneValue() {
@@ -547,7 +561,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		displayedScale = Mth.lerp(0.15f, displayedScale, targetScale);
 		displayedBaseY = Mth.lerp(0.15f, displayedBaseY, targetBaseY);
 
-		int adjustedScale = getAdjustedModelScale((int) displayedScale);
+		int adjustedScale = getAdjustedModelScale(player, (int) displayedScale);
 		int currentBaseY = (int) displayedBaseY;
 
 		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
@@ -1173,25 +1187,61 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
 	}
 
-	protected int getAdjustedModelScale(int baseScale) {
-		var player = Minecraft.getInstance().player;
-		if (player == null) return baseScale;
-		final float[] inverseScale = {1.0f};
+	protected int getAdjustedModelScale(LivingEntity player, int baseScale) {
+		float currentVisualScale = getCurrentVisualModelScale(player);
+		if (currentVisualScale <= 0.9375f) return baseScale;
+		float normalization = 0.9375f / currentVisualScale;
+		return Math.max(1, Math.round(baseScale * normalization));
+	}
+
+	private float getCurrentVisualModelScale(LivingEntity player) {
+		final float[] currentVisualScale = {0.9375f};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-			var localCharacter = stats.getCharacter();
+			Character localCharacter = stats.getCharacter();
 			var activeForm = localCharacter.getActiveFormData();
-			float currentScale;
+
+			float scaleX;
+			float scaleY;
 			if (activeForm != null) {
 				Float[] formScaling = activeForm.getModelScaling();
-				Float[] charScaling = localCharacter.getModelScaling();
-				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
+				scaleX = getSafeScaleValue(formScaling, 0, 0.9375f);
+				scaleY = getSafeScaleValue(formScaling, 1, 0.9375f);
 			} else {
-				Float[] charScaling = localCharacter.getModelScaling();
-				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
+				Float[] characterScaling = localCharacter.getModelScaling();
+				scaleX = getSafeScaleValue(characterScaling, 0, 0.9375f);
+				scaleY = getSafeScaleValue(characterScaling, 1, 0.9375f);
 			}
-			if (currentScale > 1.0f) inverseScale[0] = 0.9375f / currentScale;
+
+			String race = localCharacter.getRaceName() != null ? localCharacter.getRaceName().toLowerCase(Locale.ROOT) : "";
+			String currentForm = localCharacter.getActiveForm();
+			RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
+			String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null)
+					? raceConfig.getCustomModel().toLowerCase(Locale.ROOT)
+					: "";
+			String formCustomModel = (localCharacter.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
+					? activeForm.getCustomModel().toLowerCase(Locale.ROOT)
+					: "";
+
+			String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+			if (logicKey.isEmpty()) logicKey = race;
+
+			boolean isOozaru = logicKey.contains("ozaru");
+
+			if (isOozaru) {
+				scaleX = Math.max(0.1f, scaleX - 2.8f);
+				scaleY = Math.max(0.1f, scaleY - 2.8f);
+			}
+
+			currentVisualScale[0] = Math.max(0.1f, (scaleX + scaleY) / 2.0f);
 		});
-		return (int) (baseScale * inverseScale[0]);
+		return currentVisualScale[0];
+	}
+
+	private float getSafeScaleValue(Float[] scalingValues, int index, float fallback) {
+		if (scalingValues == null || index < 0 || index >= scalingValues.length || scalingValues[index] == null || scalingValues[index] <= 0.0f) {
+			return fallback;
+		}
+		return scalingValues[index];
 	}
 
 	private void reloadPreviewFormOptions() {
@@ -1542,6 +1592,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> scale + 16;
 			default -> scale;
 		};
+		previewScale = getAdjustedModelScale(player, previewScale);
 		int previewY = switch (mode) {
 			case HAIR_ONLY -> y + 42;
 			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> y + 58;
