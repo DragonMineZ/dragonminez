@@ -181,6 +181,8 @@
   "toast.dragonminez.story.quest_complete.desc": "%s is complete. Claim your reward!",
   "toast.dragonminez.party.invite.title": "Party Invite",
   "toast.dragonminez.party.invite.desc": "%s invited you to a quest party",
+  "toast.dragonminez.update.title": "DragonMineZ Update Available",
+  "toast.dragonminez.update.desc": "Installed: %s | Latest stable: %s",
   "gui.dragonminez.quest_tree.title": "Quest Tree",
   "gui.dragonminez.quest_tree.description": "Description",
   "gui.dragonminez.quest_tree.tab.tree": "Tree",
