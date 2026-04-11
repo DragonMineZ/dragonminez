@@ -278,6 +278,10 @@ public class MainEntities {
                             .sized(2.8f, 6.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ozaru").toString()));
 
+    /*
+    FRIEZA SAGA ENTITIES
+    */
+
     public static final RegistryObject<EntityType<SagaFriezaSoldier01Entity>> SAGA_FRIEZA_SOLDIER =
             ENTITY_TYPES.register("saga_friezasoldier01",
                     () -> EntityType.Builder.of(SagaFriezaSoldier01Entity::new, MobCategory.MONSTER)
@@ -394,6 +398,16 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaKrillinEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.7f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_krillin").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaTienShinhanEntity>> SAGA_TIEN_EARLY =
+            ENTITY_TYPES.register("saga_tien_early",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaTienShinhanEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_tien_early").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaYamchaEntity>> SAGA_YAMCHA =
+            ENTITY_TYPES.register("saga_yamcha",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaYamchaEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_yamcha").toString()));
     public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuMidBaseEntity>> SAGA_GOKU_MID_BASE =
             ENTITY_TYPES.register("saga_goku_mid_base",
                     () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuMidBaseEntity::new, MobCategory.MONSTER)
@@ -405,7 +419,9 @@ public class MainEntities {
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_mid_ssj").toString()));
 
-    //ANDROID SAGA
+    /*
+    ANDROID SAGA ENTITIES
+    */
     public static final RegistryObject<EntityType<SagaFriezaEntity.SagaMechaFrieza>> SAGA_MECHA_FRIEZA =
             ENTITY_TYPES.register("saga_mecha_frieza",
                     () -> EntityType.Builder.of(SagaFriezaEntity.SagaMechaFrieza::new, MobCategory.MONSTER)

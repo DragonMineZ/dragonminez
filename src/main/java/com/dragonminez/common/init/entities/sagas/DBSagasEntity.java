@@ -649,7 +649,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 break;
             case 4:
                 KiLaserEntity laser = new KiLaserEntity(this.level(), this);
-                laser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, this.getAuraColor(), this.getAuraColor(), syncCastTime);
+                laser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, usedColorMain, usedColorBorder, syncCastTime);
                 break;
             case 5:
                 KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);

@@ -185,7 +185,7 @@ public class ModClientEvents {
 
         // SAGAS
         regRender(event, DBSagasRenderer::new,
-                MainEntities.SAGA_GOKU_EARLY, MainEntities.SAGA_GOKU_EARLY_NOWEIGHTS, MainEntities.SAGA_PICCOLO_EARLY,
+                MainEntities.SAGA_GOKU_EARLY, MainEntities.SAGA_GOKU_EARLY_NOWEIGHTS, MainEntities.SAGA_PICCOLO_EARLY, MainEntities.SAGA_TIEN_EARLY, MainEntities.SAGA_YAMCHA,
                 MainEntities.SAGA_RADITZ, MainEntities.SAGA_NAPPA, MainEntities.SAGA_VEGETA, MainEntities.SAGA_OZARU_VEGETA, MainEntities.SAGA_OZARU,
                 MainEntities.SAGA_FRIEZA_SOLDIER, MainEntities.SAGA_FRIEZA_SOLDIER2, MainEntities.SAGA_FRIEZA_SOLDIER3, MainEntities.SAGA_MORO_SOLDIER,
                 MainEntities.SAGA_CUI, MainEntities.SAGA_DODORIA, MainEntities.SAGA_VEGETA_NAMEK, MainEntities.SAGA_ZARBON, MainEntities.SAGA_ZARBON_TRANSF,
