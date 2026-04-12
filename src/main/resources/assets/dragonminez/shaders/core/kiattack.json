@@ -1,0 +1,21 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "dragonminez:kiattack",
+  "fragment": "dragonminez:kiattack",
+  "attributes": ["Position", "Color", "UV0", "UV1", "UV2", "Normal"],
+  "samplers": [{"name": "DiffuseSampler"}],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] },
+    { "name": "colorCore", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "colorBorder", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "colorOutline", "type": "float", "count": 3, "values": [1.0, 1.0, 1.0] },
+    { "name": "alphaMult", "type": "float", "count": 1, "values": [1.0] },
+    { "name": "time", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "texBlend", "type": "float", "count": 1, "values": [0.0] }
+  ]
+}
