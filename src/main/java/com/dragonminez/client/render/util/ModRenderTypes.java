@@ -46,6 +46,8 @@ public class ModRenderTypes extends RenderType {
                         .createCompositeState(false));
     }
 
+
+
     public static RenderType getCustomLightning(ResourceLocation texture) {
         return RenderType.create("dragonminez_custom_lightning",
                 DefaultVertexFormat.POSITION_COLOR_NORMAL,
@@ -59,41 +61,6 @@ public class ModRenderTypes extends RenderType {
                         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                         .setCullState(RenderStateShard.NO_CULL)
                         .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                        .setLayeringState(STENCIL_READ_NOTEQUAL)
-                        .createCompositeState(false));
-    }
-
-    public static RenderType getEnergySphere(ResourceLocation texture) {
-        return RenderType.create("energy_sphere",
-                DefaultVertexFormat.NEW_ENTITY,
-                VertexFormat.Mode.QUADS,
-                256,
-                false,
-                true,
-                RenderType.CompositeState.builder()
-                        .setShaderState(new RenderStateShard.ShaderStateShard(ModClientEvents::getEnergySphereShader))
-                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                        .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                        .setLightmapState(RenderStateShard.NO_LIGHTMAP)
-                        .setOverlayState(RenderStateShard.NO_OVERLAY)
-                        .setCullState(RenderStateShard.NO_CULL)
-                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
-                        .createCompositeState(false));
-    }
-
-    public static RenderType getSolidOutline(ResourceLocation texture) {
-        return RenderType.create("dragonminez_solid_outline",
-                DefaultVertexFormat.NEW_ENTITY,
-                VertexFormat.Mode.QUADS,
-                256,
-                false,
-                false,
-                RenderType.CompositeState.builder()
-                        .setShaderState(RENDERTYPE_ENTITY_SOLID_SHADER)
-                        .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                        .setTransparencyState(NO_TRANSPARENCY)
-                        .setCullState(NO_CULL)
-                        .setWriteMaskState(COLOR_WRITE)
                         .setLayeringState(STENCIL_READ_NOTEQUAL)
                         .createCompositeState(false));
     }

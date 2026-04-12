@@ -27,13 +27,11 @@ public class MerusLaserItem extends Item {
             KiExplosionEntity kiexp = new KiExplosionEntity(pLevel, pPlayer);
             KiDiskEntity kidisc = new KiDiskEntity(pLevel, pPlayer);
             KiBarrierEntity kibarrier = new KiBarrierEntity(pLevel, pPlayer);
-            SPBlueHurricaneEntity spBlueHurricane = new SPBlueHurricaneEntity(pLevel, pPlayer);
 
-
-            //kiBlast.setupKiSmall(pPlayer,7.2f, 0.2f, 0x00FFFF);
+            //kiBlast.setupKiSmall(pPlayer, 7.2f, 1.5f, 0x00FFFF);
             //kiBlast.setupKiBlast(pPlayer,10,0.5f, 0xFF004A, 2.5f, 100);
             //kiBlast.setupKiLargeBlast(pPlayer,10,2.2f, 0x00FFFF, 4.0f, 100);
-            kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f, 100);
+            //kiBlast.setupInvertedKiBlast(pPlayer,10,0.5f, 0x362440, 0xFFFFFF, 1.5f, 100);
             //kiBlast.setupKiSouls(pPlayer,10,0.5f, 0xFFFFFF, 100);
             //kiBlast.setupKiGenki(pPlayer,10,0.8f, 100);
             //kiBlast.setupKiNova(pPlayer,10,0.6f, 100);
@@ -41,15 +39,17 @@ public class MerusLaserItem extends Item {
             //kiBlast.setupSokidan(pPlayer,10,0.5f, 0xFFEF26, 1.0f, 100);
             //kiBlast.setupKiVolley(pPlayer, 10, 1.4f, 0xFFFFFF, 40);
             //kiWave.setupKiHame(pPlayer, 10.0f, 2.0f, 1.0f, 100);
-            //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 3.0f, 100);
+            //kiWave.setupKiGalickGun(pPlayer, 10.0f, 1.0f, 1.5f, 100);
             //kiWave.setupFinalFlash(pPlayer, 10.0f, 1.0f, 2.5f, 100);
-            //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 2.0f, 100);
-            //kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
+            //kiWave.setupKiWave(pPlayer, 10.0f, 2.0f, 0x43E620 , 1.0f, 100);
+            kidisc.setupKiDisk(pPlayer, 10.0f, 2.0f, 0xF5E027, 2.5f, 100);
             //kilaser.setupKiLaser(pPlayer, 10.0f, 0.5f, 0xFF5C5C, 100);
             //kilaser.setupKiMakkankosanpo(pPlayer, 10.0f, 0.5f, 100);
             //kiexp.setupKiExplosion(pPlayer, 10.0f, 0xFFED00, 0xFFED00, 100);
             //kibarrier.setupKiBarrier(pPlayer, 0x43FF00, 0xF2FF00, 100);
-            //spBlueHurricane.setupHurricane(pPlayer, 5.0f,2.0f, 60);
+
+            // si se usa una entidad q sea KiBlast, agregar esto
+            kiBlast.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5f, 1.0F);
         }
 
 

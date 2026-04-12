@@ -55,36 +55,40 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     }
 
     // SETUP ITEMS & NPCS
-    public void setupKiExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder, int castTime) {
+    public void setupKiExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder, int colorOutline, int castTime) {
         this.setSize(2.0F);
         this.setMaxRadius(10.0f);
-        this.setColors(colorMain, colorBorder);
+        this.setColors(colorMain, colorBorder, colorOutline);
         this.setKiDamage(damage);
         this.entityData.set(OWNER_ID, owner.getId());
-
         this.setFiring(false);
         this.setFireTick(-1);
         this.setMaxLife(castTime + 100);
         this.setCastExplosion(castTime);
-
         this.updatePositionToOwner(owner);
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    // SETUP PARA JUGADORES
-    public void setupExplosionPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
-        this.setup(owner, damage, 2.0F, 0.0f, colorMain, colorBorder);
+    public void setupKiExplosion(LivingEntity owner, float damage, int colorMain, int colorBorder, int castTime) {
+        this.setupKiExplosion(owner, damage, colorMain, colorBorder, 0xFFFFFF, castTime);
+    }
+
+    // SETUP PLAYERS
+    public void setupExplosionPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder, int colorOutline) {
+        this.setup(owner, damage, 2.0F, 0.0f, colorMain, colorBorder, colorOutline);
         this.setMaxRadius(size);
         this.entityData.set(OWNER_ID, owner.getId());
-
         this.setFiring(false);
         this.setFireTick(-1);
         this.setMaxLife(99999);
         this.setCastExplosion(40);
-
         this.updatePositionToOwner(owner);
+    }
+
+    public void setupExplosionPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
+        this.setupExplosionPlayer(owner, damage, size, colorMain, colorBorder, 0xFFFFFF);
     }
 
     public void fireHability(int finalMaxLife) {

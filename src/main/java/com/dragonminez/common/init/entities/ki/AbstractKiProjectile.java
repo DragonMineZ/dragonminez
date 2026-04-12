@@ -20,6 +20,7 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     private static final EntityDataAccessor<Integer> COLOR_MAIN = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> COLOR_BORDER = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> COLOR_OUTLINE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DAMAGE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SIZE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SPEED = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.FLOAT);
@@ -32,6 +33,7 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     private transient float[] cachedColorMainRgb;
     private transient float[] cachedColorBorderRgb;
+    private transient float[] cachedColorOutlineRgb;
 
     public AbstractKiProjectile(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -44,13 +46,16 @@ public abstract class AbstractKiProjectile extends Projectile {
         return this.getKiDamage() / Math.max(1.0F, (float)this.getMaxHits());
     }
 
-    public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
+    public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder, int colorOutline) {
         this.setOwner(owner);
         this.setKiDamage(damage);
         this.setSize(size);
-        this.setColors(colorMain, colorBorder);
         this.setKiSpeed(speed);
-        this.setPos(owner.getX(), owner.getEyeY() - 0.1, owner.getZ());
+        this.setColors(colorMain, colorBorder, colorOutline);
+    }
+
+    public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
+        this.setup(owner, damage, size, speed, colorMain, colorBorder, 0xFFFFFF);
     }
 
     public boolean shouldDamage(Entity target) {
@@ -103,6 +108,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     protected void defineSynchedData() {
         this.entityData.define(COLOR_MAIN, 0xFFFFFF);
         this.entityData.define(COLOR_BORDER, 0xFFFFFF);
+        this.entityData.define(COLOR_OUTLINE, 0xFFFFFF);
         this.entityData.define(DAMAGE, 5.0f);
         this.entityData.define(SIZE, 1.0f);
         this.entityData.define(SPEED, 1.0f);
@@ -137,15 +143,22 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     protected void onKiTick() {}
 
-    public void setColors(int main, int border) {
+    public void setColors(int colorMain, int colorBorder) {
+        this.setColors(colorMain, colorBorder, 0xFFFFFF);
+    }
+
+    public void setColors(int main, int border, int outline) {
         this.entityData.set(COLOR_MAIN, main);
         this.entityData.set(COLOR_BORDER, border);
+        this.entityData.set(COLOR_OUTLINE, outline);
         this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(main);
         this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(border);
+        this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(outline);
     }
 
     public int getColor() { return this.entityData.get(COLOR_MAIN); }
-    public int getColorBorde() { return this.entityData.get(COLOR_BORDER); }
+    public int getColorBorder() { return this.entityData.get(COLOR_BORDER); }
+    public int getColorOutline() { return this.entityData.get(COLOR_OUTLINE); }
 
     public float[] getRgbColorMain() {
         if (this.cachedColorMainRgb == null) this.cachedColorMainRgb = ColorUtils.rgbIntToFloat(this.getColor());
@@ -153,10 +166,13 @@ public abstract class AbstractKiProjectile extends Projectile {
     }
 
     public float[] getRgbColorBorder() {
-        if (this.cachedColorBorderRgb == null) {
-            this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(this.getColorBorde());
-        }
+        if (this.cachedColorBorderRgb == null) this.cachedColorBorderRgb = ColorUtils.rgbIntToFloat(this.getColorBorder());
         return this.cachedColorBorderRgb;
+    }
+
+    public float[] getRgbColorOutline() {
+        if (this.cachedColorOutlineRgb == null) this.cachedColorOutlineRgb = ColorUtils.rgbIntToFloat(this.getColorOutline());
+        return this.cachedColorOutlineRgb;
     }
 
     public void setKiDamage(float damage) { this.entityData.set(DAMAGE, damage); }
@@ -180,7 +196,8 @@ public abstract class AbstractKiProjectile extends Projectile {
     protected void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
         pCompound.putInt("ColorMain", getColor());
-        pCompound.putInt("ColorBorder", getColorBorde());
+        pCompound.putInt("ColorBorder", getColorBorder());
+        pCompound.putInt("ColorOutline", getColorOutline());
         pCompound.putFloat("Damage", getKiDamage());
         pCompound.putFloat("Size", getSize());
         pCompound.putFloat("Speed", getKiSpeed());
@@ -192,7 +209,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     @Override
     protected void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
-        if (pCompound.contains("ColorMain")) setColors(pCompound.getInt("ColorMain"), pCompound.getInt("ColorBorder"));
+        if (pCompound.contains("ColorMain")) {
+            int outline = pCompound.contains("ColorOutline") ? pCompound.getInt("ColorOutline") : 0xFFFFFF;
+            this.setColors(pCompound.getInt("ColorMain"), pCompound.getInt("ColorBorder"), outline);
+        }
         if (pCompound.contains("Damage")) setKiDamage(pCompound.getFloat("Damage"));
         if (pCompound.contains("Size")) setSize(pCompound.getFloat("Size"));
         if (pCompound.contains("Speed")) setKiSpeed(pCompound.getFloat("Speed"));

@@ -1212,26 +1212,6 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				scaleY = getSafeScaleValue(characterScaling, 1, 0.9375f);
 			}
 
-			String race = localCharacter.getRaceName() != null ? localCharacter.getRaceName().toLowerCase(Locale.ROOT) : "";
-			String currentForm = localCharacter.getActiveForm();
-			RaceCharacterConfig raceConfig = ConfigManager.getRaceCharacter(race);
-			String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null)
-					? raceConfig.getCustomModel().toLowerCase(Locale.ROOT)
-					: "";
-			String formCustomModel = (localCharacter.hasActiveForm() && activeForm != null && activeForm.hasCustomModel())
-					? activeForm.getCustomModel().toLowerCase(Locale.ROOT)
-					: "";
-
-			String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-			if (logicKey.isEmpty()) logicKey = race;
-
-			boolean isOozaru = logicKey.contains("ozaru");
-
-			if (isOozaru) {
-				scaleX = Math.max(0.1f, scaleX - 2.8f);
-				scaleY = Math.max(0.1f, scaleY - 2.8f);
-			}
-
 			currentVisualScale[0] = Math.max(0.1f, (scaleX + scaleY) / 2.0f);
 		});
 		return currentVisualScale[0];

@@ -12,7 +12,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -84,41 +83,39 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     //SETUPS
-    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
+    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
         this.setKiRenderType(0);
-
         this.setSize(size);
         this.setCastSize(size / 2);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, colorBorder);
-
+        this.setColors(color, colorBorder, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
-
         this.setCastOffsets(0F, -0.2F, 0.4F);
         updatePositionRelativeToOwner(owner, true);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
-        this.setupKiWave(owner, damage, speed, color, color, size, castTime);
+    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
+        this.setupKiWave(owner, damage, speed, color, colorBorder, 0xFFFFFF, size, castTime);
     }
 
-    public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+    public void setupKiWave(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+        this.setupKiWave(owner, damage, speed, color, color, 0xFFFFFF, size, castTime);
+    }
+
+    public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setKiRenderType(0);
         this.setSize(size);
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, colorBorder);
-
+        this.setColors(color, colorBorder, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(0);
@@ -126,37 +123,39 @@ public class KiWaveEntity extends AbstractKiProjectile {
         updatePositionRelativeToOwner(owner, false);
     }
 
-    public void setupKiHame(LivingEntity owner, float damage, float speed, float size, int castTime) {
-        this.setKiRenderType(1);
+    public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setupKiWavePlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
+    }
 
+    public void setupKiHame(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
+        this.setKiRenderType(1);
         this.setSize(size);
         this.setCastSize(size / 2);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0x4FF7FF, 0x4FF7FF);
-
+        this.setColors(0x4FF7FF, 0x4FF7FF, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime*2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
-
         this.setCastOffsets(0.4F, -0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size) {
+    public void setupKiHame(LivingEntity owner, float damage, float speed, float size, int castTime) {
+        this.setupKiHame(owner, damage, speed, size, 0xFFFFFF, castTime);
+    }
+
+    public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size, int colorOutline) {
         this.setKiRenderType(1);
         this.setSize(size);
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0x4FF7FF, 0x4FF7FF);
-
+        this.setColors(0x4FF7FF, 0x4FF7FF, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(0);
@@ -164,38 +163,39 @@ public class KiWaveEntity extends AbstractKiProjectile {
         updatePositionRelativeToOwner(owner, true);
     }
 
-    public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size, int castTime) {
+    public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size) {
+        this.setupKiHamePlayer(owner, damage, speed, size, 0xFFFFFF);
+    }
+
+    public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
         this.setKiRenderType(2);
         this.setSize(size);
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xCE10E3, 0xAE10E3);
-
+        this.setColors(0xCE10E3, 0xAE10E3, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
-
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
-
         this.setCastOffsets(0.4F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size) {
-        this.setKiRenderType(2);
+    public void setupKiGalickGun(LivingEntity owner, float damage, float speed, float size, int castTime) {
+        this.setupKiGalickGun(owner, damage, speed, size, 0xFFFFFF, castTime);
+    }
 
+    public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size, int colorOutline) {
+        this.setKiRenderType(2);
         this.setSize(size);
         this.setCastSize(size / 2);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xCE10E3, 0xAE10E3);
-
+        this.setColors(0xCE10E3, 0xAE10E3, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(0);
@@ -203,78 +203,81 @@ public class KiWaveEntity extends AbstractKiProjectile {
         updatePositionRelativeToOwner(owner, true);
     }
 
-    public void setupFinalFlash(LivingEntity owner, float damage, float speed, float size, int castTime) {
+    public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size) {
+        this.setupKiGalickGunPlayer(owner, damage, speed, size, 0xFFFFFF);
+    }
+
+    public void setupFinalFlash(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
         this.setKiRenderType(3);
         this.setSize(size);
         this.setCastSize(size / 2.0F);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFFD55, 0xFFFD55);
-
+        this.setColors(0xFFFD55, 0xFFFD55, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
-
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
-
         this.setCastOffsets(0.0F, -0.3F, 0.4F);
         updatePositionRelativeToOwner(owner, true);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size) {
-        this.setKiRenderType(3);
+    public void setupFinalFlash(LivingEntity owner, float damage, float speed, float size, int castTime) {
+        this.setupFinalFlash(owner, damage, speed, size, 0xFFFFFF, castTime);
+    }
 
+    public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size, int colorOutline) {
+        this.setKiRenderType(3);
         this.setSize(size);
         this.setCastSize(size / 2.0F);
-
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFFD55, 0xFFFD55);
-
+        this.setColors(0xFFFD55, 0xFFFD55, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(40);
         this.setCastOffsets(0.0F, -0.3F, 0.4F);
         updatePositionRelativeToOwner(owner, false);
     }
-    public void setupKiOozaru(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
+
+    public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size) {
+        this.setupFinalFlashPlayer(owner, damage, speed, size, 0xFFFFFF);
+    }
+
+    public void setupKiOozaru(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size, int castTime) {
         this.setKiRenderType(0);
         this.setSize(size);
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, colorBorder);
-
+        this.setColors(color, colorBorder, colorOutline);
         this.setContinuousFollow(true);
-
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
         this.playInitialSound(MainSounds.KI_KAME_FIRE.get());
-
         this.setCastOffsets(0.0F, 0.0F, 0.6F);
         updatePositionRelativeToOwner(owner, true);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiOozaruPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+    public void setupKiOozaru(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size, int castTime) {
+        this.setupKiOozaru(owner, damage, speed, color, colorBorder, 0xFFFFFF, size, castTime);
+    }
+
+    public void setupKiOozaruPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, float size) {
         this.setKiRenderType(0);
         this.setSize(size);
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, colorBorder);
-
+        this.setColors(color, colorBorder, colorOutline);
         this.setContinuousFollow(true);
-
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastWave(0);
@@ -282,26 +285,30 @@ public class KiWaveEntity extends AbstractKiProjectile {
         updatePositionRelativeToOwner(owner, false);
     }
 
-    public void setupKiMasenko(LivingEntity owner, float damage, float speed, float size, int castTime) {
+    public void setupKiOozaruPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
+        this.setupKiOozaruPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF, size);
+    }
+
+    public void setupKiMasenko(LivingEntity owner, float damage, float speed, float size, int colorOutline, int castTime) {
         this.setKiRenderType(4);
         this.setSize(size);
         this.setCastSize(size / 2);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFF566, 0xFFF566);
-
+        this.setColors(0xFFF566, 0xFFF566, colorOutline);
         this.setFiring(false);
         this.setCastWave(castTime);
         this.setMaxLife(castTime * 2);
-
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
-
         this.setCastOffsets(0.0F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
+    }
+
+    public void setupKiMasenko(LivingEntity owner, float damage, float speed, float size, int castTime) {
+        this.setupKiMasenko(owner, damage, speed, size, 0xFFFFFF, castTime);
     }
 
     public void fireHability(int finalMaxLife) {
@@ -564,7 +571,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
     private void spawnOriginSplash() {
         if (this.tickCount % 5 == 0) {
-            double colorInt = (double) this.getColorBorde();
+            double colorInt = (double) this.getColorBorder();
             double mySize = (double) this.getSize();
             this.level().addParticle(MainParticles.KI_SPLASH_WAVE.get(), this.getX(), this.getY(), this.getZ(), colorInt, mySize, 0.0D);
         }
@@ -653,7 +660,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
                     this.setKiSpeed(this.getKiSpeed() * 0.75F);
 
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                        double colorData = (double) this.getColorBorde();
+                        double colorData = (double) this.getColorBorder();
                         double sizeData = (double) this.getSize();
                         serverLevel.sendParticles(
                                 MainParticles.KI_SPLASH_WAVE.get(),
@@ -708,7 +715,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
 
                 KiExplosionVisualEntity explosionVisual = new KiExplosionVisualEntity(MainEntities.KI_EXPLOSION_VISUAL.get(), this.level());
                 explosionVisual.setPos(pos.x, pos.y - 0.5, pos.z);
-                explosionVisual.setupExplosion(this.getColorBorde(), this.getSize() * 2.5F);
+                explosionVisual.setupExplosion(this.getColor(), this.getColorBorder(), this.getSize() * 2.5F);
                 this.level().addFreshEntity(explosionVisual);
             }
         }

@@ -4,9 +4,11 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.shader.DMZShaders;
 import com.dragonminez.client.render.util.KiMeshFactory;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
-import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
+import com.dragonminez.common.init.entities.ki.KiDiskEntity;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -14,16 +16,16 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
-public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
+public class KiDiskRenderer extends EntityRenderer<KiDiskEntity> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/ki_laser.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/ki/kidisc.png");
 
-    public KiExplosionRenderer(EntityRendererProvider.Context pContext) {
+    public KiDiskRenderer(EntityRendererProvider.Context pContext) {
         super(pContext);
     }
 
     @Override
-    public void render(KiExplosionEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+    public void render(KiDiskEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         Matrix4f basePose = new Matrix4f(poseStack.last().pose());
 
         PlayerEffectQueue.addKiAttack((stack, proj) -> {
@@ -31,16 +33,13 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
             stack.last().pose().set(basePose);
 
             float ageInTicks = entity.tickCount + partialTick;
+            float scale = entity.getSize();
             boolean isFiring = entity.isFiring();
+            float castTime = (float) entity.getCastTime();
 
-            float scale;
             if (!isFiring) {
-                scale = entity.getSize();
-            } else {
-                int activeTicks = entity.tickCount - entity.getFireTick();
-                scale = entity.getSize() + (activeTicks * 0.4f);
-                if (scale > entity.getMaxRadius()) {
-                    scale = entity.getMaxRadius();
+                if (castTime > 0.1F && ageInTicks <= castTime) {
+                    scale *= (ageInTicks / castTime);
                 }
             }
 
@@ -56,19 +55,30 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
                 shader.safeGetUniform("time").set(ageInTicks / 20.0f);
                 shader.safeGetUniform("ProjMat").set(proj);
 
-                VertexBuffer mesh = KiMeshFactory.getSphereMesh();
+                VertexBuffer mesh = KiMeshFactory.getCylinderMesh();
                 mesh.bind();
 
                 stack.pushPose();
-                stack.translate(0.0D, entity.getBbHeight() / 2.0D, 0.0D);
-                stack.scale(scale, scale, scale);
+
+                stack.mulPose(Axis.YP.rotationDegrees(180.0F - entity.getYRot()));
+
+                if (isFiring) {
+                    stack.mulPose(Axis.XP.rotationDegrees(entity.getXRot() + 90.0F));
+                } else {
+                    stack.mulPose(Axis.XP.rotationDegrees(90.0F));
+                }
+
+                stack.mulPose(Axis.ZP.rotationDegrees(ageInTicks * 35.0f));
+
+                stack.translate(0, 0, -0.025D);
+                stack.scale(scale, scale, 0.05f);
 
                 shader.safeGetUniform("ModelViewMat").set(stack.last().pose());
-                shader.safeGetUniform("alphaMult").set(0.65f);
+                shader.safeGetUniform("alphaMult").set(1.0f);
                 shader.apply();
                 mesh.drawWithShader(stack.last().pose(), proj, shader);
 
-                stack.scale(1.25f, 1.25f, 1.25f);
+                stack.scale(1.2f, 1.2f, 1.5f);
                 shader.safeGetUniform("ModelViewMat").set(stack.last().pose());
                 shader.safeGetUniform("alphaMult").set(0.15f);
                 shader.apply();
@@ -78,13 +88,12 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
                 VertexBuffer.unbind();
                 shader.clear();
             }
-
             stack.popPose();
         });
     }
 
     @Override
-    public ResourceLocation getTextureLocation(KiExplosionEntity pEntity) {
+    public ResourceLocation getTextureLocation(KiDiskEntity entity) {
         return TEXTURE;
     }
 }

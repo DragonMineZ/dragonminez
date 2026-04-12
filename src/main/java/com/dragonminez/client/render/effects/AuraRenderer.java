@@ -327,6 +327,10 @@ public class AuraRenderer {
 			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : normalHex;
 			normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
 		}
+
+		if (normalLayerId < 0) normalLayerId = 0;
+		else if (normalLayerId > 6) normalLayerId = 6;
+
 		activeLayers.add(new AuraLayer(normalType, normalLayerId, normalColor));
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
