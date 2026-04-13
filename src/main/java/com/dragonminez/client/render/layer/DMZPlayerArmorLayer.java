@@ -37,70 +37,74 @@ public class DMZPlayerArmorLayer<T extends AbstractClientPlayer & GeoAnimatable>
 		super.render(poseStack, animatable, bakedModel, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
 	}
 
-	@Override
-	protected @Nullable ItemStack getArmorItemForBone(GeoBone bone, T animatable) {
-		final String boneName = bone.getName();
+    @Override
+    protected @Nullable ItemStack getArmorItemForBone(GeoBone bone, T animatable) {
+        final String boneName = bone.getName();
 
-		EquipmentSlot slot = switch (boneName) {
-			case "armorHead", "armor_head" -> EquipmentSlot.HEAD;
-			case "armorBody", "armor_body",
-				 "armorRightArm", "armor_right_arm",
-				 "armorLeftArm", "armor_left_arm" -> EquipmentSlot.CHEST;
-			case "armorLeggingsBody", "armor_leggings_body",
-				 "armorLeftLeg", "armor_left_leg",
-				 "armorRightLeg", "armor_right_leg" -> EquipmentSlot.LEGS;
-			case "armorRightBoot", "armor_right_boot",
-				 "armorLeftBoot", "armor_left_boot" -> EquipmentSlot.FEET;
-			default -> null;
-		};
-		if (slot == null) return null;
+        EquipmentSlot slot = switch (boneName) {
+            case "armorHead", "armor_head" -> EquipmentSlot.HEAD;
+            case "armorBody", "armor_body",
+                 "armorRightArm", "armor_right_arm",
+                 "armorLeftArm", "armor_left_arm" -> EquipmentSlot.CHEST;
+            case "armorLeggingsBody", "armor_leggings_body",
+                 "armorLeftLeg", "armor_left_leg",
+                 "armorRightLeg", "armor_right_leg" -> EquipmentSlot.LEGS;
+            case "armorRightBoot", "armor_right_boot",
+                 "armorLeftBoot", "armor_left_boot" -> EquipmentSlot.FEET;
+            default -> null;
+        };
+        if (slot == null) return null;
 
-		ItemStack stack = animatable.getInventory().armor.get(slot.getIndex());
-		if (CosmeticArmorCompat.isLoaded()) {
-			ItemStack cosStack = CosmeticArmorCompat.getCosmeticStack(animatable, slot);
-			if (cosStack != null) {
-				if (cosStack.isEmpty()) return null;
-				stack = cosStack;
-			}
-		}
+        ItemStack stack = animatable.getInventory().armor.get(slot.getIndex());
+        if (CosmeticArmorCompat.isLoaded()) {
+            ItemStack cosStack = CosmeticArmorCompat.getCosmeticStack(animatable, slot);
+            if (cosStack != null) {
+                if (cosStack.isEmpty()) return null;
+                stack = cosStack;
+            }
+        }
 
-		if (stack.isEmpty()) return null;
-		if (!(stack.getItem() instanceof ArmorItem) && !(stack.getItem() instanceof DbzArmorItem)) return null;
-		if (!stack.canEquip(slot, animatable) && !(stack.getItem() instanceof DbzArmorItem)) return null;
+        if (stack.isEmpty()) return null;
+        if (!(stack.getItem() instanceof ArmorItem) && !(stack.getItem() instanceof DbzArmorItem)) return null;
+        if (!stack.canEquip(slot, animatable) && !(stack.getItem() instanceof DbzArmorItem)) return null;
 
-		if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
-			StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
-			if (stats == null) return null;
+        StatsData stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(null);
+        if (stats != null) {
+            var character = stats.getCharacter();
+            String race = character.getRaceName().toLowerCase();
+            String gender = character.getGender().toLowerCase();
 
-			var character = stats.getCharacter();
-			String race = character.getRaceName().toLowerCase();
-			String gender = character.getGender().toLowerCase();
+            var raceConfig = ConfigManager.getRaceCharacter(race);
+            String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
+            String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
+                    ? character.getActiveFormData().getCustomModel().toLowerCase() : "";
 
-			var raceConfig = ConfigManager.getRaceCharacter(race);
-			String raceCustomModel = (raceConfig != null && raceConfig.getCustomModel() != null) ? raceConfig.getCustomModel().toLowerCase() : "";
-			String formCustomModel = (character.hasActiveForm() && character.getActiveFormData() != null && character.getActiveFormData().hasCustomModel())
-					? character.getActiveFormData().getCustomModel().toLowerCase() : "";
+            String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
+            if (logicKey.isEmpty()) logicKey = race;
 
-			String logicKey = formCustomModel.isEmpty() ? raceCustomModel : formCustomModel;
-			if (logicKey.isEmpty()) logicKey = race;
+            if (logicKey.equals("candy")) {
+                return null;
+            }
 
-			boolean isArmored = character.getArmored();
-			boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
-			boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
-			boolean isOozaru = character.isOozaruCached() || logicKey.startsWith("oozaru");
-			boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
-					|| logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra");
-			boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
+            if (boneName.equals("armorBody") || boneName.equals("armor_body")) {
+                boolean isArmored = character.getArmored();
+                boolean isMajin = race.equals("majin") || logicKey.startsWith("majin");
+                boolean isFemaleHumanOrSaiyan = gender.equals("female") && (race.equals("human") || race.equals("saiyan"));
+                boolean isOozaru = character.isOozaruCached() || logicKey.startsWith("oozaru");
+                boolean isBuffed = logicKey.startsWith("buffed") || logicKey.startsWith("frostdemon_fp") || logicKey.startsWith("majin_ultra")
+                        || logicKey.startsWith("namekian_orange") || logicKey.startsWith("bioandroid_ultra");
+                boolean isDbzArmor = stack.getItem() instanceof DbzArmorItem;
 
-			if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
-				if (!isArmored) return null;
-			} else if (isBuffed) {
-				if (isDbzArmor) return null;
-			}
-		}
+                if (isMajin || isFemaleHumanOrSaiyan || isOozaru) {
+                    if (!isArmored) return null;
+                } else if (isBuffed) {
+                    if (isDbzArmor) return null;
+                }
+            }
+        }
 
-		return stack;
-	}
+        return stack;
+    }
 
 	@Override
 	protected @NotNull EquipmentSlot getEquipmentSlotForBone(GeoBone bone, ItemStack stack, T animatable) {

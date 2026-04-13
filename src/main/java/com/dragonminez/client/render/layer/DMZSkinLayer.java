@@ -6,6 +6,7 @@ import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.SkinGathererProvider;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.extras.ActionMode;
@@ -62,6 +63,10 @@ public class DMZSkinLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		var player = (AbstractClientPlayer) animatable;
 		if (player == null) return;
+
+        if (player.hasEffect(MainEffects.CANDY.get())) { //EFECTO
+            return;
+        }
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, player);
 		var stats = statsCap.orElse(new StatsData(player));

@@ -41,6 +41,7 @@ public class MainEffects {
 	// Bonus Effects | Beneficial
 	public static final RegistryObject<MobEffect> MAJIN = EFFECTS.register("majin", () -> new DMZEffect(true));
 	public static final RegistryObject<MobEffect> MIGHTFRUIT = EFFECTS.register("mightfruit", () -> new DMZEffect(true));
+    public static final RegistryObject<MobEffect> CANDY = EFFECTS.register("candy", () -> new DMZEffect(true));
 
     public static void register(IEventBus eventBus) { EFFECTS.register(eventBus); }
 }

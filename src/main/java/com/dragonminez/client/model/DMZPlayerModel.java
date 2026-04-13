@@ -6,6 +6,7 @@ import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
@@ -44,6 +45,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem_fp.geo.json");
 
+    private static final ResourceLocation CANDY_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/candy.geo.json");
+    private static final ResourceLocation CANDY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/candy.png");
+
     private static final Map<ResourceLocation, Boolean> FILE_EXISTS_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, ResourceLocation> MODEL_RESOLUTION_CACHE = new ConcurrentHashMap<>();
     private final ResourceLocation textureLocation;
@@ -58,6 +62,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getModelResource(T player) {
+        if (player.hasEffect(MainEffects.CANDY.get())) {
+            return CANDY_MODEL;
+        }
+
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
             Character character = data.getCharacter();
             String race = character.getRaceName().toLowerCase();
@@ -169,6 +177,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getTextureResource(T t) {
+        if (t.hasEffect(MainEffects.CANDY.get())) {
+            return CANDY_TEXTURE;
+        }
         return textureLocation;
     }
 

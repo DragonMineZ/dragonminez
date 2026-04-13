@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -87,6 +88,8 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		if (!"head".equals(anchor) && !"body".equals(anchor)) {
 			return;
 		}
+
+        if (animatable.hasEffect(MainEffects.CANDY.get())) return;
 
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;

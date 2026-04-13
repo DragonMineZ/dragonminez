@@ -6,6 +6,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.extras.ActionMode;
@@ -65,6 +66,9 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
 		Character character = stats.getCharacter();
+
+        if (animatable.hasEffect(MainEffects.CANDY.get())) return; //CARAMELO
+
 		if (!HairManager.canUseHair(character)) return;
 
 		CustomHair effectiveHair = HairManager.getEffectiveHair(character);
