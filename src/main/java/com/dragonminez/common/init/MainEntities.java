@@ -695,6 +695,14 @@ public class MainEntities {
                             .build("ki_explosion_visual")
             );
 
+    public static final RegistryObject<EntityType<SPDragonFistEntity>> SP_DRAGON_FIST = ENTITY_TYPES.register("sp_dragon_fist",
+            () -> EntityType.Builder.<SPDragonFistEntity>of(SPDragonFistEntity::new, MobCategory.MISC)
+                    .sized(2.0F, 2.0F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("sp_dragon_fist")
+    );
+
     // Single generic entity type for ALL data-driven quest NPCs
     public static final RegistryObject<EntityType<QuestNPCEntity>> QUEST_NPC =
             ENTITY_TYPES.register("quest_npc",
