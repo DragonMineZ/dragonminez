@@ -5,6 +5,8 @@ import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.particles.KiTrailParticle;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -108,9 +110,39 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
             }
 
             if (this.level().isClientSide) {
-                this.level().addParticle(ParticleTypes.CLOUD, this.getX() + (this.random.nextDouble() - 0.5)*3, this.getY() + 1, this.getZ() + (this.random.nextDouble() - 0.5)*3, 0, 0.1, 0);
+                float[] rgb = ColorUtils.rgbIntToFloat(0x3F58FC);
+
+                for (int i = 0; i < 4; i++) {
+                    double radius = 4.0 + this.random.nextDouble() * 2.0;
+                    double theta = this.random.nextDouble() * 2 * Math.PI;
+                    double phi = Math.acos(2 * this.random.nextDouble() - 1);
+
+                    double offsetX = radius * Math.sin(phi) * Math.cos(theta);
+                    double offsetY = radius * Math.cos(phi) + 1.0;
+                    double offsetZ = radius * Math.sin(phi) * Math.sin(theta);
+
+                    double spawnX = this.getX() + offsetX;
+                    double spawnY = this.getY() + offsetY;
+                    double spawnZ = this.getZ() + offsetZ;
+
+                    double vx = this.getX() - spawnX;
+                    double vy = (this.getY() + 1.0) - spawnY;
+                    double vz = this.getZ() - spawnZ;
+
+                    Particle p = net.minecraft.client.Minecraft.getInstance().particleEngine.createParticle(
+                            MainParticles.KI_TRAIL.get(),
+                            spawnX, spawnY, spawnZ,
+                            vx * 0.15D, vy * 0.15D, vz * 0.15D
+                    );
+
+                    if (p instanceof KiTrailParticle trail) {
+                        trail.setKiColor(rgb[0], rgb[1], rgb[2]);
+                        trail.setKiScale(1.5f + this.random.nextFloat() * 1.5f);
+                    }
+                }
             }
         }
+
         else {
             this.setPos(owner.getX(), owner.getY(), owner.getZ());
             this.setBoundingBox(this.getDimensions(this.getPose()).makeBoundingBox(this.position()));
