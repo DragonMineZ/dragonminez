@@ -703,6 +703,13 @@ public class MainEntities {
                     .build("sp_dragon_fist")
     );
 
+    public static final RegistryObject<EntityType<SPMajinCandyEntity>> SP_MAJIN_CANDY = ENTITY_TYPES.register("sp_majin_candy",
+            () -> EntityType.Builder.<SPMajinCandyEntity>of(SPMajinCandyEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("sp_majin_candy"));
+
     // Single generic entity type for ALL data-driven quest NPCs
     public static final RegistryObject<EntityType<QuestNPCEntity>> QUEST_NPC =
             ENTITY_TYPES.register("quest_npc",
