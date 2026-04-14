@@ -43,7 +43,7 @@ public class HairEditorScreen extends ScaledScreen {
 	private static final ResourceLocation MENU_BIG = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/menu/menubig.png");
 	private static final ResourceLocation STAT_BUTTONS = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/buttons/characterbuttons.png");
 	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
-	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/s_panorama");
+	private static final ResourceLocation PANORAMA_SAIYAN = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/background/roshi");
 
 	private static final Set<String> DEV_NAMES = Set.of("Dev", "ImYuseix", "ezShokkoh", "narukebaransu");
 	private final PanoramaRenderer panorama = new PanoramaRenderer(new CubeMap(PANORAMA_SAIYAN));
@@ -92,6 +92,10 @@ public class HairEditorScreen extends ScaledScreen {
 	private TexturedTextButton colorButton;
 	private boolean isUpdatingFromCode = false;
 
+    private String actionStatusText = "";
+    private int actionStatusTimer = 0;
+    private int actionStatusColor = 0xFFFFFF;
+
 	public HairEditorScreen(Screen previousScreen, Character character) {
 		super(Component.translatable("gui.dragonminez.hair_editor.title").withStyle(Style.EMPTY.withFont(DMZ_FONT)));
 		this.previousScreen = previousScreen;
@@ -132,7 +136,15 @@ public class HairEditorScreen extends ScaledScreen {
 		}
 	}
 
-	private void initGlobalUI() {
+    @Override
+    public void tick() {
+        super.tick();
+        if (actionStatusTimer > 0) {
+            actionStatusTimer--;
+        }
+    }
+
+    private void initGlobalUI() {
 		addRenderableWidget(new TexturedTextButton.Builder()
 				.position(12, 12)
 				.size(74, 20)
@@ -221,7 +233,7 @@ public class HairEditorScreen extends ScaledScreen {
 		updateFullCodeBox();
 
 		addRenderableWidget(new CustomTextureButton.Builder()
-				.position(leftPanelX + 45, panelY + 175)
+				.position(leftPanelX + 45, panelY + 170)
 				.size(20, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(182, 0, 182, 20)
@@ -231,11 +243,15 @@ public class HairEditorScreen extends ScaledScreen {
 					fillEmptyStyles(workingHairs);
 					updateFullCodeBox();
 					Minecraft.getInstance().keyboardHandler.setClipboard(fullCodeBox.getValue());
+
+                    actionStatusText = "Copied!";
+                    actionStatusTimer = 60;
+                    actionStatusColor = 0x55FF55;
 				})
 				.build());
 
 		addRenderableWidget(new CustomTextureButton.Builder()
-				.position(leftPanelX + 75, panelY + 175)
+				.position(leftPanelX + 75, panelY + 170)
 				.size(20, 20)
 				.texture(STAT_BUTTONS)
 				.textureCoords(162, 0, 162, 20)
@@ -243,15 +259,37 @@ public class HairEditorScreen extends ScaledScreen {
 				.message(Component.empty())
 				.onPress(btn -> {
 					String code = fullCodeBox.getValue();
-					if (HairManager.isFullSetCode(code)) {
-						CustomHair[] set = HairManager.fromFullSetCode(code);
-						if (set != null) {
-							System.arraycopy(set, 0, workingHairs, 0, 4);
-							syncHairToServer();
-						}
-					}
+                    if (HairManager.isFullSetCode(code)) {
+                        CustomHair[] set = HairManager.fromFullSetCode(code);
+                        if (set != null) {
+                            System.arraycopy(set, 0, workingHairs, 0, 4);
+                            syncHairToServer();
+
+                            actionStatusText = "Imported!";
+                            actionStatusTimer = 60;
+                            actionStatusColor = 0x55FF55;
+
+                        }
+                    } else {
+                        actionStatusText = "Invalid!";
+                        actionStatusTimer = 60;
+                        actionStatusColor = 0xFF5555;
+                    }
 				})
 				.build());
+
+        addRenderableWidget(new CustomTextureButton.Builder()
+                .position(leftPanelX + 127, panelY + 153)
+                .size(14, 11)
+                .texture(STAT_BUTTONS)
+                .textureCoords(10, 0, 10, 10)
+                .textureSize(10, 10)
+                .onPress(btn -> {
+                    if (fullCodeBox != null) {
+                        fullCodeBox.setValue("");
+                    }
+                })
+                .build());
 	}
 
 	private void initStyleTab() {
@@ -768,7 +806,12 @@ public class HairEditorScreen extends ScaledScreen {
 
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.styles").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
 		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.fullcode"), leftPanelX + 15, panelY + 138, 0xFFFFFF);
-	}
+
+        if (actionStatusTimer > 0) {
+            drawCenteredStringWithBorder(graphics, txt(actionStatusText), leftPanelX + 70, panelY + 195, actionStatusColor);
+        }
+
+    }
 
 	private void renderStyleContent(GuiGraphics graphics, int mouseX, int mouseY) {
 		int leftPanelX = 12;
