@@ -45,31 +45,21 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 
 	@Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
 	private void dragonminez$startAttack(CallbackInfoReturnable<Boolean> cir) {
-		System.out.println("[DMZ_DEBUG] startAttack called | player=" + (player != null) + " | screen=" + (screen != null) + " | hit=" + (hitResult != null ? hitResult.getType() : "null") + " | isAttacking=" + isAttacking + " | awaiting=" + isAwaitingUpswing);
 		if (player == null || screen != null) return;
-
 		if (Screen.hasAltDown() && player.getMainHandItem().isEmpty()) return;
 
 		var mcDMZ = (Minecraft_DMZ) this;
 		var comboCount = mcDMZ.getComboCount();
 		var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);
 
-		if (hand == null || !PlayerAttackHelper.canAttack(player)) {
-			System.out.println("[DMZ_DEBUG] startAttack skip | hand/canAttack invalid");
-			return;
-		}
-		if (!shouldUseCombatAttack(hand)) {
-			System.out.println("[DMZ_DEBUG] startAttack skip | shouldUseCombatAttack=false (vanilla mining path)");
-			return;
-		}
+		if (hand == null || !PlayerAttackHelper.canAttack(player)) return;
+		if (!shouldUseCombatAttack(hand)) return;
+
 
 		cir.cancel();
 		cir.setReturnValue(false);
 
-		if (itemUseCooldown > 0 || isAttacking || isAwaitingUpswing) {
-			System.out.println("[DMZ_DEBUG] startAttack blocked | itemUseCooldown=" + itemUseCooldown + " | isAttacking=" + isAttacking + " | awaiting=" + isAwaitingUpswing);
-			return;
-		}
+		if (itemUseCooldown > 0 || isAttacking || isAwaitingUpswing) return;
 
 		float cooldownProgress = player.getAttackStrengthScale(0.5F);
 		if (ConfigManager.getCombatConfig().getRespectAttackCooldown() && cooldownProgress < 1.0F) return;
@@ -154,7 +144,6 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var attackRange = upswingStack.attributes().attackRange();
 
 		TargetFinder.TargetResult targetResult = TargetFinder.findAttackTargetResult(player, cursorTarget, upswingStack.attack(), attackRange);
-		System.out.println("[DMZ_DEBUG] executeAttack | targetCount=" + targetResult.entities.size() + " | combo=" + mcDMZ.getComboCount() + " | slot=" + player.getInventory().selected);
 
 		var event = new DMZClientEvent.PlayerAttackHit(player, upswingStack, targetResult.entities, cursorTarget);
 		MinecraftForge.EVENT_BUS.post(event);

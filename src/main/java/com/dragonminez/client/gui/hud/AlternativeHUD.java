@@ -87,7 +87,7 @@ public class AlternativeHUD {
 				RenderSystem.enableBlend();
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-				float hudScale = 1.0f; // Escala vanilla
+				float hudScale = 1.25f;
 				int globalAnchorX = width / 2;
 				int globalAnchorY = height;
 
@@ -95,10 +95,9 @@ public class AlternativeHUD {
 				guiGraphics.pose().translate(globalAnchorX, globalAnchorY, 0);
 				guiGraphics.pose().scale(hudScale, hudScale, 1.0f);
 
-				// Coordenadas idénticas a las barras vanilla
-				float baseHpX = -91.0f; float baseHpY = -39.0f;
-				float baseKiX = -91.0f; float baseKiY = -49.0f;
-				float baseStmX = 10.0f; float baseStmY = -39.0f;
+				float baseHpX = -95.0f; float baseHpY = -49.0f;
+				float baseKiX = -95.0f; float baseKiY = -50.0f;
+				float baseStmX = -5.0f; float baseStmY = -50.0f;
 
 				float hpOffX = ConfigManager.getUserConfig().getHud().getHealthBarPosX() / hudScale;
 				float hpOffY = ConfigManager.getUserConfig().getHud().getHealthBarPosY() / hudScale;
@@ -124,8 +123,11 @@ public class AlternativeHUD {
 				guiGraphics.blit(hud, 3, 3, 3, 61, 7 + (int) currentKiBarWidth, 4, 128, 128);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 				drawBarValues(guiGraphics, currentKi, maxKi, 42, 3);
-				drawRacialIcon(guiGraphics, raceName, Math.min(powerRelease, 100), -22, 3);
-				drawFormIcon(guiGraphics, formRelease, -22, 3);
+				guiGraphics.pose().pushPose();
+				guiGraphics.pose().scale(1.5f, 1.5f, 1.5f);
+				drawRacialIcon(guiGraphics, raceName, Math.min(powerRelease, 100), -28, 0);
+				drawFormIcon(guiGraphics, formRelease, -28, 0);
+				guiGraphics.pose().popPose();
 				guiGraphics.pose().popPose();
 
 				guiGraphics.pose().pushPose();
