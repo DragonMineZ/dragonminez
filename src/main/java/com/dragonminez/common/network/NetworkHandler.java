@@ -129,30 +129,6 @@ public class NetworkHandler {
 				.consumerMainThread(KiBlastC2S::handle)
 				.add();
 
-		net.messageBuilder(ComboAttackC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(ComboAttackC2S::new)
-				.encoder(ComboAttackC2S::encode)
-				.consumerMainThread(ComboAttackC2S::handle)
-				.add();
-
-		net.messageBuilder(MeleeAttackIntentC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(MeleeAttackIntentC2S::new)
-				.encoder(MeleeAttackIntentC2S::encode)
-				.consumerMainThread(MeleeAttackIntentC2S::handle)
-				.add();
-
-		net.messageBuilder(CombatStylePreferenceC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(CombatStylePreferenceC2S::new)
-				.encoder(CombatStylePreferenceC2S::encode)
-				.consumerMainThread(CombatStylePreferenceC2S::handle)
-				.add();
-
-		net.messageBuilder(MeleeManualAttackC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(MeleeManualAttackC2S::new)
-				.encoder(MeleeManualAttackC2S::encode)
-				.consumerMainThread(MeleeManualAttackC2S::handle)
-				.add();
-
 		net.messageBuilder(NPCActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(NPCActionC2S::new)
 				.encoder(NPCActionC2S::toBytes)
@@ -249,6 +225,12 @@ public class NetworkHandler {
 				.consumerMainThread(TechniqueChargeC2S::handle)
 				.add();
 
+		net.messageBuilder(CombatAttackRequestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(CombatAttackRequestC2S::new)
+				.encoder(CombatAttackRequestC2S::encode)
+				.consumerMainThread(CombatAttackRequestC2S::handle)
+				.add();
+
 		/*
 		  SERVER -> CLIENT
 		 */
@@ -334,6 +316,18 @@ public class NetworkHandler {
 				.decoder(PartyInviteToastS2C::new)
 				.encoder(PartyInviteToastS2C::encode)
 				.consumerMainThread(PartyInviteToastS2C::handle)
+				.add();
+
+		net.messageBuilder(SyncWeaponRegistryS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncWeaponRegistryS2C::new)
+				.encoder(SyncWeaponRegistryS2C::encode)
+				.consumerMainThread(SyncWeaponRegistryS2C::handle)
+				.add();
+
+		net.messageBuilder(MeleeAnimationS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(MeleeAnimationS2C::new)
+				.encoder(MeleeAnimationS2C::encode)
+				.consumerMainThread(MeleeAnimationS2C::handle)
 				.add();
 	}
 

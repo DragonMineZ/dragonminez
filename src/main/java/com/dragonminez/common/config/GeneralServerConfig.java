@@ -23,7 +23,6 @@ public class GeneralServerConfig {
 
 	private WorldGenConfig worldGen = new WorldGenConfig();
 	private GameplayConfig gameplay = new GameplayConfig();
-	private CombatConfig combat = new CombatConfig();
 	private RacialSkillsConfig racialSkills = new RacialSkillsConfig();
 	private StorageConfig storage = new StorageConfig();
 
@@ -235,113 +234,6 @@ public class GeneralServerConfig {
 		private List<String> blacklistedItems = new ArrayList<>();
 	}
 
-	@Getter
-	@NoArgsConstructor
-	public static class CombatConfig {
-		private Boolean killPlayersOnCombatLogout = true;
-		private Double staminaConsumptionRatio = 0.125;
-		private Integer baselineFormDrain = 200;
-		private Boolean respectAttackCooldown = true;
-		private Boolean enableBlocking = true;
-		private Boolean enableParrying = true;
-		private double effectiveDefenseOnGuardBreak = 0.33;
-		private Boolean enableComboAttacks = true;
-		private Integer comboAttacksCooldownSeconds = 8;
-		private Boolean enablePerfectEvasion = true;
-		private Integer parryWindowMs = 150;
-		private Double blockDamageReductionCap = 0.80;
-		private Double blockDamageReductionMin = 0.40;
-		private Double poiseDamageMultiplier = 0.25;
-		private Integer poiseRegenCooldown = 100;
-		private Integer blockBreakStunDurationTicks = 60;
-		private Integer perfectEvasionWindowMs = 150;
-		private Boolean enableHitstun = true;
-		private Integer hitstunDurationTicks = 10;
-		private String[] hitstunSources = {"player", "saga_npc"};
-		private Integer dashCooldownSeconds = 4;
-		private Integer doubleDashCooldownSeconds = 12;
-		private Double[] kiBladeConfig = {1.0, 0.05};
-		private Double[] kiScytheConfig = {1.5, 0.075};
-		private Double[] kiClawLanceConfig = {2.0, 0.125};
-		private String[] allowedCombatItems = {};
-		private String[] twoHandedCombatItems = {};
-
-		public Double getStaminaConsumptionRatio() {
-			return Math.max(0, Math.min(staminaConsumptionRatio, Double.MAX_VALUE));
-		}
-
-		public Integer getComboAttacksCooldownSeconds() {
-			return Math.max(0, Math.min(comboAttacksCooldownSeconds, Integer.MAX_VALUE));
-		}
-
-		public Integer getParryWindowMs() {
-			return Math.max(0, Math.min(parryWindowMs, Integer.MAX_VALUE));
-		}
-
-		public Double getBlockDamageReductionCap() {
-			return Math.max(0, Math.min(blockDamageReductionCap, Double.MAX_VALUE));
-		}
-
-		public Double getBlockDamageReductionMin() {
-			return Math.max(0, Math.min(blockDamageReductionMin, Double.MAX_VALUE));
-		}
-
-		public Double getPoiseDamageMultiplier() {
-			return Math.max(0, Math.min(poiseDamageMultiplier, Double.MAX_VALUE));
-		}
-
-		public Integer getPoiseRegenCooldown() {
-			return Math.max(0, Math.min(poiseRegenCooldown, Integer.MAX_VALUE));
-		}
-
-		public Integer getBlockBreakStunDurationTicks() {
-			return Math.max(0, Math.min(blockBreakStunDurationTicks, Integer.MAX_VALUE));
-		}
-
-		public Integer getPerfectEvasionWindowMs() {
-			return Math.max(0, Math.min(perfectEvasionWindowMs, Integer.MAX_VALUE));
-		}
-
-		public Boolean getEnableHitstun() {
-			return enableHitstun != null ? enableHitstun : true;
-		}
-
-		public Integer getHitstunDurationTicks() {
-			return Math.max(0, Math.min(hitstunDurationTicks, Integer.MAX_VALUE));
-		}
-
-		public String[] getHitstunSources() {
-			return hitstunSources != null ? hitstunSources : new String[0];
-		}
-
-		public Integer getDashCooldownSeconds() {
-			return Math.max(0, Math.min(dashCooldownSeconds, Integer.MAX_VALUE));
-		}
-
-		public Integer getDoubleDashCooldownSeconds() {
-			return Math.max(0, Math.min(doubleDashCooldownSeconds, Integer.MAX_VALUE));
-		}
-
-		public Double[] getKiBladeConfig() {
-			return new Double[]{Math.max(0, Math.min(kiBladeConfig[0], Double.MAX_VALUE)), Math.max(0, Math.min(kiBladeConfig[1], Double.MAX_VALUE))};
-		}
-
-		public Double[] getKiScytheConfig() {
-			return new Double[]{Math.max(0, Math.min(kiScytheConfig[0], Double.MAX_VALUE)), Math.max(0, Math.min(kiScytheConfig[1], Double.MAX_VALUE))};
-		}
-
-		public Double[] getKiClawLanceConfig() {
-			return new Double[]{Math.max(0, Math.min(kiClawLanceConfig[0], Double.MAX_VALUE)), Math.max(0, Math.min(kiClawLanceConfig[1], Double.MAX_VALUE))};
-		}
-
-		public String[] getAllowedCombatItems() {
-			return allowedCombatItems != null ? allowedCombatItems : new String[0];
-		}
-
-		public String[] getTwoHandedCombatItems() {
-			return twoHandedCombatItems != null ? twoHandedCombatItems : new String[0];
-		}
-	}
 
 	@Getter
 	@NoArgsConstructor

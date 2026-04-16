@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 public class TriggerAnimationS2C {
 
 	public enum AnimationType {
-		EVASION, DASH, KI_BLAST_SHOT, COMBO, MELEE
+		EVASION, DASH, KI_BLAST_SHOT
 	}
 
 	private final UUID playerUUID;

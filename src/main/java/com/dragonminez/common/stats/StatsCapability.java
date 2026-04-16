@@ -76,6 +76,7 @@ public class StatsCapability {
 			NetworkHandler.sendToPlayer(
 					new SyncServerConfigS2C(
 							ConfigManager.getServerConfig(),
+							ConfigManager.getCombatConfig(),
 							ConfigManager.getSkillsConfig(),
 							ConfigManager.getAllForms(),
 							ConfigManager.getAllRaceStats(),

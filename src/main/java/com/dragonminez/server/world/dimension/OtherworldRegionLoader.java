@@ -3,7 +3,7 @@ package com.dragonminez.server.world.dimension;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
@@ -11,22 +11,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.HashSet;
-import java.util.Set;
 
 public class OtherworldRegionLoader {
 
-	private static final Set<String> loadedWorlds = new HashSet<>();
 	private static final String RESOURCE_PATH = "/data/dragonminez/regions/otherworld/";
 
-	public static void loadPreGeneratedRegions(ServerLevel level) {
-		if (level == null || !level.dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) return;
-
-		String worldId = level.getServer().getWorldPath(LevelResource.ROOT).toString();
-		if (loadedWorlds.contains(worldId)) return;
-
+	public static void loadPreGeneratedRegions(MinecraftServer server) {
 		try {
-			Path worldPath = level.getServer().getWorldPath(LevelResource.ROOT);
+			Path worldPath = server.getWorldPath(LevelResource.ROOT);
 
 			Path regionDestPath = worldPath
 					.resolve("dimensions")
@@ -58,13 +50,10 @@ public class OtherworldRegionLoader {
 					}
 				}
 
-				if (shouldCopy) if (copyRegionFile(fileName, destFile)) copiedFiles++;
+				if (shouldCopy && copyRegionFile(fileName, destFile)) copiedFiles++;
 			}
 
-			LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Replaced (Empty): {}", copiedFiles, replacedFiles);
-			LogUtil.info(Env.SERVER, "Initializing Otherworld NPCs spawns...");
-			OtherworldNPCSpawner.spawnNPCs(level);
-			loadedWorlds.add(worldId);
+			if (copiedFiles > 0 || replacedFiles > 0) LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Replaced (Empty): {}", copiedFiles, replacedFiles);
 
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Fatal IO error loading regions: {}", e.getMessage());
@@ -92,4 +81,3 @@ public class OtherworldRegionLoader {
 		}
 	}
 }
-

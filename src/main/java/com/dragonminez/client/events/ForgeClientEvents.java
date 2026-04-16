@@ -13,6 +13,7 @@ import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
+import com.dragonminez.common.combat.util.Minecraft_DMZ;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.SpacePodEntity;
@@ -21,6 +22,8 @@ import com.dragonminez.common.network.C2S.SokidanControlC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.mixin.client.MinecraftAccessor;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -160,6 +163,12 @@ public class ForgeClientEvents {
 			if (openCharacterCreationScreen(mc)) pendingCharacterCreationReopen = false;
 		}
 
+		if (mc.options.keyAttack.isDown()) {
+			if (mc.player.getAttackStrengthScale(0.5F) >= 1.0F) {
+				((MinecraftAccessor) mc).setAttackCooldown(0);
+			}
+		}
+
 		if (mc.screen == null) {
 			openCharacterCreationScreen(mc);
 		}
@@ -207,5 +216,18 @@ public class ForgeClientEvents {
 		introToastShownThisSession = false;
 		pendingCharacterCreationReopen = false;
 		characterCreationOpenCooldownTicks = 0;
+	}
+
+	@SubscribeEvent
+	public static void onPreRenderCrosshair(RenderGuiOverlayEvent.Pre event) {
+		if (event.getOverlay() == VanillaGuiOverlay.CROSSHAIR.type()) {
+			Minecraft client = Minecraft.getInstance();
+			if (client != null && ((Minecraft_DMZ) client).hasTargetsInReach()) RenderSystem.setShaderColor(1.0F, 0.0F, 0.0F, 1.0F);
+		}
+	}
+
+	@SubscribeEvent
+	public static void onPostRenderCrosshair(RenderGuiOverlayEvent.Post event) {
+		if (event.getOverlay() == VanillaGuiOverlay.CROSSHAIR.type()) RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 }

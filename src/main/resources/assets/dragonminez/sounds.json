@@ -388,5 +388,161 @@
     "sounds": [
       "dragonminez:zanzoken"
     ]
+  },
+  "anchor_slam": {
+    "subtitle": "sounds.dragonminez.anchor_slam",
+    "sounds": [
+      "dragonminez:anchor_slam"
+    ]
+  },
+  "axe_slash": {
+    "subtitle": "sounds.dragonminez.axe_slash",
+    "sounds": [
+      "dragonminez:axe_slash"
+    ]
+  },
+  "claymore_slam": {
+    "subtitle": "sounds.dragonminez.claymore_slam",
+    "sounds": [
+      "dragonminez:claymore_slam"
+    ]
+  },
+  "claymore_stab": {
+    "subtitle": "sounds.dragonminez.claymore_stab",
+    "sounds": [
+      "dragonminez:claymore_stab"
+    ]
+  },
+  "claymore_swing": {
+    "subtitle": "sounds.dragonminez.claymore_swing",
+    "sounds": [
+      "dragonminez:claymore_swing"
+    ]
+  },
+  "dagger_slash": {
+    "subtitle": "sounds.dragonminez.dagger_slash",
+    "sounds": [
+      "dragonminez:dagger_slash"
+    ]
+  },
+  "double_axe_swing": {
+    "subtitle": "sounds.dragonminez.double_axe_swing",
+    "sounds": [
+      "dragonminez:double_axe_swing"
+    ]
+  },
+  "fist_punch": {
+    "subtitle": "sounds.dragonminez.fist_punch",
+    "sounds": [
+      "dragonminez:fist_punch"
+    ]
+  },
+  "glaive_slash_quick": {
+    "subtitle": "sounds.dragonminez.glaive_slash_quick",
+    "sounds": [
+      "dragonminez:glaive_slash_quick"
+    ]
+  },
+  "glaive_slash_slow": {
+    "subtitle": "sounds.dragonminez.glaive_slash_slow",
+    "sounds": [
+      "dragonminez:glaive_slash_slow"
+    ]
+  },
+  "hammer_slam": {
+    "subtitle": "sounds.dragonminez.hammer_slam",
+    "sounds": [
+      "dragonminez:hammer_slam"
+    ]
+  },
+  "katana_slash": {
+    "subtitle": "sounds.dragonminez.katana_slash",
+    "sounds": [
+      "dragonminez:katana_slash"
+    ]
+  },
+  "mace_slam": {
+    "subtitle": "sounds.dragonminez.mace_slam",
+    "sounds": [
+      "dragonminez:mace_slam"
+    ]
+  },
+  "mace_slash": {
+    "subtitle": "sounds.dragonminez.mace_slash",
+    "sounds": [
+      "dragonminez:mace_slash"
+    ]
+  },
+  "pickaxe_swing": {
+    "subtitle": "sounds.dragonminez.pickaxe_swing",
+    "sounds": [
+      "dragonminez:pickaxe_swing"
+    ]
+  },
+  "rapier_slash": {
+    "subtitle": "sounds.dragonminez.rapier_slash",
+    "sounds": [
+      "dragonminez:rapier_slash"
+    ]
+  },
+  "rapier_stab": {
+    "subtitle": "sounds.dragonminez.rapier_stab",
+    "sounds": [
+      "dragonminez:rapier_stab"
+    ]
+  },
+  "scythe_slash": {
+    "subtitle": "sounds.dragonminez.scythe_slash",
+    "sounds": [
+      "dragonminez:scythe_slash"
+    ]
+  },
+  "sickle_slash": {
+    "subtitle": "sounds.dragonminez.sickle_slash",
+    "sounds": [
+      "dragonminez:sickle_slash"
+    ]
+  },
+  "spear_stab": {
+    "subtitle": "sounds.dragonminez.spear_stab",
+    "sounds": [
+      "dragonminez:spear_stab"
+    ]
+  },
+  "staff_slam": {
+    "subtitle": "sounds.dragonminez.staff_slam",
+    "sounds": [
+      "dragonminez:staff_slam"
+    ]
+  },
+  "staff_slash": {
+    "subtitle": "sounds.dragonminez.staff_slash",
+    "sounds": [
+      "dragonminez:staff_slash"
+    ]
+  },
+  "staff_spin": {
+    "subtitle": "sounds.dragonminez.staff_spin",
+    "sounds": [
+      "dragonminez:staff_spin"
+    ]
+  },
+  "staff_stab": {
+    "subtitle": "sounds.dragonminez.staff_stab",
+    "sounds": [
+      "dragonminez:staff_stab"
+    ]
+  },
+  "sword_slash": {
+    "subtitle": "sounds.dragonminez.sword_slash",
+    "sounds": [
+      "dragonminez:sword_slash"
+    ]
+  },
+  "wand_swing": {
+    "subtitle": "sounds.dragonminez.wand_swing",
+    "sounds": [
+      "dragonminez:wand_swing"
+    ]
   }
 }

@@ -15,12 +15,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.model.data.EntityModelData;
 
 import java.util.Map;
 import java.util.Objects;
@@ -192,33 +190,56 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
 
-        EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
-        float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
-        float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
+        float partialTick = animationState.getPartialTick();
+        float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
+        float headYawDeg = Mth.wrapDegrees(Mth.lerp(partialTick, animatable.yHeadRotO, animatable.yHeadRot) - bodyYaw);
+        float lookYaw = -headYawDeg * Mth.DEG_TO_RAD;
+        float lookPitch = -Mth.lerp(partialTick, animatable.xRotO, animatable.getXRot()) * Mth.DEG_TO_RAD;
 
         CoreGeoBone head = this.getAnimationProcessor().getBone("head");
+        CoreGeoBone waist = this.getAnimationProcessor().getBone("waist");
+        CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
+        CoreGeoBone leftArm = this.getAnimationProcessor().getBone("left_arm");
+
+        float desiredHeadPitch;
+        float desiredHeadYaw;
+        if (FlySkillEvent.getInstance().isFlyingFast(animatable)) {
+            desiredHeadPitch = 0.7854F;
+            desiredHeadYaw = 0.0F;
+        } else {
+            desiredHeadPitch = Mth.clamp(lookPitch * 0.1F, -0.75F, 0.75F);
+            desiredHeadYaw = Mth.clamp(lookYaw * 0.95F, -1.2F, 1.2F);
+        }
+
+        float torsoLean = Mth.clamp(lookPitch, -0.9F, 0.9F);
+        if (waist != null) {
+            waist.setRotX(waist.getRotX() + (torsoLean * 0.55F));
+            waist.setRotY(waist.getRotY() + (lookYaw * 0.35F));
+        }
+        if (rightArm != null) {
+            rightArm.setRotX(rightArm.getRotX() + (torsoLean * 0.20F));
+            rightArm.setRotY(rightArm.getRotY() + (lookYaw * 0.20F));
+        }
+        if (leftArm != null) {
+            leftArm.setRotX(leftArm.getRotX() + (torsoLean * 0.20F));
+            leftArm.setRotY(leftArm.getRotY() + (lookYaw * 0.20F));
+        }
+
         if (head != null) {
-            if (FlySkillEvent.getInstance().isFlyingFast(animatable)) {
-                head.setRotX(0.7854F);
-                head.setRotY(0);
-            } else {
-                head.setRotX(headPitch);
-                head.setRotY(headYaw);
-            }
+            float parentPitch = waist != null ? waist.getRotX() : 0.0F;
+            float parentYaw = waist != null ? waist.getRotY() : 0.0F;
+            head.setRotX(desiredHeadPitch + parentPitch);
+            head.setRotY(desiredHeadYaw - parentYaw);
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
-            CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
             if (rightArm != null) {
-                rightArm.setRotX(headPitch + 1.5708F);
-                rightArm.setRotY(headYaw);
+                rightArm.setRotX(lookPitch + 1.5708F);
+                rightArm.setRotY(lookYaw);
             }
         }
 
-        float partialTick = animationState.getPartialTick();
         float ageInTicks = (float) animatable.getTick(animatable);
-        CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
-        CoreGeoBone leftArm = this.getAnimationProcessor().getBone("left_arm");
 
         try {
             if (rightArm != null) RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
@@ -234,3 +255,4 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
         );
     }
 }
+
