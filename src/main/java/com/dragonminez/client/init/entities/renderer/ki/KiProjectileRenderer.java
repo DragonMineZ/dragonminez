@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
@@ -75,19 +76,18 @@ public class KiProjectileRenderer extends EntityRenderer<AbstractKiProjectile> {
 
             stack.pushPose();
 
-            // BILLBOARDING ESTRICTO: Resuelve los problemas de offset y rotación de cámara
-            stack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
-            stack.mulPose(Axis.YP.rotationDegrees(180.0F));
+            float lerpYaw = Mth.lerp(partialTick, entity.yRotO, entity.getYRot());
+            float lerpPitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
 
-            stack.translate(0, -0.2D, 0.0D);
+            stack.translate(0.0D, entity.getBbHeight() / 2.0D, 0.0D);
+            stack.mulPose(Axis.YP.rotationDegrees(-lerpYaw));
+            stack.mulPose(Axis.XP.rotationDegrees(lerpPitch));
+
             stack.scale(scale, scale, scale);
 
             MultiBufferSource.BufferSource immediateBuffer = Minecraft.getInstance().renderBuffers().bufferSource();
 
             switch (renderType) {
-                case 1:
-                    renderLegacyBlockModel(stack, entity, immediateBuffer, ageInTicks, coreColor, borderColor, packedLight);
-                    break;
                 case 4:
                     renderLegacyBlockModel(stack, entity, immediateBuffer, ageInTicks, coreColor, borderColor, packedLight);
                     stack.translate(0, 0.35, 0);

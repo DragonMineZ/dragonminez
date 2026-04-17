@@ -5,26 +5,31 @@ import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.network.S2C.TriggerImpactFrameS2C;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.util.ComboManager;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -33,8 +38,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -44,6 +52,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -52,6 +61,9 @@ public class CombatEvent {
 	private static final Map<UUID, CollisionImpactContext> COLLISION_IMPACTS = new HashMap<>();
 	private static final Map<String, Long> LAST_PLAYER_HIT_GUARD_MS = new HashMap<>();
 	public static final String DMZ_LAST_ATTACKER_ID_TAG = "dmz_last_attacker_id";
+
+	private static final double MOMENTUM_SPEED_THRESHOLD = 0.65;
+	private static final double MOMENTUM_MAX_SPEED = 1.5;
 
 	public enum CollisionImpactType {
 		WALL,
@@ -62,8 +74,74 @@ public class CombatEvent {
 			CollisionImpactType type,
 			long expiryMs,
 			double startY,
-			float extraDamage
+			float extraDamage,
+			Vec3 momentumDirection
 	) {}
+
+	@SubscribeEvent
+	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		if (event.side.isClient() || event.phase != TickEvent.Phase.END) return;
+
+		ServerPlayer player = (ServerPlayer) event.player;
+		Vec3 currentPos = player.position();
+
+		boolean wasOnGround = player.getPersistentData().getBoolean("dmz_was_grounded");
+		boolean isGrounded = player.onGround();
+
+		if (player.getPersistentData().contains("dmz_last_x")) {
+			double lastX = player.getPersistentData().getDouble("dmz_last_x");
+			double lastY = player.getPersistentData().getDouble("dmz_last_y");
+			double lastZ = player.getPersistentData().getDouble("dmz_last_z");
+
+			double dx = currentPos.x - lastX;
+			double dy = currentPos.y - lastY;
+			double dz = currentPos.z - lastZ;
+
+			double speed = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+			if (speed < 10.0) {
+				player.getPersistentData().putDouble("dmz_server_speed", speed);
+				if (speed > 0.05) {
+					player.getPersistentData().putDouble("dmz_momentum_x", dx);
+					player.getPersistentData().putDouble("dmz_momentum_y", dy);
+					player.getPersistentData().putDouble("dmz_momentum_z", dz);
+				}
+			}
+
+			if (!wasOnGround && isGrounded && speed >= MOMENTUM_SPEED_THRESHOLD) {
+				triggerLandingAOE(player, speed);
+			}
+		}
+
+		player.getPersistentData().putDouble("dmz_last_x", currentPos.x);
+		player.getPersistentData().putDouble("dmz_last_y", currentPos.y);
+		player.getPersistentData().putDouble("dmz_last_z", currentPos.z);
+		player.getPersistentData().putBoolean("dmz_was_grounded", isGrounded);
+	}
+
+	private static void triggerLandingAOE(ServerPlayer player, double impactSpeed) {
+		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+			double ratio = Mth.clamp((impactSpeed - MOMENTUM_SPEED_THRESHOLD) / (MOMENTUM_MAX_SPEED - MOMENTUM_SPEED_THRESHOLD), 0.0, 1.0);
+			double aoeDamage = data.getMeleeDamage() * (0.15 + (0.35 * ratio));
+
+			AABB aoeBox = player.getBoundingBox().inflate(3.5);
+			List<LivingEntity> targets = player.level().getEntitiesOfClass(LivingEntity.class, aoeBox, e -> e != player && e.isAlive());
+
+			for (LivingEntity target : targets) {
+				target.hurt(player.damageSources().playerAttack(player), (float) aoeDamage);
+				Vec3 push = target.position().subtract(player.position()).normalize().scale(1.2);
+				target.setDeltaMovement(target.getDeltaMovement().add(push.x, 0.4, push.z));
+				target.hurtMarked = true;
+			}
+
+			if (player.level() instanceof ServerLevel serverLevel) {
+				createCrater(serverLevel, player.blockPosition(), 2.0);
+				spawnRockImpactCircle(serverLevel, player.position(), 3.5);
+				NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.5f, 0.05f, 2, true), player);
+				serverLevel.playSound(null, player.blockPosition(), MainSounds.CRITICO2.get(), SoundSource.PLAYERS, 1.5f, 0.8f);
+			}
+		});
+	}
 
 	@SubscribeEvent(priority = EventPriority.HIGH)
 	public static void onLivingHurt(LivingHurtEvent event) {
@@ -77,7 +155,10 @@ public class CombatEvent {
 			return;
 		}
 
-		// Attacker Damage Event
+		if (isSpecificKiAttack(source)) {
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.7f, 0.1f, 2, true), event.getEntity());
+		}
+
 		if (source.getEntity() instanceof Player attacker && source.getMsgId().equals("player")) {
 			if (attacker.hasEffect(MainEffects.STUN.get()) || attacker.isBlocking()) {
 				event.setCanceled(true);
@@ -108,6 +189,31 @@ public class CombatEvent {
 				if (currentAttack != null) {
 					dmzDamage *= currentAttack.attack().damageMultiplier();
 					if (currentAttack.isOffHand()) dmzDamage *= 0.9;
+				}
+
+				double currentSpeed = attacker.getPersistentData().getDouble("dmz_server_speed");
+				boolean isMomentumStrike = currentSpeed >= MOMENTUM_SPEED_THRESHOLD;
+
+				if (isMomentumStrike) {
+					double ratio = Mth.clamp((currentSpeed - MOMENTUM_SPEED_THRESHOLD) / (MOMENTUM_MAX_SPEED - MOMENTUM_SPEED_THRESHOLD), 0.0, 1.0);
+					double multiplier = 1.15 + (ratio * 0.35);
+					dmzDamage *= multiplier;
+
+					double mx = attacker.getPersistentData().getDouble("dmz_momentum_x");
+					double my = attacker.getPersistentData().getDouble("dmz_momentum_y");
+					double mz = attacker.getPersistentData().getDouble("dmz_momentum_z");
+
+					Vec3 knockbackDir = new Vec3(mx, my, mz).normalize();
+					if (knockbackDir.lengthSqr() < 1.0E-6) {
+						knockbackDir = attacker.getLookAngle();
+					}
+
+					livingTarget.setDeltaMovement(knockbackDir.scale(1.8));
+					livingTarget.hurtMarked = true;
+
+					CollisionImpactType impactType = livingTarget.onGround() || knockbackDir.y < -0.5 ? CollisionImpactType.GROUND : CollisionImpactType.WALL;
+					registerCollisionImpact(livingTarget, impactType, (float)(dmzDamage * 0.3), knockbackDir);
+					NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6f, 0.05f, 2, false), livingTarget);
 				}
 
 				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getCombatConfig().getStaminaConsumptionRatio());
@@ -183,7 +289,6 @@ public class CombatEvent {
 			});
 		}
 
-		// Victim Defense Event
 		if (event.getEntity() instanceof Player victim) {
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getStatus().isHasCreatedCharacter()) {
@@ -276,8 +381,8 @@ public class CombatEvent {
 											}
 										}
 									} else {
-													double reductionCap = ConfigManager.getCombatConfig().getBlockDamageReductionCap();
-													double reductionMin = ConfigManager.getCombatConfig().getBlockDamageReductionMin();
+										double reductionCap = ConfigManager.getCombatConfig().getBlockDamageReductionCap();
+										double reductionMin = ConfigManager.getCombatConfig().getBlockDamageReductionMin();
 										double mitigationPct = (defense * 3.0) / (currentDamage[0] + (defense * 3.0));
 										mitigationPct = Math.min(reductionCap, Math.max(mitigationPct, reductionMin));
 
@@ -341,6 +446,10 @@ public class CombatEvent {
 			});
 		}
 
+		if (currentDamage[0] >= 200 && currentDamage[0] >= event.getEntity().getMaxHealth() * 0.5) {
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.8f, 0.05f, 2, true), event.getEntity());
+		}
+
 		event.setAmount((float) currentDamage[0]);
 
 		if (!event.isCanceled()
@@ -356,6 +465,17 @@ public class CombatEvent {
 				SoundHelper.playSound(serverLevel, event.getEntity(), currentAttack.attack().impactSound());
 			}
 		}
+	}
+
+	private static boolean isSpecificKiAttack(DamageSource source) {
+		if (MainDamageTypes.isKiblastDamage(source)) {
+			Entity projectile = source.getDirectEntity();
+			if (projectile instanceof AbstractKiProjectile kiProj) {
+				return kiProj.getKiRenderType() > 0;
+			}
+			return true;
+		}
+		return false;
 	}
 
 	private static boolean isEmptyHandOrNoDamageItem(Player player) {
@@ -395,12 +515,15 @@ public class CombatEvent {
 
 		if (!wallImpact && !groundImpact) return;
 
+		Vec3 dir = impact.momentumDirection() != null ? impact.momentumDirection() : living.getDeltaMovement().normalize();
 		COLLISION_IMPACTS.remove(living.getUUID());
 		living.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 30, 0, false, false, true));
 		living.level().playSound(null, living.getX(), living.getY(), living.getZ(), MainSounds.PARRY.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 
 		if (living.level() instanceof ServerLevel serverLevel) {
 			spawnRockImpactCircle(serverLevel, living.position(), impact.type() == CollisionImpactType.GROUND ? 2.75 : 1.9);
+			createCrater(serverLevel, living.blockPosition(), 1.5);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerImpactFrameS2C(0.6f, 0.05f, 2, true), living);
 		}
 
 		float impactDamage = Math.max(1.0F, impact.extraDamage());
@@ -411,39 +534,26 @@ public class CombatEvent {
 		}
 	}
 
-	// Utilidad a conectar al registro de ataques finalizados de BetterCombat
-	public static void triggerFinisherImpact(Player attacker, LivingEntity victim, boolean isHeavy) {
-		float impactExtraDamage = (float) Math.max(1.0, attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.35);
-		if (attacker.level() instanceof ServerLevel serverLevel) {
-			SoundEvent critSound = attacker.getRandom().nextBoolean() ? MainSounds.CRITICO1.get() : MainSounds.CRITICO2.get();
-			serverLevel.playSound(null, victim.getX(), victim.getY(), victim.getZ(), critSound, SoundSource.PLAYERS, 1.0F, 1.0F);
-		}
-
-		if (isHeavy) {
-			victim.setDeltaMovement(victim.getDeltaMovement().x * 0.2, -1.05, victim.getDeltaMovement().z * 0.2);
-			victim.hurtMarked = true;
-			registerCollisionImpact(victim, CollisionImpactType.GROUND, impactExtraDamage);
-		} else {
-			Vec3 pushDir = victim.position().subtract(attacker.position());
-			if (pushDir.lengthSqr() < 1.0E-6) pushDir = attacker.getLookAngle();
-			pushDir = new Vec3(pushDir.x, 0.0, pushDir.z).normalize();
-			if (!Double.isFinite(pushDir.x) || !Double.isFinite(pushDir.z)) {
-				pushDir = new Vec3(attacker.getLookAngle().x, 0.0, attacker.getLookAngle().z).normalize();
-			}
-			double strength = 1.95;
-			Vec3 forcedVelocity = new Vec3(pushDir.x * strength, 0.26, pushDir.z * strength);
-			victim.setDeltaMovement(forcedVelocity);
-			victim.hurtMarked = true;
-			registerCollisionImpact(victim, CollisionImpactType.WALL, impactExtraDamage);
-			if (attacker.level() instanceof ServerLevel serverLevel) {
-				spawnDustTrail(serverLevel, victim.position(), pushDir, 10);
-			}
-		}
+	private static void registerCollisionImpact(LivingEntity victim, CollisionImpactType type, float extraDamage, Vec3 momentumDir) {
+		long expiryMs = System.currentTimeMillis() + 1200L;
+		COLLISION_IMPACTS.put(victim.getUUID(), new CollisionImpactContext(type, expiryMs, victim.getY(), extraDamage, momentumDir));
 	}
 
-	private static void registerCollisionImpact(LivingEntity victim, CollisionImpactType type, float extraDamage) {
-		long expiryMs = System.currentTimeMillis() + 1200L;
-		COLLISION_IMPACTS.put(victim.getUUID(), new CollisionImpactContext(type, expiryMs, victim.getY(), extraDamage));
+	private static void createCrater(ServerLevel level, BlockPos center, double radius) {
+		int r = (int) Math.ceil(radius);
+		for (int x = -r; x <= r; x++) {
+			for (int y = -r; y <= r; y++) {
+				for (int z = -r; z <= r; z++) {
+					if (x * x + y * y + z * z <= radius * radius) {
+						BlockPos pos = center.offset(x, y, z);
+						BlockState state = level.getBlockState(pos);
+						if (!state.isAir() && state.getDestroySpeed(level, pos) >= 0.0F && state.getDestroySpeed(level, pos) < 50.0F) {
+							level.destroyBlock(pos, true);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	private static void spawnDustTrail(ServerLevel level, Vec3 origin, Vec3 dir, int points) {
@@ -632,4 +742,3 @@ public class CombatEvent {
 		COLLISION_IMPACTS.remove(id);
 	}
 }
-

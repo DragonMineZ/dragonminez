@@ -68,7 +68,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 				ConfigType.BOOLEAN, userConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
 				v -> userConfig.setFirstPersonAnimated(v > 0)));
 		
-		configOptions.add(new ConfigOption("config.impactFramesenabled",
+		configOptions.add(new ConfigOption("config.impactFramesEnabled",
 				ConfigType.BOOLEAN, userConfig.isImpactFramesEnabled() ? 1 : 0, 0, 1,
 				v -> userConfig.setImpactFramesEnabled(v > 0)));
 

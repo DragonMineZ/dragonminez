@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
@@ -87,7 +88,7 @@ public abstract class AbstractKiProjectile extends Projectile {
                 }
                 return false;
             } else {
-                return livingTarget.hurt(com.dragonminez.common.init.MainDamageTypes.kiblast(this.level(), this, this.getOwner()), amount);
+                return livingTarget.hurt(MainDamageTypes.kiblast(this.level(), this, this.getOwner()), amount);
             }
         }
         return false;
