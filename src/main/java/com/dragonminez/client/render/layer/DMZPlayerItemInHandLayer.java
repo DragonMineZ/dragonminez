@@ -1,5 +1,6 @@
 package com.dragonminez.client.render.layer;
 
+import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -40,6 +41,13 @@ public class DMZPlayerItemInHandLayer<T extends AbstractClientPlayer & GeoAnimat
 	@Override
 	protected ItemStack getStackForBone(GeoBone bone, T animatable) {
 		String boneName = bone.getName();
+		boolean isTwoHanded = PlayerAttackHelper.isTwoHandedWielding(animatable);
+		boolean rightBoneIsOffhand = boneName.equals(RIGHT_HAND) && animatable.getMainArm() != HumanoidArm.RIGHT;
+		boolean leftBoneIsOffhand = boneName.equals(LEFT_HAND) && animatable.getMainArm() != HumanoidArm.LEFT;
+		if (isTwoHanded && (rightBoneIsOffhand || leftBoneIsOffhand)) {
+			return ItemStack.EMPTY;
+		}
+
 		if (boneName.equals(RIGHT_HAND)) {
 			return animatable.getMainArm() == HumanoidArm.RIGHT ? animatable.getMainHandItem() : animatable.getOffhandItem();
 		}

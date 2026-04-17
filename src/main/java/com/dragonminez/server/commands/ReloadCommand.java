@@ -38,6 +38,7 @@ public class ReloadCommand {
 				NetworkHandler.sendToPlayer(
 						new SyncServerConfigS2C(
 								ConfigManager.getServerConfig(),
+								ConfigManager.getCombatConfig(),
 								ConfigManager.getSkillsConfig(),
 								ConfigManager.getAllForms(),
 								ConfigManager.getAllRaceStats(),

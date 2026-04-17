@@ -36,6 +36,7 @@ public class ConfigManager {
 
 	private static GeneralServerConfig SERVER_SYNCED_GENERAL_SERVER;
 	private static SkillsConfig SERVER_SYNCED_SKILLS;
+	private static CombatConfig SERVER_SYNCED_COMBAT;
 	private static Map<String, Map<String, FormConfig>> SERVER_SYNCED_FORMS;
 	private static Map<String, RaceStatsConfig> SERVER_SYNCED_STATS;
 	private static Map<String, RaceCharacterConfig> SERVER_SYNCED_CHARACTER;
@@ -43,6 +44,7 @@ public class ConfigManager {
 
 	private static GeneralUserConfig userConfig;
 	private static GeneralServerConfig serverConfig;
+	private static CombatConfig combatConfig;
 	private static SkillsConfig skillsConfig;
 	@Getter
 	private static EntitiesConfig entitiesConfig;
@@ -175,6 +177,40 @@ public class ConfigManager {
 		if (overwriteServer) {
 			LogUtil.warn(Env.COMMON, "Regenerating general-server.json. Reason: " + reasonServer);
 			LOADER.saveConfig(serverConfigPath, serverConfig);
+		}
+
+		// Combat
+		Path combatConfigPath = CONFIG_DIR.resolve("combat.json");
+		boolean overwriteCombat = false;
+		String reasonCombat = "";
+		if (Files.exists(combatConfigPath)) {
+			try {
+				combatConfig = LOADER.loadConfig(combatConfigPath, CombatConfig.class);
+				if (combatConfig.getConfigVersion() < CombatConfig.CURRENT_VERSION) {
+					reasonCombat = combatConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + combatConfig.getConfigVersion() + " < " + CombatConfig.CURRENT_VERSION + ")";
+					overwriteCombat = true;
+				}
+				if (overwriteCombat) {
+					backupOldConfig(combatConfigPath);
+					combatConfig = new CombatConfig();
+					combatConfig.setConfigVersion(CombatConfig.CURRENT_VERSION);
+				}
+			} catch (Exception e) {
+				reasonCombat = "Parsing error: " + e;
+				backupOldConfig(combatConfigPath);
+				combatConfig = new CombatConfig();
+				combatConfig.setConfigVersion(CombatConfig.CURRENT_VERSION);
+				overwriteCombat = true;
+			}
+		} else {
+			reasonCombat = "File not found";
+			combatConfig = new CombatConfig();
+			combatConfig.setConfigVersion(CombatConfig.CURRENT_VERSION);
+			overwriteCombat = true;
+		}
+		if (overwriteCombat) {
+			LogUtil.warn(Env.COMMON, "Regenerating combat.json. Reason: " + reasonCombat);
+			LOADER.saveConfig(combatConfigPath, combatConfig);
 		}
 
 		// Skills
@@ -770,6 +806,11 @@ public class ConfigManager {
 		return serverConfig != null ? serverConfig : new GeneralServerConfig();
 	}
 
+	public static CombatConfig getCombatConfig() {
+		if (SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
+		return combatConfig != null ? combatConfig : new CombatConfig();
+	}
+
 	public static void saveGeneralUserConfig() {
 		try {
 			Path path = CONFIG_DIR.resolve("general-user.json");
@@ -779,8 +820,9 @@ public class ConfigManager {
 		}
 	}
 
-	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters, Map<String, FormConfig> syncedStackForms) {
+	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, CombatConfig syncedCombatConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters, Map<String, FormConfig> syncedStackForms) {
 		SERVER_SYNCED_GENERAL_SERVER = syncedServerConfig;
+		SERVER_SYNCED_COMBAT = syncedCombatConfig;
 		SERVER_SYNCED_SKILLS = syncedSkillsConfig;
 		SERVER_SYNCED_FORMS = syncedForms;
 		SERVER_SYNCED_STATS = syncedStats;
@@ -790,6 +832,7 @@ public class ConfigManager {
 
 	public static void clearServerSync() {
 		SERVER_SYNCED_GENERAL_SERVER = null;
+		SERVER_SYNCED_COMBAT = null;
 		SERVER_SYNCED_SKILLS = null;
 		SERVER_SYNCED_FORMS = null;
 		SERVER_SYNCED_STATS = null;

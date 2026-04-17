@@ -70,7 +70,7 @@ public class StatsData {
 		int initialStats = getInitialTotalStats();
 		int totalStats = Math.max(initialStats, stats.getTotalStats());
 
-		long maxTotalStatsForLevel = Math.max((long) initialStats, getConfiguredMaxTotalStatsRaw());
+		long maxTotalStatsForLevel = Math.max(initialStats, getConfiguredMaxTotalStatsRaw());
 		double denominator = Math.max(1.0, (double) maxTotalStatsForLevel - initialStats);
 		double progress = (totalStats - initialStats) / denominator;
 		progress = Math.max(0.0, Math.min(1.0, progress));
@@ -380,7 +380,7 @@ public class StatsData {
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
+		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
 	}
 
 	public double getAdjustedStaminaDrain() {
@@ -414,7 +414,7 @@ public class StatsData {
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
+		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
 	}
 
 	public double getAdjustedHealthDrain() {
@@ -452,7 +452,7 @@ public class StatsData {
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
+		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
 	}
 
 
@@ -583,7 +583,7 @@ public class StatsData {
 	}
 
 	private long getConfiguredMaxTotalStatsRaw() {
-		return (long) getConfiguredMaxValue() * 6L;
+		return getConfiguredMaxValue() * 6L;
 	}
 
 	public double getRaceTpCostMultiplier() {

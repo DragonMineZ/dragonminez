@@ -1,7 +1,6 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.ConfigManager;
-import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -50,8 +49,7 @@ public class KiBlastC2S {
 					if (data.getCooldowns().hasCooldown(Cooldowns.KI_BLAST_CD)) return;
 					if (data.getStatus().isStunned()) return;
 					if (!data.getSkills().hasSkill("kicontrol")) return;
-					GeneralServerConfig config = ConfigManager.getServerConfig();
-					int baseCost = config != null ? config.getCombat().getBaselineFormDrain() : 200;
+					int baseCost = ConfigManager.getCombatConfig().getBaselineFormDrain();
 
 					int cost = (int) (data.getMaxEnergy() * 0.02 + 0.1 * baseCost);
 					if (data.getResources().getCurrentEnergy() < cost) return;

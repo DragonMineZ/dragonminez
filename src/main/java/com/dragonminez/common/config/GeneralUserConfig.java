@@ -12,23 +12,6 @@ public class GeneralUserConfig {
 	private int configVersion;
 
 	private final HudConfig hud = new HudConfig();
-	private final CombatConfig combat = new CombatConfig();
-
-	public CombatConfig getCombat() {
-		return combat;
-	}
-
-	@Setter
-	@Getter
-	@NoArgsConstructor
-	public static class CombatConfig {
-		private Boolean useDMZCombatStyle = true;
-
-		public Boolean getUseDMZCombatStyle() {
-			if (useDMZCombatStyle == null) useDMZCombatStyle = true;
-			return useDMZCombatStyle;
-		}
-	}
 
 	@Setter
 	@Getter

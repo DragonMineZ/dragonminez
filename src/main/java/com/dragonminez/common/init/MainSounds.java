@@ -8,8 +8,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-import java.rmi.registry.Registry;
-
 public final class MainSounds {
 
 	public static final DeferredRegister<SoundEvent> SOUND_EVENTS_REGISTER =
@@ -32,6 +30,33 @@ public final class MainSounds {
 	public static final RegistryObject<SoundEvent> EVASION2 = registerSoundEvent("evasion2");
 	public static final RegistryObject<SoundEvent> KNOCKBACK_CHARACTER = registerSoundEvent("knockback_character");
     public static final RegistryObject<SoundEvent> ZANZOKEN = registerSoundEvent("zanzoken");
+
+	public static final RegistryObject<SoundEvent> ANCHOR_SLAM = registerSoundEvent("anchor_slam");
+	public static final RegistryObject<SoundEvent> AXE_SLASH = registerSoundEvent("axe_slash");
+	public static final RegistryObject<SoundEvent> CLAYMORE_SLAM = registerSoundEvent("claymore_slam");
+	public static final RegistryObject<SoundEvent> CLAYMORE_STAB = registerSoundEvent("claymore_stab");
+	public static final RegistryObject<SoundEvent> CLAYMORE_SWING = registerSoundEvent("claymore_swing");
+	public static final RegistryObject<SoundEvent> DAGGER_SLASH = registerSoundEvent("dagger_slash");
+	public static final RegistryObject<SoundEvent> DOUBLE_AXE_SWING = registerSoundEvent("double_axe_swing");
+	public static final RegistryObject<SoundEvent> FIST_PUNCH = registerSoundEvent("fist_punch");
+	public static final RegistryObject<SoundEvent> GLAIVE_SLASH_QUICK = registerSoundEvent("glaive_slash_quick");
+	public static final RegistryObject<SoundEvent> GLAIVE_SLASH_SLOW = registerSoundEvent("glaive_slash_slow");
+	public static final RegistryObject<SoundEvent> HAMMER_SLAM = registerSoundEvent("hammer_slam");
+	public static final RegistryObject<SoundEvent> KATANA_SLASH = registerSoundEvent("katana_slash");
+	public static final RegistryObject<SoundEvent> MACE_SLAM = registerSoundEvent("mace_slam");
+	public static final RegistryObject<SoundEvent> MACE_SLASH = registerSoundEvent("mace_slash");
+	public static final RegistryObject<SoundEvent> PICKAXE_SWING = registerSoundEvent("pickaxe_swing");
+	public static final RegistryObject<SoundEvent> RAPIER_SLASH = registerSoundEvent("rapier_slash");
+	public static final RegistryObject<SoundEvent> RAPIER_STAB = registerSoundEvent("rapier_stab");
+	public static final RegistryObject<SoundEvent> SCYTHE_SLASH = registerSoundEvent("scythe_slash");
+	public static final RegistryObject<SoundEvent> SICKLE_SLASH = registerSoundEvent("sickle_slash");
+	public static final RegistryObject<SoundEvent> SPEAR_STAB = registerSoundEvent("spear_stab");
+	public static final RegistryObject<SoundEvent> STAFF_SLAM = registerSoundEvent("staff_slam");
+	public static final RegistryObject<SoundEvent> STAFF_SLASH = registerSoundEvent("staff_slash");
+	public static final RegistryObject<SoundEvent> STAFF_SPIN = registerSoundEvent("staff_spin");
+	public static final RegistryObject<SoundEvent> STAFF_STAB = registerSoundEvent("staff_stab");
+	public static final RegistryObject<SoundEvent> SWORD_SLASH = registerSoundEvent("sword_slash");
+	public static final RegistryObject<SoundEvent> WAND_SWING = registerSoundEvent("wand_swing");
 
     public static final RegistryObject<SoundEvent> DRAGONRADAR = registerSoundEvent("dragonradar");
 	public static final RegistryObject<SoundEvent> NUBE = registerSoundEvent("nube");
@@ -71,8 +96,8 @@ public final class MainSounds {
 
 	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_AMBIENT = registerSoundEvent("entity.frieza.s.ambient");
 	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_HURT = registerSoundEvent("entity.frieza.s.hurt");
-	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_DEATH = registerSoundEvent("entity.friezas.s.death");
-	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_ATTACK = registerSoundEvent("entity.friezas.s.attack");
+	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_DEATH = registerSoundEvent("entity.frieza.s.death");
+	public static final RegistryObject<SoundEvent> FRIEZA_SOLDIER_ATTACK = registerSoundEvent("entity.frieza.s.attack");
 
 	public static final RegistryObject<SoundEvent> NAMEKIAN_VILLAGER_AMBIENT = registerSoundEvent("entity.namekian.vill.ambient");
 	public static final RegistryObject<SoundEvent> NAMEKIAN_VILLAGER_HURT = registerSoundEvent("entity.namekian.vill.hurt");
