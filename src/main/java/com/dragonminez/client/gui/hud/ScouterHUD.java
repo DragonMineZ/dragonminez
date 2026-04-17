@@ -103,7 +103,7 @@ public class ScouterHUD {
 	public static final IGuiOverlay HUD_SCOUTER = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
+		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
 
 		if (!mc.player.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("scouter")) return;
 

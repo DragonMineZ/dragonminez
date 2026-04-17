@@ -202,10 +202,11 @@ public class ClientStatsEvents {
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
 			boolean isRightClickDown = mc.options.keyUse.isDown() && !isStunned;
+			boolean isBlockKeyDown = KeyBinds.BLOCK_KEY.isDown() && !isStunned;
 
-			if (isRightClickDown != data.getStatus().isBlocking()) {
-				data.getStatus().setBlocking(isRightClickDown);
-				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isRightClickDown));
+			if (isBlockKeyDown != data.getStatus().isBlocking()) {
+				data.getStatus().setBlocking(isBlockKeyDown);
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
 			}
 
 
