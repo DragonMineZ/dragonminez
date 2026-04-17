@@ -204,14 +204,7 @@ public class UtilityMenuScreen extends Screen {
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
 		int utilityMenuKeyCode = KeyBinds.UTILITY_MENU.getKey().getValue();
-		if (keyCode == utilityMenuKeyCode) {
-			while (KeyBinds.UTILITY_MENU.consumeClick()) {
-				// Clear pending clicks so we do not reopen immediately after closing.
-			}
-			utilityMenuReopenBlockedUntilMs = System.currentTimeMillis() + 220L;
-			onClose();
-			return true;
-		}
+		if (keyCode == utilityMenuKeyCode) return true;
 		if (keyCode == 256) {
 			onClose();
 			return true;

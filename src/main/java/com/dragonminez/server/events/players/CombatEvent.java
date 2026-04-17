@@ -107,7 +107,7 @@ public class CombatEvent {
 
 				if (currentAttack != null) {
 					dmzDamage *= currentAttack.attack().damageMultiplier();
-					if (currentAttack.isOffHand()) dmzDamage *= 0.5;
+					if (currentAttack.isOffHand()) dmzDamage *= 0.9;
 				}
 
 				int baseStaminaRequired = (int) Math.ceil(dmzDamage * ConfigManager.getCombatConfig().getStaminaConsumptionRatio());
