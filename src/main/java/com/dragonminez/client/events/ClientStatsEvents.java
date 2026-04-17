@@ -51,8 +51,8 @@ public class ClientStatsEvents {
 
 	private static FlightSoundInstance flightSound;
 
-	private static int transformDoubleTapTimer = 0;
-	private static int kiChargeDoubleTapTimer = 0;
+	private static long lastTransformTapTime = 0;
+	private static long lastKiChargeTapTime = 0;
 	private static int kiBlastTimer = 0;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
@@ -247,23 +247,25 @@ public class ClientStatsEvents {
 				kiBlastTimer--;
 			}
 
-			if (transformDoubleTapTimer > 0) {
-				transformDoubleTapTimer--;
-			}
+			long currentTime = System.currentTimeMillis();
 
 			if (isActionKeyPressed && !wasTransformKeyDown) {
-				if (transformDoubleTapTimer > 0) {
+				if ((currentTime - lastTransformTapTime) <= 500) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
-					transformDoubleTapTimer = 0;
-				} else transformDoubleTapTimer = 10;
+					lastTransformTapTime = 0;
+				} else {
+					lastTransformTapTime = currentTime;
+				}
 			}
 			wasTransformKeyDown = isActionKeyPressed;
 
 			if (isKiChargeKeyPressed && !wasKiChargeKeyDown) {
-				if (kiChargeDoubleTapTimer > 0) {
+				if ((currentTime - lastKiChargeTapTime) <= 500) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_RELEASE));
-					kiChargeDoubleTapTimer = 0;
-				} else kiChargeDoubleTapTimer = 10;
+					lastKiChargeTapTime = 0;
+				} else {
+					lastKiChargeTapTime = currentTime;
+				}
 			}
 			wasKiChargeKeyDown = isKiChargeKeyPressed;
 
@@ -416,6 +418,8 @@ public class ClientStatsEvents {
 		wasRightClickDown = false;
 		lockedVanillaHotbarSlot = -1;
 		lockedTechniqueSlot = -1;
+		lastTransformTapTime = 0;
+		lastKiChargeTapTime = 0;
 		StatsCapability.clearClientCache();
 	}
 
