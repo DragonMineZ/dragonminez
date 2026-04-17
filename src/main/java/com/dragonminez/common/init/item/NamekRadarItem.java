@@ -31,6 +31,10 @@ public class NamekRadarItem extends Item {
 	public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
 
+		if (hand == InteractionHand.OFF_HAND && !player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty()) {
+			return InteractionResultHolder.fail(stack);
+		}
+
 		if (player.getCooldowns().isOnCooldown(this)) {
 			return InteractionResultHolder.fail(stack);
 		}
