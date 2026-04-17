@@ -1,6 +1,7 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -89,7 +90,22 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
-        if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+
+		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) {
+			var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+			if ("body".equals(anchor) && !animatable.isSpectator() && stats.getStatus().isHasCreatedCharacter()) {
+				boolean isOozaru = stats.getCharacter().getActiveForm() != null && stats.getCharacter().getActiveForm().contains("ozaru");
+				if (!isOozaru && stats.getStatus().isRenderKatana()) {
+					BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
+					if (yajirobeModel != null) {
+						RenderType type = RenderType.entityCutoutNoCull(YAJIROBE_SWORD_TEXTURE);
+						renderWeaponFromBodyAnchor(yajirobeModel, "katana", playerBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+					}
+				}
+			}
+			return;
+		}
 
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
