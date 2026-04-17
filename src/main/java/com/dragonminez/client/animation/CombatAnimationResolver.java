@@ -67,10 +67,10 @@ public final class CombatAnimationResolver {
         String resolved = sanitizeAnimationId(animationId);
 
         if (isOffhand) {
-            if (resolved.endsWith("_left")) {
-                resolved = resolved.substring(0, resolved.length() - 5) + "_right";
-            } else if (resolved.endsWith("_right")) {
-                resolved = resolved.substring(0, resolved.length() - 6) + "_left";
+            if (resolved.endsWith("one_handed_slash_horizontal_right_1")) {
+                resolved = resolved.substring(0, resolved.length() - "right_1".length()) + "left_1";
+            } else if (resolved.endsWith("one_handed_slash_horizontal_right_2")) {
+                resolved = resolved.substring(0, resolved.length() - "right_2".length()) + "left_2";
             }
         }
 

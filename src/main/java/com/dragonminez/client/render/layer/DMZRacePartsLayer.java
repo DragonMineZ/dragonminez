@@ -155,9 +155,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 
 		if (anchor.equals("head")) {
-			String activeBone = character.getActiveHeadBone();
+			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
+			String activeBone = character.getRenderableHeadBone();
 
-			if (activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
+			if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
 
 				GeoBone targetBone = partsModel.getBone(activeBone).orElse(null);
 				boolean fromPlayerModel = false;
@@ -177,7 +178,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				}
 			}
 
-			if (race.equals("namekian") || race.equals("namekian_orange")) {
+			if (extraHeadBonesEnabled && (race.equals("namekian") || race.equals("namekian_orange"))) {
 
 				GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
 				boolean antennaFromPlayerModel = false;

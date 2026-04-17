@@ -38,6 +38,7 @@ public class FormConfig {
 		private String name = "";
 		private Integer unlockOnSkillLevel = 0;
 		private String customModel = "";
+		private boolean keepBaseFormHeadBones = false;
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";

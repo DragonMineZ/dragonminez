@@ -448,7 +448,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private int getCurrentHairOrBoneValue() {
-		String activeBone = character.getActiveHeadBone();
+		String activeBone = character.getRenderableHeadBone();
 		boolean supportsHair = HairManager.canUseHair(character);
 		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
 
@@ -457,16 +457,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			return hairId > 0 ? hairId - 1 : -1;
 		}
 
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-		if (config != null && config.getHeadBones() != null) {
-			int currentBoneIdx = 0;
-			for (String bone : config.getHeadBones()) {
-				if (bone.equals("hair")) continue;
-				if (bone.equals(activeBone)) {
-					return hairPresets + currentBoneIdx;
-				}
-				currentBoneIdx++;
-			}
+		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
+		int boneIndex = extraBones.indexOf(activeBone);
+		if (boneIndex >= 0) {
+			return hairPresets + boneIndex;
 		}
 		return 0;
 	}
@@ -860,12 +854,25 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private int getMaxHairForCurrentState() {
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-		if (config == null || config.getHeadBones() == null) return 0;
 		int count = 0;
 		if (HairManager.canUseHair(character)) count += HairManager.getPresetCount();
-		for (String bone : config.getHeadBones()) if (!bone.equals("hair")) count++;
+		count += getAvailableExtraHeadBonesForCurrentState().size();
 		return count;
+	}
+
+	private List<String> getAvailableExtraHeadBonesForCurrentState() {
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+		if (config == null || config.getHeadBones() == null || !character.areExtraHeadBonesEnabled()) {
+			return Collections.emptyList();
+		}
+
+		List<String> extraBones = new ArrayList<>();
+		for (String bone : config.getHeadBones()) {
+			if (bone != null && !bone.isEmpty() && !bone.equals("hair")) {
+				extraBones.add(bone);
+			}
+		}
+		return extraBones;
 	}
 
 	private void syncCharacter() {
@@ -891,11 +898,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void setHairFromPreview(int value) {
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-		if (config == null || config.getHeadBones() == null) return;
-
 		boolean supportsHair = HairManager.canUseHair(character);
 		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
 
 		String newActiveBone = null;
 		int newHairId = character.getHairId();
@@ -905,15 +910,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			newHairId = value + 1;
 		} else {
 			int boneIdxTarget = value - hairPresets;
-			int currentBoneIdx = 0;
-
-			for (String bone : config.getHeadBones()) {
-				if (bone.equals("hair")) continue;
-				if (currentBoneIdx == boneIdxTarget) {
-					newActiveBone = bone;
-					break;
-				}
-				currentBoneIdx++;
+			if (boneIdxTarget >= 0 && boneIdxTarget < extraBones.size()) {
+				newActiveBone = extraBones.get(boneIdxTarget);
 			}
 		}
 
@@ -1489,6 +1487,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case HAIR_ONLY -> {
 				boolean supportsHair = HairManager.canUseHair(character);
 				int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+				List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
 
 				if (supportsHair && value < hairPresets) {
 					character.setHairId(value + 1);
@@ -1496,17 +1495,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				} else {
 					character.setHairId(0);
 					int boneIdxTarget = value - hairPresets;
-					int currentBoneIdx = 0;
-					RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-					if (config != null && config.getHeadBones() != null) {
-						for (String bone : config.getHeadBones()) {
-							if (bone.equals("hair")) continue;
-							if (currentBoneIdx == boneIdxTarget) {
-								character.setActiveHeadBone(bone);
-								break;
-							}
-							currentBoneIdx++;
-						}
+					if (boneIdxTarget >= 0 && boneIdxTarget < extraBones.size()) {
+						character.setActiveHeadBone(extraBones.get(boneIdxTarget));
 					}
 				}
 				character.setEyesType(0);

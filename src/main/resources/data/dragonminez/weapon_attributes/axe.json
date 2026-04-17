@@ -7,7 +7,7 @@
         "hitbox": "HORIZONTAL_PLANE",
         "angle": 90,
         "upswing": 0.5,
-        "animation": "combat.one_handed_slash_horizontal_right",
+        "animation": "combat.one_handed_slash_horizontal_right_1",
         "swing_sound": {
           "id": "dragonminez:axe_slash"
         }
@@ -16,7 +16,7 @@
         "hitbox": "HORIZONTAL_PLANE",
         "angle": 90,
         "upswing": 0.5,
-        "animation": "combat.one_handed_slash_horizontal_left",
+        "animation": "combat.one_handed_slash_horizontal_right_2",
         "swing_sound": {
           "id": "dragonminez:axe_slash"
         }
