@@ -597,10 +597,13 @@ public class AuraRenderer {
 
 		if (crossFactor < 1.0f) {
 			poseStack.pushPose();
-			poseStack.translate(0.0, data.bodyScaleY * 2f, 0.0);
+
+			poseStack.translate(0.0, 0.05, 0.0);
 			poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
 			poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
 			poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
+
+			poseStack.translate(0.0, 0.7, 0.0);
 
 			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
@@ -614,6 +617,7 @@ public class AuraRenderer {
 			poseStack.pushPose();
 			float sparkingPulse = 1.0f + (float) Math.sin((player.tickCount + partialTick) * 0.2f) * 0.05f;
 			poseStack.scale(0.8f * sparkingPulse, 0.65f * sparkingPulse, 0.8f * sparkingPulse);
+
 			poseStack.translate(0.0, -0.25, 0.0);
 
 			RenderType sparkingRender = ModRenderTypes.getCustomAura(sparkingTex);
