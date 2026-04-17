@@ -88,18 +88,13 @@ public abstract class MinecraftMixin implements Minecraft_DMZ {
 		var hand = PlayerAttackHelper.getCurrentAttack(player, comboCount);
 		boolean canUseCombat = hand != null && PlayerAttackHelper.canAttack(player) && shouldUseCombatAttack(hand);
 
-		System.out.println("[DMZ_DEBUG] continueAttack called | combo=" + comboCount + " | hit=" + (hitResult != null ? hitResult.getType() : "null") + " | canUseCombat=" + canUseCombat + " | isAttacking=" + isAttacking + " | awaiting=" + isAwaitingUpswing);
-
-		if (!canUseCombat) {
-			return;
-		}
+		if (!canUseCombat) return;
 
 		// In combat context, fully suppress vanilla continueAttack to avoid mining swing spam.
 		ci.cancel();
 
 		float cooldownProgress = player.getAttackStrengthScale(0.5F);
 		if (cooldownProgress >= 1.0F && !isAttacking && !isAwaitingUpswing) {
-			System.out.println("[DMZ_DEBUG] continueAttack triggers startAttack | cooldown=" + cooldownProgress);
 			this.startAttack();
 		}
 	}

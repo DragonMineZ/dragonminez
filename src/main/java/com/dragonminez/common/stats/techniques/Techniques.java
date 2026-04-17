@@ -83,6 +83,15 @@ public class Techniques {
 		this.techniqueCharging = false;
 	}
 
+	public void clearAllTechniques() {
+		this.unlockedTechniques.clear();
+		for (int i = 0; i < this.equippedSlots.length; i++) {
+			this.equippedSlots[i] = "";
+		}
+		this.selectedSlot = 0;
+		clearTechniqueCharge();
+	}
+
 	public int getSelectedSlot() {
 		return this.selectedSlot;
 	}

@@ -87,7 +87,7 @@ public class CrowdinManager {
 		boolean defaultValue = production;
 		Boolean configuredValue = null;
 		try {
-			configuredValue = ConfigManager.getUserConfig().getHud().getLiveCrowdinTranslations();
+			configuredValue = ConfigManager.getUserConfig().getLiveCrowdinTranslations();
 		} catch (Exception ignored) {
 		}
 

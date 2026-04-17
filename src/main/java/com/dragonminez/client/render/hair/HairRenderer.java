@@ -54,8 +54,9 @@ public class HairRenderer {
 		}
 
 		float[] tempRgb = new float[3];
-		VertexConsumer opaqueBuffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(HAIR_TEXTURE));
-		VertexConsumer translucentBuffer = bufferSource.getBuffer(RenderType.entityTranslucent(HAIR_TEXTURE));
+		RenderType opaqueType = RenderType.entityCutoutNoCull(HAIR_TEXTURE);
+		RenderType translucentType = RenderType.entityTranslucent(HAIR_TEXTURE);
+
 		for (HairFace face : FACES) {
 			HairStrand[] strandsFrom = hairFrom.getStrands(face);
 			HairStrand[] strandsTo = hairTo.getStrands(face);
@@ -191,7 +192,7 @@ public class HairRenderer {
 				}
 				Vector3f staticPos = CustomHair.getStrandBasePosition(face, i);
 
-				VertexConsumer strandBuffer = currentAlpha < 1.0f ? translucentBuffer : opaqueBuffer;
+				VertexConsumer strandBuffer = bufferSource.getBuffer(currentAlpha < 1.0f ? translucentType : opaqueType);
 				renderStrandInterpolated(poseStack, strandBuffer,
 						staticPos, tempRgb[0], tempRgb[1], tempRgb[2], packedLight, packedOverlay,
 						time, movementIntensity, isCharging,

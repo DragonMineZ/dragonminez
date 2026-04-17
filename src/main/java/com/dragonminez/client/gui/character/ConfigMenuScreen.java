@@ -38,7 +38,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	private int maxScroll = 0;
 	private boolean isDraggingScroll = false;
 
-	private GeneralUserConfig.HudConfig hudConfig;
+	private GeneralUserConfig userConfig;
 	private final List<ConfigOption> configOptions = new ArrayList<>();
 	private final List<CustomTextureButton> decreaseButtons = new ArrayList<>();
 	private final List<CustomTextureButton> increaseButtons = new ArrayList<>();
@@ -58,83 +58,87 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 	}
 
 	private void loadConfig() {
-		hudConfig = ConfigManager.getUserConfig().getHud();
+		userConfig = ConfigManager.getUserConfig();
 	}
 
 	private void initializeConfigOptions() {
 		configOptions.clear();
 
 		configOptions.add(new ConfigOption("config.firstPersonAnimated",
-				ConfigType.BOOLEAN, hudConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
-				v -> hudConfig.setFirstPersonAnimated(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getFirstPersonAnimated() ? 1 : 0, 0, 1,
+				v -> userConfig.setFirstPersonAnimated(v > 0)));
+		
+		configOptions.add(new ConfigOption("config.impactFramesEnabled",
+				ConfigType.BOOLEAN, userConfig.isImpactFramesEnabled() ? 1 : 0, 0, 1,
+				v -> userConfig.setImpactFramesEnabled(v > 0)));
 
 		configOptions.add(new ConfigOption("config.techniqueHotbarHorizontal",
-				ConfigType.BOOLEAN, hudConfig.getTechniqueHotbarHorizontal() ? 1 : 0, 0, 1,
-				v -> hudConfig.setTechniqueHotbarHorizontal(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getTechniqueHotbarHorizontal() ? 1 : 0, 0, 1,
+				v -> userConfig.setTechniqueHotbarHorizontal(v > 0)));
 
 		configOptions.add(new ConfigOption("config.xenoverseHudPosX",
-				ConfigType.INT, hudConfig.getXenoverseHudPosX(), -1000, 2000,
-				v -> hudConfig.setXenoverseHudPosX(v.intValue())));
+				ConfigType.INT, userConfig.getXenoverseHudPosX(), -1000, 2000,
+				v -> userConfig.setXenoverseHudPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.xenoverseHudPosY",
-				ConfigType.INT, hudConfig.getXenoverseHudPosY(), -1000, 2000,
-				v -> hudConfig.setXenoverseHudPosY(v.intValue())));
+				ConfigType.INT, userConfig.getXenoverseHudPosY(), -1000, 2000,
+				v -> userConfig.setXenoverseHudPosY(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.advancedDescription",
-				ConfigType.BOOLEAN, hudConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
-				v -> hudConfig.setAdvancedDescription(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getAdvancedDescription() ? 1 : 0, 0, 1,
+				v -> userConfig.setAdvancedDescription(v > 0)));
 
 		configOptions.add(new ConfigOption("config.advancedDescriptionPercentage",
-				ConfigType.BOOLEAN, hudConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
-				v -> hudConfig.setAdvancedDescriptionPercentage(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getAdvancedDescriptionPercentage() ? 1 : 0, 0, 1,
+				v -> userConfig.setAdvancedDescriptionPercentage(v > 0)));
 
 		configOptions.add(new ConfigOption("config.alternativeHud",
-				ConfigType.BOOLEAN, hudConfig.getAlternativeHud() ? 1 : 0, 0, 1,
-				v -> hudConfig.setAlternativeHud(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getAlternativeHud() ? 1 : 0, 0, 1,
+				v -> userConfig.setAlternativeHud(v > 0)));
 
 		configOptions.add(new ConfigOption("config.hexagonStatsDisplay",
-				ConfigType.BOOLEAN, hudConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
-				v -> hudConfig.setHexagonStatsDisplay(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getHexagonStatsDisplay() ? 1 : 0, 0, 1,
+				v -> userConfig.setHexagonStatsDisplay(v > 0)));
 
 		configOptions.add(new ConfigOption("config.menuScaleMultiplier",
-				ConfigType.FLOAT, hudConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
-				v -> hudConfig.setMenuScaleMultiplier(v)));
+				ConfigType.FLOAT, userConfig.getMenuScaleMultiplier(), 0.75f, 2.5f,
+				v -> userConfig.setMenuScaleMultiplier(v)));
 
 		configOptions.add(new ConfigOption("config.healthBarPosX",
-				ConfigType.INT, hudConfig.getHealthBarPosX(), -1000, 2000,
-				v -> hudConfig.setHealthBarPosX(v.intValue())));
+				ConfigType.INT, userConfig.getHealthBarPosX(), -1000, 2000,
+				v -> userConfig.setHealthBarPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.healthBarPosY",
-				ConfigType.INT, hudConfig.getHealthBarPosY(), -1000, 2000,
-				v -> hudConfig.setHealthBarPosY(v.intValue())));
+				ConfigType.INT, userConfig.getHealthBarPosY(), -1000, 2000,
+				v -> userConfig.setHealthBarPosY(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.energyBarPosX",
-				ConfigType.INT, hudConfig.getEnergyBarPosX(), -1000, 2000,
-				v -> hudConfig.setEnergyBarPosX(v.intValue())));
+				ConfigType.INT, userConfig.getEnergyBarPosX(), -1000, 2000,
+				v -> userConfig.setEnergyBarPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.energyBarPosY",
-				ConfigType.INT, hudConfig.getEnergyBarPosY(), -1000, 2000,
-				v -> hudConfig.setEnergyBarPosY(v.intValue())));
+				ConfigType.INT, userConfig.getEnergyBarPosY(), -1000, 2000,
+				v -> userConfig.setEnergyBarPosY(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.staminaBarPosX",
-				ConfigType.INT, hudConfig.getStaminaBarPosX(), -1000, 2000,
-				v -> hudConfig.setStaminaBarPosX(v.intValue())));
+				ConfigType.INT, userConfig.getStaminaBarPosX(), -1000, 2000,
+				v -> userConfig.setStaminaBarPosX(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.staminaBarPosY",
-				ConfigType.INT, hudConfig.getStaminaBarPosY(), -1000, 2000,
-				v -> hudConfig.setStaminaBarPosY(v.intValue())));
+				ConfigType.INT, userConfig.getStaminaBarPosY(), -1000, 2000,
+				v -> userConfig.setStaminaBarPosY(v.intValue())));
 
 		configOptions.add(new ConfigOption("config.isStoryHardDifficulty",
-				ConfigType.BOOLEAN, hudConfig.getStoryHardDifficulty() ? 1 : 0, 0, 1,
-				v -> hudConfig.setStoryHardDifficulty(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getStoryHardDifficulty() ? 1 : 0, 0, 1,
+				v -> userConfig.setStoryHardDifficulty(v > 0)));
 
 		configOptions.add(new ConfigOption("config.cameraMovementDuringFlight",
-				ConfigType.BOOLEAN, hudConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
-				v -> hudConfig.setCameraMovementDuringFlight(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getCameraMovementDuringFlight() ? 1 : 0, 0, 1,
+				v -> userConfig.setCameraMovementDuringFlight(v > 0)));
 
 		configOptions.add(new ConfigOption("config.liveCrowdinTranslations",
-				ConfigType.BOOLEAN, hudConfig.getLiveCrowdinTranslations() ? 1 : 0, 0, 1,
-				v -> hudConfig.setLiveCrowdinTranslations(v > 0)));
+				ConfigType.BOOLEAN, userConfig.getLiveCrowdinTranslations() ? 1 : 0, 0, 1,
+				v -> userConfig.setLiveCrowdinTranslations(v > 0)));
 	}
 
 	private void initConfigButtons() {
@@ -391,7 +395,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		}
 
 		if ("config.liveCrowdinTranslations".equals(option.key) && this.minecraft != null) {
-			if (hudConfig.getLiveCrowdinTranslations()) {
+			if (userConfig.getLiveCrowdinTranslations()) {
 				CrowdinManager.fetchLanguage(this.minecraft.options.languageCode);
 			} else {
 				CrowdinManager.clearCache();

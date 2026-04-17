@@ -189,11 +189,11 @@ public class NetworkHandler {
 				.consumerMainThread(LeavePartyC2S::handle)
 				.add();
 
-        net.messageBuilder(SokidanControlC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-                .decoder(SokidanControlC2S::new)
-                .encoder(SokidanControlC2S::toBytes)
-                .consumerMainThread(SokidanControlC2S::handle)
-                .add();
+		net.messageBuilder(SokidanControlC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SokidanControlC2S::new)
+				.encoder(SokidanControlC2S::toBytes)
+				.consumerMainThread(SokidanControlC2S::handle)
+				.add();
 
 		net.messageBuilder(EquipTechniqueC2S.class,  id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(EquipTechniqueC2S::new)
@@ -329,6 +329,12 @@ public class NetworkHandler {
 				.encoder(MeleeAnimationS2C::encode)
 				.consumerMainThread(MeleeAnimationS2C::handle)
 				.add();
+
+		net.messageBuilder(TriggerImpactFrameS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TriggerImpactFrameS2C::new)
+				.encoder(TriggerImpactFrameS2C::encode)
+				.consumerMainThread(TriggerImpactFrameS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
@@ -346,5 +352,4 @@ public class NetworkHandler {
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
 		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
 	}
-
 }

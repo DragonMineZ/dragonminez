@@ -52,6 +52,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private String dragonminez$currentMeleeAnim = null;
 	@Unique private String dragonminez$currentPoseAnim = null;
 	@Unique private float dragonminez$currentMeleeSpeed = 1.0F;
+	@Unique private boolean dragonminez$unarmedAttackToggle = false;
+	@Unique private boolean dragonminez$unarmedSwingLatch = false;
 
 	@Unique
 	private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
@@ -197,6 +199,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		}
 
 		AnimationController<T> ctl = state.getController();
+		boolean hasSwingFrame = player.attackAnim > 0.0F || player.swinging || player.swingTime > 0;
 		if (dragonminez$currentMeleeAnim != null) {
 
 			ctl.setAnimationSpeed(dragonminez$currentMeleeSpeed);
@@ -208,6 +211,20 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 			ctl.forceAnimationReset();
 			dragonminez$currentMeleeAnim = null;
 			dragonminez$attackAnimTicks = Math.max(8, Math.round(12.0F / Math.max(dragonminez$currentMeleeSpeed, 0.1F)));
+			return PlayState.CONTINUE;
+		}
+
+		if (!hasSwingFrame) {
+			dragonminez$unarmedSwingLatch = false;
+		}
+
+		if (dragonminez$attackAnimTicks <= 0 && !dragonminez$unarmedSwingLatch && hasSwingFrame && shouldPlayUnarmedAttack(player)) {
+			dragonminez$unarmedAttackToggle = !dragonminez$unarmedAttackToggle;
+			ctl.setAnimationSpeed(1.0D);
+			ctl.setAnimation(dragonminez$unarmedAttackToggle ? ATTACK : ATTACK2);
+			ctl.forceAnimationReset();
+			dragonminez$unarmedSwingLatch = true;
+			dragonminez$attackAnimTicks = 8;
 			return PlayState.CONTINUE;
 		}
 
@@ -393,6 +410,16 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	private static boolean isBlocking(AbstractClientPlayer player) {
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		return data != null && data.getStatus().isBlocking();
+	}
+
+	@Unique
+	private static boolean shouldPlayUnarmedAttack(AbstractClientPlayer player) {
+		return player.getMainHandItem().isEmpty()
+				&& player.getOffhandItem().isEmpty()
+				&& !player.isUsingItem()
+				&& !isBlocking(player)
+				&& !isPlacingBlock(player)
+				&& !isUsingTool(player);
 	}
 
 	@Override

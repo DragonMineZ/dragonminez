@@ -379,6 +379,22 @@ public class Character {
 		return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
 	}
 
+	public boolean areExtraHeadBonesEnabled() {FormConfig.FormData activeStackFormData = getActiveStackFormData();
+		if (activeStackFormData != null && !activeStackFormData.isKeepBaseFormHeadBones()) {
+			return false;
+		}
+		FormConfig.FormData activeFormData = getActiveFormData();
+		return activeFormData == null || activeFormData.isKeepBaseFormHeadBones();
+	}
+
+	public String getRenderableHeadBone() {
+		String bone = safeString(activeHeadBone);
+		if (bone.isEmpty() || bone.equals("hair")) {
+			return bone;
+		}
+		return areExtraHeadBonesEnabled() ? bone : "";
+	}
+
 	public void saveAppearance(CompoundTag tag) {
 		tag.putString("BodyColor", safeString(bodyColor));
 		tag.putString("BodyColor2", safeString(bodyColor2));

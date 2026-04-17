@@ -24,6 +24,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.mixin.client.MinecraftAccessor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -36,6 +37,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ForgeClientEvents {
@@ -88,14 +90,6 @@ public class ForgeClientEvents {
 		}
 
 		if (mc.screen != null) return;
-
-		if (KeyBinds.UTILITY_MENU.consumeClick() && !UtilityMenuScreen.isUtilityMenuReopenBlocked()) {
-			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
-				if (!data.getStatus().isHasCreatedCharacter()) return;
-				mc.setScreen(new UtilityMenuScreen());
-				mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
-			});
-		}
 
 		if (KeyBinds.SPACEPOD_MENU.consumeClick() && mc.player.isPassenger() && mc.player.getVehicle() instanceof SpacePodEntity) {
 			mc.setScreen(new SpacePodScreen());
@@ -151,6 +145,7 @@ public class ForgeClientEvents {
 		TransformationPostShaderManager.tick();
 		if (mc.player == null || mc.level == null) return;
 		if (characterCreationOpenCooldownTicks > 0) characterCreationOpenCooldownTicks--;
+		handleUtilityMenuHold(mc);
 
 		if (pendingCharacterCreationReopen && mc.screen == null) {
 			if (isHasCreatedCharacterCache) pendingCharacterCreationReopen = false;
@@ -199,6 +194,39 @@ public class ForgeClientEvents {
 				CrowdinManager.fetchLanguage(current);
 			}
 		}
+	}
+
+	private static void handleUtilityMenuHold(Minecraft mc) {
+		boolean utilityHeld = isUtilityMenuKeyHeld(mc);
+
+		if (mc.screen instanceof UtilityMenuScreen utilityScreen) {
+			if (!utilityHeld) utilityScreen.startClosingAnimation();
+			return;
+		}
+
+		if (!utilityHeld) return;
+		if (mc.screen != null) return;
+		if (UtilityMenuScreen.isUtilityMenuReopenBlocked()) return;
+
+		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
+			if (!data.getStatus().isHasCreatedCharacter()) return;
+			mc.setScreen(new UtilityMenuScreen());
+			mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+		});
+	}
+
+	private static boolean isUtilityMenuKeyHeld(Minecraft mc) {
+		if (mc == null || mc.getWindow() == null) return false;
+		InputConstants.Key key = KeyBinds.UTILITY_MENU.getKey();
+		long window = mc.getWindow().getWindow();
+
+		if (key.getType() == InputConstants.Type.KEYSYM) {
+			return InputConstants.isKeyDown(window, key.getValue());
+		}
+		if (key.getType() == InputConstants.Type.MOUSE) {
+			return GLFW.glfwGetMouseButton(window, key.getValue()) == GLFW.GLFW_PRESS;
+		}
+		return false;
 	}
 
 	@SubscribeEvent

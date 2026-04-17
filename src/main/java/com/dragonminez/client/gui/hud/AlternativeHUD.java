@@ -43,7 +43,7 @@ public class AlternativeHUD {
 	public static final IGuiOverlay HUD_ALTERNATIVE = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (!ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
+		if (!ConfigManager.getUserConfig().getAlternativeHud()) return;
 
 		StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> {
 			Character character = data.getCharacter();
@@ -99,12 +99,12 @@ public class AlternativeHUD {
 				float baseKiX = -95.0f; float baseKiY = -50.0f;
 				float baseStmX = -5.0f; float baseStmY = -50.0f;
 
-				float hpOffX = ConfigManager.getUserConfig().getHud().getHealthBarPosX() / hudScale;
-				float hpOffY = ConfigManager.getUserConfig().getHud().getHealthBarPosY() / hudScale;
-				float kiOffX = ConfigManager.getUserConfig().getHud().getEnergyBarPosX() / hudScale;
-				float kiOffY = ConfigManager.getUserConfig().getHud().getEnergyBarPosY() / hudScale;
-				float stmOffX = ConfigManager.getUserConfig().getHud().getStaminaBarPosX() / hudScale;
-				float stmOffY = ConfigManager.getUserConfig().getHud().getStaminaBarPosY() / hudScale;
+				float hpOffX = ConfigManager.getUserConfig().getHealthBarPosX() / hudScale;
+				float hpOffY = ConfigManager.getUserConfig().getHealthBarPosY() / hudScale;
+				float kiOffX = ConfigManager.getUserConfig().getEnergyBarPosX() / hudScale;
+				float kiOffY = ConfigManager.getUserConfig().getEnergyBarPosY() / hudScale;
+				float stmOffX = ConfigManager.getUserConfig().getStaminaBarPosX() / hudScale;
+				float stmOffY = ConfigManager.getUserConfig().getStaminaBarPosY() / hudScale;
 
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().translate(baseHpX + hpOffX, baseHpY + hpOffY, 0);
@@ -144,8 +144,8 @@ public class AlternativeHUD {
 	};
 
 	private static void drawBarValues(GuiGraphics guiGraphics, float current, float max, int x, int y) {
-		if (ConfigManager.getUserConfig().getHud().getAdvancedDescription()) {
-			boolean pct = ConfigManager.getUserConfig().getHud().getAdvancedDescriptionPercentage();
+		if (ConfigManager.getUserConfig().getAdvancedDescription()) {
+			boolean pct = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
 			String text = pct ? String.format("%.0f%%", (current / max) * 100) : numberFormat.format((int) current) + " / " + numberFormat.format((int) max);
 			drawTinyText(guiGraphics, text, x, y, ColorUtils.hexToInt("#FFFFFF"));
 		}

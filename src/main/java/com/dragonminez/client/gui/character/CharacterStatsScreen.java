@@ -76,7 +76,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	protected void init() {
 		super.init();
 
-		useHexagonView = ConfigManager.getUserConfig().getHud().getHexagonStatsDisplay();
+		useHexagonView = ConfigManager.getUserConfig().getHexagonStatsDisplay();
 
 		updateStatsData();
 		initStatButtons();
@@ -764,7 +764,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
 			useHexagonView = !useHexagonView;
-			ConfigManager.getUserConfig().getHud().setHexagonStatsDisplay(useHexagonView);
+			ConfigManager.getUserConfig().setHexagonStatsDisplay(useHexagonView);
 			ConfigManager.saveGeneralUserConfig();
 			((SwitchButton) button).toggle();
 			if (useHexagonView) player.playSound(MainSounds.SWITCH_OFF.get());

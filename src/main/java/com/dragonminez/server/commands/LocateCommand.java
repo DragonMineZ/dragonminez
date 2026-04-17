@@ -81,10 +81,10 @@ public class LocateCommand {
 		int distance = (source.getLevel() == targetLevel) ? StructureLocator.getDistanceTo(BlockPos.containing(source.getPosition()), finalPos) : -1;
 
 		Component coordComponent = ComponentUtils.wrapInSquareBrackets(
-				Component.literal(finalPos.getX() + ", " + finalPos.getY() + ", " + finalPos.getZ())
+				Component.literal(finalPos.getX() + ", " + "~" + ", " + finalPos.getZ())
 		).withStyle(style -> style
 				.withColor(ChatFormatting.GREEN)
-				.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/execute in " + targetDimKey.location() + " run tp @s " + finalPos.getX() + " " + finalPos.getY() + " " + finalPos.getZ()))
+				.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/execute in " + targetDimKey.location() + " run tp @s " + finalPos.getX() + " " + source.getPlayer().getY() + " " + finalPos.getZ()))
 				.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Click -> TP")))
 		);
 

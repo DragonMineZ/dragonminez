@@ -72,7 +72,7 @@ public abstract class ScaledScreen extends Screen {
 	}
 
 	private float getMenuScaleMultiplier() {
-		float multiplier = ConfigManager.getUserConfig().getHud().getMenuScaleMultiplier();
+		float multiplier = ConfigManager.getUserConfig().getMenuScaleMultiplier();
 		if (!Float.isFinite(multiplier)) {
 			return 1.0f;
 		}

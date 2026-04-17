@@ -14,7 +14,7 @@ public class FirstPersonManager {
 
 	public static boolean shouldRenderFirstPerson(Player player) {
 		if (player != Minecraft.getInstance().player) return false;
-		if (!ConfigManager.getUserConfig().getHud().getFirstPersonAnimated()) return false;
+		if (!ConfigManager.getUserConfig().getFirstPersonAnimated()) return false;
 		if (player.getMainHandItem().getItem() instanceof MapItem || player.getOffhandItem().getItem() instanceof MapItem) return false;
 		if (Minecraft.getInstance().screen instanceof ChatScreen) return Minecraft.getInstance().options.getCameraType().isFirstPerson();
 		if (Minecraft.getInstance().screen != null) return false;

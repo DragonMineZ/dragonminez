@@ -69,6 +69,7 @@ public class AuraRenderer {
 	private static class CachedAuraData {
 		float auraScaleX, auraScaleY, auraScaleZ;
 		float bodyScaleX, bodyScaleY, bodyScaleZ;
+		float modelScaleX, modelScaleY, modelScaleZ;
 		float alphaProgress;
 		BakedGeoModel playerModel;
 		List<AuraLayer> lastLayers;
@@ -223,11 +224,15 @@ public class AuraRenderer {
 		PULSE_PROGRESS.keySet().removeIf(id -> !currentFramePlayers.contains(id) && !AURA_CACHE.containsKey(id));
 	}
 
-	private static float[] getBodyScale(StatsData stats) {
+	private static float[] getModelScale(StatsData stats) {
 		float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
 		var character = stats.getCharacter();
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+			sX = character.getActiveStackFormData().getModelScaling()[0];
+			sY = character.getActiveStackFormData().getModelScaling()[1];
+			sZ = character.getActiveStackFormData().getModelScaling()[2];
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			sX = character.getActiveFormData().getModelScaling()[0];
 			sY = character.getActiveFormData().getModelScaling()[1];
 			sZ = character.getActiveFormData().getModelScaling()[2];
@@ -236,6 +241,13 @@ public class AuraRenderer {
 			sY = character.getModelScaling()[1];
 			sZ = character.getModelScaling()[2];
 		}
+		return new float[]{sX, sY, sZ};
+	}
+
+	private static float[] getBodyScale(StatsData stats) {
+		float[] modelScale = getModelScale(stats);
+		float sX = modelScale[0], sY = modelScale[1], sZ = modelScale[2];
+		var character = stats.getCharacter();
 
 		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
 		if (currentForm.contains("ozaru")) {
@@ -247,18 +259,19 @@ public class AuraRenderer {
 		return new float[]{sX, sY, sZ};
 	}
 
-	private static float[] getAuraScale(StatsData stats) {
-		float scale = 1.05f;
+	private static float[] getAuraScale(StatsData stats, float[] modelScale) {
+		float baseScale = 1.05f;
 		var character = stats.getCharacter();
 		String currentForm = character.getActiveForm() != null ? character.getActiveForm().toLowerCase() : "";
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null) scale += 0.1f;
-		if (currentForm.contains("oozaru")) scale = 3.0f;
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) baseScale += 0.1f;
+		if (character.hasActiveForm() && character.getActiveFormData() != null) baseScale += 0.1f;
+		if (currentForm.contains("oozaru")) baseScale = 3.0f;
 		if (currentForm.contains("supersaiyan2") || currentForm.contains("supersaiyan3") || currentForm.contains("ultra") || currentForm.contains("superperfect")) {
-			scale += 0.2f;
+			baseScale += 0.2f;
 		}
 
-		return new float[]{scale, scale, scale};
+		return new float[]{baseScale * modelScale[0], baseScale * modelScale[1], baseScale * modelScale[2]};
 	}
 
 	private static List<AuraLayer> getAuraLayers(Player player, StatsData stats, float partialTick) {
@@ -385,9 +398,11 @@ public class AuraRenderer {
 			if (data.alphaProgress > 1.0f) data.alphaProgress = 1.0f;
 		}
 
+		float[] modelScale = getModelScale(stats);
 		float[] body = getBodyScale(stats);
-		float[] auraScale = getAuraScale(stats);
+		float[] auraScale = getAuraScale(stats, modelScale);
 
+		data.modelScaleX = modelScale[0]; data.modelScaleY = modelScale[1]; data.modelScaleZ = modelScale[2];
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
 		data.auraScaleX = auraScale[0]; data.auraScaleY = auraScale[1]; data.auraScaleZ = auraScale[2];
 
@@ -435,9 +450,11 @@ public class AuraRenderer {
 			if (data.alphaProgress > 1.0f) data.alphaProgress = 1.0f;
 		}
 
+		float[] modelScale = getModelScale(stats);
 		float[] body = getBodyScale(stats);
-		float[] auraScale = getAuraScale(stats);
+		float[] auraScale = getAuraScale(stats, modelScale);
 
+		data.modelScaleX = modelScale[0]; data.modelScaleY = modelScale[1]; data.modelScaleZ = modelScale[2];
 		data.bodyScaleX = body[0]; data.bodyScaleY = body[1]; data.bodyScaleZ = body[2];
 		data.auraScaleX = auraScale[0]; data.auraScaleY = auraScale[1]; data.auraScaleZ = auraScale[2];
 		data.playerModel = entry.playerModel();
@@ -539,7 +556,11 @@ public class AuraRenderer {
 			poseStack.last().pose().identity();
 			poseStack.last().normal().identity();
 			poseStack.translate(0.0, -0.6, -0.7);
-			poseStack.scale(finalScaleX * 3.0f, finalScaleY * 3.0f, 1.0f);
+
+			float normalizedScaleX = finalScaleX / (data.modelScaleX > 0 ? data.modelScaleX : 1.0f);
+			float normalizedScaleY = finalScaleY / (data.modelScaleY > 0 ? data.modelScaleY : 1.0f);
+
+			poseStack.scale(normalizedScaleX * 3.0f, normalizedScaleY * 3.0f, 1.0f);
 
 			shader.safeGetUniform("alp1").set(finalAlpha * 0.45f);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
@@ -576,10 +597,13 @@ public class AuraRenderer {
 
 		if (crossFactor < 1.0f) {
 			poseStack.pushPose();
-			poseStack.translate(0.0, data.bodyScaleY * 2f, 0.0);
+
+			poseStack.translate(0.0, 0.05, 0.0);
 			poseStack.mulPose(mc.gameRenderer.getMainCamera().rotation());
 			poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
 			poseStack.scale(finalScaleX, finalScaleY * pitchSquash, finalScaleZ);
+
+			poseStack.translate(0.0, 0.7, 0.0);
 
 			shader.safeGetUniform("alp1").set((1.0f - crossFactor) * finalAlpha);
 			shader.safeGetUniform("modelMatrix").set(poseStack.last().pose());
@@ -593,6 +617,7 @@ public class AuraRenderer {
 			poseStack.pushPose();
 			float sparkingPulse = 1.0f + (float) Math.sin((player.tickCount + partialTick) * 0.2f) * 0.05f;
 			poseStack.scale(0.8f * sparkingPulse, 0.65f * sparkingPulse, 0.8f * sparkingPulse);
+
 			poseStack.translate(0.0, -0.25, 0.0);
 
 			RenderType sparkingRender = ModRenderTypes.getCustomAura(sparkingTex);

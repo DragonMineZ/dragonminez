@@ -17,7 +17,7 @@ import static net.minecraft.world.entity.EquipmentSlot.MAINHAND;
 public class PlayerAttackHelper {
 
     public static float getDualWieldingAttackDamageMultiplier(Player player, AttackHand hand) {
-        return isDualWielding(player) ? (hand.isOffHand() ? 0.5f : 1.0f) : 1.0f;
+        return isDualWielding(player) ? (hand.isOffHand() ? 0.9f : 1.0f) : 1.0f;
     }
 
     public static boolean shouldAttackWithOffHand(Player player, int comboCount) {

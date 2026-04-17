@@ -3,8 +3,11 @@ package com.dragonminez.client.util;
 import com.dragonminez.Reference;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
+
+import java.lang.reflect.Modifier;
 
 public class KeyBinds {
 
@@ -20,6 +23,7 @@ public class KeyBinds {
 	public static final KeyMapping KI_SENSE = registerKey("ki_sense", GLFW.GLFW_KEY_F4);
 	public static final KeyMapping FLY_KEY = registerKey("fly_key", GLFW.GLFW_KEY_F);
 	public static final KeyMapping DASH_KEY = registerKey("dash_key", GLFW.GLFW_KEY_R);
+    public static final KeyMapping BLOCK_KEY = registerMouse("block_key", GLFW.GLFW_MOUSE_BUTTON_RIGHT);
 
     private static KeyMapping registerKey(String name, int keyCode) {
         return new KeyMapping(
@@ -31,10 +35,20 @@ public class KeyBinds {
         );
     }
 
-    public static void registerAll(net.minecraftforge.client.event.RegisterKeyMappingsEvent event) {
+	private static KeyMapping registerMouse(String name, int keyCode) {
+		return new KeyMapping(
+				"key." + Reference.MOD_ID + "." + name,
+				KeyConflictContext.IN_GAME,
+				InputConstants.Type.MOUSE,
+				keyCode,
+				CATEGORY
+		);
+	}
+
+    public static void registerAll(RegisterKeyMappingsEvent event) {
         try {
             for (var field : KeyBinds.class.getDeclaredFields()) {
-                if (field.getType() == KeyMapping.class && java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                if (field.getType() == KeyMapping.class && Modifier.isStatic(field.getModifiers())) {
                     field.setAccessible(true);
                     KeyMapping keyMapping = (KeyMapping) field.get(null);
                     if (keyMapping != null) {
@@ -47,4 +61,3 @@ public class KeyBinds {
         }
     }
 }
-
