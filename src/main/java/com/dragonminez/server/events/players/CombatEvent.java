@@ -88,6 +88,10 @@ public class CombatEvent {
 		boolean wasOnGround = player.getPersistentData().getBoolean("dmz_was_grounded");
 		boolean isGrounded = player.onGround();
 
+		boolean isFlying = StatsProvider.get(StatsCapability.INSTANCE, player)
+				.map(data -> data.getSkills().isSkillActive("fly"))
+				.orElse(false);
+
 		if (player.getPersistentData().contains("dmz_last_x")) {
 			double lastX = player.getPersistentData().getDouble("dmz_last_x");
 			double lastY = player.getPersistentData().getDouble("dmz_last_y");
@@ -108,7 +112,8 @@ public class CombatEvent {
 				}
 			}
 
-			if (!wasOnGround && isGrounded && speed >= MOMENTUM_SPEED_THRESHOLD) {
+			boolean wasFlying = player.getPersistentData().getBoolean("dmz_was_flying");
+			if (!wasOnGround && isGrounded && wasFlying && speed >= MOMENTUM_SPEED_THRESHOLD) {
 				triggerLandingAOE(player, speed);
 			}
 		}
@@ -117,6 +122,10 @@ public class CombatEvent {
 		player.getPersistentData().putDouble("dmz_last_y", currentPos.y);
 		player.getPersistentData().putDouble("dmz_last_z", currentPos.z);
 		player.getPersistentData().putBoolean("dmz_was_grounded", isGrounded);
+
+		if (!isGrounded) player.getPersistentData().putBoolean("dmz_was_flying", isFlying);
+		else player.getPersistentData().putBoolean("dmz_was_flying", false);
+
 	}
 
 	private static void triggerLandingAOE(ServerPlayer player, double impactSpeed) {
@@ -192,7 +201,8 @@ public class CombatEvent {
 				}
 
 				double currentSpeed = attacker.getPersistentData().getDouble("dmz_server_speed");
-				boolean isMomentumStrike = currentSpeed >= MOMENTUM_SPEED_THRESHOLD;
+				boolean wasFlying = attacker.getPersistentData().getBoolean("dmz_was_flying");
+				boolean isMomentumStrike = currentSpeed >= MOMENTUM_SPEED_THRESHOLD && wasFlying;
 
 				if (isMomentumStrike) {
 					double ratio = Mth.clamp((currentSpeed - MOMENTUM_SPEED_THRESHOLD) / (MOMENTUM_MAX_SPEED - MOMENTUM_SPEED_THRESHOLD), 0.0, 1.0);

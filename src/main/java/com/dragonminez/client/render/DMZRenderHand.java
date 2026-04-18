@@ -42,6 +42,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jspecify.annotations.NonNull;
 
 @OnlyIn(Dist.CLIENT)
@@ -197,8 +198,10 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 		}
 
 		if (itemId != null) {
+			ResourceLocation registryName = ForgeRegistries.ITEMS.getKey(chestStack.getItem());
+			String namespace = registryName != null ? registryName.getNamespace() : Reference.MOD_ID;
 			String texturePath = "textures/armor/" + itemId + "_layer1.png";
-			ResourceLocation armorResource = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, texturePath);
+			ResourceLocation armorResource = ResourceLocation.fromNamespaceAndPath(namespace, texturePath);
 
 			ps.pushPose();
 
