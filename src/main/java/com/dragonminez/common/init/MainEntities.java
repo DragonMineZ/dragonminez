@@ -636,6 +636,28 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaTrunksEntity.SagaKidTrunksSSJEntity::new, MobCategory.MONSTER)
                             .sized(0.5f, 1.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_trunks_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenksBaseEntity>> SAGA_GOTENKS =
+            ENTITY_TYPES.register("saga_gotenks",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenksBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gotenks").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenksSSJEntity>> SAGA_GOTENKS_SSJ =
+            ENTITY_TYPES.register("saga_gotenks_ssj",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenksSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gotenks_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenksSSJ3Entity>> SAGA_GOTENKS_SSJ3 =
+            ENTITY_TYPES.register("saga_gotenks_ssj3",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenksSSJ3Entity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gotenks_ssj3").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaShinEntity>> SAGA_SHIN =
+            ENTITY_TYPES.register("saga_shin",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_shin").toString()));
+
+
 
     public static final RegistryObject<EntityType<ShadowDummyEntity>> SHADOW_DUMMY =
             ENTITY_TYPES.register("shadow_dummy",

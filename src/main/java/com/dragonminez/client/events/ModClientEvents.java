@@ -205,6 +205,8 @@ public class ModClientEvents {
                 MainEntities.SAGA_VEGETA_END_BASE, MainEntities.SAGA_VEGETA_END_SSJ, MainEntities.SAGA_VEGETA_END_SSJ2, MainEntities.SAGA_VEGETA_MAJIN,
                 MainEntities.SAGA_GOHAN_END_BASE, MainEntities.SAGA_GOHAN_END_SSJ, MainEntities.SAGA_GOHAN_END_SSJ2, MainEntities.SAGA_GOHAN_END_ULTIMATE,
                 MainEntities.SAGA_GOTEN, MainEntities.SAGA_GOTEN_SSJ, MainEntities.SAGA_KID_TRUNKS, MainEntities.SAGA_KID_TRUNKS_SSJ,
+                MainEntities.SAGA_GOTENKS, MainEntities.SAGA_GOTENKS_SSJ, MainEntities.SAGA_GOTENKS_SSJ3,
+                MainEntities.SAGA_SHIN,
                 MainEntities.SHADOW_DUMMY);
 
         event.registerEntityRenderer(MainEntities.DINOSAUR1.get(), DinosRenderer::new);

@@ -59,7 +59,7 @@ public class SagaZFightersEntity {
 
             this.setCanFly(true);
             this.setAuraColor(0xFFFFFF);
-            this.setKiBlastSpeed(1.4F);
+            this.setKiBlastSpeed(1.0F);
             this.setDBZStyle(0);
             this.setEvade(true, 100);
             this.addKiSkill(KiSkillType.KI_LASER, 100, 1.0F, 0xFFE661, 0xFFE661);
@@ -70,6 +70,23 @@ public class SagaZFightersEntity {
         @Override
         public String getGeckolibModelName() {
             return "saga_yamcha";
+        }
+
+    }
+
+    public static class SagaShinEntity extends DBSagasEntity {
+
+        public SagaShinEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 100);
+            this.addKiSkill(KiSkillType.KI_LASER, 170, 1.0F, 0xFFE661, 0xFFE661);
+            this.addKiSkill(KiSkillType.KI_SMALL, 80, 1.0F, 0xFFE661, 0xFFE661);
+
         }
 
     }
