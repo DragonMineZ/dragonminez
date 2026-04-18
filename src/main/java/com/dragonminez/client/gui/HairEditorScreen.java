@@ -70,7 +70,6 @@ public class HairEditorScreen extends ScaledScreen {
 	private double lastMouseX = 0;
 	private double lastMouseY = 0;
 
-	// Variables para controlar el zoom suave
 	private float targetZoom = 150.0f;
 	private float currentZoom = 150.0f;
 
@@ -589,6 +588,9 @@ public class HairEditorScreen extends ScaledScreen {
 					hueSlider.setValue((int) hsv[0]);
 					saturationSlider.setValue(hsv[1] == 0 ? 100 : (int) hsv[1]);
 					valueSlider.setValue(hsv[2] == 0 ? 100 : (int) hsv[2]);
+					saturationSlider.setCurrentHue(hsv[0]);
+					valueSlider.setCurrentHue(hsv[0]);
+					valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
 					applyColorToStrand("#" + hex);
 				} catch (Exception ignored) {}
 				isUpdatingFromCode = false;
@@ -611,6 +613,9 @@ public class HairEditorScreen extends ScaledScreen {
 			hueSlider.setValue((int) hsv[0]);
 			saturationSlider.setValue(hsv[1] == 0 ? 100 : (int) hsv[1]);
 			valueSlider.setValue(hsv[2] == 0 ? 100 : (int) hsv[2]);
+			saturationSlider.setCurrentHue(hsv[0]);
+			valueSlider.setCurrentHue(hsv[0]);
+			valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
 			isUpdatingFromCode = true;
 			hexColorField.setValue(currentColor);
 			isUpdatingFromCode = false;
@@ -623,6 +628,9 @@ public class HairEditorScreen extends ScaledScreen {
 		float h = hueSlider.getValue();
 		float s = saturationSlider.getValue();
 		float v = valueSlider.getValue();
+		saturationSlider.setCurrentHue(h);
+		valueSlider.setCurrentHue(h);
+		valueSlider.setCurrentSaturation(s);
 		String newColor = ColorUtils.hsvToHex(h, s, v);
 
 		isUpdatingFromCode = true;

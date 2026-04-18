@@ -84,7 +84,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		utilityRightArrow = createArrowButton(x + 122, y + 56, false, btn -> toggleUtility());
 		addRenderableWidget(utilityLeftArrow);
 		addRenderableWidget(utilityRightArrow);
-        updateUtilityArrowsVisibility();
+		updateUtilityArrowsVisibility();
 
 		addAdjusters(x, y + 76, () -> creatorDamage = Mth.clamp(creatorDamage - 0.1f, 0.1f, 20.0f), () -> creatorDamage = Mth.clamp(creatorDamage + 0.1f, 0.1f, 20.0f));
 		addAdjusters(x, y + 91, () -> creatorSize = Mth.clamp(creatorSize - 0.1f, 0.1f, 20.0f), () -> creatorSize = Mth.clamp(creatorSize + 0.1f, 0.1f, 20.0f));
@@ -133,7 +133,56 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				.onPress(btn -> createSkill())
 				.build());
 
+		initColorPickerSliders();
+
 		if (colorPickerVisible) showColorPicker(colorTarget);
+	}
+
+	private void initColorPickerSliders() {
+		int x = getUiWidth() / 2 - 70;
+		int y = getUiHeight() / 2 - 106;
+
+		int sliderX = x + 141 + 10;
+		int sliderY = y + 130;
+		int sliderWidth = 90;
+
+		hueSlider = new ColorSlider.Builder()
+				.position(sliderX, sliderY)
+				.size(sliderWidth, 10)
+				.range(0, 360)
+				.value(0)
+				.message(tr("gui.dragonminez.customization.hue"))
+				.onValueChange(val -> updateColorFromSliders())
+				.build();
+
+		saturationSlider = new ColorSlider.Builder()
+				.position(sliderX, sliderY + 12)
+				.size(sliderWidth, 10)
+				.range(100, 0)
+				.value(100)
+				.message(tr("gui.dragonminez.customization.saturation"))
+				.onValueChange(val -> updateColorFromSliders())
+				.build();
+
+		valueSlider = new ColorSlider.Builder()
+				.position(sliderX, sliderY + 24)
+				.size(sliderWidth, 10)
+				.range(100, 0)
+				.value(100)
+				.message(tr("gui.dragonminez.customization.value"))
+				.onValueChange(val -> updateColorFromSliders())
+				.build();
+
+		hexField = new EditBox(this.font, sliderX, sliderY + 36, sliderWidth, 12, tr("gui.dragonminez.common.hex"));
+		hexField.setMaxLength(7);
+		hexField.setResponder(this::onHexChanged);
+
+		addRenderableWidget(hueSlider);
+		addRenderableWidget(saturationSlider);
+		addRenderableWidget(valueSlider);
+		addRenderableWidget(hexField);
+
+		setSlidersVisible();
 	}
 
 	private void addAdjusters(int x, int y, Runnable dec, Runnable inc) {
@@ -225,71 +274,88 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	}
 
 	private void showColorPicker(String target) {
-		hideColorPicker();
 		colorTarget = target;
 		colorPickerVisible = true;
-		int x = getUiWidth() / 2 - 70;
-		int y = getUiHeight() / 2 - 106;
-		int sliderX = x + 18;
-		int sliderY = y + 157;
-		int sliderWidth = 90;
-
 
 		int color = "interior".equals(target) ? creatorColorInterior : creatorColorExterior;
 		float[] hsv = ColorUtils.rgbToHsv((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF);
 
-		hueSlider = new ColorSlider(sliderX, sliderY, sliderWidth, 8, 0, 360, Math.round(hsv[0]), tr("gui.dragonminez.customization.hue"), v -> updateColorFromSliders());
-		saturationSlider = new ColorSlider(sliderX, sliderY + 10, sliderWidth, 8, 0, 100, Math.round(hsv[1]), tr("gui.dragonminez.customization.saturation"), v -> updateColorFromSliders());
-		valueSlider = new ColorSlider(sliderX, sliderY + 20, sliderWidth, 8, 0, 100, Math.round(hsv[2]), tr("gui.dragonminez.customization.value"), v -> updateColorFromSliders());
-		saturationSlider.setCurrentHue(hueSlider.getValue());
-		valueSlider.setCurrentHue(hueSlider.getValue());
-		valueSlider.setCurrentSaturation(saturationSlider.getValue());
+		updatingFromHex = true;
+		if (hueSlider != null) hueSlider.setValue(Math.round(hsv[0]));
+		if (saturationSlider != null) {
+			saturationSlider.setValue(Math.round(hsv[1]));
+			saturationSlider.setCurrentHue(hsv[0]);
+		}
+		if (valueSlider != null) {
+			valueSlider.setValue(Math.round(hsv[2]));
+			valueSlider.setCurrentHue(hsv[0]);
+			valueSlider.setCurrentSaturation(hsv[1] == 0 ? 100 : hsv[1]);
+		}
+		if (hexField != null) hexField.setValue(ColorUtils.hsvToHex(hsv[0], hsv[1], hsv[2]));
+		updatingFromHex = false;
 
-		hexField = new EditBox(this.font, sliderX, sliderY + 30, sliderWidth, 12, tr("gui.dragonminez.common.hex"));
-		hexField.setValue(ColorUtils.hsvToHex(hueSlider.getValue(), saturationSlider.getValue(), valueSlider.getValue()));
-		hexField.setResponder(this::onHexChanged);
-
-		addRenderableWidget(hueSlider);
-		addRenderableWidget(saturationSlider);
-		addRenderableWidget(valueSlider);
-		addRenderableWidget(hexField);
+		setSlidersVisible();
 	}
 
 	private void hideColorPicker() {
 		colorPickerVisible = false;
-		if (hueSlider != null) removeWidget(hueSlider);
-		if (saturationSlider != null) removeWidget(saturationSlider);
-		if (valueSlider != null) removeWidget(valueSlider);
-		if (hexField != null) removeWidget(hexField);
-		hueSlider = null;
-		saturationSlider = null;
-		valueSlider = null;
-		hexField = null;
+		setSlidersVisible();
+	}
+
+	private void setSlidersVisible() {
+		if (hueSlider != null) hueSlider.visible = colorPickerVisible;
+		if (saturationSlider != null) saturationSlider.visible = colorPickerVisible;
+		if (valueSlider != null) valueSlider.visible = colorPickerVisible;
+		if (hexField != null) hexField.visible = colorPickerVisible;
 	}
 
 	private void onHexChanged(String value) {
 		if (updatingFromHex || value == null) return;
 		String hex = value.startsWith("#") ? value : "#" + value;
 		if (hex.length() != 7 || !hex.substring(1).matches("[0-9a-fA-F]{6}")) return;
-		float[] hsv = ColorUtils.hexToHsv(hex);
-		hueSlider.setValue(Math.round(hsv[0]));
-		saturationSlider.setValue(Math.round(hsv[1]));
-		valueSlider.setValue(Math.round(hsv[2]));
-		updateColorFromSliders();
+
+		updatingFromHex = true;
+		try {
+			float[] hsv = ColorUtils.hexToHsv(hex);
+			if (hueSlider != null) hueSlider.setValue(Math.round(hsv[0]));
+			if (saturationSlider != null) {
+				saturationSlider.setValue(Math.round(hsv[1]));
+				saturationSlider.setCurrentHue(hsv[0]);
+			}
+			if (valueSlider != null) {
+				valueSlider.setValue(Math.round(hsv[2]));
+				valueSlider.setCurrentHue(hsv[0]);
+				valueSlider.setCurrentSaturation(hsv[1]);
+			}
+			applyColor(hex);
+		} catch (Exception ignored) {}
+		updatingFromHex = false;
 	}
 
 	private void updateColorFromSliders() {
-		if (hueSlider == null || saturationSlider == null || valueSlider == null) return;
-		saturationSlider.setCurrentHue(hueSlider.getValue());
-		valueSlider.setCurrentHue(hueSlider.getValue());
-		valueSlider.setCurrentSaturation(saturationSlider.getValue());
-		String hex = ColorUtils.hsvToHex(hueSlider.getValue(), saturationSlider.getValue(), valueSlider.getValue());
+		if (!colorPickerVisible || hueSlider == null || saturationSlider == null || valueSlider == null) return;
+
+		float h = hueSlider.getValue();
+		float s = saturationSlider.getValue();
+		float v = valueSlider.getValue();
+
+		saturationSlider.setCurrentHue(h);
+		valueSlider.setCurrentHue(h);
+		valueSlider.setCurrentSaturation(s);
+
+		String newColor = ColorUtils.hsvToHex(h, s, v);
+
+		updatingFromHex = true;
+		if (hexField != null && !hexField.isFocused()) hexField.setValue(newColor);
+		updatingFromHex = false;
+
+		applyColor(newColor);
+	}
+
+	private void applyColor(String hex) {
 		int color = ColorUtils.hexToInt(hex);
 		if ("interior".equals(colorTarget)) creatorColorInterior = color;
 		else creatorColorExterior = color;
-		updatingFromHex = true;
-		if (hexField != null && !hexField.isFocused()) hexField.setValue(hex);
-		updatingFromHex = false;
 	}
 
 	private void createSkill() {
@@ -351,35 +417,52 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		drawStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.tp_cost_label"), x + 14, y + 190, 0xFFDDDDDD);
 		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(tpCost)), x + 98, y + 190, 0xFFDDDDDD);
 
+		if (colorPickerVisible) renderColorPickerBackground(graphics);
+
 		super.render(graphics, uiMouseX, uiMouseY, partialTick);
 		endUiScale(graphics);
 	}
 
+	private void renderColorPickerBackground(GuiGraphics graphics) {
+		var poseStack = graphics.pose();
+		poseStack.pushPose();
+		poseStack.translate(0.0D, 0.0D, 200.0D);
+		int x = getUiWidth() / 2 - 70;
+		int y = getUiHeight() / 2 - 106;
+		int sliderX = x + 141 + 10;
+		int sliderY = y + 130;
+		graphics.fill(sliderX - 5, sliderY - 5, sliderX + 95, sliderY + 56, 0x88000000);
+		poseStack.popPose();
+	}
+
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (super.mouseClicked(mouseX, mouseY, button)) return true;
+
 		double uiMouseX = toUiX(mouseX);
 		double uiMouseY = toUiY(mouseY);
 
 		if (colorPickerVisible) {
 			int x = getUiWidth() / 2 - 70;
 			int y = getUiHeight() / 2 - 106;
-			int pickerX = x + 18;
-			int pickerY = y + 157;
+			int sliderX = x + 141 + 10;
+			int sliderY = y + 130;
 			int pickerW = 90;
-			int pickerH = 42;
+			int pickerH = 56;
 
-			boolean insidePicker = uiMouseX >= pickerX - 4 && uiMouseX <= pickerX + pickerW + 4
-					&& uiMouseY >= pickerY - 4 && uiMouseY <= pickerY + pickerH + 4;
-			boolean insideColorButtons = (uiMouseX >= x + 26 && uiMouseX <= x + 46 && uiMouseY >= y + 166 && uiMouseY <= y + 186)
-					|| (uiMouseX >= x + 95 && uiMouseX <= x + 115 && uiMouseY >= y + 166 && uiMouseY <= y + 186);
+			boolean insidePicker = uiMouseX >= sliderX - 5 && uiMouseX <= sliderX + pickerW + 5
+					&& uiMouseY >= sliderY - 5 && uiMouseY <= sliderY + pickerH + 5;
+			boolean insideColorButtons = (uiMouseX >= x + 26 && uiMouseX <= x + 46 && uiMouseY >= y + 160 && uiMouseY <= y + 180)
+					|| (uiMouseX >= x + 95 && uiMouseX <= x + 115 && uiMouseY >= y + 160 && uiMouseY <= y + 180);
 
 			if (!insidePicker && !insideColorButtons) {
 				hideColorPicker();
 				return true;
 			}
+			return false;
 		}
 
-		return super.mouseClicked(mouseX, mouseY, button);
+		return false;
 	}
 
 	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
@@ -404,7 +487,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 			StatsProvider.get(StatsCapability.INSTANCE, mc.player).ifPresent(data -> value[0] = data.getKiDamage());
 			baseKiDamage = value[0];
 		}
-		return String.format(Locale.US, "%.1f * %.1f", baseKiDamage, creatorDamage);
+		return String.format(Locale.US, "%.1f", baseKiDamage * creatorDamage);
 	}
 
 	@Override
@@ -427,4 +510,3 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		return false;
 	}
 }
-
