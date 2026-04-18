@@ -391,7 +391,7 @@ public class MainEntities {
     public static final RegistryObject<EntityType<SagaGohanEntity.SagaKidGohanEntity>> SAGA_KID_GOHAN =
             ENTITY_TYPES.register("saga_kid_gohan",
                     () -> EntityType.Builder.of(SagaGohanEntity.SagaKidGohanEntity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.6f)
+                            .sized(0.5f, 1.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_gohan").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaKrillinEntity>> SAGA_KRILLIN =
             ENTITY_TYPES.register("saga_krillin",
@@ -616,7 +616,26 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanEndUltimateEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_end_ultimate").toString()));
-
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenKidEntity>> SAGA_GOTEN =
+            ENTITY_TYPES.register("saga_goten",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenKidEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goten").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenKidSSJEntity>> SAGA_GOTEN_SSJ =
+            ENTITY_TYPES.register("saga_goten_ssj",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenKidSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goten_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaTrunksEntity.SagaKidTrunksBaseEntity>> SAGA_KID_TRUNKS =
+            ENTITY_TYPES.register("saga_kid_trunks",
+                    () -> EntityType.Builder.of(SagaTrunksEntity.SagaKidTrunksBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_trunks").toString()));
+    public static final RegistryObject<EntityType<SagaTrunksEntity.SagaKidTrunksSSJEntity>> SAGA_KID_TRUNKS_SSJ =
+            ENTITY_TYPES.register("saga_kid_trunks_ssj",
+                    () -> EntityType.Builder.of(SagaTrunksEntity.SagaKidTrunksSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_trunks_ssj").toString()));
 
     public static final RegistryObject<EntityType<ShadowDummyEntity>> SHADOW_DUMMY =
             ENTITY_TYPES.register("shadow_dummy",

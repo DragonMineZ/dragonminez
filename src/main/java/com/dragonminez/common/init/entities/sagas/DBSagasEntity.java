@@ -115,6 +115,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_KID = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     protected static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("walk");
@@ -1320,6 +1321,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public void setComboing(boolean comboing) {this.entityData.set(IS_COMBOING, comboing);}
     public boolean isComboing() {return this.entityData.get(IS_COMBOING);}
 
+    public void setisKid(boolean iskid) {this.entityData.set(IS_KID, iskid);}
+    public boolean isKid() {return this.entityData.get(IS_KID);}
+
     public int getTextureVariant() {return this.entityData.get(TEXTURE_VARIANT);}
     public void setTextureVariant(int variant) {this.entityData.set(TEXTURE_VARIANT, variant);}
 
@@ -1395,6 +1399,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         pCompound.putString("AuraType", this.getAuraType());
         pCompound.putInt("DBZStyle", this.getDBZStyle());
         pCompound.putBoolean("CanFly", this.canFly());
+        pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
@@ -1408,6 +1413,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (pCompound.contains("KiBlastSpeed")) this.kiBlastSpeed = pCompound.getFloat("KiBlastSpeed");
         if (pCompound.contains("AuraType")) this.setAuraType(pCompound.getString("AuraType"));
         if (pCompound.contains("DBZStyle")) this.setDBZStyle(pCompound.getInt("DBZStyle"));
+        if (pCompound.contains("isKid")) this.setisKid(pCompound.getBoolean("isKid"));
         if (pCompound.contains("CanFly")) this.setCanFly(pCompound.getBoolean("CanFly"));
         if (pCompound.contains("TextureVariant")) {
             this.setTextureVariant(pCompound.getInt("TextureVariant"));
@@ -1436,6 +1442,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
         this.entityData.define(IS_ZANZOKEN, false);
+        this.entityData.define(IS_KID, false);
     }
 
     @Override

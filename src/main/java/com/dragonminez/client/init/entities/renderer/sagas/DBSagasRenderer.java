@@ -74,6 +74,10 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             poseStack.scale(0.8f, 0.8f, 0.8f);
         }
 
+        if(entity.isKid()){
+            poseStack.scale(0.7f, 0.7f, 0.7f);
+        }
+
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
 
 
