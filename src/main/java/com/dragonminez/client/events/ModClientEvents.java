@@ -28,6 +28,8 @@ import com.dragonminez.client.init.menu.screens.FuelGeneratorScreen;
 import com.dragonminez.client.init.menu.screens.KikonoStationScreen;
 import com.dragonminez.common.init.particles.*;
 import com.dragonminez.server.world.dimension.CustomSpecialEffects;
+import com.mojang.blaze3d.platform.MacosUtil;
+import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -53,6 +55,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.registries.RegistryObject;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ModClientEvents {
@@ -108,6 +119,8 @@ public class ModClientEvents {
 	@SubscribeEvent
 	public static void onClientSetup(FMLClientSetupEvent event) {
 		event.enqueueWork(() -> {
+			setCustomWindowIcon();
+
 			//Bloques
 			BlockEntityRenderers.register(MainBlockEntities.DRAGON_BALL_BLOCK_ENTITY.get(), DragonBallBlockRenderer::new);
 			BlockEntityRenderers.register(MainBlockEntities.ENERGY_CABLE_BE.get(), EnergyCableBlockRenderer::new);
@@ -303,5 +316,56 @@ public class ModClientEvents {
 	@SubscribeEvent
 	public static void registerDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
 		CustomSpecialEffects.registerSpecialEffects(event);
+	}
+
+	private static void setCustomWindowIcon() {
+		Minecraft mc = Minecraft.getInstance();
+
+		if (Minecraft.ON_OSX) {
+			try {
+				ResourceLocation macLoc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "icons/minecraft.icns");
+				var res = mc.getResourceManager().getResource(macLoc);
+				if (res.isPresent()) MacosUtil.loadIcon(res.get()::open);
+			} catch (Exception ignored) {}
+			return;
+		}
+
+		long windowId = mc.getWindow().getWindow();
+		String[] iconNames = {"icon_16x16.png", "icon_32x32.png", "icon_48x48.png", "icon_128x128.png", "icon_256x256.png"};
+		List<NativeImage> loadedImages = new ArrayList<>();
+
+		for (String name : iconNames) {
+			try {
+				ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "icons/" + name);
+				var resource = mc.getResourceManager().getResource(loc);
+				if (resource.isPresent()) {
+					try (InputStream is = resource.get().open()) {
+						loadedImages.add(NativeImage.read(is));
+					}
+				}
+			} catch (Exception ignored) {}
+		}
+
+		if (loadedImages.isEmpty()) return;
+		List<ByteBuffer> buffersToFree = new ArrayList<>();
+
+		try (MemoryStack stack = MemoryStack.stackPush()) {
+			GLFWImage.Buffer glfwImages = GLFWImage.malloc(loadedImages.size(), stack);
+
+			for (int i = 0; i < loadedImages.size(); i++) {
+				NativeImage image = loadedImages.get(i);
+				ByteBuffer byteBuffer = MemoryUtil.memAlloc(image.getWidth() * image.getHeight() * 4);
+				buffersToFree.add(byteBuffer);
+				byteBuffer.asIntBuffer().put(image.getPixelsRGBA());
+				glfwImages.position(i);
+				glfwImages.width(image.getWidth());
+				glfwImages.height(image.getHeight());
+				glfwImages.pixels(byteBuffer);
+			}
+			GLFW.glfwSetWindowIcon(windowId, glfwImages.position(0));
+		} finally {
+			buffersToFree.forEach(MemoryUtil::memFree);
+			loadedImages.forEach(NativeImage::close);
+		}
 	}
 }

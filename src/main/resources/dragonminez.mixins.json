@@ -35,6 +35,7 @@
     "client.PrimaryLevelDataMixin",
     "client.SoundManagerMixin",
     "client.TitleScreenMixin",
+    "client.WindowMixin",
     "client.WorldOpenFlowsMixin",
     "client.WorldSelectionListMixin"
   ],
