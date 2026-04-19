@@ -181,10 +181,10 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return PlayState.STOP;
 
-		String race = data.getCharacter().getRaceName().toLowerCase();
-		if (race.equals("bioandroid") && data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE)) {
-			return PlayState.STOP;
-		}
+//		String race = data.getCharacter().getRaceName().toLowerCase();
+//		if (race.equals("bioandroid") && data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE)) {
+//			return PlayState.STOP;
+//		}
 
 		state.getController().setAnimation(TAIL);
 		return PlayState.CONTINUE;

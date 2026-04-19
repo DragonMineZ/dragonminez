@@ -15,10 +15,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.molang.MolangParser;
 import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.model.data.EntityModelData;
 
 import java.util.Map;
 import java.util.Objects;
@@ -30,6 +33,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
     private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
+    private static final ResourceLocation JANEMBA_SUPER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_super.geo.json");
+
     private static final ResourceLocation FROST_DEMON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
     private static final ResourceLocation FROST_DEMON_SECOND = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_second.geo.json");
     private static final ResourceLocation FROST_DEMON_THIRD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_third.geo.json");
@@ -154,6 +159,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "majin_super": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
             case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_FEMALE_BUFFED;
             case "majin_evil": case "majin_kid": return isMale ? BASE_SLIM : MAJIN_SLIM;
+            case "janemba_super": return JANEMBA_SUPER;
             case "frostdemon": case "frostdemon_final": return FROST_DEMON;
             case "frostdemon_second": return FROST_DEMON_SECOND;
             case "frostdemon_fifth": return FROST_DEMON_FIFTH;
@@ -213,23 +219,29 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
         float torsoLean = Mth.clamp(lookPitch, -0.9F, 0.9F);
         if (waist != null) {
-            waist.setRotX(waist.getRotX() + (torsoLean * 0.55F));
-            waist.setRotY(waist.getRotY() + (lookYaw * 0.35F));
+//            waist.setRotX(waist.getRotX() + (torsoLean * 0.55F));
+//            waist.setRotY(waist.getRotY() + (lookYaw * 0.35F));
         }
-        if (rightArm != null) {
-            rightArm.setRotX(rightArm.getRotX() + (torsoLean * 0.20F));
-            rightArm.setRotY(rightArm.getRotY() + (lookYaw * 0.20F));
-        }
-        if (leftArm != null) {
-            leftArm.setRotX(leftArm.getRotX() + (torsoLean * 0.20F));
-            leftArm.setRotY(leftArm.getRotY() + (lookYaw * 0.20F));
-        }
+//        if (rightArm != null) {
+//            rightArm.setRotX(rightArm.getRotX() + (torsoLean * 0.20F));
+//            rightArm.setRotY(rightArm.getRotY() + (lookYaw * 0.20F));
+//        }
+//        if (leftArm != null) {
+//            leftArm.setRotX(leftArm.getRotX() + (torsoLean * 0.20F));
+//            leftArm.setRotY(leftArm.getRotY() + (lookYaw * 0.20F));
+//        }
 
         if (head != null) {
-            float parentPitch = waist != null ? waist.getRotX() : 0.0F;
-            float parentYaw = waist != null ? waist.getRotY() : 0.0F;
-            head.setRotX(desiredHeadPitch + parentPitch);
-            head.setRotY(desiredHeadYaw - parentYaw);
+            EntityModelData entityModelData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
+
+            float lookPitchRad = entityModelData.headPitch() * Mth.DEG_TO_RAD;
+            float lookYawRad = entityModelData.netHeadYaw() * Mth.DEG_TO_RAD;
+
+            float waistRotX = (waist != null) ? waist.getRotX() : 0.0F;
+            float waistRotY = (waist != null) ? waist.getRotY() : 0.0F;
+
+            head.setRotX(lookPitchRad - waistRotX);
+            head.setRotY(lookYawRad - waistRotY);
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
@@ -254,5 +266,24 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()
         );
     }
+
+    @Override
+    public void applyMolangQueries(T animatable, double animTime) {
+        super.applyMolangQueries(animatable, animTime);
+
+        MolangParser parser = MolangParser.INSTANCE;
+
+        float clampedPitch = -Mth.clamp(animatable.getXRot(), -85F, 85F);
+
+        float relativeYaw = -Mth.wrapDegrees(animatable.getYHeadRot() - animatable.yBodyRot);
+        float clampedYaw = Mth.clamp(relativeYaw, -90F, 90F);
+
+        parser.setValue("query.head_x_rotation", () -> (double) clampedPitch);
+        parser.setValue("query.head_y_rotation", () -> (double) clampedYaw);
+
+        parser.setValue("query.head_pitch", () -> (double) clampedPitch);
+        parser.setValue("query.head_yaw", () -> (double) clampedYaw);
+    }
 }
+
 
