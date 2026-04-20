@@ -2,32 +2,29 @@ package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
-import com.dragonminez.server.world.dimension.OtherworldDimension;
-import net.minecraft.core.BlockPos;
+import com.dragonminez.common.spacepod.SpacePodDestinationDefinition;
+import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 public class TravelToPlanetC2S {
-	private final String targetDimensionId;
+	private final String destinationId;
 
-	public TravelToPlanetC2S(String targetDimensionId) {
-		this.targetDimensionId = targetDimensionId;
-	}
-
-	public TravelToPlanetC2S(ResourceKey<Level> dimensionKey) {
-		this.targetDimensionId = dimensionKey.location().toString();
+	public TravelToPlanetC2S(String destinationId) {
+		this.destinationId = destinationId;
 	}
 
 	public static void encode(TravelToPlanetC2S msg, FriendlyByteBuf buf) {
-		buf.writeUtf(msg.targetDimensionId);
+		buf.writeUtf(msg.destinationId);
 	}
 
 	public static TravelToPlanetC2S decode(FriendlyByteBuf buf) {
@@ -40,7 +37,12 @@ public class TravelToPlanetC2S {
 			if (player == null) return;
 
 			ServerLevel currentLevel = player.serverLevel();
-			ResourceLocation targetId = ResourceLocation.tryParse(targetDimensionId);
+			SpacePodDestinationDefinition destination = SpacePodDestinationRegistry.getServerDestination(destinationId);
+			if (destination == null || !destination.unlockRules().test(player)) {
+				return;
+			}
+
+			ResourceLocation targetId = ResourceLocation.tryParse(destination.dimension());
 			if (targetId == null) {
 				return;
 			}
@@ -63,21 +65,11 @@ public class TravelToPlanetC2S {
 				}
 			}
 
-			BlockPos targetPos;
-			if (targetKey.equals(OtherworldDimension.OTHERWORLD_KEY)) {
-				targetPos = new BlockPos(54, 210, 1082);
-			} else {
-				double newY = player.getY();
-				if (newY < 0) newY = 180;
-				else if (newY < 60) newY += 90;
-
-				targetPos = new BlockPos((int) player.getX(), (int) newY, (int) player.getZ());
-			}
-
-			player.teleportTo(targetLevel, targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getYRot(), player.getXRot());
+			Vec3 targetPos = destination.resolvePosition(player.position());
+			player.teleportTo(targetLevel, targetPos.x, targetPos.y, targetPos.z, player.getYRot(), player.getXRot());
 
 			SpacePodEntity newPod = new SpacePodEntity(MainEntities.SPACE_POD.get(), targetLevel);
-			newPod.setPos(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+			newPod.setPos(targetPos.x, targetPos.y, targetPos.z);
 
 			if (targetLevel.addFreshEntity(newPod)) {
 				player.startRiding(newPod);

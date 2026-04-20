@@ -27,13 +27,13 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 		root.addProperty("replace", true);
 
 		JsonArray destinations = new JsonArray();
-		destinations.add(destination("overworld", "gui.dragonminez.spacepod.overworld", true, "minecraft:overworld", 0, null, primitive("ALWAYS")));
-		destinations.add(destination("namek", "gui.dragonminez.spacepod.namek", true, "dragonminez:namek", 1, null, primitive("ALWAYS")));
-		destinations.add(destination("otherworld", "gui.dragonminez.spacepod.otherworld", true, "dragonminez:otherworld", 2, null,
+		destinations.add(destination("overworld", "gui.dragonminez.spacepod.overworld", true, "minecraft:overworld", 0, null, null, null, null, true, primitive("ALWAYS")));
+		destinations.add(destination("namek", "gui.dragonminez.spacepod.namek", true, "dragonminez:namek", 1, null, null, null, null, true, primitive("ALWAYS")));
+		destinations.add(destination("otherworld", "gui.dragonminez.spacepod.otherworld", true, "dragonminez:otherworld", 2, null, 54.0, 210.0, 1082.0, true,
 				and(primitive("KAIO_UNLOCKED"), primitive("OTHERWORLD_ENABLED"))));
-		destinations.add(destination("supreme", "gui.dragonminez.spacepod.supreme", true, "dragonminez:supreme_planet", 3, null, primitive("NEVER")));
-		destinations.add(destination("cereal", "gui.dragonminez.spacepod.cereal", true, "dragonminez:cereal_planet", 4, null, primitive("NEVER")));
-		destinations.add(destination("beerus", "gui.dragonminez.spacepod.beerus", true, "dmzsuper:beerus_planet", 5, null, primitive("NEVER")));
+		destinations.add(destination("supreme", "gui.dragonminez.spacepod.supreme", true, "dragonminez:supreme_planet", 3, null, null, null, null, true, primitive("NEVER")));
+		destinations.add(destination("cereal", "gui.dragonminez.spacepod.cereal", true, "dragonminez:cereal_planet", 4, null, null, null, null, true, primitive("NEVER")));
+		destinations.add(destination("beerus", "gui.dragonminez.spacepod.beerus", true, "dmzsuper:beerus_planet", 5, null, null, null, null, true, primitive("NEVER")));
 		root.add("destinations", destinations);
 
 		Path path = this.output.getOutputFolder(PackOutput.Target.DATA_PACK)
@@ -50,7 +50,7 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 		return "DragonMineZ Space Pod Destinations";
 	}
 
-	private static JsonObject destination(String id, String name, boolean translate, String dimension, Integer iconIndex, String iconTexture, Object unlockRules) {
+	private static JsonObject destination(String id, String name, boolean translate, String dimension, Integer iconIndex, String iconTexture, Double x, Double y, Double z, boolean showWhenLocked, Object unlockRules) {
 		JsonObject object = new JsonObject();
 		object.addProperty("id", id);
 		object.addProperty("name", name);
@@ -62,6 +62,16 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 		if (iconTexture != null) {
 			object.addProperty("icon_texture", iconTexture);
 		}
+		if (x != null) {
+			object.addProperty("x", x);
+		}
+		if (y != null) {
+			object.addProperty("y", y);
+		}
+		if (z != null) {
+			object.addProperty("z", z);
+		}
+		object.addProperty("show_when_locked", showWhenLocked);
 		object.add("unlock_rules", GSON.toJsonTree(unlockRules));
 		return object;
 	}

@@ -89,8 +89,13 @@ public class SpacePodScreen extends Screen {
 
 		for (SpacePodDestinationDefinition definition : SpacePodDestinationRegistry.getClientDestinations()) {
 			boolean unlocked = definition.unlockRules().test(this.minecraft.player);
+			if (!unlocked && !definition.showWhenLocked()) {
+				continue;
+			}
+
 			ResourceLocation iconTexture = definition.iconTexture() != null ? ResourceLocation.tryParse(definition.iconTexture()) : null;
 			destinations.add(new PlanetDestination(
+					definition.id(),
 					definition.name(),
 					definition.translate(),
 					definition.dimension(),
@@ -104,10 +109,10 @@ public class SpacePodScreen extends Screen {
 	private void initiateTravel() {
 		if (selectedIndex >= 0 && selectedIndex < destinations.size()) {
 			PlanetDestination dest = destinations.get(selectedIndex);
-			if (dest.unlocked && dest.dimensionId != null && !dest.dimensionId.isBlank()) {
+			if (dest.unlocked && dest.dimensionId != null && !dest.dimensionId.isBlank() && dest.id != null && !dest.id.isBlank()) {
 				String currentDimensionId = this.minecraft.player.level().dimension().location().toString();
 				if (!currentDimensionId.equals(dest.dimensionId)) {
-					NetworkHandler.sendToServer(new TravelToPlanetC2S(dest.dimensionId));
+					NetworkHandler.sendToServer(new TravelToPlanetC2S(dest.id));
 					this.onClose();
 				}
 			}
@@ -312,6 +317,7 @@ public class SpacePodScreen extends Screen {
 	}
 
 	private static class PlanetDestination {
+		String id;
 		String name;
 		boolean translate;
 		String dimensionId;
@@ -319,7 +325,8 @@ public class SpacePodScreen extends Screen {
 		ResourceLocation iconTexture;
 		boolean unlocked;
 
-		public PlanetDestination(String name, boolean translate, String dimensionId, Integer iconIndex, ResourceLocation iconTexture, boolean unlocked) {
+		public PlanetDestination(String id, String name, boolean translate, String dimensionId, Integer iconIndex, ResourceLocation iconTexture, boolean unlocked) {
+			this.id = id;
 			this.name = name;
 			this.translate = translate;
 			this.dimensionId = dimensionId;

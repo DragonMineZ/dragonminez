@@ -21,6 +21,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -71,6 +72,16 @@ public class SpacePodDestinationRegistry extends SimpleJsonResourceReloadListene
 		return serverDestinations;
 	}
 
+	@Nullable
+	public static SpacePodDestinationDefinition getServerDestination(String destinationId) {
+		for (SpacePodDestinationDefinition destination : serverDestinations) {
+			if (destination.id().equals(destinationId)) {
+				return destination;
+			}
+		}
+		return null;
+	}
+
 	@OnlyIn(Dist.CLIENT)
 	public static List<SpacePodDestinationDefinition> getClientDestinations() {
 		return clientDestinations;
@@ -97,6 +108,16 @@ public class SpacePodDestinationRegistry extends SimpleJsonResourceReloadListene
 			if (destination.iconTexture() != null) {
 				object.addProperty("icon_texture", destination.iconTexture());
 			}
+			if (destination.x() != null) {
+				object.addProperty("x", destination.x());
+			}
+			if (destination.y() != null) {
+				object.addProperty("y", destination.y());
+			}
+			if (destination.z() != null) {
+				object.addProperty("z", destination.z());
+			}
+			object.addProperty("show_when_locked", destination.showWhenLocked());
 			object.add("unlock_rules", unlockToJson(destination.unlockRules()));
 			array.add(object);
 		}
@@ -105,10 +126,42 @@ public class SpacePodDestinationRegistry extends SimpleJsonResourceReloadListene
 		return GSON.toJson(root);
 	}
 
-
 	private static JsonElement unlockToJson(SpacePodUnlockExpression expression) {
 		if (expression instanceof SpacePodUnlockExpression.Primitive primitive) {
 			return GSON.toJsonTree(primitive.rule().name());
+		}
+		if (expression instanceof SpacePodUnlockExpression.QuestCompleted questCompleted) {
+			JsonObject object = new JsonObject();
+			object.addProperty("quest", questCompleted.questId());
+			return object;
+		}
+		if (expression instanceof SpacePodUnlockExpression.LevelAtLeast levelAtLeast) {
+			JsonObject object = new JsonObject();
+			object.addProperty("level", levelAtLeast.level());
+			return object;
+		}
+		if (expression instanceof SpacePodUnlockExpression.StatAtLeast statAtLeast) {
+			JsonObject object = new JsonObject();
+			JsonObject stat = new JsonObject();
+			stat.addProperty("name", statAtLeast.statName());
+			stat.addProperty("min", statAtLeast.min());
+			object.add("stat", stat);
+			return object;
+		}
+		if (expression instanceof SpacePodUnlockExpression.RaceMatches raceMatches) {
+			JsonObject object = new JsonObject();
+			object.addProperty("race", raceMatches.race());
+			return object;
+		}
+		if (expression instanceof SpacePodUnlockExpression.PlayerTag playerTag) {
+			JsonObject object = new JsonObject();
+			object.addProperty("tag", playerTag.tag());
+			return object;
+		}
+		if (expression instanceof SpacePodUnlockExpression.VisitedDimension visitedDimension) {
+			JsonObject object = new JsonObject();
+			object.addProperty("visited_dimension", visitedDimension.dimensionId());
+			return object;
 		}
 		if (expression instanceof SpacePodUnlockExpression.And andExpression) {
 			JsonObject object = new JsonObject();
