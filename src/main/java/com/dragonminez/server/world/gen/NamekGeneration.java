@@ -5,13 +5,13 @@ import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.server.world.biome.NamekBiomes;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.block.Blocks;
@@ -33,16 +33,34 @@ public class NamekGeneration {
 		HolderGetter<DimensionType> dimTypes = context.lookup(Registries.DIMENSION_TYPE);
 		HolderGetter<NoiseGeneratorSettings> noiseSettings = context.lookup(Registries.NOISE_SETTINGS);
 
-		BiomeSource biomeSource = MultiNoiseBiomeSource.createFromList(
-				new Climate.ParameterList<>(List.of(
-						Pair.of(Climate.parameters(0.0F, 0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.0F), biomeRegistry.getOrThrow(NamekBiomes.AJISSA_PLAINS)),
-						Pair.of(Climate.parameters(0.0F, 0.0F, 0.6F, 0.0F, 0.0F, 0.0F, 0.0F), biomeRegistry.getOrThrow(NamekBiomes.SACRED_LAND)),
-						Pair.of(Climate.parameters(0.0F, 0.0F, -0.45F, 0.0F, 0.0F, 0.0F, 0.0F), biomeRegistry.getOrThrow(NamekBiomes.NAMEKIAN_RIVERS))
-				))
+		MultiNoiseBiomeSource biomeSource = MultiNoiseBiomeSource.createFromList(createNamekBiomeParameters(biomeRegistry));
+
+		ChunkGenerator chunkGenerator = new NoiseBasedChunkGenerator(
+				biomeSource,
+				noiseSettings.getOrThrow(NAMEK_NOISE_SETTINGS)
 		);
 
-		ChunkGenerator chunkGenerator = new NoiseBasedChunkGenerator(biomeSource, noiseSettings.getOrThrow(NAMEK_NOISE_SETTINGS));
-		context.register(NAMEK_STEM, new LevelStem(dimTypes.getOrThrow(NamekDimension.NAMEK_TYPE), chunkGenerator));
+		context.register(NAMEK_STEM, new LevelStem(
+				dimTypes.getOrThrow(NamekDimension.NAMEK_TYPE),
+				chunkGenerator
+		));
+	}
+
+	private static Climate.ParameterList<Holder<Biome>> createNamekBiomeParameters(HolderGetter<Biome> biomeRegistry) {
+		return new Climate.ParameterList<>(List.of(
+				Pair.of(
+						Climate.parameters(0.0F, 0.0F, 0.1F, 0.0F, 0.0F, 0.0F, 0.0F),
+						biomeRegistry.getOrThrow(NamekBiomes.AJISSA_PLAINS)
+				),
+				Pair.of(
+						Climate.parameters(0.0F, 0.0F, 0.6F, 0.0F, 0.0F, 0.0F, 0.0F),
+						biomeRegistry.getOrThrow(NamekBiomes.SACRED_LAND)
+				),
+				Pair.of(
+						Climate.parameters(0.0F, 0.0F, -0.45F, 0.0F, 0.0F, 0.0F, 0.0F),
+						biomeRegistry.getOrThrow(NamekBiomes.NAMEKIAN_RIVERS)
+				)
+		));
 	}
 
 	public static void bootstrapNoise(BootstapContext<NoiseGeneratorSettings> context) {
