@@ -179,10 +179,13 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		List<String> masterOfferings = getMasterSkills();
 		List<String> visibleSkills = new ArrayList<>();
 		SkillsConfig skillsConfig = ConfigManager.getSkillsConfig();
+		String playerRace = getPlayerRaceName();
 
 		switch (currentCategory) {
 			case SKILLS:
 				for (String skillId : masterOfferings) {
+					if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
+
 					if (!skillsConfig.getKiSkills().contains(skillId) && !skillsConfig.getFormSkills().contains(skillId) &&
 							!skillsConfig.getStackSkills().contains(skillId)) {
 						visibleSkills.add(skillId);
@@ -191,6 +194,8 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 				break;
 			case KI:
 				for (String skillId : masterOfferings) {
+					if (!skillsConfig.isSkillAllowedForRace(skillId, playerRace)) continue;
+
 					if (skillsConfig.getKiSkills().contains(skillId)) {
 						visibleSkills.add(skillId);
 					}
@@ -201,6 +206,12 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 		return visibleSkills;
 	}
 
+	private String getPlayerRaceName() {
+		if (statsData == null || statsData.getCharacter() == null) return "";
+		String raceName = statsData.getCharacter().getRaceName();
+		return raceName != null ? raceName.toLowerCase(Locale.ROOT) : "";
+	}
+
 	private void refreshButtons() {
 		this.clearWidgets();
 		initDynamicButtons();
@@ -209,6 +220,7 @@ public class MastersSkillsScreen extends BaseMenuScreen {
 
 	private void initPurchaseButton() {
 		if (selectedSkill == null || statsData == null) return;
+		if (!ConfigManager.getSkillsConfig().isSkillAllowedForRace(selectedSkill, getPlayerRaceName())) return;
 
 		Skill skill = statsData.getSkills().getSkill(selectedSkill);
 		if (skill == null) {

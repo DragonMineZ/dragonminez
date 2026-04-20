@@ -49,6 +49,7 @@ public class UpdateSkillC2S {
 			if (player != null) {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 					Skill skill = data.getSkills().getSkill(skillName);
+					boolean raceAllowed = isSkillAllowedForPlayerRace(data, skillName);
 					switch (action) {
 						case TOGGLE:
 							if (skill != null && skill.getLevel() > 0) {
@@ -58,6 +59,7 @@ public class UpdateSkillC2S {
 
 						case UPGRADE:
 							if (skill == null) break;
+							if (skill.getLevel() <= 0 && !raceAllowed) break;
 							refreshRuntimeMaxLevel(data, skillName, skill);
 							if (!skill.isMaxLevel() && data.getResources().getTrainingPoints() >= cost && cost != -1 && !(skillName.equals("potentialunlock") && skill.getLevel() == 10)) {
 								data.getResources().removeTrainingPoints(cost);
@@ -71,6 +73,7 @@ public class UpdateSkillC2S {
 							break;
 
 						case PURCHASE:
+							if (!raceAllowed) break;
 							if (!data.getSkills().hasSkill(skillName) && data.getResources().getTrainingPoints() >= cost && cost != -1) {
 								data.getResources().removeTrainingPoints(cost);
 								data.getSkills().setSkillLevel(skillName, 1);
@@ -85,6 +88,13 @@ public class UpdateSkillC2S {
 			}
 		});
 		ctx.get().setPacketHandled(true);
+	}
+
+	private static boolean isSkillAllowedForPlayerRace(StatsData data, String skillName) {
+		if (data == null || skillName == null || skillName.isEmpty()) return false;
+
+		String raceName = data.getCharacter() != null ? data.getCharacter().getRaceName() : "";
+		return ConfigManager.getSkillsConfig().isSkillAllowedForRace(skillName, raceName);
 	}
 
 	private void unlockTechniqueIfPresent(com.dragonminez.common.stats.StatsData data, String techId) {
