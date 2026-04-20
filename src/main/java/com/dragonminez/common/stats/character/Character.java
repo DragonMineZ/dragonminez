@@ -28,6 +28,7 @@ public class Character {
     private String activeForm = "";
     private final FormMasteries formMasteries = new FormMasteries();
 	private UsedForms formsUsedBefore = new UsedForms();
+	private int activeFormItemDurationTicks = 0;
 
     private String selectedStackFormGroup = "";
     private String activeStackFormGroup = "";
@@ -35,6 +36,7 @@ public class Character {
     private String activeStackForm = "";
     private final FormMasteries stackFormMasteries = new FormMasteries();
 	private UsedForms stackFormsUsedBefore = new UsedForms();
+	private int activeStackFormItemDurationTicks = 0;
 
 	private boolean hasSaiyanTail = true;
 
@@ -280,10 +282,12 @@ public class Character {
 		tag.putString("CurrentFormGroup", safeString(activeFormGroup));
 		tag.putString("SelectedForm", safeString(selectedForm));
 		tag.putString("CurrentForm", safeString(activeForm));
+		tag.putInt("ActiveFormItemDurationTicks", activeFormItemDurationTicks);
 		tag.putString("SelectedStackFormGroup", safeString(selectedStackFormGroup));
 		tag.putString("CurrentStackFormGroup", safeString(activeStackFormGroup));
 		tag.putString("SelectedStackForm", safeString(selectedStackForm));
 		tag.putString("CurrentStackForm", safeString(activeStackForm));
+		tag.putInt("ActiveStackFormItemDurationTicks", activeStackFormItemDurationTicks);
 		tag.put("FormsUsedBefore", (formsUsedBefore != null ? formsUsedBefore : new UsedForms()).save());
 		tag.put("StackFormsUsedBefore", (stackFormsUsedBefore != null ? stackFormsUsedBefore : new UsedForms()).save());
 		tag.putBoolean("HasSaiyanTail", hasSaiyanTail);
@@ -326,12 +330,14 @@ public class Character {
         this.activeFormGroup = tag.getString("CurrentFormGroup");
 		this.selectedForm = tag.getString("SelectedForm");
         this.activeForm = tag.getString("CurrentForm");
+		this.activeFormItemDurationTicks = tag.getInt("ActiveFormItemDurationTicks");
         if (tag.contains("FormMasteries")) formMasteries.load(tag.getCompound("FormMasteries"));
 		if (tag.contains("FormsUsedBefore")) formsUsedBefore.load(tag.getCompound("FormsUsedBefore"));
         this.selectedStackFormGroup = tag.getString("SelectedStackFormGroup");
         this.activeStackFormGroup = tag.getString("CurrentStackFormGroup");
 		this.selectedStackForm = tag.getString("SelectedStackForm");
         this.activeStackForm = tag.getString("CurrentStackForm");
+		this.activeStackFormItemDurationTicks = tag.getInt("ActiveStackFormItemDurationTicks");
         if (tag.contains("StackFormMasteries")) stackFormMasteries.load(tag.getCompound("StackFormMasteries"));
 		if (tag.contains("StackFormsUsedBefore")) stackFormsUsedBefore.load(tag.getCompound("StackFormsUsedBefore"));
 		this.hasSaiyanTail = tag.getBoolean("HasSaiyanTail");
@@ -346,12 +352,14 @@ public class Character {
     public void setActiveForm(String groupName, String formName) {
         this.activeFormGroup = groupName != null ? groupName : "";
         this.activeForm = formName != null ? formName : "";
+		this.activeFormItemDurationTicks = 0;
 		updateOozaruCache();
     }
 
     public void clearActiveForm() {
         this.activeFormGroup = "";
         this.activeForm = "";
+		this.activeFormItemDurationTicks = 0;
 		updateOozaruCache();
     }
 
@@ -367,11 +375,13 @@ public class Character {
     public void setActiveStackForm(String groupName, String formName) {
         this.activeStackFormGroup = groupName != null ? groupName : "";
         this.activeStackForm = formName != null ? formName : "";
+		this.activeStackFormItemDurationTicks = 0;
     }
 
     public void clearActiveStackForm() {
         this.activeStackFormGroup = "";
         this.activeStackForm = "";
+		this.activeStackFormItemDurationTicks = 0;
     }
 
 	public FormConfig.FormData getActiveStackFormData() {
@@ -442,11 +452,13 @@ public class Character {
 		this.activeFormGroup = safeString(other.activeFormGroup);
 		this.selectedForm = safeString(other.selectedForm);
 		this.activeForm = safeString(other.activeForm);
+		this.activeFormItemDurationTicks = other.activeFormItemDurationTicks;
 		this.formMasteries.copyFrom(other.formMasteries);
 		this.selectedStackFormGroup = safeString(other.selectedStackFormGroup);
 		this.activeStackFormGroup = safeString(other.activeStackFormGroup);
 		this.selectedStackForm = safeString(other.selectedStackForm);
 		this.activeStackForm = safeString(other.activeStackForm);
+		this.activeStackFormItemDurationTicks = other.activeStackFormItemDurationTicks;
         this.stackFormMasteries.copyFrom(other.stackFormMasteries);
         this.armored = other.armored;
     }

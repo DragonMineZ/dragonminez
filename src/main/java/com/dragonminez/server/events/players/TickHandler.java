@@ -17,6 +17,7 @@ import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.stats.techniques.Techniques;
+import com.dragonminez.common.util.TransformationItemCostHelper;
 import com.dragonminez.server.events.players.actionmode.FormModeHandler;
 import com.dragonminez.server.events.players.actionmode.FusionModeHandler;
 import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
@@ -25,6 +26,7 @@ import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.GravityLogic;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
@@ -666,6 +668,7 @@ public class TickHandler {
 		boolean hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 		if (hasActiveForm && data.getCharacter().getSelectedFormGroup().contains("oozaru") && !data.getCharacter().isHasSaiyanTail()) {
 			data.getCharacter().clearActiveForm();
+			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 			player.removeEffect(MainEffects.TRANSFORMED.get());
 			player.refreshDimensions();
 		}
@@ -673,6 +676,12 @@ public class TickHandler {
 		if (!data.getStatus().isAlive() && player.level().dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
 			if (player.getFoodData().getFoodLevel() <= 20) player.getFoodData().setFoodLevel(20);
 			return;
+		}
+
+		if (hasActiveForm || hasActiveStackForm) {
+			handleDurationItemCosts(player, data, hasActiveForm, hasActiveStackForm);
+			hasActiveForm = data.getCharacter().getActiveForm() != null && !data.getCharacter().getActiveForm().isEmpty();
+			hasActiveStackForm = data.getCharacter().getActiveStackForm() != null && !data.getCharacter().getActiveStackForm().isEmpty();
 		}
 
 		if ((hasActiveForm || hasActiveStackForm) && !player.isCreative() && !player.isSpectator()) {
@@ -692,18 +701,80 @@ public class TickHandler {
 				} else {
 					player.setHealth(1.0f);
 					data.getCharacter().clearActiveForm();
+					TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 					data.getCharacter().clearActiveStackForm();
+					TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 					player.refreshDimensions();
 				}
 			} else {
 				data.getCharacter().clearActiveStackForm();
+				TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
 				data.getCharacter().clearActiveForm();
+				TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
 				player.removeEffect(MainEffects.TRANSFORMED.get());
 				player.refreshDimensions();
 			}
 		}
 	}
+
+	private static void handleDurationItemCosts(ServerPlayer player, StatsData data, boolean hasActiveForm, boolean hasActiveStackForm) {
+		if (player.isCreative() || player.isSpectator()) {
+			if (hasActiveForm) TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
+			if (hasActiveStackForm) TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
+			return;
+		}
+
+		if (!hasActiveForm) {
+			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
+		} else {
+			handleSingleDurationCost(player, data, true);
+		}
+
+		if (!hasActiveStackForm) {
+			TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
+		} else {
+			handleSingleDurationCost(player, data, false);
+		}
+	}
+
+	private static void handleSingleDurationCost(ServerPlayer player, StatsData data, boolean baseForm) {
+		FormConfig.FormData activeData = baseForm ? data.getCharacter().getActiveFormData() : data.getCharacter().getActiveStackFormData();
+		if (activeData == null || !activeData.hasDurationItemCosts()) {
+			if (baseForm) TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
+			else TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
+			return;
+		}
+
+		int remaining = baseForm ? TransformationItemCostHelper.getFormDurationSecondsRemaining(player) : TransformationItemCostHelper.getStackFormDurationSecondsRemaining(player);
+		if (remaining <= 0) {
+			int addedSeconds = TransformationItemCostHelper.consumeDurationItem(player, activeData);
+			if (addedSeconds <= 0) {
+				clearTransformationForMissingDurationItem(player, data, baseForm);
+				return;
+			}
+			remaining += addedSeconds;
+		}
+
+		remaining = Math.max(0, remaining - 1);
+		if (baseForm) TransformationItemCostHelper.setFormDurationSecondsRemaining(player, remaining);
+		else TransformationItemCostHelper.setStackFormDurationSecondsRemaining(player, remaining);
+	}
+
+	private static void clearTransformationForMissingDurationItem(ServerPlayer player, StatsData data, boolean baseForm) {
+		if (baseForm) {
+			data.getCharacter().clearActiveForm();
+			TransformationItemCostHelper.clearFormDurationSecondsRemaining(player);
+			player.removeEffect(MainEffects.TRANSFORMED.get());
+		} else {
+			data.getCharacter().clearActiveStackForm();
+			TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
+			player.removeEffect(MainEffects.STACK_TRANSFORMED.get());
+		}
+		player.sendSystemMessage(Component.translatable("message.dragonminez.form.no_duration_item"), true);
+		player.refreshDimensions();
+	}
+
 
 	public static void registerActionModeHandlers() {
 		ACTION_MODE_HANDLERS.put(ActionMode.FORM.name(), new FormModeHandler());
