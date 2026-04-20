@@ -92,6 +92,7 @@ public class StatsCapability {
 			);
 
 			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
+				markCurrentDimensionVisited(serverPlayer, data);
 				PlayerQuestData questData = data.getPlayerQuestData();
 				if (questData.isSagaLocked("saiyan_saga")) questData.setSagaUnlocked("saiyan_saga", true);
 				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
@@ -122,7 +123,14 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer));
+			StatsProvider.get(INSTANCE, serverPlayer).ifPresent(data -> {
+				markCurrentDimensionVisited(serverPlayer, data);
+				NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
+			});
 		}
+	}
+
+	private static void markCurrentDimensionVisited(ServerPlayer player, StatsData data) {
+		data.getStatus().markVisitedDimension(player.serverLevel().dimension().location().toString());
 	}
 }
