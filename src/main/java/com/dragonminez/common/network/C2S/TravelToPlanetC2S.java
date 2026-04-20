@@ -1,13 +1,9 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.SpacePodEntity;
-import com.dragonminez.server.world.dimension.NamekDimension;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -44,69 +40,49 @@ public class TravelToPlanetC2S {
 			if (player == null) return;
 
 			ServerLevel currentLevel = player.serverLevel();
-
-			ResourceKey<Level> targetKey;
-			if (targetDimensionId.contains("namek")) {
-				targetKey = NamekDimension.NAMEK_KEY;
-			} else if (targetDimensionId.contains("otherworld") || targetDimensionId.contains("kaio")) {
-				targetKey = OtherworldDimension.OTHERWORLD_KEY;
-			} else {
-				targetKey = Level.OVERWORLD;
+			ResourceLocation targetId = ResourceLocation.tryParse(targetDimensionId);
+			if (targetId == null) {
+				return;
 			}
 
+			ResourceKey<Level> targetKey = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, targetId);
 			ServerLevel targetLevel = player.server.getLevel(targetKey);
+			if (targetLevel == null || targetLevel == currentLevel) {
+				return;
+			}
 
-			if (targetLevel != null && targetLevel != currentLevel) {
+			player.stopRiding();
+			List<SpacePodEntity> nearbyPods = currentLevel.getEntitiesOfClass(
+					SpacePodEntity.class,
+					player.getBoundingBox().inflate(10.0D)
+			);
 
-				player.stopRiding();
-				List<SpacePodEntity> nearbyPods = currentLevel.getEntitiesOfClass(
-						SpacePodEntity.class,
-						player.getBoundingBox().inflate(10.0D)
-				);
-
-				for (SpacePodEntity pod : nearbyPods) {
-					if (!pod.isVehicle()) {
-						pod.discard();
-					}
+			for (SpacePodEntity pod : nearbyPods) {
+				if (!pod.isVehicle()) {
+					pod.discard();
 				}
+			}
 
-				BlockPos targetPos;
+			BlockPos targetPos;
+			if (targetKey.equals(OtherworldDimension.OTHERWORLD_KEY)) {
+				targetPos = new BlockPos(54, 210, 1082);
+			} else {
+				double newY = player.getY();
+				if (newY < 0) newY = 180;
+				else if (newY < 60) newY += 90;
 
-				if (targetKey.equals(OtherworldDimension.OTHERWORLD_KEY)) {
-					targetPos = new BlockPos(54, 210, 1082);
-				} else {
-					double newY = player.getY();
-					if (newY < 0) newY = 180;
-					else if (newY < 60) newY += 90;
+				targetPos = new BlockPos((int) player.getX(), (int) newY, (int) player.getZ());
+			}
 
-					targetPos = new BlockPos((int)player.getX(), (int)newY, (int)player.getZ());
-				}
+			player.teleportTo(targetLevel, targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getYRot(), player.getXRot());
 
-				player.teleportTo(targetLevel, targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getYRot(), player.getXRot());
+			SpacePodEntity newPod = new SpacePodEntity(MainEntities.SPACE_POD.get(), targetLevel);
+			newPod.setPos(targetPos.getX(), targetPos.getY(), targetPos.getZ());
 
-				SpacePodEntity newPod = new SpacePodEntity(MainEntities.SPACE_POD.get(), targetLevel);
-				newPod.setPos(targetPos.getX(), targetPos.getY(), targetPos.getZ());
-
-				if (targetLevel.addFreshEntity(newPod)) {
-					player.startRiding(newPod);
-				}
+			if (targetLevel.addFreshEntity(newPod)) {
+				player.startRiding(newPod);
 			}
 		});
 		context.get().setPacketHandled(true);
-	}
-
-	private BlockPos findStructure(ServerLevel level, ResourceLocation structureId, BlockPos center) {
-		var registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-		var structureHolder = registry.getHolder(ResourceKey.create(Registries.STRUCTURE, structureId));
-
-		if (structureHolder.isPresent()) {
-			var result = level.getChunkSource().getGenerator()
-					.findNearestMapStructure(level, HolderSet.direct(structureHolder.get()), center, 100, false);
-
-			if (result != null) {
-				return result.getFirst();
-			}
-		}
-		return null;
 	}
 }

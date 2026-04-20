@@ -18,6 +18,7 @@ import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWeaponRegistryS2C;
+import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
@@ -32,7 +33,6 @@ import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.*;
-import com.google.gson.Gson;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -101,6 +101,7 @@ public class ForgeCommonEvents {
 
 			String jsonRegistry = new com.google.gson.Gson().toJson(stringMap);
 			NetworkHandler.sendToPlayer(new SyncWeaponRegistryS2C(jsonRegistry), player);
+			SpacePodDestinationRegistry.syncToPlayer(player);
 		}
 	}
 
@@ -370,6 +371,7 @@ public class ForgeCommonEvents {
 
 	@SubscribeEvent
 	public static void onAddReloadListeners(AddReloadListenerEvent event) {
+		event.addListener(SpacePodDestinationRegistry.INSTANCE);
 		event.addListener(new SimplePreparableReloadListener<Void>() {
 			@Override
 			protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {

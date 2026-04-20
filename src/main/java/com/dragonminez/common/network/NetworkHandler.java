@@ -335,6 +335,12 @@ public class NetworkHandler {
 				.encoder(TriggerImpactFrameS2C::encode)
 				.consumerMainThread(TriggerImpactFrameS2C::handle)
 				.add();
+
+		net.messageBuilder(SyncSpacePodDestinationsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncSpacePodDestinationsS2C::new)
+				.encoder(SyncSpacePodDestinationsS2C::encode)
+				.consumerMainThread(SyncSpacePodDestinationsS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
