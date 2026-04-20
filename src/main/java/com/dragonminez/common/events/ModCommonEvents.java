@@ -137,7 +137,18 @@ public class ModCommonEvents {
 
     @SubscribeEvent
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
-        event.add(EntityType.PLAYER, MainAttributes.DMZ_HEALTH.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRENGTH.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_POWER.get());
+        event.add(EntityType.PLAYER, MainAttributes.RESISTANCE.get());
+        event.add(EntityType.PLAYER, MainAttributes.VITALITY.get());
+        event.add(EntityType.PLAYER, MainAttributes.KI_POWER.get());
+        event.add(EntityType.PLAYER, MainAttributes.ENERGY.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_ENERGY.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_STAMINA.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_POISE.get());
+        event.add(EntityType.PLAYER, MainAttributes.MELEE_DAMAGE.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_DAMAGE.get());
+        event.add(EntityType.PLAYER, MainAttributes.DEFENSE.get());
     }
 
 	@SubscribeEvent
