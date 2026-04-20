@@ -80,7 +80,7 @@ public class StatsEvents {
 			AttributeInstance maxHealthAttr = serverPlayer.getAttribute(Attributes.MAX_HEALTH);
 			if (maxHealthAttr == null) return;
 
-			float dmzHealthBonus = data.getMaxHealth();
+			float dmzHealthBonus = data.getHealthBonus();
 			AttributeModifier existingModifier = maxHealthAttr.getModifier(DMZ_HEALTH_MODIFIER_UUID);
 
 			if (existingModifier == null || existingModifier.getAmount() != dmzHealthBonus) {
