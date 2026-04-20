@@ -11,7 +11,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class FormConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 	private int configVersion;
 
 	private String groupName;
@@ -77,6 +77,8 @@ public class FormConfig {
 		private Boolean canAlwaysTransform = false;
 		private Boolean directTransformation = false;
 		private TransformationPostShaderConfig transformationPostShader = new TransformationPostShaderConfig();
+
+		private java.util.List<MobEffectConfig> mobEffects = new java.util.ArrayList<>();
 
 		private transient float[] rgbBodyColor1;
 		private transient float[] rgbBodyColor2;
@@ -194,6 +196,10 @@ public class FormConfig {
 			return transformationPostShader != null ? transformationPostShader : new TransformationPostShaderConfig();
 		}
 
+		public java.util.List<MobEffectConfig> getMobEffects() {
+			return mobEffects != null ? mobEffects : java.util.Collections.emptyList();
+		}
+
 		public float[] getRgbBodyColor1() {
 			if (rgbBodyColor1 == null && bodyColor1 != null && !bodyColor1.isEmpty()) rgbBodyColor1 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor1);
 			return rgbBodyColor1;
@@ -227,6 +233,46 @@ public class FormConfig {
 		public float[] getRgbAuraColor() {
 			if (rgbAuraColor == null && auraColor != null && !auraColor.isEmpty()) rgbAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(auraColor);
 			return rgbAuraColor;
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class MobEffectConfig {
+			private String effectId = "";
+			private Integer amplifier = 0;
+			private Integer durationTicks = -1;
+			private Boolean ambient = false;
+			private Boolean visible = true;
+			private Boolean showIcon = true;
+
+			public String getEffectId() {
+				return effectId != null ? effectId.trim() : "";
+			}
+
+			public int getAmplifier() {
+				return Math.max(0, amplifier != null ? amplifier : 0);
+			}
+
+			public int getDurationTicks() {
+				return durationTicks != null ? durationTicks : -1;
+			}
+
+			public boolean isPersistent() {
+				return getDurationTicks() < 0;
+			}
+
+			public boolean isAmbient() {
+				return Boolean.TRUE.equals(ambient);
+			}
+
+			public boolean isVisible() {
+				return visible == null || visible;
+			}
+
+			public boolean isShowIcon() {
+				return showIcon == null || showIcon;
+			}
 		}
 
 		@Setter
