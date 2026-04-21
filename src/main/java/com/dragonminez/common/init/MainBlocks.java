@@ -1,6 +1,8 @@
 package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.block.custom.*;
 import com.dragonminez.server.world.tree.NamekAjissaGrower;
 import com.dragonminez.server.world.tree.NamekSacredGrower;
@@ -19,6 +21,8 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 
@@ -329,61 +333,75 @@ public final class MainBlocks {
                     .replaceable()
             ));
 
-	public static final RegistryObject<Block> DBALL1_BLOCK = registerBlockOnly("dball1",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.ONE_STAR, false));
+	private static final Map<String, Map<Integer, RegistryObject<Block>>> DRAGON_BALL_BLOCKS = registerDragonBallBlocks();
 
-	public static final RegistryObject<Block> DBALL2_BLOCK = registerBlockOnly("dball2",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.TWO_STAR, false));
+	public static final RegistryObject<Block> DBALL1_BLOCK = getDragonBallBlockOrThrow("earth", 1);
+	public static final RegistryObject<Block> DBALL2_BLOCK = getDragonBallBlockOrThrow("earth", 2);
+	public static final RegistryObject<Block> DBALL3_BLOCK = getDragonBallBlockOrThrow("earth", 3);
+	public static final RegistryObject<Block> DBALL4_BLOCK = getDragonBallBlockOrThrow("earth", 4);
+	public static final RegistryObject<Block> DBALL5_BLOCK = getDragonBallBlockOrThrow("earth", 5);
+	public static final RegistryObject<Block> DBALL6_BLOCK = getDragonBallBlockOrThrow("earth", 6);
+	public static final RegistryObject<Block> DBALL7_BLOCK = getDragonBallBlockOrThrow("earth", 7);
 
-	public static final RegistryObject<Block> DBALL3_BLOCK = registerBlockOnly("dball3",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.THREE_STAR, false));
+	public static final RegistryObject<Block> DBALL1_NAMEK_BLOCK = getDragonBallBlockOrThrow("namek", 1);
+	public static final RegistryObject<Block> DBALL2_NAMEK_BLOCK = getDragonBallBlockOrThrow("namek", 2);
+	public static final RegistryObject<Block> DBALL3_NAMEK_BLOCK = getDragonBallBlockOrThrow("namek", 3);
+	public static final RegistryObject<Block> DBALL4_NAMEK_BLOCK = getDragonBallBlockOrThrow("namek", 4);
+	public static final RegistryObject<Block> DBALL5_NAMEK_BLOCK = getDragonBallBlockOrThrow("namek", 5);
+	public static final RegistryObject<Block> DBALL6_NAMEK_BLOCK = getDragonBallBlockOrThrow("namek", 6);
+	public static final RegistryObject<Block> DBALL7_NAMEK_BLOCK = getDragonBallBlockOrThrow("namek", 7);
 
-	public static final RegistryObject<Block> DBALL4_BLOCK = registerBlockOnly("dball4",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.FOUR_STAR, false));
+	private static Map<String, Map<Integer, RegistryObject<Block>>> registerDragonBallBlocks() {
+		Map<String, Map<Integer, RegistryObject<Block>>> registered = new LinkedHashMap<>();
+		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBootstrapBallSets()) {
+			Map<Integer, RegistryObject<Block>> setBlocks = new LinkedHashMap<>();
+			for (Map.Entry<Integer, String> entry : definition.getBlockRegistryNamesByStar().entrySet()) {
+				int star = entry.getKey();
+				String registryName = entry.getValue();
+				RegistryObject<Block> block = registerBlockOnly(registryName,
+						() -> new DragonBallBlock(createDragonBallProperties(definition), dragonBallTypeFromStar(star), definition.getId()));
+				definition.setRegisteredBlock(star, block);
+				setBlocks.put(star, block);
+			}
+			registered.put(definition.getId(), Map.copyOf(setBlocks));
+		}
+		return Map.copyOf(registered);
+	}
 
-	public static final RegistryObject<Block> DBALL5_BLOCK = registerBlockOnly("dball5",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.FIVE_STAR, false));
+	private static BlockBehaviour.Properties createDragonBallProperties(DragonBallSetDefinition definition) {
+		return BlockBehaviour.Properties.copy(Blocks.BAMBOO)
+				.strength(0.35F)
+				.explosionResistance(3600000.0F)
+				.noOcclusion()
+				.noParticlesOnBreak()
+				.lightLevel(value -> 7);
+	}
 
-	public static final RegistryObject<Block> DBALL6_BLOCK = registerBlockOnly("dball6",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.SIX_STAR, false));
+	private static DragonBallType dragonBallTypeFromStar(int star) {
+		return switch (star) {
+			case 1 -> DragonBallType.ONE_STAR;
+			case 2 -> DragonBallType.TWO_STAR;
+			case 3 -> DragonBallType.THREE_STAR;
+			case 4 -> DragonBallType.FOUR_STAR;
+			case 5 -> DragonBallType.FIVE_STAR;
+			case 6 -> DragonBallType.SIX_STAR;
+			case 7 -> DragonBallType.SEVEN_STAR;
+			default -> throw new IllegalArgumentException("Unsupported dragon ball star count: " + star);
+		};
+	}
 
-	public static final RegistryObject<Block> DBALL7_BLOCK = registerBlockOnly("dball7",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 7), DragonBallType.SEVEN_STAR, false));
+	public static RegistryObject<Block> getDragonBallBlockOrThrow(String setId, int star) {
+		Map<Integer, RegistryObject<Block>> setBlocks = DRAGON_BALL_BLOCKS.get(setId);
+		if (setBlocks == null || !setBlocks.containsKey(star)) {
+			throw new IllegalArgumentException("No dragon ball block registered for set '" + setId + "' star " + star);
+		}
+		return setBlocks.get(star);
+	}
 
-	public static final RegistryObject<Block> DBALL1_NAMEK_BLOCK = registerBlockOnly("dball1_namek",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.ONE_STAR, true));
-
-	public static final RegistryObject<Block> DBALL2_NAMEK_BLOCK = registerBlockOnly("dball2_namek",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.TWO_STAR, true));
-
-	public static final RegistryObject<Block> DBALL3_NAMEK_BLOCK = registerBlockOnly("dball3_namek",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.THREE_STAR, true));
-
-	public static final RegistryObject<Block> DBALL4_NAMEK_BLOCK = registerBlockOnly("dball4_namek",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.FOUR_STAR, true));
-
-	public static final RegistryObject<Block> DBALL5_NAMEK_BLOCK = registerBlockOnly("dball5_namek",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.FIVE_STAR, true));
-
-	public static final RegistryObject<Block> DBALL6_NAMEK_BLOCK = registerBlockOnly("dball6_namek",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.SIX_STAR, true));
-
-	public static final RegistryObject<Block> DBALL7_NAMEK_BLOCK = registerBlockOnly("dball7_namek",
-			() -> new DragonBallBlock(BlockBehaviour.Properties.copy(Blocks.BAMBOO).strength(0.35F)
-					.explosionResistance(3600000.0F).noOcclusion().noParticlesOnBreak().lightLevel(value -> 15), DragonBallType.SEVEN_STAR, true));
+	public static Map<Integer, RegistryObject<Block>> getDragonBallBlocks(String setId) {
+		Map<Integer, RegistryObject<Block>> setBlocks = DRAGON_BALL_BLOCKS.get(setId);
+		return setBlocks == null ? Map.of() : setBlocks;
+	}
 
 	private static RegistryObject<Block> registerBlock(String name, Supplier<Block> supplier) {
 		RegistryObject<Block> registeredObject = BLOCK_REGISTER.register(name, supplier);

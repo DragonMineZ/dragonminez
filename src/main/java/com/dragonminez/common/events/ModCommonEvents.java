@@ -1,13 +1,13 @@
 package com.dragonminez.common.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDataPackResources;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -18,12 +18,17 @@ import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.gen.OverworldSurfaceRules;
 import com.dragonminez.server.world.region.OverworldRegion;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -36,6 +41,18 @@ import terrablender.api.SurfaceRuleManager;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModCommonEvents {
 
+	@SubscribeEvent
+	public static void onAddPackFinders(AddPackFindersEvent event) {
+		if (event.getPackType() == PackType.SERVER_DATA) {
+			event.addRepositorySource((packConsumer) -> {
+				Pack dragonballPack = Pack.readMetaAndCreate("dmz_dragonballs_runtime_data", Component.literal("DMZ Dragonballs Runtime Data"), true,
+					DragonBallDataPackResources::new, PackType.SERVER_DATA, Pack.Position.TOP, PackSource.BUILT_IN);
+				if (dragonballPack != null) packConsumer.accept(dragonballPack);
+			});
+		}
+	}
+
+
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         // MAESTROS
@@ -47,8 +64,9 @@ public class ModCommonEvents {
         // Quest NPC — single entity type for all data-driven quest NPCs | Usa un solo tipo de entidad para todos los NPCs de misiones basados en datos
         event.put(MainEntities.QUEST_NPC.get(), MastersEntity.createAttributes().build());
 
-		event.put(MainEntities.SHENRON.get(), ShenronEntity.createAttributes().build());
-		event.put(MainEntities.PORUNGA.get(), PorungaEntity.createAttributes().build());
+		for (var entity : MainEntities.getDragonWishEntities().values()) {
+			event.put(entity.get(), DragonWishEntity.createAttributes().build());
+		}
 
         // SAIBAMANS
         regAttr(event, SagaSaibamanEntity.createAttributes().build(),

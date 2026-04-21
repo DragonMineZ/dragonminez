@@ -8,6 +8,7 @@ import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import com.dragonminez.common.compat.WorldGuardCompat;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.armor.DbzArmorItem;
@@ -20,6 +21,8 @@ import com.dragonminez.common.network.S2C.AppearanceSyncS2C;
 import com.dragonminez.common.network.S2C.SyncWeaponRegistryS2C;
 import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import com.dragonminez.common.network.S2C.SyncWishesS2C;
+import com.dragonminez.common.dragonball.DragonDefinitionReloadListener;
+import com.dragonminez.common.wish.DragonWishRegistry;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.StatsCapability;
@@ -238,19 +241,13 @@ public class ForgeCommonEvents {
 		}
 
 		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
-			if (overworld != null) {
-				DragonBallSavedData data = DragonBallSavedData.get(overworld);
-				if (!data.isFirstSpawnEarth()) {
-					DragonBallsHandler.scatterDragonBalls(overworld, false);
-					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for Earth.");
-				}
-			}
-
-			if (namek != null) {
-				DragonBallSavedData data = DragonBallSavedData.get(namek);
-				if (!data.isFirstSpawnNamek()) {
-					DragonBallsHandler.scatterDragonBalls(namek, true);
-					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for Namek.");
+			for (var definition : DragonBallDefinitions.getBallSets()) {
+				ServerLevel targetLevel = event.getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));
+				if (targetLevel == null) continue;
+				DragonBallSavedData data = DragonBallSavedData.get(targetLevel);
+				if (!data.isFirstSpawnComplete(definition.getId())) {
+					DragonBallsHandler.scatterDragonBalls(targetLevel, definition.getId());
+					LogUtil.info(Env.COMMON, "First DragonBalls Spawn setup for set: " + definition.getId());
 				}
 			}
 		} else {
@@ -372,6 +369,8 @@ public class ForgeCommonEvents {
 	@SubscribeEvent
 	public static void onAddReloadListeners(AddReloadListenerEvent event) {
 		event.addListener(SpacePodDestinationRegistry.INSTANCE);
+		event.addListener(DragonDefinitionReloadListener.INSTANCE);
+		event.addListener(DragonWishRegistry.INSTANCE);
 		event.addListener(new SimplePreparableReloadListener<Void>() {
 			@Override
 			protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {

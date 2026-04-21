@@ -1,6 +1,11 @@
 package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
+import com.dragonminez.common.dragonball.DragonRadarAssetDefinition;
+import com.dragonminez.common.dragonball.DragonRadarDefinition;
+import com.dragonminez.common.dragonball.DragonBallSetAssetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
 import net.minecraft.data.PackOutput;
@@ -23,8 +28,15 @@ public class DMZItemModelProvider extends ItemModelProvider {
 	@Override
 	protected void registerModels() {
 		//Items (MainItems)
-		simpleItem(MainItems.DBALL_RADAR_ITEM);
-		simpleItem(MainItems.NAMEKDBALL_RADAR_ITEM);
+		for (DragonRadarDefinition radarDefinition : DragonBallDefinitions.getRadars()) {
+			DragonRadarAssetDefinition assets = radarDefinition.resolveAssetDefinition();
+			RegistryObject<Item> item = MainItems.getDragonRadarItemOrThrow(radarDefinition.getId());
+			if (assets != null && assets.getItemTexturePath().isPresent()) {
+				withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getItemTexturePath().get()));
+			} else {
+				simpleItem(item);
+			}
+		}
 		simpleItem(MainItems.MIGHT_TREE_FRUIT);
 		simpleItem(MainItems.NUBE_ITEM);
 		simpleItem(MainItems.NUBE_NEGRA_ITEM);
@@ -43,20 +55,18 @@ public class DMZItemModelProvider extends ItemModelProvider {
 		simpleItem(MainItems.HEART_MEDICINE);
 		simpleItem(MainItems.NAMEK_WATER_BUCKET);
 		simpleItem(MainItems.HEALING_BUCKET);
-		simpleItem(MainItems.DBALL1_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL2_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL3_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL4_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL5_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL6_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL7_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL1_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL2_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL3_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL4_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL5_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL6_NAMEK_BLOCK_ITEM);
-		simpleItem(MainItems.DBALL7_NAMEK_BLOCK_ITEM);
+		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
+			DragonBallSetAssetDefinition assets = setDefinition.resolveAssetDefinition();
+			for (Map.Entry<Integer, RegistryObject<Item>> entry : MainItems.getDragonBallBlockItems(setDefinition.getId()).entrySet()) {
+				int star = entry.getKey();
+				RegistryObject<Item> item = entry.getValue();
+				if (assets != null && assets.getInventoryTexturePathForStar(star).isPresent()) {
+					withExistingParent(item.getId().getPath(), mcLoc("item/generated")).texture("layer0", ResourceLocation.parse(assets.getInventoryTexturePathForStar(star).get()));
+				} else {
+					simpleItem(item);
+				}
+			}
+		}
 		simpleItem(MainItems.RADAR_PIECE);
 		simpleItem(MainItems.T1_RADAR_CHIP);
 		simpleItem(MainItems.T2_RADAR_CHIP);

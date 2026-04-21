@@ -1,5 +1,7 @@
 package com.dragonminez.common.init.item;
 
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.init.MainSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -17,14 +19,23 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class NamekRadarItem extends Item {
-
-	private static final int[] RANGES = {150, 300};
+public class DragonRadarItem extends Item {
 	public static final String NBT_RANGE = "RadarRange";
 	private static final int COOLDOWN_TICKS = 20 * 16;
 
-	public NamekRadarItem() {
+	private final String radarDefinitionId;
+
+	public DragonRadarItem(String radarDefinitionId) {
 		super(new Properties().stacksTo(1));
+		this.radarDefinitionId = radarDefinitionId;
+	}
+
+	public String getRadarDefinitionId() {
+		return radarDefinitionId;
+	}
+
+	public DragonRadarDefinition getDefinition() {
+		return DragonBallDefinitions.getRadar(radarDefinitionId);
 	}
 
 	@Override
@@ -42,27 +53,32 @@ public class NamekRadarItem extends Item {
 		player.playSound(MainSounds.DRAGONRADAR.get());
 
 		if (!world.isClientSide()) {
+			DragonRadarDefinition definition = getDefinition();
 			int currentRange = stack.getOrCreateTag().getInt(NBT_RANGE);
-			int newRange = RANGES[(indexOf(currentRange) + 1) % RANGES.length];
-
+			int newRange = definition == null ? currentRange : getNextRange(definition.getRanges(), currentRange);
 			stack.getOrCreateTag().putInt(NBT_RANGE, newRange);
 			player.displayClientMessage(Component.translatable("gui.dmzradar.range", newRange), true);
 		}
 
 		player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
-
 		return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
 	}
 
-	private int indexOf(int range) {
-		for (int i = 0; i < RANGES.length; i++) {
-			if (RANGES[i] == range) return i;
+	private int getNextRange(int[] ranges, int currentRange) {
+		if (ranges.length == 0) return currentRange;
+		for (int i = 0; i < ranges.length; i++) {
+			if (ranges[i] == currentRange) {
+				return ranges[(i + 1) % ranges.length];
+			}
 		}
-		return 0;
+		return ranges[0];
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-		pTooltipComponents.add(Component.translatable("item.dragonminez.namekdball_radar.tooltip").withStyle(ChatFormatting.GRAY));
+	public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, List<Component> tooltip, @NotNull TooltipFlag isAdvanced) {
+		DragonRadarDefinition definition = getDefinition();
+		if (definition != null) {
+			tooltip.add(Component.translatable(definition.getTooltipKey()).withStyle(ChatFormatting.GRAY));
+		}
 	}
 }

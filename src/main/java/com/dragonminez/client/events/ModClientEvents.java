@@ -3,6 +3,7 @@ package com.dragonminez.client.events;
 import com.dragonminez.Reference;
 import com.dragonminez.client.crowdin.CrowdinManager;
 import com.dragonminez.client.crowdin.CrowdinPackResources;
+import com.dragonminez.client.dragonball.DragonBallPackResources;
 import com.dragonminez.client.animation.CombatAnimationResolver;
 import com.dragonminez.client.gui.UtilityMenuScreen;
 import com.dragonminez.client.gui.hud.*;
@@ -99,7 +100,7 @@ public class ModClientEvents {
         KeyBinds.registerAll(event);
     }
 
-	@SubscribeEvent
+		@SubscribeEvent
 	public static void onAddPackFinders(AddPackFindersEvent event) {
 		if (event.getPackType() == PackType.CLIENT_RESOURCES) {
       if (CrowdinManager.isLiveTranslationsEnabled()) {
@@ -110,11 +111,15 @@ public class ModClientEvents {
 			event.addRepositorySource((packConsumer) -> {
 				Pack crowdinPack = Pack.readMetaAndCreate("dmz_crowdin_ota", Component.literal("DMZ Live Translations"), true,
 						CrowdinPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
-
 				if (crowdinPack != null) packConsumer.accept(crowdinPack);
+
+				Pack dragonBallRuntimePack = Pack.readMetaAndCreate("dmz_dragonballs_runtime", Component.literal("DMZ Dragonballs Runtime Resources"), true,
+						DragonBallPackResources::new, PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
+				if (dragonBallRuntimePack != null) packConsumer.accept(dragonBallRuntimePack);
 			});
 		}
 	}
+
 
 	@SubscribeEvent
 	public static void onClientSetup(FMLClientSetupEvent event) {
@@ -243,8 +248,9 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.ROBOT_XENOVERSE.get(), RedRibbonRenderer::new);
         event.registerEntityRenderer(MainEntities.PUNCH_MACHINE.get(), PunchMachineRenderer::new);
 
-		event.registerEntityRenderer(MainEntities.SHENRON.get(), DragonDBRenderer::new);
-		event.registerEntityRenderer(MainEntities.PORUNGA.get(), DragonDBRenderer::new);
+		for (var entity : MainEntities.getDragonWishEntities().values()) {
+			event.registerEntityRenderer(entity.get(), DragonDBRenderer::new);
+		}
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);

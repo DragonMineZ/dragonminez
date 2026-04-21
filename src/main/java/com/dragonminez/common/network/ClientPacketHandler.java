@@ -21,6 +21,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
@@ -85,6 +86,10 @@ public class ClientPacketHandler {
 
 	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions) {
 		RadarRenderEvent.updateRadarData(earthPositions, namekPositions);
+	}
+
+	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions, Map<String, List<BlockPos>> positionsBySet) {
+		RadarRenderEvent.updateRadarData(earthPositions, namekPositions, positionsBySet);
 	}
 
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
