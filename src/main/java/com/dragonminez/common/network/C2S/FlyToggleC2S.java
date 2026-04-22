@@ -58,7 +58,6 @@ public class FlyToggleC2S {
 
                 if (flySkill.isActive()) {
                     player.getAbilities().mayfly = true;
-                    // Keep vanilla creative-flight movement disabled; DMZ handles motion client-side.
                     player.getAbilities().flying = false;
                     player.onUpdateAbilities();
                 } else {

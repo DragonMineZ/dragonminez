@@ -68,20 +68,18 @@ public class FlySkillEvent {
 					double energyCostPercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
 					int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
 
-					if (!flySkill.isActive() && data.getResources().getCurrentEnergy() < energyCost) {
-						return;
-					}
+					if (!flySkill.isActive()) {
+						if (data.getResources().getCurrentEnergy() < energyCost) return;
 
-					if (player.onGround() && !flySkill.isActive()) {
-						player.jumpFromGround();
-						Vec3 motion = player.getDeltaMovement();
-						player.setDeltaMovement(motion.x, 0.42D, motion.z);
-						pendingFlightActivation = true;
+						if (player.onGround()) {
+							player.jumpFromGround();
+							Vec3 motion = player.getDeltaMovement();
+							player.setDeltaMovement(motion.x, 0.42D, motion.z);
+							pendingFlightActivation = true;
+						} else NetworkHandler.sendToServer(new FlyToggleC2S(true));
 					} else {
 						NetworkHandler.sendToServer(new FlyToggleC2S(false));
-						if (flySkill.isActive()) {
-							resetFlightState();
-						}
+						resetFlightState();
 					}
 				});
 			}
