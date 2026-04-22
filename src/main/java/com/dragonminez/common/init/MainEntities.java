@@ -2,8 +2,9 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.*;
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonDefinition;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.masters.*;
@@ -29,7 +30,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class MainEntities {
@@ -37,16 +40,35 @@ public class MainEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Reference.MOD_ID);
 
-    public static final RegistryObject<EntityType<ShenronEntity>> SHENRON =
-            ENTITY_TYPES.register("shenron",
-                    () -> EntityType.Builder.of(ShenronEntity::new, MobCategory.CREATURE)
-                            .sized(3.0f, 17.0f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shenron").toString()));
-    public static final RegistryObject<EntityType<PorungaEntity>> PORUNGA =
-            ENTITY_TYPES.register("porunga",
-                    () -> EntityType.Builder.of(PorungaEntity::new, MobCategory.CREATURE)
-                            .sized(4.0f, 20.0f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "porunga").toString()));
+    private static final Map<String, RegistryObject<EntityType<DragonWishEntity>>> DRAGON_WISH_ENTITIES = registerDragonWishEntities();
+
+    public static final RegistryObject<EntityType<DragonWishEntity>> SHENRON = getDragonWishEntityOrThrow("shenron");
+    public static final RegistryObject<EntityType<DragonWishEntity>> PORUNGA = getDragonWishEntityOrThrow("porunga");
+
+private static Map<String, RegistryObject<EntityType<DragonWishEntity>>> registerDragonWishEntities() {
+    Map<String, RegistryObject<EntityType<DragonWishEntity>>> registered = new LinkedHashMap<>();
+    for (DragonDefinition definition : DragonBallDefinitions.getBootstrapDragons()) {
+        RegistryObject<EntityType<DragonWishEntity>> entity = ENTITY_TYPES.register(definition.getEntityRegistryName(),
+                () -> EntityType.Builder.<DragonWishEntity>of((type, level) -> new DragonWishEntity(type, level, definition.getId()), MobCategory.CREATURE)
+                        .sized(definition.getEntityWidth(), definition.getEntityHeight())
+                        .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, definition.getEntityRegistryName()).toString()));
+        registered.put(definition.getId(), entity);
+    }
+    return Map.copyOf(registered);
+}
+
+public static RegistryObject<EntityType<DragonWishEntity>> getDragonWishEntityOrThrow(String dragonId) {
+    RegistryObject<EntityType<DragonWishEntity>> entity = DRAGON_WISH_ENTITIES.get(dragonId);
+    if (entity == null) {
+        throw new IllegalArgumentException("No dragon wish entity registered for dragon '" + dragonId + "'");
+    }
+    return entity;
+}
+
+public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDragonWishEntities() {
+    return DRAGON_WISH_ENTITIES;
+}
+
     public static final RegistryObject<EntityType<MasterKarinEntity>> MASTER_KARIN =
             ENTITY_TYPES.register("master_karin",
                     () -> EntityType.Builder.of(MasterKarinEntity::new, MobCategory.CREATURE)

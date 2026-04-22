@@ -1,14 +1,18 @@
 package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -109,20 +113,6 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.ROCKY_COBBLESTONE_SLAB.get())
 				.add(MainBlocks.ROCKY_COBBLESTONE_STAIRS.get())
 				.add(MainBlocks.ROCKY_COBBLESTONE_WALL.get())
-				.add(MainBlocks.DBALL1_BLOCK.get())
-				.add(MainBlocks.DBALL2_BLOCK.get())
-				.add(MainBlocks.DBALL3_BLOCK.get())
-				.add(MainBlocks.DBALL4_BLOCK.get())
-				.add(MainBlocks.DBALL5_BLOCK.get())
-				.add(MainBlocks.DBALL6_BLOCK.get())
-				.add(MainBlocks.DBALL7_BLOCK.get())
-				.add(MainBlocks.DBALL1_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL2_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL3_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL4_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL5_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL6_NAMEK_BLOCK.get())
-				.add(MainBlocks.DBALL7_NAMEK_BLOCK.get())
 				.add(MainBlocks.NAMEK_COAL_ORE.get())
 				.add(MainBlocks.NAMEK_IRON_ORE.get())
 				.add(MainBlocks.NAMEK_COPPER_ORE.get())
@@ -143,6 +133,13 @@ public class DMZBlockTagGenerator extends BlockTagsProvider {
 				.add(MainBlocks.GETE_BLOCK.get())
 				.add(MainBlocks.NAMEK_KIKONO_ORE.get())
 				.add(MainBlocks.KIKONO_BLOCK.get());
+
+
+		for (DragonBallSetDefinition setDefinition : DragonBallDefinitions.getBallSets()) {
+			for (RegistryObject<Block> block : MainBlocks.getDragonBallBlocks(setDefinition.getId()).values()) {
+				this.tag(BlockTags.MINEABLE_WITH_PICKAXE).add(block.get());
+			}
+		}
 
 		this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
 				.add(MainBlocks.NAMEK_GRASS_BLOCK.get())

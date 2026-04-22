@@ -1,6 +1,8 @@
 package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonRadarRecipeDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
 import net.minecraft.data.PackOutput;
@@ -24,6 +26,18 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 
 	@Override
 	protected void buildRecipes(@NotNull Consumer<FinishedRecipe> pWriter) {
+		com.dragonminez.common.dragonball.DragonBallPackManager.LoadedDefinitions externalDragonballPacks = com.dragonminez.common.dragonball.DragonBallPackManager.loadAll();
+		java.util.Map<String, com.dragonminez.common.dragonball.DragonRadarDefinition> radarDefinitions = new java.util.LinkedHashMap<>();
+		for (var radarDefinition : DragonBallDefinitions.getBootstrapRadars()) radarDefinitions.put(radarDefinition.getId(), radarDefinition);
+		for (var radarDefinition : externalDragonballPacks.radars.values()) radarDefinitions.put(radarDefinition.getId(), radarDefinition);
+		for (var radarDefinition : DragonBallDefinitions.getRadars()) radarDefinitions.put(radarDefinition.getId(), radarDefinition);
+		for (var radarDefinition : radarDefinitions.values()) {
+			if ("earth_radar".equals(radarDefinition.getId()) || "namek_radar".equals(radarDefinition.getId())) continue;
+			DragonRadarRecipeDefinition recipeDefinition = radarDefinition.resolveRecipeDefinition();
+			if (recipeDefinition != null) {
+				recipeDefinition.buildRecipes(pWriter, radarDefinition);
+			}
+		}
 		oreBlasting(pWriter, Gete, RecipeCategory.MISC, MainItems.GETE_SCRAP.get(), 3.5f, 100, "gete");
 		oreSmelting(pWriter, Gete, RecipeCategory.MISC, MainItems.GETE_SCRAP.get(), 3.5f, 200, "gete");
 		oreBlasting(pWriter, Kikono, RecipeCategory.MISC, MainItems.KIKONO_SHARD.get(), 2.5f, 100, "kikono");
@@ -232,16 +246,6 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.T2_RADAR_CPU.get()), has(MainItems.T2_RADAR_CPU.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.DBALL_RADAR_ITEM.get(), 1)
-				.pattern("OPO")
-				.pattern("PGP")
-				.pattern("CPC")
-				.define('O', Items.OBSERVER)
-				.define('G', MainItems.T1_RADAR_CPU.get())
-				.define('C', MainItems.T1_RADAR_CHIP.get())
-				.define('P', MainItems.RADAR_PIECE.get())
-				.unlockedBy(getHasName(MainItems.T1_RADAR_CPU.get()), has(MainItems.T1_RADAR_CPU.get()))
-				.group(Reference.MOD_ID).save(pWriter);
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.T2_RADAR_CHIP.get(), 1)
 				.pattern("ROR")
@@ -255,16 +259,11 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 				.unlockedBy(getHasName(MainItems.RADAR_PIECE.get()), has(MainItems.RADAR_PIECE.get()))
 				.group(Reference.MOD_ID).save(pWriter);
 
-		ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, MainItems.NAMEKDBALL_RADAR_ITEM.get(), 1)
-				.pattern("OCO")
-				.pattern("PGP")
-				.pattern("CPC")
-				.define('O', Items.OBSERVER)
-				.define('G', MainItems.T2_RADAR_CPU.get())
-				.define('C', MainItems.T2_RADAR_CHIP.get())
-				.define('P', MainItems.RADAR_PIECE.get())
-				.unlockedBy(getHasName(MainItems.T2_RADAR_CHIP.get()), has(MainItems.T2_RADAR_CHIP.get()))
-				.group(Reference.MOD_ID).save(pWriter);
+
+		for (var radarDefinition : DragonBallDefinitions.getRadars()) {
+			var recipeDefinition = radarDefinition.resolveRecipeDefinition();
+			if (recipeDefinition != null) recipeDefinition.buildRecipes(pWriter, radarDefinition);
+		}
 
 		ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, MainItems.KATANA_YAJIROBE.get(), 1)
 				.pattern("  I")
