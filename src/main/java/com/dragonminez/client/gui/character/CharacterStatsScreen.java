@@ -1022,6 +1022,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToOneDecimal(gravity)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
 			}
 
+			double potionEffect = statsData.getTpPotionEffectMultiplier();
+			if (potionEffect > 1.0) {
+				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", formatUpToOneDecimal(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE).getVisualOrderText());
+			}
+
 			renderClampedTooltip(graphics, tooltip, mouseX, mouseY);
 		}
 	}

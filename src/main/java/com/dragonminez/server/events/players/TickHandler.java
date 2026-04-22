@@ -1,5 +1,7 @@
 package com.dragonminez.server.events.players;
 
+import com.dragonminez.Env;
+import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
@@ -24,6 +26,7 @@ import com.dragonminez.server.events.players.actionmode.RacialModeHandler;
 import com.dragonminez.server.events.players.actionmode.StackFormModeHandler;
 import com.dragonminez.server.events.players.statuseffect.*;
 import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.OtherworldDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -45,6 +48,7 @@ import java.util.*;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class TickHandler {
+	private static final Env LOG_ENV = Env.SERVER;
 	private static final Map<String, IActionModeHandler> ACTION_MODE_HANDLERS = new HashMap<>();
 	private static final List<IStatusEffectHandler> STATUS_EFFECT_HANDLERS = new ArrayList<>();
 	private static final Map<UUID, AbstractKiProjectile> CHARGING_CACHE = new HashMap<>();
@@ -140,7 +144,7 @@ public class TickHandler {
 
 					regenerateHealth(serverPlayer, data, classStats);
 					regenerateEnergy(serverPlayer, data, classStats, meditationBonus, activeCharging);
-					regenerateStamina(data, classStats, meditationBonus);
+					regenerateStamina(serverPlayer, data, classStats, meditationBonus);
 					regeneratePoise(data, meditationBonus);
 				}
 
@@ -364,6 +368,8 @@ public class TickHandler {
 		if (activeCharging) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			LogUtil.debug(LOG_ENV, "[TickHandler] Base ki regen for {} while charging: current={}, max={}, baseRate={}, meditationBonus={}, activeChargeMultiplier={}, preliminary={}", player.getGameProfile().getName(), currentEnergy, maxEnergy, baseRegen, meditationBonus, ACTIVE_CHARGE_MULTIPLIER, regenAmount);
+			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
 			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
@@ -382,6 +388,8 @@ public class TickHandler {
 		} else if (currentEnergy < maxEnergy) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			LogUtil.debug(LOG_ENV, "[TickHandler] Base ki regen for {}: current={}, max={}, baseRate={}, meditationBonus={}, preliminary={}", player.getGameProfile().getName(), currentEnergy, maxEnergy, baseRegen, meditationBonus, regenAmount);
+			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
 			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
@@ -396,6 +404,8 @@ public class TickHandler {
 		if (data.getStatus().isAndroidUpgraded()) {
 			double baseRegen = classStats.getEnergyRegenRate();
 			double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			LogUtil.debug(LOG_ENV, "[TickHandler] Base android ki regen for {}: current={}, max={}, baseRate={}, meditationBonus={}, preliminary={}", player.getGameProfile().getName(), currentEnergy, maxEnergy, baseRegen, meditationBonus, regenAmount);
+			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
 			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
@@ -423,6 +433,9 @@ public class TickHandler {
 
 				if (!data.getCharacter().getFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
 					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
+					LogUtil.debug(LOG_ENV, "[TickHandler] Passive form mastery base gain for {} form {}:{} = {}", player.getGameProfile().getName(), activeFormGroup, activeFormName, masteryGain);
+					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
+					LogUtil.debug(LOG_ENV, "[TickHandler] Passive form mastery final gain for {} form {}:{} = {}", player.getGameProfile().getName(), activeFormGroup, activeFormName, masteryGain);
 					data.getCharacter().getFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
 				}
 			}
@@ -437,6 +450,9 @@ public class TickHandler {
 
 				if (!data.getCharacter().getStackFormMasteries().hasMaxMastery(activeFormGroup, activeFormName, maxMastery)) {
 					double masteryGain = formData != null ? formData.getPassiveMasteryGainEveryFiveSeconds() : 0.001;
+					LogUtil.debug(LOG_ENV, "[TickHandler] Passive stack mastery base gain for {} form {}:{} = {}", player.getGameProfile().getName(), activeFormGroup, activeFormName, masteryGain);
+					masteryGain = PotionEffectHelper.applyMasteryGainMultiplier(player, masteryGain);
+					LogUtil.debug(LOG_ENV, "[TickHandler] Passive stack mastery final gain for {} form {}:{} = {}", player.getGameProfile().getName(), activeFormGroup, activeFormName, masteryGain);
 					data.getCharacter().getStackFormMasteries().addMastery(activeFormGroup, activeFormName, masteryGain, maxMastery);
 				}
 			}
@@ -444,6 +460,7 @@ public class TickHandler {
 
 		if (energyChange != 0) {
 			int newEnergy = (int) Math.max(0, Math.min(maxEnergy, currentEnergy + Math.ceil(energyChange)));
+			LogUtil.debug(LOG_ENV, "[TickHandler] Final ki regen for {}: delta={}, current={}, new={}, max={}", player.getGameProfile().getName(), energyChange, currentEnergy, newEnergy, maxEnergy);
 			data.getResources().setCurrentEnergy(newEnergy);
 
 			if (newEnergy <= maxEnergy * 0.05 && !data.getStatus().isAndroidUpgraded() && (hasActiveForm || hasActiveStackForm)) {
@@ -456,7 +473,7 @@ public class TickHandler {
 		}
 	}
 
-	private static void regenerateStamina(StatsData data,
+	private static void regenerateStamina(ServerPlayer player, StatsData data,
 										  RaceStatsConfig.ClassStats classStats, double meditationBonus) {
 		float currentStamina = data.getResources().getCurrentStamina();
 		int maxStamina = data.getMaxStamina();
@@ -464,9 +481,12 @@ public class TickHandler {
 		if (currentStamina < maxStamina) {
 			double baseRegen = classStats.getStaminaRegenRate();
 			double regenAmount = maxStamina * baseRegen * meditationBonus;
+			LogUtil.debug(LOG_ENV, "[TickHandler] Base stamina regen for {}: current={}, max={}, baseRate={}, meditationBonus={}, preliminary={}", player.getGameProfile().getName(), currentStamina, maxStamina, baseRegen, meditationBonus, regenAmount);
+			regenAmount = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenAmount);
 			if (regenAmount <= 1.0) regenAmount = 0.5;
 
 			float newStamina = (float) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
+			LogUtil.debug(LOG_ENV, "[TickHandler] Final stamina regen for {}: delta={}, current={}, new={}, max={}", player.getGameProfile().getName(), regenAmount, currentStamina, newStamina, maxStamina);
 			data.getResources().setCurrentStamina(newStamina);
 		}
 	}

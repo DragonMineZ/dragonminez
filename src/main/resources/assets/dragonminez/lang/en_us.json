@@ -1772,5 +1772,9 @@
   "sounds.dragonminez.staff_spin": "Spin",
   "sounds.dragonminez.staff_stab": "Stab",
   "sounds.dragonminez.sword_slash": "Slash",
-  "sounds.dragonminez.wand_swing": "Swing"
+  "sounds.dragonminez.wand_swing": "Swing",
+  "effect.dragonminez.ki_regen": "Ki Regeneration",
+  "effect.dragonminez.stamina_regen": "Stamina Regeneration",
+  "effect.dragonminez.tp_gain": "TP Multiplier",
+  "effect.dragonminez.mastery_gain": "Mastery Multiplier"
 }
