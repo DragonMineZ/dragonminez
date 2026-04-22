@@ -5,6 +5,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.util.TransformationItemCostHelper;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.events.players.IActionModeHandler;
 import net.minecraft.network.chat.Component;
@@ -77,6 +78,10 @@ public class StackFormModeHandler implements IActionModeHandler {
 		}
 
 		if (hasEnoughEnergy && hasEnoughStamina && hasEnoughHealth) {
+			if (!TransformationItemCostHelper.canAffordAndHandleTriggerCost(player, nextForm)) {
+				player.displayClientMessage(Component.translatable("message.dragonminez.form.no_trigger_item"), true);
+				return;
+			}
 			String group = data.getCharacter().hasActiveStackForm() ?
 					data.getCharacter().getActiveStackFormGroup() :
 					data.getCharacter().getSelectedStackFormGroup();
@@ -85,6 +90,7 @@ public class StackFormModeHandler implements IActionModeHandler {
 				data.getCharacter().getStackFormsUsedBefore().putForm(group, nextForm.getName());
 			}
 			data.getCharacter().setActiveStackForm(group, nextForm.getName());
+			TransformationItemCostHelper.clearStackFormDurationSecondsRemaining(player);
 			player.refreshDimensions();
 
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), MainSounds.TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
