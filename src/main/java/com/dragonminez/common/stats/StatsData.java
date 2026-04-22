@@ -11,6 +11,7 @@ import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -643,8 +644,13 @@ public class StatsData {
 		return 1.0 + (bonusGravity * 0.05);
 	}
 
+	public double getTpPotionEffectMultiplier() {
+		if (player == null) return 1.0;
+		return PotionEffectHelper.applyTpGainMultiplier(player, 1.0);
+	}
+
 	public double getTpTotalMultiplier() {
-		return getTpAdditiveMultiplier() * getTpGlobalMultiplier();
+		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier();
 	}
 
 	public int calculateTPGain(int baseTP) {

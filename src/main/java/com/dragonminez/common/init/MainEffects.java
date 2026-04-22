@@ -3,6 +3,7 @@ package com.dragonminez.common.init;
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.effects.DMZEffect;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -42,6 +43,10 @@ public class MainEffects {
 	public static final RegistryObject<MobEffect> MAJIN = EFFECTS.register("majin", () -> new DMZEffect(true));
 	public static final RegistryObject<MobEffect> MIGHTFRUIT = EFFECTS.register("mightfruit", () -> new DMZEffect(true));
     public static final RegistryObject<MobEffect> CANDY = EFFECTS.register("candy", () -> new DMZEffect(true));
+	public static final RegistryObject<MobEffect> KI_REGEN = EFFECTS.register("ki_regen", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x3C7DFF));
+	public static final RegistryObject<MobEffect> STAMINA_REGEN = EFFECTS.register("stamina_regen", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x45B35E));
+	public static final RegistryObject<MobEffect> TP_GAIN = EFFECTS.register("tp_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0xF29B38));
+	public static final RegistryObject<MobEffect> MASTERY_GAIN = EFFECTS.register("mastery_gain", () -> new DMZEffect(MobEffectCategory.BENEFICIAL, 0x9B59D0));
 
     public static void register(IEventBus eventBus) { EFFECTS.register(eventBus); }
 }
