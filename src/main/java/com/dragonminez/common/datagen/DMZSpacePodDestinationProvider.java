@@ -38,9 +38,8 @@ public class DMZSpacePodDestinationProvider implements DataProvider {
 
 		Path path = this.output.getOutputFolder(PackOutput.Target.DATA_PACK)
 				.resolve(Reference.MOD_ID)
-				.resolve("dragonminez")
-				.resolve("spacepod_destinations")
-				.resolve("default_destinations.json");
+				.resolve("spacepod")
+				.resolve("destinations.json");
 
 		return DataProvider.saveStable(cachedOutput, GSON.toJsonTree(root), path);
 	}

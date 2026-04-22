@@ -31,7 +31,7 @@ import java.util.Map;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SpacePodDestinationRegistry extends SimpleJsonResourceReloadListener {
 
-	public static final String DIRECTORY = "dragonminez/spacepod_destinations";
+	public static final String DIRECTORY = "/destinations";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	public static final SpacePodDestinationRegistry INSTANCE = new SpacePodDestinationRegistry();
 
