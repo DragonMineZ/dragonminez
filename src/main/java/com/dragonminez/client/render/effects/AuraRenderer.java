@@ -275,7 +275,6 @@ public class AuraRenderer {
 	}
 
 	private static List<AuraLayer> getAuraLayers(Player player, StatsData stats, float partialTick) {
-		List<AuraLayer> activeLayers = new ArrayList<>();
 		var character = stats.getCharacter();
 		int entityId = player.getId();
 
@@ -312,21 +311,15 @@ public class AuraRenderer {
 			chargeProgress = Math.max(0.0f, Math.min(1.0f, smoothProgress));
 		} else COLOR_PROGRESS_MAP.put(entityId, 0.0f);
 
+		Map<Integer, AuraLayer> layerMap = new HashMap<>();
+
 		String normalHex = character.getAuraColor();
 		float[] normalColor = character.getRgbAuraColor();
 		String normalType = ConfigManager.getRaceCharacter(character.getRace()) != null ?
 				ConfigManager.getRaceCharacter(character.getRace()).getAuraType() : "kakarot";
 		int normalLayerId = 0;
 
-		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
-			var sfd = character.getActiveStackFormData();
-			if (sfd.getAuraColor() != null && !sfd.getAuraColor().isEmpty()) {
-				normalHex = sfd.getAuraColor();
-				normalColor = sfd.getRgbAuraColor();
-			}
-			if (sfd.getAuraType() != null && !sfd.getAuraType().isEmpty()) normalType = sfd.getAuraType();
-			normalLayerId = sfd.getAuraLayer() != null ? sfd.getAuraLayer() : 0;
-		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
+		if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			var fd = character.getActiveFormData();
 			if (fd.getAuraColor() != null && !fd.getAuraColor().isEmpty()) {
 				normalHex = fd.getAuraColor();
@@ -341,10 +334,8 @@ public class AuraRenderer {
 			normalColor = interpolateColor(normalHex, targetHex, chargeProgress);
 		}
 
-		if (normalLayerId < 0) normalLayerId = 0;
-		else if (normalLayerId > 6) normalLayerId = 6;
-
-		activeLayers.add(new AuraLayer(normalType, normalLayerId, normalColor));
+		normalLayerId = Mth.clamp(normalLayerId, 0, 6);
+		layerMap.put(normalLayerId, new AuraLayer(normalType, normalLayerId, normalColor));
 
 		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
 			var fd = character.getActiveStackFormData();
@@ -357,16 +348,21 @@ public class AuraRenderer {
 				String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : stackHex;
 				stackColor = interpolateColor(stackHex, targetHex, chargeProgress);
 			}
-			activeLayers.add(new AuraLayer(stackType, stackLayerId, stackColor));
+
+			stackLayerId = Mth.clamp(stackLayerId, 0, 6);
+			layerMap.put(stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
+
 		} else if (chargingStack && nextForm != null) {
 			String targetHex = nextForm.getAuraColor() != null && !nextForm.getAuraColor().isEmpty() ? nextForm.getAuraColor() : "#FFFFFF";
 			String stackType = nextForm.getAuraType() != null && !nextForm.getAuraType().isEmpty() ? nextForm.getAuraType() : "kakarot";
 			int stackLayerId = nextForm.getAuraLayer() != null ? nextForm.getAuraLayer() : 1;
 
 			float[] stackColor = interpolateColor(normalHex, targetHex, chargeProgress);
-			activeLayers.add(new AuraLayer(stackType, stackLayerId, stackColor));
+			stackLayerId = Mth.clamp(stackLayerId, 0, 6);
+			layerMap.put(stackLayerId, new AuraLayer(stackType, stackLayerId, stackColor));
 		}
 
+		List<AuraLayer> activeLayers = new ArrayList<>(layerMap.values());
 		activeLayers.sort(Comparator.comparingInt(l -> l.layerId));
 		return activeLayers;
 	}
