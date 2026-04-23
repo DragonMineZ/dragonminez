@@ -13,7 +13,7 @@ public class GeneralUserConfig {
 	private int configVersion;
 
 	private Boolean firstPersonAnimated = true;
-	private boolean impactFramesEnabled = true;
+	private boolean impactFramesEnabled = false;
 	private Boolean techniqueHotbarHorizontal = true;
 	private Integer xenoverseHudPosX = 5;
 	private Integer xenoverseHudPosY = 5;
