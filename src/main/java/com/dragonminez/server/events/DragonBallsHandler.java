@@ -58,9 +58,8 @@ public class DragonBallsHandler {
 				if (isFirstSpawn) {
 					try {
 						level.getChunkAt(targetPos);
-						generateBallSafely(level, definition, star, targetPos);
 					} catch (Exception exception) {
-						LogUtil.warn(Env.SERVER, "Immediate Dragon Ball generation failed at {} for set {}: {}", targetPos, setId, exception.toString());
+						LogUtil.warn(Env.SERVER, "Immediate Dragon Ball chunk load failed at {} for set {}: {}", targetPos, setId, exception.toString());
 					}
 				}
 			}
@@ -126,34 +125,36 @@ public class DragonBallsHandler {
 		int z = targetXZ.getZ();
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 		BlockPos realPos = new BlockPos(x, y, z);
-		if (!level.isLoaded(realPos)) {
-			level.getChunkAt(realPos);
-			if (!level.isLoaded(realPos)) return;
-		}
+
+		if (!level.isLoaded(realPos)) return;
 
 		BlockPos.MutableBlockPos mutable = realPos.mutable();
-		while (mutable.getY() > -60 && level.getBlockState(mutable.below()).isAir()) mutable.move(0, -1, 0);
+		while (mutable.getY() > level.getMinBuildHeight() && level.getBlockState(mutable.below()).canBeReplaced()) {
+			mutable.move(0, -1, 0);
+		}
 		realPos = mutable.immutable();
 
-		while (!level.getBlockState(realPos).isAir() && realPos.getY() < level.getMaxBuildHeight() - 1) {
+		while (!level.getBlockState(realPos).canBeReplaced() && realPos.getY() < level.getMaxBuildHeight() - 1) {
 			realPos = realPos.above();
 		}
 
 		BlockState below = level.getBlockState(realPos.below());
 		if (below.isAir() || below.is(Blocks.WATER)) {
-			level.setBlock(realPos.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+			level.setBlock(realPos.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
 		}
-
-		if (!level.getBlockState(realPos).canBeReplaced()) return;
 
 		Block block = definition.getBlockForStar(star);
 		if (block == null) return;
-		boolean success = level.setBlock(realPos, block.defaultBlockState(), 3);
+
+		boolean success = level.setBlock(realPos, block.defaultBlockState(), 2);
+
 		if (!success || level.getBlockState(realPos).getBlock() != block) return;
 
 		DragonBallSavedData data = DragonBallSavedData.get(level);
 		data.getPendingBalls(definition.getId()).get(star).remove(targetXZ);
+
 		if (!data.getActiveBalls(definition.getId()).get(star).contains(realPos)) data.getActiveBalls(definition.getId()).get(star).add(realPos);
+
 		data.setDirty();
 		LogUtil.info(Env.SERVER, "Dragon Ball [" + star + "] physically generated at " + realPos + " for set " + definition.getId());
 		syncRadar(level);
