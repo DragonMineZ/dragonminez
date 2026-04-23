@@ -37,6 +37,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
+        this.setKiType(KiType.SHIELD);
     }
 
     public KiBarrierEntity(Level level, LivingEntity owner) {

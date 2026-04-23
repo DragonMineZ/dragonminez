@@ -34,6 +34,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
     public KiBarrageEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
+        this.setKiType(KiType.BARRAGE);
     }
 
     public KiBarrageEntity(Level level, LivingEntity owner) {

@@ -113,7 +113,7 @@ public class CombatEvent {
 			}
 
 			boolean wasFlying = player.getPersistentData().getBoolean("dmz_was_flying");
-			if (!wasOnGround && isGrounded && wasFlying && speed >= MOMENTUM_SPEED_THRESHOLD) {
+			if (!wasOnGround && isGrounded && wasFlying && speed >= MOMENTUM_SPEED_THRESHOLD && dy < -0.4) {
 				triggerLandingAOE(player, speed);
 			}
 		}
@@ -237,10 +237,8 @@ public class CombatEvent {
 					staminaRequired = 0;
 				}
 
-				boolean isFirstHit = attacker.getPersistentData().getBoolean("dmz_first_hit");
-
 				if (currentStamina >= staminaRequired) {
-					if (!attacker.isCreative() && isFirstHit) attackerData.getResources().removeStamina(staminaRequired);
+					if (!attacker.isCreative()) attackerData.getResources().removeStamina(staminaRequired);
 					finalDmzDamage = dmzDamage;
 				} else {
 					double staminaRatio = (double) currentStamina / staminaRequired;
@@ -278,7 +276,7 @@ public class CombatEvent {
 							}
 						}
 					}
-					if (!attacker.isCreative() && !isPunchMachine && isFirstHit) attackerData.getResources().removeEnergy(kiCost);
+					if (!attacker.isCreative() && !isPunchMachine) attackerData.getResources().removeEnergy(kiCost);
 				}
 
 				if (ConfigManager.getCombatConfig().getKillPlayersOnCombatLogout() && event.getEntity() instanceof Player) {
@@ -481,7 +479,7 @@ public class CombatEvent {
 		if (MainDamageTypes.isKiblastDamage(source)) {
 			Entity projectile = source.getDirectEntity();
 			if (projectile instanceof AbstractKiProjectile kiProj) {
-				return kiProj.getKiRenderType() > 0;
+				return kiProj.getKiType() == 2 || kiProj.getKiType() == 7;
 			}
 			return true;
 		}

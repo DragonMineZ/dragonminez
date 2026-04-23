@@ -40,6 +40,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         super(type, level);
         this.setNoGravity(true);
         this.noPhysics = true;
+        this.setKiType(KiType.EXPLOSION);
     }
 
     public KiExplosionEntity(Level level, LivingEntity owner) {

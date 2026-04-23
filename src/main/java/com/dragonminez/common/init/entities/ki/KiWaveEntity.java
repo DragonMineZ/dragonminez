@@ -50,6 +50,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
+        this.setKiType(KiType.WAVE);
     }
 
     public KiWaveEntity(Level level, LivingEntity owner) {

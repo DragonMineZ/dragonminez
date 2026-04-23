@@ -41,6 +41,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
+        this.setKiType(KiType.LASER);
     }
 
     public KiLaserEntity(Level level, LivingEntity owner) {

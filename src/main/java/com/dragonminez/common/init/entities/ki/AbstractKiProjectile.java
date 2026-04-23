@@ -31,6 +31,7 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final EntityDataAccessor<Integer> ARMOR_PENETRATION = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_HEAL = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> MAX_LIFE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> KI_TYPE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
 
     private transient float[] cachedColorMainRgb;
     private transient float[] cachedColorBorderRgb;
@@ -140,6 +141,20 @@ public abstract class AbstractKiProjectile extends Projectile {
 
         this.onKiTick();
 
+    }
+
+    public enum KiType { SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA }
+
+    public int getKiType() {
+        return this.entityData.get(KI_TYPE);
+    }
+
+    public void setKiType(KiType type) {
+        this.entityData.set(KI_TYPE, type.ordinal());
+    }
+
+    public void setKiType(int type) {
+        this.entityData.set(KI_TYPE, type);
     }
 
     protected void onKiTick() {}

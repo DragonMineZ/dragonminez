@@ -57,6 +57,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
     public KiBlastEntity(Level level, LivingEntity owner) {
         this(MainEntities.KI_BLAST.get(), level);
         this.setOwner(owner);
+        this.setKiType(getKiRenderType());
     }
 
     @Override

@@ -33,6 +33,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
     public KiDiskEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.refreshDimensions();
+        this.setKiType(KiType.DISK);
     }
 
     public KiDiskEntity(Level level, LivingEntity owner) {
