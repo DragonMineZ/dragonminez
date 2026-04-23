@@ -42,7 +42,7 @@ public final class PotionEffectHelper {
 		return result;
 	}
 
-	private static double getMultiplierFromEffect(LivingEntity entity, MobEffect effect, String effectName) {
+	public static double getMultiplierFromEffect(LivingEntity entity, MobEffect effect, String effectName) {
 		if (entity == null || effect == null) {
 			return 1.0D;
 		}
@@ -55,12 +55,6 @@ public final class PotionEffectHelper {
 		int amplifier = instance.getAmplifier();
 		double bonus = getBonusFromAmplifier(amplifier);
 		double multiplier = 1.0D + bonus;
-
-		LogUtil.debug(Env.SERVER, LOG_PREFIX + "Entity=" + entity.getName().getString()
-				+ ", effect=" + effectName
-				+ ", amplifier=" + amplifier
-				+ ", bonus=" + bonus
-				+ ", multiplier=" + multiplier);
 
 		return multiplier;
 	}

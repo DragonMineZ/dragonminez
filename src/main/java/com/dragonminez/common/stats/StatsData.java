@@ -4,6 +4,7 @@ import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
@@ -695,7 +696,7 @@ public class StatsData {
 
 	public double getTpPotionEffectMultiplier() {
 		if (player == null) return 1.0;
-		return PotionEffectHelper.applyTpGainMultiplier(player, 1.0);
+		return PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.TP_GAIN.get(), "tp_gain");
 	}
 
 	public double getTpTotalMultiplier() {

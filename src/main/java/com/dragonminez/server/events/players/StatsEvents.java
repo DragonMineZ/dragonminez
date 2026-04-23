@@ -201,7 +201,7 @@ public class StatsEvents {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
 						int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
-						attackerData.getResources().addTrainingPoints((int) Math.max(0, Math.round(PotionEffectHelper.applyTpGainMultiplier(attacker, baseTps))));
+						attackerData.getResources().addTrainingPoints(baseTps);
 
 						if (attackerData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
