@@ -91,7 +91,7 @@ public class HairEditorScreen extends ScaledScreen {
 	private TexturedTextButton colorButton;
 	private boolean isUpdatingFromCode = false;
 
-    private String actionStatusText = "";
+	private Component actionStatusText = Component.empty();
     private int actionStatusTimer = 0;
     private int actionStatusColor = 0xFFFFFF;
 
@@ -243,7 +243,7 @@ public class HairEditorScreen extends ScaledScreen {
 					updateFullCodeBox();
 					Minecraft.getInstance().keyboardHandler.setClipboard(fullCodeBox.getValue());
 
-                    actionStatusText = "Copied!";
+					actionStatusText = tr("gui.dragonminez.hair_editor.status.copied");
                     actionStatusTimer = 60;
                     actionStatusColor = 0x55FF55;
 				})
@@ -264,13 +264,13 @@ public class HairEditorScreen extends ScaledScreen {
                             System.arraycopy(set, 0, workingHairs, 0, 4);
                             syncHairToServer();
 
-                            actionStatusText = "Imported!";
+							actionStatusText = tr("gui.dragonminez.hair_editor.status.imported");
                             actionStatusTimer = 60;
                             actionStatusColor = 0x55FF55;
 
                         }
                     } else {
-                        actionStatusText = "Invalid!";
+						actionStatusText = tr("gui.dragonminez.hair_editor.status.invalid");
                         actionStatusTimer = 60;
                         actionStatusColor = 0xFF5555;
                     }
@@ -815,10 +815,7 @@ public class HairEditorScreen extends ScaledScreen {
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.styles").withStyle(ChatFormatting.BOLD), leftPanelX + 70, panelY + 17, 0xFFFFD700);
 		drawStringWithBorder(graphics, tr("gui.dragonminez.hair_editor.fullcode"), leftPanelX + 15, panelY + 138, 0xFFFFFF);
 
-        if (actionStatusTimer > 0) {
-            drawCenteredStringWithBorder(graphics, txt(actionStatusText), leftPanelX + 70, panelY + 195, actionStatusColor);
-        }
-
+		if (actionStatusTimer > 0) drawCenteredStringWithBorder(graphics, actionStatusText, leftPanelX + 70, panelY + 195, actionStatusColor);
     }
 
 	private void renderStyleContent(GuiGraphics graphics, int mouseX, int mouseY) {
