@@ -154,7 +154,6 @@ public class TransformStatusHandler implements IStatusEffectHandler {
             return null;
         }
 
-        LogUtil.info(Env.SERVER, LOG_PREFIX + "Resolved regular form '{}' in group '{}' for {} with {} configured mob effect(s).", form, group, player.getScoreboardName(), formData.getMobEffects().size());
         return formData;
     }
 
@@ -179,7 +178,6 @@ public class TransformStatusHandler implements IStatusEffectHandler {
             return null;
         }
 
-        LogUtil.info(Env.SERVER, LOG_PREFIX + "Resolved stack form '{}' in group '{}' for {} with {} configured mob effect(s).", form, group, player.getScoreboardName(), formData.getMobEffects().size());
         return formData;
     }
 

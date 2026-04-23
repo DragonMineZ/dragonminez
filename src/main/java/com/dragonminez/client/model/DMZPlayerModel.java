@@ -217,20 +217,6 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             desiredHeadYaw = Mth.clamp(lookYaw * 0.95F, -1.2F, 1.2F);
         }
 
-        float torsoLean = Mth.clamp(lookPitch, -0.9F, 0.9F);
-        if (waist != null) {
-//            waist.setRotX(waist.getRotX() + (torsoLean * 0.55F));
-//            waist.setRotY(waist.getRotY() + (lookYaw * 0.35F));
-        }
-//        if (rightArm != null) {
-//            rightArm.setRotX(rightArm.getRotX() + (torsoLean * 0.20F));
-//            rightArm.setRotY(rightArm.getRotY() + (lookYaw * 0.20F));
-//        }
-//        if (leftArm != null) {
-//            leftArm.setRotX(leftArm.getRotX() + (torsoLean * 0.20F));
-//            leftArm.setRotY(leftArm.getRotY() + (lookYaw * 0.20F));
-//        }
-
         if (head != null) {
             EntityModelData entityModelData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 

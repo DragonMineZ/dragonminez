@@ -27,12 +27,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -1338,9 +1340,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		PreviewFormOption option = previewFormOptions.get(previewFormIndex);
 		String rawName = option.formName != null ? option.formName : "";
 		if (rawName.isEmpty()) return tr("forms.dragonminez.base").getString();
-		String raceName = character.getRace() != null ? character.getRace().toLowerCase(java.util.Locale.ROOT) : "human";
+		String raceName = character.getRace() != null ? character.getRace().toLowerCase(Locale.ROOT) : "human";
 		String translationKey = "race.dragonminez." + raceName + ".form." + option.groupName + "." + rawName;
-		if (net.minecraft.client.resources.language.I18n.exists(translationKey)) {
+		if (I18n.exists(translationKey)) {
 			return tr(translationKey).getString();
 		}
 		return formatPreviewFormName(rawName);
@@ -1353,7 +1355,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			if (part == null || part.isEmpty()) continue;
 			if (!builder.isEmpty()) builder.append(' ');
 			builder.append(java.lang.Character.toUpperCase(part.charAt(0)));
-			if (part.length() > 1) builder.append(part.substring(1).toLowerCase(java.util.Locale.ROOT));
+			if (part.length() > 1) builder.append(part.substring(1).toLowerCase(Locale.ROOT));
 		}
 		return builder.isEmpty() ? rawName : builder.toString();
 	}
@@ -1459,7 +1461,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int originalNose = character.getNoseType();
 		int originalMouth = character.getMouthType();
 		int originalTattoo = character.getTattooType();
-		String originalActiveBone = character.getActiveHeadBone(); // Guardado del hueso original
+		String originalActiveBone = character.getActiveHeadBone();
 		boolean oldHairPhysics = HairRenderer.PHYSICS_ENABLED;
 
 		boolean[] hadTailState = {false};
@@ -1563,11 +1565,18 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			default -> scale;
 		};
 		previewScale = getAdjustedModelScale(player, previewScale);
-		int previewY = switch (mode) {
-			case HAIR_ONLY -> y + 42;
-			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> y + 58;
-			default -> y + 8;
-		};
+		int previewY = 0;
+		switch (mode) {
+			case HAIR_ONLY -> {
+				if (ConfigManager.getRaceCharacter(character.getRace()) != null) {
+					if (Arrays.stream(ConfigManager.getRaceCharacter(character.getRace()).getHeadBones()).toList().contains("hair")) {
+						previewY = y + 36;
+					} else previewY = y + 28;
+				} else previewY = y + 36;
+			}
+			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> previewY = y + 58;
+			default -> previewY = y + 8;
+		}
 
 		graphics.enableScissor(
 				toScreenCoord(cardX + 1),

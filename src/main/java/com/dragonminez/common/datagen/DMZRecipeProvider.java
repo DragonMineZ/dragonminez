@@ -2,6 +2,8 @@ package com.dragonminez.common.datagen;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallPackManager;
+import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.dragonball.DragonRadarRecipeDefinition;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainItems;
@@ -16,7 +18,9 @@ import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.common.crafting.conditions.IConditionBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class DMZRecipeProvider extends RecipeProvider implements IConditionBuilder {
@@ -26,8 +30,8 @@ public class DMZRecipeProvider extends RecipeProvider implements IConditionBuild
 
 	@Override
 	protected void buildRecipes(@NotNull Consumer<FinishedRecipe> pWriter) {
-		com.dragonminez.common.dragonball.DragonBallPackManager.LoadedDefinitions externalDragonballPacks = com.dragonminez.common.dragonball.DragonBallPackManager.loadAll();
-		java.util.Map<String, com.dragonminez.common.dragonball.DragonRadarDefinition> radarDefinitions = new java.util.LinkedHashMap<>();
+		DragonBallPackManager.LoadedDefinitions externalDragonballPacks = DragonBallPackManager.loadAll();
+		Map<String, DragonRadarDefinition> radarDefinitions = new LinkedHashMap<>();
 		for (var radarDefinition : DragonBallDefinitions.getBootstrapRadars()) radarDefinitions.put(radarDefinition.getId(), radarDefinition);
 		for (var radarDefinition : externalDragonballPacks.radars.values()) radarDefinitions.put(radarDefinition.getId(), radarDefinition);
 		for (var radarDefinition : DragonBallDefinitions.getRadars()) radarDefinitions.put(radarDefinition.getId(), radarDefinition);

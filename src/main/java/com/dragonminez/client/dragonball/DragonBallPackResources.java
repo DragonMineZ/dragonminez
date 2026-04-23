@@ -54,7 +54,7 @@ public class DragonBallPackResources implements PackResources {
 	private List<DragonBallSetDefinition> getMergedBallSets() {
 		Map<String, DragonBallSetDefinition> merged = new LinkedHashMap<>();
 		for (DragonBallSetDefinition def : DragonBallDefinitions.getBootstrapBallSets()) merged.put(def.getId(), def);
-		DragonBallPackManager.LoadedDefinitions external = DragonBallPackManager.loadAll();
+		DragonBallPackManager.LoadedDefinitions external = DragonBallPackManager.getCurrent();
 		for (DragonBallSetDefinition def : external.ballSets.values()) merged.put(def.getId(), def);
 		for (DragonBallSetDefinition def : DragonBallDefinitions.getBallSets()) merged.put(def.getId(), def);
 		return new ArrayList<>(merged.values());
@@ -62,7 +62,7 @@ public class DragonBallPackResources implements PackResources {
 
 	private List<DragonRadarDefinition> getMergedRadars() {
 		Map<String, DragonRadarDefinition> merged = new LinkedHashMap<>();
-		DragonBallPackManager.LoadedDefinitions external = DragonBallPackManager.loadAll();
+		DragonBallPackManager.LoadedDefinitions external = DragonBallPackManager.getCurrent();
 		for (DragonRadarDefinition def : DragonBallDefinitions.getBootstrapRadars()) merged.put(def.getId(), def);
 		for (DragonRadarDefinition def : external.radars.values()) merged.put(def.getId(), def);
 		for (DragonRadarDefinition def : DragonBallDefinitions.getRadars()) merged.put(def.getId(), def);
