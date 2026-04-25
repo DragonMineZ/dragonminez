@@ -144,7 +144,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 	private enum NavEntryType {
 		SAGA,
 		MAIN_QUEST,
-		SIDE_QUEST
+		SIDE_QUEST,
+		SECRET_SECTION,
+		SECRET_SIDE_QUEST
 	}
 
 	private enum PartyConfirmAction {
@@ -419,6 +421,29 @@ public class QuestTreeScreen extends BaseMenuScreen {
 					null, null, false));
 			addSideBranchEntries(mainQuest, sideBranches, currentSaga, 2);
 		}
+		appendSecretSideQuestEntries(currentSaga);
+	}
+
+	private void appendSecretSideQuestEntries(Saga currentSaga) {
+		if (currentSaga == null || statsData == null) return;
+
+		List<Quest> discovered = new ArrayList<>();
+		for (Quest quest : QuestRegistry.getClientQuests().values()) {
+			if (!quest.isSideQuest() || !quest.isSecret()) continue;
+			if (!QuestTreeLayoutHelper.belongsToSaga(quest, currentSaga.getId())) continue;
+			if (isSecretQuestDiscovered(currentSaga, quest)) {
+				discovered.add(quest);
+			}
+		}
+		if (discovered.isEmpty()) return;
+
+		discovered.sort(Comparator.comparing(q -> q.getStringId() != null ? q.getStringId() : ""));
+		navigatorEntries.add(new NavigatorEntry(NavEntryType.SECRET_SECTION, 1, currentSaga, null,
+				null, tr("gui.dragonminez.quest_tree.secret_sidequests").getString(), false));
+		for (Quest quest : discovered) {
+			navigatorEntries.add(new NavigatorEntry(NavEntryType.SECRET_SIDE_QUEST, 2, currentSaga, quest,
+					null, null, false));
+		}
 	}
 
 	private String getSagaDisplayName(Saga saga) {
@@ -462,6 +487,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return true;
 	}
 
+	private boolean isSecretQuestDiscovered(Saga saga, Quest quest) {
+		if (statsData == null || saga == null || quest == null) return false;
+		PlayerQuestData pqd = statsData.getPlayerQuestData();
+		String questKey = questProgressKey(saga, quest);
+		if (pqd.isQuestCompleted(questKey)) return true;
+		PlayerQuestData.QuestStatus status = pqd.getQuestStatus(questKey);
+		return status == PlayerQuestData.QuestStatus.ACCEPTED || status == PlayerQuestData.QuestStatus.FAILED;
+	}
+
 	// ========================================================================================
 	// Buttons
 	// ========================================================================================
@@ -500,8 +534,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				}
 			}
 			if (hasUnclaimedRewards) {
-				buttonText = tr("gui.dragonminez.quests.claim_rewards");
 				isClaimAction = true;
+				if (selectedQuest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
+					buttonText = tr("gui.dragonminez.quests.claim_from_npc");
+					buttonActive = false;
+					tooltipLines = List.of(tr("gui.dragonminez.quests.claim_from_npc.tooltip"));
+				} else {
+					buttonText = tr("gui.dragonminez.quests.claim_rewards");
+				}
 			} else {
 				return;
 			}
@@ -512,11 +552,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return;
 		}
 
-		if (isClaimAction && isInSharedPartyAsMember()) {
+		if (isClaimAction && buttonActive && isInSharedPartyAsMember()) {
 			buttonText = tr("gui.dragonminez.party.leader_only");
 			buttonActive = false;
 			tooltipLines = List.of(tr("gui.dragonminez.party.leader_only"));
-		} else if (!buttonActive) {
+		} else if (!buttonActive && tooltipLines.isEmpty()) {
 			tooltipLines = buildQuestBlockerTooltip(selectedQuest, currentSaga, true);
 		}
 
@@ -905,11 +945,18 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			graphics.fill(scrollBarX, indicatorY, scrollBarX + 2, indicatorY + indicatorHeight, 0xFFAAAAAA);
 		}
 
-		if (hoveredEntry != null && hoveredEntry.comingSoon()) {
-			renderSimpleTooltip(graphics,
-					List.of(txt("Coming soon... Follow development in Discord!")),
-					mouseX,
-					mouseY);
+		if (hoveredEntry != null) {
+			if (hoveredEntry.comingSoon()) {
+				renderSimpleTooltip(graphics,
+						List.of(txt("Coming soon... Follow development in Discord!")),
+						mouseX,
+						mouseY);
+			} else if (hoveredEntry.type() == NavEntryType.SECRET_SECTION) {
+				renderSimpleTooltip(graphics,
+						List.of(tr("gui.dragonminez.quest_tree.secret_sidequests.tooltip")),
+						mouseX,
+						mouseY);
+			}
 		}
 
 		renderPartyFooter(graphics, panel);
@@ -919,6 +966,15 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		int color;
 		Component text;
 		int textY = y + 2;
+
+		if (entry.type() == NavEntryType.SECRET_SECTION) {
+			color = hovered ? 0xFFFFE08A : 0xFFFFCC55;
+			String raw = "* " + entry.sagaLabel();
+			String clipped = fitSingleLineEllipsis(raw, Math.max(24, rowWidth - 8));
+			text = txt(clipped).withStyle(ChatFormatting.BOLD);
+			drawStringWithBorder(graphics, text, x + (entry.depth() * 10), textY, color);
+			return;
+		}
 
 		if (entry.type() == NavEntryType.SAGA) {
 			if (entry.isPlaceholderSaga()) {
@@ -1745,7 +1801,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			statusText = tr("gui.dragonminez.quest_tree.status.locked").getString();
 		} else {
 			title = LocalizationUtil.localizedOrReadableText(quest.getTitle());
-			statusText = getStatusText(getNodeStatus(quest));
+			QuestNodeStatus status = getNodeStatus(quest);
+			if (status == QuestNodeStatus.CLAIMABLE && quest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
+				statusText = tr("gui.dragonminez.quests.claim_from_npc").getString();
+				extraLines.add(tr("gui.dragonminez.quests.claim_from_npc.tooltip"));
+			} else {
+				statusText = getStatusText(status);
+			}
 			extraLines.addAll(buildQuestBlockerTooltip(quest, availableSagas.isEmpty() ? null : availableSagas.get(currentSagaIndex), false));
 		}
 
@@ -2180,6 +2242,9 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 			return true;
 		}
+		if (entry.type() == NavEntryType.SECRET_SECTION) {
+			return true;
+		}
 
 		if (entry.quest() != null) {
 			selectQuest(entry.quest(), true);
@@ -2367,6 +2432,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		if (quest.isSideQuest()) {
+			if (quest.isSecret()) {
+				return status == PlayerQuestData.QuestStatus.ACCEPTED || status == PlayerQuestData.QuestStatus.FAILED
+						? NodeVisibility.VISIBLE
+						: NodeVisibility.HIDDEN;
+			}
 			return QuestAvailabilityChecker.isAvailable(quest, statsData)
 					? NodeVisibility.VISIBLE
 					: NodeVisibility.HIDDEN;

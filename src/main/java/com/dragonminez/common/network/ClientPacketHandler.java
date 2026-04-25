@@ -54,10 +54,11 @@ public class ClientPacketHandler {
 	}
 
 	public static void handleOpenQuestNpcDialoguePacket(String npcId, List<String> offerableQuestIds,
-			List<String> turnInQuestIds, List<String> inProgressQuestIds) {
+			List<String> turnInQuestIds, List<String> inProgressQuestIds, boolean masterNpc, int entityId) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player != null) {
-			mc.setScreen(new QuestNPCDialogueScreen(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds));
+			mc.setScreen(new QuestNPCDialogueScreen(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds,
+					masterNpc, entityId));
 		}
 	}
 

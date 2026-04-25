@@ -88,9 +88,12 @@ public class StoryCommand {
 						.requires(source -> source.hasPermission(2))
 						.then(Commands.literal("spawn")
 								.then(Commands.argument("npcId", StringArgumentType.word())
-										.executes(context -> spawnQuestNPC(context, null))
+										.executes(context -> spawnQuestNPC(context, null, null))
 										.then(Commands.argument("model", StringArgumentType.word())
-												.executes(context -> spawnQuestNPC(context, StringArgumentType.getString(context, "model")))))))
+												.executes(context -> spawnQuestNPC(context, StringArgumentType.getString(context, "model"), null))
+												.then(Commands.argument("texture", StringArgumentType.word())
+														.executes(context -> spawnQuestNPC(context, StringArgumentType.getString(context, "model"),
+																StringArgumentType.getString(context, "texture"))))))))
 		);
 	}
 
@@ -312,7 +315,7 @@ public class StoryCommand {
 		return players;
 	}
 
-	private static int spawnQuestNPC(CommandContext<CommandSourceStack> context, String modelOverride) {
+	private static int spawnQuestNPC(CommandContext<CommandSourceStack> context, String modelOverride, String textureOverride) {
 		try {
 			String npcId = StringArgumentType.getString(context, "npcId");
 			ServerPlayer player = context.getSource().getPlayerOrException();
@@ -326,6 +329,9 @@ public class StoryCommand {
 			npc.setNpcId(npcId);
 			if (modelOverride != null && !modelOverride.isEmpty()) {
 				npc.setNpcModel(modelOverride);
+			}
+			if (textureOverride != null && !textureOverride.isEmpty()) {
+				npc.setNpcTexture(textureOverride);
 			}
 
 			npc.setPos(player.getX(), player.getY(), player.getZ());

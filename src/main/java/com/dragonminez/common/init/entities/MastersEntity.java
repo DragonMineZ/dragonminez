@@ -1,12 +1,12 @@
 package com.dragonminez.common.init.entities;
 
-import com.dragonminez.client.gui.MastersSkillsScreen;
-import com.dragonminez.client.gui.character.CharacterStatsScreen;
-import com.dragonminez.client.gui.character.RaceSelectionScreen;
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -21,8 +21,6 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
@@ -114,20 +112,30 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 	public void checkDespawn() {
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	@Override
 	protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
-		if (this.level().isClientSide && masterName != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, pPlayer).ifPresent(data -> {
-				if (data.getStatus().isHasCreatedCharacter()) {
-					Minecraft mc = Minecraft.getInstance();
-					mc.setScreen(new MastersSkillsScreen(masterName, this));
-					mc.player.playSound(MainSounds.UI_MENU_SWITCH.get());
+		if (pHand != InteractionHand.MAIN_HAND) {
+			return InteractionResult.PASS;
+		}
+
+		if (!this.level().isClientSide && pPlayer instanceof ServerPlayer serverPlayer && masterName != null) {
+			StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
+				if (!data.getStatus().isHasCreatedCharacter()) {
+					serverPlayer.displayClientMessage(
+							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
+					return;
 				}
+
+				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(masterName, data);
+				NetworkHandler.sendToPlayer(
+						new OpenQuestNPCDialogueS2C(masterName, options.offerableQuestIds(),
+								options.turnInQuestIds(), options.inProgressQuestIds(), true, getId()),
+						serverPlayer
+				);
 			});
 			return InteractionResult.SUCCESS;
 		}
 
-		return super.mobInteract(pPlayer, pHand);
+		return InteractionResult.SUCCESS;
 	}
 }

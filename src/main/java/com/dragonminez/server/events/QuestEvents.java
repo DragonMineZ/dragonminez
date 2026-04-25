@@ -336,27 +336,42 @@ public class QuestEvents {
 				return false;
 			}
 
-			if (!killedEntity.getPersistentData().contains(QuestService.QUEST_KEY_TAG)
-					|| !killedEntity.getPersistentData().contains(QuestService.QUEST_OBJECTIVE_INDEX_TAG)) {
+			if (killObjective.getCountMode() == KillObjective.CountMode.ANY_MATCHING
+					&& !hasQuestSpawnTags(killedEntity)) {
 				return true;
 			}
 
-			if (!questKey.equals(killedEntity.getPersistentData().getString(QuestService.QUEST_KEY_TAG))
-					|| objectiveIndex != killedEntity.getPersistentData().getInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG)
-					|| !killedEntity.getPersistentData().contains(QuestService.QUEST_OWNER_TAG)) {
-				return false;
-			}
-
-			String ownerUuid = killedEntity.getPersistentData().getString(QuestService.QUEST_OWNER_TAG);
-			for (ServerPlayer member : partyMembers) {
-				if (member.getStringUUID().equals(ownerUuid)) {
-					return true;
-				}
-			}
-			return false;
+			return matchesQuestSpawnTags(killedEntity, questKey, objectiveIndex, partyMembers);
 		} catch (Exception e) {
 			return false;
 		}
+	}
+
+	private static boolean hasQuestSpawnTags(LivingEntity killedEntity) {
+		return killedEntity.getPersistentData().contains(QuestService.QUEST_KEY_TAG)
+				|| killedEntity.getPersistentData().contains(QuestService.QUEST_OBJECTIVE_INDEX_TAG)
+				|| killedEntity.getPersistentData().contains(QuestService.QUEST_OWNER_TAG);
+	}
+
+	private static boolean matchesQuestSpawnTags(LivingEntity killedEntity, String questKey, int objectiveIndex,
+												List<ServerPlayer> partyMembers) {
+		if (!killedEntity.getPersistentData().contains(QuestService.QUEST_KEY_TAG)
+				|| !killedEntity.getPersistentData().contains(QuestService.QUEST_OBJECTIVE_INDEX_TAG)
+				|| !killedEntity.getPersistentData().contains(QuestService.QUEST_OWNER_TAG)) {
+			return false;
+		}
+		if (!questKey.equals(killedEntity.getPersistentData().getString(QuestService.QUEST_KEY_TAG))
+				|| objectiveIndex != killedEntity.getPersistentData().getInt(QuestService.QUEST_OBJECTIVE_INDEX_TAG)) {
+			return false;
+		}
+
+		String ownerUuid = killedEntity.getPersistentData().getString(QuestService.QUEST_OWNER_TAG);
+		for (ServerPlayer member : partyMembers) {
+			if (member.getStringUUID().equals(ownerUuid)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean isFirstUncompleted(PlayerQuestData pqd, String questKey, Quest quest, int targetIndex) {

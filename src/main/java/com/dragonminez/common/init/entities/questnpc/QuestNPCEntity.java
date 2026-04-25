@@ -3,13 +3,8 @@ package com.dragonminez.common.init.entities.questnpc;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
-import com.dragonminez.common.quest.Quest;
-import com.dragonminez.common.quest.QuestAvailabilityChecker;
-import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -25,14 +20,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 /**
  * A single, generic, data-driven quest NPC entity.
  * Each instance stores an "npcId" (e.g. "bulma", "farmer_01", "young_goku") in synched entity data + NBT.
- * The model, texture, and animation are resolved dynamically from the npcId by QuestNPCModel.
+ * The model, texture, and animation are resolved dynamically by QuestNPCModel.
  * One entity type registration serves ALL quest NPCs — no need for hundreds of Java classes.
  */
 public class QuestNPCEntity extends MastersEntity {
@@ -41,6 +32,9 @@ public class QuestNPCEntity extends MastersEntity {
 			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
 
 	private static final EntityDataAccessor<String> NPC_MODEL =
+			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
+
+	private static final EntityDataAccessor<String> NPC_TEXTURE =
 			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
 
 	public QuestNPCEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
@@ -53,6 +47,7 @@ public class QuestNPCEntity extends MastersEntity {
 		super.defineSynchedData();
 		this.entityData.define(NPC_ID, "generic_npc");
 		this.entityData.define(NPC_MODEL, "");
+		this.entityData.define(NPC_TEXTURE, "");
 	}
 
 	// ---- NPC identity ----
@@ -78,6 +73,14 @@ public class QuestNPCEntity extends MastersEntity {
 		this.entityData.set(NPC_MODEL, model != null ? model : "");
 	}
 
+	public String getNpcTexture() {
+		return this.entityData.get(NPC_TEXTURE);
+	}
+
+	public void setNpcTexture(String texture) {
+		this.entityData.set(NPC_TEXTURE, texture != null ? texture : "");
+	}
+
 	/**
 	 * Returns the model key used for geo/animation resolution.
 	 * If a model override is set, use that; otherwise fall back to npcId.
@@ -85,6 +88,11 @@ public class QuestNPCEntity extends MastersEntity {
 	public String getModelKey() {
 		String model = getNpcModel();
 		return (model != null && !model.isEmpty()) ? model : getNpcId();
+	}
+
+	public String getTextureKey() {
+		String texture = getNpcTexture();
+		return (texture != null && !texture.isEmpty()) ? texture : getNpcId();
 	}
 
 	// ---- Display name ----
@@ -109,6 +117,10 @@ public class QuestNPCEntity extends MastersEntity {
 		if (model != null && !model.isEmpty()) {
 			tag.putString("QuestNpcModel", model);
 		}
+		String texture = getNpcTexture();
+		if (texture != null && !texture.isEmpty()) {
+			tag.putString("QuestNpcTexture", texture);
+		}
 	}
 
 	@Override
@@ -119,6 +131,9 @@ public class QuestNPCEntity extends MastersEntity {
 		}
 		if (tag.contains("QuestNpcModel")) {
 			setNpcModel(tag.getString("QuestNpcModel"));
+		}
+		if (tag.contains("QuestNpcTexture")) {
+			setNpcTexture(tag.getString("QuestNpcTexture"));
 		}
 	}
 
@@ -136,16 +151,12 @@ public class QuestNPCEntity extends MastersEntity {
 					return;
 				}
 
-				// Gather quests this NPC can offer/turn-in
-				List<String> offerableQuestIds = new ArrayList<>();
-				List<String> turnInQuestIds = new ArrayList<>();
-				List<String> inProgressQuestIds = new ArrayList<>();
-
-				collectNPCQuests(npcId, data, offerableQuestIds, turnInQuestIds, inProgressQuestIds);
+				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(npcId, data);
 
 				// Send dialogue packet to client
 				NetworkHandler.sendToPlayer(
-						new OpenQuestNPCDialogueS2C(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds),
+						new OpenQuestNPCDialogueS2C(npcId, options.offerableQuestIds(),
+								options.turnInQuestIds(), options.inProgressQuestIds(), false, getId()),
 						serverPlayer
 				);
 			});
@@ -154,59 +165,6 @@ public class QuestNPCEntity extends MastersEntity {
 		}
 
 		return InteractionResult.SUCCESS;
-	}
-
-	/**
-	 * Collects quest IDs relevant to this NPC for the given player.
-	 */
-	private static void collectNPCQuests(String npcId, StatsData data,
-										 List<String> offerable, List<String> turnIn, List<String> inProgress) {
-		PlayerQuestData pqd = data.getPlayerQuestData();
-		Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
-
-		List<String> giverQuestIds = QuestRegistry.getQuestIdsByGiver(npcId);
-
-		// Quests this NPC gives
-		for (String questId : giverQuestIds) {
-			Quest quest = allQuests.get(questId);
-			if (quest == null) continue;
-
-			if (pqd.isQuestCompleted(questId)) continue;
-
-			if (pqd.isQuestAccepted(questId)) {
-				inProgress.add(questId);
-			} else if (isOfferableQuest(questId, quest, data)) {
-				offerable.add(questId);
-			}
-		}
-
-		// Quests where this NPC is the turn-in target
-		List<String> turnInQuestIds = QuestRegistry.getQuestIdsByTurnIn(npcId);
-		for (String questId : turnInQuestIds) {
-			Quest quest = allQuests.get(questId);
-			if (quest == null) continue;
-
-			if (!pqd.isQuestAccepted(questId)) continue;
-			if (pqd.isQuestCompleted(questId)) continue;
-
-			if (QuestService.isTurnInReady(pqd, questId, quest) && !turnIn.contains(questId)) {
-				turnIn.add(questId);
-			}
-		}
-	}
-
-	private static boolean isOfferableQuest(String questId, Quest quest, StatsData data) {
-		if (!quest.isSagaQuest()) {
-			return QuestAvailabilityChecker.isAvailable(quest, data);
-		}
-
-		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questId);
-		if (resolved == null || resolved.saga() == null) {
-			return false;
-		}
-
-		int questIndex = resolved.saga().getQuests().indexOf(quest);
-		return questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, resolved.saga(), questIndex, data);
 	}
 }
 

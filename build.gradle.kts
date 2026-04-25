@@ -189,6 +189,8 @@ dependencies {
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.7")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
+
     // Dev utility mods
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-common-api:$jeiVersion"))
     compileOnly(fg.deobf("mezz.jei:jei-$minecraftVersion-forge-api:$jeiVersion"))
@@ -280,6 +282,10 @@ val includeTimestamp: Provider<Boolean> =
 
 tasks.named("build") {
     dependsOn("reobfJar", "reobfJarJar")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
 tasks.named<Jar>("jar").configure {

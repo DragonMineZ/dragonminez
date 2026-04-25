@@ -157,7 +157,7 @@ public class QuestTreeLayoutHelper {
 
 			List<Quest> sortedSide = new ArrayList<>();
 			for (Quest q : allQuests.values()) {
-				if (q.isSideQuest() && belongsToSaga(q, saga.getId())) {
+				if (q.isSideQuest() && !q.isSecret() && belongsToSaga(q, saga.getId())) {
 					sortedSide.add(q);
 				}
 			}
@@ -342,7 +342,7 @@ public class QuestTreeLayoutHelper {
 	 * A sidequest belongs to a saga if it has a SAGA_QUEST condition referencing that saga,
 	 * or if it chains off another sidequest that belongs to that saga.
 	 */
-	private static boolean belongsToSaga(Quest sidequest, String sagaId) {
+	public static boolean belongsToSaga(Quest sidequest, String sagaId) {
 		if (sidequest.getPrerequisites() == null) return false;
 
 		var conditions = sidequest.getPrerequisites().conditions();
