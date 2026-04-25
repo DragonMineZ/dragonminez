@@ -8,6 +8,7 @@ import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.network.NetworkHandler;
@@ -32,6 +33,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -339,22 +341,28 @@ public class TickHandler {
 	}
 
 	private static void regenerateHealth(ServerPlayer player, StatsData data,
-										 RaceStatsConfig.ClassStats classStats) {
+	                                     RaceStatsConfig.ClassStats classStats) {
 		float currentHealth = player.getHealth();
 		float maxHealth = player.getMaxHealth();
 
 		if (currentHealth < maxHealth) {
-			double baseRegen = classStats.getHealthRegenRate();
-			double regenAmount = maxHealth * baseRegen;
-			if (regenAmount <= 0.0) return;
+			double vit = data.getStats().getVitality() + data.getBonusStats().calculateBonus("VIT", data.getStats().getVitality());
+			double hp5 = classStats.getBaseHp5() + (vit * classStats.getHp5VitScaling());
 
-			float newHealth = (float) Math.min(maxHealth, currentHealth + regenAmount);
+			int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.VITALITY_RECOVERY.get(), player);
+			double enchMult = 1.0 + (enchLvl * 0.0625);
+
+			double regenPerSecond = (hp5 / 5.0) * enchMult;
+
+			if (regenPerSecond <= 0.0) return;
+
+			float newHealth = (float) Math.min(maxHealth, currentHealth + regenPerSecond);
 			player.setHealth(newHealth);
 		}
 	}
 
 	private static void regenerateEnergy(ServerPlayer player, StatsData data,
-										 RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
+	                                     RaceStatsConfig.ClassStats classStats, double meditationBonus, boolean activeCharging) {
 		float currentEnergy = data.getResources().getCurrentEnergy();
 		int maxEnergy = data.getMaxEnergy();
 
@@ -364,60 +372,59 @@ public class TickHandler {
 		FormConfig.FormData activeStackForm = hasActiveStackForm ? data.getCharacter().getActiveStackFormData() : null;
 
 		double energyChange = 0;
+		double ene = data.getStats().getEnergy() + data.getBonusStats().calculateBonus("ENE", data.getStats().getEnergy());
+		double ep5 = classStats.getBaseEp5() + (ene * classStats.getEp5EneScaling());
+
+		int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.ENERGY_RECOVERY.get(), player);
+		double enchMult = 1.0 + (enchLvl * 0.0625);
+
+		double baseRegenPerSecond = (ep5 / 5.0) * meditationBonus * enchMult;
 
 		if (activeCharging) {
-			double baseRegen = classStats.getEnergyRegenRate();
-			double regenAmount = maxEnergy * baseRegen * meditationBonus * ACTIVE_CHARGE_MULTIPLIER;
+			double regenAmount = baseRegenPerSecond * ACTIVE_CHARGE_MULTIPLIER;
 			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
+
 			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
 
-			if (regenAmount <= 1.0) {
-				regenAmount = 0.5;
-			}
+			if (regenAmount < 1.0) regenAmount = 1.0;
 			energyChange += regenAmount;
 
 			DMZEvent.KiChargeEvent kiEvent = new DMZEvent.KiChargeEvent(player, currentEnergy, maxEnergy);
-			if (MinecraftForge.EVENT_BUS.post(kiEvent)) {
-				energyChange = 0;
-			}
+			if (MinecraftForge.EVENT_BUS.post(kiEvent)) energyChange = 0;
 		} else if (currentEnergy < maxEnergy) {
-			double baseRegen = classStats.getEnergyRegenRate();
-			double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			double regenAmount = baseRegenPerSecond;
 			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
+
 			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
-			if (regenAmount <= 1.0) {
-				regenAmount = 0.5;
-			}
+
+			if (regenAmount < 0.5) regenAmount = 0.5;
 			energyChange += regenAmount;
 		}
 
 		if (data.getStatus().isAndroidUpgraded()) {
-			double baseRegen = classStats.getEnergyRegenRate();
-			double regenAmount = maxEnergy * baseRegen * meditationBonus;
+			double regenAmount = baseRegenPerSecond;
 			regenAmount = PotionEffectHelper.applyKiRegenMultiplier(player, regenAmount);
+
 			if (ConfigManager.getServerConfig().getRacialSkills().getEnableRacialSkills()
 					&& ConfigManager.getServerConfig().getRacialSkills().getHumanRacialSkill()
 					&& ConfigManager.getRaceCharacter(data.getCharacter().getRace()).getRacialSkill().equals("human")) {
 				regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
 			}
-			regenAmount *= ConfigManager.getServerConfig().getRacialSkills().getHumanKiRegenBoost();
-			if (regenAmount <= 1.0) {
-				regenAmount = 0.5;
-			}
+
+			if (regenAmount < 0.5) regenAmount = 0.5;
 			energyChange += regenAmount;
 		}
 
-		if (masterySeconds < 5) {
-			masterySeconds++;
-		} else {
+		if (masterySeconds < 5) masterySeconds++;
+		else {
 			masterySeconds = 0;
 
 			if (hasActiveForm && activeForm != null) {
@@ -466,17 +473,23 @@ public class TickHandler {
 	}
 
 	private static void regenerateStamina(ServerPlayer player, StatsData data,
-										  RaceStatsConfig.ClassStats classStats, double meditationBonus) {
+	                                      RaceStatsConfig.ClassStats classStats, double meditationBonus) {
 		float currentStamina = data.getResources().getCurrentStamina();
 		int maxStamina = data.getMaxStamina();
 
 		if (currentStamina < maxStamina) {
-			double baseRegen = classStats.getStaminaRegenRate();
-			double regenAmount = maxStamina * baseRegen * meditationBonus;
-			regenAmount = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenAmount);
-			if (regenAmount <= 1.0) regenAmount = 0.5;
+			double vit = data.getStats().getVitality() + data.getBonusStats().calculateBonus("VIT", data.getStats().getVitality());
+			double sp5 = classStats.getBaseSp5() + (vit * classStats.getSp5VitScaling());
 
-			float newStamina = (float) Math.min(maxStamina, currentStamina + Math.ceil(regenAmount));
+			int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), player);
+			double enchMult = 1.0 + (enchLvl * 0.0625);
+
+			double regenPerSecond = (sp5 / 5.0) * meditationBonus * enchMult;
+
+			regenPerSecond = PotionEffectHelper.applyStaminaRegenMultiplier(player, regenPerSecond);
+			if (regenPerSecond < 0.5) regenPerSecond = 0.5;
+
+			float newStamina = (float) Math.min(maxStamina, currentStamina + Math.ceil(regenPerSecond));
 			data.getResources().setCurrentStamina(newStamina);
 		}
 	}
@@ -490,7 +503,11 @@ public class TickHandler {
 
 		if (currentPoise < maxPoise) {
 			double baseRegen = 0.1;
-			double regenAmount = maxPoise * baseRegen * meditationBonus;
+
+			int enchLvl = EnchantmentHelper.getEnchantmentLevel(MainEnchants.RESISTANCE_RECOVERY.get(), data.getPlayer());
+			double enchMult = 1.0 + (enchLvl * 0.0625);
+
+			double regenAmount = maxPoise * baseRegen * meditationBonus * enchMult;
 			if (regenAmount < 1.0) regenAmount = 1.0;
 			data.getResources().addPoise((float) regenAmount);
 		}
@@ -510,14 +527,10 @@ public class TickHandler {
 		boolean execute = false;
 
 		IActionModeHandler handler = ACTION_MODE_HANDLERS.get(mode.name());
-		if (handler != null) {
-			increment += handler.handleActionCharge(player, data);
-		}
+		if (handler != null) increment += handler.handleActionCharge(player, data);
 
 		if (increment > 0) {
-			if (!(mode == ActionMode.FUSION && currentRelease >= 100)) {
-				currentRelease += increment;
-			}
+			if (!(mode == ActionMode.FUSION && currentRelease >= 100)) currentRelease += increment;
 			if (currentRelease >= 100) {
 				currentRelease = 100;
 				execute = true;
@@ -528,7 +541,7 @@ public class TickHandler {
 			int potentialUnlockLevel = data.getSkills().getSkillLevel("potentialunlock");
 			int maxRelease = 50 + (potentialUnlockLevel * 5);
 			if (powerRelease < maxRelease) {
-				int newRelease = Math.min(maxRelease, currentRelease + 5);
+				int newRelease = Math.min(maxRelease, powerRelease + 5);
 				data.getResources().setPowerRelease(newRelease);
 			}
 		}
@@ -804,7 +817,6 @@ public class TickHandler {
 		STATUS_EFFECT_HANDLERS.add(new MajinStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new MightFruitStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new SaiyanPassiveHandler());
-		STATUS_EFFECT_HANDLERS.add(new ComboStatusHandler());
 		STATUS_EFFECT_HANDLERS.add(new BioPassiveHandler());
 		STATUS_EFFECT_HANDLERS.add(new MajinReviveHandler());
 	}
