@@ -1,12 +1,15 @@
 package com.dragonminez.common.combat.logic.player;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.alignment.NpcDispositionService;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class TargetHelper {
@@ -34,6 +37,10 @@ public class TargetHelper {
         if (target instanceof HangingEntity) {
             return Relation.NEUTRAL;
         }
+        var interactiveRelation = NpcDispositionService.getInteractiveRelation(attacker, target);
+        if (interactiveRelation.isPresent()) {
+            return interactiveRelation.get();
+        }
 
         var config = ConfigManager.getCombatConfig();
         var casterTeam = attacker.getTeam();
@@ -54,6 +61,40 @@ public class TargetHelper {
             return true;
         }
         return ConfigManager.getCombatConfig().getAllowAttackingMount();
+    }
+
+    public static boolean canAttack(Player attacker, Entity target, double maxRange) {
+        Relation relation = getRelation(attacker, target);
+        return switch (relation) {
+            case FRIENDLY -> false;
+            case HOSTILE -> true;
+            case NEUTRAL -> isLookingAt(attacker, target, maxRange);
+        };
+    }
+
+    public static void onSuccessfulAttack(Player attacker, Entity target, Relation relation) {
+        if (relation == Relation.NEUTRAL && attacker instanceof ServerPlayer serverPlayer && NpcDispositionService.isInteractiveNpc(target)) {
+            NpcDispositionService.markHostile(serverPlayer, target);
+        }
+    }
+
+    private static boolean isLookingAt(Player attacker, Entity target, double maxRange) {
+        if (attacker == null || target == null) {
+            return false;
+        }
+
+        Vec3 eye = attacker.getEyePosition();
+        Vec3 targetCenter = target.getBoundingBox().getCenter();
+        Vec3 toTarget = targetCenter.subtract(eye);
+        double distance = toTarget.length();
+        if (distance <= 0.0 || distance > maxRange + 0.75D) {
+            return false;
+        }
+
+        Vec3 look = attacker.getLookAngle().normalize();
+        Vec3 direction = toTarget.normalize();
+        double dot = look.dot(direction);
+        return dot >= 0.985D;
     }
 
     public static boolean isEntityHostileVehicle(String entityName) {

@@ -18,6 +18,7 @@ import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
+import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
@@ -289,6 +290,8 @@ public class SyncQuestRegistryS2C {
 		} else if (reward instanceof SkillReward skill) {
 			obj.addProperty("skill", skill.getSkill());
 			obj.addProperty("level", skill.getLevel());
+		} else if (reward instanceof AlignmentReward alignment) {
+			obj.addProperty("amount", alignment.getAmount());
 		}
 
 		return obj;
@@ -354,6 +357,14 @@ public class SyncQuestRegistryS2C {
 					} else {
 						obj.addProperty("milliseconds", condition.getDuration());
 					}
+				}
+			}
+			case ALIGNMENT -> {
+				if (condition.getMinAlignment() != null) {
+					obj.addProperty("min", condition.getMinAlignment());
+				}
+				if (condition.getMaxAlignment() != null) {
+					obj.addProperty("max", condition.getMaxAlignment());
 				}
 			}
 		}

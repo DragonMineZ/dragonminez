@@ -78,7 +78,11 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		/**
 		 * A duration must have elapsed since this quest first became start-eligible.
 		 */
-		TIME
+		TIME,
+		/**
+		 * Player alignment must be within an inclusive numeric range.
+		 */
+		ALIGNMENT
 	}
 
 	public enum TimeMode {
@@ -118,6 +122,8 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		private final String dimensionId;
 		private final TimeMode timeMode;
 		private final Long duration;
+		private final Integer minAlignment;
+		private final Integer maxAlignment;
 
 		// Nested group
 		private final QuestPrerequisites nested;
@@ -125,7 +131,8 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 		private Condition(ConditionType type, String sagaId, Integer questId, String requiredQuestId,
 						  String stat, Integer minValue, Integer minLevel, String biomeId,
 						  String structureId, StructureHint structureHint, String dimensionId,
-						  TimeMode timeMode, Long duration, QuestPrerequisites nested) {
+						  TimeMode timeMode, Long duration, Integer minAlignment, Integer maxAlignment,
+						  QuestPrerequisites nested) {
 			this.type = type;
 			this.sagaId = sagaId;
 			this.questId = questId;
@@ -139,6 +146,8 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			this.dimensionId = dimensionId;
 			this.timeMode = timeMode;
 			this.duration = duration;
+			this.minAlignment = minAlignment;
+			this.maxAlignment = maxAlignment;
 			this.nested = nested;
 		}
 
@@ -150,6 +159,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.SAGA_QUEST, sagaId, questId, null,
 					null, null, null, null,
 					null, null, null, null, null,
+					null, null,
 					null);
 		}
 
@@ -160,6 +170,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.QUEST, null, null, requiredQuestId,
 					null, null, null, null,
 					null, null, null, null, null,
+					null, null,
 					null);
 		}
 
@@ -167,6 +178,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.STAT, null, null, null,
 					stat, minValue, null, null,
 					null, null, null, null, null,
+					null, null,
 					null);
 		}
 
@@ -174,6 +186,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.LEVEL, null, null, null,
 					null, null, minLevel, null,
 					null, null, null, null, null,
+					null, null,
 					null);
 		}
 
@@ -181,6 +194,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.BIOME, null, null, null,
 					null, null, null, biomeId,
 					null, null, null, null, null,
+					null, null,
 					null);
 		}
 
@@ -188,6 +202,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.STRUCTURE, null, null, null,
 					null, null, null, null,
 					structureId, structureHint, null, null, null,
+					null, null,
 					null);
 		}
 
@@ -195,6 +210,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.DIMENSION, null, null, null,
 					null, null, null, null,
 					null, null, dimensionId, null, null,
+					null, null,
 					null);
 		}
 
@@ -202,6 +218,15 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(ConditionType.TIME, null, null, null,
 					null, null, null, null,
 					null, null, null, timeMode, duration,
+					null, null,
+					null);
+		}
+
+		public static Condition alignment(Integer minAlignment, Integer maxAlignment) {
+			return new Condition(ConditionType.ALIGNMENT, null, null, null,
+					null, null, null, null,
+					null, null, null, null, null,
+					minAlignment, maxAlignment,
 					null);
 		}
 
@@ -209,6 +234,7 @@ public record QuestPrerequisites(Operator operator, List<Condition> conditions) 
 			return new Condition(null, null, null, null,
 					null, null, null, null,
 					null, null, null, null, null,
+					null, null,
 					nested);
 		}
 	}

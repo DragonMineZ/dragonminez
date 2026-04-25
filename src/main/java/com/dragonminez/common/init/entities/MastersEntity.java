@@ -1,6 +1,8 @@
 package com.dragonminez.common.init.entities;
 
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.alignment.NpcDispositionService;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
@@ -87,6 +89,9 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 		if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC) || source.is(DamageTypes.GENERIC_KILL)) {
 			return super.hurt(source, amount);
 		}
+		if (source.getEntity() instanceof Player player && TargetHelper.getRelation(player, this) == TargetHelper.Relation.HOSTILE) {
+			return super.hurt(source, amount);
+		}
 
 		return false;
 	}
@@ -123,6 +128,11 @@ public class MastersEntity extends PathfinderMob implements GeoEntity {
 				if (!data.getStatus().isHasCreatedCharacter()) {
 					serverPlayer.displayClientMessage(
 							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
+					return;
+				}
+				Component blocker = NpcDispositionService.getDialogueBlocker(serverPlayer, this);
+				if (blocker != null) {
+					serverPlayer.displayClientMessage(blocker, true);
 					return;
 				}
 

@@ -3,6 +3,7 @@ package com.dragonminez.server.world.npc;
 import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.server.world.structure.helper.DMZStructures;
 import com.dragonminez.server.world.structure.helper.StructureLocator;
@@ -175,7 +176,9 @@ public final class NPCPlacementManager {
 				getBoolean(json, "surface", false),
 				getBoolean(json, "relative_to_spawn", false),
 				getBoolean(json, "enabled", true),
-				getBoolean(json, "override", true)
+				getBoolean(json, "override", false),
+				getOptionalInt(json, "alignment"),
+				getString(json, "relation", null)
 		);
 	}
 
@@ -201,22 +204,42 @@ public final class NPCPlacementManager {
 			if (placedUuid.isPresent()) {
 				Entity trackedEntity = level.getEntity(placedUuid.get());
 				if (trackedEntity == null) {
-					return;
+					if (!placement.override()) {
+						return;
+					}
+					placementData.clear(placement.id());
+				} else {
+					existing = trackedEntity;
+					applyPlacementMetadata(existing, placement);
 				}
-				existing = trackedEntity;
-				applyPlacementMetadata(existing, placement);
 			}
 		}
 
 		if (existing != null && existing.getType() != entityType) {
+			if (!placement.override()) {
+				LogUtil.warn(Env.SERVER, "NPCPlacementManager: placement '{}' is tagged on entity type '{}' but expects '{}'",
+						placement.id(), existing.getType(), entityType);
+				return;
+			}
 			existing.discard();
 			placementData.clear(placement.id());
 			existing = null;
 		}
 
-		ResolvedPosition pos = resolvePosition(level, placement);
+		if (existing != null) {
+			placementData.markSpawned(placement.id(), existing.getUUID());
+			if (!placement.override()) {
+				applyPlacementMetadata(existing, placement);
+				return;
+			}
+		}
 
 		if (existing == null) {
+			if (!placement.override()) {
+				return;
+			}
+
+			ResolvedPosition pos = resolvePosition(level, placement);
 			existing = entityType.create(level);
 			if (existing == null) {
 				LogUtil.warn(Env.SERVER, "NPCPlacementManager: failed to create entity '{}' for placement '{}'", placement.entity(), placement.id());
@@ -233,13 +256,7 @@ public final class NPCPlacementManager {
 			return;
 		}
 
-		placementData.markSpawned(placement.id(), existing.getUUID());
-		if (!placement.override()) {
-			applyPlacementMetadata(existing, placement);
-			return;
-		}
-
-		applyPlacementData(existing, placement, pos);
+		applyPlacementData(existing, placement, resolvePosition(level, placement));
 	}
 
 	@Nullable
@@ -270,6 +287,12 @@ public final class NPCPlacementManager {
 			mob.setPersistenceRequired();
 		}
 		entity.getPersistentData().putString(PLACEMENT_TAG, placement.id());
+		if (placement.alignment() != null) {
+			entity.getPersistentData().putInt(NpcDispositionService.NPC_ALIGNMENT_TAG, Math.max(0, Math.min(100, placement.alignment())));
+		}
+		if (placement.relationOverride() != null && !placement.relationOverride().isBlank()) {
+			entity.getPersistentData().putString(NpcDispositionService.NPC_RELATION_OVERRIDE_TAG, placement.relationOverride());
+		}
 
 		if (entity instanceof QuestNPCEntity questNPC) {
 			if (placement.npcId() != null && !placement.npcId().isBlank()) {
@@ -426,9 +449,18 @@ public final class NPCPlacementManager {
 		return json.get(key).getAsBoolean();
 	}
 
+	@Nullable
+	private static Integer getOptionalInt(JsonObject json, String key) {
+		if (!json.has(key) || json.get(key).isJsonNull()) {
+			return null;
+		}
+		return json.get(key).getAsInt();
+	}
+
 	private record NPCPlacement(String id, String entity, ResourceKey<Level> dimension, @Nullable String npcId,
 								String model, String texture, @Nullable String structureId, double x, double y, double z, float yaw, float pitch,
-								boolean surface, boolean relativeToSpawn, boolean enabled, boolean override) {
+								boolean surface, boolean relativeToSpawn, boolean enabled, boolean override,
+								@Nullable Integer alignment, @Nullable String relationOverride) {
 	}
 
 	@Nullable

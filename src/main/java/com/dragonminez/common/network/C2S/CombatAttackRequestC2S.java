@@ -148,6 +148,9 @@ public class CombatAttackRequestC2S {
 				if (!TargetHelper.isAttackableMount(entity) && player.getVehicle() == entity) continue;
 
 				double maxRange = hand.attributes().attackRange();
+				TargetHelper.Relation relation = TargetHelper.getRelation(player, entity);
+				if (!TargetHelper.canAttack(player, entity, maxRange + 4.0D)) continue;
+
 				if (player.distanceToSqr(entity) <= (maxRange * maxRange) + 16.0) {
 
 					if (firstHit) {
@@ -157,6 +160,7 @@ public class CombatAttackRequestC2S {
 						player.getPersistentData().putBoolean("dmz_first_hit", false);
 					}
 
+					TargetHelper.onSuccessfulAttack(player, entity, relation);
 					player.attack(entity);
 				}
 

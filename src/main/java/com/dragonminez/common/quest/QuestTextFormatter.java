@@ -122,6 +122,7 @@ public final class QuestTextFormatter {
 					resolveDimensionName(condition.getDimensionId())
 			);
 			case TIME -> buildTimeRequirement(condition, context);
+			case ALIGNMENT -> buildAlignmentRequirement(condition);
 		};
 	}
 
@@ -331,6 +332,21 @@ public final class QuestTextFormatter {
 		return base.append(Component.literal(" ("))
 				.append(Component.translatable("gui.dragonminez.quests.requirement.ready"))
 				.append(Component.literal(")"));
+	}
+
+	private static Component buildAlignmentRequirement(QuestPrerequisites.Condition condition) {
+		Integer min = condition.getMinAlignment();
+		Integer max = condition.getMaxAlignment();
+		if (min != null && max != null) {
+			return Component.translatable("gui.dragonminez.quests.requirement.alignment_range", min, max);
+		}
+		if (min != null) {
+			return Component.translatable("gui.dragonminez.quests.requirement.alignment_min", min);
+		}
+		if (max != null) {
+			return Component.translatable("gui.dragonminez.quests.requirement.alignment_max", max);
+		}
+		return Component.translatable("gui.dragonminez.quests.requirement.alignment");
 	}
 
 	private static Component resolveSagaQuestName(String sagaId, Integer questId) {

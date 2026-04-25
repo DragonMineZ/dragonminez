@@ -186,7 +186,10 @@ final class QuestDefaults {
 	}
 
 	private static JsonObject requirements(String op, JsonObject... conditions) {
-		return prereqs(op, conditions);
+		JsonObject[] withAlignment = new JsonObject[conditions.length + 1];
+		System.arraycopy(conditions, 0, withAlignment, 0, conditions.length);
+		withAlignment[conditions.length] = condAlignmentMin(41);
+		return prereqs(op, withAlignment);
 	}
 
 	private static JsonObject condSaga(String sagaId, int questId) {
@@ -208,6 +211,13 @@ final class QuestDefaults {
 		JsonObject c = new JsonObject();
 		c.addProperty("type", "LEVEL");
 		c.addProperty("minLevel", minLevel);
+		return c;
+	}
+
+	private static JsonObject condAlignmentMin(int minAlignment) {
+		JsonObject c = new JsonObject();
+		c.addProperty("type", "ALIGNMENT");
+		c.addProperty("min", minAlignment);
 		return c;
 	}
 

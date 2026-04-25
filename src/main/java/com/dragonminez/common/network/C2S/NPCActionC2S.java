@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.ShadowDummyEntity;
@@ -51,6 +52,11 @@ public class NPCActionC2S {
 			if (player == null) return;
 
 			StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+				Component blocker = NpcDispositionService.getServiceBlocker(player, packet.npcName);
+				if (blocker != null) {
+					player.displayClientMessage(blocker, true);
+					return;
+				}
 				switch (packet.npcName) {
 					case "karin" -> handleKarin(player, data, packet.actionId);
 					case "guru" -> handleGuru(player, data, packet.actionId);

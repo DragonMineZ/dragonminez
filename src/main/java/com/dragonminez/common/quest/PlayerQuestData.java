@@ -63,6 +63,9 @@ public class PlayerQuestData {
     /** Per-quest anchors used by elapsed start requirements. */
     private final Map<String, QuestStartRequirementTiming> startRequirementTimings = new LinkedHashMap<>();
 
+    /** NPC keys this player has made hostile through direct actions. */
+    private final Set<String> hostileNpcKeys = new LinkedHashSet<>();
+
     /** Current tracked quest key (saga:questId or sidequestId) shown in client HUD. */
     @Getter
     private String trackedQuestId = null;
@@ -184,6 +187,7 @@ public class PlayerQuestData {
         quests.clear();
         sagaUnlockState.clear();
         startRequirementTimings.clear();
+        hostileNpcKeys.clear();
         trackedQuestId = null;
     }
 
@@ -219,6 +223,20 @@ public class PlayerQuestData {
     public void clearStartRequirementTiming(String questId) {
         if (questId == null || questId.isBlank()) return;
         startRequirementTimings.remove(questId);
+    }
+
+    public void markNpcHostile(String npcKey) {
+        if (npcKey == null || npcKey.isBlank()) return;
+        hostileNpcKeys.add(npcKey);
+    }
+
+    public boolean isNpcHostile(String npcKey) {
+        return npcKey != null && hostileNpcKeys.contains(npcKey);
+    }
+
+    public void clearNpcHostility(String npcKey) {
+        if (npcKey == null || npcKey.isBlank()) return;
+        hostileNpcKeys.remove(npcKey);
     }
 
     /**
@@ -483,6 +501,14 @@ public class PlayerQuestData {
         }
         tag.putBoolean("introPromptShown", introPromptShown);
 
+        if (!hostileNpcKeys.isEmpty()) {
+            ListTag hostileNpcs = new ListTag();
+            for (String npcKey : hostileNpcKeys) {
+                hostileNpcs.add(StringTag.valueOf(npcKey));
+            }
+            tag.put("hostileNpcKeys", hostileNpcs);
+        }
+
         return tag;
     }
 
@@ -490,6 +516,7 @@ public class PlayerQuestData {
         quests.clear();
         sagaUnlockState.clear();
         startRequirementTimings.clear();
+        hostileNpcKeys.clear();
         trackedQuestId = null;
         introPromptShown = false;
 
@@ -522,6 +549,16 @@ public class PlayerQuestData {
 
         if (tag.contains("introPromptShown", Tag.TAG_BYTE)) {
             introPromptShown = tag.getBoolean("introPromptShown");
+        }
+
+        if (tag.contains("hostileNpcKeys", Tag.TAG_LIST)) {
+            ListTag hostileNpcs = tag.getList("hostileNpcKeys", Tag.TAG_STRING);
+            for (int i = 0; i < hostileNpcs.size(); i++) {
+                String npcKey = hostileNpcs.getString(i);
+                if (!npcKey.isBlank()) {
+                    hostileNpcKeys.add(npcKey);
+                }
+            }
         }
     }
 
