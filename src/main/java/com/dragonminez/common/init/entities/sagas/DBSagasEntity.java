@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
@@ -214,6 +215,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private float currentPoolSkillSize = 1.0F;
     private int currentPoolColorMain = 0xFFFFFF;
     private int currentPoolColorBorder = 0xFFFFFF;
+    private int currentPoolColorOutline = 0xFFFFFF;
 
     public static class KiSkill {
         public int id;
@@ -222,14 +224,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         public float size;
         public int colorMain;
         public int colorBorder;
+        public int colorOutline;
 
-        public KiSkill(int id, int cooldown, float size, int colorMain, int colorBorder) {
+        public KiSkill(int id, int cooldown, float size, int colorMain, int colorBorder, int colorOutline) {
             this.id = id;
             this.cooldownMax = cooldown;
             this.currentCooldown = 0;
             this.size = size;
             this.colorMain = colorMain;
             this.colorBorder = colorBorder;
+            this.colorOutline = colorOutline;
         }
     }
 
@@ -239,9 +243,17 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         super(pEntityType, pLevel);
     }
 
+    public void setSkillColors(int mainColor, int borderColor, int outlineColor) {
+        this.currentPoolColorMain = mainColor;
+        this.currentPoolColorBorder = borderColor;
+        this.currentPoolColorOutline = outlineColor;
+
+    }
+
     public void setSkillColors(int mainColor, int borderColor) {
         this.currentPoolColorMain = mainColor;
         this.currentPoolColorBorder = borderColor;
+        this.currentPoolColorOutline = ColorUtils.darkenColor(borderColor, 0.6f);
     }
 
     public boolean isZanzoken() {
@@ -360,8 +372,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.currentZanzokenCooldown = cooldown;
     }
 
+    public void addKiSkill(KiSkillType type, int cooldown, float size, int colorMain, int colorBorder, int colorOutline) {
+        this.skillPool.add(new KiSkill(type.getId(), cooldown, size, colorMain, colorBorder, colorOutline));
+    }
+
     public void addKiSkill(KiSkillType type, int cooldown, float size, int colorMain, int colorBorder) {
-        this.skillPool.add(new KiSkill(type.getId(), cooldown, size, colorMain, colorBorder));
+        this.skillPool.add(new KiSkill(type.getId(), cooldown, size, colorMain, colorBorder, ColorUtils.darkenColor(colorBorder, 0.6f)));
     }
 
     public void addKiSkill(KiSkillType type, int cooldown, float size) {
@@ -405,6 +421,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 .add(Attributes.ATTACK_DAMAGE, 15.0D)
                 .add(Attributes.FOLLOW_RANGE, 64.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D)
+                .add(Attributes.ATTACK_SPEED, 4.0D)
                 .add(EntityAttributes.KI_BLAST_DAMAGE.get(), 20.0D)
                 .add(EntityAttributes.FLY_SPEED.get(), 0.35D)
                 .add(EntityAttributes.KI_BLAST_SPEED.get(), 0.6D);
@@ -676,6 +693,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         float actualSize = this.currentPoolSkillSize;
         int usedColorMain = this.currentPoolColorMain;
         int usedColorBorder = this.currentPoolColorBorder;
+        int usedColorOutline = this.currentPoolColorOutline;
 
         switch (skillType) {
             case 1:
@@ -737,7 +755,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 break;
             case 8:
                 KiWaveEntity genericWave = new KiWaveEntity(this.level(), this);
-                genericWave.setupKiWave(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, usedColorBorder, actualSize, syncCastTime);
+                genericWave.setupKiWave(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, usedColorBorder, usedColorOutline, actualSize, syncCastTime);
                 break;
             case 9:
                 KiWaveEntity oozaruBeam = new KiWaveEntity(this.level(), this);
@@ -1166,15 +1184,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
 
         if (this.isEvading() || this.isCasting() || this.isComboing() || this.isZanzoken()) {
+            event.getController().setAnimationSpeed(1.0D);
             return PlayState.STOP;
+        }
+
+        double moveSpeedAttr = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
+
+        double animModifier = moveSpeedAttr / 0.25D;
+
+        if (event.isMoving()) {
+            event.getController().setAnimationSpeed(animModifier);
+        } else {
+            event.getController().setAnimationSpeed(1.0D);
         }
 
         int style = entity.getDBZStyle();
 
         if (entity.isFlying()) {
-            double speedSqr = entity.getDeltaMovement().x * entity.getDeltaMovement().x + entity.getDeltaMovement().z * entity.getDeltaMovement().z;
-
-            if (speedSqr > 0.05D) {
+            double currentSpeedSqr = entity.getDeltaMovement().x * entity.getDeltaMovement().x + entity.getDeltaMovement().z * entity.getDeltaMovement().z;
+            if (currentSpeedSqr > 0.05D) {
                 return event.setAndContinue(ANIM_FLY_FAST);
             }
             return event.setAndContinue(ANIM_FLY);

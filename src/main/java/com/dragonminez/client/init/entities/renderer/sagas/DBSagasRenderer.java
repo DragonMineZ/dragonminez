@@ -59,6 +59,8 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             poseStack.scale(1.2f, 1.2f, 1.2f);
         } else if(entity instanceof SagaFriezaEntity.SagaFriezaThirdForm){
             poseStack.scale(1.3f, 1.3f, 1.3f);
+        } else if(entity instanceof SagaBabidiSoldiersEntity.SagaYakonEntity){
+            poseStack.scale(1.5f, 1.5f, 1.5f);
         } else if(entity instanceof SagaCellEntity.SagaSemiPerfectCellEntity){
             poseStack.scale(1.2f, 1.2f, 1.2f);
         } else if(entity instanceof SagaVegetaEntity.SagaVegetaMidSSG2Entity){

@@ -698,7 +698,7 @@
 				},
 				"waist": {
 					"rotation": {
-						"vector": ["10-query.head_x_rotation*0.25", "-query.head_y_rotation*0.5", 0]
+						"vector": [10, 0, 0]
 					},
 					"position": {
 						"vector": [0, "math.sin(query.anim_time *90)*0.5-0.4", 0]
@@ -1842,7 +1842,7 @@
 				},
 				"waist": {
 					"rotation": {
-						"vector": ["-query.head_x_rotation*0.25", "-query.head_y_rotation*0.5", 0]
+						"vector": [0, 0, 0]
 					},
 					"position": {
 						"vector": [0, "math.sin(query.anim_time *90)*0.5-0.4", 0]
@@ -1886,7 +1886,7 @@
 				},
 				"waist": {
 					"rotation": {
-						"vector": ["-query.head_x_rotation*0.25", "-query.head_y_rotation*0.5", 0]
+						"vector": [0, 0, 0]
 					},
 					"position": {
 						"vector": [0, "math.sin(query.anim_time *90)*0.5-0.4", 0]
@@ -8101,6 +8101,5 @@
 				}
 			}
 		}
-	},
-	"geckolib_format_version": 2
+	}
 }

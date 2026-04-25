@@ -106,6 +106,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setupKiWave(owner, damage, speed, color, colorBorder, 0xFFFFFF, size, castTime);
     }
 
+
     public void setupKiWave(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
         this.setupKiWave(owner, damage, speed, color, color, 0xFFFFFF, size, castTime);
     }

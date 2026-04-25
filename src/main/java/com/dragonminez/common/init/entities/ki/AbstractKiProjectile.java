@@ -119,6 +119,8 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.entityData.define(ARMOR_PENETRATION, 0);
         this.entityData.define(MAX_LIFE, 100);
         this.entityData.define(IS_HEAL, false);
+        this.entityData.define(KI_TYPE, KiType.SMALL_BALL.ordinal());
+
     }
 
     @Override
@@ -145,8 +147,8 @@ public abstract class AbstractKiProjectile extends Projectile {
 
     public enum KiType { SMALL_BALL, MEDIUM_BALL, GIANT_BALL, WAVE, LASER, BEAM, DISK, EXPLOSION, SHIELD, BARRAGE, AREA }
 
-    public int getKiType() {
-        return this.entityData.get(KI_TYPE);
+    public KiType getKiType() {
+        return KiType.values()[this.entityData.get(KI_TYPE)];
     }
 
     public void setKiType(KiType type) {

@@ -349,7 +349,7 @@ public class SagaVegetaEntity{
                     if (this.isComboing()) {
                         this.setComboing(false);
                     }
-                    this.setSkillColors(0xFFE657, 0xFFE657);
+                    this.setSkillColors(0xFFE657, 0xFFE657, 0xFFFFFF);
                     this.startCasting(KiSkillType.KI_EXPLOSION.getId());
 
                     this.setHealth(10.0F);

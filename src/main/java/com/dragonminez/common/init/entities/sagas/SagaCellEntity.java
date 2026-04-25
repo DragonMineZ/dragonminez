@@ -85,6 +85,7 @@ public class SagaCellEntity {
 
             this.setEvade(true, 150);
             this.setWildSense(true, 250);
+            this.setZanzoken(true, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
@@ -122,6 +123,7 @@ public class SagaCellEntity {
 
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
+            this.setZanzoken(true, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);

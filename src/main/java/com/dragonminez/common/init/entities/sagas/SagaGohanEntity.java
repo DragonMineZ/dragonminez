@@ -253,7 +253,7 @@ public class SagaGohanEntity {
 
         @Override
         public EntityType<? extends DBSagasEntity> getNextTransform() {
-            return MainEntities.SAGA_GOHAN_MID_SSJ.get();
+            return MainEntities.SAGA_GOHAN_END_SSJ.get();
         }
 
         @Override
@@ -295,7 +295,7 @@ public class SagaGohanEntity {
 
         @Override
         public EntityType<? extends DBSagasEntity> getNextTransform() {
-            return MainEntities.SAGA_GOHAN_MID_SSJ2.get();
+            return MainEntities.SAGA_GOHAN_END_SSJ2.get();
         }
 
         @Override

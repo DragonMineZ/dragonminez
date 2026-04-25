@@ -678,6 +678,42 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_shin").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaKibitoEntity>> SAGA_KIBITO =
+            ENTITY_TYPES.register("saga_kibito",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaKibitoEntity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 2.2f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kibito").toString()));
+    public static final RegistryObject<EntityType<SagaBabidiSoldiersEntity.SagaSpopovitchEntity>> SAGA_SPOPOVITCH =
+            ENTITY_TYPES.register("saga_spopovitch",
+                    () -> EntityType.Builder.of(SagaBabidiSoldiersEntity.SagaSpopovitchEntity::new, MobCategory.MONSTER)
+                            .sized(0.9f, 2.2f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_spopovitch").toString()));
+    public static final RegistryObject<EntityType<SagaBabidiSoldiersEntity.SagaPuiPuiEntity>> SAGA_PUIPUI=
+            ENTITY_TYPES.register("saga_puipui",
+                    () -> EntityType.Builder.of(SagaBabidiSoldiersEntity.SagaPuiPuiEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_puipui").toString()));
+    public static final RegistryObject<EntityType<SagaBabidiSoldiersEntity.SagaYakonEntity>> SAGA_YAKON=
+            ENTITY_TYPES.register("saga_yakon",
+                    () -> EntityType.Builder.of(SagaBabidiSoldiersEntity.SagaYakonEntity::new, MobCategory.MONSTER)
+                            .sized(1.1f, 2.5f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_yakon").toString()));
+    public static final RegistryObject<EntityType<SagaBabidiSoldiersEntity.DaburaEntity>> SAGA_DABURA=
+            ENTITY_TYPES.register("saga_dabura",
+                    () -> EntityType.Builder.of(SagaBabidiSoldiersEntity.DaburaEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_dabura").toString()));
+    public static final RegistryObject<EntityType<SagaBabidiSoldiersEntity.BabidiEntity>> SAGA_BABIDI=
+            ENTITY_TYPES.register("saga_babidi",
+                    () -> EntityType.Builder.of(SagaBabidiSoldiersEntity.BabidiEntity::new, MobCategory.MONSTER)
+                            .sized(0.4f, 1.5f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_babidi").toString()));
+    public static final RegistryObject<EntityType<SagaBuuEntity.BuuFatEntity>> SAGA_BUU_FAT=
+            ENTITY_TYPES.register("saga_buufat",
+                    () -> EntityType.Builder.of(SagaBuuEntity.BuuFatEntity::new, MobCategory.MONSTER)
+                            .sized(0.8f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_buufat").toString()));
+
 
 
 

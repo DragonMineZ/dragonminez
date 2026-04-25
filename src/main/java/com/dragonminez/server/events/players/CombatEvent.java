@@ -475,16 +475,18 @@ public class CombatEvent {
 		}
 	}
 
-	private static boolean isSpecificKiAttack(DamageSource source) {
-		if (MainDamageTypes.isKiblastDamage(source)) {
-			Entity projectile = source.getDirectEntity();
-			if (projectile instanceof AbstractKiProjectile kiProj) {
-				return kiProj.getKiType() == 2 || kiProj.getKiType() == 7;
-			}
-			return true;
-		}
-		return false;
-	}
+    private static boolean isSpecificKiAttack(DamageSource source) {
+        if (MainDamageTypes.isKiblastDamage(source)) {
+            Entity projectile = source.getDirectEntity();
+
+            if (projectile instanceof AbstractKiProjectile kiProj) {
+                AbstractKiProjectile.KiType type = kiProj.getKiType();
+                return type == AbstractKiProjectile.KiType.GIANT_BALL || type == AbstractKiProjectile.KiType.EXPLOSION;
+            }
+            return true;
+        }
+        return false;
+    }
 
 	private static boolean isEmptyHandOrNoDamageItem(Player player) {
 		ItemStack mainHand = player.getMainHandItem();

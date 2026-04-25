@@ -99,7 +99,8 @@ public class ModCommonEvents {
                 MainEntities.SAGA_GOHAN_END_BASE, MainEntities.SAGA_GOHAN_END_SSJ, MainEntities.SAGA_GOHAN_END_SSJ2, MainEntities.SAGA_GOHAN_END_ULTIMATE,
                 MainEntities.SAGA_GOTEN, MainEntities.SAGA_GOTEN_SSJ, MainEntities.SAGA_KID_TRUNKS, MainEntities.SAGA_KID_TRUNKS_SSJ,
                 MainEntities.SAGA_GOTENKS, MainEntities.SAGA_GOTENKS_SSJ, MainEntities.SAGA_GOTENKS_SSJ3,
-                MainEntities.SAGA_SHIN,
+                MainEntities.SAGA_SHIN, MainEntities.SAGA_KIBITO, MainEntities.SAGA_SPOPOVITCH, MainEntities.SAGA_PUIPUI, MainEntities.SAGA_YAKON, MainEntities.SAGA_DABURA,
+                MainEntities.SAGA_BABIDI, MainEntities.SAGA_BUU_FAT,
                 MainEntities.SHADOW_DUMMY);
 
 
