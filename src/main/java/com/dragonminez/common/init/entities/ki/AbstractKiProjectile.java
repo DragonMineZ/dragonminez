@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -11,6 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
@@ -63,14 +65,28 @@ public abstract class AbstractKiProjectile extends Projectile {
     public boolean shouldDamage(Entity target) {
         if (target == this) return false;
         if (target instanceof AbstractKiProjectile kiProj && kiProj.getOwner() == this.getOwner()) return false;
+        if (target == this.getOwner() || target.is(this.getOwner())) return this.isHeal();
 
-        if (this.getOwner() instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
-            if (this.isHeal()) {
-                return ownerLiving.isAlliedTo(targetLiving) || targetLiving == ownerLiving;
-            } else {
-                if (target == this.getOwner() || target.is(this.getOwner())) return false;
-                return !ownerLiving.isAlliedTo(targetLiving);
+        if (this.getOwner() instanceof Player playerOwner) {
+            TargetHelper.Relation relation = TargetHelper.getRelation(playerOwner, target);
+
+            if (this.isHeal()) return relation == TargetHelper.Relation.FRIENDLY;
+            else {
+                if (relation == TargetHelper.Relation.FRIENDLY) return false;
+
+                if (relation == TargetHelper.Relation.NEUTRAL) {
+                    Vec3 viewVector = playerOwner.getViewVector(1.0F).normalize();
+                    Vec3 toTarget = target.position().add(0, target.getBbHeight() / 2.0, 0).subtract(playerOwner.getEyePosition()).normalize();
+
+                    double dotProduct = viewVector.dot(toTarget);
+                    return dotProduct > 0.95;
+                }
+
+                return true;
             }
+        } else if (this.getOwner() instanceof LivingEntity ownerLiving && target instanceof LivingEntity targetLiving) {
+            if (this.isHeal()) return ownerLiving.isAlliedTo(targetLiving);
+            else return !ownerLiving.isAlliedTo(targetLiving);
         }
 
         return !this.isHeal();

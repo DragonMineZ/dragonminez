@@ -1,5 +1,6 @@
 package com.dragonminez.server.util;
 
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -33,8 +34,12 @@ public class RacialSkillLogic {
 			RaceCharacterConfig config = ConfigManager.getRaceCharacter(race);
 
 			if (target == null) return;
-			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative()
-					&& !(target instanceof MastersEntity) && !(target instanceof PunchMachineEntity)) {
+			if (target instanceof MastersEntity || target instanceof PunchMachineEntity) return;
+
+			TargetHelper.Relation relation = TargetHelper.getRelation(player, target);
+			if (relation == TargetHelper.Relation.FRIENDLY) return;
+
+			if (!canOverpowerTarget(player, data, target) && !race.equals("bioandroid") && !player.isCreative()) {
 				player.displayClientMessage(Component.translatable("message.dragonminez.racial.target_too_strong"), true);
 				return;
 			}
