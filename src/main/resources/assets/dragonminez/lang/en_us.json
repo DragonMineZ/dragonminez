@@ -63,6 +63,8 @@
   "gui.dragonminez.character_stats.defense": "Defense",
   "gui.dragonminez.character_stats.defense.tooltip1": "The damage you nullify from enemies.",
   "gui.dragonminez.character_stats.defense.tooltip2": "Increasing Resistance increases this value by %s per point",
+  "gui.dragonminez.character_stats.protection": "Protection",
+  "gui.dragonminez.character_stats.dmg_reduction": "Damage Reduction",
   "gui.dragonminez.character_stats.health": "Health",
   "gui.dragonminez.character_stats.health.tooltip1": "Your health points.",
   "gui.dragonminez.character_stats.health.tooltip2": "Increasing Vitality increases this value by %s per point",
