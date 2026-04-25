@@ -168,8 +168,8 @@ dependencies {
     implementation(fg.deobf("com.github.glitchfiend:TerraBlender-forge:1.20.1-3.0.1.10"))
 
     // Source: https://mvnrepository.com/artifact/org.projectlombok/lombok
-    compileOnly("org.projectlombok:lombok:1.18.44")
-    annotationProcessor("org.projectlombok:lombok:1.18.44")
+    compileOnly("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     // Database libraries
     jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.7,)") {
