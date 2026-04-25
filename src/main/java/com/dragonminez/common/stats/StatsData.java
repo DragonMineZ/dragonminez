@@ -1,8 +1,10 @@
 package com.dragonminez.common.stats;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.config.RaceCharacterConfig;
 import com.dragonminez.common.config.RaceStatsConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.stats.character.*;
 import com.dragonminez.common.stats.character.Character;
@@ -11,6 +13,7 @@ import com.dragonminez.common.stats.skills.Skills;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.common.util.TransformationsHelper;
 import com.dragonminez.server.util.GravityLogic;
+import com.dragonminez.server.util.PotionEffectHelper;
 import com.dragonminez.server.world.dimension.HTCDimension;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -70,7 +73,7 @@ public class StatsData {
 		int initialStats = getInitialTotalStats();
 		int totalStats = Math.max(initialStats, stats.getTotalStats());
 
-		long maxTotalStatsForLevel = Math.max((long) initialStats, getConfiguredMaxTotalStatsRaw());
+		long maxTotalStatsForLevel = Math.max(initialStats, getConfiguredMaxTotalStatsRaw());
 		double denominator = Math.max(1.0, (double) maxTotalStatsForLevel - initialStats);
 		double progress = (totalStats - initialStats) / denominator;
 		progress = Math.max(0.0, Math.min(1.0, progress));
@@ -136,107 +139,155 @@ public class StatsData {
 		return (int) ((str + skp + res + vit + pwr) * releaseMultiplier);
 	}
 
-	public float getMaxHealth() {
+	private double getSecondaryAttributeValue(net.minecraft.world.entity.ai.attributes.Attribute attribute, double fallback) {
+		if (player == null) return fallback;
+		var instance = player.getAttribute(attribute);
+		return instance != null ? instance.getValue() : fallback;
+	}
+
+	private double getSecondaryAttributeBaseValue(net.minecraft.world.entity.ai.attributes.Attribute attribute, double fallback) {
+		if (player == null) return fallback;
+		var instance = player.getAttribute(attribute);
+		return instance != null ? instance.getBaseValue() : fallback;
+	}
+
+	private double getArmorToughnessValue() {
+		if (player == null) return 0.0;
+		var toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS);
+		return toughness != null ? toughness.getValue() : 0.0;
+	}
+
+	public float getHealthBonus() {
+		double vitality = stats.getVitality();
 		double vitScaling = getStatScaling("VIT");
 		double vitMult = getFormMultiplier("VIT");
-		double bonusVit = bonusStats.calculateBonus("VIT", stats.getVitality());
-		return (float) ((stats.getVitality() * vitScaling * vitMult) + (bonusVit * vitScaling));
+		double bonusVit = bonusStats.calculateBonus("VIT", (int) Math.round(vitality));
+		return (float) ((vitality * vitScaling * vitMult) + (bonusVit * vitScaling));
+	}
+
+	public float getMaxHealth() {
+		return (float) getSecondaryAttributeValue(Attributes.MAX_HEALTH, 20.0);
 	}
 
 	public int getMaxEnergy() {
+		double energy = stats.getEnergy();
 		double eneScaling = getStatScaling("ENE");
 		double eneMult = getFormMultiplier("ENE");
-		double bonusEne = bonusStats.calculateBonus("ENE", stats.getEnergy());
-		return (int) (20 + (stats.getEnergy() * eneScaling * eneMult) + (bonusEne * eneScaling));
+		double bonusEne = bonusStats.calculateBonus("ENE", (int) Math.round(energy));
+		double secondaryMaxEnergy = getSecondaryAttributeValue(MainAttributes.MAX_ENERGY.get(), 20.0);
+		return (int) (secondaryMaxEnergy + (energy * eneScaling * eneMult) + (bonusEne * eneScaling));
 	}
 
 	public int getMaxStamina() {
+		double resistance = stats.getResistance();
 		double stmScaling = getStatScaling("STM");
 		double resMult = getTotalMultiplier("RES");
-		double bonusRes = bonusStats.calculateBonus("RES", stats.getResistance());
-		return (int) (20 + (stats.getResistance() * stmScaling * resMult) + (bonusRes * stmScaling));
+		double bonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance));
+		double secondaryMaxStamina = getSecondaryAttributeValue(MainAttributes.MAX_STAMINA.get(), 20.0);
+		return (int) (secondaryMaxStamina + (resistance * stmScaling * resMult) + (bonusRes * stmScaling));
 	}
 
 	public int getMaxPoise() {
-		return (int) (25 + getDefense());
+		double secondaryMaxPoise = getSecondaryAttributeValue(MainAttributes.MAX_POISE.get(), 25.0);
+		return (int) (secondaryMaxPoise + getDefense());
 	}
 
 	public double getMaxMeleeDamage() {
+		double strength = stats.getStrength();
 		double strScaling = getStatScaling("STR");
 		double strMult = getTotalMultiplier("STR");
-		double bonusStr = bonusStats.calculateBonus("STR", stats.getStrength());
-		return (1 + (stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling));
+		double bonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength));
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		return secondaryMeleeDamage + (strength * strScaling * strMult) + (bonusStr * strScaling);
 	}
 
 	public double getMeleeDamageWithoutMults() {
+		double strength = stats.getStrength();
 		double strScaling = getStatScaling("STR");
-		double bonusStr = bonusStats.calculateBonus("STR", stats.getStrength());
+		double bonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength));
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		return (1 + ((stats.getStrength() * strScaling) + (bonusStr * strScaling)) * releaseMultiplier);
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		return secondaryMeleeDamage + ((strength * strScaling) + (bonusStr * strScaling)) * releaseMultiplier;
 	}
 
 	public double getMeleeDamage() {
+		double strength = stats.getStrength();
 		double strScaling = getStatScaling("STR");
 		double strMult = getTotalMultiplier("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double bonusStr = bonusStats.calculateBonus("STR", stats.getStrength());
-		return (1 + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * releaseMultiplier);
+		double bonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength));
+		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
+		return secondaryMeleeDamage + ((strength * strScaling * strMult) + (bonusStr * strScaling)) * releaseMultiplier;
 	}
 
 	public double getMaxStrikeDamage() {
+		double strikePower = stats.getStrikePower();
+		double strength = stats.getStrength();
 		double skpScaling = getStatScaling("SKP");
 		double strScaling = getStatScaling("STR");
 		double skpMult = getTotalMultiplier("SKP");
 		double strMult = getTotalMultiplier("STR");
-		double bonusSkp = bonusStats.calculateBonus("SKP", stats.getStrikePower());
-		double bonusStr = bonusStats.calculateBonus("STR", stats.getStrength());
-		return (1 + (stats.getStrikePower() * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * 0.25);
+		double bonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower));
+		double bonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength));
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		return secondaryStrikeDamage + (strikePower * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((strength * strScaling * strMult) + (bonusStr * strScaling)) * 0.25;
 	}
 
 	public double getStrikeDamage() {
+		double strikePower = stats.getStrikePower();
+		double strength = stats.getStrength();
 		double skpScaling = getStatScaling("SKP");
 		double strScaling = getStatScaling("STR");
 		double skpMult = getTotalMultiplier("SKP");
 		double strMult = getTotalMultiplier("STR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double bonusSkp = bonusStats.calculateBonus("SKP", stats.getStrikePower());
-		double bonusStr = bonusStats.calculateBonus("STR", stats.getStrength());
-		double baseDamage = (stats.getStrikePower() * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((stats.getStrength() * strScaling * strMult) + (bonusStr * strScaling)) * 0.25;
-		return 1 + baseDamage * releaseMultiplier;
+		double bonusSkp = bonusStats.calculateBonus("SKP", (int) Math.round(strikePower));
+		double bonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength));
+		double secondaryStrikeDamage = getSecondaryAttributeValue(MainAttributes.STRIKE_DAMAGE.get(), 1.0);
+		double baseDamage = (strikePower * skpScaling * skpMult) + (bonusSkp * skpScaling) + ((strength * strScaling * strMult) + (bonusStr * strScaling)) * 0.25;
+		return secondaryStrikeDamage + baseDamage * releaseMultiplier;
 	}
 
 	public double getMaxKiDamage() {
+		double kiPower = stats.getKiPower();
 		double pwrScaling = getStatScaling("PWR");
 		double pwrMult = getTotalMultiplier("PWR");
-		double bonusPwr = bonusStats.calculateBonus("PWR", stats.getKiPower());
-		return (stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling);
+		double bonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower));
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		return secondaryKiDamage + (kiPower * pwrScaling * pwrMult) + (bonusPwr * pwrScaling);
 	}
 
 	public double getKiDamage() {
+		double kiPower = stats.getKiPower();
 		double pwrScaling = getStatScaling("PWR");
 		double pwrMult = getTotalMultiplier("PWR");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double bonusPwr = bonusStats.calculateBonus("PWR", stats.getKiPower());
-		return ((stats.getKiPower() * pwrScaling * pwrMult) + (bonusPwr * pwrScaling)) * releaseMultiplier;
+		double bonusPwr = bonusStats.calculateBonus("PWR", (int) Math.round(kiPower));
+		double secondaryKiDamage = getSecondaryAttributeValue(MainAttributes.KI_DAMAGE.get(), 0.0);
+		return secondaryKiDamage + ((kiPower * pwrScaling * pwrMult) + (bonusPwr * pwrScaling)) * releaseMultiplier;
 	}
 
 	public double getMaxDefense() {
+		double resistance = stats.getResistance();
 		double defScaling = getStatScaling("DEF");
 		double resMult = getTotalMultiplier("RES");
-		double bonusRes = bonusStats.calculateBonus("RES", stats.getResistance());
+		double bonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance));
 		double armor = player.getArmorValue();
-		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
-		return (stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.5 + toughness * 0.8;
+		double toughness = getArmorToughnessValue();
+		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
+		return secondaryDefense + (resistance * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.5 + toughness * 0.8;
 	}
 
 	public double getDefense() {
+		double resistance = stats.getResistance();
 		double defScaling = getStatScaling("DEF");
 		double resMult = getTotalMultiplier("RES");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double bonusRes = bonusStats.calculateBonus("RES", stats.getResistance());
+		double bonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance));
 		double armor = player.getArmorValue();
-		double toughness = player.getAttribute(Attributes.ARMOR_TOUGHNESS).getValue();
-		return ((stats.getResistance() * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.5) + toughness * 0.8) * releaseMultiplier;
+		double toughness = getArmorToughnessValue();
+		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
+		return (secondaryDefense + (resistance * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.5) + toughness * 0.8) * releaseMultiplier;
 	}
 
 	public double getTotalMultiplier(String statName) {
@@ -380,7 +431,7 @@ public class StatsData {
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
+		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
 	}
 
 	public double getAdjustedStaminaDrain() {
@@ -414,7 +465,7 @@ public class StatsData {
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
+		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
 	}
 
 	public double getAdjustedHealthDrain() {
@@ -452,7 +503,7 @@ public class StatsData {
 		}
 
 		double drainAmount = adjustedBaseDrain + adjustedStackDrain;
-		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getServerConfig().getCombat().getBaselineFormDrain()) : 0;
+		return drainAmount != 0 ? Math.max(1, drainAmount * ConfigManager.getCombatConfig().getBaselineFormDrain()) : 0;
 	}
 
 
@@ -583,7 +634,7 @@ public class StatsData {
 	}
 
 	private long getConfiguredMaxTotalStatsRaw() {
-		return (long) getConfiguredMaxValue() * 6L;
+		return getConfiguredMaxValue() * 6L;
 	}
 
 	public double getRaceTpCostMultiplier() {
@@ -643,8 +694,13 @@ public class StatsData {
 		return 1.0 + (bonusGravity * 0.05);
 	}
 
+	public double getTpPotionEffectMultiplier() {
+		if (player == null) return 1.0;
+		return PotionEffectHelper.getMultiplierFromEffect(player, MainEffects.TP_GAIN.get(), "tp_gain");
+	}
+
 	public double getTpTotalMultiplier() {
-		return getTpAdditiveMultiplier() * getTpGlobalMultiplier();
+		return getTpAdditiveMultiplier() * getTpGlobalMultiplier() * getTpPotionEffectMultiplier();
 	}
 
 	public int calculateTPGain(int baseTP) {

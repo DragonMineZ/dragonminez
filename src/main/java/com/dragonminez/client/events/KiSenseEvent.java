@@ -129,7 +129,7 @@ public class KiSenseEvent {
 
 		poseStack.pushPose();
 		String text = "";
-		if (ConfigManager.getUserConfig().getHud().getAdvancedDescriptionPercentage()) {
+		if (ConfigManager.getUserConfig().getAdvancedDescriptionPercentage()) {
 			text = String.format("%.0f", health / maxHealth * 100) + "%";
 		} else {
 			text = numberFormat.format(health) + " / " + numberFormat.format(maxHealth);

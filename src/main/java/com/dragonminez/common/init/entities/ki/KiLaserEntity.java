@@ -41,6 +41,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
+        this.setKiType(KiType.LASER);
     }
 
     public KiLaserEntity(Level level, LivingEntity owner) {
@@ -65,113 +66,122 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     //SETUPS ENTIDADES
-
-    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int colorBorder, int castTime) {
+    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline, int castTime) {
         this.setKiRenderType(0);
         this.setSize(1.0f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, colorBorder);
-
+        this.setColors(color, colorBorder, colorOutline);
         this.setFiring(false);
         this.setCastTime(castTime);
         this.setMaxLife(castTime + 80);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
-
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         updatePositionRelativeToOwner(owner);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int castTime) {
-        this.setupKiLaser(owner, damage, speed, color, color, castTime);
+    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int colorBorder, int castTime) {
+        this.setupKiLaser(owner, damage, speed, color, colorBorder, 0xFFFFFF, castTime);
     }
 
-    public void setupKiDodonpa(LivingEntity owner, float damage, float speed, int castTime) {
+    public void setupKiLaser(LivingEntity owner, float damage, float speed, int color, int castTime) {
+        this.setupKiLaser(owner, damage, speed, color, color, 0xFFFFFF, castTime);
+    }
+
+    public void setupKiDodonpa(LivingEntity owner, float damage, float speed, int colorOutline, int castTime) {
         this.setKiRenderType(0);
         this.setSize(0.5f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFEB7A, 0xFFE657);
-
+        this.setColors(0xFFEB7A, 0xFFE657, colorOutline);
         this.setFiring(false);
         this.setCastTime(castTime);
         this.setMaxLife(castTime + 80);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
-
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
 
+    public void setupKiDodonpa(LivingEntity owner, float damage, float speed, int castTime) {
+        this.setupKiDodonpa(owner, damage, speed, 0xFFFFFF, castTime);
+    }
+
+    public void setupKiMakkankosanpo(LivingEntity owner, float damage, float speed, int colorOutline, int castTime) {
+        this.setKiRenderType(1);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFE657, 0xFFE657, colorOutline);
+        this.setFiring(false);
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime + 120);
+        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
     public void setupKiMakkankosanpo(LivingEntity owner, float damage, float speed, int castTime) {
-        this.setKiRenderType(1);
-        this.setSize(1.0f);
-        this.setKiDamage(damage);
-        this.setKiSpeed(speed);
-        this.setColors(0xFFE657, 0xFFE657);
-
-        this.setFiring(false);
-        this.setCastTime(castTime);
-        this.setMaxLife(castTime + 120); // El Makankosappo suele llegar más lejos
-        this.setCastOffsets(0.3F, -0.1F, 0.5F);
-
-        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
-        updatePositionRelativeToOwner(owner);
-
-        if (!this.level().isClientSide) {
-            this.level().addFreshEntity(this);
-        }
+        this.setupKiMakkankosanpo(owner, damage, speed, 0xFFFFFF, castTime);
     }
 
-    // SETUP PLAYERS
-    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, int colorOutline) {
         this.setKiRenderType(0);
         this.setSize(1.0f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, colorBorder);
-
+        this.setColors(color, colorBorder, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(20);
+        this.setCastOffsets(0.3F, -0.1F, 0.5F);
+        updatePositionRelativeToOwner(owner);
+    }
+
+    public void setupKiLaserPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
+        this.setupKiLaserPlayer(owner, damage, speed, color, colorBorder, 0xFFFFFF);
+    }
+
+    public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed, int colorOutline){
+        this.setKiRenderType(1);
+        this.setSize(1.0f);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(0xFFE657, 0xFFE657, colorOutline);
+        this.setFiring(false);
+        this.setMaxLife(99999);
+        this.setCastTime(40);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
         updatePositionRelativeToOwner(owner);
     }
 
     public void setupKiMakkankosanpoPlayer(LivingEntity owner, float damage, float speed){
-        this.setKiRenderType(1);
-        this.setSize(1.0f);
+        this.setupKiMakkankosanpoPlayer(owner, damage, speed, 0xFFFFFF);
+    }
+
+    public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed, int colorOutline) {
+        this.setKiRenderType(0);
+        this.setSize(0.5f);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(0xFFE657, 0xFFE657);
-
+        this.setColors(0xFFEB7A, 0xFFE657, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
-        this.setCastTime(40); // Tiempo visual
+        this.setCastTime(20);
         this.setCastOffsets(0.3F, -0.1F, 0.5F);
         updatePositionRelativeToOwner(owner);
     }
 
     public void setupKiDodonpaPlayer(LivingEntity owner, float damage, float speed) {
-        this.setKiRenderType(0);
-        this.setSize(0.5f);
-        this.setKiDamage(damage);
-        this.setKiSpeed(speed);
-        this.setColors(0xFFEB7A, 0xFFE657);
-
-        this.setFiring(false);
-        this.setMaxLife(99999);
-        this.setCastTime(20);
-        this.setCastOffsets(0.3F, -0.1F, 0.5F);
-
-        updatePositionRelativeToOwner(owner);
+        this.setupKiDodonpaPlayer(owner, damage, speed, 0xFFFFFF);
     }
 
 

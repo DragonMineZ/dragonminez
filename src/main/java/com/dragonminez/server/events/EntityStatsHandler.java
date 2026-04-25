@@ -3,7 +3,7 @@ package com.dragonminez.server.events;
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.EntityAttributes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -63,8 +63,8 @@ public class EntityStatsHandler {
 		if (entity.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE)) {
 			entity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(melee);
 		}
-		if (entity instanceof DBSagasEntity sagaEntity) {
-			sagaEntity.setKiBlastDamage((float) ki);
+		if (entity.getAttributes().hasAttribute(EntityAttributes.KI_BLAST_DAMAGE.get())) {
+			entity.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(ki);
 		}
 	}
 

@@ -1,13 +1,13 @@
 package com.dragonminez.common.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonBallDataPackResources;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.MainBlocks;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.*;
 import com.dragonminez.common.init.entities.animal.*;
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.namek.NamekTraderEntity;
 import com.dragonminez.common.init.entities.namek.NamekWarriorEntity;
 import com.dragonminez.common.init.entities.redribbon.BanditEntity;
@@ -18,12 +18,17 @@ import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.gen.OverworldSurfaceRules;
 import com.dragonminez.server.world.region.OverworldRegion;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -36,6 +41,18 @@ import terrablender.api.SurfaceRuleManager;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModCommonEvents {
 
+	@SubscribeEvent
+	public static void onAddPackFinders(AddPackFindersEvent event) {
+		if (event.getPackType() == PackType.SERVER_DATA) {
+			event.addRepositorySource((packConsumer) -> {
+				Pack dragonballPack = Pack.readMetaAndCreate("dmz_dragonballs_runtime_data", Component.literal("DMZ Dragonballs Runtime Data"), true,
+					DragonBallDataPackResources::new, PackType.SERVER_DATA, Pack.Position.TOP, PackSource.BUILT_IN);
+				if (dragonballPack != null) packConsumer.accept(dragonballPack);
+			});
+		}
+	}
+
+
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         // MAESTROS
@@ -47,8 +64,9 @@ public class ModCommonEvents {
         // Quest NPC — single entity type for all data-driven quest NPCs | Usa un solo tipo de entidad para todos los NPCs de misiones basados en datos
         event.put(MainEntities.QUEST_NPC.get(), MastersEntity.createAttributes().build());
 
-		event.put(MainEntities.SHENRON.get(), ShenronEntity.createAttributes().build());
-		event.put(MainEntities.PORUNGA.get(), PorungaEntity.createAttributes().build());
+		for (var entity : MainEntities.getDragonWishEntities().values()) {
+			event.put(entity.get(), DragonWishEntity.createAttributes().build());
+		}
 
         // SAIBAMANS
         regAttr(event, SagaSaibamanEntity.createAttributes().build(),
@@ -65,7 +83,7 @@ public class ModCommonEvents {
 
         // SAGAS
         regAttr(event, DBSagasEntity.createAttributes().build(),
-                MainEntities.SAGA_GOKU_EARLY, MainEntities.SAGA_GOKU_EARLY_NOWEIGHTS, MainEntities.SAGA_PICCOLO_EARLY,
+                MainEntities.SAGA_GOKU_EARLY, MainEntities.SAGA_GOKU_EARLY_NOWEIGHTS, MainEntities.SAGA_PICCOLO_EARLY, MainEntities.SAGA_TIEN_EARLY, MainEntities.SAGA_YAMCHA,
                 MainEntities.SAGA_RADITZ, MainEntities.SAGA_NAPPA, MainEntities.SAGA_VEGETA,
                 MainEntities.SAGA_CUI, MainEntities.SAGA_DODORIA, MainEntities.SAGA_VEGETA_NAMEK, MainEntities.SAGA_ZARBON, MainEntities.SAGA_ZARBON_TRANSF,
                 MainEntities.SAGA_GULDO, MainEntities.SAGA_RECOOME, MainEntities.SAGA_JEICE, MainEntities.SAGA_BURTER, MainEntities.SAGA_GINYU, MainEntities.SAGA_GINYU_GOKU, MainEntities.SAGA_NAIL,
@@ -79,7 +97,9 @@ public class ModCommonEvents {
                 MainEntities.SAGA_GOKU_END_BASE, MainEntities.SAGA_GOKU_END_SSJ, MainEntities.SAGA_GOKU_END_SSJ2, MainEntities.SAGA_GOKU_END_SSJ3,
                 MainEntities.SAGA_VEGETA_END_BASE, MainEntities.SAGA_VEGETA_END_SSJ, MainEntities.SAGA_VEGETA_END_SSJ2, MainEntities.SAGA_VEGETA_MAJIN,
                 MainEntities.SAGA_GOHAN_END_BASE, MainEntities.SAGA_GOHAN_END_SSJ, MainEntities.SAGA_GOHAN_END_SSJ2, MainEntities.SAGA_GOHAN_END_ULTIMATE,
-
+                MainEntities.SAGA_GOTEN, MainEntities.SAGA_GOTEN_SSJ, MainEntities.SAGA_KID_TRUNKS, MainEntities.SAGA_KID_TRUNKS_SSJ,
+                MainEntities.SAGA_GOTENKS, MainEntities.SAGA_GOTENKS_SSJ, MainEntities.SAGA_GOTENKS_SSJ3,
+                MainEntities.SAGA_SHIN,
                 MainEntities.SHADOW_DUMMY);
 
 
@@ -135,7 +155,18 @@ public class ModCommonEvents {
 
     @SubscribeEvent
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
-        event.add(EntityType.PLAYER, MainAttributes.DMZ_HEALTH.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRENGTH.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_POWER.get());
+        event.add(EntityType.PLAYER, MainAttributes.RESISTANCE.get());
+        event.add(EntityType.PLAYER, MainAttributes.VITALITY.get());
+        event.add(EntityType.PLAYER, MainAttributes.KI_POWER.get());
+        event.add(EntityType.PLAYER, MainAttributes.ENERGY.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_ENERGY.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_STAMINA.get());
+        event.add(EntityType.PLAYER, MainAttributes.MAX_POISE.get());
+        event.add(EntityType.PLAYER, MainAttributes.MELEE_DAMAGE.get());
+        event.add(EntityType.PLAYER, MainAttributes.STRIKE_DAMAGE.get());
+        event.add(EntityType.PLAYER, MainAttributes.DEFENSE.get());
     }
 
 	@SubscribeEvent

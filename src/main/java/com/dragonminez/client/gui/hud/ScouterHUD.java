@@ -8,10 +8,8 @@ import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.stats.*;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -27,7 +25,6 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Matrix4f;
 
 import java.util.List;
 
@@ -46,7 +43,6 @@ public class ScouterHUD {
 	private static int cachedBP = 0;
 	private static final double SCAN_RANGE = 50.0;
 	private static final int BP_LIMIT = 150000000;
-	private static final float TEX_SIZE = 128.0f;
 
 	@SubscribeEvent
 	public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -95,16 +91,11 @@ public class ScouterHUD {
 		try {
 			if (entity instanceof Player player) {
 				var cap = StatsProvider.get(StatsCapability.INSTANCE, player);
-				if (cap.isPresent()) {
-					return cap.map(StatsData::getBattlePower).orElse(0);
-				}
+				if (cap.isPresent()) return cap.map(StatsData::getBattlePower).orElse(0);
 			}
-			if (entity instanceof IBattlePower bpEntity) {
-				return bpEntity.getBattlePower();
-			}
+			if (entity instanceof IBattlePower bpEntity) return bpEntity.getBattlePower();
 		} catch (Exception e) {
 			LogUtil.error(Env.CLIENT, "Error calculating BP for entity ID " + entity.getId() + ": " + e.getMessage());
-			return 0;
 		}
 		return 0;
 	}
@@ -112,24 +103,19 @@ public class ScouterHUD {
 	public static final IGuiOverlay HUD_SCOUTER = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.options.renderDebug || mc.player == null) return;
-		if (ConfigManager.getUserConfig().getHud().getAlternativeHud()) return;
+		if (ConfigManager.getUserConfig().getAlternativeHud()) return;
 
-		boolean hasScouter = mc.player.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("scouter");
-		if (!hasScouter) return;
+		if (!mc.player.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("scouter")) return;
 
-		ResourceLocation currentTexture;
-		if (scouterColor == MainItems.BLUE_SCOUTER.get()) currentTexture = SCOUTER_BLUE;
-		else if (scouterColor == MainItems.RED_SCOUTER.get()) currentTexture = SCOUTER_RED;
-		else if (scouterColor == MainItems.PURPLE_SCOUTER.get()) currentTexture = SCOUTER_PURPLE;
-		else currentTexture = SCOUTER_GREEN;
+		ResourceLocation currentTexture = scouterColor == MainItems.BLUE_SCOUTER.get() ? SCOUTER_BLUE :
+				scouterColor == MainItems.RED_SCOUTER.get() ? SCOUTER_RED :
+				scouterColor == MainItems.PURPLE_SCOUTER.get() ? SCOUTER_PURPLE : SCOUTER_GREEN;
 
 		guiGraphics.pose().pushPose();
-		guiGraphics.pose().scale(3.0f, 3.0f, 1.0f);
+		guiGraphics.pose().translate(0, height / 2.0f, 0);
+		guiGraphics.pose().scale(2.5f, 2.5f, 1.0f);
 
-		int scaledWidth = (int) (width / 3.0f);
-		int scaledHeight = (int) (height / 3.0f);
-
-		renderScouterFrame(guiGraphics, currentTexture, scaledWidth, scaledHeight);
+		renderScouterFrame(guiGraphics, currentTexture);
 
 		if (isRenderingInfo) {
 			HitResult hit = mc.hitResult;
@@ -144,19 +130,17 @@ public class ScouterHUD {
 			if (focusedEntity != null && distToFocus <= 20) {
 				int bp = getEntityBP(focusedEntity);
 				if (bp <= BP_LIMIT) {
-					String bpStr = formatBP(bp);
-					renderCustomNumbers(guiGraphics, SCOUTER_PURPLE, bpStr, scaledWidth, scaledHeight);
-					renderEntityInfo(guiGraphics, currentTexture, true, focusedEntity instanceof Player, scaledWidth, scaledHeight);
+					renderCustomNumbers(guiGraphics, SCOUTER_PURPLE, formatBP(bp));
+					renderEntityInfo(guiGraphics, currentTexture, true, focusedEntity instanceof Player);
 				}
 			} else if (focusedEntity != null && distToFocus > 20 && distToFocus <= 50) {
-				renderDirectionIcon(guiGraphics, currentTexture, mc.player, focusedEntity, scaledWidth, scaledHeight, true);
-				renderEntityInfo(guiGraphics, currentTexture, false, focusedEntity instanceof Player, scaledWidth, scaledHeight);
+				renderDirectionIcon(guiGraphics, currentTexture, mc.player, focusedEntity, true);
+				renderEntityInfo(guiGraphics, currentTexture, false, focusedEntity instanceof Player);
 			} else {
 				Entity strongest = mc.player.level().getEntity(strongestEntityID);
 				if (strongest instanceof LivingEntity livingStrongest && livingStrongest.isAlive()) {
-					double dist = mc.player.distanceTo(livingStrongest);
-					if (dist <= SCAN_RANGE) {
-						renderDirectionIcon(guiGraphics, currentTexture, mc.player, livingStrongest, scaledWidth, scaledHeight, false);
+					if (mc.player.distanceTo(livingStrongest) <= SCAN_RANGE) {
+						renderDirectionIcon(guiGraphics, currentTexture, mc.player, livingStrongest, false);
 					}
 				}
 			}
@@ -164,57 +148,29 @@ public class ScouterHUD {
 		guiGraphics.pose().popPose();
 	};
 
-
-	private static void drawScouterSprite(GuiGraphics gui, ResourceLocation texture, float x, float y, float u, float v, float w, float h) {
-		RenderSystem.setShader(GameRenderer::getPositionTexShader);
-		RenderSystem.setShaderTexture(0, texture);
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		RenderSystem.disableDepthTest();
-
-		Matrix4f matrix = gui.pose().last().pose();
-		BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-
-		float minU = u / TEX_SIZE;
-		float maxU = (u + w) / TEX_SIZE;
-		float minV = v / TEX_SIZE;
-		float maxV = (v + h) / TEX_SIZE;
-
-		buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-		buffer.vertex(matrix, x, y + h, 0).uv(minU, maxV).endVertex();
-		buffer.vertex(matrix, x + w, y + h, 0).uv(maxU, maxV).endVertex();
-		buffer.vertex(matrix, x + w, y, 0).uv(maxU, minV).endVertex();
-		buffer.vertex(matrix, x, y, 0).uv(minU, minV).endVertex();
-
-		BufferUploader.drawWithShader(buffer.end());
-		RenderSystem.enableDepthTest();
-		RenderSystem.disableBlend();
-	}
-
-	private static void renderScouterFrame(GuiGraphics gui, ResourceLocation texture, int screenWidth, int screenHeight) {
-		int y = screenHeight / 2 - 40;
+	private static void renderScouterFrame(GuiGraphics gui, ResourceLocation texture) {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-		drawScouterSprite(gui, texture, 0, y, 0, 15, 7, 41);
+		gui.blit(texture, 0, -20, 0, 15, 7, 41, 128, 128);
 		RenderSystem.enableBlend();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.65F);
-		drawScouterSprite(gui, texture, 7, y, 7, 15, 63, 41);
+		gui.blit(texture, 7, -20, 7, 15, 63, 41, 128, 128);
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		RenderSystem.disableBlend();
 	}
 
-	private static void renderCustomNumbers(GuiGraphics gui, ResourceLocation texture, String text, int w, int h) {
+	private static void renderCustomNumbers(GuiGraphics gui, ResourceLocation texture, String text) {
 		int charWidth = 3;
 		int spacing = 1;
 		int currentTextWidth = (text.length() * charWidth) + ((text.length() - 1) * spacing);
 		int maxPossibleWidth = (4 * charWidth) + (3 * spacing);
 		int centerOffset = (maxPossibleWidth - currentTextWidth) / 2;
-		int startX = ((w / 2) - 127) + centerOffset;
-		int startY = (h / 2) - 6;
+
+		int startX = 10 + centerOffset;
+		int startY = -4;
 
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
 			int u = 2, v = 64;
-			int charW = 3;
 
 			switch (c) {
 				case '0' -> { u = 2; v = 64; }
@@ -231,73 +187,51 @@ public class ScouterHUD {
 				case 'm' -> { u = 22; v = 68; }
 				case '.' -> { u = 26; v = 64; }
 			}
-
-			drawScouterSprite(gui, texture, startX + (i * (charW + 1)), startY, u, v, charW, 3);
+			gui.blit(texture, startX + (i * (charWidth + 1)), startY, u, v, charWidth, 3, 128, 128);
 		}
 	}
 
-	private static void renderDirectionIcon(GuiGraphics gui, ResourceLocation texture, Player player, LivingEntity target, int w, int h, boolean isCircleMode) {
+	private static void renderDirectionIcon(GuiGraphics gui, ResourceLocation texture, Player player, LivingEntity target, boolean isCircleMode) {
 		double dx = target.getX() - player.getX();
 		double dz = target.getZ() - player.getZ();
-
 		double angleToTarget = Math.toDegrees(Math.atan2(dz, dx)) - 90;
-		double diff = Mth.wrapDegrees(angleToTarget - player.getYRot());
-		int directionIndex = 0;
-		diff = -diff;
+		double diff = -Mth.wrapDegrees(angleToTarget - player.getYRot());
+		int dir = 0;
 
-		if (diff >= -22.5 && diff < 22.5) directionIndex = 0;       // N
-		else if (diff >= -67.5 && diff < -22.5) directionIndex = 1; // NE
-		else if (diff >= -112.5 && diff < -67.5) directionIndex = 2; // E
-		else if (diff >= -157.5 && diff < -112.5) directionIndex = 3; // SE
-		else if (diff >= 157.5 || diff < -157.5) directionIndex = 4; // S
-		else if (diff >= 112.5 && diff < 157.5) directionIndex = 5; // SW
-		else if (diff >= 67.5 && diff < 112.5) directionIndex = 6;  // W
-		else if (diff >= 22.5 && diff < 67.5) directionIndex = 7;   // NW
+		if (diff >= -22.5 && diff < 22.5) dir = 0;
+		else if (diff >= -67.5 && diff < -22.5) dir = 1;
+		else if (diff >= -112.5 && diff < -67.5) dir = 2;
+		else if (diff >= -157.5 && diff < -112.5) dir = 3;
+		else if (diff >= 157.5 || diff < -157.5) dir = 4;
+		else if (diff >= 112.5 && diff < 157.5) dir = 5;
+		else if (diff >= 67.5 && diff < 112.5) dir = 6;
+		else if (diff >= 22.5 && diff < 67.5) dir = 7;
 
-		int centerX = w / 2;
-		int centerY = h / 2 ;
-
-		switch (directionIndex) {
-			case 0 -> drawScouterSprite(gui, texture, centerX - 120, centerY - 36, 26, 75, 5, 5); // N
-			case 1 -> {
-				drawScouterSprite(gui, texture, centerX -  120, centerY -  36, 26, 75, 5, 5); // N
-				drawScouterSprite(gui, texture, centerX - 105, centerY - 22, 14, 75, 5, 5); // E
-			}
-			case 2 -> drawScouterSprite(gui, texture, centerX - 105, centerY - 22, 14, 75, 5, 5); // E
-			case 3 -> {
-				drawScouterSprite(gui, texture, centerX - 105, centerY - 22, 14, 75, 5, 5); // E
-				drawScouterSprite(gui, texture, centerX - 120, centerY - 8, 34, 75, 5, 5); // S
-			}
-			case 4 -> drawScouterSprite(gui, texture, centerX - 120, centerY - 8, 34, 75, 5, 5); // S
-			case 5 -> {
-				drawScouterSprite(gui, texture, centerX - 120, centerY - 8, 34, 75, 5, 5); // S
-				drawScouterSprite(gui, texture, centerX - 135, centerY - 22, 19, 75, 5, 5); // W
-			}
-			case 6 -> drawScouterSprite(gui, texture, centerX - 135, centerY - 22, 19, 75, 5, 5); // W
-			case 7 -> {
-				drawScouterSprite(gui, texture, centerX - 120, centerY - 36, 26, 75, 5, 5); // N
-				drawScouterSprite(gui, texture, centerX - 135, centerY - 22, 19, 75, 5, 5); // W
-			}
+		switch (dir) {
+			case 0 -> gui.blit(texture, 40, -16, 26, 75, 5, 5, 128, 128);
+			case 1 -> { gui.blit(texture, 40, -16, 26, 75, 5, 5, 128, 128); gui.blit(texture, 50, -8, 14, 75, 5, 5, 128, 128); }
+			case 2 -> gui.blit(texture, 50, -8, 14, 75, 5, 5, 128, 128);
+			case 3 -> { gui.blit(texture, 50, -8, 14, 75, 5, 5, 128, 128); gui.blit(texture, 40, 0, 34, 75, 5, 5, 128, 128); }
+			case 4 -> gui.blit(texture, 40, 0, 34, 75, 5, 5, 128, 128);
+			case 5 -> { gui.blit(texture, 40, 0, 34, 75, 5, 5, 128, 128); gui.blit(texture, 30, -8, 19, 75, 5, 5, 128, 128); }
+			case 6 -> gui.blit(texture, 30, -8, 19, 75, 5, 5, 128, 128);
+			case 7 -> { gui.blit(texture, 40, -16, 26, 75, 5, 5, 128, 128); gui.blit(texture, 30, -8, 19, 75, 5, 5, 128, 128); }
 		}
 	}
 
-	private static void renderEntityInfo(GuiGraphics gui, ResourceLocation texture, boolean extraInfo, boolean isPlayer, int w, int h) {
-		int centerX = (w / 2) - 127;
-		int centerY = (h / 2) - 10;
-
+	private static void renderEntityInfo(GuiGraphics gui, ResourceLocation texture, boolean extraInfo, boolean isPlayer) {
 		gui.pose().pushPose();
+		gui.pose().translate(40, -30, 0);
 		gui.pose().scale(2.0f, 2.0f, 1.0f);
-		drawScouterSprite(gui, texture, centerX - 17, centerY - 46, 2, 73, 9, 9);
+		gui.blit(texture, 0, 0, 2, 73, 9, 9, 128, 128);
 		gui.pose().popPose();
 
 		if (!extraInfo) return;
 
-		drawScouterSprite(gui, texture, centerX + 15, centerY - 20, 4, 88, 12, 5);
-
+		gui.blit(texture, 50, -10, 4, 88, 12, 5, 128, 128);
 		int uX = isPlayer ? 3 : 20;
-		int width = isPlayer ? 14 : 11;
-
-		drawScouterSprite(gui, texture, centerX + 18, centerY - 25, uX, 98, width, 5);
+		int w = isPlayer ? 14 : 11;
+		gui.blit(texture, 53, -15, uX, 98, w, 5, 128, 128);
 	}
 
 	private static String formatBP(int bp) {
@@ -306,10 +240,7 @@ public class ScouterHUD {
 		return String.format("%.1fm", bp / 1000000.0f).replace(",", ".");
 	}
 
-	public static void setRenderingInfo(boolean render) {
-		System.out.println("Setting Scouter Rendering Info to: " + render);
-		isRenderingInfo = render;
-	}
+	public static void setRenderingInfo(boolean render) { isRenderingInfo = render; }
 	public static boolean isRenderingInfo() { return isRenderingInfo; }
 	public static void setScouterColor(Item item) { scouterColor = item; }
 	public static Item getScouterColor() { return scouterColor; }

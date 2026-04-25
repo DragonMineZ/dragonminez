@@ -4,6 +4,7 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.render.effects.AuraRenderer;
 import com.dragonminez.client.render.effects.KiWeaponRenderer;
 import com.dragonminez.client.render.util.PlayerEffectQueue;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -29,6 +30,7 @@ public class PlayerEffectsRenderHandler {
 			PlayerEffectQueue.getAndClearSparks();
 			PlayerEffectQueue.getAndClearWeapons();
 			PlayerEffectQueue.getAndClearFirstPersonAuras();
+			PlayerEffectQueue.getAndClearKiAttacks();
 		}
 	}
 
@@ -58,6 +60,22 @@ public class PlayerEffectsRenderHandler {
 		AuraRenderer.processFusionFlashes(mc, gameTime, partialTick, poseStack, buffers);
 		KiWeaponRenderer.processWeapons(buffers, poseStack);
 		buffers.endBatch();
+
+		var kiAttacks = PlayerEffectQueue.getAndClearKiAttacks();
+		if (!kiAttacks.isEmpty()) {
+			RenderSystem.depthMask(false);
+			RenderSystem.enableBlend();
+			RenderSystem.defaultBlendFunc();
+			RenderSystem.disableCull();
+
+			for (var task : kiAttacks) {
+				task.render(poseStack, projectionMatrix);
+			}
+
+			RenderSystem.enableCull();
+			RenderSystem.depthMask(true);
+			RenderSystem.disableBlend();
+		}
 
 		AuraRenderer.processThirdPersonAuras(mc, poseStack, projectionMatrix, CURRENT_FRAME_PLAYERS, isFirstPerson, isCameraColliding);
 		AuraRenderer.processFirstPersonAuras(mc, poseStack, projectionMatrix, partialTick, CURRENT_FRAME_PLAYERS, isFirstPerson);

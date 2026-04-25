@@ -41,7 +41,7 @@ public class TechniqueHotbarHUD {
 			String[] slots = techniques.getEquippedSlots();
 			int selectedSlot = techniques.getSelectedSlot();
 			int visibleSlots = Math.min(5, slots.length);
-			boolean horizontal = ConfigManager.getUserConfig().getHud().getTechniqueHotbarHorizontal();
+			boolean horizontal = ConfigManager.getUserConfig().getTechniqueHotbarHorizontal();
 			ResourceLocation hotbarTexture = horizontal ? HORIZONTAL_TEXTURE : VERTICAL_TEXTURE;
 
 			RenderSystem.enableBlend();

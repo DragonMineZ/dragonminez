@@ -16,6 +16,7 @@ public class DMZShaders {
 	public static ShaderInstance auraShader;
 	public static ShaderInstance lightningShader;
 	public static ShaderInstance outlineShader;
+	public static ShaderInstance ki3dShader;
 
 	@SubscribeEvent
 	public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -33,5 +34,10 @@ public class DMZShaders {
 						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "transformation_mask"),
 						DefaultVertexFormat.NEW_ENTITY),
 				shaderInstance -> outlineShader = shaderInstance);
+
+		event.registerShader(new ShaderInstance(event.getResourceProvider(),
+						ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "kiattack"),
+						DefaultVertexFormat.NEW_ENTITY),
+				shaderInstance -> ki3dShader = shaderInstance);
 	}
 }

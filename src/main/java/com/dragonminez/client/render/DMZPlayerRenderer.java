@@ -2,6 +2,7 @@ package com.dragonminez.client.render;
 
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.flight.FlightRollHandler;
+import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.render.layer.*;
 import com.dragonminez.client.render.shader.TransformationPostShaderManager;
 import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
@@ -20,6 +21,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -150,6 +152,9 @@ public class DMZPlayerRenderer<T extends AbstractClientPlayer & GeoAnimatable> e
 			poseStack.mulPose(Axis.YP.rotationDegrees(-(180 - entityYaw)));
 			poseStack.translate(0, -pivotY, 0);
 		}
+
+		// Avoid rotating the full body root during attack; that tilts legs unnaturally.
+		// Torso/head pitch is still handled by the animation/model layers.
 
 		poseStack.scale(scalingX, scalingY, scalingZ);
 

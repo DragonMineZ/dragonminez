@@ -618,6 +618,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData giantForm = new FormConfig.FormData();
 		giantForm.setName(NamekianForms.GIANT);
 		giantForm.setUnlockOnSkillLevel(1);
+		giantForm.setKeepBaseFormHeadBones(true);
 		giantForm.setModelScaling(new Float[]{3.6f, 3.6f, 3.6f});
 		giantForm.setStrMultiplier(1.5);
 		giantForm.setSkpMultiplier(1.5);
@@ -631,6 +632,7 @@ public class DefaultFormsFactory {
 
 		FormConfig.FormData fullPower = new FormConfig.FormData();
 		fullPower.setName(NamekianForms.FULLPOWER);
+		fullPower.setKeepBaseFormHeadBones(true);
 		fullPower.setUnlockOnSkillLevel(2);
 		fullPower.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		fullPower.setStrMultiplier(2.25);
@@ -646,6 +648,7 @@ public class DefaultFormsFactory {
 		superNamekian.setName(NamekianForms.SUPER_NAMEKIAN);
 		superNamekian.setUnlockOnSkillLevel(3);
 		superNamekian.setCustomModel("namekian_orange");
+		superNamekian.setKeepBaseFormHeadBones(true);
 		superNamekian.setAuraColor("#7FFF00");
 		superNamekian.setHasLightnings(true);
 		superNamekian.setLightningColor("#FFFFFF");
@@ -771,6 +774,7 @@ public class DefaultFormsFactory {
 		kid.setName(MajinForms.KID);
 		kid.setUnlockOnSkillLevel(1);
 		kid.setCustomModel("majin_kid");
+		kid.setKeepBaseFormHeadBones(true);
 		kid.setModelScaling(new Float[]{0.7f, 0.7f, 0.7f});
 		kid.setStrMultiplier(1.5);
 		kid.setSkpMultiplier(1.5);
@@ -785,6 +789,7 @@ public class DefaultFormsFactory {
 		evil.setName(MajinForms.EVIL);
 		evil.setUnlockOnSkillLevel(2);
 		evil.setCustomModel("majin_evil");
+		evil.setKeepBaseFormHeadBones(true);
 		evil.setModelScaling(new Float[]{0.9f, 1.0f, 0.9f});
 		evil.setStrMultiplier(1.75);
 		evil.setSkpMultiplier(1.75);
@@ -803,6 +808,7 @@ public class DefaultFormsFactory {
 		FormConfig.FormData superForm = new FormConfig.FormData();
 		superForm.setName(MajinForms.SUPER);
 		superForm.setUnlockOnSkillLevel(3);
+		superForm.setKeepBaseFormHeadBones(true);
 		superForm.setModelScaling(new Float[]{1.0f, 1.0f, 1.0f});
 		superForm.setStrMultiplier(2.25);
 		superForm.setSkpMultiplier(2.25);
@@ -816,6 +822,7 @@ public class DefaultFormsFactory {
 		ultra.setName(MajinForms.ULTRA);
 		ultra.setUnlockOnSkillLevel(4);
 		ultra.setCustomModel("majin_ultra");
+		ultra.setKeepBaseFormHeadBones(true);
 		ultra.setModelScaling(new Float[]{1.3f, 1.2f, 1.3f});
 		ultra.setStrMultiplier(3.0);
 		ultra.setSkpMultiplier(3.0);

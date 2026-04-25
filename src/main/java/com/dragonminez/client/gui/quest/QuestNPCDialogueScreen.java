@@ -136,7 +136,7 @@ public class QuestNPCDialogueScreen extends Screen {
 						.message(buttonText)
 						.onPress(btn -> {
 							if (actionType == EntryType.OFFER) {
-								boolean isHard = ConfigManager.getUserConfig().getHud().getStoryHardDifficulty();
+								boolean isHard = ConfigManager.getUserConfig().getStoryHardDifficulty();
 								NetworkHandler.sendToServer(new QuestActionC2S(QuestActionC2S.ActionType.START, questId, isHard, ""));
 								if (Minecraft.getInstance().player != null) {
 									Minecraft.getInstance().player.playSound(MainSounds.UI_MENU_SWITCH.get());

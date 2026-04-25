@@ -117,7 +117,8 @@ public class NPCActionC2S {
 			data.getResources().setPowerRelease(0);
 			data.getStatus().setAndroidUpgraded(false);
 			data.getStatus().setInKaioPlanet(false);
-			clearTechniqueBindings(data);
+			data.getTechniques().clearAllTechniques();
+			data.getPlayerQuestData().resetAll();
 			data.getSkills().removeAllSkills();
 			data.getEffects().removeAllEffects();
 			data.getCooldowns().clearCooldowns();
@@ -134,15 +135,6 @@ public class NPCActionC2S {
 		} else if (action == 3) {
 			data.getCharacter().setHasSaiyanTail(!data.getCharacter().isHasSaiyanTail());
 		}
-	}
-
-	private static void clearTechniqueBindings(StatsData data) {
-		String[] slots = data.getTechniques().getEquippedSlots();
-		for (int i = 0; i < slots.length; i++) {
-			slots[i] = "";
-		}
-		data.getTechniques().selectSlot(0);
-		data.getTechniques().clearTechniqueCharge();
 	}
 
 	private static void handleEnma(ServerPlayer player, StatsData data, int action) {

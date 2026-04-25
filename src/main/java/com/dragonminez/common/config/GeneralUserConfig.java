@@ -5,71 +5,49 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
+@Setter
 public class GeneralUserConfig {
 	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
 
-	private final HudConfig hud = new HudConfig();
-	private final CombatConfig combat = new CombatConfig();
+	private Boolean firstPersonAnimated = true;
+	private boolean impactFramesEnabled = false;
+	private Boolean techniqueHotbarHorizontal = true;
+	private Integer xenoverseHudPosX = 5;
+	private Integer xenoverseHudPosY = 5;
+	private Boolean advancedDescription = true;
+	private Boolean advancedDescriptionPercentage = true;
+	private Boolean alternativeHud = false;
+	private Boolean hexagonStatsDisplay = false;
+	private Float menuScaleMultiplier = 1.0f;
+	private Integer healthBarPosX = 10;
+	private Integer healthBarPosY = 20;
+	private Integer energyBarPosX = 10;
+	private Integer energyBarPosY = 10;
+	private Integer staminaBarPosX = 10;
+	private Integer staminaBarPosY = 10;
+	private Boolean storyHardDifficulty = false;
+	private Boolean cameraMovementDuringFlight = true;
+	private Boolean liveCrowdinTranslations = true;
 
-	public CombatConfig getCombat() {
-		return combat;
+	public Float getMenuScaleMultiplier() {
+		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
+		return menuScaleMultiplier;
 	}
 
-	@Setter
-	@Getter
-	@NoArgsConstructor
-	public static class CombatConfig {
-		private Boolean useDMZCombatStyle = true;
-
-		public Boolean getUseDMZCombatStyle() {
-			if (useDMZCombatStyle == null) useDMZCombatStyle = true;
-			return useDMZCombatStyle;
-		}
+	public Boolean getTechniqueHotbarHorizontal() {
+		if (techniqueHotbarHorizontal == null) techniqueHotbarHorizontal = true;
+		return techniqueHotbarHorizontal;
 	}
 
-	@Setter
-	@Getter
-	@NoArgsConstructor
-	public static class HudConfig {
-		private Boolean firstPersonAnimated = true;
-		private Boolean techniqueHotbarHorizontal = true;
-		private Integer xenoverseHudPosX = 5;
-		private Integer xenoverseHudPosY = 5;
-		private Boolean advancedDescription = true;
-		private Boolean advancedDescriptionPercentage = true;
-		private Boolean alternativeHud = false;
-		private Boolean hexagonStatsDisplay = false;
-		private Float menuScaleMultiplier = 1.0f;
-		private Integer healthBarPosX = 10;
-		private Integer healthBarPosY = 20;
-		private Integer energyBarPosX = 10;
-		private Integer energyBarPosY = 10;
-		private Integer staminaBarPosX = 10;
-		private Integer staminaBarPosY = 10;
-		private Boolean storyHardDifficulty = false;
-		private Boolean cameraMovementDuringFlight = true;
-		private Boolean liveCrowdinTranslations = true;
-
-		public Float getMenuScaleMultiplier() {
-			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) menuScaleMultiplier = 1.0f;
-			return menuScaleMultiplier;
+	public void setMenuScaleMultiplier(Float menuScaleMultiplier) {
+		if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
+			this.menuScaleMultiplier = 1.0f;
+			return;
 		}
-
-		public Boolean getTechniqueHotbarHorizontal() {
-			if (techniqueHotbarHorizontal == null) techniqueHotbarHorizontal = true;
-			return techniqueHotbarHorizontal;
-		}
-
-		public void setMenuScaleMultiplier(Float menuScaleMultiplier) {
-			if (!Float.isFinite(menuScaleMultiplier) || menuScaleMultiplier <= 0.0f) {
-				this.menuScaleMultiplier = 1.0f;
-				return;
-			}
-			this.menuScaleMultiplier = menuScaleMultiplier;
-		}
+		this.menuScaleMultiplier = menuScaleMultiplier;
 	}
 }
 

@@ -5,6 +5,9 @@ import com.dragonminez.common.init.armor.DbzArmorCapeItem;
 import com.dragonminez.common.init.armor.DbzArmorItem;
 import com.dragonminez.common.init.armor.ModArmorMaterials;
 import com.dragonminez.common.init.item.*;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
+import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import net.minecraft.world.item.*;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -13,8 +16,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 @SuppressWarnings("ALL")
 public final class MainItems {
@@ -200,8 +203,12 @@ public final class MainItems {
 	public static final RegistryObject<Item> KIKONO_STICK = regItem("kikono_stick");
 
 	//DRAGON BALL RADAR
-	public static final RegistryObject<Item> DBALL_RADAR_ITEM = ITEM_REGISTER.register("dball_radar", RadarItem::new);
-	public static final RegistryObject<Item> NAMEKDBALL_RADAR_ITEM = ITEM_REGISTER.register("namekdball_radar", NamekRadarItem::new);
+	private static final Map<String, RegistryObject<Item>> DRAGON_RADAR_ITEMS = registerDragonRadarItems();
+	private static final Map<String, RegistryObject<Item>> DRAGON_RADAR_CHIP_ITEMS = registerDragonRadarChipItems();
+	private static final Map<String, RegistryObject<Item>> DRAGON_RADAR_CPU_ITEMS = registerDragonRadarCpuItems();
+
+	public static final RegistryObject<Item> DBALL_RADAR_ITEM = getDragonRadarItemOrThrow("earth_radar");
+	public static final RegistryObject<Item> NAMEKDBALL_RADAR_ITEM = getDragonRadarItemOrThrow("namek_radar");
 	public static final RegistryObject<Item> RADAR_PIECE = ITEM_REGISTER.register("radar_piece",
 			() -> new Item(properties.stacksTo(16)));
 	public static final RegistryObject<Item> T1_RADAR_CHIP = ITEM_REGISTER.register("t1_radar_chip",
@@ -266,37 +273,22 @@ public final class MainItems {
 	public static final RegistryObject<Item> PATTERN_GAMMA2 = regItem("pattern_gamma2");
 
 	//DRAGON BALLS
-	public static final RegistryObject<Item> DBALL1_BLOCK_ITEM = ITEM_REGISTER.register("dball1",
-			() -> new BlockItem(MainBlocks.DBALL1_BLOCK.get(), properties
-					.stacksTo(1)
-					.fireResistant()
-			));
-	public static final RegistryObject<Item> DBALL2_BLOCK_ITEM = ITEM_REGISTER.register("dball2",
-			() -> new BlockItem(MainBlocks.DBALL2_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL3_BLOCK_ITEM = ITEM_REGISTER.register("dball3",
-			() -> new BlockItem(MainBlocks.DBALL3_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL4_BLOCK_ITEM = ITEM_REGISTER.register("dball4",
-			() -> new BlockItem(MainBlocks.DBALL4_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL5_BLOCK_ITEM = ITEM_REGISTER.register("dball5",
-			() -> new BlockItem(MainBlocks.DBALL5_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL6_BLOCK_ITEM = ITEM_REGISTER.register("dball6",
-			() -> new BlockItem(MainBlocks.DBALL6_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL7_BLOCK_ITEM = ITEM_REGISTER.register("dball7",
-			() -> new BlockItem(MainBlocks.DBALL7_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL1_NAMEK_BLOCK_ITEM = ITEM_REGISTER.register("dball1_namek",
-			() -> new BlockItem(MainBlocks.DBALL1_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL2_NAMEK_BLOCK_ITEM = ITEM_REGISTER.register("dball2_namek",
-			() -> new BlockItem(MainBlocks.DBALL2_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL3_NAMEK_BLOCK_ITEM = ITEM_REGISTER.register("dball3_namek",
-			() -> new BlockItem(MainBlocks.DBALL3_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL4_NAMEK_BLOCK_ITEM = ITEM_REGISTER.register("dball4_namek",
-			() -> new BlockItem(MainBlocks.DBALL4_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL5_NAMEK_BLOCK_ITEM = ITEM_REGISTER.register("dball5_namek",
-			() -> new BlockItem(MainBlocks.DBALL5_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL6_NAMEK_BLOCK_ITEM = ITEM_REGISTER.register("dball6_namek",
-			() -> new BlockItem(MainBlocks.DBALL6_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
-	public static final RegistryObject<Item> DBALL7_NAMEK_BLOCK_ITEM = ITEM_REGISTER.register("dball7_namek",
-			() -> new BlockItem(MainBlocks.DBALL7_NAMEK_BLOCK.get(), properties.stacksTo(1).fireResistant()));
+	private static final Map<String, Map<Integer, RegistryObject<Item>>> DRAGON_BALL_BLOCK_ITEMS = registerDragonBallBlockItems();
+
+	public static final RegistryObject<Item> DBALL1_BLOCK_ITEM = getDragonBallBlockItemOrThrow("earth", 1);
+	public static final RegistryObject<Item> DBALL2_BLOCK_ITEM = getDragonBallBlockItemOrThrow("earth", 2);
+	public static final RegistryObject<Item> DBALL3_BLOCK_ITEM = getDragonBallBlockItemOrThrow("earth", 3);
+	public static final RegistryObject<Item> DBALL4_BLOCK_ITEM = getDragonBallBlockItemOrThrow("earth", 4);
+	public static final RegistryObject<Item> DBALL5_BLOCK_ITEM = getDragonBallBlockItemOrThrow("earth", 5);
+	public static final RegistryObject<Item> DBALL6_BLOCK_ITEM = getDragonBallBlockItemOrThrow("earth", 6);
+	public static final RegistryObject<Item> DBALL7_BLOCK_ITEM = getDragonBallBlockItemOrThrow("earth", 7);
+	public static final RegistryObject<Item> DBALL1_NAMEK_BLOCK_ITEM = getDragonBallBlockItemOrThrow("namek", 1);
+	public static final RegistryObject<Item> DBALL2_NAMEK_BLOCK_ITEM = getDragonBallBlockItemOrThrow("namek", 2);
+	public static final RegistryObject<Item> DBALL3_NAMEK_BLOCK_ITEM = getDragonBallBlockItemOrThrow("namek", 3);
+	public static final RegistryObject<Item> DBALL4_NAMEK_BLOCK_ITEM = getDragonBallBlockItemOrThrow("namek", 4);
+	public static final RegistryObject<Item> DBALL5_NAMEK_BLOCK_ITEM = getDragonBallBlockItemOrThrow("namek", 5);
+	public static final RegistryObject<Item> DBALL6_NAMEK_BLOCK_ITEM = getDragonBallBlockItemOrThrow("namek", 6);
+	public static final RegistryObject<Item> DBALL7_NAMEK_BLOCK_ITEM = getDragonBallBlockItemOrThrow("namek", 7);
 
 	// SPAWN EGGS
 	public static final RegistryObject<Item> DINO_1 = ITEM_REGISTER.register("dino1_spawn_egg", () ->
@@ -381,6 +373,82 @@ public final class MainItems {
 
 	public static Map<ArmorItem.Type, RegistryObject<Item>> fullArmorCapeNoHelmetSet(String itemId, String textureId, boolean isDamageOn) {
 		return registerArmorSetCape(itemId, textureId, false, isDamageOn);
+	}
+
+	private static Map<String, Map<Integer, RegistryObject<Item>>> registerDragonBallBlockItems() {
+		Map<String, Map<Integer, RegistryObject<Item>>> registered = new HashMap<>();
+		for (DragonBallSetDefinition definition : DragonBallDefinitions.getBootstrapBallSets()) {
+			Map<Integer, RegistryObject<Item>> setItems = new HashMap<>();
+			for (Map.Entry<Integer, String> entry : definition.getBlockRegistryNamesByStar().entrySet()) {
+				int star = entry.getKey();
+				String registryName = entry.getValue();
+				RegistryObject<Item> item = ITEM_REGISTER.register(registryName,
+						() -> new BlockItem(MainBlocks.getDragonBallBlockOrThrow(definition.getId(), star).get(), new Item.Properties().stacksTo(1).fireResistant()));
+				setItems.put(star, item);
+			}
+			registered.put(definition.getId(), Map.copyOf(setItems));
+		}
+		return Map.copyOf(registered);
+	}
+
+	public static RegistryObject<Item> getDragonBallBlockItemOrThrow(String setId, int star) {
+		Map<Integer, RegistryObject<Item>> setItems = DRAGON_BALL_BLOCK_ITEMS.get(setId);
+		if (setItems == null || !setItems.containsKey(star)) {
+			throw new IllegalArgumentException("No dragon ball block item registered for set '" + setId + "' star " + star);
+		}
+		return setItems.get(star);
+	}
+
+	public static Map<Integer, RegistryObject<Item>> getDragonBallBlockItems(String setId) {
+		Map<Integer, RegistryObject<Item>> setItems = DRAGON_BALL_BLOCK_ITEMS.get(setId);
+		return setItems == null ? Map.of() : setItems;
+	}
+
+	private static Map<String, RegistryObject<Item>> registerDragonRadarItems() {
+		Map<String, RegistryObject<Item>> registered = new LinkedHashMap<>();
+		for (DragonRadarDefinition definition : DragonBallDefinitions.getBootstrapRadars()) {
+			RegistryObject<Item> item = ITEM_REGISTER.register(definition.getItemRegistryName(), () -> new DragonRadarItem(definition.getId()));
+			registered.put(definition.getId(), item);
+		}
+		return Map.copyOf(registered);
+	}
+
+	private static Map<String, RegistryObject<Item>> registerDragonRadarChipItems() {
+		Map<String, RegistryObject<Item>> registered = new LinkedHashMap<>();
+		for (DragonRadarDefinition definition : DragonBallDefinitions.getBootstrapRadars()) {
+			definition.getChipRegistryName().ifPresent(registryName -> {
+				RegistryObject<Item> item = ITEM_REGISTER.register(registryName, () -> new Item(properties.stacksTo(16)));
+				registered.put(definition.getId(), item);
+			});
+		}
+		return Map.copyOf(registered);
+	}
+
+	private static Map<String, RegistryObject<Item>> registerDragonRadarCpuItems() {
+		Map<String, RegistryObject<Item>> registered = new LinkedHashMap<>();
+		for (DragonRadarDefinition definition : DragonBallDefinitions.getBootstrapRadars()) {
+			definition.getCpuRegistryName().ifPresent(registryName -> {
+				RegistryObject<Item> item = ITEM_REGISTER.register(registryName, () -> new Item(properties.stacksTo(16)));
+				registered.put(definition.getId(), item);
+			});
+		}
+		return Map.copyOf(registered);
+	}
+
+	public static RegistryObject<Item> getDragonRadarItemOrThrow(String radarId) {
+		RegistryObject<Item> item = DRAGON_RADAR_ITEMS.get(radarId);
+		if (item == null) {
+			throw new IllegalArgumentException("No dragon radar item registered for radar '" + radarId + "'");
+		}
+		return item;
+	}
+
+	public static RegistryObject<Item> getDragonRadarChipItem(String radarId) {
+		return DRAGON_RADAR_CHIP_ITEMS.get(radarId);
+	}
+
+	public static RegistryObject<Item> getDragonRadarCpuItem(String radarId) {
+		return DRAGON_RADAR_CPU_ITEMS.get(radarId);
 	}
 
 	public static void register(IEventBus bus) {

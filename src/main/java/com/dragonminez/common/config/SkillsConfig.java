@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Getter
 public class SkillsConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	@Setter
 	private int configVersion;
@@ -261,13 +261,37 @@ public class SkillsConfig {
 	}
 
 	public SkillCosts getSkillCosts(String skillName) {
-		return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>()));
+		return skills.getOrDefault(skillName.toLowerCase(), new SkillCosts(new ArrayList<>(), new ArrayList<>()));
+	}
+
+	public boolean isSkillAllowedForRace(String skillName, String raceName) {
+		if (skillName == null || skillName.isEmpty()) return false;
+
+		SkillCosts skillCosts = getSkillCosts(skillName);
+		if (skillCosts == null || skillCosts.getAllowedRaces() == null || skillCosts.getAllowedRaces().isEmpty()) return true;
+		if (raceName == null || raceName.isEmpty()) return false;
+
+		String normalizedRace = raceName.toLowerCase();
+		for (String allowedRace : skillCosts.getAllowedRaces()) {
+			if (allowedRace == null || allowedRace.isEmpty()) continue;
+			String normalizedAllowed = allowedRace.toLowerCase();
+			if (normalizedAllowed.equals("all") || normalizedAllowed.equals(normalizedRace)) return true;
+		}
+
+		return false;
 	}
 
 	@Getter
+	@Setter
 	@NoArgsConstructor
 	@AllArgsConstructor
 	public static class SkillCosts {
-		private List<Integer> costs;
+		private List<Integer> costs = new ArrayList<>();
+		private List<String> allowedRaces = new ArrayList<>();
+
+		public SkillCosts(List<Integer> costs) {
+			this.costs = costs;
+			this.allowedRaces = new ArrayList<>();
+		}
 	}
 }

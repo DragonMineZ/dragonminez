@@ -1,9 +1,11 @@
 package com.dragonminez.client.render.layer;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -88,6 +90,23 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 			return;
 		}
 
+		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+
+		if (FirstPersonManager.shouldRenderFirstPerson(animatable)) {
+			var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
+			if ("body".equals(anchor) && !animatable.isSpectator() && stats.getStatus().isHasCreatedCharacter()) {
+				boolean isOozaru = stats.getCharacter().getActiveForm() != null && stats.getCharacter().getActiveForm().contains("ozaru");
+				if (!isOozaru && stats.getStatus().isRenderKatana()) {
+					BakedGeoModel yajirobeModel = getGeoModel().getBakedModel(YAJIROBE_SWORD_MODEL);
+					if (yajirobeModel != null) {
+						RenderType type = RenderType.entityCutoutNoCull(YAJIROBE_SWORD_TEXTURE);
+						renderWeaponFromBodyAnchor(yajirobeModel, "katana", playerBone, poseStack, bufferSource, animatable, type, partialTick, packedLight, 1.0f);
+					}
+				}
+			}
+			return;
+		}
+
 		var stats = StatsProvider.get(StatsCapability.INSTANCE, animatable).orElse(new StatsData(animatable));
 		float alpha = animatable.isSpectator() ? 0.15f : 1.0f;
 		float tintProgress = AURA_TINT_PROGRESS.getOrDefault(animatable.getId(), 0.0f);
@@ -152,9 +171,10 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 		}
 
 		if (anchor.equals("head")) {
-			String activeBone = character.getActiveHeadBone();
+			boolean extraHeadBonesEnabled = character.areExtraHeadBonesEnabled();
+			String activeBone = character.getRenderableHeadBone();
 
-			if (activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
+			if (extraHeadBonesEnabled && activeBone != null && !activeBone.isEmpty() && !activeBone.equals("hair")) {
 
 				GeoBone targetBone = partsModel.getBone(activeBone).orElse(null);
 				boolean fromPlayerModel = false;
@@ -174,7 +194,7 @@ public class DMZRacePartsLayer<T extends AbstractClientPlayer & GeoAnimatable> e
 				}
 			}
 
-			if (race.equals("namekian") || race.equals("namekian_orange")) {
+			if (extraHeadBonesEnabled && (race.equals("namekian") || race.equals("namekian_orange"))) {
 
 				GeoBone antennaBone = partsModel.getBone("antennas1").orElse(null);
 				boolean antennaFromPlayerModel = false;

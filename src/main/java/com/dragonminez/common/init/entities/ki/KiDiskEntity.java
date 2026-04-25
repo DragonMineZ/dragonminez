@@ -33,6 +33,7 @@ public class KiDiskEntity extends AbstractKiProjectile {
     public KiDiskEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.refreshDimensions();
+        this.setKiType(KiType.DISK);
     }
 
     public KiDiskEntity(Level level, LivingEntity owner) {
@@ -48,39 +49,42 @@ public class KiDiskEntity extends AbstractKiProjectile {
         this.refreshDimensions();
     }
 
-    public void setupKiDisk(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+    public void setupKiDisk(LivingEntity owner, float damage, float speed, int colorMain, int colorBorder, int colorOutline, float size, int castTime) {
         this.setOwner(owner);
         this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, color);
-
+        this.setColors(colorMain, colorBorder, colorOutline);
         this.setFiring(false);
         this.setCastTime(castTime);
         this.setMaxLife(castTime + 100);
         this.setCastOffsets(0.4F, 0.7F, 0.2F);
-
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         updatePositionRelativeToOwner(owner);
-
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
     }
 
-    public void setupKiDiskPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
+    public void setupKiDisk(LivingEntity owner, float damage, float speed, int color, float size, int castTime) {
+        this.setupKiDisk(owner, damage, speed, color, color, 0xFFFFFF, size, castTime);
+    }
+
+    public void setupKiDiskPlayer(LivingEntity owner, float damage, float speed, int colorMain, int colorBorder, int colorOutline, float size) {
         this.setOwner(owner);
         this.setSize(size);
         this.setKiDamage(damage);
         this.setKiSpeed(speed);
-        this.setColors(color, color);
-
+        this.setColors(colorMain, colorBorder, colorOutline);
         this.setFiring(false);
         this.setMaxLife(99999);
         this.setCastTime(40);
         this.setCastOffsets(0.4F, 0.7F, 0.2F);
-
         updatePositionRelativeToOwner(owner);
+    }
+
+    public void setupKiDiskPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
+        this.setupKiDiskPlayer(owner, damage, speed, color, color, 0xFFFFFF, size);
     }
 
     public void fireHability(int finalMaxLife) {

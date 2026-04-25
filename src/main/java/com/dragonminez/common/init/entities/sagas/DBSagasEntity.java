@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
@@ -115,6 +116,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     private static final EntityDataAccessor<Integer> DBZ_STYLE = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_KID = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
     protected static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("walk");
@@ -173,17 +175,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     protected static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");
     protected static final RawAnimation ANIM_COMBO3 = RawAnimation.begin().thenPlay("combo3");
 
-    @Setter
-    @Getter
-    private double flySpeed = 0.35D;
-    @Getter
-    @Setter
-    private float kiBlastDamage = 20.0F;
-    @Setter
-    @Getter
-    private float kiBlastSpeed = 0.6F;
-    @Setter
-    private boolean canFly = true;
 
     protected int castTimer = 0;
     protected int transformTick = 0;
@@ -317,7 +308,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     public void setDBZStyle(int style) { this.entityData.set(DBZ_STYLE, style); }
     public int getDBZStyle() { return this.entityData.get(DBZ_STYLE); }
-    public boolean canFly() { return this.canFly; }
+    public boolean canFly() {
+        return this.getFlySpeed() > 0.0D;
+    }
     public void setFlyingFast(boolean flyingFast) { this.entityData.set(IS_FLYING_FAST, flyingFast); }
     public boolean isFlyingFast() { return this.entityData.get(IS_FLYING_FAST); }
     public String getAuraType() {return this.entityData.get(AURA_TYPE);}
@@ -411,7 +404,57 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
                 .add(Attributes.ATTACK_DAMAGE, 15.0D)
                 .add(Attributes.FOLLOW_RANGE, 64.0D)
-                .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D);
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.6D)
+                .add(EntityAttributes.KI_BLAST_DAMAGE.get(), 20.0D)
+                .add(EntityAttributes.FLY_SPEED.get(), 0.35D)
+                .add(EntityAttributes.KI_BLAST_SPEED.get(), 0.6D);
+    }
+
+    public void setKiBlastDamage(float damage) {
+        if (this.getAttributes().hasAttribute(EntityAttributes.KI_BLAST_DAMAGE.get())) {
+            this.getAttribute(EntityAttributes.KI_BLAST_DAMAGE.get()).setBaseValue(damage);
+        }
+    }
+
+    public float getKiBlastDamage() {
+        return this.getAttributes().hasAttribute(EntityAttributes.KI_BLAST_DAMAGE.get())
+                ? (float) this.getAttributeValue(EntityAttributes.KI_BLAST_DAMAGE.get())
+                : 20.0F;
+    }
+
+    public void setFlySpeed(double speed) {
+        if (this.getAttributes().hasAttribute(EntityAttributes.FLY_SPEED.get())) {
+            this.getAttribute(EntityAttributes.FLY_SPEED.get()).setBaseValue(speed);
+        }
+    }
+
+    public double getFlySpeed() {
+        return this.getAttributes().hasAttribute(EntityAttributes.FLY_SPEED.get())
+                ? this.getAttributeValue(EntityAttributes.FLY_SPEED.get())
+                : 0.35D;
+    }
+
+    public void setKiBlastSpeed(float speed) {
+        if (this.getAttributes().hasAttribute(EntityAttributes.KI_BLAST_SPEED.get())) {
+            this.getAttribute(EntityAttributes.KI_BLAST_SPEED.get()).setBaseValue(speed);
+        }
+    }
+
+    public float getKiBlastSpeed() {
+        return this.getAttributes().hasAttribute(EntityAttributes.KI_BLAST_SPEED.get())
+                ? (float) this.getAttributeValue(EntityAttributes.KI_BLAST_SPEED.get())
+                : 0.6F;
+    }
+
+    public void setCanFly(boolean canFly) {
+        double currentFlySpeed = this.getFlySpeed();
+        if (canFly) {
+            if (currentFlySpeed <= 0.0D) {
+                this.setFlySpeed(0.35D);
+            }
+        } else {
+            this.setFlySpeed(0.0D);
+        }
     }
 
     @Override
@@ -649,7 +692,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 break;
             case 4:
                 KiLaserEntity laser = new KiLaserEntity(this.level(), this);
-                laser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, this.getAuraColor(), this.getAuraColor(), syncCastTime);
+                laser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, usedColorMain, usedColorBorder, syncCastTime);
                 break;
             case 5:
                 KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
@@ -1320,6 +1363,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public void setComboing(boolean comboing) {this.entityData.set(IS_COMBOING, comboing);}
     public boolean isComboing() {return this.entityData.get(IS_COMBOING);}
 
+    public void setisKid(boolean iskid) {this.entityData.set(IS_KID, iskid);}
+    public boolean isKid() {return this.entityData.get(IS_KID);}
+
     public int getTextureVariant() {return this.entityData.get(TEXTURE_VARIANT);}
     public void setTextureVariant(int variant) {this.entityData.set(TEXTURE_VARIANT, variant);}
 
@@ -1389,12 +1435,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     @Override
     public void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
-        pCompound.putDouble("FlySpeed", this.flySpeed);
-        pCompound.putFloat("KiBlastDamage", this.kiBlastDamage);
-        pCompound.putFloat("KiBlastSpeed", this.kiBlastSpeed);
+        pCompound.putDouble("FlySpeed", this.getFlySpeed());
+        pCompound.putFloat("KiBlastDamage", this.getKiBlastDamage());
+        pCompound.putFloat("KiBlastSpeed", this.getKiBlastSpeed());
         pCompound.putString("AuraType", this.getAuraType());
         pCompound.putInt("DBZStyle", this.getDBZStyle());
-        pCompound.putBoolean("CanFly", this.canFly());
+        pCompound.putBoolean("isKid", this.isKid());
         pCompound.putInt("TextureVariant", this.getTextureVariant());
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
@@ -1403,12 +1449,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
-        if (pCompound.contains("FlySpeed")) this.flySpeed = pCompound.getDouble("FlySpeed");
-        if (pCompound.contains("KiBlastDamage")) this.kiBlastDamage = pCompound.getFloat("KiBlastDamage");
-        if (pCompound.contains("KiBlastSpeed")) this.kiBlastSpeed = pCompound.getFloat("KiBlastSpeed");
+        if (pCompound.contains("FlySpeed")) this.setFlySpeed(pCompound.getDouble("FlySpeed"));
+        if (pCompound.contains("KiBlastDamage")) this.setKiBlastDamage(pCompound.getFloat("KiBlastDamage"));
+        if (pCompound.contains("KiBlastSpeed")) this.setKiBlastSpeed(pCompound.getFloat("KiBlastSpeed"));
         if (pCompound.contains("AuraType")) this.setAuraType(pCompound.getString("AuraType"));
         if (pCompound.contains("DBZStyle")) this.setDBZStyle(pCompound.getInt("DBZStyle"));
-        if (pCompound.contains("CanFly")) this.setCanFly(pCompound.getBoolean("CanFly"));
+        if (pCompound.contains("isKid")) this.setisKid(pCompound.getBoolean("isKid"));
+        if (pCompound.contains("CanFly") && pCompound.getBoolean("CanFly") && this.getFlySpeed() <= 0.0D) this.setFlySpeed(0.35D);
         if (pCompound.contains("TextureVariant")) {
             this.setTextureVariant(pCompound.getInt("TextureVariant"));
         }
@@ -1436,6 +1483,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(DBZ_STYLE, 0);
         this.entityData.define(TEXTURE_VARIANT, 0);
         this.entityData.define(IS_ZANZOKEN, false);
+        this.entityData.define(IS_KID, false);
     }
 
     @Override

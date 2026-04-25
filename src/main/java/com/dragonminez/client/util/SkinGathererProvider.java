@@ -133,7 +133,7 @@ public class SkinGathererProvider {
 		switch (logicKey) {
 			case "human", "saiyan", "saiyan_ssj4", "buffed" -> resolveBodyHumanSaiyan(character, b1, consumer);
 			case "namekian", "namekian_orange" -> resolveBodyNamekian(character, b1, b2, b3, consumer);
-			case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid" -> resolveBodyMajin(character, logicKey, b1, consumer);
+			case "majin", "majin_super", "majin_ultra", "majin_evil", "majin_kid", "janemba_super" -> resolveBodyMajin(character, logicKey, b1, b2, b3, consumer);
 			case "frostdemon", "frostdemon_second", "frostdemon_final", "frostdemon_fifth", "frostdemon_third", "frostdemon_fp" -> resolveBodyFrostDemon(character, logicKey, b1, b2, b3, hair, consumer);
 			case "bioandroid", "bioandroid_semi", "bioandroid_perfect", "bioandroid_base", "bioandroid_ultra" -> resolveBodyBioAndroid(character, logicKey, b1, b2, b3, hair, consumer);
 			default -> {
@@ -257,8 +257,18 @@ public class SkinGathererProvider {
 		consumer.accept(DMZSkinLayer.getSafeTexture(getCachedTexture(prefix + "layer5.png"), getCachedTexture(fallbackPrefix + "layer5.png")), DEFAULT_STINGER_COLOR);
 	}
 
-	protected void resolveBodyMajin(Character character, String key, float[] b1, BiConsumer<ResourceLocation, float[]> consumer) {
-		String currentForm = character.getActiveForm();
+	protected void resolveBodyMajin(Character character, String key, float[] b1, float[] b2, float[] b3, BiConsumer<ResourceLocation, float[]> consumer) {
+
+        if ("janemba_super".equals(key)) {
+            String path = "textures/entity/races/majin/janembasuper_0_male_";
+
+            consumer.accept(getCachedTexture(path + "layer1.png"), b1);
+            consumer.accept(getCachedTexture(path + "layer2.png"), b2);
+            consumer.accept(getCachedTexture(path + "layer3.png"), b3);
+            return;
+        }
+
+        String currentForm = character.getActiveForm();
 		String gender = character.getGender().toLowerCase().trim();
 		String genderSuffix = (gender.equals("female") || gender.equals("mujer")) ? "female" : "male";
 		boolean isFemale = genderSuffix.equals("female");

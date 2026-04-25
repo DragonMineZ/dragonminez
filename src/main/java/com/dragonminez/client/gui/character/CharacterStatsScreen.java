@@ -76,7 +76,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	protected void init() {
 		super.init();
 
-		useHexagonView = ConfigManager.getUserConfig().getHud().getHexagonStatsDisplay();
+		useHexagonView = ConfigManager.getUserConfig().getHexagonStatsDisplay();
 
 		updateStatsData();
 		initStatButtons();
@@ -764,7 +764,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		viewSwitchButton = new SwitchButton(buttonX, buttonY, useHexagonView, Component.empty(), button -> {
 			useHexagonView = !useHexagonView;
-			ConfigManager.getUserConfig().getHud().setHexagonStatsDisplay(useHexagonView);
+			ConfigManager.getUserConfig().setHexagonStatsDisplay(useHexagonView);
 			ConfigManager.saveGeneralUserConfig();
 			((SwitchButton) button).toggle();
 			if (useHexagonView) player.playSound(MainSounds.SWITCH_OFF.get());
@@ -1020,6 +1020,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			double gravity = statsData.getTpGravityMultiplier();
 			if (gravity > 1.0) {
 				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToOneDecimal(gravity)).withStyle(ChatFormatting.GREEN).getVisualOrderText());
+			}
+
+			double potionEffect = statsData.getTpPotionEffectMultiplier();
+			if (potionEffect > 1.0) {
+				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", formatUpToOneDecimal(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE).getVisualOrderText());
 			}
 
 			renderClampedTooltip(graphics, tooltip, mouseX, mouseY);

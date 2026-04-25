@@ -6,6 +6,7 @@ import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.client.render.util.RenderUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Character;
@@ -18,6 +19,7 @@ import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.molang.MolangParser;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -31,6 +33,8 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation BASE_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/human_slim.geo.json");
     private static final ResourceLocation MAJIN_FAT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin.geo.json");
     private static final ResourceLocation MAJIN_SLIM = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/majin_slim.geo.json");
+    private static final ResourceLocation JANEMBA_SUPER = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/janemba_super.geo.json");
+
     private static final ResourceLocation FROST_DEMON = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon.geo.json");
     private static final ResourceLocation FROST_DEMON_SECOND = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_second.geo.json");
     private static final ResourceLocation FROST_DEMON_THIRD = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/frostdemon_third.geo.json");
@@ -43,6 +47,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     private static final ResourceLocation OOZARU = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/oozaru.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed.geo.json");
     private static final ResourceLocation HUMAN_SAIYAN_FEMALE_BUFFED = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/hbuffed_fem_fp.geo.json");
+
+    private static final ResourceLocation CANDY_MODEL = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "geo/entity/races/candy.geo.json");
+    private static final ResourceLocation CANDY_TEXTURE = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/entity/races/candy.png");
 
     private static final Map<ResourceLocation, Boolean> FILE_EXISTS_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, ResourceLocation> MODEL_RESOLUTION_CACHE = new ConcurrentHashMap<>();
@@ -58,6 +65,10 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getModelResource(T player) {
+        if (player.hasEffect(MainEffects.CANDY.get())) {
+            return CANDY_MODEL;
+        }
+
         return StatsProvider.get(StatsCapability.INSTANCE, player).map(data -> {
             Character character = data.getCharacter();
             String race = character.getRaceName().toLowerCase();
@@ -148,6 +159,7 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
             case "majin_super": return isMale ? BASE_DEFAULT : MAJIN_SLIM;
             case "majin_ultra": return isMale ? HUMAN_SAIYAN_BUFFED : HUMAN_SAIYAN_FEMALE_BUFFED;
             case "majin_evil": case "majin_kid": return isMale ? BASE_SLIM : MAJIN_SLIM;
+            case "janemba_super": return JANEMBA_SUPER;
             case "frostdemon": case "frostdemon_final": return FROST_DEMON;
             case "frostdemon_second": return FROST_DEMON_SECOND;
             case "frostdemon_fifth": return FROST_DEMON_FIFTH;
@@ -169,6 +181,9 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
 
     @Override
     public ResourceLocation getTextureResource(T t) {
+        if (t.hasEffect(MainEffects.CANDY.get())) {
+            return CANDY_TEXTURE;
+        }
         return textureLocation;
     }
 
@@ -181,33 +196,48 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
         super.setCustomAnimations(animatable, instanceId, animationState);
 
-        EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
-        float headPitch = entityData.headPitch() * Mth.DEG_TO_RAD;
-        float headYaw = entityData.netHeadYaw() * Mth.DEG_TO_RAD;
+        float partialTick = animationState.getPartialTick();
+        float bodyYaw = Mth.lerp(partialTick, animatable.yBodyRotO, animatable.yBodyRot);
+        float headYawDeg = Mth.wrapDegrees(Mth.lerp(partialTick, animatable.yHeadRotO, animatable.yHeadRot) - bodyYaw);
+        float lookYaw = -headYawDeg * Mth.DEG_TO_RAD;
+        float lookPitch = -Mth.lerp(partialTick, animatable.xRotO, animatable.getXRot()) * Mth.DEG_TO_RAD;
 
         CoreGeoBone head = this.getAnimationProcessor().getBone("head");
+        CoreGeoBone waist = this.getAnimationProcessor().getBone("waist");
+        CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
+        CoreGeoBone leftArm = this.getAnimationProcessor().getBone("left_arm");
+
+        float desiredHeadPitch;
+        float desiredHeadYaw;
+        if (FlySkillEvent.getInstance().isFlyingFast(animatable)) {
+            desiredHeadPitch = 0.7854F;
+            desiredHeadYaw = 0.0F;
+        } else {
+            desiredHeadPitch = Mth.clamp(lookPitch * 0.1F, -0.75F, 0.75F);
+            desiredHeadYaw = Mth.clamp(lookYaw * 0.95F, -1.2F, 1.2F);
+        }
+
         if (head != null) {
-            if (FlySkillEvent.getInstance().isFlyingFast(animatable)) {
-                head.setRotX(0.7854F);
-                head.setRotY(0);
-            } else {
-                head.setRotX(headPitch);
-                head.setRotY(headYaw);
-            }
+            EntityModelData entityModelData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
+
+            float lookPitchRad = entityModelData.headPitch() * Mth.DEG_TO_RAD;
+            float lookYawRad = entityModelData.netHeadYaw() * Mth.DEG_TO_RAD;
+
+            float waistRotX = (waist != null) ? waist.getRotX() : 0.0F;
+            float waistRotY = (waist != null) ? waist.getRotY() : 0.0F;
+
+            head.setRotX(lookPitchRad - waistRotX);
+            head.setRotY(lookYawRad - waistRotY);
         }
 
         if (animatable instanceof IPlayerAnimatable playerAnim && playerAnim.dragonminez$isShootingKi()) {
-            CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
             if (rightArm != null) {
-                rightArm.setRotX(headPitch + 1.5708F);
-                rightArm.setRotY(headYaw);
+                rightArm.setRotX(lookPitch + 1.5708F);
+                rightArm.setRotY(lookYaw);
             }
         }
 
-        float partialTick = animationState.getPartialTick();
         float ageInTicks = (float) animatable.getTick(animatable);
-        CoreGeoBone rightArm = this.getAnimationProcessor().getBone("right_arm");
-        CoreGeoBone leftArm = this.getAnimationProcessor().getBone("left_arm");
 
         try {
             if (rightArm != null) RenderUtil.animateHand(animatable, rightArm, partialTick, ageInTicks);
@@ -222,4 +252,24 @@ public class DMZPlayerModel<T extends AbstractClientPlayer & GeoAnimatable> exte
                 Minecraft.getInstance().getResourceManager().getResource(loc).isPresent()
         );
     }
+
+    @Override
+    public void applyMolangQueries(T animatable, double animTime) {
+        super.applyMolangQueries(animatable, animTime);
+
+        MolangParser parser = MolangParser.INSTANCE;
+
+        float clampedPitch = -Mth.clamp(animatable.getXRot(), -85F, 85F);
+
+        float relativeYaw = -Mth.wrapDegrees(animatable.getYHeadRot() - animatable.yBodyRot);
+        float clampedYaw = Mth.clamp(relativeYaw, -90F, 90F);
+
+        parser.setValue("query.head_x_rotation", () -> (double) clampedPitch);
+        parser.setValue("query.head_y_rotation", () -> (double) clampedYaw);
+
+        parser.setValue("query.head_pitch", () -> (double) clampedPitch);
+        parser.setValue("query.head_yaw", () -> (double) clampedYaw);
+    }
 }
+
+

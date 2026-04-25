@@ -37,6 +37,7 @@ public class KiBarrierEntity extends AbstractKiProjectile {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
         this.noPhysics = true;
+        this.setKiType(KiType.SHIELD);
     }
 
     public KiBarrierEntity(Level level, LivingEntity owner) {
@@ -51,26 +52,31 @@ public class KiBarrierEntity extends AbstractKiProjectile {
 //                MainSounds.KI_EXPLOSION_IMPACT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 
-    public void setupKiBarrier(LivingEntity owner, int color, int colorBorder, int castTime) {
-        this.setColors(color, colorBorder);
+    public void setupKiBarrier(LivingEntity owner, int color, int colorBorder, int colorOutline, int castTime) {
+        this.setColors(color, colorBorder, colorOutline);
         this.setCastTime(castTime);
         this.setMaxLife(castTime + 100);
         this.setSize(2.0f);
-
         this.setFiring(false);
         this.setFireTick(-1);
-
         if (!this.level().isClientSide) this.level().addFreshEntity(this);
     }
 
-    // SETUP PLAYERS
-    public void setupBarrierPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
-        this.setup(owner, damage, size, 0.0f, colorMain, colorBorder);
+    public void setupKiBarrier(LivingEntity owner, int color, int colorBorder, int castTime) {
+        this.setupKiBarrier(owner, color, colorBorder, 0xFFFFFF, castTime);
+    }
 
+    // SETUP PLAYERS
+    public void setupBarrierPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder, int colorOutline) {
+        this.setup(owner, damage, size, 0.0f, colorMain, colorBorder, colorOutline);
         this.setFiring(false);
         this.setFireTick(-1);
         this.setMaxLife(99999);
         this.setCastTime(40);
+    }
+
+    public void setupBarrierPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
+        this.setupBarrierPlayer(owner, damage, size, colorMain, colorBorder, 0xFFFFFF);
     }
 
     public void fireHability(int finalMaxLife) {

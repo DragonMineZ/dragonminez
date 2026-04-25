@@ -463,8 +463,18 @@ public class RaceSelectionScreen extends ScaledScreen {
             character.setBodyType(config.getDefaultBodyType());
             character.setHairId(config.getDefaultHairType());
 			if (HairManager.canUseHair(character)) character.setActiveHeadBone("hair");
-			else if (config.getHeadBones() != null && config.getHeadBones().length > 0)character.setActiveHeadBone(config.getHeadBones()[0]);
-			else character.setActiveHeadBone("");
+                  else if (config.getHeadBones() != null && config.getHeadBones().length > 0) {
+                    String firstExtraBone = "";
+                    if (character.areExtraHeadBonesEnabled()) {
+                      for (String bone : config.getHeadBones()) {
+                        if (bone != null && !bone.isEmpty() && !bone.equals("hair")) {
+                          firstExtraBone = bone;
+                          break;
+                        }
+                      }
+                    }
+                    character.setActiveHeadBone(firstExtraBone);
+                  } else character.setActiveHeadBone("");
             character.setEyesType(config.getDefaultEyesType());
             character.setNoseType(config.getDefaultNoseType());
             character.setMouthType(config.getDefaultMouthType());

@@ -2,10 +2,12 @@ package com.dragonminez.client.render.layer;
 
 import com.dragonminez.client.render.firstperson.dto.FirstPersonManager;
 import com.dragonminez.client.render.hair.HairRenderer;
+import com.dragonminez.client.render.shader.TransformationMaskBufferSource;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.hair.CustomHair;
 import com.dragonminez.common.hair.HairManager;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.*;
 import com.dragonminez.common.stats.character.Character;
 import com.dragonminez.common.stats.extras.ActionMode;
@@ -45,11 +47,21 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 	public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
 		if (!bone.getName().contentEquals("head")) return;
 
+		TransformationMaskBufferSource maskBuffer = null;
+		if (bufferSource instanceof TransformationMaskBufferSource) {
+			maskBuffer = (TransformationMaskBufferSource) bufferSource;
+			maskBuffer.setMaskCaptureEnabled(true);
+		}
+
 		poseStack.pushPose();
 		RenderUtils.translateToPivotPoint(poseStack, bone);
 		renderHair(poseStack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
 		bufferSource.getBuffer(renderType);
 		poseStack.popPose();
+
+		if (maskBuffer != null) {
+			maskBuffer.setMaskCaptureEnabled(false);
+		}
 	}
 
 	public void renderHair(PoseStack poseStack, T animatable, MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay) {
@@ -65,6 +77,9 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);
 		var stats = statsCap.orElse(new StatsData(animatable));
 		Character character = stats.getCharacter();
+
+		if (animatable.hasEffect(MainEffects.CANDY.get())) return;
+
 		if (!HairManager.canUseHair(character)) return;
 
 		CustomHair effectiveHair = HairManager.getEffectiveHair(character);

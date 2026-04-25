@@ -84,6 +84,7 @@ public class BoneVisibilityHandler {
 
 		model.getBone("tail1").ifPresent(bone -> {
 			boolean showNormalTail;
+            if (logicKey.equals("janemba_super")) return;
 
 			boolean isTaillessRace = isHuman || isNamekian || isMajin;
 			boolean isTaillessModel = logicKey.equals("human") ||

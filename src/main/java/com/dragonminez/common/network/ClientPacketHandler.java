@@ -15,11 +15,13 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
@@ -86,6 +88,10 @@ public class ClientPacketHandler {
 		RadarRenderEvent.updateRadarData(earthPositions, namekPositions);
 	}
 
+	public static void handleRadarSyncPacket(List<BlockPos> earthPositions, List<BlockPos> namekPositions, Map<String, List<BlockPos>> positionsBySet) {
+		RadarRenderEvent.updateRadarData(earthPositions, namekPositions, positionsBySet);
+	}
+
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
 			int variant, int entityId) {
 		var clientLevel = Minecraft.getInstance().level;
@@ -97,9 +103,17 @@ public class ClientPacketHandler {
 				case EVASION -> animatable.dragonminez$triggerEvasion();
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
-				case COMBO -> animatable.dragonminez$triggerCombo(variant);
-				case MELEE -> animatable.dragonminez$triggerMeleeAttack(variant);
 			}
+		}
+	}
+
+	public static void handleMeleeAnimationPacket(int entityId, String animationName, boolean isOffhand, float speedMultiplier) {
+		var clientLevel = Minecraft.getInstance().level;
+		if (clientLevel == null) return;
+
+		Entity entity = clientLevel.getEntity(entityId);
+		if (entity instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
+			animatable.dragonminez$playMeleeAnimation(animationName, isOffhand, speedMultiplier);
 		}
 	}
 

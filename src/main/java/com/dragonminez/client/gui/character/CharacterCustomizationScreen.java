@@ -27,12 +27,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.CubeMap;
 import net.minecraft.client.renderer.PanoramaRenderer;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -184,6 +186,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 30, bodyColorY, "bodyColor"));
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 60, bodyColorY, "bodyColor2"));
 		addRenderableWidget(createColorButton(LEFT_PANEL_X + 90, bodyColorY, "bodyColor3"));
+
+		if (shouldRenderFormPreviewInPreset()) {
+			initPreviewTransformationArrows(top + 174);
+		}
 	}
 
 	private void initHairTab(int top) {
@@ -205,7 +211,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 					.build());
 		}
 
-		int arrowsY = top + 174;
+		initPreviewTransformationArrows(top + 174);
+	}
+
+	private void initPreviewTransformationArrows(int arrowsY) {
 		if (previewFormIndex > 0) {
 			addRenderableWidget(createArrowButton(LEFT_PANEL_X + 18, arrowsY, true, btn -> {
 				changePreviewTransformation(-1);
@@ -218,6 +227,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				refreshScreenWidgets();
 			}));
 		}
+	}
+
+	private boolean shouldRenderFormPreviewInPreset() {
+		return !activeTabs.contains(TabId.HAIR);
 	}
 
 	private void initEyesTab(int top) {
@@ -431,10 +444,13 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.body_type").getString(), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
+		if (shouldRenderFormPreviewInPreset()) {
+			drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
+		}
 	}
 
 	private int getCurrentHairOrBoneValue() {
-		String activeBone = character.getActiveHeadBone();
+		String activeBone = character.getRenderableHeadBone();
 		boolean supportsHair = HairManager.canUseHair(character);
 		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
 
@@ -443,16 +459,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			return hairId > 0 ? hairId - 1 : -1;
 		}
 
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-		if (config != null && config.getHeadBones() != null) {
-			int currentBoneIdx = 0;
-			for (String bone : config.getHeadBones()) {
-				if (bone.equals("hair")) continue;
-				if (bone.equals(activeBone)) {
-					return hairPresets + currentBoneIdx;
-				}
-				currentBoneIdx++;
-			}
+		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
+		int boneIndex = extraBones.indexOf(activeBone);
+		if (boneIndex >= 0) {
+			return hairPresets + boneIndex;
 		}
 		return 0;
 	}
@@ -547,7 +557,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		displayedScale = Mth.lerp(0.15f, displayedScale, targetScale);
 		displayedBaseY = Mth.lerp(0.15f, displayedBaseY, targetBaseY);
 
-		int adjustedScale = getAdjustedModelScale((int) displayedScale);
+		int adjustedScale = getAdjustedModelScale(player, (int) displayedScale);
 		int currentBaseY = (int) displayedBaseY;
 
 		Quaternionf pose = (new Quaternionf()).rotateZ((float) Math.PI);
@@ -846,12 +856,25 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private int getMaxHairForCurrentState() {
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-		if (config == null || config.getHeadBones() == null) return 0;
 		int count = 0;
 		if (HairManager.canUseHair(character)) count += HairManager.getPresetCount();
-		for (String bone : config.getHeadBones()) if (!bone.equals("hair")) count++;
+		count += getAvailableExtraHeadBonesForCurrentState().size();
 		return count;
+	}
+
+	private List<String> getAvailableExtraHeadBonesForCurrentState() {
+		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
+		if (config == null || config.getHeadBones() == null || !character.areExtraHeadBonesEnabled()) {
+			return Collections.emptyList();
+		}
+
+		List<String> extraBones = new ArrayList<>();
+		for (String bone : config.getHeadBones()) {
+			if (bone != null && !bone.isEmpty() && !bone.equals("hair")) {
+				extraBones.add(bone);
+			}
+		}
+		return extraBones;
 	}
 
 	private void syncCharacter() {
@@ -877,11 +900,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void setHairFromPreview(int value) {
-		RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-		if (config == null || config.getHeadBones() == null) return;
-
 		boolean supportsHair = HairManager.canUseHair(character);
 		int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+		List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
 
 		String newActiveBone = null;
 		int newHairId = character.getHairId();
@@ -891,15 +912,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			newHairId = value + 1;
 		} else {
 			int boneIdxTarget = value - hairPresets;
-			int currentBoneIdx = 0;
-
-			for (String bone : config.getHeadBones()) {
-				if (bone.equals("hair")) continue;
-				if (currentBoneIdx == boneIdxTarget) {
-					newActiveBone = bone;
-					break;
-				}
-				currentBoneIdx++;
+			if (boneIdxTarget >= 0 && boneIdxTarget < extraBones.size()) {
+				newActiveBone = extraBones.get(boneIdxTarget);
 			}
 		}
 
@@ -1173,25 +1187,41 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		guiGraphics.fill(0, bottomBarStartY + fadeSize, this.width, this.height, colorSolid);
 	}
 
-	protected int getAdjustedModelScale(int baseScale) {
-		var player = Minecraft.getInstance().player;
-		if (player == null) return baseScale;
-		final float[] inverseScale = {1.0f};
+	protected int getAdjustedModelScale(LivingEntity player, int baseScale) {
+		float currentVisualScale = getCurrentVisualModelScale(player);
+		if (currentVisualScale <= 0.9375f) return baseScale;
+		float normalization = 0.9375f / currentVisualScale;
+		return Math.max(1, Math.round(baseScale * normalization));
+	}
+
+	private float getCurrentVisualModelScale(LivingEntity player) {
+		final float[] currentVisualScale = {0.9375f};
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
-			var localCharacter = stats.getCharacter();
+			Character localCharacter = stats.getCharacter();
 			var activeForm = localCharacter.getActiveFormData();
-			float currentScale;
+
+			float scaleX;
+			float scaleY;
 			if (activeForm != null) {
 				Float[] formScaling = activeForm.getModelScaling();
-				Float[] charScaling = localCharacter.getModelScaling();
-				currentScale = (formScaling[0] * charScaling[0] + formScaling[1] * charScaling[1]) / 2.0f;
+				scaleX = getSafeScaleValue(formScaling, 0, 0.9375f);
+				scaleY = getSafeScaleValue(formScaling, 1, 0.9375f);
 			} else {
-				Float[] charScaling = localCharacter.getModelScaling();
-				currentScale = (charScaling[0] + charScaling[1]) / 2.0f;
+				Float[] characterScaling = localCharacter.getModelScaling();
+				scaleX = getSafeScaleValue(characterScaling, 0, 0.9375f);
+				scaleY = getSafeScaleValue(characterScaling, 1, 0.9375f);
 			}
-			if (currentScale > 1.0f) inverseScale[0] = 0.9375f / currentScale;
+
+			currentVisualScale[0] = Math.max(0.1f, (scaleX + scaleY) / 2.0f);
 		});
-		return (int) (baseScale * inverseScale[0]);
+		return currentVisualScale[0];
+	}
+
+	private float getSafeScaleValue(Float[] scalingValues, int index, float fallback) {
+		if (scalingValues == null || index < 0 || index >= scalingValues.length || scalingValues[index] == null || scalingValues[index] <= 0.0f) {
+			return fallback;
+		}
+		return scalingValues[index];
 	}
 
 	private void reloadPreviewFormOptions() {
@@ -1310,9 +1340,9 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		PreviewFormOption option = previewFormOptions.get(previewFormIndex);
 		String rawName = option.formName != null ? option.formName : "";
 		if (rawName.isEmpty()) return tr("forms.dragonminez.base").getString();
-		String raceName = character.getRace() != null ? character.getRace().toLowerCase(java.util.Locale.ROOT) : "human";
+		String raceName = character.getRace() != null ? character.getRace().toLowerCase(Locale.ROOT) : "human";
 		String translationKey = "race.dragonminez." + raceName + ".form." + option.groupName + "." + rawName;
-		if (net.minecraft.client.resources.language.I18n.exists(translationKey)) {
+		if (I18n.exists(translationKey)) {
 			return tr(translationKey).getString();
 		}
 		return formatPreviewFormName(rawName);
@@ -1325,7 +1355,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			if (part == null || part.isEmpty()) continue;
 			if (!builder.isEmpty()) builder.append(' ');
 			builder.append(java.lang.Character.toUpperCase(part.charAt(0)));
-			if (part.length() > 1) builder.append(part.substring(1).toLowerCase(java.util.Locale.ROOT));
+			if (part.length() > 1) builder.append(part.substring(1).toLowerCase(Locale.ROOT));
 		}
 		return builder.isEmpty() ? rawName : builder.toString();
 	}
@@ -1431,7 +1461,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		int originalNose = character.getNoseType();
 		int originalMouth = character.getMouthType();
 		int originalTattoo = character.getTattooType();
-		String originalActiveBone = character.getActiveHeadBone(); // Guardado del hueso original
+		String originalActiveBone = character.getActiveHeadBone();
 		boolean oldHairPhysics = HairRenderer.PHYSICS_ENABLED;
 
 		boolean[] hadTailState = {false};
@@ -1459,6 +1489,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case HAIR_ONLY -> {
 				boolean supportsHair = HairManager.canUseHair(character);
 				int hairPresets = supportsHair ? HairManager.getPresetCount() : 0;
+				List<String> extraBones = getAvailableExtraHeadBonesForCurrentState();
 
 				if (supportsHair && value < hairPresets) {
 					character.setHairId(value + 1);
@@ -1466,17 +1497,8 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 				} else {
 					character.setHairId(0);
 					int boneIdxTarget = value - hairPresets;
-					int currentBoneIdx = 0;
-					RaceCharacterConfig config = ConfigManager.getRaceCharacter(character.getRace());
-					if (config != null && config.getHeadBones() != null) {
-						for (String bone : config.getHeadBones()) {
-							if (bone.equals("hair")) continue;
-							if (currentBoneIdx == boneIdxTarget) {
-								character.setActiveHeadBone(bone);
-								break;
-							}
-							currentBoneIdx++;
-						}
+					if (boneIdxTarget >= 0 && boneIdxTarget < extraBones.size()) {
+						character.setActiveHeadBone(extraBones.get(boneIdxTarget));
 					}
 				}
 				character.setEyesType(0);
@@ -1542,11 +1564,19 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> scale + 16;
 			default -> scale;
 		};
-		int previewY = switch (mode) {
-			case HAIR_ONLY -> y + 42;
-			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> y + 58;
-			default -> y + 8;
-		};
+		previewScale = getAdjustedModelScale(player, previewScale);
+		int previewY = 0;
+		switch (mode) {
+			case HAIR_ONLY -> {
+				if (ConfigManager.getRaceCharacter(character.getRace()) != null) {
+					if (Arrays.stream(ConfigManager.getRaceCharacter(character.getRace()).getHeadBones()).toList().contains("hair")) {
+						previewY = y + 36;
+					} else previewY = y + 28;
+				} else previewY = y + 36;
+			}
+			case EYES_ONLY, NOSE_ONLY, MOUTH_ONLY -> previewY = y + 58;
+			default -> previewY = y + 8;
+		}
 
 		graphics.enableScissor(
 				toScreenCoord(cardX + 1),

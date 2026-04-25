@@ -1,6 +1,5 @@
 package com.dragonminez.common.init.entities.ki;
 
-import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.*;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -35,6 +34,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
     public KiBarrageEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.setNoGravity(true);
+        this.setKiType(KiType.BARRAGE);
     }
 
     public KiBarrageEntity(Level level, LivingEntity owner) {
@@ -49,7 +49,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
         return this.getMaxLife() / 20;
     }
 
-    public static void shootVolley(LivingEntity attacker, LivingEntity target, float speed, float damage, int colorMain, int colorBorder) {
+    public static void shootVolley(LivingEntity attacker, LivingEntity target, float speed, float damage, int colorMain, int colorBorder, int colorOutline) {
         Level level = attacker.level();
         Vec3 origin = attacker.getEyePosition();
         Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.6, 0);
@@ -61,7 +61,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
 
         for (double[] offset : VOLLEY_OFFSETS) {
             KiBarrageEntity volley = new KiBarrageEntity(level, attacker);
-            volley.setup(attacker, damage, 0.4F, 0.0f, colorMain, colorBorder);
+            volley.setup(attacker, damage, 0.4F, 0.0f, colorMain, colorBorder, colorOutline);
 
             Vec3 spawnPos = origin.add(rightVector.scale(offset[0])).add(upVector.scale(offset[1]));
             volley.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
@@ -71,6 +71,10 @@ public class KiBarrageEntity extends AbstractKiProjectile {
             volley.setConvergeTarget(targetPos, viewVector, 0);
             level.addFreshEntity(volley);
         }
+    }
+
+    public static void shootVolley(LivingEntity attacker, LivingEntity target, float speed, float damage, int colorMain, int colorBorder) {
+        shootVolley(attacker, target, speed, damage, colorMain, colorBorder, 0xFFFFFF);
     }
 
     public void setConvergeTarget(Vec3 point, Vec3 forwardDirection, int delayTicks) {
@@ -164,7 +168,7 @@ public class KiBarrageEntity extends AbstractKiProjectile {
                 if (wasHit) {
                     this.onSuccessfulHit(targetEntity);
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                        double colorData = (double) this.getColorBorde();
+                        double colorData = (double) this.getColorBorder();
                         double sizeData = (double) this.getSize();
                         serverLevel.sendParticles(
                                 MainParticles.KI_SPLASH_WAVE.get(),

@@ -26,8 +26,9 @@ public class SagaGohanEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 100);
             this.setAllowedCombos(200, ComboType.AIR);
+            this.setisKid(true);
 
-            this.addKiSkill(KiSkillType.MASENKO, 200, 1.1F, 0xFFED6E, 0xFFED6E);
+            this.addKiSkill(KiSkillType.MASENKO, 200, 0.8F, 0xFFED6E, 0xFFED6E);
 
         }
 

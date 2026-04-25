@@ -175,4 +175,67 @@ public class SagaTrunksEntity {
 
     }
 
+    public static class SagaKidTrunksBaseEntity extends DBSagasEntity {
+
+        public SagaKidTrunksBaseEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFFFFF);
+            this.setKiBlastSpeed(1.4F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setisKid(true);
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 0.8F, 0x5CFFFF, 0x5CFFFF);
+            this.addKiSkill(KiSkillType.KI_SMALL, 400, 1.2F,0x5CFFFF, 0x5CFFFF );
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_kid_trunks";
+        }
+
+
+        @Override
+        protected boolean hasTransformation() {
+            return true;
+        }
+
+        @Override
+        public EntityType<? extends DBSagasEntity> getNextTransform() {
+            return MainEntities.SAGA_KID_TRUNKS_SSJ.get();
+        }
+
+        @Override
+        protected boolean spawnsNewFormFullHealth() {
+            return true;
+        }
+
+    }
+
+    public static class SagaKidTrunksSSJEntity extends DBSagasEntity {
+
+        public SagaKidTrunksSSJEntity(EntityType<? extends Monster> pEntityType, Level pLevel) {
+            super(pEntityType, pLevel);
+
+            this.setCanFly(true);
+            this.setAuraColor(0xFFE657);
+            this.setKiBlastSpeed(1.6F);
+            this.setDBZStyle(0);
+            this.setEvade(true, 60);
+            this.setisKid(true);
+
+            this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0xFFE657, 0xFFE657);
+            this.addKiSkill(KiSkillType.KI_SMALL, 400, 1.2F,0xFFE657, 0xFFE657 );
+
+        }
+
+        @Override
+        public String getGeckolibModelName() {
+            return "saga_kid_trunks_ssj";
+        }
+
+    }
+
 }

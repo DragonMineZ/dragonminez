@@ -4,7 +4,13 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -37,6 +43,7 @@ public class Status {
 	private String scouterItem;
 	private String pothalaColor;
 	private boolean isPermanentAura;
+	private final Set<String> visitedDimensions;
 
 	public Status() {
 		this.isAlive = true;
@@ -66,6 +73,18 @@ public class Status {
 		this.scouterItem = "";
 		this.pothalaColor = "";
 		this.isPermanentAura = false;
+		this.visitedDimensions = new LinkedHashSet<>();
+	}
+
+	public void markVisitedDimension(String dimensionId) {
+		if (dimensionId == null || dimensionId.isBlank() || ResourceLocation.tryParse(dimensionId) == null) {
+			return;
+		}
+		this.visitedDimensions.add(dimensionId);
+	}
+
+	public boolean hasVisitedDimension(String dimensionId) {
+		return dimensionId != null && this.visitedDimensions.contains(dimensionId);
 	}
 
 	public CompoundTag save() {
@@ -97,6 +116,12 @@ public class Status {
 		tag.putString("ScouterItem", scouterItem);
 		tag.putString("PothalaColor", pothalaColor);
 		tag.putBoolean("IsPermanentAura", isPermanentAura);
+
+		ListTag visitedDimensionsTag = new ListTag();
+		for (String dimensionId : visitedDimensions) {
+			visitedDimensionsTag.add(StringTag.valueOf(dimensionId));
+		}
+		tag.put("VisitedDimensions", visitedDimensionsTag);
 		return tag;
 	}
 
@@ -131,6 +156,13 @@ public class Status {
 		this.scouterItem = tag.getString("ScouterItem");
 		this.pothalaColor = tag.getString("PothalaColor");
 		this.isPermanentAura = tag.getBoolean("IsPermanentAura");
+		this.visitedDimensions.clear();
+		if (tag.contains("VisitedDimensions", Tag.TAG_LIST)) {
+			ListTag visitedDimensionsTag = tag.getList("VisitedDimensions", Tag.TAG_STRING);
+			for (Tag dimensionTag : visitedDimensionsTag) {
+				this.markVisitedDimension(dimensionTag.getAsString());
+			}
+		}
 	}
 
 	public void copyFrom(Status other) {
@@ -161,6 +193,7 @@ public class Status {
 		this.pothalaColor = other.pothalaColor;
 		this.scouterItem = other.scouterItem;
 		this.isPermanentAura = other.isPermanentAura;
+		this.visitedDimensions.clear();
+		this.visitedDimensions.addAll(other.visitedDimensions);
 	}
 }
-

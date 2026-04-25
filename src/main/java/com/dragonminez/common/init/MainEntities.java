@@ -2,8 +2,9 @@ package com.dragonminez.common.init;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.entities.*;
-import com.dragonminez.common.init.entities.dragon.PorungaEntity;
-import com.dragonminez.common.init.entities.dragon.ShenronEntity;
+import com.dragonminez.common.dragonball.DragonBallDefinitions;
+import com.dragonminez.common.dragonball.DragonDefinition;
+import com.dragonminez.common.init.entities.dragon.DragonWishEntity;
 import com.dragonminez.common.init.entities.animal.*;
 import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.init.entities.masters.*;
@@ -29,7 +30,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class MainEntities {
@@ -37,16 +40,35 @@ public class MainEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Reference.MOD_ID);
 
-    public static final RegistryObject<EntityType<ShenronEntity>> SHENRON =
-            ENTITY_TYPES.register("shenron",
-                    () -> EntityType.Builder.of(ShenronEntity::new, MobCategory.CREATURE)
-                            .sized(3.0f, 17.0f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "shenron").toString()));
-    public static final RegistryObject<EntityType<PorungaEntity>> PORUNGA =
-            ENTITY_TYPES.register("porunga",
-                    () -> EntityType.Builder.of(PorungaEntity::new, MobCategory.CREATURE)
-                            .sized(4.0f, 20.0f)
-                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "porunga").toString()));
+    private static final Map<String, RegistryObject<EntityType<DragonWishEntity>>> DRAGON_WISH_ENTITIES = registerDragonWishEntities();
+
+    public static final RegistryObject<EntityType<DragonWishEntity>> SHENRON = getDragonWishEntityOrThrow("shenron");
+    public static final RegistryObject<EntityType<DragonWishEntity>> PORUNGA = getDragonWishEntityOrThrow("porunga");
+
+private static Map<String, RegistryObject<EntityType<DragonWishEntity>>> registerDragonWishEntities() {
+    Map<String, RegistryObject<EntityType<DragonWishEntity>>> registered = new LinkedHashMap<>();
+    for (DragonDefinition definition : DragonBallDefinitions.getBootstrapDragons()) {
+        RegistryObject<EntityType<DragonWishEntity>> entity = ENTITY_TYPES.register(definition.getEntityRegistryName(),
+                () -> EntityType.Builder.<DragonWishEntity>of((type, level) -> new DragonWishEntity(type, level, definition.getId()), MobCategory.CREATURE)
+                        .sized(definition.getEntityWidth(), definition.getEntityHeight())
+                        .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, definition.getEntityRegistryName()).toString()));
+        registered.put(definition.getId(), entity);
+    }
+    return Map.copyOf(registered);
+}
+
+public static RegistryObject<EntityType<DragonWishEntity>> getDragonWishEntityOrThrow(String dragonId) {
+    RegistryObject<EntityType<DragonWishEntity>> entity = DRAGON_WISH_ENTITIES.get(dragonId);
+    if (entity == null) {
+        throw new IllegalArgumentException("No dragon wish entity registered for dragon '" + dragonId + "'");
+    }
+    return entity;
+}
+
+public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDragonWishEntities() {
+    return DRAGON_WISH_ENTITIES;
+}
+
     public static final RegistryObject<EntityType<MasterKarinEntity>> MASTER_KARIN =
             ENTITY_TYPES.register("master_karin",
                     () -> EntityType.Builder.of(MasterKarinEntity::new, MobCategory.CREATURE)
@@ -278,6 +300,10 @@ public class MainEntities {
                             .sized(2.8f, 6.5f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ozaru").toString()));
 
+    /*
+    FRIEZA SAGA ENTITIES
+    */
+
     public static final RegistryObject<EntityType<SagaFriezaSoldier01Entity>> SAGA_FRIEZA_SOLDIER =
             ENTITY_TYPES.register("saga_friezasoldier01",
                     () -> EntityType.Builder.of(SagaFriezaSoldier01Entity::new, MobCategory.MONSTER)
@@ -387,13 +413,23 @@ public class MainEntities {
     public static final RegistryObject<EntityType<SagaGohanEntity.SagaKidGohanEntity>> SAGA_KID_GOHAN =
             ENTITY_TYPES.register("saga_kid_gohan",
                     () -> EntityType.Builder.of(SagaGohanEntity.SagaKidGohanEntity::new, MobCategory.MONSTER)
-                            .sized(0.5f, 1.6f)
+                            .sized(0.5f, 1.3f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_gohan").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaKrillinEntity>> SAGA_KRILLIN =
             ENTITY_TYPES.register("saga_krillin",
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaKrillinEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.7f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_krillin").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaTienShinhanEntity>> SAGA_TIEN_EARLY =
+            ENTITY_TYPES.register("saga_tien_early",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaTienShinhanEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_tien_early").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaYamchaEntity>> SAGA_YAMCHA =
+            ENTITY_TYPES.register("saga_yamcha",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaYamchaEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_yamcha").toString()));
     public static final RegistryObject<EntityType<SagaGokuEntity.SagaGokuMidBaseEntity>> SAGA_GOKU_MID_BASE =
             ENTITY_TYPES.register("saga_goku_mid_base",
                     () -> EntityType.Builder.of(SagaGokuEntity.SagaGokuMidBaseEntity::new, MobCategory.MONSTER)
@@ -405,7 +441,9 @@ public class MainEntities {
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goku_mid_ssj").toString()));
 
-    //ANDROID SAGA
+    /*
+    ANDROID SAGA ENTITIES
+    */
     public static final RegistryObject<EntityType<SagaFriezaEntity.SagaMechaFrieza>> SAGA_MECHA_FRIEZA =
             ENTITY_TYPES.register("saga_mecha_frieza",
                     () -> EntityType.Builder.of(SagaFriezaEntity.SagaMechaFrieza::new, MobCategory.MONSTER)
@@ -600,6 +638,47 @@ public class MainEntities {
                     () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanEndUltimateEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_end_ultimate").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenKidEntity>> SAGA_GOTEN =
+            ENTITY_TYPES.register("saga_goten",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenKidEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goten").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenKidSSJEntity>> SAGA_GOTEN_SSJ =
+            ENTITY_TYPES.register("saga_goten_ssj",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenKidSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_goten_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaTrunksEntity.SagaKidTrunksBaseEntity>> SAGA_KID_TRUNKS =
+            ENTITY_TYPES.register("saga_kid_trunks",
+                    () -> EntityType.Builder.of(SagaTrunksEntity.SagaKidTrunksBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_trunks").toString()));
+    public static final RegistryObject<EntityType<SagaTrunksEntity.SagaKidTrunksSSJEntity>> SAGA_KID_TRUNKS_SSJ =
+            ENTITY_TYPES.register("saga_kid_trunks_ssj",
+                    () -> EntityType.Builder.of(SagaTrunksEntity.SagaKidTrunksSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kid_trunks_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenksBaseEntity>> SAGA_GOTENKS =
+            ENTITY_TYPES.register("saga_gotenks",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenksBaseEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gotenks").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenksSSJEntity>> SAGA_GOTENKS_SSJ =
+            ENTITY_TYPES.register("saga_gotenks_ssj",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenksSSJEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gotenks_ssj").toString()));
+    public static final RegistryObject<EntityType<SagaGotenEntity.SagaGotenksSSJ3Entity>> SAGA_GOTENKS_SSJ3 =
+            ENTITY_TYPES.register("saga_gotenks_ssj3",
+                    () -> EntityType.Builder.of(SagaGotenEntity.SagaGotenksSSJ3Entity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gotenks_ssj3").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaShinEntity>> SAGA_SHIN =
+            ENTITY_TYPES.register("saga_shin",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_shin").toString()));
+
 
 
     public static final RegistryObject<EntityType<ShadowDummyEntity>> SHADOW_DUMMY =
@@ -678,6 +757,21 @@ public class MainEntities {
                             .noSave()
                             .build("ki_explosion_visual")
             );
+
+    public static final RegistryObject<EntityType<SPDragonFistEntity>> SP_DRAGON_FIST = ENTITY_TYPES.register("sp_dragon_fist",
+            () -> EntityType.Builder.<SPDragonFistEntity>of(SPDragonFistEntity::new, MobCategory.MISC)
+                    .sized(2.0F, 2.0F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("sp_dragon_fist")
+    );
+
+    public static final RegistryObject<EntityType<SPMajinCandyEntity>> SP_MAJIN_CANDY = ENTITY_TYPES.register("sp_majin_candy",
+            () -> EntityType.Builder.<SPMajinCandyEntity>of(SPMajinCandyEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("sp_majin_candy"));
 
     // Single generic entity type for ALL data-driven quest NPCs
     public static final RegistryObject<EntityType<QuestNPCEntity>> QUEST_NPC =

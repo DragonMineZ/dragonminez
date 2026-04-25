@@ -129,30 +129,6 @@ public class NetworkHandler {
 				.consumerMainThread(KiBlastC2S::handle)
 				.add();
 
-		net.messageBuilder(ComboAttackC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(ComboAttackC2S::new)
-				.encoder(ComboAttackC2S::encode)
-				.consumerMainThread(ComboAttackC2S::handle)
-				.add();
-
-		net.messageBuilder(MeleeAttackIntentC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(MeleeAttackIntentC2S::new)
-				.encoder(MeleeAttackIntentC2S::encode)
-				.consumerMainThread(MeleeAttackIntentC2S::handle)
-				.add();
-
-		net.messageBuilder(CombatStylePreferenceC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(CombatStylePreferenceC2S::new)
-				.encoder(CombatStylePreferenceC2S::encode)
-				.consumerMainThread(CombatStylePreferenceC2S::handle)
-				.add();
-
-		net.messageBuilder(MeleeManualAttackC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-				.decoder(MeleeManualAttackC2S::new)
-				.encoder(MeleeManualAttackC2S::encode)
-				.consumerMainThread(MeleeManualAttackC2S::handle)
-				.add();
-
 		net.messageBuilder(NPCActionC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(NPCActionC2S::new)
 				.encoder(NPCActionC2S::toBytes)
@@ -213,11 +189,11 @@ public class NetworkHandler {
 				.consumerMainThread(LeavePartyC2S::handle)
 				.add();
 
-        net.messageBuilder(SokidanControlC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
-                .decoder(SokidanControlC2S::new)
-                .encoder(SokidanControlC2S::toBytes)
-                .consumerMainThread(SokidanControlC2S::handle)
-                .add();
+		net.messageBuilder(SokidanControlC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(SokidanControlC2S::new)
+				.encoder(SokidanControlC2S::toBytes)
+				.consumerMainThread(SokidanControlC2S::handle)
+				.add();
 
 		net.messageBuilder(EquipTechniqueC2S.class,  id(), NetworkDirection.PLAY_TO_SERVER)
 				.decoder(EquipTechniqueC2S::new)
@@ -247,6 +223,12 @@ public class NetworkHandler {
 				.decoder(TechniqueChargeC2S::new)
 				.encoder(TechniqueChargeC2S::toBytes)
 				.consumerMainThread(TechniqueChargeC2S::handle)
+				.add();
+
+		net.messageBuilder(CombatAttackRequestC2S.class, id(), NetworkDirection.PLAY_TO_SERVER)
+				.decoder(CombatAttackRequestC2S::new)
+				.encoder(CombatAttackRequestC2S::encode)
+				.consumerMainThread(CombatAttackRequestC2S::handle)
 				.add();
 
 		/*
@@ -335,6 +317,30 @@ public class NetworkHandler {
 				.encoder(PartyInviteToastS2C::encode)
 				.consumerMainThread(PartyInviteToastS2C::handle)
 				.add();
+
+		net.messageBuilder(SyncWeaponRegistryS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncWeaponRegistryS2C::new)
+				.encoder(SyncWeaponRegistryS2C::encode)
+				.consumerMainThread(SyncWeaponRegistryS2C::handle)
+				.add();
+
+		net.messageBuilder(MeleeAnimationS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(MeleeAnimationS2C::new)
+				.encoder(MeleeAnimationS2C::encode)
+				.consumerMainThread(MeleeAnimationS2C::handle)
+				.add();
+
+		net.messageBuilder(TriggerImpactFrameS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(TriggerImpactFrameS2C::new)
+				.encoder(TriggerImpactFrameS2C::encode)
+				.consumerMainThread(TriggerImpactFrameS2C::handle)
+				.add();
+
+		net.messageBuilder(SyncSpacePodDestinationsS2C.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+				.decoder(SyncSpacePodDestinationsS2C::new)
+				.encoder(SyncSpacePodDestinationsS2C::encode)
+				.consumerMainThread(SyncSpacePodDestinationsS2C::handle)
+				.add();
 	}
 
 	public static <MSG> void sendToServer(MSG message) {
@@ -352,5 +358,4 @@ public class NetworkHandler {
 	public static <MSG> void sendToTrackingEntityAndSelf(MSG message, Entity entity) {
 		INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
 	}
-
 }

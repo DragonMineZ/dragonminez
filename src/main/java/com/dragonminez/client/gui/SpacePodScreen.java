@@ -2,14 +2,11 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.TravelToPlanetC2S;
 import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.server.world.dimension.NamekDimension;
-import com.dragonminez.server.world.dimension.OtherworldDimension;
+import com.dragonminez.common.spacepod.SpacePodDestinationDefinition;
+import com.dragonminez.common.spacepod.SpacePodDestinationRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -19,10 +16,8 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jspecify.annotations.NonNull;
@@ -88,30 +83,38 @@ public class SpacePodScreen extends Screen {
 
 	private void loadDestinations() {
 		destinations.clear();
-
-		final boolean[] kaioUnlocked = {false};
-		if (this.minecraft.player != null) {
-			StatsProvider.get(StatsCapability.INSTANCE, this.minecraft.player).ifPresent(cap -> kaioUnlocked[0] = cap.getStatus().isInKaioPlanet());
+		if (this.minecraft == null || this.minecraft.player == null) {
+			return;
 		}
 
-		destinations.add(new PlanetDestination("gui.dragonminez.spacepod.overworld", Level.OVERWORLD, 0, true));
-		destinations.add(new PlanetDestination("gui.dragonminez.spacepod.namek", NamekDimension.NAMEK_KEY, 1, true));
-		if (ConfigManager.getServerConfig().getWorldGen().getOtherworldActive()) {
-			destinations.add(new PlanetDestination("gui.dragonminez.spacepod.otherworld", OtherworldDimension.OTHERWORLD_KEY, 2, kaioUnlocked[0]));
-		} else {
-			destinations.add(new PlanetDestination("gui.dragonminez.spacepod.otherworld", null, 2, false));
+		for (SpacePodDestinationDefinition definition : SpacePodDestinationRegistry.getClientDestinations()) {
+			boolean unlocked = definition.unlockRules().test(this.minecraft.player);
+			if (!unlocked && !definition.showWhenLocked()) {
+				continue;
+			}
+
+			ResourceLocation iconTexture = definition.iconTexture() != null ? ResourceLocation.tryParse(definition.iconTexture()) : null;
+			destinations.add(new PlanetDestination(
+					definition.id(),
+					definition.name(),
+					definition.translate(),
+					definition.dimension(),
+					definition.iconIndex(),
+					iconTexture,
+					unlocked
+			));
 		}
-		destinations.add(new PlanetDestination("gui.dragonminez.spacepod.supreme", null, 3, false));
-		destinations.add(new PlanetDestination("gui.dragonminez.spacepod.cereal", null, 4, false));
-		destinations.add(new PlanetDestination("gui.dragonminez.spacepod.beerus", null, 5, false));
 	}
 
 	private void initiateTravel() {
 		if (selectedIndex >= 0 && selectedIndex < destinations.size()) {
 			PlanetDestination dest = destinations.get(selectedIndex);
-			if (dest.unlocked && dest.dimension != null && this.minecraft.player.level().dimension() != dest.dimension) {
-				NetworkHandler.sendToServer(new TravelToPlanetC2S(dest.dimension));
-				this.onClose();
+			if (dest.unlocked && dest.dimensionId != null && !dest.dimensionId.isBlank() && dest.id != null && !dest.id.isBlank()) {
+				String currentDimensionId = this.minecraft.player.level().dimension().location().toString();
+				if (!currentDimensionId.equals(dest.dimensionId)) {
+					NetworkHandler.sendToServer(new TravelToPlanetC2S(dest.id));
+					this.onClose();
+				}
 			}
 		}
 	}
@@ -162,21 +165,14 @@ public class SpacePodScreen extends Screen {
 				graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, 0x30000000);
 			}
 
-			RenderSystem.setShaderTexture(0, ICONS_TEXTURE);
-			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-			int u = dest.unlocked ? ICON_X_COLOR : ICON_X_GRAY;
-			int v = ICON_Y_START + (dest.iconIndex * ICON_Y_STEP);
-
 			int iconYCentered = itemY + (ITEM_HEIGHT - ICON_SIZE) / 2;
-
-			graphics.blit(ICONS_TEXTURE, listLeft + 5, iconYCentered, u, v, ICON_SIZE, ICON_SIZE, 256, 256);
+			renderDestinationIcon(graphics, dest, listLeft + 5, iconYCentered);
 
 			Component textToDraw;
 			int textColor;
 
 			if (dest.unlocked) {
-				textToDraw = tr(dest.nameKey).withStyle(ChatFormatting.BOLD);
+				textToDraw = destinationName(dest).copy().withStyle(ChatFormatting.BOLD);
 				textColor = 0x20E0FF;
 			} else {
 				textToDraw = txt("???").withStyle(ChatFormatting.BOLD);
@@ -191,6 +187,23 @@ public class SpacePodScreen extends Screen {
 		if (maxScroll > 0) {
 			renderScrollbar(graphics, listTop, listHeight);
 		}
+	}
+
+	private void renderDestinationIcon(GuiGraphics graphics, PlanetDestination dest, int x, int y) {
+		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+		if (dest.iconTexture != null) {
+			graphics.blit(dest.iconTexture, x, y, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
+			return;
+		}
+
+		int iconIndex = dest.iconIndex != null ? dest.iconIndex : 0;
+		int u = dest.unlocked ? ICON_X_COLOR : ICON_X_GRAY;
+		int v = ICON_Y_START + (iconIndex * ICON_Y_STEP);
+		graphics.blit(ICONS_TEXTURE, x, y, u, v, ICON_SIZE, ICON_SIZE, 256, 256);
+	}
+
+	private Component destinationName(PlanetDestination destination) {
+		return destination.translate ? tr(destination.name) : txt(destination.name);
 	}
 
 	private void renderScrollbar(GuiGraphics graphics, int listTop, int listHeight) {
@@ -304,15 +317,21 @@ public class SpacePodScreen extends Screen {
 	}
 
 	private static class PlanetDestination {
-		String nameKey;
-		ResourceKey<Level> dimension;
-		int iconIndex;
+		String id;
+		String name;
+		boolean translate;
+		String dimensionId;
+		Integer iconIndex;
+		ResourceLocation iconTexture;
 		boolean unlocked;
 
-		public PlanetDestination(String nameKey, ResourceKey<Level> dimension, int iconIndex, boolean unlocked) {
-			this.nameKey = nameKey;
-			this.dimension = dimension;
+		public PlanetDestination(String id, String name, boolean translate, String dimensionId, Integer iconIndex, ResourceLocation iconTexture, boolean unlocked) {
+			this.id = id;
+			this.name = name;
+			this.translate = translate;
+			this.dimensionId = dimensionId;
 			this.iconIndex = iconIndex;
+			this.iconTexture = iconTexture;
 			this.unlocked = unlocked;
 		}
 	}

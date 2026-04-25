@@ -1,7 +1,9 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.common.dragonball.DragonRadarDefinition;
 import com.dragonminez.common.init.MainItems;
+import com.dragonminez.common.init.item.DragonRadarItem;
 import com.dragonminez.server.world.dimension.NamekDimension;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
@@ -19,7 +21,9 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class RadarRenderEvent {
@@ -27,10 +31,25 @@ public class RadarRenderEvent {
 
 	private static List<BlockPos> clientEarthPositions = new ArrayList<>();
 	private static List<BlockPos> clientNamekPositions = new ArrayList<>();
+	private static Map<String, List<BlockPos>> clientPositionsBySet = new HashMap<>();
 
 	public static void updateRadarData(List<BlockPos> earth, List<BlockPos> namek) {
 		clientEarthPositions = earth;
 		clientNamekPositions = namek;
+		clientPositionsBySet = new HashMap<>();
+		clientPositionsBySet.put("earth", earth);
+		clientPositionsBySet.put("namek", namek);
+	}
+
+	public static void updateRadarData(List<BlockPos> earth, List<BlockPos> namek, Map<String, List<BlockPos>> positionsBySet) {
+		clientEarthPositions = earth;
+		clientNamekPositions = namek;
+		clientPositionsBySet = new HashMap<>();
+		if (positionsBySet != null) {
+			positionsBySet.forEach((setId, positions) -> clientPositionsBySet.put(setId, new ArrayList<>(positions)));
+		}
+		clientPositionsBySet.put("earth", earth);
+		clientPositionsBySet.put("namek", namek);
 	}
 
 	@SubscribeEvent
@@ -75,6 +94,24 @@ public class RadarRenderEvent {
 			targets = clientNamekPositions;
 			range = getRadarRange(offHand);
 			isMainHand = false;
+		}
+
+		if (targets == null) {
+			if (mainHand.getItem() instanceof DragonRadarItem genericMainRadar) {
+				DragonRadarDefinition definition = genericMainRadar.getDefinition();
+				if (definition != null && definition.supportsDimension(level.dimension()) && definition.getBallSetId() != null) {
+					targets = clientPositionsBySet.getOrDefault(definition.getBallSetId(), List.of());
+					range = getRadarRange(mainHand);
+					isMainHand = true;
+				}
+			} else if (offHand.getItem() instanceof DragonRadarItem genericOffRadar) {
+				DragonRadarDefinition definition = genericOffRadar.getDefinition();
+				if (definition != null && definition.supportsDimension(level.dimension()) && definition.getBallSetId() != null) {
+					targets = clientPositionsBySet.getOrDefault(definition.getBallSetId(), List.of());
+					range = getRadarRange(offHand);
+					isMainHand = false;
+				}
+			}
 		}
 
 		if (targets != null) {

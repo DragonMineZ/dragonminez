@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities;
 
+import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -39,7 +40,10 @@ public class ShadowDummyEntity extends DBSagasEntity {
 				.add(Attributes.ATTACK_DAMAGE, 15.0D)
 				.add(Attributes.FOLLOW_RANGE, 64.0D)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.6D)
-				.add(Attributes.ARMOR, 10.0D);
+				.add(Attributes.ARMOR, 10.0D)
+				.add(EntityAttributes.KI_BLAST_DAMAGE.get(), 20.0D)
+				.add(EntityAttributes.FLY_SPEED.get(), 0.35D)
+				.add(EntityAttributes.KI_BLAST_SPEED.get(), 0.6D);
 	}
 
 	public void setOwner(LivingEntity owner) {

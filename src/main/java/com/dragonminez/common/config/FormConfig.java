@@ -11,7 +11,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class FormConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 	private int configVersion;
 
 	private String groupName;
@@ -38,6 +38,7 @@ public class FormConfig {
 		private String name = "";
 		private Integer unlockOnSkillLevel = 0;
 		private String customModel = "";
+		private boolean keepBaseFormHeadBones = false;
 		private String bodyColor1 = "";
 		private String bodyColor2 = "";
 		private String bodyColor3 = "";
@@ -76,6 +77,10 @@ public class FormConfig {
 		private Boolean canAlwaysTransform = false;
 		private Boolean directTransformation = false;
 		private TransformationPostShaderConfig transformationPostShader = new TransformationPostShaderConfig();
+
+		private java.util.List<TriggerItemCost> triggerItemCosts = new java.util.ArrayList<>();
+		private java.util.List<DurationItemCost> durationItemCosts = new java.util.ArrayList<>();
+		private java.util.List<MobEffectConfig> mobEffects = new java.util.ArrayList<>();
 
 		private transient float[] rgbBodyColor1;
 		private transient float[] rgbBodyColor2;
@@ -193,6 +198,27 @@ public class FormConfig {
 			return transformationPostShader != null ? transformationPostShader : new TransformationPostShaderConfig();
 		}
 
+		public java.util.List<MobEffectConfig> getMobEffects() {
+			return mobEffects != null ? mobEffects : java.util.Collections.emptyList();
+		}
+
+
+		public java.util.List<TriggerItemCost> getTriggerItemCosts() {
+			return triggerItemCosts != null ? triggerItemCosts : java.util.Collections.emptyList();
+		}
+
+		public java.util.List<DurationItemCost> getDurationItemCosts() {
+			return durationItemCosts != null ? durationItemCosts : java.util.Collections.emptyList();
+		}
+
+		public boolean hasTriggerItemCosts() {
+			return triggerItemCosts != null && !triggerItemCosts.isEmpty();
+		}
+
+		public boolean hasDurationItemCosts() {
+			return durationItemCosts != null && !durationItemCosts.isEmpty();
+		}
+
 		public float[] getRgbBodyColor1() {
 			if (rgbBodyColor1 == null && bodyColor1 != null && !bodyColor1.isEmpty()) rgbBodyColor1 = com.dragonminez.client.util.ColorUtils.hexToRgb(bodyColor1);
 			return rgbBodyColor1;
@@ -226,6 +252,127 @@ public class FormConfig {
 		public float[] getRgbAuraColor() {
 			if (rgbAuraColor == null && auraColor != null && !auraColor.isEmpty()) rgbAuraColor = com.dragonminez.client.util.ColorUtils.hexToRgb(auraColor);
 			return rgbAuraColor;
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class MobEffectConfig {
+			private String effectId = "";
+			private Integer amplifier = 0;
+			private Integer durationTicks = -1;
+			private Boolean ambient = false;
+			private Boolean visible = true;
+			private Boolean showIcon = true;
+
+			public String getEffectId() {
+				return effectId != null ? effectId.trim() : "";
+			}
+
+			public int getAmplifier() {
+				return Math.max(0, amplifier != null ? amplifier : 0);
+			}
+
+			public int getDurationTicks() {
+				return durationTicks != null ? durationTicks : -1;
+			}
+
+			public boolean isPersistent() {
+				return getDurationTicks() < 0;
+			}
+
+			public boolean isAmbient() {
+				return Boolean.TRUE.equals(ambient);
+			}
+
+			public boolean isVisible() {
+				return visible == null || visible;
+			}
+
+			public boolean isShowIcon() {
+				return showIcon == null || showIcon;
+			}
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class TriggerItemCost {
+			private String itemId = "";
+			private String itemTag = "";
+			private String nbt = "";
+			private Integer count = 1;
+			private Boolean consume = true;
+
+			public String getItemId() {
+				return itemId != null ? itemId.trim() : "";
+			}
+
+			public String getItemTag() {
+				return itemTag != null ? itemTag.trim() : "";
+			}
+
+			public String getNbt() {
+				return nbt != null ? nbt.trim() : "";
+			}
+
+			public int getCount() {
+				return Math.max(1, count != null ? count : 1);
+			}
+
+			public boolean isConsume() {
+				return consume == null || consume;
+			}
+
+			public boolean hasItemId() {
+				return !getItemId().isEmpty();
+			}
+
+			public boolean hasItemTag() {
+				return !getItemTag().isEmpty();
+			}
+
+			public boolean hasNbt() {
+				return !getNbt().isEmpty();
+			}
+		}
+
+		@Setter
+		@Getter
+		@NoArgsConstructor
+		public static class DurationItemCost {
+			private String itemId = "";
+			private String itemTag = "";
+			private String nbt = "";
+			private Integer durationSeconds = 1;
+
+			public String getItemId() {
+				return itemId != null ? itemId.trim() : "";
+			}
+
+			public String getItemTag() {
+				return itemTag != null ? itemTag.trim() : "";
+			}
+
+			public String getNbt() {
+				return nbt != null ? nbt.trim() : "";
+			}
+
+			public int getDurationSeconds() {
+				return Math.max(1, durationSeconds != null ? durationSeconds : 1);
+			}
+
+			public boolean hasItemId() {
+				return !getItemId().isEmpty();
+			}
+
+			public boolean hasItemTag() {
+				return !getItemTag().isEmpty();
+			}
+
+			public boolean hasNbt() {
+				return !getNbt().isEmpty();
+			}
 		}
 
 		@Setter

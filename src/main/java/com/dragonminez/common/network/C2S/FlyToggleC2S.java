@@ -1,7 +1,9 @@
 package com.dragonminez.common.network.C2S;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
+import com.dragonminez.common.network.S2C.ResourceSyncS2C;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -14,21 +16,25 @@ import java.util.function.Supplier;
 public class FlyToggleC2S {
 
     private final boolean enable;
+    private final boolean isBurst;
 
-    public FlyToggleC2S(boolean enable) {
+    public FlyToggleC2S(boolean enable, boolean isBurst) {
         this.enable = enable;
+        this.isBurst = isBurst;
     }
 
     public FlyToggleC2S(FriendlyByteBuf buf) {
         this.enable = buf.readBoolean();
+        this.isBurst = buf.readBoolean();
     }
 
     public static void encode(FlyToggleC2S msg, FriendlyByteBuf buf) {
         buf.writeBoolean(msg.enable);
+        buf.writeBoolean(msg.isBurst);
     }
 
     public static FlyToggleC2S decode(FriendlyByteBuf buf) {
-        return new FlyToggleC2S(buf.readBoolean());
+        return new FlyToggleC2S(buf);
     }
 
     public static void handle(FlyToggleC2S msg, Supplier<NetworkEvent.Context> ctx) {
@@ -43,14 +49,24 @@ public class FlyToggleC2S {
                 if (flySkill.isActive() == msg.enable) return;
 
                 int flyLevel = flySkill.getLevel();
-                int maxEnergy = data.getMaxEnergy();
 
                 double energyCostPercent = Math.max(0.01, 0.04 - (flyLevel * 0.003));
-                int energyCost = (int) Math.ceil(maxEnergy * energyCostPercent);
+                int energyCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * energyCostPercent);
+
+                int totalCost = energyCost;
+                int burstCost = 0;
+
+                if (msg.enable && msg.isBurst && flyLevel >= 5) {
+                    burstCost = (int) Math.ceil(ConfigManager.getCombatConfig().getBaselineFormDrain() * 0.75);
+                    totalCost += burstCost;
+                }
 
                 if (msg.enable) {
-                    if (data.getResources().getCurrentEnergy() < energyCost) {
-                        return;
+                    if (data.getResources().getCurrentEnergy() < totalCost) return;
+
+                    if (msg.isBurst && burstCost > 0) {
+                        data.getResources().addEnergy(-burstCost);
+                        NetworkHandler.sendToTrackingEntityAndSelf(new ResourceSyncS2C(player), player);
                     }
                 }
 
@@ -58,7 +74,6 @@ public class FlyToggleC2S {
 
                 if (flySkill.isActive()) {
                     player.getAbilities().mayfly = true;
-                    // Keep vanilla creative-flight movement disabled; DMZ handles motion client-side.
                     player.getAbilities().flying = false;
                     player.onUpdateAbilities();
                 } else {

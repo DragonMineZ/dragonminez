@@ -51,54 +51,18 @@ public class ClientStatsEvents {
 
 	private static FlightSoundInstance flightSound;
 
-	private static int transformDoubleTapTimer = 0;
-	private static int kiChargeDoubleTapTimer = 0;
+	private static long lastTransformTapTime = 0;
+	private static long lastKiChargeTapTime = 0;
 	private static int kiBlastTimer = 0;
 	private static boolean wasTransformKeyDown = false;
 	private static boolean wasKiChargeKeyDown = false;
 	private static long lastDashTime = 0;
 	private static boolean wasDashKeyDown = false;
-	private static boolean wasLeftClickDown = false;
-	private static boolean wasRightClickDown = false;
-	private static int lightAttackHoldTicks = 0;
-	private static int heavyAttackHoldTicks = 0;
-	private static boolean lightManualReleasedDuringHold = false;
-	private static boolean heavyManualReleasedDuringHold = false;
-	private static Boolean lastSentCombatStylePreference = null;
 	private static boolean wasDescendActionDown = false;
 	private static boolean wasTechniqueChargeDown = false;
+	private static boolean wasRightClickDown = false;
 	private static int lockedVanillaHotbarSlot = -1;
 	private static int lockedTechniqueSlot = -1;
-	private static int blockMeleeVisualCooldownTicks = 0;
-
-	@SubscribeEvent
-	public static void onClickInput(InputEvent.InteractionKeyMappingTriggered event) {
-		if (!event.isAttack()) return;
-
-		Minecraft mc = Minecraft.getInstance();
-		LocalPlayer player = mc.player;
-		if (player == null || mc.screen != null) return;
-		if (!ConfigManager.getUserConfig().getCombat().getUseDMZCombatStyle()) return;
-		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-			if (!data.getStatus().isHasCreatedCharacter()) return;
-			if (data.getStatus().isStunned()) return;
-			if (KeyBinds.SECOND_FUNCTION_KEY.isDown()) return;
-
-			if (mc.hitResult instanceof EntityHitResult) {
-				event.setCanceled(true);
-				return;
-			}
-
-			if (mc.hitResult instanceof BlockHitResult) {
-				return;
-			}
-		});
-	}
-
-	private static boolean isToolLikeItem(String descriptionId) {
-		if (descriptionId == null) return false;
-		return descriptionId.contains("pickaxe") || descriptionId.contains("axe") || descriptionId.contains("shovel") || descriptionId.contains("hoe");
-	}
 
 	@SubscribeEvent
 	public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
@@ -206,11 +170,6 @@ public class ClientStatsEvents {
 
 		StatsProvider.get(StatsCapability.INSTANCE, localPlayer).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
-			boolean useDMZCombatStyle = ConfigManager.getUserConfig().getCombat().getUseDMZCombatStyle();
-			if (lastSentCombatStylePreference == null || lastSentCombatStylePreference != useDMZCombatStyle) {
-				NetworkHandler.sendToServer(new CombatStylePreferenceC2S(useDMZCombatStyle));
-				lastSentCombatStylePreference = useDMZCombatStyle;
-			}
 
 			if (data.getTechniques().getSelectedSlot() >= TECHNIQUE_VISIBLE_SLOTS) {
 				data.getTechniques().selectSlot(0);
@@ -242,141 +201,16 @@ public class ClientStatsEvents {
 			boolean isKiChargeKeyPressed = KeyBinds.KI_CHARGE.isDown() && !isStunned;
 			boolean isDescendKeyPressed = KeyBinds.SECOND_FUNCTION_KEY.isDown() && !isStunned;
 			boolean isActionKeyPressed = KeyBinds.ACTION_KEY.isDown() && !isStunned;
-			boolean isRightClickDown = mc.options.keyUse.isDown();
-			boolean isLeftClickDown = mc.options.keyAttack.isDown();
-			boolean isTargetingBlock = mc.hitResult instanceof BlockHitResult;
-			boolean hasToolLikeItem = isToolLikeItem(localPlayer.getMainHandItem().getDescriptionId()) || isToolLikeItem(localPlayer.getOffhandItem().getDescriptionId());
+			boolean isRightClickDown = mc.options.keyUse.isDown() && !isStunned;
+			boolean isBlockKeyDown = KeyBinds.BLOCK_KEY.isDown() && !isStunned;
 
-			if (blockMeleeVisualCooldownTicks > 0) {
-				blockMeleeVisualCooldownTicks--;
+			if (isBlockKeyDown != data.getStatus().isBlocking()) {
+				data.getStatus().setBlocking(isBlockKeyDown);
+				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
 			}
 
-			boolean shouldLoopBlockMeleeVisual = useDMZCombatStyle
-					&& isLeftClickDown
-					&& isTargetingBlock
-					&& !hasToolLikeItem
-					&& !isDescendKeyPressed
-					&& !isStunned;
 
-			if (shouldLoopBlockMeleeVisual && blockMeleeVisualCooldownTicks <= 0 && localPlayer instanceof IPlayerAnimatable animatable) {
-				animatable.dragonminez$triggerMeleeAttack(0);
-				blockMeleeVisualCooldownTicks = 10;
-			} else if (!shouldLoopBlockMeleeVisual) {
-				blockMeleeVisualCooldownTicks = 0;
-			}
-
-			boolean shouldBlock = isDescendKeyPressed && isRightClickDown && !isStunned;
-			if (shouldBlock != data.getStatus().isBlocking()) {
-				data.getStatus().setBlocking(shouldBlock);
-				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, shouldBlock));
-			}
-
-			boolean canPrimeHeavyAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned && !localPlayer.isUsingItem() && !isTargetingBlock;
-			if (canPrimeHeavyAttack && isRightClickDown) {
-				heavyAttackHoldTicks = Math.min(heavyAttackHoldTicks + 1, MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS);
-				if (!wasRightClickDown || (heavyAttackHoldTicks % 4 == 0)) {
-					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.HEAVY, heavyAttackHoldTicks));
-				}
-				if (heavyAttackHoldTicks >= MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS && !heavyManualReleasedDuringHold) {
-					if (localPlayer instanceof IPlayerAnimatable animatable) {
-						boolean wasCharged = heavyAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
-						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_HEAVY, wasCharged);
-					}
-					if (mc.hitResult instanceof EntityHitResult entityHitResult) {
-						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
-								entityHitResult.getEntity().getId(),
-								MeleeAttackIntentC2S.IntentType.HEAVY,
-								heavyAttackHoldTicks
-						));
-					}
-					heavyManualReleasedDuringHold = true;
-				}
-			} else {
-				if (wasRightClickDown && heavyAttackHoldTicks > 0) {
-					if (localPlayer instanceof IPlayerAnimatable animatable) {
-						boolean wasCharged = heavyAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
-						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_HEAVY, wasCharged);
-					}
-					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.HEAVY, heavyAttackHoldTicks));
-					if (!heavyManualReleasedDuringHold && mc.hitResult instanceof EntityHitResult entityHitResult) {
-						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
-								entityHitResult.getEntity().getId(),
-								MeleeAttackIntentC2S.IntentType.HEAVY,
-								heavyAttackHoldTicks
-						));
-					}
-				}
-				heavyAttackHoldTicks = 0;
-				heavyManualReleasedDuringHold = false;
-			}
-			wasRightClickDown = isRightClickDown;
-
-			boolean canPrimeLightAttack = useDMZCombatStyle && !isDescendKeyPressed && !isStunned && !isTargetingBlock;
-			if (canPrimeLightAttack && isLeftClickDown) {
-				lightAttackHoldTicks = Math.min(lightAttackHoldTicks + 1, MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS);
-				if (!wasLeftClickDown || (lightAttackHoldTicks % 4 == 0)) {
-					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.LIGHT, lightAttackHoldTicks));
-				}
-				if (lightAttackHoldTicks >= MeleeAttackIntentC2S.MAX_TOTAL_HOLD_TICKS && !lightManualReleasedDuringHold) {
-					if (localPlayer instanceof IPlayerAnimatable animatable) {
-						boolean wasCharged = lightAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
-						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_LIGHT, wasCharged);
-					}
-					if (mc.hitResult instanceof EntityHitResult entityHitResult) {
-						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
-								entityHitResult.getEntity().getId(),
-								MeleeAttackIntentC2S.IntentType.LIGHT,
-								lightAttackHoldTicks
-						));
-					}
-					lightManualReleasedDuringHold = true;
-				}
-			} else {
-				if (wasLeftClickDown && lightAttackHoldTicks > 0) {
-					if (localPlayer instanceof IPlayerAnimatable animatable) {
-						boolean wasCharged = lightAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
-						animatable.dragonminez$triggerChargeAttackFire(IPlayerAnimatable.CHARGE_ATTACK_LIGHT, wasCharged);
-					}
-					NetworkHandler.sendToServer(new MeleeAttackIntentC2S(MeleeAttackIntentC2S.IntentType.LIGHT, lightAttackHoldTicks));
-					if (!lightManualReleasedDuringHold
-							&& mc.hitResult instanceof EntityHitResult entityHitResult) {
-						NetworkHandler.sendToServer(new MeleeManualAttackC2S(
-								entityHitResult.getEntity().getId(),
-								MeleeAttackIntentC2S.IntentType.LIGHT,
-								lightAttackHoldTicks
-						));
-					}
-				}
-				lightAttackHoldTicks = 0;
-				lightManualReleasedDuringHold = false;
-			}
-
-			if (!useDMZCombatStyle) {
-				lightAttackHoldTicks = 0;
-				heavyAttackHoldTicks = 0;
-				lightManualReleasedDuringHold = false;
-				heavyManualReleasedDuringHold = false;
-				if (localPlayer instanceof IPlayerAnimatable animatable) {
-					animatable.dragonminez$clearChargeAttackState();
-				}
-			}
-
-			if (useDMZCombatStyle && localPlayer instanceof IPlayerAnimatable animatable) {
-				boolean heavyCharging = canPrimeHeavyAttack && isRightClickDown && heavyAttackHoldTicks > 0 && !heavyManualReleasedDuringHold;
-				boolean lightCharging = canPrimeLightAttack && isLeftClickDown && lightAttackHoldTicks > 0 && !lightManualReleasedDuringHold;
-
-				if (heavyCharging) {
-					boolean charged = heavyAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
-					animatable.dragonminez$setChargeAttackState(IPlayerAnimatable.CHARGE_ATTACK_HEAVY, true, charged);
-				} else if (lightCharging) {
-					boolean charged = lightAttackHoldTicks >= MeleeAttackIntentC2S.MIN_EFFECTIVE_CHARGE_TICKS;
-					animatable.dragonminez$setChargeAttackState(IPlayerAnimatable.CHARGE_ATTACK_LIGHT, true, charged);
-				} else {
-					animatable.dragonminez$setChargeAttackState(IPlayerAnimatable.CHARGE_ATTACK_NONE, false, false);
-				}
-			}
-
-			if (isDescendKeyPressed && isLeftClickDown && !wasLeftClickDown && !hasSelectedKiTechnique) {
+			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !hasSelectedKiTechnique) {
 				String kiHex;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
@@ -396,9 +230,9 @@ public class ClientStatsEvents {
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
 			}
-			wasLeftClickDown = isLeftClickDown;
+			wasRightClickDown = isRightClickDown;
 
-			boolean techniqueChargeDown = isDescendKeyPressed && isLeftClickDown && hasSelectedKiTechnique;
+			boolean techniqueChargeDown = isDescendKeyPressed && isRightClickDown && hasSelectedKiTechnique;
 
 			if (techniqueChargeDown && !wasTechniqueChargeDown) {
 				NetworkHandler.sendToServer(new TechniqueChargeC2S(true));
@@ -414,23 +248,25 @@ public class ClientStatsEvents {
 				kiBlastTimer--;
 			}
 
-			if (transformDoubleTapTimer > 0) {
-				transformDoubleTapTimer--;
-			}
+			long currentTime = System.currentTimeMillis();
 
 			if (isActionKeyPressed && !wasTransformKeyDown) {
-				if (transformDoubleTapTimer > 0) {
+				if ((currentTime - lastTransformTapTime) <= 500) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_TRANSFORM));
-					transformDoubleTapTimer = 0;
-				} else transformDoubleTapTimer = 10;
+					lastTransformTapTime = 0;
+				} else {
+					lastTransformTapTime = currentTime;
+				}
 			}
 			wasTransformKeyDown = isActionKeyPressed;
 
 			if (isKiChargeKeyPressed && !wasKiChargeKeyDown) {
-				if (kiChargeDoubleTapTimer > 0) {
+				if ((currentTime - lastKiChargeTapTime) <= 500) {
 					NetworkHandler.sendToServer(new ExecuteActionC2S(ExecuteActionC2S.ActionType.INSTANT_RELEASE));
-					kiChargeDoubleTapTimer = 0;
-				} else kiChargeDoubleTapTimer = 10;
+					lastKiChargeTapTime = 0;
+				} else {
+					lastKiChargeTapTime = currentTime;
+				}
 			}
 			wasKiChargeKeyDown = isKiChargeKeyPressed;
 
@@ -580,15 +416,11 @@ public class ClientStatsEvents {
 	@SubscribeEvent
 	public static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
 		wasTechniqueChargeDown = false;
-		wasLeftClickDown = false;
 		wasRightClickDown = false;
-		lightAttackHoldTicks = 0;
-		heavyAttackHoldTicks = 0;
-		lightManualReleasedDuringHold = false;
-		heavyManualReleasedDuringHold = false;
-		lastSentCombatStylePreference = null;
 		lockedVanillaHotbarSlot = -1;
 		lockedTechniqueSlot = -1;
+		lastTransformTapTime = 0;
+		lastKiChargeTapTime = 0;
 		StatsCapability.clearClientCache();
 	}
 
@@ -596,7 +428,11 @@ public class ClientStatsEvents {
 		float sX = 1.0f, sY = 1.0f, sZ = 1.0f;
 		var character = stats.getCharacter();
 
-		if (character.hasActiveForm() && character.getActiveFormData() != null) {
+		if (character.hasActiveStackForm() && character.getActiveStackFormData() != null) {
+			sX = character.getActiveStackFormData().getModelScaling()[0];
+			sY = character.getActiveStackFormData().getModelScaling()[1];
+			sZ = character.getActiveStackFormData().getModelScaling()[2];
+		} else if (character.hasActiveForm() && character.getActiveFormData() != null) {
 			sX = character.getActiveFormData().getModelScaling()[0];
 			sY = character.getActiveFormData().getModelScaling()[1];
 			sZ = character.getActiveFormData().getModelScaling()[2];
