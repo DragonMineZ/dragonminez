@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities.questnpc;
 
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.alignment.NpcDispositionService;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
@@ -148,6 +149,11 @@ public class QuestNPCEntity extends MastersEntity {
 				if (!data.getStatus().isHasCreatedCharacter()) {
 					serverPlayer.displayClientMessage(
 							Component.translatable("gui.dragonminez.lines.generic.createcharacter"), true);
+					return;
+				}
+				Component blocker = NpcDispositionService.getDialogueBlocker(serverPlayer, this);
+				if (blocker != null) {
+					serverPlayer.displayClientMessage(blocker, true);
 					return;
 				}
 

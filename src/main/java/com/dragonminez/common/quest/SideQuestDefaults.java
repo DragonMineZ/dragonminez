@@ -10,6 +10,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 /**
  * Generates the default side-quest JSON files in the unified schema.
@@ -28,6 +29,11 @@ final class SideQuestDefaults {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String PARTY_SCALING_KEY = "party_scaling";
+	private static final Set<String> GOOD_PATH_NPCS = Set.of(
+			"goku", "roshi", "karin", "guru", "dende", "popo", "kingkai",
+			"bulma", "krillin", "yamcha", "tien", "chiaotzu", "gohan", "trunks",
+			"chi_chi", "videl", "namek_elder"
+	);
 
 	private SideQuestDefaults() {} // utility class
 
@@ -84,8 +90,12 @@ final class SideQuestDefaults {
 		if (turnIn != null) q.addProperty("turn_in", turnIn);
 		else q.add("turn_in", JsonNull.INSTANCE);
 
+		JsonObject effectiveStartRequirements = requiresGoodPath(questGiver, turnIn)
+				? withAlignmentRequirement(startRequirements)
+				: startRequirements;
+
 		if (prerequisites != null) q.add("prerequisites", prerequisites);
-		if (startRequirements != null) q.add("requirements", startRequirements);
+		if (effectiveStartRequirements != null) q.add("requirements", effectiveStartRequirements);
 
 		JsonArray objArr = new JsonArray(); for (JsonObject o : objectives) objArr.add(o);
 		q.add("objectives", objArr);
@@ -172,6 +182,10 @@ final class SideQuestDefaults {
 		JsonObject c = new JsonObject(); c.addProperty("type", "LEVEL"); c.addProperty("minLevel", minLevel); return c;
 	}
 
+	private static JsonObject condAlignmentMin(int minAlignment) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "ALIGNMENT"); c.addProperty("min", minAlignment); return c;
+	}
+
 	private static JsonObject condStat(String stat, int minValue) {
 		JsonObject c = new JsonObject(); c.addProperty("type", "STAT"); c.addProperty("stat", stat); c.addProperty("minValue", minValue); return c;
 	}
@@ -194,6 +208,26 @@ final class SideQuestDefaults {
 
 	private static JsonObject condRealTimeMinutes(long minutes) {
 		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "REAL_TIME"); c.addProperty("milliseconds", minutes * 60L * 1000L); return c;
+	}
+
+	private static boolean requiresGoodPath(String questGiver, String turnIn) {
+		return GOOD_PATH_NPCS.contains(normalizeNpcId(questGiver)) || GOOD_PATH_NPCS.contains(normalizeNpcId(turnIn));
+	}
+
+	private static String normalizeNpcId(String npcId) {
+		if (npcId == null || npcId.isBlank()) return "";
+		String normalized = npcId.trim().toLowerCase();
+		if (normalized.contains(":")) {
+			normalized = normalized.substring(normalized.indexOf(':') + 1);
+		}
+		return normalized;
+	}
+
+	private static JsonObject withAlignmentRequirement(JsonObject startRequirements) {
+		JsonObject requirements = startRequirements != null ? startRequirements : requirements("AND");
+		JsonArray conditions = requirements.getAsJsonArray("conditions");
+		conditions.add(condAlignmentMin(41));
+		return requirements;
 	}
 
 	/*

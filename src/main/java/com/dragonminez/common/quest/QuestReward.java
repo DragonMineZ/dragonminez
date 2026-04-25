@@ -22,7 +22,8 @@ public abstract class QuestReward {
 		ITEM,
 		COMMAND,
 		TPS,
-		SKILL
+		SKILL,
+		ALIGNMENT
 	}
 
 	public enum DifficultyType {

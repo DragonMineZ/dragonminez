@@ -9,6 +9,7 @@ import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.quest.rewards.CommandReward;
+import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
 import com.dragonminez.common.quest.rewards.TPSReward;
@@ -214,6 +215,7 @@ public class QuestParser {
 				yield (item != Items.AIR) ? new ItemReward(new ItemStack(item, count)) : null;
 			}
 			case "TPS" -> new TPSReward(json.get("amount").getAsInt());
+			case "ALIGNMENT" -> new AlignmentReward(json.get("amount").getAsInt());
 			case "COMMAND" -> {
 				String command = json.get("command").getAsString();
 				JsonElement translationKeyElement = json.get("translationKey");
@@ -307,6 +309,10 @@ public class QuestParser {
 				QuestPrerequisites.TimeMode timeMode = parseTimeMode(json);
 				yield QuestPrerequisites.Condition.time(timeMode, parseTimeDuration(json, timeMode));
 			}
+			case "ALIGNMENT" -> QuestPrerequisites.Condition.alignment(
+					json.has("min") ? json.get("min").getAsInt() : null,
+					json.has("max") ? json.get("max").getAsInt() : null
+			);
 			default -> null;
 		};
 	}

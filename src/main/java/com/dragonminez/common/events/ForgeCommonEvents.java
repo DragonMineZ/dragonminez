@@ -4,6 +4,8 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.common.alignment.NpcAlignmentRules;
+import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.combat.logic.weapon.WeaponRegistry;
 import com.dragonminez.common.combat.weapon.WeaponAttributes;
 import com.dragonminez.common.compat.WorldGuardCompat;
@@ -182,6 +184,13 @@ public class ForgeCommonEvents {
 		Level level = attacker.level();
 
 		if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
+			TargetHelper.Relation relation = TargetHelper.getRelation(attacker, target);
+			if (!TargetHelper.canAttack(attacker, target, attacker.distanceTo(target) + 1.0D)) {
+				event.setCanceled(true);
+				return;
+			}
+			TargetHelper.onSuccessfulAttack(attacker, target, relation);
+
 			double x = target.getX();
 			double y = target.getY() + (target.getBbHeight() * 0.65);
 			double z = target.getZ();
@@ -232,6 +241,7 @@ public class ForgeCommonEvents {
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
 		QuestRegistry.loadAll(event.getServer());
+		NpcAlignmentRules.load(event.getServer());
 		NPCPlacementManager.load(event.getServer());
 
 		WorldGuardCompat.init();

@@ -1,6 +1,7 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.alignment.NpcAlignmentRules;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.*;
 import com.dragonminez.common.quest.QuestRegistry;
@@ -33,6 +34,7 @@ public class ReloadCommand {
 			ConfigManager.reload();
 			StorageManager.reload();
 			QuestRegistry.loadAll(server);
+			NpcAlignmentRules.load(server);
 			NPCPlacementManager.load(server);
 			NPCPlacementManager.spawnForLoadedLevels(server);
 			WishManager.loadWishes(server);
