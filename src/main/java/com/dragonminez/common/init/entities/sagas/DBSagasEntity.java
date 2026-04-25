@@ -25,6 +25,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -1516,17 +1517,13 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
+        if (this.isTransforming() || this.isZanzoken()) return false;
+        if (this.isComboing() && this.entityData.get(CURRENT_COMBO_ID) == 4) return false;
 
-        if (this.isTransforming() || this.isZanzoken()) {
-            return false;
-        }
-
-        if (this.isComboing() && this.entityData.get(CURRENT_COMBO_ID) == 4) {
-            return false;
-        }
+        boolean isAbsoluteDeath = pSource.is(DamageTypes.FELL_OUT_OF_WORLD) || pSource.is(DamageTypes.GENERIC_KILL);
 
         if (!this.level().isClientSide && pAmount >= this.getHealth()) {
-            if (this.hasTransformation()) {
+            if (this.hasTransformation() && !isAbsoluteDeath) {
                 this.setHealth(1.0F);
                 this.startTransformation();
                 return false;
@@ -1537,7 +1534,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
         if (actuallyHurt && !this.level().isClientSide) {
 
-            if (this.getHealth() <= 0.0F && this.hasTransformation()) {
+            if (this.getHealth() <= 0.0F && this.hasTransformation() && !isAbsoluteDeath) {
                 this.setHealth(1.0F);
                 this.deathTime = 0;
                 this.startTransformation();
@@ -1545,20 +1542,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             }
 
             if (!this.isTransforming() && this.getHealth() <= (this.getMaxHealth() / 2.0F)) {
-                if (this.hasTransformation()) {
-                    this.startTransformation();
-                }
+                if (this.hasTransformation()) this.startTransformation();
             }
 
             Entity attacker = pSource.getEntity();
             if (attacker instanceof LivingEntity livingAttacker) {
-
                 boolean isUntouchablePlayer = livingAttacker instanceof Player player && (player.isCreative() || player.isSpectator());
 
                 if (!this.isCasting() && !this.isComboing() && !isUntouchablePlayer) {
-                    if (this.getTarget() != livingAttacker) {
-                        this.setTarget(livingAttacker);
-                    }
+                    if (this.getTarget() != livingAttacker) this.setTarget(livingAttacker);
                 }
             }
         }
@@ -1570,11 +1562,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         return false;
     }
 
-
-
     @Override
     public void die(DamageSource pCause) {
-        if (this.hasTransformation() && !this.isTransforming()) {
+        boolean isAbsoluteDeath = pCause.is(DamageTypes.FELL_OUT_OF_WORLD) || pCause.is(DamageTypes.GENERIC_KILL);
+
+        if (this.hasTransformation() && !this.isTransforming() && !isAbsoluteDeath) {
             this.setHealth(1.0F);
             this.deathTime = 0;
             this.startTransformation();
@@ -1585,14 +1577,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     @Override
     public boolean doHurtTarget(Entity pEntity) {
-        if (this.isTransforming()) {
-            return false;
-        }
-
-        if (this.isCasting() || this.isComboing()) {
-            return false;
-        }
-
+        if (this.isTransforming()) return false;
+        if (this.isCasting() || this.isComboing()) return false;
         return super.doHurtTarget(pEntity);
     }
 
@@ -1609,9 +1595,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (target != null && target.isAlive()) {
             double yDiff = target.getY() - this.getY();
 
-            if (this.canFly() && yDiff >= 3.0D && !isFlying()) {
-                setFlying(true);
-            }
+            if (this.canFly() && yDiff >= 3.0D && !isFlying()) setFlying(true);
             else if (isFlying()) {
                 if (!this.canFly() || (yDiff < 1.0D && this.onGround())) {
                     setFlying(false);
@@ -1632,12 +1616,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
             if (target != null) {
                 moveTowardsTargetInAir(target);
                 rotateBodyToTarget(target);
-            } else {
-                this.setDeltaMovement(this.getDeltaMovement().add(0, -0.01D, 0));
-            }
-        } else {
-            this.setNoGravity(false);
-        }
+            } else this.setDeltaMovement(this.getDeltaMovement().add(0, -0.01D, 0));
+        } else this.setNoGravity(false);
     }
 
     public void rotateBodyToTarget(LivingEntity target) {
