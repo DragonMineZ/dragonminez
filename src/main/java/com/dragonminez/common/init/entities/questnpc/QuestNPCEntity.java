@@ -3,13 +3,8 @@ package com.dragonminez.common.init.entities.questnpc;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.OpenQuestNPCDialogueS2C;
-import com.dragonminez.common.quest.Quest;
-import com.dragonminez.common.quest.QuestAvailabilityChecker;
-import com.dragonminez.common.quest.PlayerQuestData;
-import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,10 +19,6 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.NonNull;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * A single, generic, data-driven quest NPC entity.
@@ -136,16 +127,12 @@ public class QuestNPCEntity extends MastersEntity {
 					return;
 				}
 
-				// Gather quests this NPC can offer/turn-in
-				List<String> offerableQuestIds = new ArrayList<>();
-				List<String> turnInQuestIds = new ArrayList<>();
-				List<String> inProgressQuestIds = new ArrayList<>();
-
-				collectNPCQuests(npcId, data, offerableQuestIds, turnInQuestIds, inProgressQuestIds);
+				QuestService.NPCQuestOptions options = QuestService.collectNpcQuestOptions(npcId, data);
 
 				// Send dialogue packet to client
 				NetworkHandler.sendToPlayer(
-						new OpenQuestNPCDialogueS2C(npcId, offerableQuestIds, turnInQuestIds, inProgressQuestIds),
+						new OpenQuestNPCDialogueS2C(npcId, options.offerableQuestIds(),
+								options.turnInQuestIds(), options.inProgressQuestIds(), false, getId()),
 						serverPlayer
 				);
 			});
@@ -154,59 +141,6 @@ public class QuestNPCEntity extends MastersEntity {
 		}
 
 		return InteractionResult.SUCCESS;
-	}
-
-	/**
-	 * Collects quest IDs relevant to this NPC for the given player.
-	 */
-	private static void collectNPCQuests(String npcId, StatsData data,
-										 List<String> offerable, List<String> turnIn, List<String> inProgress) {
-		PlayerQuestData pqd = data.getPlayerQuestData();
-		Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
-
-		List<String> giverQuestIds = QuestRegistry.getQuestIdsByGiver(npcId);
-
-		// Quests this NPC gives
-		for (String questId : giverQuestIds) {
-			Quest quest = allQuests.get(questId);
-			if (quest == null) continue;
-
-			if (pqd.isQuestCompleted(questId)) continue;
-
-			if (pqd.isQuestAccepted(questId)) {
-				inProgress.add(questId);
-			} else if (isOfferableQuest(questId, quest, data)) {
-				offerable.add(questId);
-			}
-		}
-
-		// Quests where this NPC is the turn-in target
-		List<String> turnInQuestIds = QuestRegistry.getQuestIdsByTurnIn(npcId);
-		for (String questId : turnInQuestIds) {
-			Quest quest = allQuests.get(questId);
-			if (quest == null) continue;
-
-			if (!pqd.isQuestAccepted(questId)) continue;
-			if (pqd.isQuestCompleted(questId)) continue;
-
-			if (QuestService.isTurnInReady(pqd, questId, quest) && !turnIn.contains(questId)) {
-				turnIn.add(questId);
-			}
-		}
-	}
-
-	private static boolean isOfferableQuest(String questId, Quest quest, StatsData data) {
-		if (!quest.isSagaQuest()) {
-			return QuestAvailabilityChecker.isAvailable(quest, data);
-		}
-
-		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questId);
-		if (resolved == null || resolved.saga() == null) {
-			return false;
-		}
-
-		int questIndex = resolved.saga().getQuests().indexOf(quest);
-		return questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, resolved.saga(), questIndex, data);
 	}
 }
 

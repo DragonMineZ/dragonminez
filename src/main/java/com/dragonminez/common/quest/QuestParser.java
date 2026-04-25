@@ -70,6 +70,10 @@ public class QuestParser {
 		String turnIn = json.has("turn_in") && !json.get("turn_in").isJsonNull()
 				? json.get("turn_in").getAsString()
 				: null;
+		boolean secret = json.has("secret") && json.get("secret").getAsBoolean();
+		Quest.ClaimMode claimMode = parseClaimMode(json.has("claim_mode") && !json.get("claim_mode").isJsonNull()
+				? json.get("claim_mode").getAsString()
+				: null);
 
 		QuestPrerequisites prerequisites = parseConditionsBlock(json, "prerequisites");
 		QuestPrerequisites startRequirements = parseConditionsBlock(json, "requirements");
@@ -78,7 +82,7 @@ public class QuestParser {
 		List<QuestReward> rewards = parseRewardList(json);
 
 		return new Quest(numericId, stringId, type, title, description, category, parallelObjectives, partyScaling,
-				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn);
+				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn, secret, claimMode);
 	}
 
 	private static QuestPrerequisites parseConditionsBlock(JsonObject json, String key) {
@@ -131,7 +135,13 @@ public class QuestParser {
 				double health = json.has("health") ? json.get("health").getAsDouble() : 20.0;
 				double meleeDamage = json.has("meleeDamage") ? json.get("meleeDamage").getAsDouble() : 1.0;
 				double kiDamage = json.has("kiDamage") ? json.get("kiDamage").getAsDouble() : 1.0;
-				yield new KillObjective(entityType, killCount, health, meleeDamage, kiDamage);
+				KillObjective.SpawnMode spawnMode = parseKillSpawnMode(json.has("spawn") && !json.get("spawn").isJsonNull()
+						? json.get("spawn").getAsString()
+						: null);
+				KillObjective.CountMode countMode = parseKillCountMode(json.has("count_mode") && !json.get("count_mode").isJsonNull()
+						? json.get("count_mode").getAsString()
+						: null);
+				yield new KillObjective(entityType, killCount, health, meleeDamage, kiDamage, spawnMode, countMode);
 			}
 			case "BIOME" -> new BiomeObjective(json.get("biome").getAsString());
 			case "DIMENSION" -> new DimensionObjective(json.get("dimension").getAsString());
@@ -217,6 +227,31 @@ public class QuestParser {
 			reward.setDifficultyType(difficultyType);
 		}
 		return reward;
+	}
+
+	public static KillObjective.SpawnMode parseKillSpawnMode(String rawMode) {
+		return parseEnum(rawMode, KillObjective.SpawnMode.class, KillObjective.SpawnMode.QUEST);
+	}
+
+	public static KillObjective.CountMode parseKillCountMode(String rawMode) {
+		return parseEnum(rawMode, KillObjective.CountMode.class, KillObjective.CountMode.QUEST_SPAWNED_ONLY);
+	}
+
+	public static Quest.ClaimMode parseClaimMode(String rawMode) {
+		return parseEnum(rawMode, Quest.ClaimMode.class, Quest.ClaimMode.TREE_OR_NPC);
+	}
+
+	private static <T extends Enum<T>> T parseEnum(String rawMode, Class<T> enumClass, T fallback) {
+		if (rawMode == null || rawMode.isBlank()) {
+			return fallback;
+		}
+
+		String normalized = rawMode.trim().toUpperCase().replace('-', '_').replace(' ', '_');
+		try {
+			return Enum.valueOf(enumClass, normalized);
+		} catch (IllegalArgumentException ignored) {
+			return fallback;
+		}
 	}
 
 	/**

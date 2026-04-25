@@ -36,6 +36,7 @@ import com.dragonminez.server.storage.StorageManager;
 import com.dragonminez.server.util.FusionLogic;
 import com.dragonminez.server.world.data.DragonBallSavedData;
 import com.dragonminez.server.world.dimension.*;
+import com.dragonminez.server.world.npc.NPCPlacementManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -58,6 +59,8 @@ import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.Event;
@@ -229,6 +232,7 @@ public class ForgeCommonEvents {
 		WishManager.loadWishes(event.getServer());
 		DMZPermissions.init();
 		QuestRegistry.loadAll(event.getServer());
+		NPCPlacementManager.load(event.getServer());
 
 		WorldGuardCompat.init();
 
@@ -236,9 +240,7 @@ public class ForgeCommonEvents {
 		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);
 		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
 
-		if (otherworld != null) {
-			OtherworldNPCSpawner.spawnNPCs(otherworld);
-		}
+		NPCPlacementManager.spawnForLoadedLevels(event.getServer());
 
 		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 			for (var definition : DragonBallDefinitions.getBallSets()) {
@@ -255,6 +257,27 @@ public class ForgeCommonEvents {
 		}
 	}
 
+	@SubscribeEvent
+	public static void onServerStarted(ServerStartedEvent event) {
+		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
+
+		if (otherworld != null) {
+			LogUtil.info(Env.SERVER, "ServerStartedEvent: Attempting to load Otherworld regions, double-checking dimension presence.");
+			OtherworldRegionLoader.loadPreGeneratedRegions(event.getServer());
+		}
+		NPCPlacementManager.spawnForLoadedLevels(event.getServer());
+	}
+
+	@SubscribeEvent
+	public static void onLevelLoad(LevelEvent.Load event) {
+		if (event.getLevel() instanceof ServerLevel serverLevel) {
+			if (serverLevel.dimension().equals(OtherworldDimension.OTHERWORLD_KEY)) {
+				LogUtil.info(Env.SERVER, "LevelEvent.Load: Detected Otherworld dimension load, attempting to load regions.");
+				OtherworldRegionLoader.loadPreGeneratedRegions(serverLevel.getServer());
+			}
+			NPCPlacementManager.spawnForLevel(serverLevel);
+		}
+	}
 
 	@SubscribeEvent
 	public void onServerStopping(ServerStoppingEvent event) {

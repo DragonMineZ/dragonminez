@@ -196,6 +196,8 @@ public class SyncQuestRegistryS2C {
 		obj.addProperty("category", quest.getCategory());
 		obj.addProperty("parallel_objectives", quest.isParallelObjectives());
 		obj.addProperty("party_scaling", quest.isPartyScaling());
+		obj.addProperty("secret", quest.isSecret());
+		obj.addProperty("claim_mode", quest.getClaimMode().name());
 
 		if (quest.getQuestGiver() != null) obj.addProperty("quest_giver", quest.getQuestGiver());
 		else obj.add("quest_giver", JsonNull.INSTANCE);
@@ -232,6 +234,8 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("health", kill.getHealth());
 			obj.addProperty("meleeDamage", kill.getMeleeDamage());
 			obj.addProperty("kiDamage", kill.getKiDamage());
+			obj.addProperty("spawn", kill.getSpawnMode().name());
+			obj.addProperty("count_mode", kill.getCountMode().name());
 		} else if (objective instanceof ItemObjective item) {
 			obj.addProperty("item", item.getItemId());
 			obj.addProperty("count", item.getCount());

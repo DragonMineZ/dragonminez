@@ -4,6 +4,8 @@ import com.dragonminez.Env;
 import com.dragonminez.LogUtil;
 import com.dragonminez.Reference;
 import net.minecraft.server.MinecraftServer;
+import com.dragonminez.server.world.npc.NPCPlacementManager;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
@@ -53,7 +55,12 @@ public class OtherworldRegionLoader {
 				if (shouldCopy && copyRegionFile(fileName, destFile)) copiedFiles++;
 			}
 
-			if (copiedFiles > 0 || replacedFiles > 0) LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Replaced (Empty): {}", copiedFiles, replacedFiles);
+			LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Replaced (Empty): {}", copiedFiles, replacedFiles);
+			LogUtil.info(Env.SERVER, "Initializing configured Otherworld NPC placements...");
+			ServerLevel otherworld = server.getLevel(OtherworldDimension.OTHERWORLD_KEY);
+			if (otherworld != null) {
+				NPCPlacementManager.spawnForLevel(server, otherworld);
+			}
 
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Fatal IO error loading regions: {}", e.getMessage());

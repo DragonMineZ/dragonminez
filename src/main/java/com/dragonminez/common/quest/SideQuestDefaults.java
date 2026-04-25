@@ -47,31 +47,10 @@ final class SideQuestDefaults {
 		try {
 			Files.createDirectories(dir);
 			if (Files.exists(file)) {
-				ensureQuestProperty(file, PARTY_SCALING_KEY, quest.get(PARTY_SCALING_KEY));
 				return;
 			}
 			try (Writer w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) { GSON.toJson(quest, w); }
 		} catch (IOException e) { LogUtil.error(Env.COMMON, "Failed to create default side-quest file: {}", filename, e); }
-	}
-
-	private static void ensureQuestProperty(Path file, String property, JsonElement value) {
-		if (value == null) return;
-
-		try {
-			JsonObject existing;
-			try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-				existing = GSON.fromJson(reader, JsonObject.class);
-			}
-
-			if (existing == null || existing.has(property)) return;
-
-			existing.add(property, value.deepCopy());
-			try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-				GSON.toJson(existing, writer);
-			}
-		} catch (Exception e) {
-			LogUtil.warn(Env.COMMON, "Failed to update default side-quest file '{}': {}", file.getFileName(), e.getMessage());
-		}
 	}
 
 	/** Builds a sidequest in the unified schema. */
@@ -98,6 +77,8 @@ final class SideQuestDefaults {
 		q.addProperty("category", category);
 		q.addProperty("parallel_objectives", parallelObjectives);
 		q.addProperty(PARTY_SCALING_KEY, true);
+		q.addProperty("secret", false);
+		q.addProperty("claim_mode", "TREE_OR_NPC");
 		if (questGiver != null) q.addProperty("quest_giver", questGiver);
 		else q.add("quest_giver", JsonNull.INSTANCE);
 		if (turnIn != null) q.addProperty("turn_in", turnIn);
@@ -116,9 +97,19 @@ final class SideQuestDefaults {
 	// ---- Objective helpers ----
 
 	private static JsonObject objKill(String entity, int count) {
+		return objKill(entity, count, "NATURAL", "ANY_MATCHING");
+	}
+
+	private static JsonObject objQuestKill(String entity, int count) {
+		return objKill(entity, count, "QUEST", "QUEST_SPAWNED_ONLY");
+	}
+
+	private static JsonObject objKill(String entity, int count, String spawnMode, String countMode) {
 		JsonObject o = new JsonObject();
 		o.addProperty("type", "KILL");
 		o.addProperty("entity", entity); o.addProperty("count", count);
+		o.addProperty("spawn", spawnMode);
+		o.addProperty("count_mode", countMode);
 		return o;
 	}
 
@@ -534,7 +525,7 @@ final class SideQuestDefaults {
 				"combat", false, "videl", "videl",
 				prereqs("AND", condSaga("android_saga", 17)),
 				new JsonObject[]{
-						objKill("dragonminez:saga_cell_jr", 10),
+						objQuestKill("dragonminez:saga_cell_jr", 10),
 						objTalkTo("videl")
 				},
 				new JsonObject[]{ rewTPS(20000) }));
