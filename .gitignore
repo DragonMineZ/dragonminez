@@ -17,6 +17,7 @@ docs/_site/
 docs/.sass-cache/
 docs/.jekyll-cache/
 docs/.bundle/
+docs/superpowers/
 
 # Ignore everything in .idea except code styles
 .idea/*
