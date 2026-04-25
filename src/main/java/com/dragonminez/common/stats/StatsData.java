@@ -201,15 +201,6 @@ public class StatsData {
 		return secondaryMeleeDamage + (strength * strScaling * strMult) + (bonusStr * strScaling);
 	}
 
-	public double getMeleeDamageWithoutMults() {
-		double strength = stats.getStrength();
-		double strScaling = getStatScaling("STR");
-		double bonusStr = bonusStats.calculateBonus("STR", (int) Math.round(strength));
-		double releaseMultiplier = resources.getPowerRelease() / 100.0;
-		double secondaryMeleeDamage = getSecondaryAttributeValue(MainAttributes.MELEE_DAMAGE.get(), 1.0);
-		return secondaryMeleeDamage + ((strength * strScaling) + (bonusStr * strScaling)) * releaseMultiplier;
-	}
-
 	public double getMeleeDamage() {
 		double strength = stats.getStrength();
 		double strScaling = getStatScaling("STR");
