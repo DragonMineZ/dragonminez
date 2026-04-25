@@ -236,12 +236,6 @@ public class ForgeCommonEvents {
 
 		WorldGuardCompat.init();
 
-		ServerLevel overworld = event.getServer().getLevel(Level.OVERWORLD);
-		ServerLevel namek = event.getServer().getLevel(NamekDimension.NAMEK_KEY);
-		ServerLevel otherworld = event.getServer().getLevel(OtherworldDimension.OTHERWORLD_KEY);
-
-		NPCPlacementManager.spawnForLoadedLevels(event.getServer());
-
 		if (ConfigManager.getServerConfig().getWorldGen().getGenerateDragonBalls()) {
 			for (var definition : DragonBallDefinitions.getBallSets()) {
 				ServerLevel targetLevel = event.getServer().getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, definition.getValidDimensions().iterator().next()));

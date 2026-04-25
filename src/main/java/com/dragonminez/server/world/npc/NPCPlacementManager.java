@@ -34,6 +34,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Loads and enforces world-editable friendly NPC placements.
@@ -163,6 +165,7 @@ public final class NPCPlacementManager {
 				dimensionKey,
 				getString(json, "npc_id", null),
 				getString(json, "model", ""),
+				getString(json, "texture", ""),
 				getString(json, "structure", null),
 				getDouble(json, "x", 0.5D),
 				getDouble(json, "y", 64.0D),
@@ -177,6 +180,7 @@ public final class NPCPlacementManager {
 	}
 
 	private static void spawnOrUpdate(ServerLevel level, NPCPlacement placement) {
+		NPCPlacementSavedData placementData = NPCPlacementSavedData.get(level);
 		ResourceLocation entityId;
 		try {
 			entityId = ResourceLocation.parse(placement.entity());
@@ -192,13 +196,22 @@ public final class NPCPlacementManager {
 		}
 
 		Entity existing = findPlacedEntity(level, placement.id());
-		if (existing != null && existing.getType() != entityType) {
-			existing.discard();
-			existing = null;
+		if (existing == null) {
+			Optional<UUID> placedUuid = placementData.getEntityUuid(placement.id());
+			if (placedUuid.isPresent()) {
+				Entity trackedEntity = level.getEntity(placedUuid.get());
+				if (trackedEntity == null) {
+					return;
+				}
+				existing = trackedEntity;
+				applyPlacementMetadata(existing, placement);
+			}
 		}
 
-		if (!placement.override()) {
-			return;
+		if (existing != null && existing.getType() != entityType) {
+			existing.discard();
+			placementData.clear(placement.id());
+			existing = null;
 		}
 
 		ResolvedPosition pos = resolvePosition(level, placement);
@@ -210,8 +223,19 @@ public final class NPCPlacementManager {
 				return;
 			}
 			applyPlacementData(existing, placement, pos);
-			level.addFreshEntity(existing);
+			boolean added = level.addFreshEntity(existing);
+			if (!added) {
+				LogUtil.warn(Env.SERVER, "NPCPlacementManager: failed to add spawned entity for placement '{}'", placement.id());
+				return;
+			}
+			placementData.markSpawned(placement.id(), existing.getUUID());
 			LogUtil.info(Env.SERVER, "NPCPlacementManager: spawned '{}' at {}, {}, {}", placement.id(), pos.x(), pos.y(), pos.z());
+			return;
+		}
+
+		placementData.markSpawned(placement.id(), existing.getUUID());
+		if (!placement.override()) {
+			applyPlacementMetadata(existing, placement);
 			return;
 		}
 
@@ -220,12 +244,18 @@ public final class NPCPlacementManager {
 
 	@Nullable
 	private static Entity findPlacedEntity(ServerLevel level, String placementId) {
+		Entity first = null;
 		for (Entity entity : level.getAllEntities()) {
 			if (placementId.equals(entity.getPersistentData().getString(PLACEMENT_TAG))) {
-				return entity;
+				if (first == null) {
+					first = entity;
+				} else {
+					entity.discard();
+					LogUtil.warn(Env.SERVER, "NPCPlacementManager: removed duplicate entity for placement '{}'", placementId);
+				}
 			}
 		}
-		return null;
+		return first;
 	}
 
 	private static void applyPlacementData(Entity entity, NPCPlacement placement, ResolvedPosition pos) {
@@ -233,7 +263,7 @@ public final class NPCPlacementManager {
 		entity.setYHeadRot(placement.yaw());
 		entity.setYBodyRot(placement.yaw());
 		applyPlacementMetadata(entity, placement);
-}
+	}
 
 	private static void applyPlacementMetadata(Entity entity, NPCPlacement placement) {
 		if (entity instanceof Mob mob) {
@@ -246,6 +276,7 @@ public final class NPCPlacementManager {
 				questNPC.setNpcId(placement.npcId());
 			}
 			questNPC.setNpcModel(placement.model());
+			questNPC.setNpcTexture(placement.texture());
 		}
 	}
 
@@ -301,26 +332,26 @@ public final class NPCPlacementManager {
 		addMasterInStructure(placements, "master_popo", "dragonminez:master_popo", "minecraft:overworld", "kamilookout", 0.0, 0.0, 0.0, true, 135);
 		addMasterInStructure(placements, "master_gero", "dragonminez:master_gero", "minecraft:overworld", "gero_lab", 0.0, 0.0, 0.0, true, 315);
 		addMasterInStructure(placements, "master_guru", "dragonminez:master_guru", "dragonminez:namek", "elder_guru", 0.0, 0.0, 0.0, true, 180);
-		addMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 0.0, 0.0, 0.0, false, 180);
-		addMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.0, 0.0, 0.0, false, 180);
-		addMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 0.0, 0.0, 0.0, false, 180);
-		addMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 0.0, 0.0, 0.0, false, 180);
+		addMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 54.5, 190, 1082.5, false, 180);
+		addMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 41, 66.5, false, 180);
+		addMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 6.5, 41, 53.5, false, 180);
+		addMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 190, 1079.5, false, 180);
 
-		addQuestNPC(placements, "npc_bulma", "bulma", "minecraft:overworld", 0.0, 0.0, 0.0, 210);
-		addQuestNPC(placements, "npc_krillin", "krillin", "minecraft:overworld", 0.0, 0.0, 0.0, 210);
-		addQuestNPC(placements, "npc_yamcha", "yamcha", "minecraft:overworld", 0.0, 0.0, 0.0, 210);
-		addQuestNPC(placements, "npc_tien", "tien", "minecraft:overworld", 0.0, 0.0, 0.0, 210);
-		addQuestNPC(placements, "npc_chiaotzu", "chiaotzu", "minecraft:overworld", 0.0, 0.0, 0.0, 210);
-		addQuestNPC(placements, "npc_piccolo", "piccolo", "minecraft:overworld", 0.0, 0.0, 0.0, 150);
-		addQuestNPC(placements, "npc_gohan", "gohan", "minecraft:overworld", 0.0, 0.0, 0.0, 150);
-		addQuestNPC(placements, "npc_vegeta", "vegeta", "minecraft:overworld", 0.0, 0.0, 0.0, 330);
-		addQuestNPC(placements, "npc_trunks", "trunks", "minecraft:overworld", 0.0, 0.0, 0.0, 330);
-		addQuestNPC(placements, "npc_chi_chi", "chi_chi", "minecraft:overworld", 0.0, 0.0, 0.0, 150);
-		addQuestNPC(placements, "npc_videl", "videl", "minecraft:overworld", 0.0, 0.0, 0.0, 150);
-		addQuestNPC(placements, "npc_farmer_01", "farmer_01", "minecraft:overworld", 0.0, 0.0, 0.0, 300);
-		addQuestNPC(placements, "npc_merchant_01", "merchant_01", "minecraft:overworld", 0.0, 0.0, 0.0, 60);
-		addQuestNPC(placements, "npc_scholar_01", "scholar_01", "minecraft:overworld", 0.0, 0.0, 0.0, 45);
-		addQuestNPC(placements, "npc_namek_elder", "namek_elder", "dragonminez:namek", 0.0, 0.0, 0.0, 180);
+		addQuestNPC(placements, "npc_bulma", "bulma", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "", "");
+		addQuestNPC(placements, "npc_krillin", "krillin", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_vegeta", "saga_krillin");
+		addQuestNPC(placements, "npc_yamcha", "yamcha", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_yamcha", "saga_yamcha");
+		addQuestNPC(placements, "npc_tien", "tien", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_goku", "saga_tien_early");
+		addQuestNPC(placements, "npc_chiaotzu", "chiaotzu", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "", "");
+		addQuestNPC(placements, "npc_piccolo", "piccolo", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "saga_piccolo", "saga_piccolo");
+		addQuestNPC(placements, "npc_gohan", "gohan", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "saga_gohan_mid", "saga_gohan_mid_base");
+		addQuestNPC(placements, "npc_vegeta", "vegeta", "minecraft:overworld", 0.0, 0.0, 0.0, 330, "saga_vegeta", "saga_vegeta");
+		addQuestNPC(placements, "npc_trunks", "trunks", "minecraft:overworld", 0.0, 0.0, 0.0, 330, "saga_trunks", "saga_ftrunks_base");
+		addQuestNPC(placements, "npc_chi_chi", "chi_chi", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "", "");
+		addQuestNPC(placements, "npc_videl", "videl", "minecraft:overworld", 0.0, 0.0, 0.0, 150, "", "");
+		addQuestNPC(placements, "npc_farmer_01", "farmer_01", "minecraft:overworld", 0.0, 0.0, 0.0, 300, "", "");
+		addQuestNPC(placements, "npc_merchant_01", "merchant_01", "minecraft:overworld", 0.0, 0.0, 0.0, 60, "", "");
+		addQuestNPC(placements, "npc_scholar_01", "scholar_01", "minecraft:overworld", 0.0, 0.0, 0.0, 45, "", "");
+		addQuestNPC(placements, "npc_namek_elder", "namek_elder", "dragonminez:namek", 0.0, 0.0, 0.0, 180, "master_guru", "master_guru");
 
 		return placements;
 	}
@@ -340,10 +371,11 @@ public final class NPCPlacementManager {
 	}
 
 	private static void addQuestNPC(JsonArray placements, String id, String npcId, String dimension,
-									double x, double y, double z, float yaw) {
+									double x, double y, double z, float yaw, String model, String texture) {
 		JsonObject placement = basePlacement(id, Reference.MOD_ID + ":quest_npc", dimension, true, x, y, z, true, yaw);
 		placement.addProperty("npc_id", npcId);
-		placement.addProperty("model", npcId);
+		placement.addProperty("model", model);
+		placement.addProperty("texture", texture);
 		placements.add(placement);
 	}
 
@@ -395,7 +427,7 @@ public final class NPCPlacementManager {
 	}
 
 	private record NPCPlacement(String id, String entity, ResourceKey<Level> dimension, @Nullable String npcId,
-								String model, @Nullable String structureId, double x, double y, double z, float yaw, float pitch,
+								String model, String texture, @Nullable String structureId, double x, double y, double z, float yaw, float pitch,
 								boolean surface, boolean relativeToSpawn, boolean enabled, boolean override) {
 	}
 

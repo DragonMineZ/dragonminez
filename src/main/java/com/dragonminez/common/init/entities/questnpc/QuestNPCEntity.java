@@ -23,7 +23,7 @@ import org.jspecify.annotations.NonNull;
 /**
  * A single, generic, data-driven quest NPC entity.
  * Each instance stores an "npcId" (e.g. "bulma", "farmer_01", "young_goku") in synched entity data + NBT.
- * The model, texture, and animation are resolved dynamically from the npcId by QuestNPCModel.
+ * The model, texture, and animation are resolved dynamically by QuestNPCModel.
  * One entity type registration serves ALL quest NPCs — no need for hundreds of Java classes.
  */
 public class QuestNPCEntity extends MastersEntity {
@@ -32,6 +32,9 @@ public class QuestNPCEntity extends MastersEntity {
 			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
 
 	private static final EntityDataAccessor<String> NPC_MODEL =
+			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
+
+	private static final EntityDataAccessor<String> NPC_TEXTURE =
 			SynchedEntityData.defineId(QuestNPCEntity.class, EntityDataSerializers.STRING);
 
 	public QuestNPCEntity(EntityType<? extends PathfinderMob> pEntityType, Level pLevel) {
@@ -44,6 +47,7 @@ public class QuestNPCEntity extends MastersEntity {
 		super.defineSynchedData();
 		this.entityData.define(NPC_ID, "generic_npc");
 		this.entityData.define(NPC_MODEL, "");
+		this.entityData.define(NPC_TEXTURE, "");
 	}
 
 	// ---- NPC identity ----
@@ -69,6 +73,14 @@ public class QuestNPCEntity extends MastersEntity {
 		this.entityData.set(NPC_MODEL, model != null ? model : "");
 	}
 
+	public String getNpcTexture() {
+		return this.entityData.get(NPC_TEXTURE);
+	}
+
+	public void setNpcTexture(String texture) {
+		this.entityData.set(NPC_TEXTURE, texture != null ? texture : "");
+	}
+
 	/**
 	 * Returns the model key used for geo/animation resolution.
 	 * If a model override is set, use that; otherwise fall back to npcId.
@@ -76,6 +88,11 @@ public class QuestNPCEntity extends MastersEntity {
 	public String getModelKey() {
 		String model = getNpcModel();
 		return (model != null && !model.isEmpty()) ? model : getNpcId();
+	}
+
+	public String getTextureKey() {
+		String texture = getNpcTexture();
+		return (texture != null && !texture.isEmpty()) ? texture : getNpcId();
 	}
 
 	// ---- Display name ----
@@ -100,6 +117,10 @@ public class QuestNPCEntity extends MastersEntity {
 		if (model != null && !model.isEmpty()) {
 			tag.putString("QuestNpcModel", model);
 		}
+		String texture = getNpcTexture();
+		if (texture != null && !texture.isEmpty()) {
+			tag.putString("QuestNpcTexture", texture);
+		}
 	}
 
 	@Override
@@ -110,6 +131,9 @@ public class QuestNPCEntity extends MastersEntity {
 		}
 		if (tag.contains("QuestNpcModel")) {
 			setNpcModel(tag.getString("QuestNpcModel"));
+		}
+		if (tag.contains("QuestNpcTexture")) {
+			setNpcTexture(tag.getString("QuestNpcTexture"));
 		}
 	}
 
