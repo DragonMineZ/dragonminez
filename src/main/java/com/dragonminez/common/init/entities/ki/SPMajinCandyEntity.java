@@ -22,6 +22,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
 
 import java.util.List;
 
@@ -160,6 +161,21 @@ public class SPMajinCandyEntity extends AbstractKiProjectile {
 
         if (this.tickCount >= this.getCastTime() + 60) {
             this.discard();
+        }
+    }
+
+    @Override
+    protected void onHitEntity(EntityHitResult result) {
+        if (!this.level().isClientSide) {
+            Entity hitEntity = result.getEntity();
+            Entity owner = this.getOwner();
+
+            if (hitEntity instanceof LivingEntity target && target != owner) {
+                target.hurt(MainDamageTypes.kiblast(this.level(), this, (LivingEntity) owner), this.getKiDamage());
+
+                target.addEffect(new MobEffectInstance(MainEffects.CANDY.get(), 100, 0, false, true));
+                this.discard();
+            }
         }
     }
 

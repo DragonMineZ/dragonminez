@@ -55,7 +55,9 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
 
         if (entity instanceof SagaFriezaEntity.SagaFriezaFirstForm) {
             poseStack.scale(0.8f, 0.8f, 0.8f);
-        } else if(entity instanceof SagaFriezaEntity.SagaFriezaSecondForm){
+        } else if(entity instanceof SagaFriezaEntity.SagaFriezaSecondForm || entity instanceof SagaBuuEntity.EvilBuuEntity ||
+                entity instanceof SagaBuuEntity.SuperBuuEntity || entity instanceof SagaBuuEntity.SuperBuuPiccoloEntity || entity instanceof SagaBuuEntity.SuperBuuGotenksEntity
+                || entity instanceof SagaBuuEntity.SuperBuuGohanEntity || entity instanceof SagaFriezaEntity.SagaKingCold || entity instanceof SagaAndroidsEntity.SagaA16Entity){
             poseStack.scale(1.2f, 1.2f, 1.2f);
         } else if(entity instanceof SagaFriezaEntity.SagaFriezaThirdForm){
             poseStack.scale(1.3f, 1.3f, 1.3f);
@@ -63,8 +65,6 @@ public class DBSagasRenderer<T extends DBSagasEntity> extends GeoEntityRenderer<
             poseStack.scale(1.5f, 1.5f, 1.5f);
         } else if(entity instanceof SagaCellEntity.SagaSemiPerfectCellEntity){
             poseStack.scale(1.2f, 1.2f, 1.2f);
-        } else if(entity instanceof SagaVegetaEntity.SagaVegetaMidSSG2Entity){
-            poseStack.scale(1.1f, 1.0f, 1.1f);
         } else if(entity instanceof SagaTrunksEntity.SagaFutureTrunksSSG3Entity){
             poseStack.scale(1.3f, 1.1f, 1.3f);
         } else if(entity instanceof SagaTrunksEntity.SagaFutureTrunksKidBaseEntity || entity instanceof SagaTrunksEntity.SagaFutureTrunksKidSSJEntity

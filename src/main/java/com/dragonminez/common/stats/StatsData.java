@@ -19,6 +19,8 @@ import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 import java.util.Collection;
 import java.util.List;
@@ -279,6 +281,41 @@ public class StatsData {
 		double toughness = getArmorToughnessValue();
 		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
 		return (secondaryDefense + (resistance * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.5) + toughness * 0.8) * releaseMultiplier;
+	}
+
+	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken) {
+		double defense = getDefense();
+		if (isGuardBroken) defense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
+
+		int maxValue = getConfiguredMaxValue();
+		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
+		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF") * 3.0;
+		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
+
+		double baseReduction;
+		if (defense >= 0) baseReduction = defense / (k_factor + defense);
+		else baseReduction = defense / (k_factor - defense);
+
+		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
+		baseReduction = Math.min(baseReduction, baseCap);
+
+		double remainingDamage = incomingDamage * (1.0 - baseReduction);
+
+		int totalProtection = 0;
+		if (player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
+
+		double enchReduction = 0.0;
+		if (totalProtection > 0) {
+			double k_ench = 20.0;
+			enchReduction = totalProtection / (k_ench + totalProtection);
+
+			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();
+			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
+
+			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
+		}
+
+		return remainingDamage * (1.0 - enchReduction);
 	}
 
 	public double getTotalMultiplier(String statName) {

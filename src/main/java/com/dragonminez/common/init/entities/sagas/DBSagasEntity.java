@@ -2,14 +2,14 @@ package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.EntityAttributes;
-import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.entities.goals.SagasUseSkillGoal;
 import com.dragonminez.common.init.entities.ki.*;
+import com.dragonminez.common.init.entities.sagas.helper.ComboManager;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimationHandler;
+import com.dragonminez.common.init.entities.sagas.helper.SkillManager;
 import com.dragonminez.common.quest.QuestService;
-import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsProvider;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.BlockPos;
@@ -19,11 +19,9 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -48,14 +46,10 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animatable.instance.SingletonAnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.AnimationState;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,7 +74,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         DEATH_BALL(15),
         MASENKO(16),
         BIG_BANG(17),
-        FINAL_FLASH(18);
+        FINAL_FLASH(18),
+        MAJIN_CANDY(19),
+        KI_AIR_VOLLEY(20);
 
         private final int id;
         KiSkillType(int id) { this.id = id; }
@@ -88,7 +84,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     }
 
     public enum ComboType {
-        BASIC(0), AIR(1), KI_CHARGE_ATTACK(2), METEOR_COMBINATION(3), ANDROID_ABSORPTION(4);
+        BASIC(0), AIR(1), KI_CHARGE_ATTACK(2), METEOR_COMBINATION(3), ANDROID_ABSORPTION(4),
+        GUM_PUNCH(5), GUM_EXPAND(6), SLEEP_RECOVERY(7), RAPID_KICKS(8);
 
         private final int id;
         ComboType(int id) { this.id = id; }
@@ -120,64 +117,6 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_KID = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
-    protected static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("idle");
-    protected static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("walk");
-    protected static final RawAnimation ANIM_RUN = RawAnimation.begin().thenLoop("run1");
-    protected static final RawAnimation ANIM_ATTACK1 = RawAnimation.begin().thenPlay("attack1_1");
-    protected static final RawAnimation ANIM_ATTACK2 = RawAnimation.begin().thenPlay("attack2_1");
-    protected static final RawAnimation ANIM_ATTACK3 = RawAnimation.begin().thenPlay("attack3_1");
-    protected static final RawAnimation ANIM_TRANSFORMATION1 = RawAnimation.begin().thenPlay("transformation_1");
-
-    protected static final RawAnimation ANIM_IDLE_2 = RawAnimation.begin().thenLoop("idle2");
-    protected static final RawAnimation ANIM_WALK_2 = RawAnimation.begin().thenLoop("walk2");
-    protected static final RawAnimation ANIM_RUN_2 = RawAnimation.begin().thenLoop("run2");
-    protected static final RawAnimation ANIM_ATTACK1_2 = RawAnimation.begin().thenPlay("attack1_2");
-    protected static final RawAnimation ANIM_ATTACK2_2 = RawAnimation.begin().thenPlay("attack2_2");
-    protected static final RawAnimation ANIM_ATTACK3_2 = RawAnimation.begin().thenPlay("attack3_2");
-    protected static final RawAnimation ANIM_TRANSFORMATION2 = RawAnimation.begin().thenPlay("transformation_2");
-
-    protected static final RawAnimation ANIM_IDLE_3 = RawAnimation.begin().thenLoop("idle3");
-    protected static final RawAnimation ANIM_WALK_3 = RawAnimation.begin().thenLoop("walk3");
-    protected static final RawAnimation ANIM_RUN_3 = RawAnimation.begin().thenLoop("run3");
-    protected static final RawAnimation ANIM_ATTACK1_3 = RawAnimation.begin().thenPlay("attack1_3");
-    protected static final RawAnimation ANIM_ATTACK2_3 = RawAnimation.begin().thenPlay("attack2_3");
-    protected static final RawAnimation ANIM_ATTACK3_3 = RawAnimation.begin().thenPlay("attack3_3");
-    protected static final RawAnimation ANIM_TRANSFORMATION3 = RawAnimation.begin().thenPlay("transformation_3");
-
-    protected static final RawAnimation ANIM_FLY = RawAnimation.begin().thenLoop("fly");
-    protected static final RawAnimation ANIM_FLY_FAST = RawAnimation.begin().thenLoop("fly_fast");
-
-    protected static final RawAnimation ANIM_EVADE = RawAnimation.begin().thenPlay("evasion1");
-    protected static final RawAnimation ANIM_KIWAVE = RawAnimation.begin().thenPlay("ki_finalflash");
-    protected static final RawAnimation ANIM_KILASER = RawAnimation.begin().thenPlay("kilaser");
-    protected static final RawAnimation ANIM_BARRIER = RawAnimation.begin().thenPlay("barrier");
-    protected static final RawAnimation ANIM_KIATTACK = RawAnimation.begin().thenPlay("kiattack");
-    protected static final RawAnimation ANIM_KIBALL = RawAnimation.begin().thenPlay("ki_ball");
-    protected static final RawAnimation ANIM_KIBLAST = RawAnimation.begin().thenPlay("ki_blast");
-    protected static final RawAnimation ANIM_TAIL = RawAnimation.begin().thenLoop("tail");
-    protected static final RawAnimation ANIM_CAPE = RawAnimation.begin().thenLoop("cape");
-    protected static final RawAnimation ANIM_TRANSFORM = RawAnimation.begin().thenLoop("transform");
-    protected static final RawAnimation ANIM_GRAB = RawAnimation.begin().thenLoop("grab");
-    protected static final RawAnimation ANIM_GRAB_KI = RawAnimation.begin().thenLoop("grab_ki");
-    protected static final RawAnimation ANIM_KI_BARRAGE = RawAnimation.begin().thenPlay("ki_barrage");
-
-    protected static final RawAnimation ANIM_KI_MAKKAKO = RawAnimation.begin().thenPlay("ki_makkako");
-    protected static final RawAnimation ANIM_KI_KAME = RawAnimation.begin().thenPlay("ki_kame");
-    protected static final RawAnimation ANIM_KI_MASENKO = RawAnimation.begin().thenPlay("ki_masenko");
-    protected static final RawAnimation ANIM_KI_BARRIER = RawAnimation.begin().thenPlay("ki_barrier");
-    protected static final RawAnimation ANIM_KI_GALICK = RawAnimation.begin().thenPlay("ki_galick");
-    protected static final RawAnimation ANIM_KI_EXPLOSION = RawAnimation.begin().thenPlay("ki_explosion");
-    protected static final RawAnimation ANIM_KI_BIG_BANG = RawAnimation.begin().thenPlay("ki_bigbang");
-    protected static final RawAnimation ANIM_KI_FINALFLASH = RawAnimation.begin().thenPlay("ki_finalflash");
-    protected static final RawAnimation ANIM_KI_DISC = RawAnimation.begin().thenPlay("ki_kienzan");
-    protected static final RawAnimation ANIM_KI_LASER = RawAnimation.begin().thenPlay("ki_laser");
-    protected static final RawAnimation ANIM_KIOZARU = RawAnimation.begin().thenPlay("ki_oozaru");
-
-    protected static final RawAnimation ANIM_COMBO1 = RawAnimation.begin().thenPlay("combo1");
-    protected static final RawAnimation ANIM_COMBO2 = RawAnimation.begin().thenPlay("combo2");
-    protected static final RawAnimation ANIM_COMBO3 = RawAnimation.begin().thenPlay("combo3");
-
-
     protected int castTimer = 0;
     protected int transformTick = 0;
     private int chargeSoundTimer = 0;
@@ -204,18 +143,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private boolean comboEnabled = false;
     private int comboCooldownMax = 0;
     private int currentComboCooldown = 0;
-    private int comboTimer = 0;
+    public int comboTimer = 0;
     private LivingEntity comboTarget = null;
     private int activeComboId = -1;
     private int[] allowedCombos = new int[0];
 
+    @Getter @Setter protected double defaultMovementSpeed = 0.25D;
+    @Getter @Setter protected double defaultAttackSpeed = 4.0D;
+
+    @Getter @Setter
     private boolean isAttacking = false;
 
-
     private final List<KiSkill> skillPool = new ArrayList<>();
+    @Getter
     private float currentPoolSkillSize = 1.0F;
+    @Getter
     private int currentPoolColorMain = 0xFFFFFF;
+    @Getter
     private int currentPoolColorBorder = 0xFFFFFF;
+    @Getter
     private int currentPoolColorOutline = 0xFFFFFF;
 
     public static class KiSkill {
@@ -404,15 +350,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         });
 
         this.goalSelector.addGoal(2, new SagasUseSkillGoal(this));
-        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false));
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
+            @Override
+            protected int getAttackInterval() {
+                double attackSpeed = this.mob.getAttributeValue(Attributes.ATTACK_SPEED);
+
+                if (attackSpeed <= 0) return 20;
+
+                //Si tiene 4.0, golpea cada 5 ticks. Si tiene 8.0 (Kid Buu), golpea cada 2.5 ticks.
+                return (int) Math.max(2, 20.0D / attackSpeed);
+            }
+        });
         this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 45.0F));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, false));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, false));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, IronGolem.class, false));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -503,11 +459,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                     if (this.comboEnabled && this.currentComboCooldown > 0) this.currentComboCooldown--;
                     if (this.canUseZanzoken && this.currentZanzokenCooldown > 0) this.currentZanzokenCooldown--;
 
-                    if (this.getTarget() != null && this.distanceTo(this.getTarget()) >= 10.0D) {
-                        for (KiSkill skill : this.skillPool) {
-                            if (skill.currentCooldown > 0) {
-                                skill.currentCooldown--;
-                            }
+                    for (KiSkill skill : this.skillPool) {
+                        if (skill.currentCooldown > 0) {
+                            skill.currentCooldown--;
                         }
                     }
                 }
@@ -534,6 +488,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                     }
 
                     int skill = this.getSkillType();
+
+                    if (skill == 20) {
+                        this.setDeltaMovement(0, 0.15D, 0);
+                    } else {
+                        this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
+                    }
 
                     if (skill == 7 && this.level() instanceof ServerLevel serverLevel) {
                         if (this.castTimer > 5 && this.castTimer < 30) {
@@ -571,7 +531,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                         }
                     }
 
-                    int maxCastDuration = (skill == 4) ? 10 : (skill == 11) ? 12 : (skill == 12 || skill == 14 || skill == 17) ? 30 : (skill == 13 || skill == 16 || skill == 18) ? 40 : (skill == 15) ? 60 : 60;
+                    int maxCastDuration = SkillManager.getCastDuration(skill);
 
                     if (this.castTimer >= maxCastDuration) {
                         this.stopCasting();
@@ -621,6 +581,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                             this.comboTimer = 0;
                             this.currentComboCooldown = comboCooldownMax;
                         }
+
                     }
                 }
             }
@@ -657,416 +618,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
     }
 
-    public float getCalculatedSkillDamage(int skillType) {
-        float kiDmg = this.getKiBlastDamage();
-        float meleeDmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
-
-        switch (skillType) {
-            case 1:  return kiDmg;
-            case 2:  return kiDmg;
-            case 3:  return kiDmg;
-            case 4:  return kiDmg;
-            case 5:  return kiDmg;
-            case 6:  return 0.0F;
-            case 7:  return meleeDmg;
-            case 8:  return kiDmg;
-            case 9:  return kiDmg;
-            case 10: return kiDmg / 4.0F;
-            case 11: return kiDmg / 4.0F;
-            case 12: return meleeDmg * 3.0F;
-            case 13: return kiDmg / 2.0F;
-            case 14: return kiDmg * 1.5F;
-            case 15: return kiDmg * 2.0F;
-            case 16: return kiDmg;
-            case 17: return kiDmg * 1.8F;
-            case 18: return kiDmg * 2.0F;
-            default: return kiDmg;
-        }
-    }
-
     private void executeSkillEffect(int skillType) {
         if (this.getTarget() == null) return;
-
-        int syncCastTime = (skillType == 4) ? 0 : (skillType == 11) ? 10 : (skillType == 17) ? 30 : (skillType == 15) ? 60 : (skillType == 18) ? 40 : 37;
-
-        float actualDamage = getCalculatedSkillDamage(skillType);
-
-        float actualSize = this.currentPoolSkillSize;
-        int usedColorMain = this.currentPoolColorMain;
-        int usedColorBorder = this.currentPoolColorBorder;
-        int usedColorOutline = this.currentPoolColorOutline;
-
-        switch (skillType) {
-            case 1:
-                KiWaveEntity kamehameha = new KiWaveEntity(this.level(), this);
-                kamehameha.setupKiHame(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
-                break;
-            case 2:
-                KiWaveEntity galick = new KiWaveEntity(this.level(), this);
-                galick.setupKiGalickGun(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
-                break;
-            case 3:
-                KiLaserEntity makkanko = new KiLaserEntity(this.level(), this);
-                makkanko.setupKiMakkankosanpo(this, actualDamage, this.getKiBlastSpeed() * 2.0F, syncCastTime);
-                break;
-            case 4:
-                KiLaserEntity laser = new KiLaserEntity(this.level(), this);
-                laser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, usedColorMain, usedColorBorder, syncCastTime);
-                break;
-            case 5:
-                KiExplosionEntity explosion = new KiExplosionEntity(this.level(), this);
-                explosion.setupKiExplosion(this, actualDamage, usedColorMain, usedColorBorder, syncCastTime);
-                break;
-            case 6:
-                KiBarrierEntity barrier = new KiBarrierEntity(this.level(), this);
-                barrier.setupKiBarrier(this, usedColorMain, usedColorBorder, syncCastTime);
-                break;
-            case 7:
-                this.playSound(MainSounds.OOZARU_GROWL_PLAYER.get(), 2.0F, 0.8F + this.random.nextFloat() * 0.4F);
-
-                if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
-
-                    double fixedRoarRange = 8.0D;
-
-                    serverLevel.sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(), 100, fixedRoarRange / 1.5, fixedRoarRange / 1.5, fixedRoarRange / 1.5, 0.2D);
-                    serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK, this.getX(), this.getY() + (this.getBbHeight() / 2.0), this.getZ(), 30, fixedRoarRange / 3, fixedRoarRange / 3, fixedRoarRange / 3, 0.0D);
-
-                    AABB roarBox = this.getBoundingBox().inflate(fixedRoarRange);
-
-                    for (LivingEntity target : serverLevel.getEntitiesOfClass(LivingEntity.class, roarBox)) {
-
-                        if (target != this && target.isAlive()) {
-
-                            target.invulnerableTime = 0;
-                            target.hurt(this.damageSources().mobAttack(this), actualDamage);
-
-                            target.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
-
-                            double dx = target.getX() - this.getX();
-                            double dz = target.getZ() - this.getZ();
-
-                            Vec3 pushDir = new Vec3(dx, 0.5D, dz).normalize();
-                            double pushStrength = 3.5D;
-
-                            target.setDeltaMovement(pushDir.x * pushStrength, pushDir.y * pushStrength, pushDir.z * pushStrength);
-                            target.hasImpulse = true;
-                        }
-                    }
-                }
-                break;
-            case 8:
-                KiWaveEntity genericWave = new KiWaveEntity(this.level(), this);
-                genericWave.setupKiWave(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, usedColorBorder, usedColorOutline, actualSize, syncCastTime);
-                break;
-            case 9:
-                KiWaveEntity oozaruBeam = new KiWaveEntity(this.level(), this);
-                oozaruBeam.setupKiOozaru(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, usedColorBorder, actualSize, syncCastTime);
-                break;
-            case 10:
-                KiBlastEntity volley = new KiBlastEntity(this.level(), this);
-                volley.setupKiVolley(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, syncCastTime);
-                break;
-            case 11:
-                KiBlastEntity smallBlast = new KiBlastEntity(this.level(), this);
-                smallBlast.setupKiSmall(this, actualDamage, this.getKiBlastSpeed(), usedColorMain);
-                smallBlast.shootFromRotation(this, this.getXRot(), this.getYRot(), 0.0F, this.getKiBlastSpeed(), 1.0F);
-                this.playSound(MainSounds.KIBLAST_ATTACK.get(), 1.0F, 1.0F + (this.random.nextFloat() * 0.2F));
-                break;
-            case 12:
-                SPBlueHurricaneEntity hurricane = new SPBlueHurricaneEntity(this.level(), this);
-                hurricane.setupHurricane(this, actualDamage, this.getKiBlastSpeed(), syncCastTime);
-                break;
-            case 13:
-                if (this.getTarget() != null) {
-                    this.lookAt(this.getTarget(), 360, 360);
-                }
-                KiLaserEntity tripleLaser = new KiLaserEntity(this.level(), this);
-                tripleLaser.setupKiLaser(this, actualDamage, this.getKiBlastSpeed() * 3.0F, usedColorMain, usedColorBorder, 0);
-                break;
-            case 14:
-                KiDiskEntity kienzan = new KiDiskEntity(this.level(), this);
-                kienzan.setupKiDisk(this, actualDamage, this.getKiBlastSpeed() * 1.2F, usedColorMain, actualSize, syncCastTime);
-                break;
-            case 15:
-                KiBlastEntity deathBall = new KiBlastEntity(this.level(), this);
-                deathBall.setupKiDeathBall(this, actualDamage, this.getKiBlastSpeed() * 0.7F, usedColorMain, usedColorBorder, syncCastTime);
-                break;
-            case 16:
-                KiWaveEntity masenko = new KiWaveEntity(this.level(), this);
-                masenko.setupKiMasenko(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
-                break;
-            case 17:
-                KiBlastEntity bigBang = new KiBlastEntity(this.level(), this);
-                bigBang.setupKiBlast(this, actualDamage, this.getKiBlastSpeed(), usedColorMain, actualSize, syncCastTime);
-                break;
-            case 18:
-                KiWaveEntity finalFlash = new KiWaveEntity(this.level(), this);
-                finalFlash.setupFinalFlash(this, actualDamage, this.getKiBlastSpeed(), actualSize, syncCastTime);
-                break;
-        }
+        SkillManager.execute(skillType, this, this.getTarget());
     }
 
     private void handleComboLogic() {
-        if (comboTarget == null || !comboTarget.isAlive() || !this.isAlive() || this.isTransforming()) {
-            this.stopCombo();
-            return;
-        }
-
-        this.getNavigation().stop();
-        this.lookAt(comboTarget, 360, 360);
-
-        int comboId = this.entityData.get(CURRENT_COMBO_ID);
-
-        if (comboId == 0) {
-            if (comboTimer == 1) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() + (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY(), posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
-
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.2);
-                this.setDeltaMovement(dashDir);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 3.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.7F, 1.4F);
-                spawnPunchParticles(comboTarget);
-            }
-
-            if (comboTimer == 12) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() - (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() - (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY(), posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
-
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.2);
-                this.setDeltaMovement(dashDir);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 4.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.5F);
-                spawnPunchParticles(comboTarget);
-            }
-
-            if (comboTimer == 22) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() + (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY() + 0.5, posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.1F);
-
-                this.setDeltaMovement(0, 0, 0);
-            }
-
-            if (comboTimer == 31) {
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(2.0);
-                this.setDeltaMovement(dashDir);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 10.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
-                spawnPunchParticles(comboTarget);
-
-                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
-                comboTarget.setDeltaMovement(pushDir.x * 2.5, 0.6, pushDir.z * 2.5);
-                comboTarget.hasImpulse = true;
-
-                this.stopCombo();
-            }
-        } else if (comboId == 1) {
-            if (comboTimer == 1) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() + (targetLook.x * 1.5);
-                double posZ = comboTarget.getZ() + (targetLook.z * 1.5);
-                this.teleportTo(posX, comboTarget.getY(), posZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
-
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 4.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
-                spawnPunchParticles(comboTarget);
-
-                comboTarget.setDeltaMovement(0, 1.2D, 0);
-                comboTarget.hasImpulse = true;
-            }
-
-            if (comboTimer == 12) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-
-                double destX = comboTarget.getX() + (targetLook.x * 0.5);
-                double destY = comboTarget.getY() + 2.5D;
-                double destZ = comboTarget.getZ() + (targetLook.z * 0.5);
-
-                this.moveTo(destX, destY, destZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
-                this.setDeltaMovement(0, 0, 0);
-                this.lookAt(comboTarget, 360, 360);
-            }
-
-            if (comboTimer == 20) {
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 12.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
-                spawnPunchParticles(comboTarget);
-
-                comboTarget.setDeltaMovement(0, -2.5D, 0);
-                comboTarget.hasImpulse = true;
-            }
-
-            if (comboTimer == 25) {
-                comboTarget.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, false, true));
-
-                this.stopCombo();
-            }
-        } else if (comboId == 2) {
-            if (comboTimer == 1) {
-                this.setKiCharge(true);
-                this.playSound(MainSounds.KI_CHARGE_LOOP.get(), 1.0F, 1.5F);
-
-                Vec3 dashDir = comboTarget.position().subtract(this.position()).normalize().scale(1.5);
-                this.setDeltaMovement(dashDir);
-            }
-
-            if (comboTimer == 6) {
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 6.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
-                spawnPunchParticles(comboTarget);
-
-                this.setDeltaMovement(0, 0, 0);
-                comboTarget.setDeltaMovement(0, 0, 0);
-            }
-
-            if (comboTimer == 11) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double destX = comboTarget.getX() - (targetLook.x * 1.5);
-                double destZ = comboTarget.getZ() - (targetLook.z * 1.5);
-                this.teleportTo(destX, comboTarget.getY(), destZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
-                this.lookAt(comboTarget, 360, 360);
-            }
-
-            if (comboTimer == 17) {
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), 12.0F);
-                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
-                spawnPunchParticles(comboTarget);
-
-                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
-                comboTarget.setDeltaMovement(pushDir.x * 3.0, 0.5, pushDir.z * 3.0);
-                comboTarget.hasImpulse = true;
-
-                this.setKiCharge(false);
-                this.stopCombo();
-            }
-        } else if (comboId == 3) {
-            if (comboTimer == 1) {
-                this.lookAt(comboTarget, 360, 360);
-                super.doHurtTarget(comboTarget);
-                this.swing(InteractionHand.MAIN_HAND);
-                this.playSound(MainSounds.CRITICO1.get(), 0.8F, 1.2F);
-
-                Vec3 pushDir = comboTarget.position().subtract(this.position()).normalize();
-                comboTarget.setDeltaMovement(pushDir.x * 2.0, 0.3, pushDir.z * 2.0);
-                comboTarget.hasImpulse = true;
-            }
-
-            if (comboTimer == 10) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double destX = comboTarget.getX() + (targetLook.x * 1.5);
-                double destZ = comboTarget.getZ() + (targetLook.z * 1.5);
-                this.teleportTo(destX, comboTarget.getY(), destZ);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.3F);
-                this.lookAt(comboTarget, 360, 360);
-            }
-
-            if (comboTimer == 15 || comboTimer == 20 || comboTimer == 25 || comboTimer == 30) {
-                this.lookAt(comboTarget, 360, 360);
-                super.doHurtTarget(comboTarget);
-                this.swing(InteractionHand.MAIN_HAND);
-                this.playSound(MainSounds.CRITICO1.get(), 0.7F, 1.4F);
-            }
-
-            if (comboTimer == 35) {
-                this.lookAt(comboTarget, 360, 360);
-                super.doHurtTarget(comboTarget);
-                this.swing(InteractionHand.MAIN_HAND);
-                this.playSound(MainSounds.CRITICO1.get(), 1.0F, 0.8F);
-                comboTarget.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 60, 0, false, false, true));
-            }
-
-            if (comboTimer == 45) {
-                this.teleportTo(comboTarget.getX(), comboTarget.getY() + 4.0D, comboTarget.getZ());
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
-                this.setDeltaMovement(0, 0, 0);
-                this.lookAt(comboTarget, 360, 360);
-
-                float comboKameDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.0F;
-                KiWaveEntity kamehameha = new KiWaveEntity(this.level(), this);
-                kamehameha.setupKiHame(this, comboKameDamage, this.getKiBlastSpeed(), 1.5F, 30);
-            }
-
-            if (comboTimer > 45 && comboTimer <= 75) {
-                this.setDeltaMovement(0, 0, 0);
-                this.lookAt(comboTarget, 360, 360);
-            }
-
-            if (comboTimer == 76) {
-                this.stopCombo();
-            }
-        }
-        else if (comboId == 4) {
-            int durationTicks = 30;
-
-            if (comboTimer == 1) {
-                Vec3 targetLook = comboTarget.getLookAngle().normalize();
-                double posX = comboTarget.getX() + (targetLook.x * 0.8);
-                double posZ = comboTarget.getZ() + (targetLook.z * 0.8);
-                this.teleportTo(posX, comboTarget.getY(), posZ);
-
-                this.lookAt(comboTarget, 360, 360);
-                this.playSound(MainSounds.TP.get(), 1.0F, 1.0F);
-            }
-
-            if (comboTimer > 0 && comboTimer < durationTicks && comboTimer % 10 == 0) {
-                float drainHp = comboTarget.getMaxHealth() * 0.05F;
-                comboTarget.invulnerableTime = 0;
-                comboTarget.hurt(this.damageSources().mobAttack(this), drainHp);
-                this.heal(drainHp);
-
-                if (comboTarget instanceof ServerPlayer serverPlayer) {
-                    StatsProvider.get(StatsCapability.INSTANCE, serverPlayer).ifPresent(data -> {
-                        if (data.getStatus().isHasCreatedCharacter()) {
-                            double currentEnergy = data.getResources().getCurrentEnergy();
-                            double drainAmount = data.getMaxEnergy() * 0.05;
-                            data.getResources().setCurrentEnergy((float) Math.max(0, currentEnergy - drainAmount));
-                        }
-                    });
-                }
-                this.playSound(MainSounds.ABSORB1.get(), 0.5F, 0.8F);
-                spawnPunchParticles(comboTarget);
-            }
-
-            if (comboTimer < durationTicks) {
-                this.setDeltaMovement(0, 0, 0);
-                Vec3 grabPos = this.position().add(this.getLookAngle().scale(0.6));
-                comboTarget.setPos(grabPos.x, grabPos.y, grabPos.z);
-                comboTarget.setDeltaMovement(0, 0, 0);
-            }
-
-            if (comboTimer >= durationTicks) {
-
-                double pushPower = 1.5;
-
-                comboTarget.setDeltaMovement(pushPower, 0.5, pushPower);
-                comboTarget.hasImpulse = true;
-
-                this.playSound(MainSounds.CRITICO2.get(), 0.8F, 0.5F);
-                this.stopCombo();
-            }
-        }
+        int comboId = this.getComboId();
+        ComboManager.handleCombo(this, this.comboTarget, comboId, this.comboTimer);
     }
 
     public boolean hasSkillReady() {
@@ -1091,12 +650,15 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
                 this.currentPoolSkillSize = skill.size;
                 this.currentPoolColorMain = skill.colorMain;
                 this.currentPoolColorBorder = skill.colorBorder;
+                this.currentPoolColorOutline = skill.colorOutline;
+
                 this.startCasting(skill.id);
+
                 skill.currentCooldown = skill.cooldownMax;
+
                 return;
             }
         }
-
     }
 
     private void updateAuraLight() {
@@ -1172,173 +734,18 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "base_controller", 5, this::walkPredicate));
-        controllers.add(new AnimationController<>(this, "skill_controller", 5, this::skillPredicate));
-        controllers.add(new AnimationController<>(this, "evasion_controller", 5, this::evasionPredicate));
-        controllers.add(new AnimationController<>(this, "attack_controller", 0, this::attackPredicate));
-        controllers.add(new AnimationController<>(this, "tail_controller", 5, this::tailPredicate));
-        controllers.add(new AnimationController<>(this, "cape_controller", 5, this::capePredicate));
-
-    }
-
-    private <T extends GeoAnimatable> PlayState walkPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
-
-        if (this.isEvading() || this.isCasting() || this.isComboing() || this.isZanzoken()) {
-            event.getController().setAnimationSpeed(1.0D);
-            return PlayState.STOP;
-        }
-
-        double moveSpeedAttr = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
-
-        double animModifier = moveSpeedAttr / 0.25D;
-
-        if (event.isMoving()) {
-            event.getController().setAnimationSpeed(animModifier);
-        } else {
-            event.getController().setAnimationSpeed(1.0D);
-        }
-
-        int style = entity.getDBZStyle();
-
-        if (entity.isFlying()) {
-            double currentSpeedSqr = entity.getDeltaMovement().x * entity.getDeltaMovement().x + entity.getDeltaMovement().z * entity.getDeltaMovement().z;
-            if (currentSpeedSqr > 0.05D) {
-                return event.setAndContinue(ANIM_FLY_FAST);
-            }
-            return event.setAndContinue(ANIM_FLY);
-        }
-
-        if (event.isMoving()) {
-            if (entity.isAggressive() || entity.getTarget() != null) {
-                if (style == 1) return event.setAndContinue(ANIM_RUN_2);
-                if (style == 2) return event.setAndContinue(ANIM_RUN_3);
-                return event.setAndContinue(ANIM_RUN);
-            } else {
-                if (style == 1) return event.setAndContinue(ANIM_WALK_2);
-                if (style == 2) return event.setAndContinue(ANIM_WALK_3);
-                return event.setAndContinue(ANIM_WALK);
-            }
-        }
-
-        if (style == 1) return event.setAndContinue(ANIM_IDLE_2);
-        if (style == 2) return event.setAndContinue(ANIM_IDLE_3);
-        return event.setAndContinue(ANIM_IDLE);
-    }
-
-    private <T extends GeoAnimatable> PlayState skillPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
-
-        if (entity.isComboing()) {
-            int comboId = entity.entityData.get(CURRENT_COMBO_ID);
-            if (comboId == 0) return event.setAndContinue(ANIM_COMBO1);
-            if (comboId == 1) return event.setAndContinue(ANIM_COMBO2);
-
-            if (comboId == 3) {
-                if (entity.comboTimer >= 45) return event.setAndContinue(ANIM_KI_KAME);
-                return event.setAndContinue(ANIM_COMBO3);
-            }
-            if (comboId == 2) return event.setAndContinue(ANIM_COMBO3);
-            if (comboId == 4) return event.setAndContinue(ANIM_GRAB_KI);
-        }
-
-        if (entity.isCasting()) {
-            int skill = entity.getSkillType();
-            switch (skill) {
-                case 1: return event.setAndContinue(ANIM_KI_KAME);
-                case 2: return event.setAndContinue(ANIM_KI_GALICK);
-                case 3: return event.setAndContinue(ANIM_KI_MAKKAKO);
-                case 4: return event.setAndContinue(ANIM_KI_LASER);
-                case 5: return event.setAndContinue(ANIM_KI_EXPLOSION);
-                case 6: return event.setAndContinue(ANIM_KI_BARRIER);
-                case 7: return event.setAndContinue(ANIM_KI_EXPLOSION);
-                case 8: return event.setAndContinue(ANIM_KIWAVE);
-                case 9: return event.setAndContinue(ANIM_KIOZARU);
-                case 10: return event.setAndContinue(ANIM_KI_BARRAGE);
-                case 11: return event.setAndContinue(ANIM_KIBLAST);
-                case 12: return event.setAndContinue(ANIM_KIATTACK);
-                case 13: return event.setAndContinue(ANIM_KILASER);
-                case 14: return event.setAndContinue(ANIM_KI_DISC);
-                case 15: return event.setAndContinue(ANIM_KIBALL);
-                case 16: return event.setAndContinue(ANIM_KI_MASENKO);
-                case 17: return event.setAndContinue(ANIM_KI_BIG_BANG); // NUEVO BIG BANG
-                case 18: return event.setAndContinue(ANIM_KI_FINALFLASH); // NUEVO FINAL FLASH
-                default: return event.setAndContinue(ANIM_KIWAVE);
-            }
-        }
-
-        if (entity.isTransforming()) {
-            int style = entity.getDBZStyle();
-            if (style == 1) return event.setAndContinue(ANIM_TRANSFORMATION2);
-            if (style == 2) return event.setAndContinue(ANIM_TRANSFORMATION3);
-            return event.setAndContinue(ANIM_TRANSFORMATION1);
-        }
-
-        event.getController().forceAnimationReset();
-        return PlayState.STOP;
-    }
-
-    private <T extends GeoAnimatable> PlayState attackPredicate(AnimationState<T> event) {
-        DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
-
-        if (isCasting() || isTransforming() || isComboing() || isEvading() || isZanzoken()) {
-            return PlayState.STOP;
-        }
-
-        int style = entity.getDBZStyle();
-
-        if (entity.swingTime > 0 && !isAttacking) {
-            isAttacking = true;
-            event.getController().forceAnimationReset();
-
-            int randAttack = this.random.nextInt(3);
-            if (style == 1) {
-                if (randAttack == 0) event.getController().setAnimation(ANIM_ATTACK1_2);
-                else if (randAttack == 1) event.getController().setAnimation(ANIM_ATTACK2_2);
-                else event.getController().setAnimation(ANIM_ATTACK3_2);
-            } else if (style == 2) {
-                if (randAttack == 0) event.getController().setAnimation(ANIM_ATTACK1_3);
-                else if (randAttack == 1) event.getController().setAnimation(ANIM_ATTACK2_3);
-                else event.getController().setAnimation(ANIM_ATTACK3_3);
-            } else {
-                if (randAttack == 0) event.getController().setAnimation(ANIM_ATTACK1);
-                else if (randAttack == 1) event.getController().setAnimation(ANIM_ATTACK2);
-                else event.getController().setAnimation(ANIM_ATTACK3);
-            }
-            return PlayState.CONTINUE;
-        }
-
-        if (isAttacking) {
-            if (event.getController().getAnimationState() == AnimationController.State.STOPPED) {
-                isAttacking = false;
-                return PlayState.STOP;
-            }
-            return PlayState.CONTINUE;
-        }
-
-        return PlayState.STOP;
-    }
-
-    private <T extends GeoAnimatable> PlayState evasionPredicate(AnimationState<T> event) {
-        if (this.isEvading() || this.isZanzoken()) {
-            return event.setAndContinue(ANIM_EVADE);
-        }
-
-        event.getController().forceAnimationReset();
-        return PlayState.STOP;
-    }
-
-    private <T extends GeoAnimatable> PlayState tailPredicate(AnimationState<T> event) {
-        return event.setAndContinue(ANIM_TAIL);
-    }
-    private <T extends GeoAnimatable> PlayState capePredicate(AnimationState<T> event) {
-        return event.setAndContinue(ANIM_CAPE);
+        controllers.add(new AnimationController<>(this, "base_controller", 5, DBSagasAnimationHandler::walkPredicate));
+        controllers.add(new AnimationController<>(this, "skill_controller", 5, DBSagasAnimationHandler::skillPredicate));
+        controllers.add(new AnimationController<>(this, "evasion_controller", 5, DBSagasAnimationHandler::evasionPredicate));
+        controllers.add(new AnimationController<>(this, "attack_controller", 0, DBSagasAnimationHandler::attackPredicate));
+        controllers.add(new AnimationController<>(this, "tail_controller", 5, DBSagasAnimationHandler::tailPredicate));
+        controllers.add(new AnimationController<>(this, "cape_controller", 5, DBSagasAnimationHandler::capePredicate));
     }
 
     @Override
     public void travel(Vec3 pTravelVector) {
         if (this.isCasting() || this.isComboing() || this.isTransforming() || this.isZanzoken()) {
-            this.setDeltaMovement(0, 0, 0);
+            this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
             super.travel(Vec3.ZERO);
             return;
         }
@@ -1398,7 +805,11 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public int getTextureVariant() {return this.entityData.get(TEXTURE_VARIANT);}
     public void setTextureVariant(int variant) {this.entityData.set(TEXTURE_VARIANT, variant);}
 
-    private void stopCombo() {
+    public int getComboId() {
+        return this.entityData.get(CURRENT_COMBO_ID);
+    }
+
+    public void stopCombo() {
         this.setComboing(false);
         this.entityData.set(CURRENT_COMBO_ID, -1);
         this.comboTimer = 0;
@@ -1435,7 +846,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.playSound(MainSounds.TP.get(), 1.0F, 1.2F);
     }
 
-    private void spawnPunchParticles(LivingEntity target) {
+    public void spawnPunchParticles(LivingEntity target) {
         if (this.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(MainParticles.PUNCH_PARTICLE.get(), target.getX(),
                     target.getY() + (target.getBbHeight() / 2.0), target.getZ(), 0, 1.0f, 1.0f, 1.0f, 1.0);
@@ -1473,6 +884,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         pCompound.putInt("TextureVariant", this.getTextureVariant());
         pCompound.putBoolean("CanUseZanzoken", this.canUseZanzoken);
         pCompound.putInt("ZanzokenCooldownMax", this.zanzokenCooldownMax);
+
+        pCompound.putFloat("SkillSize", this.currentPoolSkillSize);
+        pCompound.putInt("ColorMain", this.currentPoolColorMain);
+        pCompound.putInt("ColorBorder", this.currentPoolColorBorder);
+        pCompound.putInt("ColorOutline", this.currentPoolColorOutline);
+
+        pCompound.putInt("CastTimer", this.castTimer);
+        pCompound.putInt("TransformTick", this.transformTick);
+        pCompound.putInt("ComboTimer", this.comboTimer);
+        pCompound.putInt("CurrentComboId", this.getComboId());
     }
 
     @Override
@@ -1490,6 +911,16 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
         if (pCompound.contains("CanUseZanzoken")) this.canUseZanzoken = pCompound.getBoolean("CanUseZanzoken");
         if (pCompound.contains("ZanzokenCooldownMax")) this.zanzokenCooldownMax = pCompound.getInt("ZanzokenCooldownMax");
+
+        if (pCompound.contains("SkillSize")) this.currentPoolSkillSize = pCompound.getFloat("SkillSize");
+        if (pCompound.contains("ColorMain")) this.currentPoolColorMain = pCompound.getInt("ColorMain");
+        if (pCompound.contains("ColorBorder")) this.currentPoolColorBorder = pCompound.getInt("ColorBorder");
+        if (pCompound.contains("ColorOutline")) this.currentPoolColorOutline = pCompound.getInt("ColorOutline");
+
+        if (pCompound.contains("CastTimer")) this.castTimer = pCompound.getInt("CastTimer");
+        if (pCompound.contains("TransformTick")) this.transformTick = pCompound.getInt("TransformTick");
+        if (pCompound.contains("ComboTimer")) this.comboTimer = pCompound.getInt("ComboTimer");
+        if (pCompound.contains("CurrentComboId")) {this.entityData.set(CURRENT_COMBO_ID, pCompound.getInt("CurrentComboId"));}
     }
 
     @Override
@@ -1531,6 +962,10 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         }
 
         boolean actuallyHurt = super.hurt(pSource, pAmount);
+
+        if (!this.level().isClientSide && this.isComboing() && this.getComboId() == 7) {
+            this.stopCombo();
+        }
 
         if (actuallyHurt && !this.level().isClientSide) {
 
@@ -1595,7 +1030,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (target != null && target.isAlive()) {
             double yDiff = target.getY() - this.getY();
 
-            if (this.canFly() && yDiff >= 3.0D && !isFlying()) setFlying(true);
+            if (this.canFly() && yDiff >= 4.0D && !isFlying()) setFlying(true);
             else if (isFlying()) {
                 if (!this.canFly() || (yDiff < 1.0D && this.onGround())) {
                     setFlying(false);
@@ -1670,7 +1105,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.castTimer = 0;
         this.setSkillType(0);
 
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
     }
 
     protected boolean handleTransformationLogic(int transformTick, int duration) {

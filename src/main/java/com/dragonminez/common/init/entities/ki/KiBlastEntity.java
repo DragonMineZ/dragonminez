@@ -473,6 +473,24 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setupKiVolley(owner, damage, speed, color, 0xFFFFFF, castTime);
     }
 
+    public void setupKiAirVolley(LivingEntity owner, float damage, float speed, int color, int colorOutline, int castTime) {
+        this.setOwner(owner);
+        this.setKiRenderType(10);
+        this.setSize(0.0F);
+        this.setKiDamage(damage);
+        this.setKiSpeed(speed);
+        this.setColors(color, color, colorOutline);
+        this.setFiring(false);
+        this.setCastTime(castTime);
+        this.setMaxLife(castTime*2);
+        this.setCastOffsets(0.0f, 1.5f, 0.0f);
+        this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
+        updatePositionRelativeToOwner(owner);
+        if (!this.level().isClientSide) {
+            this.level().addFreshEntity(this);
+        }
+    }
+
     //ACA TERMINAN LOS METODOS PARA NPCS
 
     public void toggleSokidanControl() {
@@ -546,7 +564,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         boolean isFiring = this.isFiring();
 
-        if (!isFiring || this.getKiRenderType() == 9) {
+        if (!isFiring || this.getKiRenderType() == 9 || this.getKiRenderType() == 10) {
             var owner = this.getOwner();
             if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
                 updatePositionRelativeToOwner(livingOwner);
@@ -575,27 +593,58 @@ public class KiBlastEntity extends AbstractKiProjectile {
         int type = this.getKiRenderType();
         Entity ownerEntity = this.getOwner();
 
-        if (type == 9) {
+        if (type == 9 || type == 10) {
             if (ownerEntity instanceof LivingEntity owner && owner.isAlive()) {
 
-                owner.setDeltaMovement(0, 0, 0);
+                if (type == 10) {
+                    if (isCasting) {
+                        owner.setDeltaMovement(0, 0.05D, 0);
+                    } else {
+                        owner.setDeltaMovement(0, 0, 0);
+                    }
+                } else {
+                    owner.setDeltaMovement(0, 0, 0);
+                }
+
                 owner.fallDistance = 0.0F;
                 owner.hasImpulse = true;
 
                 if (!this.level().isClientSide) {
                     if (!isCasting) {
-                        if (this.tickCount % 4 == 0) { // Mantenemos el tiempo original
+                        if (type == 9) {
+                            if (this.tickCount % 4 == 0) {
+                                for (int i = 0; i < 5; i++) {
+                                    KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
+                                    bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
 
-                            for (int i = 0; i < 5; i++) {
-                                KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
-                                bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
+                                    bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed() / 2, 15.0F);
+                                    this.level().addFreshEntity(bullet);
+                                }
 
-                                bullet.shootFromRotation(owner, owner.getXRot(), owner.getYRot(), 0.0F, this.getKiSpeed(), 15.0F);
-                                this.level().addFreshEntity(bullet);
+                                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                                        MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.5F + (this.random.nextFloat() * 0.5F));
                             }
+                        } else if (type == 10) {
+                            if (this.tickCount % 2 == 0) {
+                                for (int i = 0; i < 10; i++) {
+                                    KiBlastEntity bullet = new KiBlastEntity(this.level(), owner);
+                                    bullet.setupKiSmall(owner, this.getKiDamage(), this.getKiSpeed(), this.getColor());
 
-                            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                                    MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.1F, 1.5F + (this.random.nextFloat() * 0.5F));
+                                    double spawnX = owner.getX();
+                                    double spawnY = owner.getY() + (owner.getBbHeight() / 2.0D);
+                                    double spawnZ = owner.getZ();
+                                    bullet.setPos(spawnX, spawnY, spawnZ);
+
+                                    float randomPitch = (this.random.nextFloat() * 180.0F) - 90.0F;
+                                    float randomYaw = this.random.nextFloat() * 360.0F;
+
+                                    bullet.shootFromRotation(owner, randomPitch, randomYaw, 0.0F, this.getKiSpeed() / 3, 0.0F);
+                                    this.level().addFreshEntity(bullet);
+                                }
+
+                                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                                        MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.15F, 1.2F + (this.random.nextFloat() * 0.4F));
+                            }
                         }
                     }
 
@@ -696,7 +745,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
                 }
             }
 
-            if (type == 2 || type == 5 || type == 6) { // Large Blast, Genkidama, Supernova
+            if (type == 2 || type == 5 || type == 6) {
                 for (int i = 0; i < 10; i++) {
                     double absDist = scale * 3;
                     double angle = this.random.nextDouble() * Math.PI * 2;

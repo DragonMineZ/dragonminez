@@ -36,9 +36,14 @@ public class RaceStatsConfig {
 	public static class ClassStats {
 		private BaseStats baseStats = new BaseStats();
 		private StatScaling statScaling = new StatScaling();
-		private Double healthRegenRate = 0.0025;
-		private Double energyRegenRate = 0.01;
-		private Double staminaRegenRate = 0.01;
+		private Double baseHp5 = 5.0;
+		private Double hp5VitScaling = 0.05;
+
+		private Double baseEp5 = 10.0;
+		private Double ep5EneScaling = 0.1;
+
+		private Double baseSp5 = 10.0;
+		private Double sp5VitScaling = 0.1;
 		private Double tpCostMultiplier = 1.0;
 		private Double tpGainMultiplier = 1.0;
 	}

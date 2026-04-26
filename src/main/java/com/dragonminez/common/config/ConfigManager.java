@@ -719,15 +719,27 @@ public class ConfigManager {
 	}
 
 	private static void setupDefaultStats(RaceStatsConfig config) {
-		setupInitialStats(config.getClassStats("warrior"), 10, 5, 10, 10, 5, 5, 0.003, 0.008, 0.012);
+		setupInitialStats(config.getClassStats("warrior"), 10, 5, 10, 10, 5, 5,
+				5.0, 0.06,
+				5.0, 0.05,
+				10.0, 0.12);
 		setupScalingStats(config.getClassStats("warrior"), 1.0, 0.75, 0.5, 0.75, 1.5, 0.5, 2.5);
-		setupInitialStats(config.getClassStats("spiritualist"), 5, 10, 5, 5, 10, 10, 0.002, 0.015, 0.008);
+
+		setupInitialStats(config.getClassStats("spiritualist"), 5, 10, 5, 5, 10, 10,
+				3.0, 0.03,
+				15.0, 0.15,
+				5.0, 0.06);
 		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 0.25, 0.25, 1.0, 1.0, 3.0);
-		setupInitialStats(config.getClassStats("martialartist"), 5, 10, 10, 10, 5, 5, 0.0035, 0.008, 0.009);
+
+		setupInitialStats(config.getClassStats("martialartist"), 5, 10, 10, 10, 5, 5,
+				4.0, 0.045,
+				8.0, 0.08,
+				8.0, 0.09);
 		setupScalingStats(config.getClassStats("martialartist"), 0.75, 1.0, 0.75, 1.0, 1.75, 0.75, 2.75);
 	}
 
-	private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene, double healthRegen, double energyRegen, double staminaRegen) {
+	private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene,
+	                                      double baseHp5, double hp5VitScaling, double baseEp5, double ep5EneScaling, double baseSp5, double sp5VitScaling) {
 		RaceStatsConfig.BaseStats base = classStats.getBaseStats();
 		base.setStrength(str);
 		base.setStrikePower(skp);
@@ -736,9 +748,12 @@ public class ConfigManager {
 		base.setKiPower(pwr);
 		base.setEnergy(ene);
 
-		classStats.setHealthRegenRate(healthRegen);
-		classStats.setEnergyRegenRate(energyRegen);
-		classStats.setStaminaRegenRate(staminaRegen);
+		classStats.setBaseHp5(baseHp5);
+		classStats.setHp5VitScaling(hp5VitScaling);
+		classStats.setBaseEp5(baseEp5);
+		classStats.setEp5EneScaling(ep5EneScaling);
+		classStats.setBaseSp5(baseSp5);
+		classStats.setSp5VitScaling(sp5VitScaling);
 	}
 
 	private static void setupScalingStats(RaceStatsConfig.ClassStats classStats, double strScale, double skpScale, double defScale, double stmScale, double vitScale, double pwrScale, double eneScale) {

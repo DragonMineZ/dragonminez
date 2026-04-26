@@ -39,6 +39,7 @@ public class DMZCommon {
 		MainRecipes.register(modEventBus);
 		MainMenus.register(modEventBus);
         MainEffects.register(modEventBus);
+		MainEnchants.register(modEventBus);
         MainStructurePlacements.register(modEventBus);
 		modEventBus.addListener(ModCommonEvents::commonSetup);
 		OverworldFeatures.register(modEventBus);

@@ -711,9 +711,38 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaBuuEntity.BuuFatEntity>> SAGA_BUU_FAT=
             ENTITY_TYPES.register("saga_buufat",
                     () -> EntityType.Builder.of(SagaBuuEntity.BuuFatEntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 1.8f)
+                            .sized(0.8f, 1.9f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_buufat").toString()));
-
+    public static final RegistryObject<EntityType<SagaBuuEntity.EvilBuuEntity>> SAGA_EVILBUU=
+            ENTITY_TYPES.register("saga_evilbuu",
+                    () -> EntityType.Builder.of(SagaBuuEntity.EvilBuuEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_evilbuu").toString()));
+    public static final RegistryObject<EntityType<SagaBuuEntity.SuperBuuEntity>> SAGA_SUPERBUU=
+            ENTITY_TYPES.register("saga_superbuu",
+                    () -> EntityType.Builder.of(SagaBuuEntity.SuperBuuEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_superbuu").toString()));
+    public static final RegistryObject<EntityType<SagaBuuEntity.SuperBuuPiccoloEntity>> SAGA_SUPERBUU_PICCOLO=
+            ENTITY_TYPES.register("saga_superbuu_piccolo",
+                    () -> EntityType.Builder.of(SagaBuuEntity.SuperBuuPiccoloEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_superbuu_piccolo").toString()));
+    public static final RegistryObject<EntityType<SagaBuuEntity.SuperBuuGotenksEntity>> SAGA_SUPERBUU_GOTENKS=
+            ENTITY_TYPES.register("saga_superbuu_gotenks",
+                    () -> EntityType.Builder.of(SagaBuuEntity.SuperBuuGotenksEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_superbuu_gotenks").toString()));
+    public static final RegistryObject<EntityType<SagaBuuEntity.SuperBuuGohanEntity>> SAGA_SUPERBUU_GOHAN=
+            ENTITY_TYPES.register("saga_superbuu_gohan",
+                    () -> EntityType.Builder.of(SagaBuuEntity.SuperBuuGohanEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 2.1f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_superbuu_gohan").toString()));
+    public static final RegistryObject<EntityType<SagaBuuEntity.KidBuuEntity>> SAGA_KIDBUU=
+            ENTITY_TYPES.register("saga_kidbuu",
+                    () -> EntityType.Builder.of(SagaBuuEntity.KidBuuEntity::new, MobCategory.MONSTER)
+                            .sized(0.4f, 1.4f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_kidbuu").toString()));
 
 
 

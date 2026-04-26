@@ -1,6 +1,7 @@
 package com.dragonminez.common.network.C2S;
 
-import com.dragonminez.server.events.players.CombatEvent;
+import com.dragonminez.server.events.players.combat.CombatEvent;
+import com.dragonminez.server.events.players.combat.DashHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -35,7 +36,7 @@ public class DashC2S {
 		context.enqueueWork(() -> {
 			ServerPlayer player = context.getSender();
 			if (player != null) {
-				CombatEvent.handleDash(player, xInput, zInput, isDoubleDash);
+				DashHandler.handleDash(player, xInput, zInput, isDoubleDash);
 			}
 		});
 		context.setPacketHandled(true);

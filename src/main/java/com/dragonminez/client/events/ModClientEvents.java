@@ -225,7 +225,8 @@ public class ModClientEvents {
                 MainEntities.SAGA_GOTEN, MainEntities.SAGA_GOTEN_SSJ, MainEntities.SAGA_KID_TRUNKS, MainEntities.SAGA_KID_TRUNKS_SSJ,
                 MainEntities.SAGA_GOTENKS, MainEntities.SAGA_GOTENKS_SSJ, MainEntities.SAGA_GOTENKS_SSJ3,
                 MainEntities.SAGA_SHIN, MainEntities.SAGA_KIBITO, MainEntities.SAGA_SPOPOVITCH, MainEntities.SAGA_PUIPUI, MainEntities.SAGA_YAKON, MainEntities.SAGA_DABURA,
-                MainEntities.SAGA_BABIDI, MainEntities.SAGA_BUU_FAT,
+                MainEntities.SAGA_BABIDI, MainEntities.SAGA_BUU_FAT, MainEntities.SAGA_EVILBUU, MainEntities.SAGA_SUPERBUU,  MainEntities.SAGA_SUPERBUU_PICCOLO,
+                MainEntities.SAGA_SUPERBUU_GOTENKS, MainEntities.SAGA_SUPERBUU_GOHAN, MainEntities.SAGA_KIDBUU,
                 MainEntities.SHADOW_DUMMY);
 
 

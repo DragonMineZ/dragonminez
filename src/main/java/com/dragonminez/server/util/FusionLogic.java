@@ -34,8 +34,8 @@ public class FusionLogic {
 			return false;
 		}
 
-		int lvl1 = getPlayerPowerLevel(lData);
-		int lvl2 = getPlayerPowerLevel(pData);
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
 
 		double threshold = ConfigManager.getServerConfig().getGameplay().getMetamoruFusionThreshold();
 		if (threshold > 0) {
@@ -85,8 +85,8 @@ public class FusionLogic {
 	}
 
 	public static void executePothala(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData) {
-		int lvl1 = getPlayerPowerLevel(lData);
-		int lvl2 = getPlayerPowerLevel(pData);
+		int lvl1 = lData.getStats().getTotalStats();
+		int lvl2 = pData.getStats().getTotalStats();
 
 		DMZEvent.FusionEvent event = new DMZEvent.FusionEvent(leader, partner, DMZEvent.FusionEvent.FusionType.POTHALA);
 		if (MinecraftForge.EVENT_BUS.post(event)) return;
@@ -95,8 +95,6 @@ public class FusionLogic {
 		lData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 		pData.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
 
-		removeEarring(leader);
-		removeEarring(partner);
 		int FUSION_DURATION = ConfigManager.getServerConfig().getGameplay().getFusionDurationSeconds() * 20;
 
 		applyFusion(leader, partner, lData, pData, "POTHALA", lvl1, lvl2);
@@ -105,6 +103,8 @@ public class FusionLogic {
 		partner.addEffect(new MobEffectInstance(MainEffects.FUSED.get(), FUSION_DURATION, 0, false, false));
 		leader.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", partner.getDisplayName()), true);
 		partner.displayClientMessage(Component.translatable("message.dragonminez.fusion.success", leader.getDisplayName()), true);
+		removeEarring(leader);
+		removeEarring(partner);
 	}
 
 	private static void applyFusion(ServerPlayer leader, ServerPlayer partner, StatsData lData, StatsData pData, String type, int lvl1, int lvl2) {
@@ -241,10 +241,6 @@ public class FusionLogic {
 
 			return String.format("%02x%02x%02x", r, g, b);
 		} catch (Exception e) { return c1; }
-	}
-
-	private static int getPlayerPowerLevel(StatsData data) {
-		return data.getStats().getTotalStats();
 	}
 
 	private static void removeEarring(ServerPlayer player) {
