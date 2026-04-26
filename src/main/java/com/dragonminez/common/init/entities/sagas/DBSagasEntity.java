@@ -350,15 +350,25 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         });
 
         this.goalSelector.addGoal(2, new SagasUseSkillGoal(this));
-        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false));
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.8D, false) {
+            @Override
+            protected int getAttackInterval() {
+                double attackSpeed = this.mob.getAttributeValue(Attributes.ATTACK_SPEED);
+
+                if (attackSpeed <= 0) return 20;
+
+                //Si tiene 4.0, golpea cada 5 ticks. Si tiene 8.0 (Kid Buu), golpea cada 2.5 ticks.
+                return (int) Math.max(2, 20.0D / attackSpeed);
+            }
+        });
         this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 45.0F));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, (new HurtByTargetGoal(this)));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, false));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, false));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, IronGolem.class, false));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -1020,7 +1030,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (target != null && target.isAlive()) {
             double yDiff = target.getY() - this.getY();
 
-            if (this.canFly() && yDiff >= 3.0D && !isFlying()) setFlying(true);
+            if (this.canFly() && yDiff >= 4.0D && !isFlying()) setFlying(true);
             else if (isFlying()) {
                 if (!this.canFly() || (yDiff < 1.0D && this.onGround())) {
                     setFlying(false);
@@ -1095,7 +1105,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.castTimer = 0;
         this.setSkillType(0);
 
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25D);
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.defaultMovementSpeed);
     }
 
     protected boolean handleTransformationLogic(int transformTick, int duration) {

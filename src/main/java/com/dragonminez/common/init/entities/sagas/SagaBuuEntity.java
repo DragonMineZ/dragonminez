@@ -32,7 +32,7 @@ public class SagaBuuEntity {
 
             this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(4.5D);
             this.setDefaultAttackSpeed(4.5D);
-            
+
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.45D);
 
         }
@@ -243,6 +243,7 @@ public class SagaBuuEntity {
             this.addKiSkill(KiSkillType.KI_SMALL, 40, 1.5F, 0xFF82F3, 0xFF1AEC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 400, 2.0F, 0xFF82F3, 0xFF1AEC, 0xDE0BCD);
             this.addKiSkill(KiSkillType.OOZARU_ROAR, 250, 1.5F);
+            this.addKiSkill(KiSkillType.BIG_BANG, 850, 5.0F, 0x9E2386, 0xFF52E2, 0xFF00D1);
 
 
             this.setWildSense(true, 100);

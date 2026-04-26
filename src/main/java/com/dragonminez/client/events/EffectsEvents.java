@@ -2,6 +2,7 @@ package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.init.MainEffects;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -47,6 +48,29 @@ public class EffectsEvents {
 		if (player == null || mc.isPaused()) return;
 
 		double time = player.level().getGameTime() + event.getPartialTick();
+
+        double shakeRadius = 15.0D;
+        var nearbyEntities = player.level().getEntitiesOfClass(DBSagasEntity.class, player.getBoundingBox().inflate(shakeRadius));
+
+        for (DBSagasEntity entity : nearbyEntities) {
+            if (entity.isAlive() && entity.isCasting() && entity.getSkillType() == 7) {
+
+                double distance = player.distanceTo(entity);
+                if (distance <= shakeRadius) {
+
+                    float intensity = (float) (1.0D - (distance / shakeRadius));
+
+                    float shakePitch = (player.getRandom().nextFloat() - 0.5F) * 2.5F * intensity;
+                    float shakeYaw = (player.getRandom().nextFloat() - 0.5F) * 2.5F * intensity;
+                    float shakeRoll = (player.getRandom().nextFloat() - 0.5F) * 1.5F * intensity;
+
+                    event.setPitch(event.getPitch() + shakePitch);
+                    event.setYaw(event.getYaw() + shakeYaw);
+                    event.setRoll(event.getRoll() + shakeRoll);
+                    break;
+                }
+            }
+        }
 
 		if (player.hasEffect(MainEffects.STAGGER.get())) {
 			int amplifier = player.getEffect(MainEffects.STAGGER.get()).getAmplifier();

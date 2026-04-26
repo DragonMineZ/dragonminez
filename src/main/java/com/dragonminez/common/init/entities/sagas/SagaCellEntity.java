@@ -88,6 +88,11 @@ public class SagaCellEntity {
             this.setZanzoken(true, 100);
 
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
+            this.setDefaultMovementSpeed(0.35D);
+
+            this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(5.0D);
+            this.setDefaultAttackSpeed(5.0D);
+
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
 
@@ -128,8 +133,8 @@ public class SagaCellEntity {
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.35D);
             this.setDefaultMovementSpeed(0.35D);
 
-            this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(6.0D);
-            this.setDefaultAttackSpeed(6.0D);
+            this.getAttribute(Attributes.ATTACK_SPEED).setBaseValue(8.0D);
+            this.setDefaultAttackSpeed(8.0D);
 
             this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(0.20D);
 
