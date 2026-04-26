@@ -18,6 +18,7 @@ import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.dragonminez.common.quest.objectives.StructureObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
+import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
@@ -196,6 +197,8 @@ public class SyncQuestRegistryS2C {
 		obj.addProperty("category", quest.getCategory());
 		obj.addProperty("parallel_objectives", quest.isParallelObjectives());
 		obj.addProperty("party_scaling", quest.isPartyScaling());
+		obj.addProperty("secret", quest.isSecret());
+		obj.addProperty("claim_mode", quest.getClaimMode().name());
 
 		if (quest.getQuestGiver() != null) obj.addProperty("quest_giver", quest.getQuestGiver());
 		else obj.add("quest_giver", JsonNull.INSTANCE);
@@ -232,6 +235,8 @@ public class SyncQuestRegistryS2C {
 			obj.addProperty("health", kill.getHealth());
 			obj.addProperty("meleeDamage", kill.getMeleeDamage());
 			obj.addProperty("kiDamage", kill.getKiDamage());
+			obj.addProperty("spawn", kill.getSpawnMode().name());
+			obj.addProperty("count_mode", kill.getCountMode().name());
 		} else if (objective instanceof ItemObjective item) {
 			obj.addProperty("item", item.getItemId());
 			obj.addProperty("count", item.getCount());
@@ -285,6 +290,8 @@ public class SyncQuestRegistryS2C {
 		} else if (reward instanceof SkillReward skill) {
 			obj.addProperty("skill", skill.getSkill());
 			obj.addProperty("level", skill.getLevel());
+		} else if (reward instanceof AlignmentReward alignment) {
+			obj.addProperty("amount", alignment.getAmount());
 		}
 
 		return obj;
@@ -350,6 +357,14 @@ public class SyncQuestRegistryS2C {
 					} else {
 						obj.addProperty("milliseconds", condition.getDuration());
 					}
+				}
+			}
+			case ALIGNMENT -> {
+				if (condition.getMinAlignment() != null) {
+					obj.addProperty("min", condition.getMinAlignment());
+				}
+				if (condition.getMaxAlignment() != null) {
+					obj.addProperty("max", condition.getMaxAlignment());
 				}
 			}
 		}

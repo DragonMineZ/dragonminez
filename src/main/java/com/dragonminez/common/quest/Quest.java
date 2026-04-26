@@ -24,6 +24,11 @@ public class Quest {
 		EVENT
 	}
 
+	public enum ClaimMode {
+		TREE_OR_NPC,
+		NPC_ONLY
+	}
+
 	private final int id;
 	private final String stringId;
 	private final QuestType type;
@@ -45,6 +50,8 @@ public class Quest {
 	private final String turnIn;
 	private final QuestPrerequisites prerequisites;
 	private final QuestPrerequisites startRequirements;
+	private final boolean secret;
+	private final ClaimMode claimMode;
 
 	/**
 	 * Universal constructor for quests.
@@ -54,6 +61,16 @@ public class Quest {
 				 List<QuestObjective> objectives, List<QuestReward> rewards,
 				 QuestPrerequisites prerequisites, QuestPrerequisites startRequirements,
 				 String questGiver, String turnIn) {
+		this(id, stringId, type, title, description, category, parallelObjectives, partyScaling,
+				objectives, rewards, prerequisites, startRequirements, questGiver, turnIn,
+				false, ClaimMode.TREE_OR_NPC);
+	}
+
+	public Quest(int id, String stringId, QuestType type, String title, String description,
+				 String category, boolean parallelObjectives, boolean partyScaling,
+				 List<QuestObjective> objectives, List<QuestReward> rewards,
+				 QuestPrerequisites prerequisites, QuestPrerequisites startRequirements,
+				 String questGiver, String turnIn, boolean secret, ClaimMode claimMode) {
 		this.id = id;
 		this.stringId = stringId;
 		this.type = type != null ? type : QuestType.SAGA;
@@ -70,6 +87,8 @@ public class Quest {
 		this.turnIn = turnIn;
 		this.prerequisites = prerequisites;
 		this.startRequirements = startRequirements;
+		this.secret = secret;
+		this.claimMode = claimMode != null ? claimMode : ClaimMode.TREE_OR_NPC;
 	}
 
 	public boolean hasPrerequisites() {

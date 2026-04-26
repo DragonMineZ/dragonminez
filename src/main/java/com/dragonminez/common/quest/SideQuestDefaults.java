@@ -10,6 +10,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 /**
  * Generates the default side-quest JSON files in the unified schema.
@@ -28,6 +29,11 @@ final class SideQuestDefaults {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String PARTY_SCALING_KEY = "party_scaling";
+	private static final Set<String> GOOD_PATH_NPCS = Set.of(
+			"goku", "roshi", "karin", "guru", "dende", "popo", "kingkai",
+			"bulma", "krillin", "yamcha", "tien", "chiaotzu", "gohan", "trunks",
+			"chi_chi", "videl", "namek_elder"
+	);
 
 	private SideQuestDefaults() {} // utility class
 
@@ -47,31 +53,10 @@ final class SideQuestDefaults {
 		try {
 			Files.createDirectories(dir);
 			if (Files.exists(file)) {
-				ensureQuestProperty(file, PARTY_SCALING_KEY, quest.get(PARTY_SCALING_KEY));
 				return;
 			}
 			try (Writer w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) { GSON.toJson(quest, w); }
 		} catch (IOException e) { LogUtil.error(Env.COMMON, "Failed to create default side-quest file: {}", filename, e); }
-	}
-
-	private static void ensureQuestProperty(Path file, String property, JsonElement value) {
-		if (value == null) return;
-
-		try {
-			JsonObject existing;
-			try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-				existing = GSON.fromJson(reader, JsonObject.class);
-			}
-
-			if (existing == null || existing.has(property)) return;
-
-			existing.add(property, value.deepCopy());
-			try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-				GSON.toJson(existing, writer);
-			}
-		} catch (Exception e) {
-			LogUtil.warn(Env.COMMON, "Failed to update default side-quest file '{}': {}", file.getFileName(), e.getMessage());
-		}
 	}
 
 	/** Builds a sidequest in the unified schema. */
@@ -98,13 +83,19 @@ final class SideQuestDefaults {
 		q.addProperty("category", category);
 		q.addProperty("parallel_objectives", parallelObjectives);
 		q.addProperty(PARTY_SCALING_KEY, true);
+		q.addProperty("secret", false);
+		q.addProperty("claim_mode", "TREE_OR_NPC");
 		if (questGiver != null) q.addProperty("quest_giver", questGiver);
 		else q.add("quest_giver", JsonNull.INSTANCE);
 		if (turnIn != null) q.addProperty("turn_in", turnIn);
 		else q.add("turn_in", JsonNull.INSTANCE);
 
+		JsonObject effectiveStartRequirements = requiresGoodPath(questGiver, turnIn)
+				? withAlignmentRequirement(startRequirements)
+				: startRequirements;
+
 		if (prerequisites != null) q.add("prerequisites", prerequisites);
-		if (startRequirements != null) q.add("requirements", startRequirements);
+		if (effectiveStartRequirements != null) q.add("requirements", effectiveStartRequirements);
 
 		JsonArray objArr = new JsonArray(); for (JsonObject o : objectives) objArr.add(o);
 		q.add("objectives", objArr);
@@ -116,9 +107,19 @@ final class SideQuestDefaults {
 	// ---- Objective helpers ----
 
 	private static JsonObject objKill(String entity, int count) {
+		return objKill(entity, count, "NATURAL", "ANY_MATCHING");
+	}
+
+	private static JsonObject objQuestKill(String entity, int count) {
+		return objKill(entity, count, "QUEST", "QUEST_SPAWNED_ONLY");
+	}
+
+	private static JsonObject objKill(String entity, int count, String spawnMode, String countMode) {
 		JsonObject o = new JsonObject();
 		o.addProperty("type", "KILL");
 		o.addProperty("entity", entity); o.addProperty("count", count);
+		o.addProperty("spawn", spawnMode);
+		o.addProperty("count_mode", countMode);
 		return o;
 	}
 
@@ -181,6 +182,10 @@ final class SideQuestDefaults {
 		JsonObject c = new JsonObject(); c.addProperty("type", "LEVEL"); c.addProperty("minLevel", minLevel); return c;
 	}
 
+	private static JsonObject condAlignmentMin(int minAlignment) {
+		JsonObject c = new JsonObject(); c.addProperty("type", "ALIGNMENT"); c.addProperty("min", minAlignment); return c;
+	}
+
 	private static JsonObject condStat(String stat, int minValue) {
 		JsonObject c = new JsonObject(); c.addProperty("type", "STAT"); c.addProperty("stat", stat); c.addProperty("minValue", minValue); return c;
 	}
@@ -203,6 +208,26 @@ final class SideQuestDefaults {
 
 	private static JsonObject condRealTimeMinutes(long minutes) {
 		JsonObject c = new JsonObject(); c.addProperty("type", "TIME"); c.addProperty("mode", "REAL_TIME"); c.addProperty("milliseconds", minutes * 60L * 1000L); return c;
+	}
+
+	private static boolean requiresGoodPath(String questGiver, String turnIn) {
+		return GOOD_PATH_NPCS.contains(normalizeNpcId(questGiver)) || GOOD_PATH_NPCS.contains(normalizeNpcId(turnIn));
+	}
+
+	private static String normalizeNpcId(String npcId) {
+		if (npcId == null || npcId.isBlank()) return "";
+		String normalized = npcId.trim().toLowerCase();
+		if (normalized.contains(":")) {
+			normalized = normalized.substring(normalized.indexOf(':') + 1);
+		}
+		return normalized;
+	}
+
+	private static JsonObject withAlignmentRequirement(JsonObject startRequirements) {
+		JsonObject requirements = startRequirements != null ? startRequirements : requirements("AND");
+		JsonArray conditions = requirements.getAsJsonArray("conditions");
+		conditions.add(condAlignmentMin(41));
+		return requirements;
 	}
 
 	/*
@@ -534,7 +559,7 @@ final class SideQuestDefaults {
 				"combat", false, "videl", "videl",
 				prereqs("AND", condSaga("android_saga", 17)),
 				new JsonObject[]{
-						objKill("dragonminez:saga_cell_jr", 10),
+						objQuestKill("dragonminez:saga_cell_jr", 10),
 						objTalkTo("videl")
 				},
 				new JsonObject[]{ rewTPS(20000) }));

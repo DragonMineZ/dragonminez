@@ -1,5 +1,6 @@
 package com.dragonminez.common.init.entities.sagas;
 
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.init.MainItems;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.stats.StatsCapability;
@@ -75,6 +76,16 @@ public class SagaBabidiSoldiersEntity {
 
                     double newKi = Math.max(0, currentKi - drainAmount);
                     data.getResources().setCurrentEnergy((float) newKi);
+
+                    if (data.getCharacter().hasActiveForm() || data.getCharacter().hasActiveStackForm()) {
+                        float dmg = (float) (ConfigManager.getCombatConfig().getBaselineFormDrain() * (data.getTotalMultiplier(
+                                data.getMeleeDamage() > data.getKiDamage() ? "STR" : data.getKiDamage() > data.getStrikeDamage() ? "PWR" : "SKP")) / 4);
+
+                        data.getCharacter().clearActiveForm();
+                        data.getCharacter().clearActiveStackForm();
+
+                        this.hurt(damageSources().magic(), dmg);
+                    }
 
                 });
             }

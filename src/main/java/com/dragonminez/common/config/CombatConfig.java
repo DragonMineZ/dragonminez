@@ -15,7 +15,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class CombatConfig {
-	public static final int CURRENT_VERSION = 5;
+	public static final int CURRENT_VERSION = 4;
 
 	@Setter
 	private int configVersion;
@@ -25,12 +25,15 @@ public class CombatConfig {
 	private Integer baselineFormDrain = 15;
 	private Boolean killPlayersOnCombatLogout = true;
 
+	private Double baseDamageReductionCap = 0.75;
+	private Double enchantmentDamageReductionCap = 0.85;
+	private Double defenseDecayOnGuardBreak = 0.66;
+
 	private Boolean enableBlocking = true;
 	private Boolean enableParrying = true;
 	private Boolean enableComboAttacks = true;
 	private Integer parryWindowMs = 250;
 	private Integer blockBreakStunDurationTicks = 60;
-	private Double effectiveDefenseOnGuardBreak = 0.3;
 	private Double poiseDamageMultiplier = 1.0;
 	private Double blockDamageReductionCap = 0.8;
 	private Double blockDamageReductionMin = 0.1;

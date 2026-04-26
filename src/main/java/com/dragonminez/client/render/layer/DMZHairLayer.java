@@ -18,8 +18,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.renderer.GeoRenderer;
@@ -27,6 +29,7 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.util.RenderUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extends GeoRenderLayer<T> {
@@ -70,8 +73,11 @@ public class DMZHairLayer<T extends AbstractClientPlayer & GeoAnimatable> extend
 
 		var headItem = animatable.getItemBySlot(EquipmentSlot.HEAD);
 		if (!headItem.isEmpty()) {
-			String headDescId = headItem.getItem().getDescriptionId();
-			if (!headDescId.contains("pothala") && !headDescId.contains("scouter") && !headDescId.contains("invencible")) return;
+			ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(headItem.getItem());
+			if (itemId != null) {
+				List<String> allowedHelmets = ConfigManager.getServerConfig().getGameplay().getHelmetsThatKeepHair();
+				if (!allowedHelmets.contains(itemId.toString())) return;
+			}
 		}
 
 		var statsCap = StatsProvider.get(StatsCapability.INSTANCE, animatable);

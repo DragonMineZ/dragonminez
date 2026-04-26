@@ -79,6 +79,17 @@ public class QuestAvailabilityChecker {
 		return describeStartRequirementFailure(quest, questKey, player, statsData);
 	}
 
+	static boolean matchesAlignmentCondition(QuestPrerequisites.Condition condition, int alignment) {
+		if (condition == null || condition.getType() != QuestPrerequisites.ConditionType.ALIGNMENT) {
+			return false;
+		}
+		Integer min = condition.getMinAlignment();
+		Integer max = condition.getMaxAlignment();
+		if (min != null && alignment < min) return false;
+		if (max != null && alignment > max) return false;
+		return true;
+	}
+
 	public static boolean isSagaQuestAvailable(Quest quest, Saga saga, int questIndex, StatsData statsData) {
 		if (quest == null || saga == null || statsData == null) {
 			return false;
@@ -253,6 +264,9 @@ public class QuestAvailabilityChecker {
 					case GAME_TIME -> context.gameTime() - timing.getGameTimeStarted() >= duration;
 					case REAL_TIME -> context.realTimeMs() - timing.getRealTimeStartedMs() >= duration;
 				};
+			}
+			case ALIGNMENT -> {
+				yield matchesAlignmentCondition(condition, data.getResources().getAlignment());
 			}
 		};
 	}

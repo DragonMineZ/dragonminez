@@ -1,6 +1,7 @@
 package com.dragonminez.common.util;
 
 import com.dragonminez.common.quest.QuestReward;
+import com.dragonminez.common.quest.rewards.AlignmentReward;
 import com.dragonminez.common.quest.rewards.CommandReward;
 import com.dragonminez.common.quest.rewards.ItemReward;
 import com.dragonminez.common.quest.rewards.SkillReward;
@@ -21,6 +22,7 @@ public class QuestRewardTypeAdapter implements JsonSerializer<QuestReward>, Json
             case "COMMAND" -> context.deserialize(jsonObject, CommandReward.class);
             case "TPS" -> context.deserialize(jsonObject, TPSReward.class);
             case "SKILL" -> context.deserialize(jsonObject, SkillReward.class);
+            case "ALIGNMENT" -> context.deserialize(jsonObject, AlignmentReward.class);
             default -> throw new JsonParseException("Unknown reward type: " + type);
         };
     }

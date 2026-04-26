@@ -221,11 +221,6 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         }
     }
 
-    @Override
-    public boolean shouldDamage(Entity target) {
-        return super.shouldDamage(target);
-    }
-
     private void spawnParticles(float maxRadius, boolean isFiring) {
         float[] rgbBorder = this.getRgbColorBorder();
         float[] rgbCore = ColorUtils.rgbIntToFloat(this.getColor());

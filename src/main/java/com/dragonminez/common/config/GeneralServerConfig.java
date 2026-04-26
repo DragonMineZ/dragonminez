@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +15,7 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class GeneralServerConfig {
-	public static final int CURRENT_VERSION = 5;
+	public static final int CURRENT_VERSION = 4;
 
 	@Setter
 	private int configVersion;
@@ -76,6 +75,17 @@ public class GeneralServerConfig {
 		private Integer fusionDurationSeconds = 900;
 		private Integer fusionCooldownSeconds = 1800;
 		private Boolean multiplicationInsteadOfAdditionForMultipliers = false;
+
+		private List<String> helmetsThatKeepHair = new ArrayList<>(Arrays.asList(
+				"dragonminez:pothala_left",
+				"dragonminez:pothala_right",
+				"dragonminez:green_pothala_left",
+				"dragonminez:green_pothala_right",
+				"dragonminez:red_scouter",
+				"dragonminez:blue_scouter",
+				"dragonminez:green_scouter",
+				"dragonminez:purple_scouter"
+		));
 
 		public Integer getReviveCooldownSeconds() {
 			return Math.max(0, Math.min(reviveCooldownSeconds, Integer.MAX_VALUE));
@@ -141,6 +151,10 @@ public class GeneralServerConfig {
 			return Math.max(0, Math.min(fusionCooldownSeconds, Integer.MAX_VALUE));
 		}
 
+		public List<String> getHelmetsThatKeepHair() {
+			return helmetsThatKeepHair;
+		}
+
 		private static Map<String, Float[]> createDefaultFoodRegenerations() {
 			Map<String, Float[]> defaults = new HashMap<>();
 			defaults.put("dragonminez:raw_dino_meat", new Float[]{0.10f, 0.10f, 0.10f});
@@ -195,45 +209,26 @@ public class GeneralServerConfig {
 	@Getter
 	@NoArgsConstructor
 	public static class FoodConfig {
-		// Lower and upper bounds on hunger points provided by
-		// the food item, for it to recover health, ki and stamina;
-		// Food points above the upper bound do not contribute
-		// to recovery values;
-		// Food points below the lower bound do not contribute
-		// to recovery values;
 		private Integer minHungerPoints = 4;
 		private Integer maxHungerPoints = 20;
 
-		// Lower and upper bounds on saturation points provided by
-		// the food item, for it to recover health, ki and stamina;
-		// Saturation points above the upper bound do not contribute
-		// to recovery values;
-		// Saturation points below the lower bound do not contribute
-		// to recovery values;
 		private Float minSaturationPoints = 0.4f;
 		private Float maxSaturationPoints = 2.0f;
 
-		// Health, ki and stamina percentage recovered by
-		// consumed food, per hunger point provided
 		private Float healthPercentageRecoveredPerHungerPoint = 1.0f;
 		private Float kiPercentageRecoveredPerHungerPoint = 1.0f;
 		private Float staminaPercentageRecoveredPerHungerPoint = 1.0f;
 
-		// Health, ki and stamina percentage recovered by
-		// consumed food, per saturation point provided
 		private Float healthPercentageRecoveredPerSaturationPoint = 1.0f;
 		private Float kiPercentageRecoveredPerSaturationPoint = 1.0f;
 		private Float staminaPercentageRecoveredPerSaturationPoint = 1.0f;
 
-		// Whitelisted mods and items
-		private List<String> whitelistedNamespaces = new ArrayList();
+		private List<String> whitelistedNamespaces = new ArrayList<>();
 		private List<String> whitelistedItems = new ArrayList<>();
 
-		// Blacklisted mods and items
 		private List<String> blacklistedNamespaces = new ArrayList<>();
 		private List<String> blacklistedItems = new ArrayList<>();
 	}
-
 
 	@Getter
 	@NoArgsConstructor

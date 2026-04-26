@@ -53,7 +53,7 @@ public class OtherworldRegionLoader {
 				if (shouldCopy && copyRegionFile(fileName, destFile)) copiedFiles++;
 			}
 
-			if (copiedFiles > 0 || replacedFiles > 0) LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Replaced (Empty): {}", copiedFiles, replacedFiles);
+			LogUtil.info(Env.SERVER, "Region loader finished. New: {}, Replaced (Empty): {}", copiedFiles, replacedFiles);
 
 		} catch (IOException e) {
 			LogUtil.error(Env.SERVER, "Fatal IO error loading regions: {}", e.getMessage());

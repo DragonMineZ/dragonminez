@@ -18,7 +18,9 @@ import net.minecraft.world.entity.Mob;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 // Es como el QuestRegistry.java pero en vez de ser puras tecnicalidades, ahora usa cosas de MC directamente. Este es como
 // el "bridge" para los packets.
@@ -33,6 +35,10 @@ public final class QuestService {
 	}
 
 	public record ResolvedQuest(String questKey, Quest quest, @Nullable Saga saga) {
+	}
+
+	public record NPCQuestOptions(List<String> offerableQuestIds, List<String> turnInQuestIds,
+								  List<String> inProgressQuestIds) {
 	}
 
 	@Nullable
@@ -106,6 +112,11 @@ public final class QuestService {
 		if (resolved == null) {
 			return;
 		}
+		if (resolved.quest().getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
+			requester.sendSystemMessage(Component.translatable("quest.dmz.reward.npc_only")
+					.withStyle(ChatFormatting.RED));
+			return;
+		}
 
 		ServerPlayer controller = PartyManager.resolveQuestController(requester);
 		if (controller == null) {
@@ -118,18 +129,7 @@ public final class QuestService {
 				return;
 			}
 
-			boolean anyClaimed = false;
-			List<QuestReward> rewards = resolved.quest().getRewards();
-			for (int i = 0; i < rewards.size(); i++) {
-				if (pqd.isRewardClaimed(questKey, i)) {
-					continue;
-				}
-				rewards.get(i).giveReward(controller);
-				pqd.claimReward(questKey, i);
-				anyClaimed = true;
-			}
-
-			if (anyClaimed) {
+			if (claimAvailableRewards(controller, resolved.quest(), questKey, pqd)) {
 				syncQuestProgress(controller);
 			}
 		});
@@ -157,6 +157,53 @@ public final class QuestService {
 
 	public static boolean requiresTurnInAction(Quest quest) {
 		return quest != null && quest.getTurnIn() != null && !quest.getTurnIn().isBlank();
+	}
+
+	public static NPCQuestOptions collectNpcQuestOptions(String npcId, StatsData data) {
+		List<String> offerableQuestIds = new ArrayList<>();
+		List<String> turnInQuestIds = new ArrayList<>();
+		List<String> inProgressQuestIds = new ArrayList<>();
+
+		if (npcId == null || npcId.isBlank() || data == null) {
+			return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds);
+		}
+
+		PlayerQuestData pqd = data.getPlayerQuestData();
+		Map<String, Quest> allQuests = QuestRegistry.getAllQuests();
+
+		for (String questId : QuestRegistry.getQuestIdsByGiver(npcId)) {
+			Quest quest = allQuests.get(questId);
+			if (quest == null || pqd.isQuestCompleted(questId)) {
+				continue;
+			}
+
+			if (pqd.isQuestAccepted(questId)) {
+				inProgressQuestIds.add(questId);
+			} else if (isOfferableNpcQuest(questId, quest, data)) {
+				offerableQuestIds.add(questId);
+			}
+		}
+
+		for (String questId : QuestRegistry.getQuestIdsByTurnIn(npcId)) {
+			Quest quest = allQuests.get(questId);
+			if (quest == null) {
+				continue;
+			}
+			if (pqd.isQuestCompleted(questId)) {
+				if (hasUnclaimedRewards(pqd, questId, quest) && !turnInQuestIds.contains(questId)) {
+					turnInQuestIds.add(questId);
+				}
+				continue;
+			}
+			if (!pqd.isQuestAccepted(questId)) {
+				continue;
+			}
+			if (isTurnInReady(pqd, questId, quest) && !turnInQuestIds.contains(questId)) {
+				turnInQuestIds.add(questId);
+			}
+		}
+
+		return new NPCQuestOptions(offerableQuestIds, turnInQuestIds, inProgressQuestIds);
 	}
 
 	public static void spawnKillObjectivesForQuest(ServerPlayer requester, String questKey, int partySize, boolean isHardMode) {
@@ -237,7 +284,16 @@ public final class QuestService {
 		if (!requiresTurnInAction(quest) || !npcId.equals(quest.getTurnIn())) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
-		if (!pqd.isQuestAccepted(questKey) || pqd.isQuestCompleted(questKey)) {
+
+		if (pqd.isQuestCompleted(questKey)) {
+			boolean anyClaimed = claimAvailableRewards(controller, quest, questKey, pqd);
+			if (anyClaimed) {
+				syncQuestProgress(controller);
+				return null;
+			}
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+		if (!pqd.isQuestAccepted(questKey)) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 		if (!isTurnInReady(pqd, questKey, quest)) {
@@ -258,6 +314,7 @@ public final class QuestService {
 
 		requester.displayClientMessage(
 				Component.translatable("command.dragonminez.story.sidequest.turned_in", questKey), false);
+		claimAvailableRewards(controller, quest, questKey, pqd);
 		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), controller);
 
 		if (PartyManager.isInParty(controller)) {
@@ -288,6 +345,43 @@ public final class QuestService {
 		return questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(resolved.quest(), saga, questIndex, data);
 	}
 
+	private static boolean hasUnclaimedRewards(PlayerQuestData pqd, String questKey, Quest quest) {
+		for (int i = 0; i < quest.getRewards().size(); i++) {
+			if (!pqd.isRewardClaimed(questKey, i)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean claimAvailableRewards(ServerPlayer rewardTarget, Quest quest, String questKey, PlayerQuestData pqd) {
+		boolean anyClaimed = false;
+		List<QuestReward> rewards = quest.getRewards();
+		for (int i = 0; i < rewards.size(); i++) {
+			if (pqd.isRewardClaimed(questKey, i)) {
+				continue;
+			}
+			rewards.get(i).giveReward(rewardTarget);
+			pqd.claimReward(questKey, i);
+			anyClaimed = true;
+		}
+		return anyClaimed;
+	}
+
+	private static boolean isOfferableNpcQuest(String questId, Quest quest, StatsData data) {
+		if (!quest.isSagaQuest()) {
+			return QuestAvailabilityChecker.isAvailable(quest, data);
+		}
+
+		ResolvedQuest resolved = resolveQuest(questId);
+		if (resolved == null || resolved.saga() == null) {
+			return false;
+		}
+
+		int questIndex = resolved.saga().getQuests().indexOf(quest);
+		return questIndex >= 0 && QuestAvailabilityChecker.isSagaQuestAvailable(quest, resolved.saga(), questIndex, data);
+	}
+
 	private static void spawnKillObjectives(ServerPlayer requester, ResolvedQuest resolved, PlayerQuestData pqd,
 											int partySize, boolean isHardMode) {
 		Quest quest = resolved.quest();
@@ -296,6 +390,9 @@ public final class QuestService {
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
 			QuestObjective objective = quest.getObjectives().get(i);
 			if (!(objective instanceof KillObjective killObjective)) {
+				continue;
+			}
+			if (killObjective.getSpawnMode() != KillObjective.SpawnMode.QUEST) {
 				continue;
 			}
 

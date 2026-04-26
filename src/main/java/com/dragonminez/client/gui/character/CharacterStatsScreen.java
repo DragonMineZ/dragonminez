@@ -24,6 +24,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
@@ -51,6 +53,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	private int tickCount = 0;
 	private final NumberFormat numberFormatter = NumberFormat.getInstance(Locale.US);
 	private final DecimalFormat oneDecimalFormatter;
+	private final DecimalFormat twoDecimalFormatter;
 	private final DecimalFormat scientificFormatter;
 	private final DecimalFormat fullTpsFormatter;
 	private boolean useHexagonView = false;
@@ -68,6 +71,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		super(Component.translatable("gui.dragonminez.character_stats.title"));
 		DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
 		this.oneDecimalFormatter = new DecimalFormat("#,##0.#", symbols);
+		this.twoDecimalFormatter = new DecimalFormat("#,##0.00", symbols);
 		this.scientificFormatter = new DecimalFormat("0.###E0", symbols);
 		this.fullTpsFormatter = new DecimalFormat("#,##0.######", symbols);
 	}
@@ -233,6 +237,37 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		multiplierButton = null;
 
 		initStatButtons();
+	}
+
+	private double[] getDamageReductionPercentages() {
+		double defense = statsData.getDefense();
+		int maxValue = statsData.getConfiguredMaxValue();
+		double expectedMaxStats = statsData.isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
+		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF") * 3.0;
+		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
+
+		double baseReduction;
+		if (defense >= 0) baseReduction = defense / (k_factor + defense);
+		else baseReduction = defense / (k_factor - defense);
+
+		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
+		baseReduction = Math.min(baseReduction, baseCap);
+
+		int totalProtection = 0;
+		if (Minecraft.getInstance().player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, Minecraft.getInstance().player);
+
+		double enchReduction = 0.0;
+		if (totalProtection > 0) {
+			double k_ench = 20.0;
+			enchReduction = totalProtection / (k_ench + totalProtection);
+
+			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();
+			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
+
+			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
+		}
+
+		return new double[]{baseReduction * 100.0, enchReduction * 100.0};
 	}
 
 	private void renderTPCost(GuiGraphics graphics) {
@@ -627,6 +662,19 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 								formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW), 180));
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.max_value",
 								formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN), 180));
+
+						double[] pcts = getDamageReductionPercentages();
+						tooltip.add(txt("").getVisualOrderText());
+						tooltip.add(tr("gui.dragonminez.character_stats.defense").append(": ")
+								.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
+								.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
+								.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+						if (pcts[1] > 0) {
+							tooltip.add(tr("gui.dragonminez.character_stats.protection").append(": ")
+									.append(txt(formatUpToTwoDecimals(pcts[1]) + "% "))
+									.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
+									.withStyle(ChatFormatting.LIGHT_PURPLE).getVisualOrderText());
+						}
 					}
 					case 4 -> {
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.health.tooltip1"), 180));
@@ -940,6 +988,20 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			tooltip.add(tr("gui.dragonminez.character_stats.stamina").append(": ")
 					.append(txt(formatUpToOneDecimal(stamina)))
 					.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+
+			double[] pcts = getDamageReductionPercentages();
+			tooltip.add(txt("").getVisualOrderText());
+			tooltip.add(tr("gui.dragonminez.character_stats.defense").append(": ")
+					.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
+					.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
+					.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+			if (pcts[1] > 0) {
+				tooltip.add(tr("gui.dragonminez.character_stats.protection").append(": ")
+						.append(txt(formatUpToTwoDecimals(pcts[1]) + "% "))
+						.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
+						.withStyle(ChatFormatting.LIGHT_PURPLE).getVisualOrderText());
+			}
+
 			renderClampedTooltip(graphics, tooltip, mouseX, mouseY);
 		}
 
@@ -1058,6 +1120,10 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 	private String formatUpToOneDecimal(double value) {
 		return oneDecimalFormatter.format(value);
+	}
+
+	private String formatUpToTwoDecimals(double value) {
+		return twoDecimalFormatter.format(value);
 	}
 
 	private boolean shouldUseScientificForTps(float tps) {

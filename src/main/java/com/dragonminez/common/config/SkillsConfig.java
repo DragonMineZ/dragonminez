@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Getter
 public class SkillsConfig {
-	public static final int CURRENT_VERSION = 5;
+	public static final int CURRENT_VERSION = 4;
 
 	@Setter
 	private int configVersion;

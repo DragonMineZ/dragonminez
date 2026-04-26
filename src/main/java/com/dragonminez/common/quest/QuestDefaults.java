@@ -63,7 +63,6 @@ final class QuestDefaults {
 		try {
 			Files.createDirectories(dir);
 			if (Files.exists(file)) {
-				ensureQuestProperty(file, PARTY_SCALING_KEY, quest.get(PARTY_SCALING_KEY));
 				return;
 			}
 			try (Writer w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
@@ -71,30 +70,6 @@ final class QuestDefaults {
 			}
 		} catch (IOException e) {
 			LogUtil.error(Env.COMMON, "Failed to create default quest file: {}", filename, e);
-		}
-	}
-
-	private static void ensureQuestProperty(Path file, String property, JsonElement value) {
-		if (value == null) {
-			return;
-		}
-
-		try {
-			JsonObject existing;
-			try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-				existing = GSON.fromJson(reader, JsonObject.class);
-			}
-
-			if (existing == null || existing.has(property)) {
-				return;
-			}
-
-			existing.add(property, value.deepCopy());
-			try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-				GSON.toJson(existing, writer);
-			}
-		} catch (Exception e) {
-			LogUtil.warn(Env.COMMON, "Failed to update default quest file '{}': {}", file.getFileName(), e.getMessage());
 		}
 	}
 
@@ -114,6 +89,8 @@ final class QuestDefaults {
 		q.addProperty("category", category);
 		q.addProperty("parallel_objectives", false);
 		q.addProperty(PARTY_SCALING_KEY, true);
+		q.addProperty("secret", false);
+		q.addProperty("claim_mode", "TREE_OR_NPC");
 		q.add("quest_giver", JsonNull.INSTANCE);
 		q.add("turn_in", JsonNull.INSTANCE);
 
@@ -160,6 +137,8 @@ final class QuestDefaults {
 		o.addProperty("health", hp);
 		o.addProperty("meleeDamage", melee);
 		o.addProperty("kiDamage", ki);
+		o.addProperty("spawn", "QUEST");
+		o.addProperty("count_mode", "QUEST_SPAWNED_ONLY");
 		return o;
 	}
 
@@ -207,7 +186,10 @@ final class QuestDefaults {
 	}
 
 	private static JsonObject requirements(String op, JsonObject... conditions) {
-		return prereqs(op, conditions);
+		JsonObject[] withAlignment = new JsonObject[conditions.length + 1];
+		System.arraycopy(conditions, 0, withAlignment, 0, conditions.length);
+		withAlignment[conditions.length] = condAlignmentMin(41);
+		return prereqs(op, withAlignment);
 	}
 
 	private static JsonObject condSaga(String sagaId, int questId) {
@@ -229,6 +211,13 @@ final class QuestDefaults {
 		JsonObject c = new JsonObject();
 		c.addProperty("type", "LEVEL");
 		c.addProperty("minLevel", minLevel);
+		return c;
+	}
+
+	private static JsonObject condAlignmentMin(int minAlignment) {
+		JsonObject c = new JsonObject();
+		c.addProperty("type", "ALIGNMENT");
+		c.addProperty("min", minAlignment);
 		return c;
 	}
 

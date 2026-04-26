@@ -1,6 +1,7 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.alignment.NpcAlignmentRules;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.*;
 import com.dragonminez.common.quest.QuestRegistry;
@@ -8,6 +9,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.WishManager;
 import com.dragonminez.server.storage.StorageManager;
+import com.dragonminez.server.world.npc.NPCPlacementManager;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -32,6 +34,9 @@ public class ReloadCommand {
 			ConfigManager.reload();
 			StorageManager.reload();
 			QuestRegistry.loadAll(server);
+			NpcAlignmentRules.load(server);
+			NPCPlacementManager.load(server);
+			NPCPlacementManager.spawnForLoadedLevels(server);
 			WishManager.loadWishes(server);
 			int syncedPlayers = 0;
 			for (ServerPlayer player : server.getPlayerList().getPlayers()) {

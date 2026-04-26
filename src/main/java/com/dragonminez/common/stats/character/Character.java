@@ -389,10 +389,9 @@ public class Character {
 		return ConfigManager.getStackForm(activeStackFormGroup, activeStackForm);
 	}
 
-	public boolean areExtraHeadBonesEnabled() {FormConfig.FormData activeStackFormData = getActiveStackFormData();
-		if (activeStackFormData != null && !activeStackFormData.isKeepBaseFormHeadBones()) {
-			return false;
-		}
+	public boolean areExtraHeadBonesEnabled() {
+		FormConfig.FormData activeStackFormData = getActiveStackFormData();
+		if (activeStackFormData != null && !activeStackFormData.isKeepBaseFormHeadBones()) return false;
 		FormConfig.FormData activeFormData = getActiveFormData();
 		return activeFormData == null || activeFormData.isKeepBaseFormHeadBones();
 	}
