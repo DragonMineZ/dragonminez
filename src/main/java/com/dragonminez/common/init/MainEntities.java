@@ -678,6 +678,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_shin").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.SagaShinEntity>> SAGA_VIDEL =
+            ENTITY_TYPES.register("saga_videl",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_videl").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaKibitoEntity>> SAGA_KIBITO =
             ENTITY_TYPES.register("saga_kibito",
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaKibitoEntity::new, MobCategory.MONSTER)
