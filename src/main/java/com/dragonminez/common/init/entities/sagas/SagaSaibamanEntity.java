@@ -32,6 +32,7 @@ public class SagaSaibamanEntity extends DBSagasEntity{
     private boolean isAttacking = false;
     private int fuseTimer = 0;
     private int explodeTimer = 3;
+    private boolean isAttached = false;
 
     private boolean hasCheckedExplosionChance = false;
 
@@ -57,48 +58,56 @@ public class SagaSaibamanEntity extends DBSagasEntity{
         super.tick();
 
         if (!this.isAlive()) return;
-        //25% health
+
         float healthThreshold = this.getMaxHealth() * 0.25f;
 
         if (this.getHealth() <= healthThreshold && !this.hasCheckedExplosionChance && !isExploding()) {
-
             this.hasCheckedExplosionChance = true;
-            //5% explode
+
             if (this.random.nextFloat() < 0.05F) {
                 this.setExploding(true);
             }
         }
-        /* Si el saibaman recupera mas del 25% de su vida entonces volvemos a verificar
-        if (this.getHealth() > healthThreshold) {
-            this.hasCheckedExplosionChance = false;
-        }
-         */
+
         if (isExploding()) {
             LivingEntity target = this.getTarget();
+
             if (target == null) {
                 target = this.level().getNearestPlayer(this, 10.0D);
+                if (target != null) {
+                    this.setTarget(target);
+                }
             }
+
             if (target != null) {
-                Vec3 lookAngle = target.getLookAngle();
-                double behindX = target.getX() - (lookAngle.x * 0.8D);
-                double behindZ = target.getZ() - (lookAngle.z * 0.8D);
-                double y = target.getY();
+                if (this.isAttached || this.distanceTo(target) <= 2.0D) {
+                    this.isAttached = true;
 
-                this.setPos(behindX, y, behindZ);
-                this.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
-                this.setYBodyRot(this.getYRot());
-                this.setYHeadRot(this.getYRot());
+                    Vec3 lookAngle = target.getLookAngle();
+                    double behindX = target.getX() - (lookAngle.x * 0.8D);
+                    double behindZ = target.getZ() - (lookAngle.z * 0.8D);
 
-                this.setDeltaMovement(0, 0, 0);
-                this.getNavigation().stop();
-                this.setTarget(null);
-                this.setAggressive(false);
-            }
+                    this.setPos(behindX, target.getY(), behindZ);
+                    this.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
+                    this.setYBodyRot(this.getYRot());
+                    this.setYHeadRot(this.getYRot());
 
-            fuseTimer++;
+                    this.setDeltaMovement(0, 0, 0);
+                    this.getNavigation().stop();
+                    this.setAggressive(false);
 
-            if (fuseTimer >= explodeTimer * 20) {
-                explode();
+                    fuseTimer++;
+
+                    if (fuseTimer == 1 || fuseTimer % 15 == 0) {
+                        this.playSound(net.minecraft.sounds.SoundEvents.CREEPER_PRIMED, 1.0F, 0.5F + (fuseTimer / 60.0F));
+                    }
+
+                    if (fuseTimer >= explodeTimer * 20) {
+                        explode();
+                    }
+                } else {
+                    this.getNavigation().moveTo(target, 1.5D);
+                }
             }
         }
     }
