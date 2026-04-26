@@ -210,7 +210,7 @@ public class DMZRenderHand extends LivingEntityRenderer<AbstractClientPlayer, Pl
 			float armorInflation = 1.05F;
 			ps.scale(armorInflation, armorInflation, armorInflation);
 
-			ps.translate(isRightArm ? 0.02D : -0.01, 0.02D, 0.0D);
+			ps.translate(isRightArm ? 0.02D : -0.01, -0.04D, 0.0D);
 
 			renderPart(ps, pBuffer, pCombinedLight, pRendererArm, armorResource, WHITE_COLOR);
 

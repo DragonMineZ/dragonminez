@@ -1,6 +1,7 @@
 package com.dragonminez.common.init.entities.sagas;
 
 import com.dragonminez.common.init.entities.IBattlePower;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -121,13 +122,13 @@ public class SagaSaibamanEntity extends DBSagasEntity{
         DBSagasEntity entity = (DBSagasEntity) event.getAnimatable();
         if (event.isMoving()) {
             if (entity.isAggressive() || entity.getTarget() != null) {
-                event.getController().setAnimation(ANIM_RUN);
+                event.getController().setAnimation(DBSagasAnimations.ANIM_RUN);
             } else {
-                event.getController().setAnimation(ANIM_WALK);
+                event.getController().setAnimation(DBSagasAnimations.ANIM_WALK);
             }
             return PlayState.CONTINUE;
         }
-        event.getController().setAnimation(ANIM_IDLE);
+        event.getController().setAnimation(DBSagasAnimations.ANIM_IDLE);
         return PlayState.CONTINUE;
     }
 

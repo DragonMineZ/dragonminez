@@ -2,6 +2,7 @@ package com.dragonminez.common.init.entities;
 
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.common.init.entities.sagas.helper.DBSagasAnimations;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.core.particles.ParticleTypes;
@@ -89,7 +90,7 @@ public class ShadowDummyEntity extends DBSagasEntity {
 			int skill = getSkillType();
 
 			if (skill == Bolita) {
-				return event.setAndContinue(ANIM_KIWAVE);
+				return event.setAndContinue(DBSagasAnimations.ANIM_KI_FINALFLASH);
 			}
 		}
 		event.getController().forceAnimationReset();
