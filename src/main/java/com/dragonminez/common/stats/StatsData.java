@@ -263,43 +263,41 @@ public class StatsData {
 	public double getMaxDefense() {
 		double resistance = stats.getResistance();
 		double defScaling = getStatScaling("DEF");
-		double resMult = getTotalMultiplier("RES");
 		double bonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance));
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
 		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
-		return secondaryDefense + (resistance * defScaling * resMult) + (bonusRes * defScaling) + armor * 0.5 + toughness * 0.8;
+		return secondaryDefense + (resistance * defScaling) + (bonusRes * defScaling) + armor * 0.75 + toughness;
 	}
 
 	public double getDefense() {
 		double resistance = stats.getResistance();
 		double defScaling = getStatScaling("DEF");
-		double resMult = getTotalMultiplier("RES");
 		double releaseMultiplier = resources.getPowerRelease() / 100.0;
 		double bonusRes = bonusStats.calculateBonus("RES", (int) Math.round(resistance));
 		double armor = player.getArmorValue();
 		double toughness = getArmorToughnessValue();
 		double secondaryDefense = getSecondaryAttributeValue(MainAttributes.DEFENSE.get(), 0.0);
-		return (secondaryDefense + (resistance * defScaling * resMult) + (bonusRes * defScaling) + (armor * 0.5) + toughness * 0.8) * releaseMultiplier;
+		return (secondaryDefense + (resistance * defScaling) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
 	}
 
 	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken) {
-		double defense = getDefense();
-		if (isGuardBroken) defense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
+		double resTotalMult = getTotalMultiplier("RES");
+		double baseDefense = getDefense();
+
+		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
 
 		int maxValue = getConfiguredMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
-		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF") * 3.0;
+		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
 		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
 
-		double baseReduction;
-		if (defense >= 0) baseReduction = defense / (k_factor + defense);
-		else baseReduction = defense / (k_factor - defense);
-
-		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
-		baseReduction = Math.min(baseReduction, baseCap);
+		double baseReduction = baseDefense >= 0 ? baseDefense / (k_factor + baseDefense) : baseDefense / (k_factor - baseDefense);
+		baseReduction = Math.min(baseReduction, ConfigManager.getCombatConfig().getBaseDamageReductionCap());
 
 		double remainingDamage = incomingDamage * (1.0 - baseReduction);
+
+		if (resTotalMult > 0) remainingDamage /= resTotalMult;
 
 		int totalProtection = 0;
 		if (player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
@@ -308,11 +306,9 @@ public class StatsData {
 		if (totalProtection > 0) {
 			double k_ench = 20.0;
 			enchReduction = totalProtection / (k_ench + totalProtection);
-
 			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();
-			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
-
-			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
+			double maxEnchAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
+			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchAllowed));
 		}
 
 		return remainingDamage * (1.0 - enchReduction);

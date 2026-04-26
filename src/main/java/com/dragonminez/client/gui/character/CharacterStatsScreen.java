@@ -240,15 +240,18 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	}
 
 	private double[] getDamageReductionPercentages() {
-		double defense = statsData.getDefense();
+		double resTotalMult = statsData.getTotalMultiplier("RES");
+		double baseDefense = statsData.getDefense();
+
 		int maxValue = statsData.getConfiguredMaxValue();
 		double expectedMaxStats = statsData.isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
-		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF") * 3.0;
+		double expectedMaxDef = expectedMaxStats * statsData.getStatScaling("DEF");
 		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
 
 		double baseReduction;
-		if (defense >= 0) baseReduction = defense / (k_factor + defense);
-		else baseReduction = defense / (k_factor - defense);
+		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
+		else baseReduction = baseDefense / (k_factor - baseDefense);
+
 
 		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
 		baseReduction = Math.min(baseReduction, baseCap);
@@ -267,7 +270,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
 		}
 
-		return new double[]{baseReduction * 100.0, enchReduction * 100.0};
+		return new double[]{baseReduction * 100.0, resTotalMult, enchReduction * 100.0};
 	}
 
 	private void renderTPCost(GuiGraphics graphics) {
@@ -665,13 +668,22 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 						double[] pcts = getDamageReductionPercentages();
 						tooltip.add(txt("").getVisualOrderText());
+
 						tooltip.add(tr("gui.dragonminez.character_stats.defense").append(": ")
 								.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
 								.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 								.withStyle(ChatFormatting.AQUA).getVisualOrderText());
-						if (pcts[1] > 0) {
+
+						if (pcts[1] > 1.0) {
+							tooltip.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
+									.append(txt(formatUpToOneDecimal(pcts[1]) + " "))
+									.append(tr("gui.dragonminez.character_stats.dmg_taken"))
+									.withStyle(ChatFormatting.GOLD).getVisualOrderText());
+						}
+
+						if (pcts[2] > 0) {
 							tooltip.add(tr("gui.dragonminez.character_stats.protection").append(": ")
-									.append(txt(formatUpToTwoDecimals(pcts[1]) + "% "))
+									.append(txt(formatUpToTwoDecimals(pcts[2]) + "% "))
 									.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 									.withStyle(ChatFormatting.LIGHT_PURPLE).getVisualOrderText());
 						}
@@ -991,13 +1003,22 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 			double[] pcts = getDamageReductionPercentages();
 			tooltip.add(txt("").getVisualOrderText());
+
 			tooltip.add(tr("gui.dragonminez.character_stats.defense").append(": ")
 					.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
 					.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 					.withStyle(ChatFormatting.AQUA).getVisualOrderText());
-			if (pcts[1] > 0) {
+
+			if (pcts[1] > 1.0) {
+				tooltip.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
+						.append(txt(formatUpToOneDecimal(pcts[1]) + " "))
+						.append(tr("gui.dragonminez.character_stats.dmg_taken"))
+						.withStyle(ChatFormatting.GOLD).getVisualOrderText());
+			}
+
+			if (pcts[2] > 0) {
 				tooltip.add(tr("gui.dragonminez.character_stats.protection").append(": ")
-						.append(txt(formatUpToTwoDecimals(pcts[1]) + "% "))
+						.append(txt(formatUpToTwoDecimals(pcts[2]) + "% "))
 						.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 						.withStyle(ChatFormatting.LIGHT_PURPLE).getVisualOrderText());
 			}
