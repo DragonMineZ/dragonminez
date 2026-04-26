@@ -359,38 +359,6 @@ public class PlayerQuestData {
         return sagaId + ":" + questId;
     }
 
-    // ---- Saga convenience overloads (auto-build composite key) ----
-
-    /** Checks if a saga quest is completed. Builds composite key from saga + numeric quest ID. */
-    public boolean isQuestCompleted(String sagaId, int questId) {
-        return isQuestCompleted(sagaQuestKey(sagaId, questId));
-    }
-
-    /** Completes a saga quest. Builds composite key from saga + numeric quest ID. */
-    public void completeQuest(String sagaId, int questId) {
-        completeQuest(sagaQuestKey(sagaId, questId));
-    }
-
-    /** Gets objective progress for a saga quest. */
-    public int getObjectiveProgress(String sagaId, int questId, int objectiveIndex) {
-        return getObjectiveProgress(sagaQuestKey(sagaId, questId), objectiveIndex);
-    }
-
-    /** Sets objective progress for a saga quest. */
-    public void setObjectiveProgress(String sagaId, int questId, int objectiveIndex, int progress) {
-        setObjectiveProgress(sagaQuestKey(sagaId, questId), objectiveIndex, progress);
-    }
-
-    /** Checks if a reward is claimed for a saga quest. Usually done by packets. Can be forced with this. */
-    public boolean isRewardClaimed(String sagaId, int questId, int rewardIndex) {
-        return isRewardClaimed(sagaQuestKey(sagaId, questId), rewardIndex);
-    }
-
-    /** Claims a reward for a saga quest. Usually done automatically by packets. Can be forced with this. */
-    public void claimReward(String sagaId, int questId, int rewardIndex) {
-        claimReward(sagaQuestKey(sagaId, questId), rewardIndex);
-    }
-
     // ========================================================================================
     // Party State
     // ========================================================================================

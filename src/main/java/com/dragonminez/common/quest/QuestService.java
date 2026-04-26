@@ -1,5 +1,6 @@
 package com.dragonminez.common.quest;
 
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.network.S2C.StoryToastS2C;
@@ -15,6 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
@@ -130,7 +132,7 @@ public final class QuestService {
 			}
 
 			if (claimAvailableRewards(controller, resolved.quest(), questKey, pqd)) {
-				syncQuestProgress(controller);
+				syncQuestState(controller);
 			}
 		});
 	}
@@ -221,6 +223,7 @@ public final class QuestService {
 		PlayerQuestData pqd = data.getPlayerQuestData();
 		String questKey = resolved.questKey();
 		Quest quest = resolved.quest();
+		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
 
 		PlayerQuestData.QuestStatus questStatus = pqd.getQuestStatus(questKey);
 		boolean restartingFailed = questStatus == PlayerQuestData.QuestStatus.FAILED;
@@ -252,18 +255,30 @@ public final class QuestService {
 			}
 		}
 
-		int partySize = PartyManager.getAllPartyMembers(controller).size();
+		DMZEvent.QuestStartEvent startEvent = new DMZEvent.QuestStartEvent(
+				controller,
+				questKey,
+				resolved.saga(),
+				quest,
+				partyMembers,
+				isHardMode
+		);
+		if (MinecraftForge.EVENT_BUS.post(startEvent)) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+
+		int partySize = partyMembers.size();
 		pqd.acceptQuest(questKey);
 		quest.initializeObjectiveRequirements(pqd, questKey, partySize);
-		pqd.setQuestHardMode(questKey, isHardMode);
+		pqd.setQuestHardMode(questKey, startEvent.isHardMode());
 		pqd.setTrackedQuestId(questKey);
 
-		spawnKillObjectives(requester, resolved, pqd, partySize, isHardMode);
+		spawnKillObjectives(requester, resolved, pqd, partySize, startEvent.isHardMode());
 
 		NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), controller);
 		if (PartyManager.isInParty(controller)) {
 			PartyManager.syncPartyQuestState(controller);
-			for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+			for (ServerPlayer member : partyMembers) {
 				if (!member.getUUID().equals(controller.getUUID())) {
 					NetworkHandler.sendToPlayer(StoryToastS2C.questStarted(questKey), member);
 				}
@@ -280,6 +295,7 @@ public final class QuestService {
 		Quest quest = resolved.quest();
 		String questKey = resolved.questKey();
 		PlayerQuestData pqd = data.getPlayerQuestData();
+		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
 
 		if (!requiresTurnInAction(quest) || !npcId.equals(quest.getTurnIn())) {
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
@@ -288,7 +304,7 @@ public final class QuestService {
 		if (pqd.isQuestCompleted(questKey)) {
 			boolean anyClaimed = claimAvailableRewards(controller, quest, questKey, pqd);
 			if (anyClaimed) {
-				syncQuestProgress(controller);
+				syncQuestState(controller);
 				return null;
 			}
 			return Component.translatable("message.dragonminez.quest.start.unavailable");
@@ -300,11 +316,47 @@ public final class QuestService {
 			return Component.translatable("message.dragonminez.quest.start.locked");
 		}
 
+		DMZEvent.QuestTurnInEvent turnInEvent = new DMZEvent.QuestTurnInEvent(
+				controller,
+				questKey,
+				resolved.saga(),
+				quest,
+				partyMembers,
+				npcId
+		);
+		if (MinecraftForge.EVENT_BUS.post(turnInEvent)) {
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
+		}
+
+		boolean objectiveProgressChanged = false;
 		for (int i = 0; i < quest.getObjectives().size(); i++) {
 			QuestObjective objective = quest.getObjectives().get(i);
 			if (objective instanceof TalkToObjective talkToObjective && npcId.equals(talkToObjective.getNpcId())) {
-				pqd.setObjectiveProgress(questKey, i, quest.getObjectiveRequired(pqd, questKey, i));
+				int required = quest.getObjectiveRequired(pqd, questKey, i);
+				objectiveProgressChanged |= updateObjectiveProgressWithEvent(
+						controller,
+						pqd,
+						resolved,
+						quest,
+						partyMembers,
+						i,
+						required
+				);
 			}
+		}
+
+		DMZEvent.QuestCompletedEvent completeEvent = new DMZEvent.QuestCompletedEvent(
+				controller,
+				questKey,
+				resolved.saga(),
+				quest,
+				partyMembers
+		);
+		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
+			if (objectiveProgressChanged) {
+				syncQuestState(controller);
+			}
+			return Component.translatable("message.dragonminez.quest.start.unavailable");
 		}
 
 		pqd.completeQuest(questKey);
@@ -318,17 +370,50 @@ public final class QuestService {
 		NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), controller);
 
 		if (PartyManager.isInParty(controller)) {
-			PartyManager.syncPartyQuestState(controller);
-			for (ServerPlayer member : PartyManager.getAllPartyMembers(controller)) {
+			for (ServerPlayer member : partyMembers) {
 				if (!member.getUUID().equals(controller.getUUID())) {
 					NetworkHandler.sendToPlayer(StoryToastS2C.questComplete(questKey), member);
 				}
 			}
-		} else {
-			NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(controller), controller);
 		}
+		syncQuestState(controller);
 
 		return null;
+	}
+
+	private static boolean updateObjectiveProgressWithEvent(ServerPlayer controller, PlayerQuestData pqd,
+												  ResolvedQuest resolved, Quest quest, List<ServerPlayer> partyMembers,
+												  int objectiveIndex, int newProgress) {
+		int current = pqd.getObjectiveProgress(resolved.questKey(), objectiveIndex);
+		if (current == newProgress) {
+			return false;
+		}
+
+		int required = objectiveIndex >= 0 && objectiveIndex < quest.getObjectives().size()
+				? quest.getObjectiveRequired(pqd, resolved.questKey(), objectiveIndex)
+				: 0;
+		DMZEvent.QuestObjectiveProgressEvent progressEvent = new DMZEvent.QuestObjectiveProgressEvent(
+				controller,
+				resolved.questKey(),
+				resolved.saga(),
+				quest,
+				partyMembers,
+				objectiveIndex,
+				current,
+				newProgress,
+				required
+		);
+		if (MinecraftForge.EVENT_BUS.post(progressEvent)) {
+			return false;
+		}
+
+		int updated = progressEvent.getNewProgress();
+		if (updated == current) {
+			return false;
+		}
+
+		pqd.setObjectiveProgress(resolved.questKey(), objectiveIndex, updated);
+		return true;
 	}
 
 	private static boolean isQuestAvailableToStart(ResolvedQuest resolved, StatsData data) {
@@ -357,8 +442,22 @@ public final class QuestService {
 	private static boolean claimAvailableRewards(ServerPlayer rewardTarget, Quest quest, String questKey, PlayerQuestData pqd) {
 		boolean anyClaimed = false;
 		List<QuestReward> rewards = quest.getRewards();
+		ResolvedQuest resolved = resolveQuest(questKey);
+		Saga saga = resolved != null ? resolved.saga() : null;
+		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(rewardTarget);
 		for (int i = 0; i < rewards.size(); i++) {
 			if (pqd.isRewardClaimed(questKey, i)) {
+				continue;
+			}
+			DMZEvent.QuestRewardClaimEvent rewardEvent = new DMZEvent.QuestRewardClaimEvent(
+					rewardTarget,
+					questKey,
+					saga,
+					quest,
+					partyMembers,
+					i
+			);
+			if (MinecraftForge.EVENT_BUS.post(rewardEvent)) {
 				continue;
 			}
 			rewards.get(i).giveReward(rewardTarget);
@@ -481,7 +580,7 @@ public final class QuestService {
 		return null;
 	}
 
-	private static void syncQuestProgress(ServerPlayer controller) {
+	public static void syncQuestState(ServerPlayer controller) {
 		if (PartyManager.isInParty(controller)) {
 			PartyManager.syncPartyQuestState(controller);
 		} else {

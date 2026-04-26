@@ -2,9 +2,10 @@ package com.dragonminez.common.events;
 
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.Saga;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.eventbus.api.Cancelable;
@@ -14,11 +15,22 @@ import java.util.List;
 
 public abstract class DMZEvent extends Event {
 
+	private static String buildQuestKey(Saga saga, Quest quest) {
+		if (quest == null) {
+			return "";
+		}
+		if (saga == null) {
+			return quest.getStringId() != null ? quest.getStringId() : String.valueOf(quest.getId());
+		}
+		return saga.getId() + ":" + quest.getId();
+	}
+
 	/**
 	 * Event fired when a player's stat is about to change, doesn't matter from what source.
 	 * This includes increases and decreases to stats, fired through commands, items, interfaces, etc.
 	 * This event is cancelable; if canceled, the stat change will not occur.
 	 */
+	@Getter
 	@Cancelable
 	public static class StatChangeEvent extends Event {
 
@@ -32,22 +44,6 @@ public abstract class DMZEvent extends Event {
 			this.stat = stat;
 			this.oldValue = oldValue;
 			this.newValue = newValue;
-		}
-
-		public Player getPlayer() {
-			return player;
-		}
-
-		public StatType getStat() {
-			return stat;
-		}
-
-		public int getOldValue() {
-			return oldValue;
-		}
-
-		public int getNewValue() {
-			return newValue;
 		}
 
 		public enum StatType {
@@ -64,6 +60,7 @@ public abstract class DMZEvent extends Event {
 	 * Event fired when a player is about to charge ki energy.
 	 * This event is cancelable; if canceled, the ki charge will not occur.
 	 */
+	@Getter
 	@Cancelable
 	public static class KiChargeEvent extends Event {
 
@@ -77,18 +74,6 @@ public abstract class DMZEvent extends Event {
 			this.maxEnergy = maxEnergy;
 		}
 
-		public Player getPlayer() {
-			return player;
-		}
-
-		public float getCurrentEnergy() {
-			return currentEnergy;
-		}
-
-		public int getMaxEnergy() {
-			return maxEnergy;
-		}
-
 		public boolean isEnergyFull() {
 			return currentEnergy >= maxEnergy;
 		}
@@ -98,11 +83,13 @@ public abstract class DMZEvent extends Event {
 	 * Event fired when a player is about to gain training points.
 	 * This event is cancelable; if canceled, the TP gain will not occur.
 	 */
+	@Getter
 	@Cancelable
 	public static class TPGainEvent extends Event {
 
 		private final Player player;
 		private final int oldValue;
+		@Setter
 		private int tpGain;
 
 		public TPGainEvent(Player player, int oldValue, int tpGain) {
@@ -111,23 +98,7 @@ public abstract class DMZEvent extends Event {
 			this.tpGain = tpGain;
 		}
 
-		public Player getPlayer() {
-			return player;
-		}
-
-		public int getOldValue() {
-			return oldValue;
-		}
-
-		public int getTpGain() {
-			return tpGain;
-		}
-
-		public void setTpGain(int tpGain) {
-			this.tpGain = tpGain;
-		}
-
-		public int getNewValue() {
+		public int getNewTpsValue() {
 			return oldValue + tpGain;
 		}
 	}
@@ -136,13 +107,17 @@ public abstract class DMZEvent extends Event {
 	 * Event fired when a player successfully blocks an attack.
 	 * This event is cancelable; if canceled, the block will not occur, so the player will take full damage.
 	 */
+	@Getter
 	@Cancelable
 	public static class PlayerBlockEvent extends Event {
 		private final ServerPlayer victim;
 		private final LivingEntity attacker;
 		private final float originalDamage;
+		@Setter
 		private float finalDamage;
+		@Setter
 		private boolean isParry;
+		@Setter
 		private float poiseDamage;
 
 		public PlayerBlockEvent(ServerPlayer victim, LivingEntity attacker, float originalDamage, float finalDamage, boolean isParry, float poiseDamage) {
@@ -154,26 +129,20 @@ public abstract class DMZEvent extends Event {
 			this.poiseDamage = poiseDamage;
 		}
 
-		public ServerPlayer getVictim() { return victim; }
-		public LivingEntity getAttacker() { return attacker; }
-		public float getOriginalDamage() { return originalDamage; }
-		public float getFinalDamage() { return finalDamage; }
-		public void setFinalDamage(float finalDamage) { this.finalDamage = finalDamage; }
-		public boolean isParry() { return isParry; }
-		public void setParry(boolean parry) { isParry = parry; }
-		public float getPoiseDamage() { return poiseDamage; }
-		public void setPoiseDamage(float poiseDamage) { this.poiseDamage = poiseDamage; }
 	}
 
 	/**
 	 * Event fired when a player performs a dash.
 	 * This event is cancelable; if canceled, the dash will not occur.
 	 */
+	@Getter
 	@Cancelable
 	public static class PlayerDashEvent extends Event {
 		private final ServerPlayer player;
 		private final DashType dashType;
+		@Setter
 		private double distance;
+		@Setter
 		private int kiCost;
 
 		public PlayerDashEvent(ServerPlayer player, DashType dashType, double distance, int kiCost) {
@@ -182,13 +151,6 @@ public abstract class DMZEvent extends Event {
 			this.distance = distance;
 			this.kiCost = kiCost;
 		}
-
-		public ServerPlayer getPlayer() { return player; }
-		public DashType getDashType() { return dashType; }
-		public double getDistance() { return distance; }
-		public void setDistance(double distance) { this.distance = distance; }
-		public int getKiCost() { return kiCost; }
-		public void setKiCost(int kiCost) { this.kiCost = kiCost; }
 
 		public enum DashType {
 			NORMAL,
@@ -200,11 +162,13 @@ public abstract class DMZEvent extends Event {
 	 * Event fired when a player successfully evades an attack.
 	 * This event is cancelable; if canceled, the evasion will not occur.
 	 */
+	@Getter
 	@Cancelable
 	public static class PlayerEvasionEvent extends Event {
 		private final ServerPlayer player;
 		private final LivingEntity attacker;
 		private final float originalDamage;
+		@Setter
 		private int kiCost;
 
 		public PlayerEvasionEvent(ServerPlayer player, LivingEntity attacker, float originalDamage, int kiCost) {
@@ -214,17 +178,13 @@ public abstract class DMZEvent extends Event {
 			this.kiCost = kiCost;
 		}
 
-		public ServerPlayer getPlayer() { return player; }
-		public LivingEntity getAttacker() { return attacker; }
-		public float getOriginalDamage() { return originalDamage; }
-		public int getKiCost() { return kiCost; }
-		public void setKiCost(int kiCost) { this.kiCost = kiCost; }
 	}
 
 	/**
 	 * Event fired when two entities are about to fuse.
 	 * This event is cancelable; if canceled, the fusion will not occur.
 	 */
+	@Getter
 	@Cancelable
 	public static class FusionEvent extends Event {
 		private final ServerPlayer initiator;
@@ -237,51 +197,138 @@ public abstract class DMZEvent extends Event {
 			this.type = type;
 		}
 
-		public ServerPlayer getInitiator() { return initiator; }
-		public LivingEntity getTarget() { return target; }
-		public FusionType getType() { return type; }
-
 		public enum FusionType {
 			METAMORU, POTHALA, ABSORPTION, ASSIMILATION
 		}
 	}
 
 	/**
-	 * Event fired when a player completes a quest.
+	 * Base event for quest lifecycle hooks (start/progress/fail/turn-in/reward/complete).
 	 */
-	public static class QuestCompleteEvent extends Event {
+	@Getter
+	public abstract static class QuestLifecycleEvent extends Event {
 		private final ServerPlayer player;
+		private final String questKey;
 		private final Saga saga;
 		private final Quest quest;
 		private final List<ServerPlayer> partyMembers;
 
-		public QuestCompleteEvent(ServerPlayer player, Saga saga, Quest quest, List<ServerPlayer> partyMembers) {
+		public QuestLifecycleEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers) {
 			this.player = player;
+			this.questKey = questKey == null ? "" : questKey;
 			this.saga = saga;
 			this.quest = quest;
-			this.partyMembers = partyMembers;
+			this.partyMembers = partyMembers == null ? List.of() : List.copyOf(partyMembers);
 		}
 
-		public ServerPlayer getPlayer() {
-			return player;
+	}
+
+	/**
+	 * Event fired before a quest is accepted.
+	 */
+	@Setter
+	@Getter
+	@Cancelable
+	public static class QuestStartEvent extends QuestLifecycleEvent {
+		private boolean hardMode;
+
+		public QuestStartEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, boolean hardMode) {
+			super(player, questKey, saga, quest, partyMembers);
+			this.hardMode = hardMode;
 		}
 
-		public Saga getSaga() {
-			return saga;
+	}
+
+	/**
+	 * Event fired before objective progress is stored.
+	 */
+	@Getter
+	@Cancelable
+	public static class QuestObjectiveProgressEvent extends QuestLifecycleEvent {
+		private final int objectiveIndex;
+		private final int oldProgress;
+		@Setter
+		private int newProgress;
+		private final int objectiveRequired;
+
+		public QuestObjectiveProgressEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers,
+										  int objectiveIndex, int oldProgress, int newProgress, int objectiveRequired) {
+			super(player, questKey, saga, quest, partyMembers);
+			this.objectiveIndex = objectiveIndex;
+			this.oldProgress = oldProgress;
+			this.newProgress = newProgress;
+			this.objectiveRequired = objectiveRequired;
 		}
 
-		public Quest getQuest() {
-			return quest;
+	}
+
+	/**
+	 * Event fired before a quest is marked as failed.
+	 */
+	@Getter
+	@Cancelable
+	public static class QuestFailEvent extends QuestLifecycleEvent {
+		private final FailureReason reason;
+
+		public QuestFailEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, FailureReason reason) {
+			super(player, questKey, saga, quest, partyMembers);
+			this.reason = reason;
 		}
 
-		public List<ServerPlayer> getPartyMembers() {
-			return partyMembers;
+		public enum FailureReason {
+			PLAYER_DEATH,
+			FORCED_RESET,
+			SCRIPT
+		}
+	}
+
+	/**
+	 * Event fired before a quest turn-in action is applied.
+	 */
+	@Getter
+	@Cancelable
+	public static class QuestTurnInEvent extends QuestLifecycleEvent {
+		private final String npcId;
+
+		public QuestTurnInEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, String npcId) {
+			super(player, questKey, saga, quest, partyMembers);
+			this.npcId = npcId == null ? "" : npcId;
+		}
+
+	}
+
+	/**
+	 * Event fired before an individual reward is claimed.
+	 */
+	@Getter
+	@Cancelable
+	public static class QuestRewardClaimEvent extends QuestLifecycleEvent {
+		private final int rewardIndex;
+
+		public QuestRewardClaimEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers, int rewardIndex) {
+			super(player, questKey, saga, quest, partyMembers);
+			this.rewardIndex = rewardIndex;
+		}
+
+	}
+
+	/**
+	 * Fires when quest is completed
+	 */
+	public static class QuestCompletedEvent extends QuestLifecycleEvent {
+		public QuestCompletedEvent(ServerPlayer player, Saga saga, Quest quest, List<ServerPlayer> partyMembers) {
+			super(player, buildQuestKey(saga, quest), saga, quest, partyMembers);
+		}
+
+		public QuestCompletedEvent(ServerPlayer player, String questKey, Saga saga, Quest quest, List<ServerPlayer> partyMembers) {
+			super(player, questKey, saga, quest, partyMembers);
 		}
 	}
 
 	/**
 	 * Event fired when a player's data is being saved.
 	 */
+	@Getter
 	public static class PlayerDataSaveEvent extends Event {
 		private final ServerPlayer player;
 		private final CompoundTag data;
@@ -291,18 +338,12 @@ public abstract class DMZEvent extends Event {
 			this.data = data;
 		}
 
-		public ServerPlayer getPlayer() {
-			return player;
-		}
-
-		public CompoundTag getData() {
-			return data;
-		}
 	}
 
 	/**
 	 * Event fired when a player's data is being loaded.
 	 */
+	@Getter
 	public static class PlayerDataLoadEvent extends Event {
 		private final ServerPlayer player;
 		private final CompoundTag data;
@@ -312,13 +353,6 @@ public abstract class DMZEvent extends Event {
 			this.data = data;
 		}
 
-		public ServerPlayer getPlayer() {
-			return player;
-		}
-
-		public CompoundTag getData() {
-			return data;
-		}
 	}
 }
 

@@ -1,15 +1,15 @@
 package com.dragonminez.server.commands;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEntities;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.quest.PartyManager;
 import com.dragonminez.common.quest.PlayerQuestData;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
+import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.quest.QuestTextFormatter;
 import com.dragonminez.common.quest.Saga;
 import com.dragonminez.common.stats.StatsCapability;
@@ -24,11 +24,14 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class StoryCommand {
 
@@ -59,7 +62,7 @@ public class StoryCommand {
 
 				.then(Commands.literal("finish")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.QUEST_FINISH_SELF, DMZPermissions.QUEST_FINISH_OTHERS))
-						.then(Commands.argument("quest", StringArgumentType.word())
+						.then(Commands.argument("quest", StringArgumentType.string())
 								.suggests(QUEST_OR_ALL_SUGGESTIONS)
 								.executes(context -> finishQuest(context, null))
 								.then(Commands.argument("player", EntityArgument.player())
@@ -68,7 +71,7 @@ public class StoryCommand {
 
 				.then(Commands.literal("reset")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.QUEST_RESET_SELF, DMZPermissions.QUEST_RESET_OTHERS))
-						.then(Commands.argument("quest", StringArgumentType.word())
+						.then(Commands.argument("quest", StringArgumentType.string())
 								.suggests(QUEST_OR_ALL_SUGGESTIONS)
 								.executes(context -> resetQuest(context, null))
 								.then(Commands.argument("player", EntityArgument.player())
@@ -77,7 +80,7 @@ public class StoryCommand {
 
 				.then(Commands.literal("resetsaga")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.QUEST_RESETSAGA_SELF, DMZPermissions.QUEST_RESETSAGA_OTHERS))
-						.then(Commands.argument("saga", StringArgumentType.word())
+						.then(Commands.argument("saga", StringArgumentType.string())
 								.suggests(SAGA_OR_ALL_SUGGESTIONS)
 								.executes(context -> resetSaga(context, null))
 								.then(Commands.argument("player", EntityArgument.player())
@@ -87,11 +90,11 @@ public class StoryCommand {
 				.then(Commands.literal("questnpc")
 						.requires(source -> source.hasPermission(2))
 						.then(Commands.literal("spawn")
-								.then(Commands.argument("npcId", StringArgumentType.word())
+								.then(Commands.argument("npcId", StringArgumentType.string())
 										.executes(context -> spawnQuestNPC(context, null, null))
-										.then(Commands.argument("model", StringArgumentType.word())
+										.then(Commands.argument("model", StringArgumentType.string())
 												.executes(context -> spawnQuestNPC(context, StringArgumentType.getString(context, "model"), null))
-												.then(Commands.argument("texture", StringArgumentType.word())
+												.then(Commands.argument("texture", StringArgumentType.string())
 														.executes(context -> spawnQuestNPC(context, StringArgumentType.getString(context, "model"),
 																StringArgumentType.getString(context, "texture"))))))))
 		);
@@ -174,7 +177,7 @@ public class StoryCommand {
 					for (Map.Entry<String, Quest> entry : questsToFinish) {
 						completeQuest(pqd, entry.getKey(), entry.getValue(), player);
 					}
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					QuestService.syncQuestState(player);
 				});
 				successCount++;
 			}
@@ -210,11 +213,20 @@ public class StoryCommand {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 					PlayerQuestData pqd = stats.getPlayerQuestData();
 					if ("all".equalsIgnoreCase(questKey)) {
+						for (String acceptedQuestKey : pqd.getAcceptedQuestIds()) {
+							Quest acceptedQuest = QuestRegistry.getQuest(acceptedQuestKey);
+							if (acceptedQuest != null) {
+								postForcedResetFailEvent(player, pqd, acceptedQuestKey, acceptedQuest);
+							}
+						}
 						pqd.resetAll();
 					} else {
-						pqd.resetQuest(questKey);
+						Quest quest = QuestRegistry.getQuest(questKey);
+						if (quest != null && postForcedResetFailEvent(player, pqd, questKey, quest)) {
+							resetQuestEntry(pqd, questKey);
+						}
 					}
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					QuestService.syncQuestState(player);
 				});
 				successCount++;
 			}
@@ -250,11 +262,27 @@ public class StoryCommand {
 				StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(stats -> {
 					PlayerQuestData pqd = stats.getPlayerQuestData();
 					if ("all".equalsIgnoreCase(sagaId)) {
+						for (String acceptedQuestKey : pqd.getAcceptedQuestIds()) {
+							Quest acceptedQuest = QuestRegistry.getQuest(acceptedQuestKey);
+							if (acceptedQuest != null) {
+								postForcedResetFailEvent(player, pqd, acceptedQuestKey, acceptedQuest);
+							}
+						}
 						pqd.resetAll();
 					} else {
-						pqd.resetSaga(sagaId);
+						String prefix = sagaId + ":";
+						for (String questKey : collectKnownQuestKeys(pqd)) {
+							if (!questKey.startsWith(prefix)) {
+								continue;
+							}
+
+							Quest quest = QuestRegistry.getQuest(questKey);
+							if (quest == null || postForcedResetFailEvent(player, pqd, questKey, quest)) {
+								resetQuestEntry(pqd, questKey);
+							}
+						}
 					}
-					NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+					QuestService.syncQuestState(player);
 				});
 				successCount++;
 			}
@@ -293,7 +321,52 @@ public class StoryCommand {
 			pqd.setObjectiveProgress(questKey, i, quest.getObjectiveRequired(pqd, questKey, i));
 		}
 
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
+		Saga saga = resolved != null ? resolved.saga() : null;
+		DMZEvent.QuestCompletedEvent completeEvent = new DMZEvent.QuestCompletedEvent(
+				player,
+				questKey,
+				saga,
+				quest,
+				PartyManager.getAllPartyMembers(player)
+		);
+		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
+			return;
+		}
+
 		pqd.completeQuest(questKey);
+		if (questKey.equals(pqd.getTrackedQuestId())) {
+			pqd.setTrackedQuestId(null);
+		}
+	}
+
+	private static boolean postForcedResetFailEvent(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest) {
+		if (!pqd.isQuestAccepted(questKey) || pqd.isQuestCompleted(questKey)) {
+			return true;
+		}
+
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
+		DMZEvent.QuestFailEvent failEvent = new DMZEvent.QuestFailEvent(
+				player,
+				questKey,
+				resolved != null ? resolved.saga() : null,
+				quest,
+				PartyManager.getAllPartyMembers(player),
+				DMZEvent.QuestFailEvent.FailureReason.FORCED_RESET
+		);
+		return !MinecraftForge.EVENT_BUS.post(failEvent);
+	}
+
+	private static Set<String> collectKnownQuestKeys(PlayerQuestData pqd) {
+		Set<String> questKeys = new LinkedHashSet<>();
+		questKeys.addAll(pqd.getAcceptedQuestIds());
+		questKeys.addAll(pqd.getCompletedQuestIds());
+		questKeys.addAll(pqd.getFailedQuestIds());
+		return questKeys;
+	}
+
+	private static void resetQuestEntry(PlayerQuestData pqd, String questKey) {
+		pqd.resetQuest(questKey);
 		if (questKey.equals(pqd.getTrackedQuestId())) {
 			pqd.setTrackedQuestId(null);
 		}

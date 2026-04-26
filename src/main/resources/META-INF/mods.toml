@@ -1,6 +1,7 @@
 modLoader="javafml"
 loaderVersion="[47,)"
 license="${mod_license}"
+issueTrackerURL = "https://discord.dragonminez.com"
 
 [[mods]]
 modId="${mod_id}"
@@ -35,7 +36,7 @@ config="dragonminez.mixins.json"
     modId="geckolib"
     mandatory=true
     versionRange="${geckolib_version_range}"
-    ordering="NONE"
+    ordering="AFTER"
     side="BOTH"
 
 [[dependencies.dragonminez]]

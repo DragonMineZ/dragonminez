@@ -2,6 +2,7 @@ package com.dragonminez.server.events;
 
 import com.dragonminez.Reference;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.questnpc.QuestNPCEntity;
 import com.dragonminez.common.network.NetworkHandler;
@@ -29,6 +30,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -96,9 +98,23 @@ public class QuestEvents {
 			}
 
 			Set<String> failedQuestIds = new LinkedHashSet<>();
+			List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(controller);
 			for (String questKey : acceptedQuestIds) {
 				Quest quest = QuestRegistry.getQuest(questKey);
 				if (quest == null || pqd.isQuestCompleted(questKey) || !hasKillObjectives(quest)) {
+					continue;
+				}
+
+				QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
+				DMZEvent.QuestFailEvent failEvent = new DMZEvent.QuestFailEvent(
+						controller,
+						questKey,
+						resolved != null ? resolved.saga() : null,
+						quest,
+						partyMembers,
+						DMZEvent.QuestFailEvent.FailureReason.PLAYER_DEATH
+				);
+				if (MinecraftForge.EVENT_BUS.post(failEvent)) {
 					continue;
 				}
 
@@ -111,7 +127,7 @@ public class QuestEvents {
 			}
 
 			notifyQuestFailure(controller, failedQuestIds);
-			syncQuestState(controller);
+			QuestService.syncQuestState(controller);
 		});
 	}
 
@@ -407,10 +423,32 @@ public class QuestEvents {
 			return;
 		}
 
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
+		int required = objectiveIndex >= 0 && objectiveIndex < quest.getObjectives().size()
+				? quest.getObjectiveRequired(pqd, questKey, objectiveIndex)
+				: 0;
+		DMZEvent.QuestObjectiveProgressEvent progressEvent = new DMZEvent.QuestObjectiveProgressEvent(
+				player,
+				questKey,
+				resolved != null ? resolved.saga() : null,
+				quest,
+				PartyManager.getAllPartyMembers(player),
+				objectiveIndex,
+				current,
+				newProgress,
+				required
+		);
+		if (MinecraftForge.EVENT_BUS.post(progressEvent)) {
+			return;
+		}
+		newProgress = progressEvent.getNewProgress();
+		if (current == newProgress) {
+			return;
+		}
+
 		pqd.setObjectiveProgress(questKey, objectiveIndex, newProgress);
 
 		if (objectiveIndex >= 0 && objectiveIndex < quest.getObjectives().size()) {
-			int required = quest.getObjectiveRequired(pqd, questKey, objectiveIndex);
 			if (current < required && newProgress >= required) {
 				int clampedProgress = Math.min(newProgress, required);
 				NetworkHandler.sendToPlayer(
@@ -435,6 +473,18 @@ public class QuestEvents {
 			}
 		}
 
+		QuestService.ResolvedQuest resolved = QuestService.resolveQuest(questKey);
+		DMZEvent.QuestCompletedEvent completeEvent = new DMZEvent.QuestCompletedEvent(
+				player,
+				questKey,
+				resolved != null ? resolved.saga() : null,
+				quest,
+				PartyManager.getAllPartyMembers(player)
+		);
+		if (MinecraftForge.EVENT_BUS.post(completeEvent)) {
+			return;
+		}
+
 		pqd.completeQuest(questKey);
 		if (questKey.equals(pqd.getTrackedQuestId())) {
 			pqd.setTrackedQuestId(null);
@@ -443,13 +493,6 @@ public class QuestEvents {
 		NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
 	}
 
-	private static void syncQuestState(ServerPlayer controller) {
-		if (PartyManager.isInParty(controller)) {
-			PartyManager.syncPartyQuestState(controller);
-		} else {
-			NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(controller), controller);
-		}
-	}
 
 	@FunctionalInterface
 	private interface AcceptedQuestProcessor {
