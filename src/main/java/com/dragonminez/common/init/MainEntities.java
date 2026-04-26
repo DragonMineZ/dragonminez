@@ -243,6 +243,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaPiccoloEntity.SagaPiccoloEarlyEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_piccolo").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.ChaozEntity>> SAGA_CHAOZ =
+            ENTITY_TYPES.register("saga_chaoz",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.ChaozEntity::new, MobCategory.MONSTER)
+                            .sized(0.5f, 1.3f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_chaoz").toString()));
 
     public static final RegistryObject<EntityType<SagaSaibamanEntity>> SAGA_SAIBAMAN =
             ENTITY_TYPES.register("saga_saibaman1",
@@ -683,6 +688,11 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaShinEntity::new, MobCategory.MONSTER)
                             .sized(0.6f, 1.8f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_videl").toString()));
+    public static final RegistryObject<EntityType<SagaZFightersEntity.BasicNPCEntity>> SAGA_BULMA =
+            ENTITY_TYPES.register("saga_bulma",
+                    () -> EntityType.Builder.of(SagaZFightersEntity.BasicNPCEntity::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.8f)
+                            .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_bulma").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaKibitoEntity>> SAGA_KIBITO =
             ENTITY_TYPES.register("saga_kibito",
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaKibitoEntity::new, MobCategory.MONSTER)
