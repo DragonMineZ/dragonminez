@@ -98,7 +98,7 @@ public abstract class DMZEvent extends Event {
 			this.tpGain = tpGain;
 		}
 
-		public int getNewValue() {
+		public int getNewTpsValue() {
 			return oldValue + tpGain;
 		}
 	}

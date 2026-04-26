@@ -62,7 +62,7 @@ public class StoryCommand {
 
 				.then(Commands.literal("finish")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.QUEST_FINISH_SELF, DMZPermissions.QUEST_FINISH_OTHERS))
-						.then(Commands.argument("quest", StringArgumentType.word())
+						.then(Commands.argument("quest", StringArgumentType.string())
 								.suggests(QUEST_OR_ALL_SUGGESTIONS)
 								.executes(context -> finishQuest(context, null))
 								.then(Commands.argument("player", EntityArgument.player())
@@ -71,7 +71,7 @@ public class StoryCommand {
 
 				.then(Commands.literal("reset")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.QUEST_RESET_SELF, DMZPermissions.QUEST_RESET_OTHERS))
-						.then(Commands.argument("quest", StringArgumentType.word())
+						.then(Commands.argument("quest", StringArgumentType.string())
 								.suggests(QUEST_OR_ALL_SUGGESTIONS)
 								.executes(context -> resetQuest(context, null))
 								.then(Commands.argument("player", EntityArgument.player())
@@ -80,7 +80,7 @@ public class StoryCommand {
 
 				.then(Commands.literal("resetsaga")
 						.requires(source -> DMZPermissions.check(source, DMZPermissions.QUEST_RESETSAGA_SELF, DMZPermissions.QUEST_RESETSAGA_OTHERS))
-						.then(Commands.argument("saga", StringArgumentType.word())
+						.then(Commands.argument("saga", StringArgumentType.string())
 								.suggests(SAGA_OR_ALL_SUGGESTIONS)
 								.executes(context -> resetSaga(context, null))
 								.then(Commands.argument("player", EntityArgument.player())
@@ -90,11 +90,11 @@ public class StoryCommand {
 				.then(Commands.literal("questnpc")
 						.requires(source -> source.hasPermission(2))
 						.then(Commands.literal("spawn")
-								.then(Commands.argument("npcId", StringArgumentType.word())
+								.then(Commands.argument("npcId", StringArgumentType.string())
 										.executes(context -> spawnQuestNPC(context, null, null))
-										.then(Commands.argument("model", StringArgumentType.word())
+										.then(Commands.argument("model", StringArgumentType.string())
 												.executes(context -> spawnQuestNPC(context, StringArgumentType.getString(context, "model"), null))
-												.then(Commands.argument("texture", StringArgumentType.word())
+												.then(Commands.argument("texture", StringArgumentType.string())
 														.executes(context -> spawnQuestNPC(context, StringArgumentType.getString(context, "model"),
 																StringArgumentType.getString(context, "texture"))))))))
 		);
