@@ -38,6 +38,9 @@ public class XenoverseHUD {
 	private static final float HP_BAR_MAX_WIDTH = 137.0f;
 	private static final float KI_BAR_MAX_WIDTH = 114.0f;
 	private static final float STM_BAR_MAX_WIDTH = 85.0f;
+	private static final HudStatNumberAnimator HP_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.HEALTH);
+	private static final HudStatNumberAnimator KI_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.KI);
+	private static final HudStatNumberAnimator STM_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.STAMINA);
 
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
@@ -136,15 +139,16 @@ public class XenoverseHUD {
 
 				if (ConfigManager.getUserConfig().getAdvancedDescription()) {
 					boolean showPercent = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
+					float tickTime = mc.player.tickCount + partialTicks;
 
 					String hpText = showPercent ? String.format("%.0f%%", (currentHP / maxHP) * 100) : numberFormat.format((int) currentHP) + " / " + numberFormat.format((int) maxHP);
-					drawScaledText(guiGraphics, hpText, 100, 15, 0.5f, ColorUtils.hexToInt("#FFFFFF"));
+					drawAnimatedScaledText(guiGraphics, HP_NUMBER, hpText, displayValue(currentHP, maxHP, showPercent), tickTime, 100, 15, 0.5f);
 
 					String kiText = showPercent ? String.format("%.0f%%", (currentKi / (float) maxKi) * 100) : numberFormat.format(currentKi) + " / " + numberFormat.format(maxKi);
-					drawScaledText(guiGraphics, kiText, 90, 23, 0.5f, ColorUtils.hexToInt("#FFFFFF"));
+					drawAnimatedScaledText(guiGraphics, KI_NUMBER, kiText, displayValue(currentKi, maxKi, showPercent), tickTime, 90, 23, 0.5f);
 
 					String stmText = showPercent ? String.format("%.0f%%", (currentStm / (float) maxStm) * 100) : numberFormat.format(currentStm) + " / " + numberFormat.format(maxStm);
-					drawScaledText(guiGraphics, stmText, 80, 30, 0.5f, ColorUtils.hexToInt("#FFFFFF"));
+					drawAnimatedScaledText(guiGraphics, STM_NUMBER, stmText, displayValue(currentStm, maxStm, showPercent), tickTime, 80, 30, 0.5f);
 				}
 
 				guiGraphics.pose().popPose();
@@ -160,12 +164,39 @@ public class XenoverseHUD {
 		guiGraphics.pose().popPose();
 	}
 
+	private static void drawAnimatedScaledText(GuiGraphics guiGraphics, HudStatNumberAnimator animator, String text, float value, float tickTime, int x, int y, float scale) {
+		HudStatNumberAnimator.RenderState state = animator.update(text, value, tickTime);
+		if (state.isHidden()) return;
+
+		guiGraphics.pose().pushPose();
+		guiGraphics.pose().translate(x + state.offsetX(), y + state.offsetY(), 0);
+		guiGraphics.pose().scale(scale, scale, 1.0f);
+		drawStringWithBorder(guiGraphics, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
+		guiGraphics.pose().popPose();
+	}
+
+	private static float displayValue(float current, float max, boolean showPercent) {
+		return showPercent ? Math.round((current / max) * 100.0f) : Math.round(current);
+	}
+
+	private static int withAlpha(int rgb, float alpha) {
+		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
+		return (alphaChannel << 24) | (rgb & 0xFFFFFF);
+	}
+
 	private static void drawStringWithBorder(GuiGraphics guiGraphics, String text, int x, int y, int color) {
 		MutableComponent dmzText = Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x - 1, y, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x + 1, y, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y - 1, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y + 1, 0x000000);
+		int borderColor = borderColor(color);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x - 1, y, borderColor);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x + 1, y, borderColor);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y - 1, borderColor);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y + 1, borderColor);
 		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y, color);
+	}
+
+	private static int borderColor(int color) {
+		int alpha = (color >>> 24) & 0xFF;
+		if (alpha == 0) alpha = 0xFF;
+		return alpha << 24;
 	}
 }

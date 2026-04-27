@@ -37,6 +37,9 @@ public class AlternativeHUD {
 	private static volatile int lastSeenMaxStm = -1;
 	private static final float LERP_SPEED = 0.25f;
 	private static final float BAR_MAX_WIDTH = 76.0f;
+	private static final HudStatNumberAnimator HP_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.HEALTH);
+	private static final HudStatNumberAnimator KI_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.KI);
+	private static final HudStatNumberAnimator STM_NUMBER = new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.STAMINA);
 
 	static NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
 
@@ -105,6 +108,7 @@ public class AlternativeHUD {
 				float kiOffY = ConfigManager.getUserConfig().getEnergyBarPosY() / hudScale;
 				float stmOffX = ConfigManager.getUserConfig().getStaminaBarPosX() / hudScale;
 				float stmOffY = ConfigManager.getUserConfig().getStaminaBarPosY() / hudScale;
+				float tickTime = mc.player.tickCount + partialTicks;
 
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().translate(baseHpX + hpOffX, baseHpY + hpOffY, 0);
@@ -112,7 +116,7 @@ public class AlternativeHUD {
 				int hpTextureV = (currentHP < maxHP * 0.33) ? 33 : (currentHP < maxHP * 0.66) ? 22 : 11;
 				guiGraphics.blit(hud, 2, 3, 2, hpTextureV, 7 + (int) currentHPBarWidth, 5, 128, 128);
 				drawTinyText(guiGraphics, powerRelease + "%", -4, 41, ColorUtils.hexToInt("#FACAF7"));
-				drawBarValues(guiGraphics, currentHP, maxHP, 42, 3);
+				drawBarValues(guiGraphics, HP_NUMBER, currentHP, maxHP, 42, 3, tickTime);
 				guiGraphics.pose().popPose();
 
 				guiGraphics.pose().pushPose();
@@ -122,7 +126,7 @@ public class AlternativeHUD {
 				RenderSystem.setShaderColor(auraRgb[0], auraRgb[1], auraRgb[2], 1.0f);
 				guiGraphics.blit(hud, 3, 3, 3, 61, 7 + (int) currentKiBarWidth, 4, 128, 128);
 				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-				drawBarValues(guiGraphics, currentKi, maxKi, 42, 3);
+				drawBarValues(guiGraphics, KI_NUMBER, currentKi, maxKi, 42, 3, tickTime);
 				guiGraphics.pose().pushPose();
 				guiGraphics.pose().scale(1.5f, 1.5f, 1.5f);
 				drawRacialIcon(guiGraphics, raceName, Math.min(powerRelease, 100), -28, 0);
@@ -135,7 +139,7 @@ public class AlternativeHUD {
 				guiGraphics.blit(hud, 0, 0, 0, 72, 83, 9, 128, 128);
 				guiGraphics.blit(hud, 2, 3, 2, 90, -5 + (int) currentStmBarWidth, 4, 128, 128);
 				guiGraphics.blit(hud, 77, 3, 77, 90, 4, 4, 128, 128);
-				drawBarValues(guiGraphics, currentStm, maxStm, 41, 3);
+				drawBarValues(guiGraphics, STM_NUMBER, currentStm, maxStm, 41, 3, tickTime);
 				guiGraphics.pose().popPose();
 
 				guiGraphics.pose().popPose();
@@ -143,11 +147,11 @@ public class AlternativeHUD {
 		});
 	};
 
-	private static void drawBarValues(GuiGraphics guiGraphics, float current, float max, int x, int y) {
+	private static void drawBarValues(GuiGraphics guiGraphics, HudStatNumberAnimator animator, float current, float max, int x, int y, float tickTime) {
 		if (ConfigManager.getUserConfig().getAdvancedDescription()) {
 			boolean pct = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
 			String text = pct ? String.format("%.0f%%", (current / max) * 100) : numberFormat.format((int) current) + " / " + numberFormat.format((int) max);
-			drawTinyText(guiGraphics, text, x, y, ColorUtils.hexToInt("#FFFFFF"));
+			drawAnimatedTinyText(guiGraphics, animator, text, displayValue(current, max, pct), tickTime, x, y);
 		}
 	}
 
@@ -179,6 +183,26 @@ public class AlternativeHUD {
 		guiGraphics.pose().popPose();
 	}
 
+	private static void drawAnimatedTinyText(GuiGraphics guiGraphics, HudStatNumberAnimator animator, String text, float value, float tickTime, int x, int y) {
+		HudStatNumberAnimator.RenderState state = animator.update(text, value, tickTime);
+		if (state.isHidden()) return;
+
+		guiGraphics.pose().pushPose();
+		guiGraphics.pose().translate(x + state.offsetX(), y + state.offsetY(), 0);
+		guiGraphics.pose().scale(0.5f, 0.5f, 1.0f);
+		drawStringWithBorder(guiGraphics, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
+		guiGraphics.pose().popPose();
+	}
+
+	private static float displayValue(float current, float max, boolean showPercent) {
+		return showPercent ? Math.round((current / max) * 100.0f) : Math.round(current);
+	}
+
+	private static int withAlpha(int rgb, float alpha) {
+		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
+		return (alphaChannel << 24) | (rgb & 0xFFFFFF);
+	}
+
 	private static float lerp(float start, float end, float delta) {
 		float change = (end - start) * LERP_SPEED * delta;
 		return Math.abs(end - start) <= 1 ? end : start + change;
@@ -186,10 +210,17 @@ public class AlternativeHUD {
 
 	private static void drawStringWithBorder(GuiGraphics guiGraphics, String text, int x, int y, int color) {
 		MutableComponent dmzText = Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x - 1, y, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x + 1, y, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y - 1, 0x000000);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y + 1, 0x000000);
+		int borderColor = borderColor(color);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x - 1, y, borderColor);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x + 1, y, borderColor);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y - 1, borderColor);
+		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y + 1, borderColor);
 		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y, color);
+	}
+
+	private static int borderColor(int color) {
+		int alpha = (color >>> 24) & 0xFF;
+		if (alpha == 0) alpha = 0xFF;
+		return alpha << 24;
 	}
 }
