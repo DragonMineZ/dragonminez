@@ -281,34 +281,44 @@ public class StatsData {
 		return (secondaryDefense + (resistance * defScaling) + (bonusRes * defScaling) + (armor * 0.75) + toughness) * releaseMultiplier;
 	}
 
-	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken) {
+	public double calculatePostMitigationDamage(double incomingDamage, boolean isGuardBroken, double armorPenetration) {
 		double resTotalMult = getTotalMultiplier("RES");
 		double baseDefense = getDefense();
 
 		if (isGuardBroken) baseDefense *= (1.0 - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak());
+		if (baseDefense > 0) baseDefense *= (1.0 - armorPenetration);
 
 		int maxValue = getConfiguredMaxValue();
 		double expectedMaxStats = isMaxLevelValueInsteadOfStats() ? (maxValue * 6.0) / 2.0 : maxValue;
 		double expectedMaxDef = expectedMaxStats * getStatScaling("DEF");
 		double k_factor = Math.max(100.0, expectedMaxDef * 0.25);
 
-		double baseReduction = baseDefense >= 0 ? baseDefense / (k_factor + baseDefense) : baseDefense / (k_factor - baseDefense);
-		baseReduction = Math.min(baseReduction, ConfigManager.getCombatConfig().getBaseDamageReductionCap());
+		double baseReduction;
+		if (baseDefense >= 0) baseReduction = baseDefense / (k_factor + baseDefense);
+		else baseReduction = baseDefense / (k_factor - baseDefense);
+
+
+		double baseCap = ConfigManager.getCombatConfig().getBaseDamageReductionCap();
+		baseReduction = Math.min(baseReduction, baseCap);
 
 		double remainingDamage = incomingDamage * (1.0 - baseReduction);
 
-		if (resTotalMult > 0) remainingDamage /= resTotalMult;
+		if (resTotalMult > 1.0) remainingDamage /= resTotalMult;
 
 		int totalProtection = 0;
 		if (player != null) totalProtection = EnchantmentHelper.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, player);
 
 		double enchReduction = 0.0;
 		if (totalProtection > 0) {
+			double effectiveProtection = totalProtection * (1.0 - armorPenetration);
+
 			double k_ench = 20.0;
-			enchReduction = totalProtection / (k_ench + totalProtection);
+			enchReduction = effectiveProtection / (k_ench + effectiveProtection);
+
 			double totalCap = ConfigManager.getCombatConfig().getEnchantmentDamageReductionCap();
-			double maxEnchAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
-			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchAllowed));
+			double maxEnchReductionAllowed = (totalCap - baseReduction) / (1.0 - baseReduction);
+
+			enchReduction = Math.min(enchReduction, Math.max(0, maxEnchReductionAllowed));
 		}
 
 		return remainingDamage * (1.0 - enchReduction);

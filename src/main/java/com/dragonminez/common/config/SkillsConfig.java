@@ -167,6 +167,20 @@ public class SkillsConfig {
 		kiManipulationCosts.add(3300);
 		skills.put("kimanipulation", new SkillCosts(kiManipulationCosts));
 
+
+		List<Integer> defensePenetration = new ArrayList<>();
+		defensePenetration.add(3600);
+		defensePenetration.add(600);
+		defensePenetration.add(900);
+		defensePenetration.add(1200);
+		defensePenetration.add(1500);
+		defensePenetration.add(1800);
+		defensePenetration.add(2100);
+		defensePenetration.add(2400);
+		defensePenetration.add(2700);
+		defensePenetration.add(3300);
+		skills.put("defense_penetration", new SkillCosts(defensePenetration));
+
 		List<Integer> kaiokenCosts = new ArrayList<>();
 		kaiokenCosts.add(1000);
 		kaiokenCosts.add(1500);
@@ -206,6 +220,7 @@ public class SkillsConfig {
 		gokuSkills.add("fly");
 		gokuSkills.add("kicontrol");
 		gokuSkills.add("kisense");
+		gokuSkills.add("defense_penetration");
 		gokuSkills.add("fusion");
 		gokuSkills.add("potentialunlock");
 		gokuSkills.add("kamehameha");
@@ -221,6 +236,7 @@ public class SkillsConfig {
 		skillOfferings.put("kingkai", kingKaiSkills);
 
 		List<String> vegetaSkills = new ArrayList<>();
+		vegetaSkills.add("defense_penetration");
 		vegetaSkills.add("galick_gun");
 		vegetaSkills.add("big_bang");
 		vegetaSkills.add("final_flash");

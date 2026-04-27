@@ -5,6 +5,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.SwitchButton;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.config.ConfigManager;
+import com.dragonminez.common.init.MainEnchants;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.IncreaseStatC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -646,6 +647,16 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 								formatUpToOneDecimal(strScaling)).withStyle(ChatFormatting.YELLOW), 180));
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.max_value",
 								formatUpToOneDecimal(maxMeleeDamage)).withStyle(ChatFormatting.GREEN), 180));
+						tooltip.add(txt("").getVisualOrderText());
+						tooltip.add(tr("gui.dragonminez.character_stats.melee_damage").append(txt(": "))
+								.append(txt(formatUpToOneDecimal(meleeDamage)))
+								.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+
+						double defensePen = getDefensePenetrationPercentage();
+						if (defensePen > 0) {
+							tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+									.withStyle(ChatFormatting.RED).getVisualOrderText());
+						}
 					}
 					case 1 -> {
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.strike_damage.tooltip1"), 180));
@@ -653,6 +664,16 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 								formatUpToOneDecimal(skpScaling)).withStyle(ChatFormatting.YELLOW), 180));
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.max_value",
 								formatUpToOneDecimal(maxStrikeDamage)).withStyle(ChatFormatting.GREEN), 180));
+						tooltip.add(txt("").getVisualOrderText());
+						tooltip.add(tr("gui.dragonminez.character_stats.strike_damage").append(txt(": "))
+								.append(txt(formatUpToOneDecimal(strikeDamage)))
+								.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+
+						double defensePen = getDefensePenetrationPercentage();
+						if (defensePen > 0) {
+							tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+									.withStyle(ChatFormatting.RED).getVisualOrderText());
+						}
 					}
 					case 2 -> {
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.stamina.tooltip1"), 180));
@@ -699,6 +720,12 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 								formatUpToOneDecimal(pwrScaling)).withStyle(ChatFormatting.YELLOW), 180));
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.max_value",
 								formatUpToOneDecimal(maxKiDamage)).withStyle(ChatFormatting.GREEN), 180));
+
+						double defensePen = getDefensePenetrationPercentage();
+						if (defensePen > 0) {
+							tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+									.withStyle(ChatFormatting.RED).getVisualOrderText());
+						}
 					}
 					case 6 -> {
 						tooltip.addAll(font.split(tr("gui.dragonminez.character_stats.max_energy.tooltip1"), 180));
@@ -965,6 +992,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			tooltip.add(tr("gui.dragonminez.character_stats.melee_damage").append(": ")
 					.append(txt(formatUpToOneDecimal(meleeDamage)))
 					.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+			double defensePen = getDefensePenetrationPercentage();
+			if (defensePen > 0) {
+				tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+						.withStyle(ChatFormatting.RED).getVisualOrderText());
+			}
 			renderClampedTooltip(graphics, tooltip, mouseX, mouseY);
 		}
 
@@ -979,6 +1011,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			tooltip.add(tr("gui.dragonminez.character_stats.strike_damage").append(": ")
 					.append(txt(formatUpToOneDecimal(strikeDamage)))
 					.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+			double defensePen = getDefensePenetrationPercentage();
+			if (defensePen > 0) {
+				tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+						.withStyle(ChatFormatting.RED).getVisualOrderText());
+			}
 			renderClampedTooltip(graphics, tooltip, mouseX, mouseY);
 		}
 
@@ -1037,6 +1074,11 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			tooltip.add(tr("gui.dragonminez.character_stats.ki_damage").append(": ")
 					.append(txt(formatUpToOneDecimal(kiDamage)))
 					.withStyle(ChatFormatting.AQUA).getVisualOrderText());
+			double defensePen = getDefensePenetrationPercentage();
+			if (defensePen > 0) {
+				tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+						.withStyle(ChatFormatting.RED).getVisualOrderText());
+			}
 			renderClampedTooltip(graphics, tooltip, mouseX, mouseY);
 		}
 
@@ -1155,6 +1197,15 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 	private String formatTpsDisplay(float tps) {
 		if (Float.isNaN(tps) || Float.isInfinite(tps)) return String.valueOf(tps);
 		return shouldUseScientificForTps(tps) ? scientificFormatter.format(tps) : fullTpsFormatter.format(tps);
+	}
+
+	private double getDefensePenetrationPercentage() {
+		int skillLevel = statsData.getSkills().getSkillLevel("defense_penetration");
+		int enchLevel = 0;
+
+		if (Minecraft.getInstance().player != null) enchLevel = EnchantmentHelper.getEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), Minecraft.getInstance().player);
+
+		return Math.min(0.50, (skillLevel * 0.025) + (enchLevel * 0.025)) * 100.0;
 	}
 
 	private void drawHexagon(GuiGraphics graphics, int centerX, int centerY, float[] pointsX, float[] pointsY, float[] maxPointsX, float[] maxPointsY) {
