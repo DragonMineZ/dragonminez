@@ -21,6 +21,20 @@ public class MainEnchants {
 	public static final RegistryObject<Enchantment> ENERGY_RECOVERY = ENCHANTMENTS.register("energy_recovery",
 			() -> new RecoveryEnchantment(Enchantment.Rarity.UNCOMMON, EquipmentSlot.values(), "energy"));
 
+	public static final RegistryObject<Enchantment> DEFENSE_PENETRATION = ENCHANTMENTS.register("defense_penetration",
+			() -> new WeaponPenetrationEnchantment(Enchantment.Rarity.RARE, EquipmentSlot.MAINHAND));
+
+	public static class WeaponPenetrationEnchantment extends Enchantment {
+		protected WeaponPenetrationEnchantment(Rarity rarity, EquipmentSlot... slots) {
+			super(rarity, EnchantmentCategory.WEAPON, slots);
+		}
+
+		@Override
+		public int getMaxLevel() {
+			return 5;
+		}
+	}
+
 	public static class RecoveryEnchantment extends Enchantment {
 		private final String type;
 

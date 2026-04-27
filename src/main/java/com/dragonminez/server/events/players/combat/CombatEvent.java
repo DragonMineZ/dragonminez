@@ -5,10 +5,7 @@ import com.dragonminez.common.combat.util.Player_DMZ;
 import com.dragonminez.common.combat.util.SoundHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.events.DMZEvent;
-import com.dragonminez.common.init.MainDamageTypes;
-import com.dragonminez.common.init.MainEffects;
-import com.dragonminez.common.init.MainParticles;
-import com.dragonminez.common.init.MainSounds;
+import com.dragonminez.common.init.*;
 import com.dragonminez.common.init.entities.PunchMachineEntity;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.network.NetworkHandler;
@@ -32,6 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
@@ -186,6 +184,23 @@ public class CombatEvent {
 		}
 
 		if (event.getEntity() instanceof Player victim) {
+
+			double finalDefensePenetration;
+			if (source.getEntity() instanceof LivingEntity sourceLiving) {
+				int enchLevel = EnchantmentHelper.getEnchantmentLevel(MainEnchants.DEFENSE_PENETRATION.get(), sourceLiving);
+				double enchPen = enchLevel * 0.025;
+
+				double skillPen = 0.0;
+				if (sourceLiving instanceof Player sourcePlayer) {
+					var attackerStats = StatsProvider.get(StatsCapability.INSTANCE, sourcePlayer).orElse(null);
+					if (attackerStats != null) skillPen = attackerStats.getSkills().getSkillLevel("defense_penetration") * 0.025;
+				}
+
+				finalDefensePenetration = Math.min(0.50, enchPen + skillPen);
+			} else {
+				finalDefensePenetration = 0.0;
+			}
+
 			StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(victimData -> {
 				if (victimData.getStatus().isHasCreatedCharacter()) {
 					victimData.getStatus().setLastHurtTime(System.currentTimeMillis());
@@ -298,7 +313,7 @@ public class CombatEvent {
 
 									if (victim instanceof ServerPlayer sPlayer) {
 										boolean isGuardBrokenTmp = victimData.getStatus().isStunned() && victimData.getResources().getCurrentPoise() <= 0;
-										double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp);
+										double estimatedPostMitigation = victimData.calculatePostMitigationDamage(currentDamage[0], isGuardBrokenTmp, finalDefensePenetration);
 										float finalDmg = (float) (estimatedPostMitigation * blockMultiplier);
 
 										DMZEvent.PlayerBlockEvent blockEvent = new DMZEvent.PlayerBlockEvent(sPlayer, source.getEntity() instanceof LivingEntity ? (LivingEntity) source.getEntity() : null, (float)currentDamage[0], finalDmg, isParry, poiseDamage);
@@ -317,6 +332,7 @@ public class CombatEvent {
 
 					victim.getPersistentData().putDouble("dmz_raw_damage", currentDamage[0]);
 					victim.getPersistentData().putDouble("dmz_block_multiplier", blockMultiplier);
+					victim.getPersistentData().putDouble("dmz_defense_pen", finalDefensePenetration);
 
 					if (victim instanceof ServerPlayer serverPlayer) {
 						NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(serverPlayer), serverPlayer);
@@ -371,10 +387,12 @@ public class CombatEvent {
 		if (event.getEntity() instanceof Player victim) {
 			if (victim.getPersistentData().contains("dmz_raw_damage")) {
 				double rawDamage = victim.getPersistentData().getDouble("dmz_raw_damage");
+				double defensePenetration = victim.getPersistentData().contains("dmz_defense_pen") ?
+						victim.getPersistentData().getDouble("dmz_defense_pen") : 0.0;
 
 				StatsProvider.get(StatsCapability.INSTANCE, victim).ifPresent(stats -> {
 					boolean isGuardBroken = stats.getStatus().isStunned() && stats.getResources().getCurrentPoise() <= 0;
-					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken);
+					double postMitigation = stats.calculatePostMitigationDamage(rawDamage, isGuardBroken, defensePenetration);
 
 					if (victim.getPersistentData().contains("dmz_block_multiplier")) {
 						postMitigation *= victim.getPersistentData().getDouble("dmz_block_multiplier");
@@ -385,6 +403,7 @@ public class CombatEvent {
 				});
 
 				victim.getPersistentData().remove("dmz_raw_damage");
+				victim.getPersistentData().remove("dmz_defense_pen");
 			}
 		}
 	}
