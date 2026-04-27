@@ -279,7 +279,6 @@ public class ForgeCommonEvents {
 				LogUtil.info(Env.SERVER, "LevelEvent.Load: Detected Otherworld dimension load, attempting to load regions.");
 				OtherworldRegionLoader.loadPreGeneratedRegions(serverLevel.getServer());
 			}
-			NPCPlacementManager.spawnForLevel(serverLevel);
 		}
 	}
 

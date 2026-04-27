@@ -184,6 +184,7 @@ public final class NPCPlacementManager {
 
 	private static void spawnOrUpdate(ServerLevel level, NPCPlacement placement) {
 		NPCPlacementSavedData placementData = NPCPlacementSavedData.get(level);
+		boolean overridePlacement = placement.override() || shouldForceManualSpawn(placement);
 		ResourceLocation entityId;
 		try {
 			entityId = ResourceLocation.parse(placement.entity());
@@ -204,7 +205,9 @@ public final class NPCPlacementManager {
 			if (placedUuid.isPresent()) {
 				Entity trackedEntity = level.getEntity(placedUuid.get());
 				if (trackedEntity == null) {
-					if (!placement.override()) {
+					ResolvedPosition pos = resolvePosition(level, placement);
+					MissingTrackedEntityAction action = resolveMissingTrackedEntity(isPlacementChunkLoaded(level, pos), overridePlacement);
+					if (action != MissingTrackedEntityAction.RESPAWN) {
 						return;
 					}
 					placementData.clear(placement.id());
@@ -216,7 +219,7 @@ public final class NPCPlacementManager {
 		}
 
 		if (existing != null && existing.getType() != entityType) {
-			if (!placement.override()) {
+			if (!overridePlacement) {
 				LogUtil.warn(Env.SERVER, "NPCPlacementManager: placement '{}' is tagged on entity type '{}' but expects '{}'",
 						placement.id(), existing.getType(), entityType);
 				return;
@@ -228,14 +231,14 @@ public final class NPCPlacementManager {
 
 		if (existing != null) {
 			placementData.markSpawned(placement.id(), existing.getUUID());
-			if (!placement.override()) {
+			if (!overridePlacement) {
 				applyPlacementMetadata(existing, placement);
 				return;
 			}
 		}
 
 		if (existing == null) {
-			if (!placement.override()) {
+			if (!overridePlacement) {
 				return;
 			}
 
@@ -336,6 +339,10 @@ public final class NPCPlacementManager {
 		return new ResolvedPosition(x, y, z);
 	}
 
+	private static boolean isPlacementChunkLoaded(ServerLevel level, ResolvedPosition pos) {
+		return level.isLoaded(BlockPos.containing(pos.x(), pos.y(), pos.z()));
+	}
+
 	private static void writeDefaultPlacements(Path file) throws IOException {
 		JsonObject root = new JsonObject();
 		root.addProperty("schema", 1);
@@ -355,10 +362,10 @@ public final class NPCPlacementManager {
 		addMasterInStructure(placements, "master_popo", "dragonminez:master_popo", "minecraft:overworld", "kamilookout", 0.0, 0.0, 0.0, true, 135);
 		addMasterInStructure(placements, "master_gero", "dragonminez:master_gero", "minecraft:overworld", "gero_lab", 0.0, 0.0, 0.0, true, 315);
 		addMasterInStructure(placements, "master_guru", "dragonminez:master_guru", "dragonminez:namek", "elder_guru", 0.0, 0.0, 0.0, true, 180);
-		addMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 54.5, 190, 1082.5, false, 180);
-		addMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 41, 66.5, false, 180);
-		addMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 6.5, 41, 53.5, false, 180);
-		addMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 190, 1079.5, false, 180);
+		addManualMaster(placements, "master_kaiosama", "dragonminez:master_kaiosama", "dragonminez:otherworld", false, 54.5, 190, 1082.5, false, 180);
+		addManualMaster(placements, "master_enma", "dragonminez:master_enma", "dragonminez:otherworld", false, 0.5, 41, 66.5, false, 180);
+		addManualMaster(placements, "master_baba", "dragonminez:master_uranai", "dragonminez:otherworld", false, 6.5, 41, 53.5, false, 180);
+		addManualMaster(placements, "master_toribot", "dragonminez:master_toribot", "dragonminez:otherworld", false, 50.5, 190, 1079.5, false, 180);
 
 		addQuestNPC(placements, "npc_bulma", "bulma", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "", "");
 		addQuestNPC(placements, "npc_krillin", "krillin", "minecraft:overworld", 0.0, 0.0, 0.0, 210, "saga_vegeta", "saga_krillin");
@@ -374,14 +381,14 @@ public final class NPCPlacementManager {
 		addQuestNPC(placements, "npc_farmer_01", "farmer_01", "minecraft:overworld", 0.0, 0.0, 0.0, 300, "", "");
 		addQuestNPC(placements, "npc_merchant_01", "merchant_01", "minecraft:overworld", 0.0, 0.0, 0.0, 60, "", "");
 		addQuestNPC(placements, "npc_scholar_01", "scholar_01", "minecraft:overworld", 0.0, 0.0, 0.0, 45, "", "");
-		addQuestNPC(placements, "npc_namek_elder", "namek_elder", "dragonminez:namek", 0.0, 0.0, 0.0, 180, "master_guru", "master_guru");
 
 		return placements;
 	}
 
-	private static void addMaster(JsonArray placements, String id, String entity, String dimension,
-								  boolean relativeToSpawn, double x, double y, double z, boolean surface, float yaw) {
+	private static void addManualMaster(JsonArray placements, String id, String entity, String dimension,
+									 boolean relativeToSpawn, double x, double y, double z, boolean surface, float yaw) {
 		JsonObject placement = basePlacement(id, entity, dimension, relativeToSpawn, x, y, z, surface, yaw);
+		placement.addProperty("override", true);
 		placements.add(placement);
 	}
 
@@ -455,6 +462,30 @@ public final class NPCPlacementManager {
 			return null;
 		}
 		return json.get(key).getAsInt();
+	}
+
+	private static boolean shouldForceManualSpawn(NPCPlacement placement) {
+		if (!"dragonminez:otherworld".equals(placement.dimension().location().toString())) {
+			return false;
+		}
+
+		return switch (placement.id()) {
+			case "master_kaiosama", "master_enma", "master_baba", "master_toribot" -> true;
+			default -> false;
+		};
+	}
+
+	static MissingTrackedEntityAction resolveMissingTrackedEntity(boolean placementChunkLoaded, boolean overridePlacement) {
+		if (!placementChunkLoaded) {
+			return MissingTrackedEntityAction.WAIT_FOR_CHUNK;
+		}
+		return overridePlacement ? MissingTrackedEntityAction.RESPAWN : MissingTrackedEntityAction.SKIP;
+	}
+
+	enum MissingTrackedEntityAction {
+		WAIT_FOR_CHUNK,
+		RESPAWN,
+		SKIP
 	}
 
 	private record NPCPlacement(String id, String entity, ResourceKey<Level> dimension, @Nullable String npcId,
