@@ -205,6 +205,12 @@ public class TickHandler {
 						data.getStatus().setScouterItem(scouterItem);
 				} else if (!data.getStatus().getScouterItem().isEmpty()) data.getStatus().setScouterItem("");
 
+				boolean hasPothala = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getDescriptionId().contains("pothala");
+				if (hasPothala) {
+					boolean isGreenPothala = serverPlayer.getItemBySlot(EquipmentSlot.HEAD).getItem().getDescriptionId().contains("green");
+					data.getStatus().setPothalaColor(isGreenPothala ? "green" : "yellow");
+				} else if (!data.getStatus().getPothalaColor().isEmpty()) data.getStatus().setPothalaColor("");
+
 			}
 
 			for (IStatusEffectHandler handler : STATUS_EFFECT_HANDLERS) {

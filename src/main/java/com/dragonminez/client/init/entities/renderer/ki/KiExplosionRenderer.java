@@ -39,8 +39,9 @@ public class KiExplosionRenderer extends EntityRenderer<KiExplosionEntity> {
             } else {
                 int activeTicks = entity.tickCount - entity.getFireTick();
                 scale = entity.getSize() + (activeTicks * 0.4f);
-                if (scale > entity.getMaxRadius()) {
-                    scale = entity.getMaxRadius();
+                float limit = Math.max(entity.getMaxRadius(), entity.getSize() * 5.0f);
+                if (scale > limit) {
+                    scale = limit;
                 }
             }
 

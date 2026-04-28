@@ -31,6 +31,7 @@ public class TechniqueChargeOverlay {
 
 			TechniqueData selectedTechnique = data.getTechniques().getSelectedTechnique();
 			if (!(selectedTechnique instanceof KiAttackData kiAttack)) return;
+			if (selectedTechnique.getCastTime() < 1) return;
 
 			int x = (width - 223) / 2;
 			int y = height - 72;

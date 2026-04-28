@@ -33,9 +33,6 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     private static final EntityDataAccessor<Integer> CAST_EXPLOSION = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
 
-    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> FIRE_TICK = SynchedEntityData.defineId(KiExplosionEntity.class, EntityDataSerializers.INT);
-
     public KiExplosionEntity(EntityType<? extends KiExplosionEntity> type, Level level) {
         super(type, level);
         this.setNoGravity(true);
@@ -110,8 +107,6 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         this.entityData.define(MAX_RADIUS, 15.0f);
         this.entityData.define(OWNER_ID, -1);
         this.entityData.define(CAST_EXPLOSION, 100);
-        this.entityData.define(IS_FIRING, false);
-        this.entityData.define(FIRE_TICK, -1);
     }
 
     @Override
@@ -307,10 +302,6 @@ public class KiExplosionEntity extends AbstractKiProjectile {
     public float getMaxRadius() { return this.entityData.get(MAX_RADIUS); }
     public void setCastExplosion(int ticks) { this.entityData.set(CAST_EXPLOSION, ticks); }
     public int getCastExplosion() { return this.entityData.get(CAST_EXPLOSION); }
-    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
-    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
-    public int getFireTick() { return this.entityData.get(FIRE_TICK); }
-    public void setFireTick(int tick) { this.entityData.set(FIRE_TICK, tick); }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {

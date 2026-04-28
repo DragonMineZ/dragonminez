@@ -34,6 +34,8 @@ public abstract class AbstractKiProjectile extends Projectile {
     private static final EntityDataAccessor<Boolean> IS_HEAL = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> MAX_LIFE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> KI_TYPE = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> FIRE_TICK = SynchedEntityData.defineId(AbstractKiProjectile.class, EntityDataSerializers.INT);
 
     private transient float[] cachedColorMainRgb;
     private transient float[] cachedColorBorderRgb;
@@ -136,7 +138,8 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.entityData.define(MAX_LIFE, 100);
         this.entityData.define(IS_HEAL, false);
         this.entityData.define(KI_TYPE, KiType.SMALL_BALL.ordinal());
-
+        this.entityData.define(IS_FIRING, false);
+        this.entityData.define(FIRE_TICK, -1);
     }
 
     @Override
@@ -226,6 +229,11 @@ public abstract class AbstractKiProjectile extends Projectile {
     public void setMaxLife(int lifeInTicks) {this.entityData.set(MAX_LIFE, lifeInTicks); }
     public int getMaxLife() {return this.entityData.get(MAX_LIFE); }
 
+    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
+    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
+    public int getFireTick() { return this.entityData.get(FIRE_TICK); }
+    public void setFireTick(int tick) { this.entityData.set(FIRE_TICK, tick); }
+
     @Override
     protected void addAdditionalSaveData(CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
@@ -238,6 +246,8 @@ public abstract class AbstractKiProjectile extends Projectile {
         pCompound.putString("TechniqueId", getTechniqueId());
         pCompound.putInt("ArmorPenetration", getArmorPenetration());
         pCompound.putBoolean("IsHeal", isHeal());
+        pCompound.putBoolean("IsFiring", isFiring());
+        pCompound.putInt("FireTick", getFireTick());
     }
 
     @Override
@@ -253,6 +263,8 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (pCompound.contains("TechniqueId")) setTechniqueId(pCompound.getString("TechniqueId"));
         if (pCompound.contains("ArmorPenetration")) setArmorPenetration(pCompound.getInt("ArmorPenetration"));
         if (pCompound.contains("IsHeal")) setHeal(pCompound.getBoolean("IsHeal"));
+        if (pCompound.contains("IsFiring")) setFiring(pCompound.getBoolean("IsFiring"));
+        if (pCompound.contains("FireTick")) setFireTick(pCompound.getInt("FireTick"));
     }
 
     @Override

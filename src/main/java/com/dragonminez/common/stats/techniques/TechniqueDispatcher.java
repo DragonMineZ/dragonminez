@@ -14,23 +14,17 @@ public class TechniqueDispatcher {
 	public static boolean executeKiAttack(LivingEntity owner, Level level, KiAttackData data, StatsData statsData, float chargeMultiplier) {
 		if (level.isClientSide) return false;
 
-        boolean isInitialSpawn = chargeMultiplier < 0.5f;
+		boolean isInitialSpawn = chargeMultiplier < 0.5f;
 		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
 
 		double cost = data.getCalculatedCost() * clampedCharge;
-        if (isInitialSpawn) {
-            if (statsData.getResources().getCurrentEnergy() < (data.getCalculatedCost() * 0.5)) {
-                return false;
-            }
-        } else {
-            if (statsData.getResources().getCurrentEnergy() < cost) {
-                return false;
-            }
-            statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
-        }
+		if (isInitialSpawn) if (statsData.getResources().getCurrentEnergy() < (data.getCalculatedCost() * 0.5)) return false;
+		else {
+			if (statsData.getResources().getCurrentEnergy() < cost) return false;
+			statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
+		}
 
 		float realDamage = (float) (statsData.getKiDamage() * data.getDamageMultiplier() * clampedCharge);
-
 		int maxLife = resolvePlayerMaxLifeTicks(data, clampedCharge);
 		boolean isHeal = (data.getUtility() == KiAttackData.Utility.HEAL);
 
@@ -41,10 +35,12 @@ public class TechniqueDispatcher {
                 wave.setKiDamage(realDamage);
                 wave.fireHability(maxLife);
                 return true;
-            } else if (activeKi instanceof KiBlastEntity blast) {
-                blast.setKiDamage(realDamage);
-                blast.fireHability(maxLife);
-                return true;
+			} else if (activeKi instanceof KiBlastEntity blast) {
+				blast.setKiDamage(realDamage);
+				blast.fireHability(maxLife);
+				Vec3 lookBlast = owner.getLookAngle();
+				blast.setDeltaMovement(lookBlast.scale(data.getSpeed()));
+				return true;
             } else if (activeKi instanceof KiLaserEntity laser) {
                 laser.setKiDamage(realDamage);
                 laser.fireHability(maxLife);
@@ -67,12 +63,39 @@ public class TechniqueDispatcher {
 
 		switch (data.getKiType()) {
 			case SMALL_BALL:
+				if (!isInitialSpawn) return true;
+
+				double instantCost = data.getCalculatedCost();
+				if (statsData.getResources().getCurrentEnergy() < instantCost) return false;
+
+				statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - instantCost));
+
 				KiBlastEntity smallBall = new KiBlastEntity(level, owner);
-				smallBall.setupKiSmall(owner, realDamage, data.getSpeed(), data.getColorExterior());
+
+				smallBall.setOwner(owner);
+				smallBall.setKiRenderType(0);
+				smallBall.setSize(0.8F);
+				smallBall.setKiSpeed(data.getSpeed());
+				smallBall.setKiDamage(realDamage);
+				smallBall.setColors(data.getColorExterior(), data.getColorExterior(), 0xFFFFFF);
+				smallBall.setCastTime(0);
 				smallBall.setMaxLife(maxLife);
 				smallBall.setTechniqueId(data.getId());
 				smallBall.setArmorPenetration(data.getArmorPenetration());
 				smallBall.setHeal(isHeal);
+				smallBall.setFiring(true);
+
+				Vec3 lookSmall = owner.getLookAngle();
+				Vec3 spawnPos = owner.getEyePosition().add(lookSmall.scale(0.5D));
+				smallBall.setPos(spawnPos.x, spawnPos.y - 0.2D, spawnPos.z);
+				smallBall.setDeltaMovement(lookSmall.scale(data.getSpeed()));
+				smallBall.setYRot(owner.getYRot());
+				smallBall.setXRot(owner.getXRot());
+
+				if (!level.isClientSide) {
+					smallBall.playInitialSound(com.dragonminez.common.init.MainSounds.KIBLAST_ATTACK.get());
+					level.addFreshEntity(smallBall);
+				}
 				break;
 			case MEDIUM_BALL:
 				KiBlastEntity medBall = new KiBlastEntity(level, owner);
@@ -81,9 +104,7 @@ public class TechniqueDispatcher {
 				medBall.setArmorPenetration(data.getArmorPenetration());
 				medBall.setHeal(isHeal);
 
-                if (!level.isClientSide) {
-                    level.addFreshEntity(medBall); // <--- SOLO EL SERVER LA CREA
-                }
+                if (!level.isClientSide) level.addFreshEntity(medBall);
 				break;
 			case GIANT_BALL:
 				KiBlastEntity giantBall = new KiBlastEntity(level, owner);
@@ -100,9 +121,8 @@ public class TechniqueDispatcher {
 				giantBall.setArmorPenetration(data.getArmorPenetration());
 				giantBall.setHeal(isHeal);
 
-                if (!level.isClientSide) {
-                    level.addFreshEntity(giantBall);
-                }
+
+				if (!level.isClientSide) level.addFreshEntity(giantBall);
 				break;
             case WAVE:
                 KiWaveEntity wave = new KiWaveEntity(level, owner);
@@ -123,11 +143,9 @@ public class TechniqueDispatcher {
                 if (isInitialSpawn) {
                     wave.setFiring(false);
                     wave.setMaxLife(99999);
-                } else {
-                    wave.setFiring(true);
-                }
+                } else wave.setFiring(true);
 
-                level.addFreshEntity(wave);
+				if (!level.isClientSide) level.addFreshEntity(wave);
                 break;
 			case LASER:
                 KiLaserEntity laser = new KiLaserEntity(level, owner);
@@ -135,9 +153,7 @@ public class TechniqueDispatcher {
                 laser.setTechniqueId(data.getId());
                 laser.setArmorPenetration(data.getArmorPenetration());
                 laser.setHeal(isHeal);
-                if (!level.isClientSide) {
-                    level.addFreshEntity(laser);
-                }
+                if (!level.isClientSide) level.addFreshEntity(laser);
                 break;
 			case BEAM:
                 KiLaserEntity beam = new KiLaserEntity(level, owner);
@@ -145,9 +161,8 @@ public class TechniqueDispatcher {
                 beam.setTechniqueId(data.getId());
                 beam.setArmorPenetration(data.getArmorPenetration());
                 beam.setHeal(isHeal);
-                if (!level.isClientSide) {
-                    level.addFreshEntity(beam);
-                }
+
+                if (!level.isClientSide) level.addFreshEntity(beam);
                 break;
 			case DISK:
                 KiDiskEntity disk = new KiDiskEntity(level, owner);
@@ -156,20 +171,16 @@ public class TechniqueDispatcher {
                 disk.setArmorPenetration(data.getArmorPenetration());
                 disk.setHeal(isHeal);
 
-                if (!level.isClientSide) {
-                    level.addFreshEntity(disk);
-                }
+                if (!level.isClientSide) level.addFreshEntity(disk);
                 break;
-			case SHIELD: //Cambiar este luego xd
+			case SHIELD:
                 KiBarrierEntity barrier = new KiBarrierEntity(level, owner);
                 barrier.setupBarrierPlayer(owner, realDamage, data.getSize(), data.getColorInterior(), data.getColorExterior());
                 barrier.setTechniqueId(data.getId());
                 barrier.setArmorPenetration(data.getArmorPenetration());
                 barrier.setHeal(isHeal);
 
-                if (!level.isClientSide) {
-                    level.addFreshEntity(barrier);
-                }
+                if (!level.isClientSide) level.addFreshEntity(barrier);
 				break;
 			case EXPLOSION:
                 KiExplosionEntity explosion = new KiExplosionEntity(level, owner);
@@ -178,9 +189,7 @@ public class TechniqueDispatcher {
                 explosion.setArmorPenetration(data.getArmorPenetration());
                 explosion.setHeal(isHeal);
 
-                if (!level.isClientSide) {
-                    level.addFreshEntity(explosion);
-                }
+                if (!level.isClientSide) level.addFreshEntity(explosion);
                 break;
 			case AREA: //Cambiar este luego xd
                 KiExplosionEntity areaDrop = new KiExplosionEntity(level, owner);
@@ -189,9 +198,7 @@ public class TechniqueDispatcher {
                 areaDrop.setArmorPenetration(data.getArmorPenetration());
                 areaDrop.setHeal(isHeal);
 
-                if (!level.isClientSide) {
-                    level.addFreshEntity(areaDrop);
-                }
+                if (!level.isClientSide) level.addFreshEntity(areaDrop);
                 break;
 			case BARRAGE:
 				Vec3 look = owner.getLookAngle();
@@ -203,7 +210,7 @@ public class TechniqueDispatcher {
 					KiBarrageEntity barrage = new KiBarrageEntity(level, owner);
 					barrage.setup(owner, realDamage / offsets.length, data.getSize(), data.getSpeed(), data.getColorInterior(), data.getColorExterior());
 
-					Vec3 spawnPos = owner.getEyePosition().add(look.scale(0.5))
+					spawnPos = owner.getEyePosition().add(look.scale(0.5))
 							.add(right.scale(offsets[i][0]))
 							.add(up.scale(offsets[i][1]));
 					barrage.setPos(spawnPos.x, spawnPos.y, spawnPos.z);

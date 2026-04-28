@@ -564,7 +564,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         boolean isFiring = this.isFiring();
 
-        if (!isFiring || this.getKiRenderType() == 9 || this.getKiRenderType() == 10) {
+        if ((!isFiring && this.getCastTime() > 0) || this.getKiRenderType() == 9 || this.getKiRenderType() == 10) {
             var owner = this.getOwner();
             if (owner instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
                 updatePositionRelativeToOwner(livingOwner);
@@ -577,7 +577,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
         super.tick();
 
-        if (!isFiring) {
+        if (!isFiring && this.getCastTime() > 0) {
             this.setDeltaMovement(0, 0, 0);
         }
     }

@@ -60,13 +60,14 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         });
     }
 
-    public void renderKiLaser(AbstractKiProjectile entity, float partialTick, PoseStack poseStack, Matrix4f proj, float alphaMultiplier) {
+    public void renderKiLaser(KiLaserEntity entity, float partialTick, PoseStack poseStack, Matrix4f proj, float alphaMultiplier) {
         float[] coreColor = entity.getRgbColorMain();
         float[] borderColor = entity.getRgbColorBorder();
         float[] outlineColor = entity.getRgbColorOutline();
 
-        float radius = entity.getSize() * 0.4f;
-        float length = entity.getSize() * 6.0F; // LONGITUD ESTATICA PARA QUE PAREZCA PROYECTIL VOLADOR
+        float radius = entity.getSize() * 0.08f;
+        boolean isFiring = entity.isFiring();
+        float length = isFiring ? entity.getBeamLength() : radius;
         float ageInTicks = entity.tickCount + partialTick;
 
         float yaw = entity.getYRot();
@@ -81,7 +82,7 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         shader.safeGetUniform("time").set(ageInTicks / 20.0f);
         shader.safeGetUniform("ProjMat").set(proj);
 
-        VertexBuffer mesh = KiMeshFactory.getCylinderMesh();
+        VertexBuffer mesh = isFiring ? KiMeshFactory.getCylinderMesh() : KiMeshFactory.getSphereMesh();
         mesh.bind();
 
         poseStack.pushPose();
@@ -89,13 +90,24 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
 
         poseStack.pushPose();
-        poseStack.scale(radius, radius, length);
+        if (isFiring) {
+            poseStack.scale(radius, radius, length);
+        } else {
+            float chargeScale = entity.getSize() * 0.16f;
+            poseStack.scale(chargeScale, chargeScale, chargeScale);
+        }
+
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
         shader.apply();
         mesh.drawWithShader(poseStack.last().pose(), proj, shader);
 
-        poseStack.scale(1.4f, 1.4f, 1.0f);
+        if (isFiring) {
+            poseStack.scale(1.4f, 1.4f, 1.0f);
+        } else {
+            poseStack.scale(1.25f, 1.25f, 1.25f);
+        }
+
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
         shader.apply();
@@ -108,8 +120,9 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
     }
 
     private void renderKiLaserAro(KiLaserEntity entity, float partialTick, PoseStack poseStack, Matrix4f proj, float alphaMultiplier) {
-        float length = entity.getSize() * 6.0F;
+        boolean isFiring = entity.isFiring();
         float width = entity.getSize() * 0.2f;
+        float length = isFiring ? entity.getBeamLength() : entity.getSize() * 0.08f;
 
         float yaw = entity.getYRot();
         float pitch = entity.getXRot();
@@ -122,15 +135,41 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         ShaderInstance shader = DMZShaders.ki3dShader;
         if (shader == null) return;
 
+        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
+        shader.safeGetUniform("ProjMat").set(proj);
         shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
         shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
         shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
-        shader.safeGetUniform("time").set(ageInTicks / 20.0f);
-        shader.safeGetUniform("ProjMat").set(proj);
 
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+
+        if (!isFiring) {
+            VertexBuffer sphereMesh = KiMeshFactory.getSphereMesh();
+            sphereMesh.bind();
+
+            poseStack.pushPose();
+            float chargeScale = entity.getSize() * 0.16f;
+            poseStack.scale(chargeScale, chargeScale, chargeScale);
+
+            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+            shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
+            shader.apply();
+            sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
+
+            poseStack.scale(1.25f, 1.25f, 1.25f);
+            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+            shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
+            shader.apply();
+            sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
+
+            poseStack.popPose();
+            VertexBuffer.unbind();
+            shader.clear();
+            poseStack.popPose();
+            return;
+        }
 
         VertexBuffer cylinderMesh = KiMeshFactory.getCylinderMesh();
         cylinderMesh.bind();
@@ -199,8 +238,9 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
     }
 
     private void renderKiMakkankosanpo(KiLaserEntity entity, float partialTick, PoseStack poseStack, Matrix4f proj, float alphaMultiplier) {
-        float length = entity.getSize() * 8.0F;
+        boolean isFiring = entity.isFiring();
         float width = entity.getSize() * 0.15f;
+        float length = isFiring ? entity.getBeamLength() : entity.getSize() * 0.08f;
 
         float yaw = entity.getYRot();
         float pitch = entity.getXRot();
@@ -210,27 +250,50 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
         float[] borderColor = entity.getRgbColorBorder();
         float[] outlineColor = entity.getRgbColorOutline();
 
-        float[] purpleColor = ColorUtils.rgbIntToFloat(0xEF00FF);
-        float[] brightnessPurple = ColorUtils.lightenColor(purpleColor, 0.6f);
-
         ShaderInstance shader = DMZShaders.ki3dShader;
         if (shader == null) return;
 
         shader.safeGetUniform("time").set(ageInTicks / 20.0f);
         shader.safeGetUniform("ProjMat").set(proj);
+        shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
+        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
+        shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
 
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+
+        if (!isFiring) {
+            VertexBuffer sphereMesh = KiMeshFactory.getSphereMesh();
+            sphereMesh.bind();
+
+            poseStack.pushPose();
+            float chargeScale = entity.getSize() * 0.16f;
+            poseStack.scale(chargeScale, chargeScale, chargeScale);
+
+            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+            shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
+            shader.apply();
+            sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
+
+            poseStack.scale(1.25f, 1.25f, 1.25f);
+            shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
+            shader.safeGetUniform("alphaMult").set(0.15f * alphaMultiplier);
+            shader.apply();
+            sphereMesh.drawWithShader(poseStack.last().pose(), proj, shader);
+
+            poseStack.popPose();
+            VertexBuffer.unbind();
+            shader.clear();
+            poseStack.popPose();
+            return;
+        }
 
         VertexBuffer cylinderMesh = KiMeshFactory.getCylinderMesh();
         cylinderMesh.bind();
 
         poseStack.pushPose();
         poseStack.scale(width, width, length);
-        shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
-        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
-        shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
         shader.apply();
@@ -263,10 +326,6 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
             poseStack.mulPose(Axis.ZP.rotationDegrees(angle1));
             poseStack.translate(0.0D, radius, 0.0D);
             poseStack.scale(aroGrosor * 1.3f, aroGrosor * 1.3f, segVisualLength);
-
-            shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
-            shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
-            shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
             shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
             shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
             shader.apply();
@@ -278,10 +337,6 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
             poseStack.mulPose(Axis.ZP.rotationDegrees(angle1 + 180.0f));
             poseStack.translate(0.0D, radius, 0.0D);
             poseStack.scale(aroGrosor, aroGrosor, segVisualLength);
-
-            shader.safeGetUniform("colorCore").set(brightnessPurple[0], brightnessPurple[1], brightnessPurple[2]);
-            shader.safeGetUniform("colorBorder").set(purpleColor[0], purpleColor[1], purpleColor[2]);
-            shader.safeGetUniform("colorOutline").set(purpleColor[0] * 0.5f, purpleColor[1] * 0.5f, purpleColor[2] * 0.5f);
             shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
             shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
             shader.apply();
@@ -296,12 +351,8 @@ public class KiLaserRenderer extends EntityRenderer<KiLaserEntity> {
 
         poseStack.pushPose();
         poseStack.translate(0.0D, 0.0D, length);
-        float endBallScale = width * 1.5f; // BOLA MUCHO MÁS PEQUEÑA
+        float endBallScale = width * 1.5f;
         poseStack.scale(endBallScale, endBallScale, endBallScale);
-
-        shader.safeGetUniform("colorCore").set(coreColor[0], coreColor[1], coreColor[2]);
-        shader.safeGetUniform("colorBorder").set(borderColor[0], borderColor[1], borderColor[2]);
-        shader.safeGetUniform("colorOutline").set(outlineColor[0], outlineColor[1], outlineColor[2]);
         shader.safeGetUniform("ModelViewMat").set(poseStack.last().pose());
         shader.safeGetUniform("alphaMult").set(1.0f * alphaMultiplier);
         shader.apply();

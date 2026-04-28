@@ -34,7 +34,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
     private static final EntityDataAccessor<Float> OFFSET_Y = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> OFFSET_Z = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.FLOAT);
 
-    private static final EntityDataAccessor<Boolean> IS_FIRING = SynchedEntityData.defineId(KiLaserEntity.class, EntityDataSerializers.BOOLEAN);
     private static final float MAX_RANGE = 250.0F;
 
     public KiLaserEntity(EntityType<? extends Projectile> pEntityType, Level pLevel) {
@@ -210,7 +209,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.entityData.define(OFFSET_X, 0.0F);
         this.entityData.define(OFFSET_Y, 0.0F);
         this.entityData.define(OFFSET_Z, 0.0F);
-        this.entityData.define(IS_FIRING, false);
     }
 
     public float getBeamLength() {return this.entityData.get(BEAM_LENGTH);}
@@ -224,8 +222,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
         this.entityData.set(OFFSET_Y, y);
         this.entityData.set(OFFSET_Z, z);
     }
-    public boolean isFiring() { return this.entityData.get(IS_FIRING); }
-    public void setFiring(boolean firing) { this.entityData.set(IS_FIRING, firing); }
 
     @Override
     public void tick() {
@@ -237,7 +233,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
         boolean isFiring = this.isFiring();
 
-        if (!isFiring) {
+        if (!isFiring && this.getCastTime() > 0) {
             if (this.getOwner() instanceof LivingEntity livingOwner && livingOwner.isAlive()) {
                 updatePositionRelativeToOwner(livingOwner);
                 this.setDeltaMovement(0, 0, 0);

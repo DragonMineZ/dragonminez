@@ -31,6 +31,7 @@ public class KiAttackData extends TechniqueData {
 
 	private int colorInterior;
 	private int colorExterior;
+	private int colorOutline;
 
 	private float damageMultiplier;
 	private float speed;
@@ -96,8 +97,11 @@ public class KiAttackData extends TechniqueData {
 		float tpBase = (80.0f + complexity * 200.0f) * typeMult * utilMult;
 		this.tpCost = Math.max(10, Math.round(tpBase));
 
-		float castBase = (8.0f + complexity * 12.0f) * (float) Math.sqrt(typeMult) * utilMult;
-		this.castTime = Math.max(5, Math.min(200, Math.round(castBase)));
+		if (this.kiType == KiType.SMALL_BALL) this.castTime = 0;
+		else {
+			float castBase = (8.0f + complexity * 12.0f) * (float) Math.sqrt(typeMult) * utilMult;
+			this.castTime = Math.max(5, Math.min(200, Math.round(castBase)));
+		}
 
 		float cdBase = (20.0f + complexity * 30.0f) * typeMult * utilMult;
 		this.cooldown = Math.max(10, Math.min(600, Math.round(cdBase)));
@@ -158,6 +162,7 @@ public class KiAttackData extends TechniqueData {
 		tag.putString("Utility", utility != null ? utility.name() : "");
 		tag.putInt("ColorInterior", colorInterior);
 		tag.putInt("ColorExterior", colorExterior);
+		tag.putInt("ColorOutline", colorOutline);
 		tag.putFloat("DamageMultiplier", damageMultiplier);
 		tag.putFloat("Speed", speed);
 		tag.putFloat("Size", size);
@@ -188,14 +193,14 @@ public class KiAttackData extends TechniqueData {
 
 		this.colorInterior = tag.getInt("ColorInterior");
 		this.colorExterior = tag.getInt("ColorExterior");
+		this.colorOutline = tag.getInt("ColorOutline");
 		this.damageMultiplier = tag.getFloat("DamageMultiplier");
 		this.speed = tag.getFloat("Speed");
 		this.size = tag.getFloat("Size");
 		this.armorPenetration = tag.getInt("ArmorPenetration");
 	}
 
-	public static float[] previewDerivedValues(KiType type, Utility util,
-											   float damage, float size, float speed, int armorPen) {
+	public static float[] previewDerivedValues(KiType type, Utility util, float damage, float size, float speed, int armorPen) {
 		float maxStat = 20.0f;
 		int maxArmorPen = 100;
 
@@ -212,7 +217,13 @@ public class KiAttackData extends TechniqueData {
 
 		float kiCost = Math.max(5, (float) ((10.0 + complexity * 40.0) * typeMult * utilMult));
 		float tpCostVal = Math.max(10, Math.round((80.0f + complexity * 200.0f) * typeMult * utilMult));
-		float castVal = Math.max(5, Math.min(200, Math.round((8.0f + complexity * 12.0f) * (float) Math.sqrt(typeMult) * utilMult)));
+
+		float castVal;
+		if (type == KiType.SMALL_BALL) castVal = 0;
+		else {
+			castVal = Math.max(5, Math.min(200, Math.round((8.0f + complexity * 12.0f) * (float) Math.sqrt(typeMult) * utilMult)));
+		}
+
 		float cdVal = Math.max(10, Math.min(600, Math.round((20.0f + complexity * 30.0f) * typeMult * utilMult)));
 
 		return new float[]{kiCost, tpCostVal, castVal, cdVal};
