@@ -24,9 +24,10 @@ public class CreateTechniqueC2S {
 	private final int cooldown;
 	private final int colorInterior;
 	private final int colorExterior;
+	private final int colorOutline;
 
 	public CreateTechniqueC2S(String name, String type, String utility, float damage, float speed, float size,
-							  int armorPen, int cast, int cooldown, int colorInterior, int colorExterior) {
+							  int armorPen, int cast, int cooldown, int colorInterior, int colorExterior, int colorOutline) {
 		this.name = name;
 		this.type = type;
 		this.utility = utility;
@@ -38,6 +39,7 @@ public class CreateTechniqueC2S {
 		this.cooldown = cooldown;
 		this.colorInterior = colorInterior;
 		this.colorExterior = colorExterior;
+		this.colorOutline = colorOutline;
 	}
 
 	public CreateTechniqueC2S(FriendlyByteBuf buf) {
@@ -52,6 +54,7 @@ public class CreateTechniqueC2S {
 		this.cooldown = buf.readInt();
 		this.colorInterior = buf.readInt();
 		this.colorExterior = buf.readInt();
+		this.colorOutline = buf.readInt();
 	}
 
 	public void toBytes(FriendlyByteBuf buf) {
@@ -66,6 +69,7 @@ public class CreateTechniqueC2S {
 		buf.writeInt(this.cooldown);
 		buf.writeInt(this.colorInterior);
 		buf.writeInt(this.colorExterior);
+		buf.writeInt(this.colorOutline);
 	}
 
 	public boolean handle(Supplier<NetworkEvent.Context> supplier) {
@@ -104,6 +108,7 @@ public class CreateTechniqueC2S {
 				technique.setCooldown(Mth.clamp(cooldown, 0, 400));
 				technique.setColorInterior(colorInterior & 0xFFFFFF);
 				technique.setColorExterior(colorExterior & 0xFFFFFF);
+				technique.setColorOutline(colorOutline & 0xFFFFFF);
 				technique.setAnimation("");
 				technique.calculateDerivedValues();
 

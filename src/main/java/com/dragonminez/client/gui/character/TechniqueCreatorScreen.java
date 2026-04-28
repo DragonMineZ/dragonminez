@@ -33,6 +33,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	private EditBox hexField;
 	private CustomTextureButton interiorColorButton;
 	private CustomTextureButton exteriorColorButton;
+	private CustomTextureButton outlineColorButton;
 	private CustomTextureButton utilityLeftArrow;
 	private CustomTextureButton utilityRightArrow;
 	private ColorSlider hueSlider;
@@ -56,6 +57,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 	private float tpCost = 120;
 	private int creatorColorInterior = 0xFFFFFF;
 	private int creatorColorExterior = 0x00AEEF;
+	private int creatorColorOutline = 0xFFFFFF;
 
 	public TechniqueCreatorScreen(Screen parent) {
 		super(Component.translatable("gui.dragonminez.skills.creator.title"));
@@ -92,7 +94,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		addAdjusters(x, y + 121, () -> creatorArmorPen = Mth.clamp(creatorArmorPen - 1, 0, 100), () -> creatorArmorPen = Mth.clamp(creatorArmorPen + 1, 0, 100));
 
 		interiorColorButton = new CustomTextureButton.Builder()
-				.position(x + 26, y + 160)
+				.position(x + 14, y + 160)
 				.size(20, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(42, 15, 42, 15)
@@ -103,7 +105,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		addRenderableWidget(interiorColorButton);
 
 		exteriorColorButton = new CustomTextureButton.Builder()
-				.position(x + 95, y + 160)
+				.position(x + 60, y + 160)
 				.size(20, 20)
 				.texture(BUTTONS_TEXTURE)
 				.textureCoords(42, 15, 42, 15)
@@ -112,6 +114,17 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				.onPress(btn -> showColorPicker("exterior"))
 				.build();
 		addRenderableWidget(exteriorColorButton);
+
+		outlineColorButton = new CustomTextureButton.Builder()
+				.position(x + 106, y + 160)
+				.size(20, 20)
+				.texture(BUTTONS_TEXTURE)
+				.textureCoords(42, 15, 42, 15)
+				.textureSize(5, 5)
+				.message(Component.empty())
+				.onPress(btn -> showColorPicker("outline"))
+				.build();
+		addRenderableWidget(outlineColorButton);
 
 		addRenderableWidget(new TexturedTextButton.Builder()
 				.position(x - 8, y + 215)
@@ -277,7 +290,7 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		colorTarget = target;
 		colorPickerVisible = true;
 
-		int color = "interior".equals(target) ? creatorColorInterior : creatorColorExterior;
+		int color = "interior".equals(target) ? creatorColorInterior : "exterior".equals(target) ? creatorColorExterior : creatorColorOutline;
 		float[] hsv = ColorUtils.rgbToHsv((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF);
 
 		updatingFromHex = true;
@@ -352,10 +365,13 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		applyColor(newColor);
 	}
 
+
+
 	private void applyColor(String hex) {
 		int color = ColorUtils.hexToInt(hex);
 		if ("interior".equals(colorTarget)) creatorColorInterior = color;
-		else creatorColorExterior = color;
+		else if ("exterior".equals(colorTarget)) creatorColorExterior = color;
+		else creatorColorOutline = color;
 	}
 
 	private void createSkill() {
@@ -374,7 +390,8 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 				creatorCast,
 				creatorCooldown,
 				creatorColorInterior,
-				creatorColorExterior
+				creatorColorExterior,
+				creatorColorOutline
 		));
 		onClose();
 	}
@@ -408,10 +425,12 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		rowY += 15;
 		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.valueOf(creatorCooldown))), x + 70, rowY, 0xFFFFFFFF);
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.interior"), x + 36, y + 155, 0xFFCCCCCC);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.exterior"), x + 105, y + 155, 0xFFCCCCCC);
-		graphics.fill(x + 30, y + 165, x + 42, y + 178, 0xFF000000 | creatorColorInterior);
-		graphics.fill(x + 99, y + 165, x + 111, y + 178, 0xFF000000 | creatorColorExterior);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.interior"), x + 24, y + 152, 0xFFCCCCCC);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.exterior"), x + 70, y + 152, 0xFFCCCCCC);
+		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.outline"), x + 116, y + 152, 0xFFCCCCCC);
+		graphics.fill(x + 18, y + 165, x + 30, y + 178, 0xFF000000 | creatorColorInterior);
+		graphics.fill(x + 64, y + 165, x + 76, y + 178, 0xFF000000 | creatorColorExterior);
+		graphics.fill(x + 110, y + 165, x + 122, y + 178, 0xFF000000 | creatorColorOutline);
 		drawStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.ki_cost_label"), x + 14, y + 180, 0xFFDDDDDD);
 		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(kiCost)), x + 98, y + 180, 0xFFDDDDDD);
 		drawStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.tp_cost_label"), x + 14, y + 190, 0xFFDDDDDD);
@@ -452,8 +471,9 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 
 			boolean insidePicker = uiMouseX >= sliderX - 5 && uiMouseX <= sliderX + pickerW + 5
 					&& uiMouseY >= sliderY - 5 && uiMouseY <= sliderY + pickerH + 5;
-			boolean insideColorButtons = (uiMouseX >= x + 26 && uiMouseX <= x + 46 && uiMouseY >= y + 160 && uiMouseY <= y + 180)
-					|| (uiMouseX >= x + 95 && uiMouseX <= x + 115 && uiMouseY >= y + 160 && uiMouseY <= y + 180);
+			boolean insideColorButtons = (uiMouseX >= x + 14 && uiMouseX <= x + 34 && uiMouseY >= y + 160 && uiMouseY <= y + 180)
+					|| (uiMouseX >= x + 60 && uiMouseX <= x + 80 && uiMouseY >= y + 160 && uiMouseY <= y + 180)
+					|| (uiMouseX >= x + 106 && uiMouseX <= x + 126 && uiMouseY >= y + 160 && uiMouseY <= y + 180);
 
 			if (!insidePicker && !insideColorButtons) {
 				hideColorPicker();

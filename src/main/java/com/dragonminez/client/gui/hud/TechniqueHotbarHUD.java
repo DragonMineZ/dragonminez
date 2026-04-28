@@ -22,13 +22,6 @@ public class TechniqueHotbarHUD {
 	private static final int SLOT_SIZE = 64;
 	private static final int ICON_SIZE = 64;
 	private static final int HOTBAR_TEXTURE_SIZE = 512;
-	private static final int HORIZONTAL_VISIBLE_HEIGHT = 132;
-	private static final int VERTICAL_VISIBLE_WIDTH = 168;
-	private static final int[] HORIZONTAL_SLOT_X = {64, 140, 224, 304, 384};
-	private static final int[] HORIZONTAL_SLOT_Y = {56, 48, 40, 48, 56};
-	private static final int VERTICAL_SLOT_START_X = 56;
-	private static final int VERTICAL_SLOT_START_Y = 64;
-	private static final int VERTICAL_SLOT_GAP = 16;
 
 	public static final IGuiOverlay HUD_TECHNIQUES = (forgeGui, guiGraphics, partialTicks, width, height) -> {
 		Minecraft mc = Minecraft.getInstance();
@@ -44,34 +37,40 @@ public class TechniqueHotbarHUD {
 			boolean horizontal = ConfigManager.getUserConfig().getTechniqueHotbarHorizontal();
 			ResourceLocation hotbarTexture = horizontal ? HORIZONTAL_TEXTURE : VERTICAL_TEXTURE;
 
+			int[] horizontalX = {64, 140, 224, 308, 384};
+			int[] horizontalY = {56, 48, 40, 48, 56};
+			int[] verticalX = {32, 24, 20, 24, 32};
+			int[] verticalY = {64, 144, 224, 312, 388};
+
+			int visibleWidth = horizontal ? 512 : 168;
+			int visibleHeight = horizontal ? 132 : 448;
+
 			RenderSystem.enableBlend();
 			RenderSystem.setShader(GameRenderer::getPositionTexShader);
 			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-			float hudScale = (float) (1.0d / Math.max(1.0d, mc.getWindow().getGuiScale()));
 
-			int visibleWidth = horizontal ? HOTBAR_TEXTURE_SIZE : VERTICAL_VISIBLE_WIDTH;
-			int visibleHeight = horizontal ? HORIZONTAL_VISIBLE_HEIGHT : HOTBAR_TEXTURE_SIZE;
+			float baseScale = horizontal ? 0.4f : 0.45f;
+			float maxAllowedWidth = width * (horizontal ? 0.45f : 0.25f);
+			float maxAllowedHeight = height * (horizontal ? 0.40f : 0.65f);
 
-			int hotbarScreenX = width - Math.round(visibleWidth * hudScale) - 8;
-			int hotbarScreenY = height - Math.round(visibleHeight * hudScale) - 8;
+			float scaleX = maxAllowedWidth / visibleWidth;
+			float scaleY = maxAllowedHeight / visibleHeight;
+
+			float hudScale = Math.min(baseScale, Math.min(scaleX, scaleY));
+
+			int scaledWidth = Math.round(visibleWidth * hudScale);
+			int scaledHeight = Math.round(visibleHeight * hudScale);
+
+			int hotbarScreenX = width - scaledWidth - 8;
+			int hotbarScreenY = horizontal ? height - scaledHeight - 8 : (height - scaledHeight) / 2;
 
 			guiGraphics.pose().pushPose();
 			guiGraphics.pose().translate(hotbarScreenX, hotbarScreenY, 0.0f);
 			guiGraphics.pose().scale(hudScale, hudScale, 1.0f);
 
-			int hotbarX = 0;
-			int hotbarY = 0;
-
 			for (int i = 0; i < visibleSlots; i++) {
-				int slotX;
-				int slotY;
-				if (horizontal) {
-					slotX = hotbarX + HORIZONTAL_SLOT_X[i];
-					slotY = hotbarY + HORIZONTAL_SLOT_Y[i];
-				} else {
-					slotX = hotbarX + VERTICAL_SLOT_START_X;
-					slotY = hotbarY + VERTICAL_SLOT_START_Y + i * (SLOT_SIZE + VERTICAL_SLOT_GAP);
-				}
+				int slotX = horizontal ? horizontalX[i] : verticalX[i];
+				int slotY = horizontal ? horizontalY[i] : verticalY[i];
 
 				String techId = slots[i];
 				if (techId != null && !techId.isEmpty()) {
@@ -83,6 +82,7 @@ public class TechniqueHotbarHUD {
 							int color = kiAttack.getColorExterior();
 							RenderSystem.setShaderColor(((color >> 16) & 255) / 255.0f, ((color >> 8) & 255) / 255.0f, (color & 255) / 255.0f, 1.0f);
 						}
+
 						RenderSystem.setShaderTexture(0, iconTexture);
 						int iconX = slotX + (SLOT_SIZE - ICON_SIZE) / 2;
 						int iconY = slotY + (SLOT_SIZE - ICON_SIZE) / 2;
@@ -93,7 +93,7 @@ public class TechniqueHotbarHUD {
 			}
 
 			RenderSystem.setShaderTexture(0, hotbarTexture);
-			guiGraphics.blit(hotbarTexture, hotbarX, hotbarY, 0, 0, HOTBAR_TEXTURE_SIZE, HOTBAR_TEXTURE_SIZE, HOTBAR_TEXTURE_SIZE, HOTBAR_TEXTURE_SIZE);
+			guiGraphics.blit(hotbarTexture, 0, 0, 0, 0, HOTBAR_TEXTURE_SIZE, HOTBAR_TEXTURE_SIZE, HOTBAR_TEXTURE_SIZE, HOTBAR_TEXTURE_SIZE);
 
 			guiGraphics.pose().popPose();
 		});
