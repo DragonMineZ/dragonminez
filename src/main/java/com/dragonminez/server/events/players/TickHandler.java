@@ -642,7 +642,7 @@ public class TickHandler {
 
 		List<AbstractKiProjectile> nearbyEntities = player.level().getEntitiesOfClass(
 				AbstractKiProjectile.class,
-				player.getBoundingBox().inflate(25.0D)
+				player.getBoundingBox().inflate(30.0D)
 		);
 
 		for (AbstractKiProjectile ki : nearbyEntities) {
@@ -665,6 +665,7 @@ public class TickHandler {
 		if (ki instanceof KiDiskEntity disk) return disk.isFiring();
 		if (ki instanceof KiExplosionEntity explosion) return explosion.isFiring();
 		if (ki instanceof KiBarrierEntity barrier) return barrier.isFiring();
+        if (ki instanceof KiAreaEntity area) return area.isFiring();
 		return false;
 	}
 

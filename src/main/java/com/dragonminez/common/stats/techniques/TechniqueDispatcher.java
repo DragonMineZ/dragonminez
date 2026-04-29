@@ -191,14 +191,36 @@ public class TechniqueDispatcher {
 
                 if (!level.isClientSide) level.addFreshEntity(explosion);
                 break;
-			case AREA: //Cambiar este luego xd
-                KiExplosionEntity areaDrop = new KiExplosionEntity(level, owner);
-                areaDrop.setupExplosionPlayer(owner, realDamage, data.getSize() * 1.5F, data.getColorInterior(), data.getColorExterior());
-                areaDrop.setTechniqueId(data.getId());
-                areaDrop.setArmorPenetration(data.getArmorPenetration());
-                areaDrop.setHeal(isHeal);
+			case AREA:
+                if (isInitialSpawn) {
+                    KiAreaEntity area = new KiAreaEntity(level, owner);
 
-                if (!level.isClientSide) level.addFreshEntity(areaDrop);
+                    area.setupAreaPlayer(
+                            owner,
+                            realDamage,
+                            data.getSize() * 1.5F,
+                            data.getColorInterior(),
+                            data.getColorExterior(),
+                            0xFFFFFF
+                    );
+
+                    area.setTechniqueId(data.getId());
+                    area.setArmorPenetration(data.getArmorPenetration());
+                    area.setHeal(isHeal);
+
+                    area.setFiring(false);
+                    area.setMaxLife(99999);
+
+                    if (!level.isClientSide) level.addFreshEntity(area);
+                } else {
+                    AbstractKiProjectile activeKi = getChargingKiEntity(owner, level);
+
+                    if (activeKi instanceof KiAreaEntity area) {
+                        area.setKiDamage(realDamage);
+                        area.fireHability(maxLife);
+                        return true;
+                    }
+                }
                 break;
 			case BARRAGE:
                 if (isInitialSpawn) {
@@ -237,27 +259,21 @@ public class TechniqueDispatcher {
     private static AbstractKiProjectile getChargingKiEntity(LivingEntity owner, Level level) {
         List<AbstractKiProjectile> nearby = level.getEntitiesOfClass(
                 AbstractKiProjectile.class,
-                owner.getBoundingBox().inflate(25.0D)
+                owner.getBoundingBox().inflate(30.0D)
         );
         for (AbstractKiProjectile ki : nearby) {
             if (ki.getOwner() != null && ki.getOwner().getUUID().equals(owner.getUUID())) {
-                if (ki instanceof KiWaveEntity wave && !wave.isFiring()) {
-                    return wave;
+                if (!ki.isFiring()) {
+                    return ki;
                 }
-                if (ki instanceof KiBlastEntity blast && !blast.isFiring()) {
-                    return blast;
-                }
-                if (ki instanceof KiLaserEntity laser && !laser.isFiring()) return laser;
-                if (ki instanceof KiDiskEntity disk && !disk.isFiring()) return disk;
-                if (ki instanceof KiExplosionEntity explosion && !explosion.isFiring()) return explosion;
-                if (ki instanceof KiBarrierEntity barrier && !barrier.isFiring()) return barrier;
             }
         }
         return null;
     }
 
 
-	private static int resolvePlayerMaxLifeTicks(KiAttackData data, float chargeMultiplier) {
+
+    private static int resolvePlayerMaxLifeTicks(KiAttackData data, float chargeMultiplier) {
 		int base = switch (data.getKiType()) {
 			case WAVE, LASER, BEAM -> 80;
 			case GIANT_BALL, EXPLOSION -> 120;

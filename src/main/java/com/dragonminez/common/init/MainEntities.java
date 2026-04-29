@@ -820,6 +820,15 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     .updateInterval(10)
                     .fireImmune()
                     .build("ki_explosion"));
+
+    public static final RegistryObject<EntityType<KiAreaEntity>> KI_AREA = ENTITY_TYPES.register("ki_area",
+            () -> EntityType.Builder.<KiAreaEntity>of(KiAreaEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(10)
+                    .updateInterval(3)
+                    .noSave()
+                    .build("ki_area"));
+
     public static final RegistryObject<EntityType<KiExplosionVisualEntity>> KI_EXPLOSION_VISUAL =
             ENTITY_TYPES.register("ki_explosion_visual",
                     () -> EntityType.Builder.<KiExplosionVisualEntity>of(KiExplosionVisualEntity::new, MobCategory.MISC)

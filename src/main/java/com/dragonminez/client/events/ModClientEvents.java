@@ -267,6 +267,7 @@ public class ModClientEvents {
         event.registerEntityRenderer(MainEntities.KI_DISC.get(), KiDiskRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_BARRIER.get(), KiBarrierRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_EXPLOSION_VISUAL.get(), KiExplosionVisualRenderer::new);
+        event.registerEntityRenderer(MainEntities.KI_AREA.get(), KiProjectileRenderer::new);
 
     }
 
