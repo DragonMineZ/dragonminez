@@ -3,6 +3,7 @@ package com.dragonminez.common.init.block.custom;
 import com.dragonminez.common.dragonball.DragonBallDefinitions;
 import com.dragonminez.common.dragonball.DragonBallSetDefinition;
 import com.dragonminez.common.dragonball.DragonDefinition;
+import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.block.entity.DragonBallBlockEntity;
 import com.dragonminez.server.events.DragonBallsHandler;
@@ -28,6 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,8 +103,17 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 			List<BlockPos> consumedPositions = removeAllDragonBalls(level, pos, ballSetDefinition);
 			if (level instanceof ServerLevel serverLevel) {
 				DragonBallsHandler.unregisterConsumedDragonBalls(serverLevel, consumedPositions, ballSetId);
-				summonDragon(serverLevel, pos, player, dragonDefinition);
-				serverLevel.playSound(null, pos, MainSounds.SHENRON.get(), SoundSource.AMBIENT, 1.0F, 1.0F);
+				if (summonDragon(serverLevel, pos, player, dragonDefinition)) {
+					MinecraftForge.EVENT_BUS.post(new DMZEvent.DragonSummonedEvent(
+							player,
+							serverLevel,
+							pos,
+							dragonDefinition,
+							ballSetDefinition,
+							consumedPositions
+					));
+					serverLevel.playSound(null, pos, MainSounds.SHENRON.get(), SoundSource.AMBIENT, 1.0F, 1.0F);
+				}
 			}
 			return InteractionResult.CONSUME;
 		}
@@ -110,15 +121,15 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 		return InteractionResult.PASS;
 	}
 
-	private void summonDragon(ServerLevel serverLevel, BlockPos pos, Player player, DragonDefinition dragonDefinition) {
+	private boolean summonDragon(ServerLevel serverLevel, BlockPos pos, Player player, DragonDefinition dragonDefinition) {
 		EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.fromNamespaceAndPath("dragonminez", dragonDefinition.getId()));
 		if (entityType == null) {
-			return;
+			return false;
 		}
 
 		var entity = entityType.create(serverLevel);
 		if (!(entity instanceof com.dragonminez.common.init.entities.dragon.DragonWishEntity dragon)) {
-			return;
+			return false;
 		}
 
 		dragon.setDragonDefinitionId(dragonDefinition.getId());
@@ -126,7 +137,7 @@ public class DragonBallBlock extends BaseEntityBlock implements EntityBlock {
 		dragon.setInvokingTime(serverLevel.getDayTime());
 		dragon.setGrantedWish(false);
 		dragon.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0F, 0.0F);
-		serverLevel.addFreshEntity(dragon);
+		return serverLevel.addFreshEntity(dragon);
 	}
 
 	private boolean areAllDragonBallsNearby(Level level, BlockPos pos, DragonBallSetDefinition setDefinition) {

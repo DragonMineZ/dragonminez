@@ -1,10 +1,14 @@
 package com.dragonminez.common.events;
 
+import com.dragonminez.common.dragonball.DragonBallSetDefinition;
+import com.dragonminez.common.dragonball.DragonDefinition;
 import com.dragonminez.common.quest.Quest;
 import com.dragonminez.common.quest.Saga;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -199,6 +203,39 @@ public abstract class DMZEvent extends Event {
 
 		public enum FusionType {
 			METAMORU, POTHALA, ABSORPTION, ASSIMILATION
+		}
+	}
+
+	/**
+	 * Event fired after a dragon has been successfully summoned from a complete Dragon Ball set.
+	 */
+	@Getter
+	public static class DragonSummonedEvent extends Event {
+		private final Player player;
+		private final ServerLevel level;
+		private final BlockPos position;
+		private final DragonDefinition dragonDefinition;
+		private final DragonBallSetDefinition ballSetDefinition;
+		private final List<BlockPos> consumedPositions;
+
+		public DragonSummonedEvent(Player player, ServerLevel level, BlockPos position, DragonDefinition dragonDefinition,
+								  DragonBallSetDefinition ballSetDefinition, List<BlockPos> consumedPositions) {
+			this.player = player;
+			this.level = level;
+			this.position = position != null ? position.immutable() : BlockPos.ZERO;
+			this.dragonDefinition = dragonDefinition;
+			this.ballSetDefinition = ballSetDefinition;
+			this.consumedPositions = consumedPositions == null
+					? List.of()
+					: consumedPositions.stream().map(BlockPos::immutable).toList();
+		}
+
+		public String getDragonId() {
+			return dragonDefinition != null ? dragonDefinition.getId() : "";
+		}
+
+		public String getBallSetId() {
+			return ballSetDefinition != null ? ballSetDefinition.getId() : "";
 		}
 	}
 

@@ -46,7 +46,8 @@ public abstract class QuestObjective {
         BIOME,
         DIMENSION,
         COORDS,
-        TALK_TO
+        TALK_TO,
+        DRAGON_SUMMON
     }
 }
 

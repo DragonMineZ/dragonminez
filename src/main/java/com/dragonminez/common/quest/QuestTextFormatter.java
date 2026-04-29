@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.common.quest.objectives.BiomeObjective;
 import com.dragonminez.common.quest.objectives.CoordsObjective;
 import com.dragonminez.common.quest.objectives.DimensionObjective;
+import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
@@ -31,6 +32,7 @@ public final class QuestTextFormatter {
 	private static final String OBJECTIVE_TALK_TO = "dmz.quest.talk_to.obj";
 	private static final String OBJECTIVE_GO_TO = "dmz.quest.go_to.obj";
 	private static final String OBJECTIVE_INTERACT = "dmz.quest.interact.obj";
+	private static final String OBJECTIVE_SUMMON_DRAGON = "dmz.quest.summon_dragon.obj";
 
 	private static final Pattern NPC_VARIANT_SUFFIX = Pattern.compile("^(.+?)_\\d+$");
 
@@ -71,6 +73,9 @@ public final class QuestTextFormatter {
 		}
 		if (objective instanceof InteractObjective interact) {
 			return Component.translatable(OBJECTIVE_INTERACT, resolveInteractTarget(interact));
+		}
+		if (objective instanceof DragonSummonObjective dragonSummon) {
+			return Component.translatable(OBJECTIVE_SUMMON_DRAGON, resolveDragonName(dragonSummon.getDragonId()));
 		}
 		if (objective instanceof StructureObjective structure) {
 			return Component.translatable(OBJECTIVE_GO_TO, resolveStructureName(structure.getStructureId()));
@@ -184,6 +189,14 @@ public final class QuestTextFormatter {
 			return resolveEntityName(interact.getEntityTypeId());
 		}
 		return Component.literal("?");
+	}
+
+	private static Component resolveDragonName(String dragonId) {
+		if (dragonId == null || dragonId.isBlank()) {
+			return Component.literal("the dragon");
+		}
+		String entityId = dragonId.contains(":") ? dragonId : "dragonminez:" + dragonId;
+		return resolveEntityName(entityId);
 	}
 
 	private static Component resolveEntityName(String entityId) {

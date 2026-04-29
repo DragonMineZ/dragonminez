@@ -45,9 +45,11 @@ import org.jspecify.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @OnlyIn(Dist.CLIENT)
@@ -97,6 +99,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 
 	// Navigator (left panel) scrolling
 	private final List<NavigatorEntry> navigatorEntries = new ArrayList<>();
+	private final Set<String> expandedSideBranches = new HashSet<>();
 	private int navScrollOffset = 0;
 	private int navMaxScroll = 0;
 
@@ -177,6 +180,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		boolean isPlaceholderSaga() {
 			return type == NavEntryType.SAGA && saga == null && sagaId != null;
 		}
+	}
+
+	private boolean isReachableNavigatorQuest(Quest quest) {
+		return getNodeVisibility(quest) == NodeVisibility.VISIBLE && getNodeStatus(quest) != QuestNodeStatus.LOCKED;
 	}
 
 	private record PartyInviteEntry(UUID playerId, String playerName) {
@@ -401,25 +408,28 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		List<Quest> children = sideBranches.get(questProgressKey(saga, parentQuest));
 		if (children == null || children.isEmpty()) return;
 		for (Quest child : children) {
-			if (getNodeVisibility(child) != NodeVisibility.VISIBLE) {
+			if (!isReachableNavigatorQuest(child)) {
 				continue;
 			}
 			navigatorEntries.add(new NavigatorEntry(NavEntryType.SIDE_QUEST, depth, saga, child,
 					null, null, false));
-			addSideBranchEntries(child, sideBranches, saga, depth + 1);
+			if (isSideBranchExpanded(saga, child)) {
+				addSideBranchEntries(child, sideBranches, saga, depth + 1);
+			}
 		}
 	}
 
 	private void appendCurrentSagaQuestEntries(Saga currentSaga) {
 		Map<String, List<Quest>> sideBranches = buildSideBranchesForSaga(currentSaga);
 		for (Quest mainQuest : currentSaga.getQuests()) {
-			NodeVisibility visibility = getNodeVisibility(mainQuest);
-			if (visibility == NodeVisibility.HIDDEN || visibility == NodeVisibility.BLURRED) {
+			if (!isReachableNavigatorQuest(mainQuest)) {
 				continue;
 			}
 			navigatorEntries.add(new NavigatorEntry(NavEntryType.MAIN_QUEST, 1, currentSaga, mainQuest,
 					null, null, false));
-			addSideBranchEntries(mainQuest, sideBranches, currentSaga, 2);
+			if (isSideBranchExpanded(currentSaga, mainQuest)) {
+				addSideBranchEntries(mainQuest, sideBranches, currentSaga, 2);
+			}
 		}
 		appendSecretSideQuestEntries(currentSaga);
 	}
@@ -487,6 +497,28 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return true;
 	}
 
+	private Component getSagaLockTooltip(Saga saga) {
+		if (saga == null || isSagaUnlockedByPreviousCompletion(saga) || saga.getRequirements() == null) {
+			return null;
+		}
+
+		String previousSagaId = saga.getRequirements().previousSagaId();
+		if (previousSagaId == null || previousSagaId.isBlank()) {
+			return null;
+		}
+
+		Saga previousSaga = QuestRegistry.getClientSagas().get(previousSagaId);
+		String previousSagaName = previousSaga != null
+				? getSagaDisplayName(previousSaga)
+				: getSagaDisplayName(previousSagaId);
+		return tr("gui.dragonminez.quest_tree.saga_locked.tooltip", previousSagaName);
+	}
+
+	private String getSagaDisplayName(String sagaId) {
+		SagaCatalogEntry entry = getSagaCatalogEntry(sagaId);
+		return entry != null ? entry.label() : QuestTextFormatter.humanizeIdentifier(sagaId);
+	}
+
 	private boolean isSecretQuestDiscovered(Saga saga, Quest quest) {
 		if (statsData == null || saga == null || quest == null) return false;
 		PlayerQuestData pqd = statsData.getPlayerQuestData();
@@ -494,6 +526,34 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		if (pqd.isQuestCompleted(questKey)) return true;
 		PlayerQuestData.QuestStatus status = pqd.getQuestStatus(questKey);
 		return status == PlayerQuestData.QuestStatus.ACCEPTED || status == PlayerQuestData.QuestStatus.FAILED;
+	}
+
+	private boolean hasReachableSideBranch(Saga saga, Quest parentQuest) {
+		Map<String, List<Quest>> sideBranches = buildSideBranchesForSaga(saga);
+		return hasReachableSideBranch(saga, sideBranches, parentQuest);
+	}
+
+	private boolean hasReachableSideBranch(Saga saga, Map<String, List<Quest>> sideBranches, Quest parentQuest) {
+		List<Quest> children = sideBranches.get(questProgressKey(saga, parentQuest));
+		if (children == null || children.isEmpty()) return false;
+		for (Quest child : children) {
+			if (isReachableNavigatorQuest(child) || hasReachableSideBranch(saga, sideBranches, child)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean isSideBranchExpanded(Saga saga, Quest parentQuest) {
+		return expandedSideBranches.contains(questProgressKey(saga, parentQuest));
+	}
+
+	private void toggleSideBranch(Saga saga, Quest parentQuest) {
+		String key = questProgressKey(saga, parentQuest);
+		if (!expandedSideBranches.remove(key)) {
+			expandedSideBranches.add(key);
+		}
+		rebuildNavigatorEntries();
 	}
 
 	// ========================================================================================
@@ -951,6 +1011,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 						List.of(txt("Coming soon... Follow development in Discord!")),
 						mouseX,
 						mouseY);
+			} else if (hoveredEntry.type() == NavEntryType.SAGA && !hoveredEntry.isPlaceholderSaga()) {
+				Component lockTooltip = getSagaLockTooltip(hoveredEntry.saga());
+				if (lockTooltip != null) {
+					renderSimpleTooltip(graphics, List.of(lockTooltip), mouseX, mouseY);
+				}
 			} else if (hoveredEntry.type() == NavEntryType.SECRET_SECTION) {
 				renderSimpleTooltip(graphics,
 						List.of(tr("gui.dragonminez.quest_tree.secret_sidequests.tooltip")),
@@ -996,9 +1061,14 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			text = txt(clipped).withStyle(ChatFormatting.BOLD);
 		} else {
 			Quest q = entry.quest();
+			String branchPrefix = "";
+			if ((entry.type() == NavEntryType.MAIN_QUEST || entry.type() == NavEntryType.SIDE_QUEST)
+					&& hasReachableSideBranch(entry.saga(), q)) {
+				branchPrefix = isSideBranchExpanded(entry.saga(), q) ? "v " : "> ";
+			}
 			String label = q.isSideQuest()
-					? "- " + LocalizationUtil.localizedOrReadableText(q.getTitle())
-					: q.getId() + ". " + LocalizationUtil.localizedOrReadableText(q.getTitle());
+					? branchPrefix + "- " + LocalizationUtil.localizedOrReadableText(q.getTitle())
+					: branchPrefix + q.getId() + ". " + LocalizationUtil.localizedOrReadableText(q.getTitle());
 
 			int indent = entry.depth() * 10;
 			String clipped = fitSingleLineEllipsis(label, Math.max(24, rowWidth - indent - 8));
@@ -2247,6 +2317,10 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		if (entry.quest() != null) {
+			if ((entry.type() == NavEntryType.MAIN_QUEST || entry.type() == NavEntryType.SIDE_QUEST)
+					&& hasReachableSideBranch(entry.saga(), entry.quest())) {
+				toggleSideBranch(entry.saga(), entry.quest());
+			}
 			selectQuest(entry.quest(), true);
 			QuestTreeLayoutHelper.NodePosition node = findNodeForQuest(entry.quest());
 			if (node != null) slideToNode(node);
@@ -2428,7 +2502,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 				return NodeVisibility.VISIBLE;
 			}
 
-			return isImmediateLockedSagaQuest(saga, quest, pqd) ? NodeVisibility.BLURRED : NodeVisibility.HIDDEN;
+			return NodeVisibility.BLURRED;
 		}
 
 		if (quest.isSideQuest()) {
@@ -2439,7 +2513,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			}
 			return QuestAvailabilityChecker.isAvailable(quest, statsData)
 					? NodeVisibility.VISIBLE
-					: NodeVisibility.HIDDEN;
+					: NodeVisibility.BLURRED;
 		}
 
 		return NodeVisibility.HIDDEN;

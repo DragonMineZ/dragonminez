@@ -53,7 +53,7 @@ final class QuestDefaults {
 		createFriezaSagaQuests(questsDir);
 		createAndroidSagaQuests(questsDir);
 		createBuuSagaQuests(questsDir);
-		// createMoviesSagaQuests(questsDir);
+		createMoviesSagaQuests(questsDir);
 	}
 
 	// ---- Helpers ----
@@ -302,7 +302,7 @@ final class QuestDefaults {
 		return prereqs("AND", condSaga(sagaId, questId));
 	}
 
-	private static void writeLinearSaga(Path dir, String sagaId, String category, JsonObject firstPrereq, QuestStep... steps) {
+	private static void writeSaga(Path dir, String sagaId, String category, JsonObject firstPrereq, QuestStep... steps) {
 		for (int i = 0; i < steps.length; i++) {
 			QuestStep step = steps[i];
 			JsonObject prereq = i == 0 ? firstPrereq : prevQuest(sagaId, steps[i - 1].id());
@@ -320,7 +320,7 @@ final class QuestDefaults {
 	// ========================================================================================
 
 	private static void createSaiyanSagaQuests(Path questsDir) {
-		writeLinearSaga(questsDir.resolve("saga_saiyan"), "saiyan_saga", "saga_saiyan", null,
+		writeSaga(questsDir.resolve("saga_saiyan"), "saiyan_saga", "saga_saiyan", null,
 				step("saiyan", 1, "01_defeat_raditz.json",
 						earthReq(1, condBiome("minecraft:plains")),
 						new JsonObject[]{
@@ -377,7 +377,7 @@ final class QuestDefaults {
 
 	private static void createFriezaSagaQuests(Path questsDir) {
 		JsonObject prevSaiyan = prevQuest("saiyan_saga", 8);
-		writeLinearSaga(questsDir.resolve("saga_frieza"), "frieza_saga", "saga_frieza", prevSaiyan,
+		writeSaga(questsDir.resolve("saga_frieza"), "frieza_saga", "saga_frieza", prevSaiyan,
 				step("frieza", 1, "01_secure_namek_landing.json",
 						namekReq(100, condBiome("dragonminez:ajissa_plains")),
 						new JsonObject[]{
@@ -486,7 +486,7 @@ final class QuestDefaults {
 	private static void createAndroidSagaQuests(Path questsDir) {
 		JsonObject prevFrieza = prevQuest("frieza_saga", 16);
 
-		writeLinearSaga(questsDir.resolve("saga_android"), "android_saga", "saga_android", prevFrieza,
+		writeSaga(questsDir.resolve("saga_android"), "android_saga", "saga_android", prevFrieza,
 				step("android", 1, "01_defeat_mecha_frieza.json",
 						earthReq(440, condBiome("dragonminez:rocky")),
 						new JsonObject[]{
@@ -585,23 +585,31 @@ final class QuestDefaults {
 	// ========================================================================================
 
 	private static void createBuuSagaQuests(Path questsDir) {
-		Path dir = questsDir.resolve("saga_buu");
-		String s = "buu_saga", c = "saga_buu";
-		JsonObject prevAndroid = prevQuest("android_saga", 34);
+		JsonObject prevAndroid = prevQuest("android_saga", 15);
 
-//		writeLinearSaga(dir, s, c, prevAndroid,
-//
-//		);
+		writeSaga(questsDir.resolve("saga_buu"), "buu_saga", "saga_buu", prevAndroid,
+				step("buu", 1, "01_test_buu_saga.json",
+						earthReq(1400),
+						new JsonObject[]{
+								objKill("dragonminez:saga_kibito", 1, 10, 10000, 20000)
+						},
+						rewTPS(10))
+
+		);
 	}
 
 	private static void createMoviesSagaQuests(Path questsDir) {
-		 Path dir = questsDir.resolve("saga_movies");
-		 String s = "movies_saga", c = "saga_movies";
-		 JsonObject prevBuu = prevQuest("buu_saga", 40);
+		 JsonObject prevBuu = prevQuest("buu_saga", 1);
 
-//		 writeLinearSaga(dir, s, c, prevBuu,
-//
-//		 );
+		writeSaga(questsDir.resolve("saga_movies"), "movies_saga", "saga_movies", prevBuu,
+				step("buu", 1, "01_test_movies_saga.json",
+						earthReq(1400),
+						new JsonObject[]{
+								objKill("dragonminez:saga_kibito", 1, 10, 10000, 20000)
+						},
+						rewTPS(10))
+
+		);
 	}
 }
 

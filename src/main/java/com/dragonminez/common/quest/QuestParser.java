@@ -3,6 +3,7 @@ package com.dragonminez.common.quest;
 import com.dragonminez.common.quest.objectives.BiomeObjective;
 import com.dragonminez.common.quest.objectives.CoordsObjective;
 import com.dragonminez.common.quest.objectives.DimensionObjective;
+import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
@@ -162,6 +163,11 @@ public class QuestParser {
 				yield new InteractObjective(interactType, entityName);
 			}
 			case "STRUCTURE" -> new StructureObjective(json.get("structure").getAsString());
+			case "DRAGON_SUMMON" -> {
+				String dragonId = firstString(json, "dragon", "dragon_id", "dragonId");
+				String ballSetId = firstString(json, "ball_set", "ballSet", "ball_set_id", "ballSetId", "set");
+				yield new DragonSummonObjective(dragonId, ballSetId);
+			}
 			case "TALK_TO" -> {
 				String npcId = json.has("npcId") ? json.get("npcId").getAsString() : null;
 				yield npcId != null ? new TalkToObjective(npcId) : null;
@@ -254,6 +260,18 @@ public class QuestParser {
 		} catch (IllegalArgumentException ignored) {
 			return fallback;
 		}
+	}
+
+	private static String firstString(JsonObject json, String... keys) {
+		for (String key : keys) {
+			if (json.has(key) && !json.get(key).isJsonNull()) {
+				String value = json.get(key).getAsString();
+				if (value != null && !value.isBlank()) {
+					return value;
+				}
+			}
+		}
+		return null;
 	}
 
 	/**

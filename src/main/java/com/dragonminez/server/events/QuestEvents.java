@@ -19,6 +19,7 @@ import com.dragonminez.common.quest.QuestService;
 import com.dragonminez.common.quest.objectives.InteractObjective;
 import com.dragonminez.common.quest.objectives.ItemObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.DragonSummonObjective;
 import com.dragonminez.common.quest.objectives.TalkToObjective;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -156,6 +157,20 @@ public class QuestEvents {
 		}
 	}
 
+	@SubscribeEvent
+	public static void onDragonSummoned(DMZEvent.DragonSummonedEvent event) {
+		if (!(event.getPlayer() instanceof ServerPlayer summoner)) {
+			return;
+		}
+
+		List<ServerPlayer> partyMembers = PartyManager.getAllPartyMembers(summoner);
+		for (ServerPlayer member : partyMembers) {
+			StatsProvider.get(StatsCapability.INSTANCE, member).ifPresent(data ->
+					processAcceptedQuests(member, data, (questKey, quest, pqd) ->
+							processDragonSummonObjectives(member, pqd, questKey, quest, event)));
+		}
+	}
+
 	private static boolean primeStartRequirementTimers(ServerPlayer player, StatsData data) {
 		PlayerQuestData pqd = data.getPlayerQuestData();
 		boolean timingChanged = false;
@@ -262,6 +277,27 @@ public class QuestEvents {
 					&& interactedNpcId != null
 					&& !QuestService.requiresTurnInAction(quest)
 					&& interactedNpcId.equals(talkToObjective.getNpcId())) {
+				updateProgress(player, pqd, questKey, quest, i, currentProgress + 1);
+			}
+		}
+
+		checkAndComplete(player, pqd, questKey, quest);
+	}
+
+	private static void processDragonSummonObjectives(ServerPlayer player, PlayerQuestData pqd, String questKey, Quest quest,
+													 DMZEvent.DragonSummonedEvent event) {
+		for (int i = 0; i < quest.getObjectives().size(); i++) {
+			QuestObjective objective = quest.getObjectives().get(i);
+			int currentProgress = pqd.getObjectiveProgress(questKey, i);
+			if (currentProgress >= quest.getObjectiveRequired(pqd, questKey, i)) {
+				continue;
+			}
+			if (!quest.isParallelObjectives() && !isFirstUncompleted(pqd, questKey, quest, i)) {
+				continue;
+			}
+
+			if (objective instanceof DragonSummonObjective summonObjective
+					&& summonObjective.matches(event.getDragonId(), event.getBallSetId())) {
 				updateProgress(player, pqd, questKey, quest, i, currentProgress + 1);
 			}
 		}
