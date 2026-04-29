@@ -781,13 +781,6 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
                     .updateInterval(10)
                     .fireImmune()
                     .build("sp_blue_hurricane"));
-    public static final RegistryObject<EntityType<KiBarrageEntity>> KI_VOLLEY = ENTITY_TYPES.register("ki_volley",
-            () -> EntityType.Builder.<KiBarrageEntity>of(KiBarrageEntity::new, MobCategory.MISC)
-                    .sized(0.5f, 0.5f)
-                    .clientTrackingRange(4)
-                    .updateInterval(10)
-                    .fireImmune()
-                    .build("ki_volley"));
     public static final RegistryObject<EntityType<KiLaserEntity>> KI_LASER = ENTITY_TYPES.register("ki_laser",
             () -> EntityType.Builder.<KiLaserEntity>of(KiLaserEntity::new, MobCategory.MISC)
                     .sized(0.5F, 0.5F)

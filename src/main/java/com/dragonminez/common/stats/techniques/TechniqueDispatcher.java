@@ -201,27 +201,28 @@ public class TechniqueDispatcher {
                 if (!level.isClientSide) level.addFreshEntity(areaDrop);
                 break;
 			case BARRAGE:
-				Vec3 look = owner.getLookAngle();
-				Vec3 right = look.cross(new Vec3(0, 1, 0)).normalize();
-				Vec3 up = right.cross(look).normalize();
+                if (isInitialSpawn) {
+                    KiBlastEntity volley = new KiBlastEntity(level, owner);
 
-				double[][] offsets = {{0,0}, {1.2, 0.5}, {-1.2, 0.5}, {0.8, -0.8}, {-0.8, -0.8}};
-				for (int i = 0; i < offsets.length; i++) {
-					KiBarrageEntity barrage = new KiBarrageEntity(level, owner);
-					barrage.setup(owner, realDamage / offsets.length, data.getSize(), data.getSpeed(), data.getColorInterior(), data.getColorExterior());
+                    volley.setupKiVolleyPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), 40);
 
-					spawnPos = owner.getEyePosition().add(look.scale(0.5))
-							.add(right.scale(offsets[i][0]))
-							.add(up.scale(offsets[i][1]));
-					barrage.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
-					barrage.setDeltaMovement(look.scale(data.getSpeed()));
+                    volley.setTechniqueId(data.getId());
+                    volley.setArmorPenetration(data.getArmorPenetration());
+                    volley.setHeal(isHeal);
 
-					barrage.setTechniqueId(data.getId());
-					barrage.setArmorPenetration(data.getArmorPenetration());
-					barrage.setHeal(isHeal);
-					level.addFreshEntity(barrage);
-				}
-				return true;
+                    volley.setFiring(false);
+                    volley.setMaxLife(99999);
+
+                    if (!level.isClientSide) level.addFreshEntity(volley);
+                } else {
+                    AbstractKiProjectile activeKi = getChargingKiEntity(owner, level);
+                    if (activeKi instanceof KiBlastEntity blast) {
+                        blast.setKiDamage(realDamage);
+                        blast.fireHability(maxLife);
+                        return true;
+                    }
+                }
+                return true;
 			default:
 				KiBlastEntity defaultBlast = new KiBlastEntity(level, owner);
 				defaultBlast.setupKiBlastPlayer(owner, realDamage, data.getSpeed(), data.getColorInterior(), data.getColorExterior(), data.getSize());

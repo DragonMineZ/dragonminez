@@ -164,11 +164,9 @@ public class KiDiskEntity extends AbstractKiProjectile {
             return;
         }
 
-        // Usamos la variable real para saber en qué fase estamos
         boolean isFiring = this.isFiring();
 
         if (!this.level().isClientSide) {
-            // Si ya se disparó, empieza a sonar el zumbido constante y a cortar
             if (isFiring) {
                 if (this.tickCount % 12 == 0) {
                     this.playSound(MainSounds.KI_DISK_CHARGE.get(), 0.3F, 1.2F);

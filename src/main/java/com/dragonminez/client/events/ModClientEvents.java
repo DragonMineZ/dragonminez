@@ -257,7 +257,6 @@ public class ModClientEvents {
 		}
 
         event.registerEntityRenderer(MainEntities.KI_BLAST.get(), KiProjectileRenderer::new);
-        event.registerEntityRenderer(MainEntities.KI_VOLLEY.get(), KiProjectileRenderer::new);
         event.registerEntityRenderer(MainEntities.KI_EXPLOSION.get(), KiExplosionRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_BLUE_HURRICANE.get(), SPBlueHurricaneRenderer::new);
         event.registerEntityRenderer(MainEntities.SP_DRAGON_FIST.get(), SPDragonFistRenderer::new);
