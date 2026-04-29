@@ -55,6 +55,11 @@ public class GeneralServerConfig {
 		private Integer maxTPDiscount = 140;
 		private Double tpHealthRatio = 0.10;
 		private Integer tpPerHit = 2;
+		private Integer passiveTpGain = 3;
+		private Integer tpPer20BlocksTraveled = 1;
+		private Integer tpPerBlockMined = 1;
+		private Integer tpPerItemCrafted = 1;
+		private Boolean gravityBonusEnabled = true;
 		private Double HTCTpMultiplier = 2.5;
 		private Boolean maxLevelValueInsteadOfStats = true;
 		private Integer maxValue = 10000;
@@ -109,6 +114,26 @@ public class GeneralServerConfig {
 
 		public Integer getTpPerHit() {
 			return Math.max(0, Math.min(tpPerHit, Integer.MAX_VALUE));
+		}
+
+		public Integer getPassiveTpGain() {
+			return Math.max(0, Math.min(passiveTpGain, Integer.MAX_VALUE));
+		}
+
+		public Integer getTpPer20BlocksTraveled() {
+			return Math.max(0, Math.min(tpPer20BlocksTraveled, Integer.MAX_VALUE));
+		}
+
+		public Integer getTpPerBlockMined() {
+			return Math.max(0, Math.min(tpPerBlockMined, Integer.MAX_VALUE));
+		}
+
+		public Integer getTpPerItemCrafted() {
+			return Math.max(0, Math.min(tpPerItemCrafted, Integer.MAX_VALUE));
+		}
+
+		public Boolean getGravityBonusEnabled() {
+			return gravityBonusEnabled != null ? gravityBonusEnabled : true;
 		}
 
 		public Double getHTCTpMultiplier() {

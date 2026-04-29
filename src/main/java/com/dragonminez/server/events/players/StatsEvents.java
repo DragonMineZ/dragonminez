@@ -122,17 +122,6 @@ public class StatsEvents {
 		}
 	}
 
-	private static boolean dropTps(Entity entity) {
-		List<Class<?>> listaEnemigos = List.of(
-				Monster.class,
-				Animal.class,
-				Player.class,
-				FlyingMob.class,
-				Mob.class
-		);
-		return listaEnemigos.stream().anyMatch(clase -> clase.isInstance(entity));
-	}
-
 	private static boolean addsAlignment(Entity entity) {
 		return entity instanceof RedRibbonSoldierEntity || entity instanceof SagaFriezaSoldier01Entity || entity instanceof SagaFriezaSoldier02Entity
 				|| entity instanceof RobotEntity || entity instanceof BanditEntity;
@@ -171,15 +160,6 @@ public class StatsEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 
-			if (dropTps(event.getEntity())) {
-				int tpsHealth;
-				if (event.getEntity() instanceof ShadowDummyEntity)
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio() * 0.5);
-				else
-					tpsHealth = (int) Math.round(event.getEntity().getMaxHealth() * ConfigManager.getServerConfig().getGameplay().getTpHealthRatio());
-				data.getResources().addTrainingPoints(tpsHealth);
-			}
-
 			if (removeAlignment[0]) {
 				data.getResources().removeAlignment(5);
 				removeAlignment[0] =  false;
@@ -200,9 +180,6 @@ public class StatsEvents {
 			StatsProvider.get(StatsCapability.INSTANCE, attacker).ifPresent(attackerData -> {
 				if (attackerData.getStatus().isHasCreatedCharacter()) {
 					if (event.getAmount() >= 1) {
-						int baseTps = ConfigManager.getServerConfig().getGameplay().getTpPerHit();
-						attackerData.getResources().addTrainingPoints(baseTps);
-
 						if (attackerData.getCharacter().hasActiveForm()) {
 							FormConfig.FormData activeForm = attackerData.getCharacter().getActiveFormData();
 							if (activeForm != null && attackerData.getResources().getPowerRelease() >= 50) {

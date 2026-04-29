@@ -687,7 +687,9 @@ public class StatsData {
 		additiveMultiplier += (getTpClassMultiplier() - 1.0);
 		additiveMultiplier += (getTpFrostDemonMultiplier() - 1.0);
 		additiveMultiplier += (getTpHTCMultiplier() - 1.0);
-		additiveMultiplier += (getTpGravityMultiplier() - 1.0);
+		if (ConfigManager.getServerConfig().getGameplay() != null)
+			if (ConfigManager.getServerConfig().getGameplay().getGravityBonusEnabled())
+				additiveMultiplier += (getTpGravityMultiplier() - 1.0);
 		return Math.max(0.0, additiveMultiplier);
 	}
 
