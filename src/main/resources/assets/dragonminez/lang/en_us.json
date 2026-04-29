@@ -216,6 +216,7 @@
   "gui.dragonminez.quest_tree.status.active": "Active",
   "gui.dragonminez.quest_tree.status.available": "Available",
   "gui.dragonminez.quest_tree.status.locked": "Locked",
+  "gui.dragonminez.quest_tree.saga_locked.tooltip": "Complete %s to unlock this saga.",
   "gui.dragonminez.party.title": "Party",
   "gui.dragonminez.party.create": "Create Party",
   "gui.dragonminez.party.invite_players": "Invite Players",
@@ -1225,42 +1226,31 @@
   "dmz.quest.talk_to.obj": "Talk to %s",
   "dmz.quest.go_to.obj": "Go to %s",
   "dmz.quest.interact.obj": "Interact with %s",
+  "dmz.quest.summon_dragon.obj": "Summon %s",
 
-  "dmz.quest.saiyan1.name": "Find Master Roshi",
-  "dmz.quest.saiyan1.desc": "Track down Kame House and meet Master Roshi to begin your training.",
+  "dmz.quest.saiyan1.name": "Defeat Raditz",
+  "dmz.quest.saiyan1.desc": "Raditz has come for Gohan in the plains. Defeat the invader and survive the opening strike of the Saiyan threat.",
 
-  "dmz.quest.saiyan2.name": "Train with Krillin",
-  "dmz.quest.saiyan2.desc": "Spar with Krillin at Kame House and prove you can keep up with Roshi's training.",
+  "dmz.quest.saiyan2.name": "Wilderness Training",
+  "dmz.quest.saiyan2.desc": "Gohan's survival training begins in the wild. Hunt a dinosaur and prove you can endure the months before the Saiyans arrive.",
 
-  "dmz.quest.saiyan3.name": "Defend Gohan",
-  "dmz.quest.saiyan3.desc": "Raditz has appeared in the plains. Defeat him and protect Gohan from the invading Saiyan.",
+  "dmz.quest.saiyan3.name": "Kill the Saibamen",
+  "dmz.quest.saiyan3.desc": "The Saiyan invasion begins with planted monsters. Wipe out the Saibamen before the real warriors take the field.",
 
-  "dmz.quest.saiyan4.name": "Train with Gohan",
-  "dmz.quest.saiyan4.desc": "Gohan's survival training has begun. Hunt a dinosaur in the plains and help him endure the wilderness.",
+  "dmz.quest.saiyan4.name": "Hold Against Nappa",
+  "dmz.quest.saiyan4.desc": "Nappa is tearing through the battlefield. Hold the line and bring him down.",
 
-  "dmz.quest.saiyan5.name": "Craft the Dragon Radar",
-  "dmz.quest.saiyan5.desc": "Stay on Earth long enough for Bulma to finish the Dragon Radar, then bring the device to her.",
+  "dmz.quest.saiyan5.name": "Face Vegeta",
+  "dmz.quest.saiyan5.desc": "With Nappa gone, the Saiyan prince steps in. Challenge Vegeta on the rocky battlefield.",
 
-  "dmz.quest.saiyan6.name": "Kill the Saibamen",
-  "dmz.quest.saiyan6.desc": "The Saiyan invasion has begun. Wipe out the Saibamen before Nappa and Vegeta take over the battlefield.",
+  "dmz.quest.saiyan6.name": "Defeat Oozaru Vegeta",
+  "dmz.quest.saiyan6.desc": "Vegeta has transformed into a Great Ape. Finish the fight before the giant crushes Earth.",
 
-  "dmz.quest.saiyan7.name": "Hold Against Nappa",
-  "dmz.quest.saiyan7.desc": "Nappa is tearing through the plains. Hold the line and bring him down.",
+  "dmz.quest.saiyan7.name": "Prepare for Namek",
+  "dmz.quest.saiyan7.desc": "The next hope is on Namek. Speak with Bulma once the repaired ship is ready.",
 
-  "dmz.quest.saiyan8.name": "Face Vegeta",
-  "dmz.quest.saiyan8.desc": "With Nappa gone, the Saiyan prince steps in. Hunt Vegeta through the rocky battlefield and challenge him directly.",
-
-  "dmz.quest.saiyan9.name": "Defeat Oozaru Vegeta",
-  "dmz.quest.saiyan9.desc": "Vegeta transformed into a Great Ape. Finish the fight before the giant crushes Earth.",
-
-  "dmz.quest.saiyan10.name": "Feast with the Others",
-  "dmz.quest.saiyan10.desc": "The battle is over for now. Return to Kame House and regroup with the others.",
-
-  "dmz.quest.saiyan11.name": "Fix the Saiyan Ship",
-  "dmz.quest.saiyan11.desc": "Bulma has almost finished the ship to Namek. Speak with her once the repairs are ready.",
-
-  "dmz.quest.saiyan12.name": "Head to Namek",
-  "dmz.quest.saiyan12.desc": "The next battle lies on Namek. Reach the required power and travel there.",
+  "dmz.quest.saiyan8.name": "Head to Namek",
+  "dmz.quest.saiyan8.desc": "Leave Earth behind and travel to Namek before Frieza's forces claim the Dragon Balls.",
 
   "dmz.saga.frieza_saga": "Frieza Saga",
 
@@ -1270,154 +1260,94 @@
   "dmz.quest.frieza2.name": "Cui's Pursuit",
   "dmz.quest.frieza2.desc": "Cui has tracked the resistance to Namek. Drop him before he can report back to Frieza.",
 
-  "dmz.quest.frieza3.name": "The Namekian Village",
-  "dmz.quest.frieza3.desc": "A nearby Namekian settlement is still holding out. Find the village and see what remains.",
+  "dmz.quest.frieza3.name": "Defend the Namekians",
+  "dmz.quest.frieza3.desc": "Frieza's army is raiding Namekian settlements across the Ajissa Plains. Hold the line and protect the survivors.",
 
-  "dmz.quest.frieza4.name": "Defend the Namekians",
-  "dmz.quest.frieza4.desc": "Frieza's army is raiding the village. Hold the line and protect the Namekians from the assault.",
+  "dmz.quest.frieza4.name": "The Cruel Dodoria",
+  "dmz.quest.frieza4.desc": "Dodoria is sweeping the Ajissa Plains and leaving nothing behind. Hunt him down and end the massacre.",
 
-  "dmz.quest.frieza6.name": "The Cruel Dodoria",
-  "dmz.quest.frieza6.desc": "Dodoria is sweeping the Ajissa Plains and leaving nothing behind. Hunt him down and end the massacre.",
+  "dmz.quest.frieza5.name": "Zarbon's True Form",
+  "dmz.quest.frieza5.desc": "Zarbon's elegance hides a far uglier power. Survive his transformation and finish the fight.",
 
-  "dmz.quest.frieza7.name": "Zarbon's True Form",
-  "dmz.quest.frieza7.desc": "Zarbon's elegance hides a far uglier power. Survive his transformation and finish the fight.",
+  "dmz.quest.frieza6.name": "The Saiyan Prince",
+  "dmz.quest.frieza6.desc": "Vegeta is carving his own path across Namek in search of power. Confront the prince before he gets ahead of everyone else.",
 
-  "dmz.quest.frieza9.name": "The Saiyan Prince",
-  "dmz.quest.frieza9.desc": "Vegeta is carving his own path across Namek in search of power. Confront the prince before he gets ahead of everyone else.",
+  "dmz.quest.frieza7.name": "Ginyu Force: Guldo",
+  "dmz.quest.frieza7.desc": "The Ginyu Force has landed. Start by crushing Guldo before the squad overwhelms the battlefield.",
 
-  "dmz.quest.frieza10.name": "Ginyu Force: Guldo",
-  "dmz.quest.frieza10.desc": "The Ginyu Force has landed. Start by crushing Guldo before the squad overwhelms the battlefield.",
+  "dmz.quest.frieza8.name": "Recoome's Rampage",
+  "dmz.quest.frieza8.desc": "Recoome is all power and no restraint. Stop him before the entire front collapses.",
 
-  "dmz.quest.frieza11.name": "Recoome's Rampage",
-  "dmz.quest.frieza11.desc": "Recoome is all power and no restraint. Stop him before the entire front collapses.",
+  "dmz.quest.frieza9.name": "Burter and Jeice",
+  "dmz.quest.frieza9.desc": "Burter and Jeice are fighting as a pair. Break the duo before Captain Ginyu joins the battle himself.",
 
-  "dmz.quest.frieza12.name": "Burter and Jeice",
-  "dmz.quest.frieza12.desc": "Burter and Jeice are fighting as a pair. Break the duo before Captain Ginyu joins the battle himself.",
+  "dmz.quest.frieza10.name": "Captain Ginyu",
+  "dmz.quest.frieza10.desc": "Captain Ginyu has entered the fight. Take down the leader of the Ginyu Force before his tricks turn the battle upside down.",
 
-  "dmz.quest.frieza14.name": "Captain Ginyu",
-  "dmz.quest.frieza14.desc": "Captain Ginyu has entered the fight. Take down the leader of the Ginyu Force before his tricks turn the battle upside down.",
+  "dmz.quest.frieza11.name": "Body Change Chaos",
+  "dmz.quest.frieza11.desc": "Ginyu has stolen Goku's body and turned the battlefield into chaos. End the confusion before Frieza arrives.",
 
-  "dmz.quest.frieza15.name": "Body Change Chaos",
-  "dmz.quest.frieza15.desc": "Ginyu has stolen Goku's body and turned the battlefield into chaos. End the confusion before Frieza arrives.",
+  "dmz.quest.frieza12.name": "Frieza, First Form",
+  "dmz.quest.frieza12.desc": "The tyrant himself has finally entered the battle. Stand against Frieza's first form and survive the opening clash.",
 
-  "dmz.quest.frieza16.name": "Repel Frieza's Forces",
-  "dmz.quest.frieza16.desc": "Even after the Ginyu Force falls, Frieza's soldiers keep pressing the attack. Clear the remaining troops.",
+  "dmz.quest.frieza13.name": "Frieza's Rising Horror",
+  "dmz.quest.frieza13.desc": "Frieza refuses to stay in one shape. Survive his second and third forms before he reaches his true body.",
 
-  "dmz.quest.frieza17.name": "Frieza, First Form",
-  "dmz.quest.frieza17.desc": "The tyrant himself has finally entered the battle. Stand against Frieza's first form and survive the opening clash.",
+  "dmz.quest.frieza14.name": "Final Form Frieza",
+  "dmz.quest.frieza14.desc": "Frieza's final form is deceptively calm and infinitely more dangerous. Fight through the terror and force him back.",
 
-  "dmz.quest.frieza18.name": "Frieza's Rising Horror",
-  "dmz.quest.frieza18.desc": "Frieza refuses to stay in one shape. Survive his escalating second and third forms before he reaches his true body.",
+  "dmz.quest.frieza15.name": "100% Full Power",
+  "dmz.quest.frieza15.desc": "Frieza is done holding back. Face his full power and end the fight before Namek dies with him.",
 
-  "dmz.quest.frieza20.name": "Final Form Frieza",
-  "dmz.quest.frieza20.desc": "Frieza's final form is deceptively calm and infinitely more dangerous. Fight through the terror and force him back.",
-
-  "dmz.quest.frieza21.name": "100% Full Power",
-  "dmz.quest.frieza21.desc": "Frieza is done holding back. Face his full power and end the fight before Namek dies with him.",
-
-  "dmz.quest.frieza22.name": "Escape the Collapsing World",
-  "dmz.quest.frieza22.desc": "Namek is collapsing around you. Get out before the planet takes everyone down with it.",
+  "dmz.quest.frieza16.name": "Escape the Collapsing World",
+  "dmz.quest.frieza16.desc": "Namek is collapsing around you. Get out before the planet takes everyone down with it.",
 
   "dmz.saga.android_saga": "Android Saga",
 
-  "dmz.quest.android1.name": "Frieza's Return",
-  "dmz.quest.android1.desc": "A surviving strike team has reached Earth ahead of their leaders. Clear the scouts before the real invasion lands.",
+  "dmz.quest.android1.name": "Mecha Frieza",
+  "dmz.quest.android1.desc": "Frieza has returned to Earth rebuilt as a machine. Stop him before Earth repeats Namek's fate.",
 
-  "dmz.quest.android2.name": "Mecha Frieza",
-  "dmz.quest.android2.desc": "Frieza has returned as a machine-built monster. Stop him before Earth repeats Namek's fate.",
+  "dmz.quest.android2.name": "King Cold",
+  "dmz.quest.android2.desc": "King Cold has stepped onto the battlefield himself. Bring down the emperor before his rule reaches Earth.",
 
-  "dmz.quest.android3.name": "King Cold",
-  "dmz.quest.android3.desc": "King Cold has stepped onto the battlefield himself. Bring down the emperor before his rule reaches Earth.",
+  "dmz.quest.android3.name": "Warning from the Future",
+  "dmz.quest.android3.desc": "A mysterious warrior has changed the invasion's outcome. Speak with Trunks and learn what is coming.",
 
-  "dmz.quest.android4.name": "Future Trunks",
-  "dmz.quest.android4.desc": "A mysterious swordsman has already changed the course of history. Test the warrior who came from the future.",
-  "dmz.quest.android5.name": "Goku's Home",
-  "dmz.quest.android5.desc": "The next threat will not arrive immediately. Visit Goku's home and prepare for the years ahead.",
-  "dmz.quest.android6.name": "Three Years of Preparation",
-  "dmz.quest.android6.desc": "The Androids are still coming. Spend the waiting period training until your body is ready for what Trunks warned about.",
+  "dmz.quest.android4.name": "Three Years of Preparation",
+  "dmz.quest.android4.desc": "The Androids are still coming. Spend the waiting period training until your body is ready for what Trunks warned about.",
 
-  "dmz.quest.android7.name": "Android 19",
-  "dmz.quest.android7.desc": "The first android drains energy from anyone careless enough to fight head-on. Take 19 down fast.",
+  "dmz.quest.android5.name": "Android 19",
+  "dmz.quest.android5.desc": "The first android drains energy from anyone careless enough to fight head-on. Take 19 down fast.",
 
-  "dmz.quest.android8.name": "Dr. Gero",
-  "dmz.quest.android8.desc": "The creator of the Androids is on the move. Stop Dr. Gero before he can unleash something worse.",
+  "dmz.quest.android6.name": "Dr. Gero",
+  "dmz.quest.android6.desc": "The creator of the Androids is on the move. Stop Dr. Gero before he can unleash something worse.",
 
-  "dmz.quest.android9.name": "Track the Androids",
-  "dmz.quest.android9.desc": "Androids 17 and 18 vanished into the mountains. Search the range and find their trail.",
+  "dmz.quest.android7.name": "Track the Androids",
+  "dmz.quest.android7.desc": "The real Androids vanished into the mountains after Gero's defeat. Search the range and pick up their trail.",
 
-  "dmz.quest.android10.name": "Android 17",
-  "dmz.quest.android10.desc": "Android 17 is reckless, cruel, and stronger than expected. Bring him down before he tears through the world.",
+  "dmz.quest.android8.name": "Android 18",
+  "dmz.quest.android8.desc": "Android 18 fights with cold confidence and overwhelming force. Survive her assault before the pair moves on.",
 
-  "dmz.quest.android11.name": "Android 18",
-  "dmz.quest.android11.desc": "Android 18 fights with the same cold confidence as 17. Beat her before the pair can regroup.",
+  "dmz.quest.android9.name": "Android 17",
+  "dmz.quest.android9.desc": "Android 17 is reckless, cruel, and stronger than expected. Bring him down before he tears through the world.",
 
-  "dmz.quest.android12.name": "Android 16",
-  "dmz.quest.android12.desc": "The silent giant is finally moving. Test your strength against Android 16 in the open plains.",
+  "dmz.quest.android10.name": "Cell Emerges",
+  "dmz.quest.android10.desc": "A bio-android from another timeline is feeding on the living. Hunt Imperfect Cell before he reaches the Androids.",
 
-  "dmz.quest.android13.name": "A New Monster",
-  "dmz.quest.android13.desc": "Before the Android threat settles, a new bio-android starts hunting people in the plains. Investigate the reports.",
+  "dmz.quest.android11.name": "Semi-Perfect Cell",
+  "dmz.quest.android11.desc": "Cell has absorbed 17 and evolved into a stronger form. Stand against Semi-Perfect Cell before he reaches 18.",
 
-  "dmz.quest.android14.name": "Fusion of Warriors",
-  "dmz.quest.android14.desc": "Piccolo has fused with Kami and entered the fight at full strength. Test the new guardian-warrior.",
+  "dmz.quest.android12.name": "Beyond Super Saiyan",
+  "dmz.quest.android12.desc": "The Cell Games are coming. Push beyond your current limits before Cell proves his perfect power.",
 
-  "dmz.quest.android15.name": "Hyperbolic Time Chamber",
-  "dmz.quest.android15.desc": "The battlefield is getting out of control. Find the Time Chamber and prepare to push your limits.",
-  "dmz.quest.android16.name": "Defend the City",
-  "dmz.quest.android16.desc": "Cell is feeding on civilians and vanishing before anyone can stop him. Hunt him down and protect the city.",
+  "dmz.quest.android13.name": "Perfect Cell",
+  "dmz.quest.android13.desc": "Cell has achieved perfection and opened the Cell Games. Face him in the arena that decides Earth's fate.",
 
-  "dmz.quest.android17.name": "Stop the Absorption",
-  "dmz.quest.android17.desc": "Cell is closing in on Android 18. Beat back both threats before he completes himself.",
+  "dmz.quest.android14.name": "Cell Juniors",
+  "dmz.quest.android14.desc": "Cell's children are tearing through the fighters. Destroy them before the arena collapses.",
 
-  "dmz.quest.android18.name": "Semi-Perfect Cell",
-  "dmz.quest.android18.desc": "Cell evolved anyway, and the fight only got worse. Stand against his new form before the situation spirals.",
-
-  "dmz.quest.android19.name": "Pride of the Prince",
-  "dmz.quest.android19.desc": "Vegeta has pushed past ordinary Super Saiyan power. Challenge the prince at his peak.",
-
-  "dmz.quest.android20.name": "Future Warrior",
-  "dmz.quest.android20.desc": "Future Trunks has climbed even higher in pursuit of Cell. Face him and see how far the future has changed him.",
-
-  "dmz.quest.android21.name": "Perfect Cell",
-  "dmz.quest.android21.desc": "Cell has achieved perfection. The Cell Games are coming, and the battlefield belongs to him now.",
-
-  "dmz.quest.android22.name": "Prepare for the Cell Games",
-  "dmz.quest.android22.desc": "Cell is waiting. Return to Kami's Lookout, regroup, and get ready for the tournament that decides Earth.",
-
-  "dmz.quest.android23.name": "Gohan Steps Forward",
-  "dmz.quest.android23.desc": "Gohan has the power to end this, but only if he can bring it out. Challenge him before the Cell Games erupt.",
-
-  "dmz.quest.android24.name": "Cell Juniors",
-  "dmz.quest.android24.desc": "Cell's children are tearing through the fighters. Destroy the first wave before the arena collapses.",
-
-  "dmz.quest.android25.name": "Cell Juniors Again",
-  "dmz.quest.android25.desc": "The swarm keeps coming. Clear the second wave and keep the remaining fighters alive.",
-
-  "dmz.quest.android26.name": "Super Perfect Cell",
-  "dmz.quest.android26.desc": "Cell has come back stronger than before. End the fight for good before he destroys everything left standing.",
-
-  "dmz.quest.android27.name": "Sweep the Battlefield",
-  "dmz.quest.android27.desc": "Even after Cell falls, his spawn and debris still threaten the area. Sweep the battlefield and finish the cleanup.",
-
-  "dmz.quest.android28.name": "Post-Cell Training",
-  "dmz.quest.android28.desc": "Peace returned, but the fighters cannot afford to go soft. Keep training until the next era begins.",
-
-  "dmz.quest.android29.name": "Return to Kami's Lookout",
-  "dmz.quest.android29.desc": "The battle is over, and the world needs a moment to breathe. Report back to Kami's Lookout.",
-
-  "dmz.quest.android30.name": "World Peace Patrol",
-  "dmz.quest.android30.desc": "Peace never lasts for long. Patrol the rocky badlands and crush the last organized raiders.",
-
-  "dmz.quest.android31.name": "A Hidden Return",
-  "dmz.quest.android31.desc": "Not every trace of Cell disappeared in the final clash. Face the hidden return of his perfect form.",
-
-  "dmz.quest.android32.name": "Finish the Remnant",
-  "dmz.quest.android32.desc": "One last remnant of Cell's power still lingers. Destroy it before the future repeats itself.",
-
-  "dmz.quest.android33.name": "Pass the Torch",
-  "dmz.quest.android33.desc": "The next generation has to carry the peace the old fighters bought. Visit Goku's house and close this chapter.",
-
-  "dmz.quest.android34.name": "Ready for the Buu Era",
-  "dmz.quest.android34.desc": "The Cell conflict is over. Return to Kami's Lookout and prepare for whatever the next era brings.",
+  "dmz.quest.android15.name": "Super Perfect Cell",
+  "dmz.quest.android15.desc": "Cell has returned stronger after Goku's sacrifice. End the fight for good before he destroys everything left standing.",
   
   "dmz.saga.movies_saga": "Movies Saga",
   "//": "SIDE QUESTS § TRAINING",
@@ -1432,6 +1362,8 @@
   "//": "SIDE QUESTS § EXPLORATION",
   "dmz.sidequest.explorer.name": "World Explorer",
   "dmz.sidequest.explorer.desc": "A warrior must know the land they protect. Explore the different biomes of the world.",
+  "dmz.sidequest.earth_landmarks.name": "Earth Landmarks",
+  "dmz.sidequest.earth_landmarks.desc": "Survey Earth's most important martial arts landmarks: Kame House, Goku's House, and Kami's Lookout.",
   "dmz.sidequest.namek_explorer.name": "Namek Explorer",
   "dmz.sidequest.namek_explorer.desc": "You've reached Namek! Explore this alien world and discover the villages of the Namekian people.",
   "dmz.sidequest.sacred_lands.name": "The Sacred Lands",
@@ -1441,8 +1373,8 @@
   "dmz.sidequest.monster_hunter.desc": "The world is filled with dangerous creatures. Prove yourself as a monster hunter by eliminating various threats.",
   "dmz.sidequest.nether_warrior.name": "Nether Warrior",
   "dmz.sidequest.nether_warrior.desc": "The Nether holds powerful enemies. Only a true warrior can survive its fiery depths.",
-  "dmz.sidequest.dball_hunter.name": "Dragon Ball Guardian",
-  "dmz.sidequest.dball_hunter.desc": "Bandits have learned about the Dragon Balls. Track down their outpost and put an end to their plans.",
+  "dmz.sidequest.dball_hunter.name": "Red Ribbon Outpost",
+  "dmz.sidequest.dball_hunter.desc": "An outpost is stirring up trouble in the countryside. Track it down and clear out the raiders.",
 
   "//": "SIDE QUESTS § TRAINING €” SAIYAN SAGA",
   "dmz.sidequest.krillin_sparring.name": "Krillin's Sparring Match",
@@ -1462,7 +1394,7 @@
 
   "//": "SIDE QUESTS § EXPLORATION €” FRIEZA SAGA",
   "dmz.sidequest.krillin_scout.name": "Namek Reconnaissance",
-  "dmz.sidequest.krillin_scout.desc": "Krillin asks you to scout the Ajissa Plains for Frieza's forces. Find a Namekian village and clear out any soldiers lurking nearby.",
+  "dmz.sidequest.krillin_scout.desc": "Krillin asks you to scout the Ajissa Plains for safe routes through Frieza's territory. Find a Namekian village and report back.",
   "dmz.sidequest.namek_farewell.name": "Namek's Farewell",
   "dmz.sidequest.namek_farewell.desc": "Before Namek's fate is sealed, the Namekian Elder asks you to visit the Sacred Lands one last time and pay your respects to this dying world.",
 
@@ -1513,18 +1445,18 @@
   "//": "SIDE QUESTS § COLLECTION €” SAIYAN SAGA",
   "dmz.sidequest.bulma_radar.name": "Radar Upgrade",
   "dmz.sidequest.bulma_radar.desc": "Bulma needs specific materials to improve the Dragon Radar's range. Gather redstone, copper, and gold for her €” she'll make it worth your while.",
-  "dmz.sidequest.collect_dballs.name": "Collect the Dragon Balls",
-  "dmz.sidequest.collect_dballs.desc": "Bulma asks you to gather all seven Dragon Balls before the Saiyan threat escalates. Bring each one back safely.",
+  "dmz.sidequest.collect_dballs.name": "Summon Shenron",
+  "dmz.sidequest.collect_dballs.desc": "Bulma's radar is ready. Find the seven Earth Dragon Balls, bring them together, summon Shenron, and report back.",
   "dmz.sidequest.chichi_provisions.name": "Provisions for Battle",
   "dmz.sidequest.chichi_provisions.desc": "Chi-Chi is preparing a feast for the warriors before the final battle against the Saiyans. Help her gather enough food to feed everyone.",
 
   "//": "SIDE QUESTS § COLLECTION €” FRIEZA SAGA",
   "dmz.sidequest.bulma_namek.name": "Namekian Research",
-  "dmz.sidequest.bulma_namek.desc": "Bulma is fascinated by Namekian technology. Collect Kikono shards and cloth from this alien world so she can study their unique properties.",
+  "dmz.sidequest.bulma_namek.desc": "Bulma needs Namekian materials to tune a radar for this alien world. Collect Kikono shards and cloth so the search can begin.",
   "dmz.sidequest.merchant_artifacts.name": "Alien Artifacts",
   "dmz.sidequest.merchant_artifacts.desc": "A Traveling Merchant discovered rare alien materials on Namek. Retrieve Kikono shards and diamonds for him €” he promises a legendary weapon in return.",
-  "dmz.sidequest.gohan_namek_db.name": "Race for the Dragon Balls",
-  "dmz.sidequest.gohan_namek_db.desc": "Gohan is racing to collect the Namekian Dragon Balls before Frieza. Help him by visiting Guru and gathering Kikono shards to trade for information.",
+  "dmz.sidequest.gohan_namek_db.name": "Summon Porunga",
+  "dmz.sidequest.gohan_namek_db.desc": "The Namekian Elder entrusts you with the village's greatest hope. Find the seven Namekian Dragon Balls, summon Porunga, and return safely.",
 
   "//": "SIDE QUESTS § COLLECTION €” ANDROID SAGA",
   "dmz.sidequest.bulma_gero.name": "Gero's Blueprints",

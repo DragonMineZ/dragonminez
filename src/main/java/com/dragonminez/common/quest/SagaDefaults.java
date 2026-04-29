@@ -38,8 +38,8 @@ final class SagaDefaults {
 		writeSagaManifest(sagaDir, "saiyan_saga.json", "saiyan_saga", "dmz.saga.saiyan_saga", "", "saga_saiyan");
 		writeSagaManifest(sagaDir, "frieza_saga.json", "frieza_saga", "dmz.saga.frieza_saga", "saiyan_saga", "saga_frieza");
 		writeSagaManifest(sagaDir, "android_saga.json", "android_saga", "dmz.saga.android_saga", "frieza_saga", "saga_android");
-		// writeSagaManifest(sagaDir, "buu_saga.json", "buu_saga", "dmz.saga.buu_saga", "android_saga", "saga_buu");
-		// writeSagaManifest(sagaDir, "movies_saga.json", "movies_saga", "dmz.saga.movies_saga", "buu_saga", "saga_movies");
+		writeSagaManifest(sagaDir, "buu_saga.json", "buu_saga", "dmz.saga.buu_saga", "android_saga", "saga_buu");
+		writeSagaManifest(sagaDir, "movies_saga.json", "movies_saga", "dmz.saga.movies_saga", "buu_saga", "saga_movies");
 	}
 
 	/**
