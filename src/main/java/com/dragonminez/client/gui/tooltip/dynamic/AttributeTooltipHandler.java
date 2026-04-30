@@ -115,7 +115,14 @@ public class AttributeTooltipHandler {
 	public static MutableComponent createTotalComponent(Attribute attribute, double value) {
 		String suffix = PERCENT_ATTRIBUTES.contains(attribute) ? "%" : "";
 		double displayValue = PERCENT_ATTRIBUTES.contains(attribute) ? value * 100 : value;
-		return Component.literal(" ").append(Component.translatable("attribute.modifier.equals.0", FORMAT.format(displayValue) + suffix, Component.translatable(attribute.getDescriptionId())));
+
+		Component rawAttrDesc = Component.translatable(attribute.getDescriptionId());
+		Component attrDescNoIcon = IconUtil.getAttributeNameWithoutIcon(rawAttrDesc);
+
+		Component coloredStat = Component.translatable("attribute.modifier.equals.0", FORMAT.format(displayValue) + suffix, attrDescNoIcon);
+		Component finalStat = IconUtil.processIcon(rawAttrDesc, coloredStat);
+
+		return Component.empty().append(finalStat);
 	}
 
 	public static MutableComponent createModifierComponent(Attribute attribute, AttributeModifier modifier) {
@@ -129,7 +136,13 @@ public class AttributeTooltipHandler {
 		String formattedValue = FORMAT.format(Math.abs(displayValue)) + suffix;
 		ChatFormatting color = isPositive ? ChatFormatting.BLUE : ChatFormatting.RED;
 
-		return Component.translatable(key, formattedValue, Component.translatable(attribute.getDescriptionId())).withStyle(color);
+		Component rawAttrDesc = Component.translatable(attribute.getDescriptionId());
+		Component attrDescNoIcon = IconUtil.getAttributeNameWithoutIcon(rawAttrDesc);
+
+		Component coloredStat = Component.translatable(key, formattedValue, attrDescNoIcon).withStyle(color);
+		Component finalStat = IconUtil.processIcon(rawAttrDesc, coloredStat);
+
+		return Component.empty().append(finalStat);
 	}
 
 	public static MutableComponent listHeader() {

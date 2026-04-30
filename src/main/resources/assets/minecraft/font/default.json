@@ -1,0 +1,130 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE000"],
+      "file": "minecraft:attribute_icon/generic.attack_range.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE001"],
+      "file": "minecraft:attribute_icon/generic.armor.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE002"],
+      "file": "minecraft:attribute_icon/generic.armor_toughness.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE003"],
+      "file": "minecraft:attribute_icon/generic.attack_damage.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE004"],
+      "file": "minecraft:attribute_icon/generic.attack_knockback.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE005"],
+      "file": "minecraft:attribute_icon/generic.attack_speed.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE006"],
+      "file": "minecraft:attribute_icon/player.sweeping_damage_ratio.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE007"],
+      "file": "minecraft:attribute_icon/generic.knockback_resistance.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE008"],
+      "file": "minecraft:attribute_icon/generic.luck.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE009"],
+      "file": "minecraft:attribute_icon/generic.max_health.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE00A"],
+      "file": "minecraft:attribute_icon/generic.movement_speed.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE00B"],
+      "file": "minecraft:attribute_icon/generic.jump_strength.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE00C"],
+      "file": "minecraft:attribute_icon/generic.gravity.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE00D"],
+      "file": "minecraft:attribute_icon/generic.fall_damage_multiplier.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE00E"],
+      "file": "minecraft:attribute_icon/player.mining_efficiency.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE00F"],
+      "file": "minecraft:attribute_icon/player.block_break_speed.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE010"],
+      "file": "minecraft:attribute_icon/player.block_interaction_range.png",
+      "height": 9
+    },
+    {
+      "type": "bitmap",
+      "ascent": 8,
+      "chars": ["\uE011"],
+      "file": "minecraft:attribute_icon/player.entity_interaction_range.png",
+      "height": 9
+    }
+  ]
+}

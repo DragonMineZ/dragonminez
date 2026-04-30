@@ -19,8 +19,11 @@ public class WeaponRangeTooltipHandler {
 		if (attributes != null && attributes.attackRange() > 0) {
 			double totalRange = attributes.attackRange();
 
-			MutableComponent text = Component.translatable("attribute.modifier.equals.0", FORMAT.format(totalRange), Component.translatable(ForgeMod.ENTITY_REACH.get().getDescriptionId()));
-			tooltip.accept(Component.literal(" ").append(text.withStyle(AttributeTooltipHandler.BASE_COLOR)));
+			Component rawAttrDesc = Component.translatable(ForgeMod.ENTITY_REACH.get().getDescriptionId());
+			Component attrDescNoIcon = IconUtil.getAttributeNameWithoutIcon(rawAttrDesc);
+			Component coloredStat = Component.translatable("attribute.modifier.equals.0", FORMAT.format(totalRange), attrDescNoIcon).withStyle(AttributeTooltipHandler.BASE_COLOR);
+			Component finalStat = IconUtil.processIcon(rawAttrDesc, coloredStat);
+			tooltip.accept(Component.empty().append(finalStat));
 		}
 
 		if (attributes != null && attributes.isTwoHanded()) {
