@@ -157,7 +157,7 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
 
     // Vulnerability corrections
-    implementation("com.google.guava:guava:33.5.0-jre") { because("Security/compat override requested.") }
+    implementation("com.google.guava:guava:33.6.0-jre") { because("Security/compat override requested.") }
     implementation("io.netty:netty-codec:4.2.7.Final") { because("Security/compat override requested.") }
     implementation("io.netty:netty-handler:4.2.7.Final") { because("Security/compat override requested.") }
     implementation("org.apache.commons:commons-compress:1.27.1") { because("Security/compat override requested.") }
