@@ -172,14 +172,14 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.46")
 
     // Database libraries
-    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.7,)") {
+    jarJar(group = "org.mariadb.jdbc", name = "mariadb-java-client", version = "[3.5.8,)") {
         jarJar.ranged(
             this,
             "[3.5.7,)"
         )
     }
     jarJar(group = "com.zaxxer", name = "HikariCP", version = "[7.0.2,)") { jarJar.ranged(this, "[7.0.2,)") }
-    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.7")
+    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.8")
     compileOnly("com.zaxxer:HikariCP:7.0.2")
 
     // Dev utility mods
