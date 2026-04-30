@@ -423,7 +423,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaKrillinEntity>> SAGA_KRILLIN =
             ENTITY_TYPES.register("saga_krillin",
                     () -> EntityType.Builder.of(SagaZFightersEntity.SagaKrillinEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.7f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_krillin").toString()));
     public static final RegistryObject<EntityType<SagaZFightersEntity.SagaTienShinhanEntity>> SAGA_TIEN_EARLY =
             ENTITY_TYPES.register("saga_tien_early",
@@ -517,12 +517,12 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaTrunksEntity.SagaFutureTrunksKidBaseEntity>> SAGA_FUTURE_TRUNKS_KID_BASE =
             ENTITY_TYPES.register("saga_ftrunks_kid_base",
                     () -> EntityType.Builder.of(SagaTrunksEntity.SagaFutureTrunksKidBaseEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.8f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ftrunks_kid_base").toString()));
     public static final RegistryObject<EntityType<SagaTrunksEntity.SagaFutureTrunksKidSSJEntity>> SAGA_FUTURE_TRUNKS_KID_SSJ =
             ENTITY_TYPES.register("saga_ftrunks_kid_ssj",
                     () -> EntityType.Builder.of(SagaTrunksEntity.SagaFutureTrunksKidSSJEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.8f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_ftrunks_kid_ssj").toString()));
     public static final RegistryObject<EntityType<SagaTrunksEntity.SagaFutureTrunksBaseEntity>> SAGA_FUTURE_TRUNKS_BASE =
             ENTITY_TYPES.register("saga_ftrunks_base",
@@ -547,17 +547,17 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaGohanEntity.SagaGohanMidBaseEntity>> SAGA_GOHAN_MID_BASE =
             ENTITY_TYPES.register("saga_gohan_mid_base",
                     () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanMidBaseEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.7f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_mid_base").toString()));
     public static final RegistryObject<EntityType<SagaGohanEntity.SagaGohanMidSSJEntity>> SAGA_GOHAN_MID_SSJ =
             ENTITY_TYPES.register("saga_gohan_mid_ssj",
                     () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanMidSSJEntity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.7f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_mid_ssj").toString()));
     public static final RegistryObject<EntityType<SagaGohanEntity.SagaGohanMidSSJ2Entity>> SAGA_GOHAN_MID_SSJ2 =
             ENTITY_TYPES.register("saga_gohan_mid_ssj2",
                     () -> EntityType.Builder.of(SagaGohanEntity.SagaGohanMidSSJ2Entity::new, MobCategory.MONSTER)
-                            .sized(0.6f, 1.7f)
+                            .sized(0.6f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_gohan_mid_ssj2").toString()));
     public static final RegistryObject<EntityType<SagaGohanEntity.SagaFutureGohanBaseEntity>> SAGA_FUTURE_GOHAN_BASE =
                 ENTITY_TYPES.register("saga_fgohan_base",
@@ -577,7 +577,7 @@ public static Map<String, RegistryObject<EntityType<DragonWishEntity>>> getDrago
     public static final RegistryObject<EntityType<SagaCellEntity.SagaCellJREntity>> SAGA_CELL_JR =
             ENTITY_TYPES.register("saga_cell_jr",
                     () -> EntityType.Builder.of(SagaCellEntity.SagaCellJREntity::new, MobCategory.MONSTER)
-                            .sized(0.8f, 1.7f)
+                            .sized(0.8f, 1.6f)
                             .build(ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "saga_cell_jr").toString()));
 
     /*

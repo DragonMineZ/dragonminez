@@ -48,6 +48,7 @@ public class SagaBuuEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.0f);
+            this.setScaleVal(1.2f);
 
             this.setAllowedCombos(150, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC);
 
@@ -75,6 +76,7 @@ public class SagaBuuEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.0f);
+            this.setScaleVal(1.2f);
 
             this.setAllowedCombos(150, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND);
 
@@ -117,6 +119,7 @@ public class SagaBuuEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.2f);
+            this.setScaleVal(1.2f);
 
             this.setAllowedCombos(150, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND);
 
@@ -154,6 +157,7 @@ public class SagaBuuEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.2f);
+            this.setScaleVal(1.2f);
 
             this.setAllowedCombos(150, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND,
                     ComboType.METEOR_COMBINATION, ComboType.RAPID_KICKS);
@@ -194,6 +198,7 @@ public class SagaBuuEntity {
             this.setAuraColor(0xFF82F3);
             this.setKiBlastSpeed(2.2f);
             this.setLightning(true);
+            this.setScaleVal(1.2f);
             this.setLightningColor(0xDE0B0B);
 
             this.setAllowedCombos(120, ComboType.GUM_PUNCH, ComboType.AIR, ComboType.BASIC, ComboType.GUM_EXPAND,

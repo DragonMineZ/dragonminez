@@ -24,6 +24,7 @@ public class SagaTrunksEntity {
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(0);
             this.setEvade(true, 60);
+            this.setisKid(true);
 
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0x5CFFFF, 0x5CFFFF);
             this.addKiSkill(KiSkillType.KI_SMALL, 400, 1.2F,0x5CFFFF, 0x5CFFFF );
@@ -63,6 +64,7 @@ public class SagaTrunksEntity {
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(0);
             this.setEvade(true, 60);
+            this.setisKid(true);
 
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.2F, 0xFFE657, 0xFFE657);
             this.addKiSkill(KiSkillType.KI_SMALL, 400, 1.2F,0xFFE657, 0xFFE657 );
@@ -159,6 +161,7 @@ public class SagaTrunksEntity {
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
             this.setKiCharge(true);
+            this.setScaleVal(1.3f);
 
             this.addKiSkill(KiSkillType.BIG_BANG, 200, 1.5F, 0x00C0FF, 0x00C0FF);
             this.addKiSkill(KiSkillType.MASENKO, 100, 1.2F, 0xFFE657, 0xFFE657);

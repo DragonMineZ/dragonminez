@@ -60,6 +60,7 @@ public class SagaAndroidsEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
+            this.setScaleVal(1.2f);
 
             this.setAllowedCombos(120, ComboType.BASIC);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 400, 3.0F, 0xFFF870, 0xFFF870);

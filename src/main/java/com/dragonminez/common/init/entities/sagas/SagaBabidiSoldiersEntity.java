@@ -57,6 +57,7 @@ public class SagaBabidiSoldiersEntity {
             this.setAuraColor(0xFFFFFF);
             this.setKiBlastSpeed(1.4F);
             this.setDBZStyle(2);
+            this.setScaleVal(1.5f);
 
         }
 

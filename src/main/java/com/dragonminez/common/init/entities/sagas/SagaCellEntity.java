@@ -48,6 +48,7 @@ public class SagaCellEntity {
             this.setAuraColor(0xFFFFFF);
             this.setTextureVariant(0);
             this.setKiBlastSpeed(2.0f);
+            this.setScaleVal(1.2f);
 
             this.setAllowedCombos(150, ComboType.AIR, ComboType.KI_CHARGE_ATTACK);
 
@@ -159,6 +160,7 @@ public class SagaCellEntity {
             this.setAuraColor(0xFFFC42);
             this.setTextureVariant(0);
             this.setKiBlastSpeed(2.0f);
+            this.setisKid(true);
 
             this.setAllowedCombos(150, ComboType.AIR, ComboType.BASIC);
 

@@ -50,6 +50,7 @@ public class SagaGohanEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
+            this.setisKid(true);
 
             this.setAllowedCombos(120, ComboType.BASIC);
 
@@ -90,6 +91,7 @@ public class SagaGohanEntity {
             this.setDBZStyle(0);
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
+            this.setisKid(true);
 
             this.setAllowedCombos(120, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK);
 
@@ -133,6 +135,7 @@ public class SagaGohanEntity {
             this.setEvade(true, 60);
             this.setWildSense(true, 100);
             this.setLightning(true);
+            this.setisKid(true);
 
             this.setAllowedCombos(120, ComboType.BASIC, ComboType.KI_CHARGE_ATTACK, ComboType.METEOR_COMBINATION, ComboType.AIR);
 

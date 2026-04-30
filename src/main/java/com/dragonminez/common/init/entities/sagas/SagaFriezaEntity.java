@@ -21,6 +21,7 @@ public class SagaFriezaEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0x971EE8);
             this.setKiBlastSpeed(1.4f);
+            this.setScaleVal(0.8f);
 
             this.addKiSkill(KiSkillType.KI_SMALL, 200, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
@@ -43,7 +44,7 @@ public class SagaFriezaEntity {
             this.setCanFly(true);
             this.setDBZStyle(2);
             this.setAuraColor(0x971EE8);
-
+            this.setScaleVal(1.2f);
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xAA00FF, 0x6C00A3);
             this.addKiSkill(KiSkillType.GENERIC_KI_WAVE, 200, 1.1F, 0xC523DE, 0xC523DE);
             this.setAllowedCombos(150, ComboType.AIR);
@@ -83,6 +84,7 @@ public class SagaFriezaEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0x971EE8);
             this.setKiBlastSpeed(1.4f);
+            this.setScaleVal(1.3f);
 
             this.addKiSkill(KiSkillType.TRIPLE_LASER, 200, 1.1F, 0xC523DE, 0xC523DE);
             this.addKiSkill(KiSkillType.KI_VOLLEY, 200, 1.1F, 0xC523DE, 0xC523DE);
@@ -178,6 +180,7 @@ public class SagaFriezaEntity {
             this.setDBZStyle(0);
             this.setAuraColor(0xBF0F0F);
             this.setKiBlastSpeed(1.4f);
+            this.setScaleVal(1.2f);
 
             this.addKiSkill(KiSkillType.TRIPLE_LASER, 200, 1.0F, 0xDE233F, 0xDE233F);
             this.addKiSkill(KiSkillType.KI_LASER, 60, 1.0F, 0xA623DE, 0xA623DE);

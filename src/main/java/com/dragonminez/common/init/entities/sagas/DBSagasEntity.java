@@ -117,6 +117,8 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     private static final EntityDataAccessor<Boolean> IS_ZANZOKEN = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_KID = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.BOOLEAN);
 
+    private static final EntityDataAccessor<Float> SCALE_VAL = SynchedEntityData.defineId(DBSagasEntity.class, EntityDataSerializers.FLOAT);
+
     protected int castTimer = 0;
     protected int transformTick = 0;
     private int chargeSoundTimer = 0;
@@ -274,6 +276,14 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
     public boolean isFlyingFast() { return this.entityData.get(IS_FLYING_FAST); }
     public String getAuraType() {return this.entityData.get(AURA_TYPE);}
     public void setAuraType(String type) {this.entityData.set(AURA_TYPE, type);}
+    public float getScale() {
+        return this.isKid() ? 0.7F : 1.0F;
+    }
+
+    public void setScaleVal(float scale) {
+        this.entityData.set(SCALE_VAL, scale);
+    }
+
 
     public void setCombo(int id, int cooldown) {
         this.comboEnabled = true;
@@ -894,6 +904,9 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         pCompound.putInt("TransformTick", this.transformTick);
         pCompound.putInt("ComboTimer", this.comboTimer);
         pCompound.putInt("CurrentComboId", this.getComboId());
+
+        pCompound.putFloat("EntityScale", this.entityData.get(SCALE_VAL));
+        pCompound.putBoolean("isKid", this.isKid());
     }
 
     @Override
@@ -921,6 +934,12 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         if (pCompound.contains("TransformTick")) this.transformTick = pCompound.getInt("TransformTick");
         if (pCompound.contains("ComboTimer")) this.comboTimer = pCompound.getInt("ComboTimer");
         if (pCompound.contains("CurrentComboId")) {this.entityData.set(CURRENT_COMBO_ID, pCompound.getInt("CurrentComboId"));}
+
+        if (pCompound.contains("EntityScale")) {this.setScaleVal(pCompound.getFloat("EntityScale"));} else {this.setScaleVal(1.0F);}
+
+        if (pCompound.contains("isKid")) {
+            this.setisKid(pCompound.getBoolean("isKid"));
+        }
     }
 
     @Override
@@ -944,6 +963,7 @@ public abstract class DBSagasEntity extends Monster implements GeoEntity {
         this.entityData.define(TEXTURE_VARIANT, 0);
         this.entityData.define(IS_ZANZOKEN, false);
         this.entityData.define(IS_KID, false);
+        this.entityData.define(SCALE_VAL, 1.0F);
     }
 
     @Override
