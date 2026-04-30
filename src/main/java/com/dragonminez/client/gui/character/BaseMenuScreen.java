@@ -17,8 +17,6 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.List;
-
 @OnlyIn(Dist.CLIENT)
 public abstract class BaseMenuScreen extends ScaledScreen {
 	protected static boolean GLOBAL_SWITCHING = false;
@@ -343,9 +341,5 @@ public abstract class BaseMenuScreen extends ScaledScreen {
 		});
 
 		return (int) (baseScale * inverseScale[0]);
-	}
-
-	protected void renderAdvancedTooltip(GuiGraphics graphics, List<Component> text, int mouseX, int mouseY) {
-		TextUtil.renderAdvancedTooltip(graphics, this.font, text, mouseX, mouseY, getUiWidth(), getUiHeight(), tooltipScrollY);
 	}
 }

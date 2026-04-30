@@ -31,6 +31,7 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -1260,7 +1261,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		}
 
 		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
-				txt(fitSingleLineEllipsis(getStatusText(status), width - 12)),
+				txt(fitSingleLineEllipsis(getStatusText(status).getString(), width - 12)),
 				x + width / 2,
 				height >= 40 ? y + height - lineHeight - 4 : y + 20,
 				getStatusColor(status));
@@ -1536,24 +1537,11 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return true;
 	}
 
-	private void renderSimpleTooltip(GuiGraphics graphics, List<Component> lines, int mouseX, int mouseY) {
-		if (lines == null || lines.isEmpty()) {
-			return;
-		}
 
-		int tooltipWidth = 0;
-		for (Component line : lines) {
-			tooltipWidth = Math.max(tooltipWidth, this.font.width(line));
-		}
-		tooltipWidth += 10;
-		int tooltipX = mouseX + 8;
-		int tooltipHeight = 6 + (lines.size() * 10);
-		int tooltipY = mouseY - tooltipHeight;
-		graphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, 0xEE111122);
-		graphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 0xFF555577);
-		for (int i = 0; i < lines.size(); i++) {
-			graphics.drawString(this.font, lines.get(i), tooltipX + 5, tooltipY + 3 + (i * 10), 0xFFFFFFFF, false);
-		}
+
+	private void renderSimpleTooltip(GuiGraphics graphics, List<Component> lines, int mouseX, int mouseY) {
+		if (lines == null || lines.isEmpty()) return;
+		TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), null, lines, null, 0xFFFFFF);
 	}
 
 	private List<Component> buildQuestBlockerTooltip(Quest quest, Saga saga, boolean includePartyNote) {
@@ -1573,7 +1561,7 @@ public class QuestTreeScreen extends BaseMenuScreen {
 			return lines;
 		}
 
-		if (saga == null && !quest.isSideQuest()) {
+		if (saga == null && !quest.isSagaQuest()) {
 			return lines;
 		}
 
@@ -1834,41 +1822,29 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		NodeVisibility vis = getNodeVisibility(quest);
 		if (vis == NodeVisibility.HIDDEN) return;
 
-		String title;
-		String statusText;
-		List<Component> extraLines = new ArrayList<>();
+		Component title;
+		List<Component> desc = new ArrayList<>();
+		List<Component> extras = new ArrayList<>();
+		int color;
+
 		if (vis == NodeVisibility.BLURRED) {
-			title = "§kUnknown Quest§r";
-			statusText = tr("gui.dragonminez.quest_tree.status.locked").getString();
+			title = txt("Unknown Quest").withStyle(ChatFormatting.OBFUSCATED);
+			desc.add(tr("gui.dragonminez.quest_tree.status.locked"));
+			color = 0xFF888888;
 		} else {
-			title = LocalizationUtil.localizedOrReadableText(quest.getTitle());
+			title = txt(LocalizationUtil.localizedOrReadableText(quest.getTitle())).withStyle(ChatFormatting.BOLD);
 			QuestNodeStatus status = getNodeStatus(quest);
 			if (status == QuestNodeStatus.CLAIMABLE && quest.getClaimMode() == Quest.ClaimMode.NPC_ONLY) {
-				statusText = tr("gui.dragonminez.quests.claim_from_npc").getString();
-				extraLines.add(tr("gui.dragonminez.quests.claim_from_npc.tooltip"));
+				desc.add(tr("gui.dragonminez.quests.claim_from_npc"));
+				desc.add(tr("gui.dragonminez.quests.claim_from_npc.tooltip"));
 			} else {
-				statusText = getStatusText(status);
+				desc.add(getStatusText(status));
 			}
-			extraLines.addAll(buildQuestBlockerTooltip(quest, availableSagas.isEmpty() ? null : availableSagas.get(currentSagaIndex), false));
+			extras.addAll(buildQuestBlockerTooltip(quest, availableSagas.isEmpty() ? null : availableSagas.get(currentSagaIndex), false));
+			color = getStatusColor(status);
 		}
 
-		int tooltipWidth = Math.max(this.font.width(title), this.font.width(statusText));
-		for (Component line : extraLines) {
-			tooltipWidth = Math.max(tooltipWidth, this.font.width(line));
-		}
-		tooltipWidth += 12;
-		int tooltipHeight = 26 + (extraLines.size() * 11);
-		int tooltipX = mouseX + 10;
-		int tooltipY = mouseY - tooltipHeight - 5;
-
-		graphics.fill(tooltipX, tooltipY, tooltipX + tooltipWidth, tooltipY + tooltipHeight, 0xEE111122);
-		graphics.renderOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 0xFF555577);
-		graphics.drawString(this.font, title, tooltipX + 5, tooltipY + 3, 0xFFFFFFFF, false);
-		int statusColor = vis == NodeVisibility.BLURRED ? 0xFF888888 : getStatusColor(getNodeStatus(quest));
-		graphics.drawString(this.font, statusText, tooltipX + 5, tooltipY + 14, statusColor, false);
-		for (int i = 0; i < extraLines.size(); i++) {
-			graphics.drawString(this.font, extraLines.get(i), tooltipX + 5, tooltipY + 25 + (i * 11), 0xFFCCCCCC, false);
-		}
+		TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, color);
 	}
 
 	private void renderActionButtonGlow(GuiGraphics graphics) {
@@ -2563,13 +2539,13 @@ public class QuestTreeScreen extends BaseMenuScreen {
 		return QuestNodeStatus.LOCKED;
 	}
 
-	private String getStatusText(QuestNodeStatus status) {
+	private Component getStatusText(QuestNodeStatus status) {
 		return switch (status) {
-			case COMPLETED -> tr("gui.dragonminez.quests.status.complete").getString();
-			case CLAIMABLE -> tr("gui.dragonminez.quests.claim_rewards").getString();
-			case ACTIVE -> tr("gui.dragonminez.quest_tree.status.active").getString();
-			case AVAILABLE -> tr("gui.dragonminez.quest_tree.status.available").getString();
-			case LOCKED -> tr("gui.dragonminez.quest_tree.status.locked").getString();
+			case COMPLETED -> tr("gui.dragonminez.quests.status.complete").withStyle(ChatFormatting.DARK_GREEN);
+			case CLAIMABLE -> tr("gui.dragonminez.quests.claim_rewards").withStyle(ChatFormatting.GOLD);
+			case ACTIVE -> tr("gui.dragonminez.quest_tree.status.active").withStyle(ChatFormatting.AQUA);
+			case AVAILABLE -> tr("gui.dragonminez.quest_tree.status.available").withStyle(ChatFormatting.GREEN);
+			case LOCKED -> tr("gui.dragonminez.quest_tree.status.locked").withStyle(ChatFormatting.RED);
 		};
 	}
 

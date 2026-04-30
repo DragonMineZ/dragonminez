@@ -342,6 +342,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		graphics.drawString(font, " " + genderSymbol, symbolX, 19 + topOffset, nameColor, false);
 
 		if (mouseX >= centerX - 40 && mouseX <= centerX + 40 && mouseY >= 19 && mouseY <= 19 + font.lineHeight) {
+			Component title = tr("gui.dragonminez.character_stats.alignment").withStyle(ChatFormatting.GOLD);
 			List<Component> tooltip = new ArrayList<>();
 			if (alignment > 60) {
 				tooltip.add(tr("gui.dragonminez.character_stats.alignment.good", alignment).withStyle(ChatFormatting.YELLOW));
@@ -350,7 +351,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			} else {
 				tooltip.add(tr("gui.dragonminez.character_stats.alignment.evil", alignment).withStyle(ChatFormatting.YELLOW));
 			}
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, tooltip, null, 0xFFFF00);
 		}
 
 		Component raceComponent = tr("race.dragonminez." + raceName);
@@ -401,7 +402,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			if (mouseX >= tpsX && mouseX <= tpsX + tpsWidth && mouseY >= tpsY && mouseY <= tpsY + font.lineHeight) {
 				List<Component> tooltip = new ArrayList<>();
 				tooltip.add(txt(fullTpsFormatter.format(tps)).withStyle(ChatFormatting.YELLOW));
-				renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+				TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), null, tooltip, null, 0xFFFF00);
 			}
 		}
 
@@ -415,6 +416,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		TextUtil.drawStringWithBorder(graphics, this.font, formComponent, valueX + 5, startY + 22, 0xC7EAFC, 0x000000);
 
 		if (mouseX >= valueX + 5 && mouseX <= valueX + 85 && mouseY >= startY + 22 && mouseY <= startY + 22 + font.lineHeight) {
+			Component title = tr("gui.dragonminez.character_stats.form.mastery").withStyle(ChatFormatting.GOLD);
 			List<Component> tooltip = new ArrayList<>();
 			boolean hasTitle = false;
 
@@ -468,7 +470,7 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			}
 
 			if (!tooltip.isEmpty()) {
-				renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+				TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, tooltip, null, 0xFFCC00);
 			}
 		}
 
@@ -513,76 +515,40 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			if (mouseX >= statLabelX && mouseX <= statLabelX + 25 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
 				Component descComponent = tr("gui.dragonminez.character_stats." + statNames[i] + ".desc");
 
-				List<Component> tooltip = new ArrayList<>();
-				for (FormattedCharSequence seq : font.split(descComponent, 180)) {
-					tooltip.add(TooltipUtil.toText(seq));
-				}
+				Component title = tr("gui.dragonminez.character_stats." + statNames[i]).withStyle(ChatFormatting.BOLD);
+				List<Component> desc = new ArrayList<>();
+				desc.add(tr("gui.dragonminez.character_stats." + statNames[i] + ".desc"));
 
+				List<Component> extras = new ArrayList<>();
 				if (hasMult) {
-					tooltip.add(txt(""));
-					tooltip.add(tr("gui.dragonminez.character_stats.base_value")
-							.append(": " + numberFormatter.format(baseValue))
-							.withStyle(ChatFormatting.GRAY));
-					tooltip.add(tr("gui.dragonminez.character_stats.modified_value")
-							.append(": " + numberFormatter.format((int) modifiedValue))
-							.withStyle(ChatFormatting.YELLOW));
+					extras.add(tr("gui.dragonminez.character_stats.base_value").append(": " + numberFormatter.format(baseValue)).withStyle(ChatFormatting.GRAY));
+					extras.add(tr("gui.dragonminez.character_stats.modified_value").append(": " + numberFormatter.format((int) modifiedValue)).withStyle(ChatFormatting.YELLOW));
 
 					double formMultiplier = statsData.getFormMultiplier(statNamesUpper[i]);
 					double stackMultiplier = statsData.getStackFormMultiplier(statNamesUpper[i]);
 					double effectsMultiplier = statsData.getEffectsMultiplier(statNamesUpper[i]);
-
 					boolean hasForm = Math.abs(formMultiplier - 1.0) > 0.01;
 					boolean hasStack = Math.abs(stackMultiplier - 1.0) > 0.01;
 					boolean hasEffects = Math.abs(effectsMultiplier - 1.0) > 0.01;
 
 					if (hasForm || hasStack || hasEffects) {
-						tooltip.add(txt(""));
-						tooltip.add(tr("gui.dragonminez.character_stats.multipliers")
-								.withStyle(ChatFormatting.AQUA));
-					}
-
-					int activeMultsCount = 0;
-
-					if (hasForm) {
-						activeMultsCount++;
-						tooltip.add(tr("gui.dragonminez.character_stats.form_multiplier")
-								.append(" x" + String.format(Locale.US, "%.2f", formMultiplier))
-								.withStyle(ChatFormatting.GOLD));
-					}
-					if (hasStack) {
-						activeMultsCount++;
-						tooltip.add(tr("gui.dragonminez.character_stats.stack_multiplier")
-								.append(" x" + String.format(Locale.US, "%.2f", stackMultiplier))
-								.withStyle(ChatFormatting.RED));
-					}
-					if (hasEffects) {
-						activeMultsCount++;
-						tooltip.add(tr("gui.dragonminez.character_stats.effects_multiplier")
-								.append(" x" + String.format(Locale.US, "%.2f", effectsMultiplier))
-								.withStyle(ChatFormatting.LIGHT_PURPLE));
-					}
-
-					if (activeMultsCount > 1) {
-						tooltip.add(txt(""));
-						DecimalFormat df = new DecimalFormat("#.####", new DecimalFormatSymbols(Locale.US));
-						tooltip.add(txt("Total: x" + df.format(totalMult))
-								.withStyle(ChatFormatting.GREEN));
+						extras.add(tr("gui.dragonminez.character_stats.multipliers").withStyle(ChatFormatting.AQUA));
+						if (hasForm) extras.add(tr("gui.dragonminez.character_stats.form_multiplier").append(" x" + String.format(Locale.US, "%.2f", formMultiplier)).withStyle(ChatFormatting.GOLD));
+						if (hasStack) extras.add(tr("gui.dragonminez.character_stats.stack_multiplier").append(" x" + String.format(Locale.US, "%.2f", stackMultiplier)).withStyle(ChatFormatting.RED));
+						if (hasEffects) extras.add(tr("gui.dragonminez.character_stats.effects_multiplier").append(" x" + String.format(Locale.US, "%.2f", effectsMultiplier)).withStyle(ChatFormatting.LIGHT_PURPLE));
 					}
 				}
 
 				var bonuses = statsData.getBonusStats().getBonuses(statNamesUpper[i]);
 				if (!bonuses.isEmpty()) {
-					tooltip.add(txt(""));
-					tooltip.add(tr("gui.dragonminez.character_stats.bonus")
-							.withStyle(ChatFormatting.AQUA));
+					extras.add(tr("gui.dragonminez.character_stats.bonus").withStyle(ChatFormatting.AQUA));
 					for (var bonus : bonuses) {
-						String bonusText = bonus.name.replace("_", " +") + ": " + bonus.operation +
-								(bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
-						tooltip.add(txt("  " + bonusText).withStyle(ChatFormatting.GREEN));
+						String bonusText = bonus.name.replace("_", " +") + ": " + bonus.operation + (bonus.operation.equals("*") ? String.format(Locale.US, "%.2f", bonus.value) : String.format(Locale.US, "%.0f", bonus.value));
+						extras.add(txt("  " + bonusText).withStyle(ChatFormatting.GREEN));
 					}
 				}
 
-				renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+				TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 			}
 		}
 
@@ -642,128 +608,72 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 			TextUtil.drawStringWithBorder(graphics, this.font, labelComponent, rightX, yPos, 0x7CFDD6, 0x000000);
 
 			if (mouseX >= rightX && mouseX <= rightX + 60 && mouseY >= yPos && mouseY <= yPos + font.lineHeight) {
-				List<Component> tooltip = new ArrayList<>();
+				Component title = tr(labels[i]).withStyle(ChatFormatting.BOLD);
+				List<Component> desc = new ArrayList<>();
+				List<Component> extras = new ArrayList<>();
 
 				switch (i) {
 					case 0 -> {
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.melee_damage.tooltip1"), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.melee_damage.tooltip2", formatUpToOneDecimal(strScaling)).withStyle(ChatFormatting.YELLOW), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxMeleeDamage)).withStyle(ChatFormatting.GREEN), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						tooltip.add(txt(""));
-						tooltip.add(tr("gui.dragonminez.character_stats.melee_damage").append(txt(": "))
-								.append(txt(formatUpToOneDecimal(meleeDamage)))
-								.withStyle(ChatFormatting.AQUA));
-
+						desc.add(tr("gui.dragonminez.character_stats.melee_damage.tooltip1"));
+						desc.add(tr("gui.dragonminez.character_stats.melee_damage.tooltip2", formatUpToOneDecimal(strScaling)).withStyle(ChatFormatting.YELLOW));
+						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxMeleeDamage)).withStyle(ChatFormatting.GREEN));
 						double defensePen = getDefensePenetrationPercentage();
-						if (defensePen > 0) {
-							tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
-									.withStyle(ChatFormatting.RED));
-						}
+						if (defensePen > 0) extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%")).withStyle(ChatFormatting.RED));
 					}
 					case 1 -> {
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.strike_damage.tooltip1"), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.strike_damage.tooltip2", formatUpToOneDecimal(skpScaling)).withStyle(ChatFormatting.YELLOW), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxStrikeDamage)).withStyle(ChatFormatting.GREEN), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						tooltip.add(txt(""));
-						tooltip.add(tr("gui.dragonminez.character_stats.strike_damage").append(txt(": "))
-								.append(txt(formatUpToOneDecimal(strikeDamage)))
-								.withStyle(ChatFormatting.AQUA));
-
+						desc.add(tr("gui.dragonminez.character_stats.strike_damage.tooltip1"));
+						desc.add(tr("gui.dragonminez.character_stats.strike_damage.tooltip2", formatUpToOneDecimal(skpScaling)).withStyle(ChatFormatting.YELLOW));
+						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxStrikeDamage)).withStyle(ChatFormatting.GREEN));
 						double defensePen = getDefensePenetrationPercentage();
-						if (defensePen > 0) {
-							tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
-									.withStyle(ChatFormatting.RED));
-						}
+						if (defensePen > 0) extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%")).withStyle(ChatFormatting.RED));
 					}
 					case 2 -> {
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.stamina.tooltip1"), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.stamina.tooltip2", formatUpToOneDecimal(stmScaling)).withStyle(ChatFormatting.YELLOW), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
+						desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip1"));
+						desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip2", formatUpToOneDecimal(stmScaling)).withStyle(ChatFormatting.YELLOW));
 					}
 					case 3 -> {
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.defense.tooltip1"), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.defense.tooltip2", formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
+						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip1"));
+						desc.add(tr("gui.dragonminez.character_stats.defense.tooltip2", formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
+						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
 
 						double[] pcts = getDamageReductionPercentages();
-						tooltip.add(txt(""));
-
-						tooltip.add(tr("gui.dragonminez.character_stats.defense").append(": ")
-								.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
+						extras.add(tr("gui.dragonminez.character_stats.defense").append(": ")
+								.append(txt(formatUpToTwoDecimals((pcts[0] + pcts[2]) * 100.0) + "% "))
 								.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 								.withStyle(ChatFormatting.AQUA));
 
 						if (pcts[1] > 1.0) {
-							tooltip.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
-									.append(txt(formatUpToOneDecimal(pcts[1]) + " "))
-									.append(tr("gui.dragonminez.character_stats.dmg_taken"))
-									.withStyle(ChatFormatting.GOLD));
+							extras.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
+								.append(txt(formatUpToOneDecimal(pcts[1]) + " "))
+								.append(tr("gui.dragonminez.character_stats.dmg_taken"))
+								.withStyle(ChatFormatting.GOLD));
 						}
 
 						if (pcts[2] > 0) {
-							tooltip.add(tr("gui.dragonminez.character_stats.protection").append(": ")
+							extras.add(tr("gui.dragonminez.character_stats.protection").append(": ")
 									.append(txt(formatUpToTwoDecimals(pcts[2]) + "% "))
 									.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 									.withStyle(ChatFormatting.LIGHT_PURPLE));
 						}
 					}
 					case 4 -> {
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.health.tooltip1"), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.health.tooltip2", formatUpToOneDecimal(vitScaling)).withStyle(ChatFormatting.YELLOW), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
+						desc.add(tr("gui.dragonminez.character_stats.health.tooltip1"));
+						desc.add(tr("gui.dragonminez.character_stats.health.tooltip2", formatUpToOneDecimal(vitScaling)).withStyle(ChatFormatting.YELLOW));
 					}
 					case 5 -> {
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.ki_damage.tooltip1"), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.ki_damage.tooltip2", formatUpToOneDecimal(pwrScaling)).withStyle(ChatFormatting.YELLOW), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxKiDamage)).withStyle(ChatFormatting.GREEN), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-
+						desc.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip1"));
+						desc.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip2", formatUpToOneDecimal(pwrScaling)).withStyle(ChatFormatting.YELLOW));
+						desc.add(tr("gui.dragonminez.character_stats.max_value", formatUpToOneDecimal(maxKiDamage)).withStyle(ChatFormatting.GREEN));
 						double defensePen = getDefensePenetrationPercentage();
-						if (defensePen > 0) {
-							tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
-									.withStyle(ChatFormatting.RED));
-						}
+						if (defensePen > 0) extras.add(tr("gui.dragonminez.character_stats.ki_damage").append(txt(": ")).append(txt(formatUpToOneDecimal(kiDamage))).withStyle(ChatFormatting.AQUA));
 					}
 					case 6 -> {
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.max_energy.tooltip1"), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
-						for (FormattedCharSequence seq : font.split(tr("gui.dragonminez.character_stats.max_energy.tooltip2", formatUpToOneDecimal(eneScaling)).withStyle(ChatFormatting.YELLOW), 180)) {
-							tooltip.add(TooltipUtil.toText(seq));
-						}
+						desc.add(tr("gui.dragonminez.character_stats.max_energy.tooltip1"));
+						desc.add(tr("gui.dragonminez.character_stats.max_energy.tooltip2", formatUpToOneDecimal(eneScaling)).withStyle(ChatFormatting.YELLOW));
 					}
 				}
 
-				renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+				TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0x7CFDD6);
 			}
 		}
 
@@ -967,128 +877,139 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 		int vitTextWidth = font.width(vitComponent);
 
 		if (mouseX >= strX - strTextWidth / 2 && mouseX <= strX + strTextWidth / 2 && mouseY >= strY && mouseY <= strY + font.lineHeight) {
-			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(tr("gui.dragonminez.character_stats.melee_damage.tooltip1"));
-			tooltip.add(tr("gui.dragonminez.character_stats.melee_damage.tooltip2",
+			Component title = tr("gui.dragonminez.character_stats.str").withStyle(ChatFormatting.BOLD);
+			List<Component> desc = new ArrayList<>();
+			desc.add(tr("gui.dragonminez.character_stats.melee_damage.tooltip1"));
+			desc.add(tr("gui.dragonminez.character_stats.melee_damage.tooltip2",
 					formatUpToOneDecimal(strScaling)).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(tr("gui.dragonminez.character_stats.max_value",
+			desc.add(tr("gui.dragonminez.character_stats.max_value",
 					formatUpToOneDecimal(maxMeleeDamage)).withStyle(ChatFormatting.GREEN));
-			tooltip.add(txt(""));
-			tooltip.add(tr("gui.dragonminez.character_stats.melee_damage").append(": ")
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.melee_damage").append(": ")
 					.append(txt(formatUpToOneDecimal(meleeDamage)))
 					.withStyle(ChatFormatting.AQUA));
 			double defensePen = getDefensePenetrationPercentage();
 			if (defensePen > 0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+				extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
 						.withStyle(ChatFormatting.RED));
 			}
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
 		if (mouseX >= skpX - skpTextWidth / 2 && mouseX <= skpX + skpTextWidth / 2 && mouseY >= skpY && mouseY <= skpY + font.lineHeight) {
-			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(tr("gui.dragonminez.character_stats.strike_damage.tooltip1"));
-			tooltip.add(tr("gui.dragonminez.character_stats.strike_damage.tooltip2",
+			Component title = tr("gui.dragonminez.character_stats.skp").withStyle(ChatFormatting.BOLD);
+			List<Component> desc = new ArrayList<>();
+			desc.add(tr("gui.dragonminez.character_stats.strike_damage.tooltip1"));
+			desc.add(tr("gui.dragonminez.character_stats.strike_damage.tooltip2",
 					formatUpToOneDecimal(skpScaling)).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(tr("gui.dragonminez.character_stats.max_value",
+			desc.add(tr("gui.dragonminez.character_stats.max_value",
 					formatUpToOneDecimal(maxStrikeDamage)).withStyle(ChatFormatting.GREEN));
-			tooltip.add(txt(""));
-			tooltip.add(tr("gui.dragonminez.character_stats.strike_damage").append(": ")
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.strike_damage").append(": ")
 					.append(txt(formatUpToOneDecimal(strikeDamage)))
 					.withStyle(ChatFormatting.AQUA));
 			double defensePen = getDefensePenetrationPercentage();
 			if (defensePen > 0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+				extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
 						.withStyle(ChatFormatting.RED));
 			}
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
 		if (mouseX >= resX - resTextWidth / 2 && mouseX <= resX + resTextWidth / 2 && mouseY >= resY && mouseY <= resY + font.lineHeight) {
-			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(tr("gui.dragonminez.character_stats.defense.tooltip1"));
-			tooltip.add(tr("gui.dragonminez.character_stats.defense.tooltip2",
+			Component title = tr("gui.dragonminez.character_stats.res").withStyle(ChatFormatting.BOLD);
+			List<Component> desc = new ArrayList<>();
+			desc.add(tr("gui.dragonminez.character_stats.defense.tooltip1"));
+			desc.add(tr("gui.dragonminez.character_stats.defense.tooltip2",
 					formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(tr("gui.dragonminez.character_stats.max_value",
+			desc.add(tr("gui.dragonminez.character_stats.max_value",
 					formatUpToOneDecimal(maxDefense)).withStyle(ChatFormatting.GREEN));
-			tooltip.add(txt(""));
-			tooltip.add(tr("gui.dragonminez.character_stats.stamina.tooltip1"));
-			tooltip.add(tr("gui.dragonminez.character_stats.stamina.tooltip2",
+			desc.add(Component.empty());
+			desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip1"));
+			desc.add(tr("gui.dragonminez.character_stats.stamina.tooltip2",
 					formatUpToOneDecimal(resScaling)).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(txt(""));
-			tooltip.add(tr("gui.dragonminez.character_stats.defense").append(": ")
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.defense").append(": ")
 					.append(txt(formatUpToOneDecimal(defense)))
 					.withStyle(ChatFormatting.AQUA));
-			tooltip.add(tr("gui.dragonminez.character_stats.stamina").append(": ")
+			extras.add(tr("gui.dragonminez.character_stats.stamina").append(": ")
 					.append(txt(formatUpToOneDecimal(stamina)))
 					.withStyle(ChatFormatting.AQUA));
 
 			double[] pcts = getDamageReductionPercentages();
-			tooltip.add(txt(""));
+			extras.add(txt(""));
 
-			tooltip.add(tr("gui.dragonminez.character_stats.defense").append(": ")
+			extras.add(tr("gui.dragonminez.character_stats.defense").append(": ")
 					.append(txt(formatUpToTwoDecimals(pcts[0]) + "% "))
 					.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 					.withStyle(ChatFormatting.AQUA));
 
 			if (pcts[1] > 1.0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
+				extras.add(tr("gui.dragonminez.character_stats.power_divider").append(": /")
 						.append(txt(formatUpToOneDecimal(pcts[1]) + " "))
 						.append(tr("gui.dragonminez.character_stats.dmg_taken"))
 						.withStyle(ChatFormatting.GOLD));
 			}
 
 			if (pcts[2] > 0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.protection").append(": ")
+				extras.add(tr("gui.dragonminez.character_stats.protection").append(": ")
 						.append(txt(formatUpToTwoDecimals(pcts[2]) + "% "))
 						.append(tr("gui.dragonminez.character_stats.dmg_reduction"))
 						.withStyle(ChatFormatting.LIGHT_PURPLE));
 			}
-
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
 		if (mouseX >= pwrX - pwrTextWidth / 2 && mouseX <= pwrX + pwrTextWidth / 2 && mouseY >= pwrY && mouseY <= pwrY + font.lineHeight) {
-			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip1"));
-			tooltip.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip2",
+			Component title = tr("gui.dragonminez.character_stats.pwr").withStyle(ChatFormatting.BOLD);
+			List<Component> desc = new ArrayList<>();
+			desc.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip1"));
+			desc.add(tr("gui.dragonminez.character_stats.ki_damage.tooltip2",
 					formatUpToOneDecimal(pwrScaling)).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(tr("gui.dragonminez.character_stats.max_value",
+			desc.add(tr("gui.dragonminez.character_stats.max_value",
 					formatUpToOneDecimal(maxKiDamage)).withStyle(ChatFormatting.GREEN));
-			tooltip.add(txt(""));
-			tooltip.add(tr("gui.dragonminez.character_stats.ki_damage").append(": ")
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.ki_damage").append(": ")
 					.append(txt(formatUpToOneDecimal(kiDamage)))
 					.withStyle(ChatFormatting.AQUA));
 			double defensePen = getDefensePenetrationPercentage();
 			if (defensePen > 0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
+				extras.add(tr("gui.dragonminez.character_stats.defense_penetration").append(txt(": " + formatUpToOneDecimal(defensePen) + "%"))
 						.withStyle(ChatFormatting.RED));
 			}
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
 		if (mouseX >= eneX - eneTextWidth / 2 && mouseX <= eneX + eneTextWidth / 2 && mouseY >= eneY && mouseY <= eneY + font.lineHeight) {
-			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(tr("gui.dragonminez.character_stats.max_energy.tooltip1"));
-			tooltip.add(tr("gui.dragonminez.character_stats.max_energy.tooltip2",
+			Component title = tr("gui.dragonminez.character_stats.ene").withStyle(ChatFormatting.BOLD);
+			List<Component> desc = new ArrayList<>();
+			desc.add(tr("gui.dragonminez.character_stats.max_energy.tooltip1"));
+			desc.add(tr("gui.dragonminez.character_stats.max_energy.tooltip2",
 					formatUpToOneDecimal(eneScaling)).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(txt(""));
-			tooltip.add(tr("gui.dragonminez.character_stats.max_energy").append(": ")
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.max_energy").append(": ")
 					.append(txt(formatUpToOneDecimal(energy)))
 					.withStyle(ChatFormatting.AQUA));
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 
 		if (mouseX >= vitX - vitTextWidth / 2 && mouseX <= vitX + vitTextWidth / 2 && mouseY >= vitY && mouseY <= vitY + font.lineHeight) {
-			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(tr("gui.dragonminez.character_stats.health.tooltip1"));
-			tooltip.add(tr("gui.dragonminez.character_stats.health.tooltip2",
+			Component title = tr("gui.dragonminez.character_stats.vit").withStyle(ChatFormatting.BOLD);
+			List<Component> desc = new ArrayList<>();
+			desc.add(tr("gui.dragonminez.character_stats.health.tooltip1"));
+			desc.add(tr("gui.dragonminez.character_stats.health.tooltip2",
 					formatUpToOneDecimal(vitScaling)).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(txt(""));
-			tooltip.add(tr("gui.dragonminez.character_stats.health").append(": ")
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.health").append(": ")
 					.append(txt(formatUpToOneDecimal(health)))
 					.withStyle(ChatFormatting.AQUA));
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0xD71432);
 		}
 	}
 
@@ -1113,31 +1034,33 @@ public class CharacterStatsScreen extends BaseMenuScreen {
 
 		int textWidth = font.width(label) + font.width(separator) + font.width(value);
 		if (mouseX >= labelX && mouseX <= labelX + textWidth && mouseY >= y && mouseY <= y + font.lineHeight) {
-			List<Component> tooltip = new ArrayList<>();
-			tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.total", totalMult).withStyle(ChatFormatting.YELLOW));
-			tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", formatUpToOneDecimal(statsData.getTpGlobalMultiplier())).withStyle(ChatFormatting.GRAY));
-			tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", formatUpToOneDecimal(statsData.getTpClassMultiplier())).withStyle(ChatFormatting.AQUA));
+			Component title = tr("gui.dragonminez.character_stats.tp_multiplier").withStyle(ChatFormatting.GOLD);
+			List<Component> desc = new ArrayList<>();
+			desc.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.total", totalMult).withStyle(ChatFormatting.YELLOW));
+
+			List<Component> extras = new ArrayList<>();
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.general", formatUpToOneDecimal(statsData.getTpGlobalMultiplier())).withStyle(ChatFormatting.GRAY));
+			extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.class", formatUpToOneDecimal(statsData.getTpClassMultiplier())).withStyle(ChatFormatting.AQUA));
 
 			if (statsData.isFrostDemonTpPassiveActive()) {
-				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.frost_demon", formatUpToOneDecimal(statsData.getTpFrostDemonMultiplier())).withStyle(ChatFormatting.LIGHT_PURPLE));
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.frost_demon", formatUpToOneDecimal(statsData.getTpFrostDemonMultiplier())).withStyle(ChatFormatting.LIGHT_PURPLE));
 			}
 
 			double htc = statsData.getTpHTCMultiplier();
 			if (htc > 1.0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", formatUpToOneDecimal(htc)).withStyle(ChatFormatting.GOLD));
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.htc", formatUpToOneDecimal(htc)).withStyle(ChatFormatting.GOLD));
 			}
 
 			double gravity = statsData.getTpGravityMultiplier();
 			if (gravity > 1.0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToOneDecimal(gravity)).withStyle(ChatFormatting.GREEN));
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.gravity", formatUpToOneDecimal(gravity)).withStyle(ChatFormatting.GREEN));
 			}
 
 			double potionEffect = statsData.getTpPotionEffectMultiplier();
 			if (potionEffect > 1.0) {
-				tooltip.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", formatUpToOneDecimal(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
+				extras.add(tr("gui.dragonminez.character_stats.tp_multiplier.tooltip.effect", formatUpToOneDecimal(potionEffect)).withStyle(ChatFormatting.LIGHT_PURPLE));
 			}
-
-			renderAdvancedTooltip(graphics, tooltip, mouseX, mouseY);
+			TextUtil.renderAdvancedTooltip(graphics, this.font, mouseX, mouseY, getUiWidth(), getUiHeight(), title, desc, extras, 0x7CFDD6);
 		}
 	}
 

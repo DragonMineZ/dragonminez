@@ -19,7 +19,7 @@ public abstract class ScaledScreen extends Screen {
 	private static final float MIN_MENU_SCALE_MULTIPLIER = 0.25f;
 	private static final float MAX_MENU_SCALE_MULTIPLIER = 3.0f;
 
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
+	protected static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private float uiScale = 1.0f;
 	private int uiWidth;

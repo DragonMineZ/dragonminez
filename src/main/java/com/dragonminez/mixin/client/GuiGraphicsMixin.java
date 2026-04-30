@@ -3,7 +3,9 @@ package com.dragonminez.mixin.client;
 import com.dragonminez.client.gui.tooltip.BedrockCenteringPositionModule;
 import com.dragonminez.client.gui.tooltip.PrioritizeTooltipTopPositionModule;
 import com.dragonminez.client.gui.tooltip.ScrollTracker;
+import com.dragonminez.client.gui.tooltip.TooltipDecor;
 import com.dragonminez.client.gui.tooltip.TooltipPositionModule;
+import com.dragonminez.client.gui.tooltip.CustomTooltipRenderers;
 import com.dragonminez.client.util.TooltipUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
@@ -30,6 +32,8 @@ public abstract class GuiGraphicsMixin {
 
     @ModifyVariable(method = "renderTooltipInternal", at = @At("HEAD"), argsOnly = true)
     private List<ClientTooltipComponent> dragonminez$wrapTooltip(List<ClientTooltipComponent> components, Font font) {
+        TooltipDecor.hasItemBox = !components.isEmpty() && components.get(0) instanceof CustomTooltipRenderers.HeaderRenderer;
+
         List<ClientTooltipComponent> wrapped = TooltipUtil.wrapComponents(components, font, this.guiWidth());
         ScrollTracker.updateTooltip(wrapped);
         return wrapped;
@@ -38,7 +42,6 @@ public abstract class GuiGraphicsMixin {
     @Redirect(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"))
     private Vector2ic dragonminez$moveTooltip(ClientTooltipPositioner positioner, int screenWidth, int screenHeight, int x, int y, int width, int height) {
         Vector2ic currentPosition = positioner.positionTooltip(screenWidth, screenHeight, x, y, width, height);
-
         pose().pushPose();
 
         for (TooltipPositionModule module : List.of(
@@ -50,11 +53,36 @@ public abstract class GuiGraphicsMixin {
         }
 
         ScrollTracker.applyScroll((GuiGraphics) (Object) this, currentPosition.x(), currentPosition.y(), width, height, screenWidth, screenHeight);
+
+        TooltipDecor.lastTooltipX = currentPosition.x();
+        TooltipDecor.lastTooltipY = currentPosition.y();
+        TooltipDecor.lastTooltipW = width;
+        TooltipDecor.lastTooltipH = height;
+
         return currentPosition;
+    }
+
+    @Redirect(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipComponent;renderText(Lnet/minecraft/client/gui/Font;IILorg/joml/Matrix4f;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;)V"))
+    private void dragonminez$centerAndSpaceComponents(ClientTooltipComponent instance, Font font, int renderX, int renderY, org.joml.Matrix4f matrix, net.minecraft.client.renderer.MultiBufferSource.BufferSource bufferSource) {
+        int finalX = renderX;
+
+        if (TooltipDecor.hasSpecialBorder && !TooltipDecor.hasItemBox && renderY <= TooltipDecor.lastTooltipY + 12) {
+            int textW = instance.getWidth(font);
+            finalX = TooltipDecor.lastTooltipX + (TooltipDecor.lastTooltipW / 2) - (textW / 2);
+        }
+
+        instance.renderText(font, finalX, renderY, matrix, bufferSource);
     }
 
     @Inject(method = "renderTooltipInternal", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;popPose()V", ordinal = 0))
     private void dragonminez$closeCustomMatrices(Font textRenderer, List<ClientTooltipComponent> tooltip, int x, int y, ClientTooltipPositioner positioner, CallbackInfo ci) {
         pose().popPose();
+    }
+
+    @Inject(method = "renderTooltipInternal", at = @At("TAIL"))
+    private void dragonminez$drawCustomDecor(Font font, List<ClientTooltipComponent> components, int mouseX, int mouseY, ClientTooltipPositioner positioner, CallbackInfo ci) {
+        if (!TooltipDecor.hasSpecialBorder) return;
+        TooltipDecor.drawShadow(pose(), TooltipDecor.lastTooltipX, TooltipDecor.lastTooltipY, TooltipDecor.lastTooltipW, TooltipDecor.lastTooltipH);
+        TooltipDecor.drawBorder(pose(), TooltipDecor.lastTooltipX, TooltipDecor.lastTooltipY, TooltipDecor.lastTooltipW, TooltipDecor.lastTooltipH);
     }
 }

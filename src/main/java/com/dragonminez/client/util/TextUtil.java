@@ -1,5 +1,8 @@
 package com.dragonminez.client.util;
 
+import com.dragonminez.client.gui.tooltip.CustomTooltipNodes;
+import com.dragonminez.client.gui.tooltip.CustomTooltipRenderers;
+import com.dragonminez.client.gui.tooltip.TooltipDecor;
 import com.dragonminez.mixin.client.GuiGraphicsInvoker;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,8 +14,6 @@ import net.minecraft.util.Mth;
 import org.joml.Vector2i;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public class TextUtil {
     public static FormattedCharSequence overrideColor(FormattedCharSequence sequence, int color) {
@@ -31,7 +32,7 @@ public class TextUtil {
 
     public static void drawStringWithBorder(GuiGraphics graphics, Font font, Component text, int x, int y, int textColor, int borderColor) {
         FormattedCharSequence sequence = text.getVisualOrderText();
-		drawStringWithBorder(graphics, font, sequence, x, y, textColor, borderColor);
+        drawStringWithBorder(graphics, font, sequence, x, y, textColor, borderColor);
     }
 
     public static void drawStringWithBorder(GuiGraphics graphics, Font font, FormattedCharSequence text, int x, int y, int textColor, int borderColor) {
@@ -82,39 +83,64 @@ public class TextUtil {
         drawCenteredStringWithBorder(graphics, font, text, centerX, y, textColor, 0xFF000000);
     }
 
-    public static void renderAdvancedTooltip(GuiGraphics graphics, Font font, List<Component> lines, int mouseX, int mouseY, int screenWidth, int screenHeight, float scrollY) {
-        if (lines == null || lines.isEmpty()) return;
+    public static void renderAdvancedTooltip(GuiGraphics graphics, Font font, int mouseX, int mouseY, int screenWidth, int screenHeight, Component title, List<Component> description, List<Component> extras, int color) {
+        if (title == null && (description == null || description.isEmpty()) && (extras == null || extras.isEmpty())) return;
 
-        List<Component> initialSplitLines = new ArrayList<>();
-        for (Component c : lines) {
-            String raw = c.getString();
-            if (raw.contains("\n")) {
-                String[] parts = raw.split("\n");
-                for (String part : parts) {
-                    initialSplitLines.add(Component.literal(part).setStyle(c.getStyle()));
+        List<ClientTooltipComponent> components = new ArrayList<>();
+        int allowedMaxWidth = Math.max(screenWidth / 3, 200);
+
+        if (title != null) {
+            components.add(ClientTooltipComponent.create(title.getVisualOrderText()));
+            components.add(new CustomTooltipRenderers.PaddingRenderer(new CustomTooltipNodes.PaddingNode(8)));
+            components.add(new CustomTooltipRenderers.SeparatorRenderer(new CustomTooltipNodes.SeparatorNode()));
+            components.add(new CustomTooltipRenderers.PaddingRenderer(new CustomTooltipNodes.PaddingNode(0)));
+        }
+
+        if (description != null && !description.isEmpty()) {
+            for (Component c : description) {
+                String raw = c.getString();
+                if (raw.contains("\n")) {
+                    for (String part : raw.split("\n")) {
+                        for (FormattedCharSequence wrapped : font.split(Component.literal(part).setStyle(c.getStyle()), allowedMaxWidth)) {
+                            components.add(ClientTooltipComponent.create(wrapped));
+                        }
+                    }
+                } else {
+                    for (FormattedCharSequence wrapped : font.split(c, allowedMaxWidth)) {
+                        components.add(ClientTooltipComponent.create(wrapped));
+                    }
                 }
-            } else {
-                initialSplitLines.add(c);
             }
         }
 
-        int allowedMaxWidth = Math.max(screenWidth / 2, 200);
-        List<FormattedCharSequence> wrappedLines = new ArrayList<>();
-        for (Component line : initialSplitLines) {
-            wrappedLines.addAll(font.split(line, allowedMaxWidth));
+        if (extras != null && !extras.isEmpty()) {
+            components.add(new CustomTooltipRenderers.PaddingRenderer(new CustomTooltipNodes.PaddingNode(12)));
+            components.add(new CustomTooltipRenderers.SeparatorRenderer(new CustomTooltipNodes.SeparatorNode()));
+            components.add(new CustomTooltipRenderers.PaddingRenderer(new CustomTooltipNodes.PaddingNode(0)));
+
+            for (Component c : extras) {
+                String raw = c.getString();
+                if (raw.contains("\n")) {
+                    for (String part : raw.split("\n")) {
+                        for (FormattedCharSequence wrapped : font.split(Component.literal(part).setStyle(c.getStyle()), allowedMaxWidth)) {
+                            components.add(ClientTooltipComponent.create(wrapped));
+                        }
+                    }
+                } else {
+                    for (FormattedCharSequence wrapped : font.split(c, allowedMaxWidth)) {
+                        components.add(ClientTooltipComponent.create(wrapped));
+                    }
+                }
+            }
         }
 
-        List<ClientTooltipComponent> components = wrappedLines.stream()
-                .map(ClientTooltipComponent::create)
-                .collect(Collectors.toList());
+        ClientTooltipPositioner positioner = (ignoredW, ignoredH, x, y, width, height) -> {
+            if (height > screenHeight) return new Vector2i(x, 4);
 
-        ClientTooltipPositioner positioner = (scrW, scrH, x, y, width, height) -> {
-            if (height > scrH) return new Vector2i(x, 4);
-
-            int modX = Mth.clamp(x - width / 2, 4, scrW - width - 4);
+            int modX = Mth.clamp(x - width / 2, 4, screenWidth - width - 4);
             int modY = y + 12;
 
-            int belowObstruction = (modY + height) - scrH;
+            int belowObstruction = (modY + height) - screenHeight;
             if (belowObstruction > 0) {
                 int aboveY = y - height - 4;
                 int aboveObstruction = -aboveY;
@@ -124,10 +150,14 @@ public class TextUtil {
             return new Vector2i(modX, modY);
         };
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, scrollY, 0);
-        ((GuiGraphicsInvoker) graphics).invokeRenderTooltipInternal(font, components, mouseX, mouseY, positioner);
-        graphics.pose().popPose();
+        TooltipDecor.forceCustomBorder = true;
+        TooltipDecor.forcedColor = color;
+
+        try {
+            ((GuiGraphicsInvoker) graphics).invokeRenderTooltipInternal(font, components, mouseX, mouseY, positioner);
+        } finally {
+            TooltipDecor.forceCustomBorder = false;
+        }
     }
 
     public static void renderScrollableText(GuiGraphics graphics, Font font, List<String> lines, int x, int y, int width, int height, float currentScroll, float maxScroll, int color) {

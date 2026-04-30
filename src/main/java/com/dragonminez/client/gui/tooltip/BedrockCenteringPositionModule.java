@@ -11,7 +11,7 @@ public class BedrockCenteringPositionModule implements TooltipPositionModule {
 		int modX = x;
 		int modY = y;
 
-		if (x < 4) {
+		if (x < 4 || x + width > screenWidth - 4) {
 			modX = Mth.clamp(mouseX - width / 2, 6, screenWidth - width - 6);
 			modY = mouseY - height - 12;
 
