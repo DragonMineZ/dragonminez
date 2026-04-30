@@ -1,6 +1,7 @@
 package com.dragonminez.client.events;
 
 import com.dragonminez.Reference;
+import com.dragonminez.client.gui.hud.HudStatNumberAnimator;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.StatsCapability;
@@ -15,7 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
@@ -27,8 +28,10 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT)
@@ -39,6 +42,9 @@ public class KiSenseEvent {
 
 	private static final Set<Integer> SENSED_ENTITIES = new HashSet<>();
 	private static int scanTickCounter = 0;
+
+	private static final Map<Integer, HudStatNumberAnimator> healthAnimators = new HashMap<>();
+	private static final Map<Integer, Float> lerpedHealthWidths = new HashMap<>();
 
 	static {
 		numberFormat.setMaximumFractionDigits(1);
@@ -77,6 +83,9 @@ public class KiSenseEvent {
 					}
 				}
 			});
+
+			lerpedHealthWidths.keySet().retainAll(SENSED_ENTITIES);
+			healthAnimators.keySet().retainAll(SENSED_ENTITIES);
 		}
 	}
 
@@ -84,10 +93,10 @@ public class KiSenseEvent {
 	public static void onRenderNameTag(RenderNameTagEvent event) {
 		if (!(event.getEntity() instanceof LivingEntity entity)) return;
 		if (!SENSED_ENTITIES.contains(entity.getId())) return;
-		renderHealthBar(event.getPoseStack(), entity, event.getMultiBufferSource());
+		renderHealthBar(event.getPoseStack(), entity, event.getPartialTick());
 	}
 
-	private static void renderHealthBar(PoseStack poseStack, LivingEntity entity, MultiBufferSource bufferSource) {
+	private static void renderHealthBar(PoseStack poseStack, LivingEntity entity, float partialTick) {
 		poseStack.pushPose();
 
 		poseStack.translate(0.0D, entity.getBbHeight() + 0.8D, 0.0D);
@@ -112,7 +121,14 @@ public class KiSenseEvent {
 
 		drawTexture(poseStack, x, y, (int) width, 9, 0, 0);
 
-		int currentBarWidth = (int) (76 * healthPercent);
+		float targetBarWidth = 76 * healthPercent;
+		int entityId = entity.getId();
+		float currentBarWidth = lerpedHealthWidths.getOrDefault(entityId, targetBarWidth);
+
+		currentBarWidth += (targetBarWidth - currentBarWidth) * 0.25f * partialTick;
+		if (Math.abs(currentBarWidth - targetBarWidth) <= 0.5f) currentBarWidth = targetBarWidth;
+
+		lerpedHealthWidths.put(entityId, currentBarWidth);
 
 		int fillV;
 		if (healthPercent < 0.33f) {
@@ -124,23 +140,60 @@ public class KiSenseEvent {
 		}
 
 		if (currentBarWidth > 0) {
-			drawTexture(poseStack, x + 2, y + 3, 7 + currentBarWidth, 5, 2, fillV);
+			drawTexture(poseStack, x + 2, y + 3, 7 + (int)currentBarWidth, 5, 2, fillV);
 		}
 
 		poseStack.pushPose();
-		String text = "";
-		if (ConfigManager.getUserConfig().getAdvancedDescriptionPercentage()) {
-			text = String.format("%.0f", health / maxHealth * 100) + "%";
+		String textStr = "";
+		boolean showPercent = ConfigManager.getUserConfig().getAdvancedDescriptionPercentage();
+		if (showPercent) {
+			textStr = String.format("%.0f", health / maxHealth * 100) + "%";
 		} else {
-			text = numberFormat.format(health) + " / " + numberFormat.format(maxHealth);
+			textStr = numberFormat.format(health) + " / " + numberFormat.format(maxHealth);
 		}
+		MutableComponent text = txt(textStr);
+
 		float textScale = 0.6f;
 		poseStack.scale(textScale, textScale, textScale);
 		float textY = 3.0f;
-		drawBorderedText(poseStack, bufferSource, mc.font, text, 0, textY);
+
+		HudStatNumberAnimator animator = healthAnimators.computeIfAbsent(entity.getId(), id -> new HudStatNumberAnimator(HudStatNumberAnimator.StatKind.KISENSE_HEALTH));
+		float value = showPercent ? Math.round((health / maxHealth) * 100.0f) : Math.round(health);
+		HudStatNumberAnimator.RenderState state = animator.update(textStr, value, mc.player.tickCount + partialTick);
+
+		if (!state.isHidden()) {
+			poseStack.translate(state.offsetX(), state.offsetY(), 0);
+
+			Matrix4f matrix = poseStack.last().pose();
+			MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+
+			float textWidth = mc.font.width(text);
+			float textX = -textWidth / 2.0f;
+
+			int color = withAlpha(state.rgbColor(), state.alpha());
+			int borderColor = withAlpha(0x000000, state.alpha());
+			int light = 15728880;
+
+			poseStack.translate(0.0F, 0.0F, -0.02F);
+			mc.font.drawInBatch(text, textX + 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
+			mc.font.drawInBatch(text, textX - 1, textY, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
+			mc.font.drawInBatch(text, textX, textY + 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
+			mc.font.drawInBatch(text, textX, textY - 1, borderColor, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, light);
+
+			poseStack.translate(0.0F, 0.0F, -0.02F);
+			Matrix4f matrixFront = poseStack.last().pose();
+			mc.font.drawInBatch(text, textX, textY, color, false, matrixFront, bufferSource, Font.DisplayMode.NORMAL, 0, light);
+
+			bufferSource.endBatch();
+		}
 
 		poseStack.popPose();
 		poseStack.popPose();
+	}
+
+	private static int withAlpha(int rgb, float alpha) {
+		int alphaChannel = Math.round(Mth.clamp(alpha, 0.0f, 1.0f) * 255.0f);
+		return (alphaChannel << 24) | (rgb & 0xFFFFFF);
 	}
 
 	private static void drawTexture(PoseStack poseStack, float x, float y, int width, int height, int u, int v) {
@@ -163,34 +216,6 @@ public class KiSenseEvent {
 		buffer.vertex(matrix, x, y, 0).uv(minU, minV).endVertex();
 
 		tesselator.end();
-	}
-
-	private static void drawBorderedText(PoseStack poseStack, MultiBufferSource buffer, Font font, String text, float x, float y) {
-		MutableComponent dmzText = txt(text);
-		FormattedCharSequence visual = dmzText.getVisualOrderText();
-		float textWidth = font.width(visual);
-		float centeredX = x - (textWidth / 2.0f);
-
-		int black = 0x000000;
-		int white = 0xFFFFFF;
-		int packedLight = 0xF000F0;
-
-		poseStack.pushPose();
-		poseStack.translate(0.0f, 0.0f, 0.025f);
-		drawTextRaw(poseStack, buffer, font, visual, centeredX - 1, y, black, packedLight);
-		drawTextRaw(poseStack, buffer, font, visual, centeredX + 1, y, black, packedLight);
-		drawTextRaw(poseStack, buffer, font, visual, centeredX, y - 1, black, packedLight);
-		drawTextRaw(poseStack, buffer, font, visual, centeredX, y + 1, black, packedLight);
-		poseStack.popPose();
-
-		poseStack.pushPose();
-		poseStack.translate(0.0f, 0.0f, -0.15f);
-		drawTextRaw(poseStack, buffer, font, visual, centeredX, y, white, packedLight);
-		poseStack.popPose();
-	}
-
-	private static void drawTextRaw(PoseStack poseStack, MultiBufferSource buffer, Font font, FormattedCharSequence text, float x, float y, int color, int packedLight) {
-		font.drawInBatch(text, x, y, color, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, packedLight);
 	}
 
 	private static MutableComponent txt(String text) {

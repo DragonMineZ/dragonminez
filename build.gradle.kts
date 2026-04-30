@@ -205,9 +205,9 @@ dependencies {
         runtimeOnly(fg.deobf("curse.maven:oculus-581495:6020952"))
 
         // For extra tooltip info, like rarity
-        runtimeOnly(fg.deobf("curse.maven:prism-lib-638111:4650325"))
-        runtimeOnly(fg.deobf("curse.maven:iceberg-520110:5838149"))
-        runtimeOnly(fg.deobf("curse.maven:legendary-tooltips-532127:4662781"))
+        //runtimeOnly(fg.deobf("curse.maven:prism-lib-638111:4650325"))
+        //runtimeOnly(fg.deobf("curse.maven:iceberg-520110:5838149"))
+        //runtimeOnly(fg.deobf("curse.maven:legendary-tooltips-532127:4662781"))
     }
 
     // Explorer's Compass and Nature's Compass for easier navigation during testing (structures, biomes)

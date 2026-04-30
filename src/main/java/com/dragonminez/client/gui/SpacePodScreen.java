@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.network.C2S.TravelToPlanetC2S;
 import com.dragonminez.common.network.NetworkHandler;
@@ -48,8 +49,9 @@ public class SpacePodScreen extends Screen {
 	private int selectedIndex = -1;
 
 	private int guiLeft, guiTop;
-	private int scrollOffset = 0;
-	private int maxScroll = 0;
+	private float targetScroll = 0;
+	private float currentScroll = 0;
+	private float maxScroll = 0;
 	private boolean isScrolling = false;
 
 	private TexturedTextButton travelButton;
@@ -65,7 +67,6 @@ public class SpacePodScreen extends Screen {
 		this.guiTop = (this.height - PANEL_HEIGHT) / 2;
 
 		loadDestinations();
-		this.maxScroll = Math.max(0, this.destinations.size() - MAX_VISIBLE_ITEMS);
 
 		this.travelButton = new TexturedTextButton.Builder()
 				.position(guiLeft + (PANEL_WIDTH - 80) / 2, guiTop + PANEL_HEIGHT - 35)
@@ -126,7 +127,7 @@ public class SpacePodScreen extends Screen {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
-		drawCenteredStringWithBorder(graphics,
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 				tr("gui.dragonminez.spacepod.title"),
 				this.width / 2, guiTop + 18, 0xFFFFD700);
 
@@ -139,53 +140,62 @@ public class SpacePodScreen extends Screen {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		int totalHeight = destinations.size() * ITEM_HEIGHT;
 
-		graphics.enableScissor(listLeft, listTop, listLeft + listWidth, listTop + listHeight);
+		maxScroll = Math.max(0, totalHeight - viewHeight);
+		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
+		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+
+		graphics.enableScissor(listLeft, listTop, listLeft + listWidth, listTop + viewHeight);
+		graphics.pose().pushPose();
+		graphics.pose().translate(0, -currentScroll, 0);
 
 		for (int i = 0; i < destinations.size(); i++) {
-			int itemY = listTop + (i * ITEM_HEIGHT) - (scrollOffset * ITEM_HEIGHT);
+			int itemY = listTop + (i * ITEM_HEIGHT);
 
-			if (itemY + ITEM_HEIGHT < listTop || itemY > listTop + listHeight) continue;
+			if (itemY + ITEM_HEIGHT >= listTop + currentScroll && itemY <= listTop + viewHeight + currentScroll) {
+				PlanetDestination dest = destinations.get(i);
+				boolean isSelected = (i == selectedIndex);
 
-			PlanetDestination dest = destinations.get(i);
-			boolean isSelected = (i == selectedIndex);
+				if (dest.unlocked) {
+					boolean isHovered = mouseX >= listLeft && mouseX < listLeft + listWidth &&
+							mouseY >= itemY - currentScroll && mouseY < itemY + ITEM_HEIGHT - currentScroll;
 
-			if (dest.unlocked) {
-				boolean isHovered = mouseX >= listLeft && mouseX < listLeft + listWidth &&
-						mouseY >= itemY && mouseY < itemY + ITEM_HEIGHT;
+					int color = isSelected ? 0x80D4AF37 : (isHovered ? 0x80555555 : 0x00000000);
+					graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
 
-				int color = isSelected ? 0x80D4AF37 : (isHovered ? 0x80555555 : 0x00000000);
-				graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
-
-				if (isSelected) {
-					graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
+					if (isSelected) {
+						graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
+					}
+				} else {
+					graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, 0x30000000);
 				}
-			} else {
-				graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, 0x30000000);
+
+				int iconYCentered = itemY + (ITEM_HEIGHT - ICON_SIZE) / 2;
+				renderDestinationIcon(graphics, dest, listLeft + 5, iconYCentered);
+
+				Component textToDraw;
+				int textColor;
+
+				if (dest.unlocked) {
+					textToDraw = destinationName(dest).copy().withStyle(ChatFormatting.BOLD);
+					textColor = 0x20E0FF;
+				} else {
+					textToDraw = txt("???").withStyle(ChatFormatting.BOLD);
+					textColor = 0x747678;
+				}
+
+				TextUtil.drawStringWithBorder(graphics, this.font, textToDraw, listLeft + 25, itemY + 8, textColor);
 			}
-
-			int iconYCentered = itemY + (ITEM_HEIGHT - ICON_SIZE) / 2;
-			renderDestinationIcon(graphics, dest, listLeft + 5, iconYCentered);
-
-			Component textToDraw;
-			int textColor;
-
-			if (dest.unlocked) {
-				textToDraw = destinationName(dest).copy().withStyle(ChatFormatting.BOLD);
-				textColor = 0x20E0FF;
-			} else {
-				textToDraw = txt("???").withStyle(ChatFormatting.BOLD);
-				textColor = 0x747678;
-			}
-
-			drawStringWithBorder(graphics, textToDraw, listLeft + 25, itemY + 8, textColor);
 		}
 
+		graphics.pose().popPose();
 		graphics.disableScissor();
 
 		if (maxScroll > 0) {
-			renderScrollbar(graphics, listTop, listHeight);
+			renderScrollbar(graphics, listTop, viewHeight, totalHeight);
 		}
 	}
 
@@ -206,19 +216,22 @@ public class SpacePodScreen extends Screen {
 		return destination.translate ? tr(destination.name) : txt(destination.name);
 	}
 
-	private void renderScrollbar(GuiGraphics graphics, int listTop, int listHeight) {
+	private void renderScrollbar(GuiGraphics graphics, int listTop, int viewHeight, int totalHeight) {
 		int scrollBarX = guiLeft + PANEL_WIDTH - 12;
-		int scrollBarHeight = listHeight;
 
-		graphics.fill(scrollBarX, listTop, scrollBarX + 3, listTop + scrollBarHeight, 0xFF333333);
+		graphics.fill(scrollBarX, listTop, scrollBarX + 3, listTop + viewHeight, 0xFF333333);
 
-		int totalItems = destinations.size();
-		float scrollPercent = (float) scrollOffset / maxScroll;
-		float visiblePercent = (float) MAX_VISIBLE_ITEMS / totalItems;
-		int indicatorHeight = Math.max(20, (int) (scrollBarHeight * visiblePercent));
-		int indicatorY = listTop + (int) ((scrollBarHeight - indicatorHeight) * scrollPercent);
+		float scrollPercent = currentScroll / maxScroll;
+		float visiblePercent = (float) viewHeight / totalHeight;
+		int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
+		int indicatorY = listTop + (int) ((viewHeight - indicatorHeight) * scrollPercent);
 
 		graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
+	}
+
+	private float calculateScrollPercent(double mouseY, int startY, int viewHeight) {
+		float percent = (float)(mouseY - startY) / viewHeight;
+		return Mth.clamp(percent, 0.0f, 1.0f);
 	}
 
 	@Override
@@ -228,10 +241,17 @@ public class SpacePodScreen extends Screen {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listBottom = listTop + (MAX_VISIBLE_ITEMS * ITEM_HEIGHT);
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY < listBottom) {
-			int relativeY = (int) mouseY - listTop + (scrollOffset * ITEM_HEIGHT);
+		if (maxScroll > 0 && mouseX >= listLeft + listWidth && mouseX <= guiLeft + PANEL_WIDTH &&
+				mouseY >= listTop && mouseY <= listTop + viewHeight) {
+			this.isScrolling = true;
+			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
+			return true;
+		}
+
+		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY <= listTop + viewHeight) {
+			int relativeY = (int) (mouseY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < destinations.size()) {
@@ -247,11 +267,6 @@ public class SpacePodScreen extends Screen {
 			}
 		}
 
-		if (maxScroll > 0 && mouseX >= listLeft + listWidth && mouseX <= guiLeft + PANEL_WIDTH) {
-			this.isScrolling = true;
-			return true;
-		}
-
 		return false;
 	}
 
@@ -264,8 +279,7 @@ public class SpacePodScreen extends Screen {
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		if (maxScroll > 0) {
-			int scroll = (int) -Math.signum(delta);
-			this.scrollOffset = Mth.clamp(this.scrollOffset + scroll, 0, maxScroll);
+			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -280,27 +294,12 @@ public class SpacePodScreen extends Screen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (isScrolling && maxScroll > 0) {
-			int listHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-			float scrollPerPixel = (float) maxScroll / listHeight;
-			this.scrollOffset = Mth.clamp(this.scrollOffset + (int) (dragY * scrollPerPixel * 5), 0, maxScroll);
+			int listTop = guiTop + 35;
+			int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
 	}
 
 	@Override

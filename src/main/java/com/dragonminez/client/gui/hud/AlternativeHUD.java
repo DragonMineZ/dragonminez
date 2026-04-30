@@ -2,6 +2,7 @@ package com.dragonminez.client.gui.hud;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.*;
@@ -27,7 +28,6 @@ public class AlternativeHUD {
 	private static final ResourceLocation hud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/alternativehud.png");
 	private static final ResourceLocation xvhud = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/xenoversehud.png");
 	private static final ResourceLocation racialIcons = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "textures/gui/hud/racial_icons.png");
-	private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "smooth");
 
 	private static volatile float currentHPBarWidth = 0;
 	private static volatile float currentKiBarWidth = 0;
@@ -179,7 +179,7 @@ public class AlternativeHUD {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(x, y, 0);
 		guiGraphics.pose().scale(0.5f, 0.5f, 1.0f);
-		drawStringWithBorder(guiGraphics, text, 0, 0, color);
+		TextUtil.drawStringWithBorder(guiGraphics, Minecraft.getInstance().font, text, 0, 0, color);
 		guiGraphics.pose().popPose();
 	}
 
@@ -190,7 +190,7 @@ public class AlternativeHUD {
 		guiGraphics.pose().pushPose();
 		guiGraphics.pose().translate(x + state.offsetX(), y + state.offsetY(), 0);
 		guiGraphics.pose().scale(0.5f, 0.5f, 1.0f);
-		drawStringWithBorder(guiGraphics, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
+		TextUtil.drawStringWithBorder(guiGraphics, Minecraft.getInstance().font, text, 0, 0, withAlpha(state.rgbColor(), state.alpha()));
 		guiGraphics.pose().popPose();
 	}
 
@@ -206,16 +206,6 @@ public class AlternativeHUD {
 	private static float lerp(float start, float end, float delta) {
 		float change = (end - start) * LERP_SPEED * delta;
 		return Math.abs(end - start) <= 1 ? end : start + change;
-	}
-
-	private static void drawStringWithBorder(GuiGraphics guiGraphics, String text, int x, int y, int color) {
-		MutableComponent dmzText = Component.literal(text).withStyle(Style.EMPTY.withFont(DMZ_FONT));
-		int borderColor = borderColor(color);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x - 1, y, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x + 1, y, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y - 1, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y + 1, borderColor);
-		guiGraphics.drawCenteredString(Minecraft.getInstance().font, dmzText, x, y, color);
 	}
 
 	private static int borderColor(int color) {

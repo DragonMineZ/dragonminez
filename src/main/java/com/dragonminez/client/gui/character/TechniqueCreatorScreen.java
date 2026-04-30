@@ -1,11 +1,11 @@
 package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
-import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.network.C2S.CreateTechniqueC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsCapability;
@@ -406,35 +406,35 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		int x = getUiWidth() / 2 - 70;
 		int y = getUiHeight() / 2 - 106;
 		graphics.blit(MENU_BIG, x, y, 0, 0, 141, 213, 256, 256);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.title"), x + 70, y + 10, 0xFFFFD700);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.title"), x + 70, y + 10, 0xFFFFD700);
 
 		int rowY = y + 39;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.type").append(": ").append(tr("technique.type." + creatorType.name().toLowerCase(Locale.ROOT))), x + 70, rowY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.type").append(": ").append(tr("technique.type." + creatorType.name().toLowerCase(Locale.ROOT))), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.utility").append(": ").append(tr("technique.utility." + creatorUtility.name().toLowerCase(Locale.ROOT))), x + 70, rowY, allowsUtility(creatorType) ? 0xFFFFFFFF : 0xFF777777);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.utility").append(": ").append(tr("technique.utility." + creatorUtility.name().toLowerCase(Locale.ROOT))), x + 70, rowY, allowsUtility(creatorType) ? 0xFFFFFFFF : 0xFF777777);
 		rowY += 15;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.damage").append(": ").append(txt(getDamageHealingExpression())), x + 70, rowY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.damage").append(": ").append(txt(getDamageHealingExpression())), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSize))), x + 70, rowY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.size").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSize))), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSpeed))), x + 70, rowY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.1f", creatorSpeed))), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(creatorArmorPen))), x + 70, rowY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(String.valueOf(creatorArmorPen))), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.valueOf(creatorCast))), x + 70, rowY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cast_time").append(": ").append(txt(String.valueOf(creatorCast))), x + 70, rowY, 0xFFFFFFFF);
 		rowY += 15;
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.valueOf(creatorCooldown))), x + 70, rowY, 0xFFFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(String.valueOf(creatorCooldown))), x + 70, rowY, 0xFFFFFFFF);
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.interior"), x + 24, y + 152, 0xFFCCCCCC);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.exterior"), x + 70, y + 152, 0xFFCCCCCC);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.color.outline"), x + 116, y + 152, 0xFFCCCCCC);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.color.interior"), x + 24, y + 152, 0xFFCCCCCC);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.color.exterior"), x + 70, y + 152, 0xFFCCCCCC);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.color.outline"), x + 116, y + 152, 0xFFCCCCCC);
 		graphics.fill(x + 18, y + 165, x + 30, y + 178, 0xFF000000 | creatorColorInterior);
 		graphics.fill(x + 64, y + 165, x + 76, y + 178, 0xFF000000 | creatorColorExterior);
 		graphics.fill(x + 110, y + 165, x + 122, y + 178, 0xFF000000 | creatorColorOutline);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.ki_cost_label"), x + 14, y + 180, 0xFFDDDDDD);
-		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(kiCost)), x + 98, y + 180, 0xFFDDDDDD);
-		drawStringWithBorder(graphics, tr("gui.dragonminez.skills.creator.tp_cost_label"), x + 14, y + 190, 0xFFDDDDDD);
-		drawCenteredStringWithBorder(graphics, txt(COST_NUMBER_FORMAT.format(tpCost)), x + 98, y + 190, 0xFFDDDDDD);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.ki_cost_label"), x + 14, y + 180, 0xFFDDDDDD);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(COST_NUMBER_FORMAT.format(kiCost)), x + 98, y + 180, 0xFFDDDDDD);
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.skills.creator.tp_cost_label"), x + 14, y + 190, 0xFFDDDDDD);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(COST_NUMBER_FORMAT.format(tpCost)), x + 98, y + 190, 0xFFDDDDDD);
 
 		if (colorPickerVisible) renderColorPickerBackground(graphics);
 
@@ -483,20 +483,6 @@ public class TechniqueCreatorScreen extends ScaledScreen {
 		}
 
 		return false;
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		drawStringWithBorder(graphics, text, centerX - (textWidth / 2), y, textColor);
 	}
 
 	private String getDamageHealingExpression() {

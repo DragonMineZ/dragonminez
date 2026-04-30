@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.C2S.TrainingRewardC2S;
 import com.dragonminez.common.stats.StatsCapability;
@@ -127,16 +128,16 @@ public class TrainingScreen extends Screen {
 
 		if (inGame) renderGame(graphics, partialTick);
 		else {
-			drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.select"), this.width / 2, guiTop + 18, 0xFFFFD700);
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.select"), this.width / 2, guiTop + 18, 0xFFFFD700);
 			super.render(graphics, mouseX, mouseY, partialTick);
 		}
 	}
 
 	private void renderGame(GuiGraphics graphics, float partialTick) {
 		Component statName = tr("gui.dragonminez.character_stats." + selectedStat);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.ingame_title", statName), this.width / 2, guiTop + 14, 0xFFFFD700);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.progress", score, GOAL_PER_ROUND), guiLeft +70, guiTop + 27, 0x00FF00);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.training.misses", totalMisses, MAX_TOTAL_MISSES), guiLeft + 70, guiTop + 192, 0xFF5555);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.ingame_title", statName), this.width / 2, guiTop + 14, 0xFFFFD700);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.progress", score, GOAL_PER_ROUND), guiLeft +70, guiTop + 27, 0x00FF00);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.training.misses", totalMisses, MAX_TOTAL_MISSES), guiLeft + 70, guiTop + 192, 0xFF5555);
 
 		int gameAreaLeft = guiLeft + 20;
 		int gameAreaTop = guiTop + 40;
@@ -190,7 +191,7 @@ public class TrainingScreen extends Screen {
 		graphics.fill(-radius, -radius, radius, radius, color);
 		graphics.renderOutline(-radius, -radius, radius*2, radius*2, 0xFF000000);
 		graphics.pose().popPose();
-		drawCenteredStringWithBorder(graphics, txt(letter), 0, -4, textColor);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(letter), 0, -4, textColor);
 		graphics.pose().popPose();
 	}
 
@@ -428,21 +429,6 @@ public class TrainingScreen extends Screen {
 		return switch (dir) {
 			case 0 -> "W"; case 1 -> "A"; case 2 -> "S"; case 3 -> "D"; default -> "?";
 		};
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
 	}
 
 	@Override

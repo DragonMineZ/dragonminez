@@ -2,6 +2,7 @@ package com.dragonminez.client.gui;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.network.C2S.GrantWishC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.wish.Wish;
@@ -39,8 +40,9 @@ public class WishesScreen extends Screen {
 	private final List<Integer> selectedIndices = new ArrayList<>();
 
 	private int guiLeft, guiTop;
-	private int scrollOffset = 0;
-	private int maxScroll = 0;
+	private float targetScroll = 0;
+	private float currentScroll = 0;
+	private float maxScroll = 0;
 	private boolean isScrolling = false;
 
 	private TexturedTextButton confirmButton;
@@ -57,8 +59,6 @@ public class WishesScreen extends Screen {
 		super.init();
 		this.guiLeft = (this.width - PANEL_WIDTH) / 2;
 		this.guiTop = (this.height - PANEL_HEIGHT) / 2;
-
-		this.maxScroll = Math.max(0, this.availableWishes.size() - MAX_VISIBLE_ITEMS);
 
 		this.confirmButton = new TexturedTextButton.Builder()
 				.position(guiLeft + (PANEL_WIDTH - 80) / 2, guiTop + PANEL_HEIGHT - 35)
@@ -86,7 +86,7 @@ public class WishesScreen extends Screen {
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		graphics.blit(MENU_TEXTURE, guiLeft, guiTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
-		drawCenteredStringWithBorder(graphics,
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font,
 				tr("gui.dragonminez.wishes_title", selectedIndices.size(), maxWishesToSelect),
 				this.width / 2, guiTop + 18, 0xFFFFD700);
 
@@ -101,49 +101,56 @@ public class WishesScreen extends Screen {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+		int totalHeight = availableWishes.size() * ITEM_HEIGHT;
 
-		graphics.enableScissor(listLeft, listTop, listLeft + listWidth, listTop + listHeight);
+		maxScroll = Math.max(0, totalHeight - viewHeight);
+		targetScroll = Mth.clamp(targetScroll, 0, maxScroll);
+		float tickDelta = Minecraft.getInstance().getDeltaFrameTime();
+		currentScroll = Mth.lerp(tickDelta * 0.4f, currentScroll, targetScroll);
+
+		graphics.enableScissor(listLeft, listTop, listLeft + listWidth, listTop + viewHeight);
+		graphics.pose().pushPose();
+		graphics.pose().translate(0, -currentScroll, 0);
 
 		for (int i = 0; i < availableWishes.size(); i++) {
-			int itemY = listTop + (i * ITEM_HEIGHT) - (scrollOffset * ITEM_HEIGHT);
+			int itemY = listTop + (i * ITEM_HEIGHT);
 
-			if (itemY + ITEM_HEIGHT < listTop || itemY > listTop + listHeight) continue;
+			if (itemY + ITEM_HEIGHT >= listTop + currentScroll && itemY <= listTop + viewHeight + currentScroll) {
+				Wish wish = availableWishes.get(i);
+				boolean isSelected = selectedIndices.contains(i);
+				boolean isHovered = mouseX >= listLeft && mouseX < listLeft + listWidth &&
+						mouseY >= itemY - currentScroll && mouseY < itemY + ITEM_HEIGHT - currentScroll;
 
-			Wish wish = availableWishes.get(i);
-			boolean isSelected = selectedIndices.contains(i);
-			boolean isHovered = mouseX >= listLeft && mouseX < listLeft + listWidth &&
-					mouseY >= itemY && mouseY < itemY + ITEM_HEIGHT;
+				int color;
+				if (isSelected) color = 0x80D4AF37;
+				else if (isHovered) color = 0x80555555;
+				else color = 0x00000000;
 
-			int color;
-			if (isSelected) color = 0x80D4AF37;
-			else if (isHovered) color = 0x80555555;
-			else color = 0x00000000;
+				graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
 
-			graphics.fill(listLeft, itemY, listLeft + listWidth, itemY + ITEM_HEIGHT, color);
+				TextUtil.drawStringWithBorder(graphics, this.font, tr(wish.getName()), listLeft + 5, itemY + 6, 0xFFFFFF);
 
-			drawStringWithBorder(graphics, tr(wish.getName()), listLeft + 5, itemY + 6, 0xFFFFFF);
-
-			if (isSelected) {
-				graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
+				if (isSelected) {
+					graphics.renderOutline(listLeft, itemY, listWidth, ITEM_HEIGHT, 0xFFFFD700);
+				}
 			}
 		}
 
+		graphics.pose().popPose();
 		graphics.disableScissor();
 
 		if (maxScroll > 0) {
 			int scrollBarX = guiLeft + PANEL_WIDTH - 12;
 			int scrollBarY = listTop;
-			int scrollBarHeight = listHeight;
 
-			graphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + scrollBarHeight, 0xFF333333);
+			graphics.fill(scrollBarX, scrollBarY, scrollBarX + 3, scrollBarY + viewHeight, 0xFF333333);
 
-			int totalItems = availableWishes.size();
-			float scrollPercent = (float) scrollOffset / maxScroll;
-			float visiblePercent = (float) MAX_VISIBLE_ITEMS / totalItems;
+			float scrollPercent = currentScroll / maxScroll;
+			float visiblePercent = (float) viewHeight / totalHeight;
 
-			int indicatorHeight = Math.max(20, (int) (scrollBarHeight * visiblePercent));
-			int indicatorY = scrollBarY + (int) ((scrollBarHeight - indicatorHeight) * scrollPercent);
+			int indicatorHeight = Math.max(20, (int) (viewHeight * visiblePercent));
+			int indicatorY = scrollBarY + (int) ((viewHeight - indicatorHeight) * scrollPercent);
 
 			graphics.fill(scrollBarX, indicatorY, scrollBarX + 3, indicatorY + indicatorHeight, 0xFFAAAAAA);
 		}
@@ -153,10 +160,10 @@ public class WishesScreen extends Screen {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listBottom = listTop + (MAX_VISIBLE_ITEMS * ITEM_HEIGHT);
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY < listBottom) {
-			int relativeY = mouseY - listTop + (scrollOffset * ITEM_HEIGHT);
+		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY <= listTop + viewHeight) {
+			int relativeY = (int) (mouseY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < availableWishes.size()) {
@@ -166,6 +173,11 @@ public class WishesScreen extends Screen {
 		}
 	}
 
+	private float calculateScrollPercent(double mouseY, int startY, int viewHeight) {
+		float percent = (float)(mouseY - startY) / viewHeight;
+		return Mth.clamp(percent, 0.0f, 1.0f);
+	}
+
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (super.mouseClicked(mouseX, mouseY, button)) return true;
@@ -173,10 +185,17 @@ public class WishesScreen extends Screen {
 		int listLeft = guiLeft + 10;
 		int listTop = guiTop + 35;
 		int listWidth = PANEL_WIDTH - 25;
-		int listBottom = listTop + (MAX_VISIBLE_ITEMS * ITEM_HEIGHT);
+		int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
 
-		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY < listBottom) {
-			int relativeY = (int) mouseY - listTop + (scrollOffset * ITEM_HEIGHT);
+		if (maxScroll > 0 && mouseX >= listLeft + listWidth && mouseX <= guiLeft + PANEL_WIDTH &&
+				mouseY >= listTop && mouseY <= listTop + viewHeight) {
+			this.isScrolling = true;
+			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
+			return true;
+		}
+
+		if (mouseX >= listLeft && mouseX < listLeft + listWidth && mouseY >= listTop && mouseY <= listTop + viewHeight) {
+			int relativeY = (int) (mouseY - listTop + currentScroll);
 			int index = relativeY / ITEM_HEIGHT;
 
 			if (index >= 0 && index < availableWishes.size()) {
@@ -188,19 +207,13 @@ public class WishesScreen extends Screen {
 			}
 		}
 
-		if (maxScroll > 0 && mouseX >= listLeft + listWidth && mouseX <= guiLeft + PANEL_WIDTH) {
-			this.isScrolling = true;
-			return true;
-		}
-
 		return false;
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
 		if (maxScroll > 0) {
-			int scroll = (int) -Math.signum(delta);
-			this.scrollOffset = Mth.clamp(this.scrollOffset + scroll, 0, maxScroll);
+			targetScroll = (float) Mth.clamp(targetScroll - (Math.signum(delta) * ITEM_HEIGHT * 2), 0, maxScroll);
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, delta);
@@ -215,10 +228,9 @@ public class WishesScreen extends Screen {
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (isScrolling && maxScroll > 0) {
-			int listHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
-			float scrollPerPixel = (float) maxScroll / listHeight;
-
-			this.scrollOffset = Mth.clamp(this.scrollOffset + (int) (dragY * scrollPerPixel * 5), 0, maxScroll);
+			int listTop = guiTop + 35;
+			int viewHeight = MAX_VISIBLE_ITEMS * ITEM_HEIGHT;
+			targetScroll = calculateScrollPercent(mouseY, listTop, viewHeight) * maxScroll;
 			return true;
 		}
 		return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -238,21 +250,6 @@ public class WishesScreen extends Screen {
 			}
 		}
 		confirmButton.visible = selectedIndices.size() == maxWishesToSelect;
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, Component text, int x, int y, int textColor) {
-		int borderColor = 0xFF000000;
-		graphics.drawString(this.font, text, x + 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x - 1, y, borderColor, false);
-		graphics.drawString(this.font, text, x, y + 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y - 1, borderColor, false);
-		graphics.drawString(this.font, text, x, y, textColor, false);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
 	}
 
 	@Override

@@ -3,12 +3,12 @@ package com.dragonminez.client.gui.character;
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
 import com.dragonminez.client.gui.HairEditorScreen;
-import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.ColorSlider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.render.hair.HairRenderer;
 import com.dragonminez.client.util.ColorUtils;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.client.util.TextureCounter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -27,7 +27,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -416,7 +415,7 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		graphics.pose().translate(0.0D, 0.0D, 500.0D);
 
 		String text = (currentTabIndex + 1) + "/" + activeTabs.size();
-		drawCenteredStringWithBorder(graphics, text, barX + barW / 2, barY - 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, text, barX + barW / 2, barY - 12, 0xFFFFFF);
 
 		graphics.fill(barX - 1, barY - 1, barX + barW + 1, barY + barH + 1, 0xFFFFFFFF);
 		graphics.fill(barX, barY, barX + barW, barY + barH, 0xFF111111);
@@ -442,10 +441,10 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void renderPresetText(GuiGraphics graphics, int centerX, int top) {
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.body_type").getString(), centerX, top + 2, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.body_type").getString(), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 40, 0, getCombinedBodyTypeCount(), getCurrentCombinedBodyTypeValue(), PreviewRenderMode.FULL_BODY, false, PREVIEW_GRID_VISIBLE_ROWS, bodyTypePreviewScrollRows);
 		if (shouldRenderFormPreviewInPreset()) {
-			drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
+			TextUtil.drawCenteredStringWithBorder(graphics, this.font, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
 		}
 	}
 
@@ -468,35 +467,35 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 	}
 
 	private void renderHairText(GuiGraphics graphics, int centerX, int top) {
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.hair").getString(), centerX, top + 2, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.hair").getString(), centerX, top + 2, 0xFF9B9B);
 		int maxHairIndex = Math.max(0, getMaxHairForCurrentState() - 1);
 		renderPreviewGrid(graphics, top + 30, 0, maxHairIndex, getCurrentHairOrBoneValue(), PreviewRenderMode.HAIR_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, hairPreviewScrollRows);
-		drawCenteredStringWithBorder(graphics, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, getCurrentPreviewTransformationName(), centerX, top + 178, 0xFFFFFF);
 	}
 
 	private void renderEyesText(GuiGraphics graphics, int centerX, int top) {
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.eyes").getString(), centerX, top + 2, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.eyes").getString(), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 30, 0, Math.max(1, TextureCounter.getMaxEyesTypes(getEffectiveModelBase())), character.getEyesType(), PreviewRenderMode.EYES_ONLY, true, PREVIEW_GRID_VISIBLE_ROWS, eyesPreviewScrollRows);
 	}
 
 	private void renderFaceText(GuiGraphics graphics, int centerX, int top) {
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.nose").getString(), centerX, top + 2, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.nose").getString(), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 20, 0, Math.max(1, TextureCounter.getMaxNoseTypes(getEffectiveModelBase())), character.getNoseType(), PreviewRenderMode.NOSE_ONLY, true, 1, nosePreviewScrollRows);
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.mouth").getString(), centerX, top + 74, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.mouth").getString(), centerX, top + 74, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 94, 0, Math.max(1, TextureCounter.getMaxMouthTypes(getEffectiveModelBase())), character.getMouthType(), PreviewRenderMode.MOUTH_ONLY, true, 2, mouthPreviewScrollRows);
 	}
 
 	private void renderBodyText(GuiGraphics graphics, int centerX, int top) {
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.tattoo").getString(), centerX, top + 2, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.tattoo").getString(), centerX, top + 2, 0xFF9B9B);
 		renderPreviewGrid(graphics, top + 30, 0, Math.max(1, TextureCounter.getMaxTattooTypes(getEffectiveModelBase())), character.getTattooType(), PreviewRenderMode.TATTOO_ONLY, false, PREVIEW_GRID_VISIBLE_ROWS, tattooPreviewScrollRows);
 	}
 
 	private void renderAuraClassText(GuiGraphics graphics, int centerX, int top) {
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.class").getString(), centerX, top + 8, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.class").getString(), centerX, top + 8, 0xFF9B9B);
 		Component className = tr("class.dragonminez." + character.getCharacterClass());
-		drawCenteredStringWithBorder2(graphics, className, centerX, top + 20, 0xFFFFFF);
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.aura").getString(), centerX, top + 124, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, className, centerX, top + 20, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.aura").getString(), centerX, top + 124, 0xFF9B9B);
 		renderBaseStatsInline(graphics, centerX, top + 44);
 	}
 
@@ -508,23 +507,23 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 
 		RaceStatsConfig.BaseStats base = classStats.getBaseStats();
 
-		drawCenteredStringWithBorder(graphics, tr("gui.dragonminez.customization.base_stats").getString(), centerX, startY, 0xFF9B9B);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.customization.base_stats").getString(), centerX, startY, 0xFF9B9B);
 		int rowY = startY + 16;
 
-		drawCenteredStringWithBorder(graphics, "STR", centerX - 40, rowY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, "SKP", centerX, rowY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, "RES", centerX + 40, rowY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(base.getStrength()), centerX - 40, rowY + 12, 0xFFFFFF);
-		drawCenteredStringWithBorder(graphics, String.valueOf(base.getStrikePower()), centerX, rowY + 12, 0xFFFFFF);
-		drawCenteredStringWithBorder(graphics, String.valueOf(base.getResistance()), centerX + 40, rowY + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "STR", centerX - 40, rowY, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "SKP", centerX, rowY, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "RES", centerX + 40, rowY, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getStrength()), centerX - 40, rowY + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getStrikePower()), centerX, rowY + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getResistance()), centerX + 40, rowY + 12, 0xFFFFFF);
 
 		rowY += 32;
-		drawCenteredStringWithBorder(graphics, "VIT", centerX - 40, rowY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, "PWR", centerX, rowY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, "ENE", centerX + 40, rowY, 0x7CFDD6);
-		drawCenteredStringWithBorder(graphics, String.valueOf(base.getVitality()), centerX - 40, rowY + 12, 0xFFFFFF);
-		drawCenteredStringWithBorder(graphics, String.valueOf(base.getKiPower()), centerX, rowY + 12, 0xFFFFFF);
-		drawCenteredStringWithBorder(graphics, String.valueOf(base.getEnergy()), centerX + 40, rowY + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "VIT", centerX - 40, rowY, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "PWR", centerX, rowY, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, "ENE", centerX + 40, rowY, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getVitality()), centerX - 40, rowY + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getKiPower()), centerX, rowY + 12, 0xFFFFFF);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, String.valueOf(base.getEnergy()), centerX + 40, rowY + 12, 0xFFFFFF);
 	}
 
 	private void renderPlayerModel(GuiGraphics graphics) {
@@ -1613,33 +1612,5 @@ public class CharacterCustomizationScreen extends ScaledScreen {
 		character.setTattooType(originalTattoo);
 		character.setActiveHeadBone(originalActiveBone); // Restaurado del hueso original
 		HairRenderer.PHYSICS_ENABLED = oldHairPhysics;
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, String text, int x, int y, int textColor) {
-		graphics.drawString(this.font, text, x - 1, y, 0x000000);
-		graphics.drawString(this.font, text, x + 1, y, 0x000000);
-		graphics.drawString(this.font, text, x, y - 1, 0x000000);
-		graphics.drawString(this.font, text, x, y + 1, 0x000000);
-		graphics.drawString(this.font, text, x, y, textColor);
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, String text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - textWidth / 2;
-		drawStringWithBorder(graphics, text, x, y, textColor);
-	}
-
-	private void drawCenteredStringWithBorder2(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		String stripped = ChatFormatting.stripFormatting(text.getString());
-		Component borderComponent = txt(stripped != null ? stripped : text.getString());
-		if (text.getStyle().isBold()) borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
-
-		int textWidth = this.font.width(borderComponent);
-		int x = centerX - textWidth / 2;
-		graphics.drawString(font, borderComponent, x + 1, y, 0x000000, false);
-		graphics.drawString(font, borderComponent, x - 1, y, 0x000000, false);
-		graphics.drawString(font, borderComponent, x, y + 1, 0x000000, false);
-		graphics.drawString(font, borderComponent, x, y - 1, 0x000000, false);
-		graphics.drawString(font, text, x, y, textColor, false);
 	}
 }

@@ -2,9 +2,9 @@ package com.dragonminez.client.gui.character;
 
 import com.dragonminez.Reference;
 import com.dragonminez.client.events.ForgeClientEvents;
-import com.dragonminez.client.gui.ScaledScreen;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
+import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.GeneralServerConfig;
 import com.dragonminez.common.config.RaceCharacterConfig;
@@ -233,7 +233,7 @@ public class RaceSelectionScreen extends ScaledScreen {
         int centerY = getUiHeight() / 2;
 
         Component raceName = tr("race." + Reference.MOD_ID + "." + currentRace);
-		drawCenteredStringWithBorder(graphics, raceName, centerX + 3, centerY + 92, 0x7CFDD6);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, raceName, centerX + 3, centerY + 92, 0x7CFDD6);
 
         Component description = tr("race." + Reference.MOD_ID + "." + currentRace + ".desc");
 
@@ -243,7 +243,7 @@ public class RaceSelectionScreen extends ScaledScreen {
 
         List<String> wrappedLines = wrapText(description.getString(), maxWidth);
         for (String line : wrappedLines) {
-            drawStringWithBorder(graphics, line, descX, descStartY, 0xFFFFFF);
+            TextUtil.drawStringWithBorder(graphics, this.font, line, descX, descStartY, 0xFFFFFF);
             descStartY += 10;
         }
     }
@@ -306,47 +306,14 @@ public class RaceSelectionScreen extends ScaledScreen {
 		int boxStartX = uiWidth - marginFromEdge - panelWidth;
 		int centerX = boxStartX + (panelWidth / 2);
 		int startY = (uiHeight / 2) - 50;
-		drawCenteredStringWithBorder(graphics, titleComp.copy().withStyle(ChatFormatting.BOLD), centerX + 60, startY - 12, 0xFF55FF55);
+		TextUtil.drawCenteredStringWithBorder(graphics, this.font, titleComp.copy().withStyle(ChatFormatting.BOLD), centerX + 60, startY - 12, 0xFF55FF55);
 		List<String> wrappedDesc = wrapText(description, panelWidth);
 		int textY = startY;
 
 		for (String line : wrappedDesc) {
-      drawCenteredStringWithBorder(graphics, txt(line), centerX + 60, textY, 0xFFCCCCCC);
+      TextUtil.drawCenteredStringWithBorder(graphics, this.font, txt(line), centerX + 60, textY, 0xFFCCCCCC);
 			textY += 12;
 		}
-	}
-
-	private void drawCenteredStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int textColor) {
-		int textWidth = this.font.width(text);
-		int x = centerX - (textWidth / 2);
-		drawStringWithBorder(graphics, text, x, y, textColor);
-	}
-
-    private void drawStringWithBorder(GuiGraphics graphics, Component text, int centerX, int y, int color) {
-		String stripped = ChatFormatting.stripFormatting(text.getString());
-    Component borderComponent = txt(stripped != null ? stripped : text.getString());
-
-		if (text.getStyle().isBold()) {
-			borderComponent = borderComponent.copy().withStyle(style -> style.withBold(true));
-		}
-
-		graphics.drawString(font, borderComponent, centerX + 1, y, 0x000000, false);
-		graphics.drawString(font, borderComponent, centerX - 1, y, 0x000000, false);
-		graphics.drawString(font, borderComponent, centerX, y + 1, 0x000000, false);
-		graphics.drawString(font, borderComponent, centerX, y - 1, 0x000000, false);
-
-		graphics.drawString(font, text, centerX, y, color, false);
-	}
-
-	private void drawStringWithBorder(GuiGraphics graphics, String text, int centerX, int y, int color) {
-		int textWidth = this.font.width(text);
-		int x = centerX - textWidth / 2;
-
-		graphics.drawString(this.font, text, x - 1, y, 0x000000);
-		graphics.drawString(this.font, text, x + 1, y, 0x000000);
-		graphics.drawString(this.font, text, x, y - 1, 0x000000);
-		graphics.drawString(this.font, text, x, y + 1, 0x000000);
-		graphics.drawString(this.font, text, x, y, color);
 	}
 
     private void renderPlayerModel(GuiGraphics graphics, int x, int y, int scale, float mouseX, float mouseY) {
