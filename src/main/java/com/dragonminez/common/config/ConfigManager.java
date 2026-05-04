@@ -5,6 +5,9 @@ import com.dragonminez.LogUtil;
 import com.dragonminez.common.init.MainEntities;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import lombok.Getter;
 import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -15,6 +18,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
+import java.util.stream.Stream;
 
 public class ConfigManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
@@ -31,6 +38,7 @@ public class ConfigManager {
 	private static final Map<String, RaceCharacterConfig> RACE_CHARACTER = new HashMap<>();
 	private static final Map<String, Map<String, FormConfig>> RACE_FORMS = new HashMap<>();
 	private static final List<String> LOADED_RACES = new ArrayList<>();
+	private static final List<String> CACHED_CONFIG_FILES = new ArrayList<>();
 
 	private static Map<String, FormConfig> STACK_FORMS = new HashMap<>();
 
@@ -100,282 +108,75 @@ public class ConfigManager {
 		}
 	}
 
-	private static void loadGeneralConfigs() throws IOException {
-		// General User
-		Path userConfigPath = CONFIG_DIR.resolve("general-user.json");
-		boolean overwriteUser = false;
-		String reasonUser = "";
-		if (Files.exists(userConfigPath)) {
+	private static <T> T loadAndValidate(Path path, Class<T> clazz, Supplier<T> defaultProvider, ToIntFunction<T> versionGetter, BiConsumer<T, Integer> versionSetter, int currentVersion, String templateName) {
+		boolean overwrite = false;
+		String reason = "";
+		T config = null;
+
+		if (Files.exists(path)) {
 			try {
-				userConfig = LOADER.loadConfig(userConfigPath, GeneralUserConfig.class);
-				if (userConfig.getConfigVersion() < GeneralUserConfig.CURRENT_VERSION) {
-					reasonUser = userConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + userConfig.getConfigVersion() + " < " + GeneralUserConfig.CURRENT_VERSION + ")";
-					overwriteUser = true;
-				}
-				if (overwriteUser) {
-					backupOldConfig(userConfigPath);
-					userConfig = new GeneralUserConfig();
-					userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
+				config = LOADER.loadConfig(path, clazz);
+				int version = versionGetter.applyAsInt(config);
+				if (version < currentVersion) {
+					reason = version == 0 ? "Missing config version" : "Outdated version (" + version + " < " + currentVersion + ")";
+					overwrite = true;
 				}
 			} catch (Exception e) {
-				reasonUser = "Parsing error: " + e.toString();
-				backupOldConfig(userConfigPath);
-				userConfig = new GeneralUserConfig();
-				userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
-				overwriteUser = true;
+				reason = "Parsing error: " + e.getMessage();
+				overwrite = true;
 			}
 		} else {
-			reasonUser = "File not found";
-			userConfig = new GeneralUserConfig();
-			userConfig.setConfigVersion(GeneralUserConfig.CURRENT_VERSION);
-			overwriteUser = true;
-		}
-		if (overwriteUser) {
-			LogUtil.warn(Env.COMMON, "Regenerating general-user.json. Reason: " + reasonUser);
-			LOADER.saveConfig(userConfigPath, userConfig);
+			reason = "File not found";
+			overwrite = true;
+			if (templateName != null) {
+				try {
+					LOADER.saveDefaultFromTemplate(path, templateName);
+					config = LOADER.loadConfig(path, clazz);
+					if (versionGetter.applyAsInt(config) < currentVersion) overwrite = true;
+				} catch (Exception e) {
+					reason = "Template loading failed: " + e.getMessage();
+				}
+			}
 		}
 
-		// General Server
-		Path serverConfigPath = CONFIG_DIR.resolve("general-server.json");
-		boolean overwriteServer = false;
-		String reasonServer = "";
-		if (Files.exists(serverConfigPath)) {
+		if (overwrite) {
+			if (Files.exists(path)) backupOldConfig(path);
+			if (config == null || (templateName != null && reason.contains("failed"))) config = defaultProvider.get();
 			try {
-				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
-					reasonServer = serverConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + serverConfig.getConfigVersion() + " < " + GeneralServerConfig.CURRENT_VERSION + ")";
-					overwriteServer = true;
-				}
-				if (overwriteServer) {
-					backupOldConfig(serverConfigPath);
-					serverConfig = new GeneralServerConfig();
-					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
-				}
+				versionSetter.accept(config, currentVersion);
+				LogUtil.warn(Env.COMMON, String.format("Regenerating %s. Reason: %s", path.getFileName(), reason));
+				LOADER.saveConfig(path, config);
 			} catch (Exception e) {
-				reasonServer = "Parsing error: " + e.toString();
-				backupOldConfig(serverConfigPath);
-				serverConfig = new GeneralServerConfig();
-				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
-				overwriteServer = true;
-			}
-		} else {
-			reasonServer = "File not found";
-			try {
-				LOADER.saveDefaultFromTemplate(serverConfigPath, "general-server.json");
-				serverConfig = LOADER.loadConfig(serverConfigPath, GeneralServerConfig.class);
-				if (serverConfig.getConfigVersion() < GeneralServerConfig.CURRENT_VERSION) {
-					serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
-					overwriteServer = true;
-				}
-			} catch (Exception e) {
-				reasonServer = "Template loading failed: " + e.toString();
-				serverConfig = new GeneralServerConfig();
-				serverConfig.setConfigVersion(GeneralServerConfig.CURRENT_VERSION);
-				overwriteServer = true;
+				LogUtil.error(Env.COMMON, "Error saving regenerated config: " + e.getMessage());
 			}
 		}
-		if (overwriteServer) {
-			LogUtil.warn(Env.COMMON, "Regenerating general-server.json. Reason: " + reasonServer);
-			LOADER.saveConfig(serverConfigPath, serverConfig);
-		}
+		return config != null ? config : defaultProvider.get();
+	}
 
-		// Combat
-		Path combatConfigPath = CONFIG_DIR.resolve("combat.json");
-		boolean overwriteCombat = false;
-		String reasonCombat = "";
-		if (Files.exists(combatConfigPath)) {
-			try {
-				combatConfig = LOADER.loadConfig(combatConfigPath, CombatConfig.class);
-				if (combatConfig.getConfigVersion() < CombatConfig.CURRENT_VERSION) {
-					reasonCombat = combatConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + combatConfig.getConfigVersion() + " < " + CombatConfig.CURRENT_VERSION + ")";
-					overwriteCombat = true;
-				}
-				if (overwriteCombat) {
-					backupOldConfig(combatConfigPath);
-					combatConfig = new CombatConfig();
-					combatConfig.setConfigVersion(CombatConfig.CURRENT_VERSION);
-				}
-			} catch (Exception e) {
-				reasonCombat = "Parsing error: " + e;
-				backupOldConfig(combatConfigPath);
-				combatConfig = new CombatConfig();
-				combatConfig.setConfigVersion(CombatConfig.CURRENT_VERSION);
-				overwriteCombat = true;
-			}
-		} else {
-			reasonCombat = "File not found";
-			combatConfig = new CombatConfig();
-			combatConfig.setConfigVersion(CombatConfig.CURRENT_VERSION);
-			overwriteCombat = true;
-		}
-		if (overwriteCombat) {
-			LogUtil.warn(Env.COMMON, "Regenerating combat.json. Reason: " + reasonCombat);
-			LOADER.saveConfig(combatConfigPath, combatConfig);
-		}
-
-		// Skills
-		Path skillsConfigPath = CONFIG_DIR.resolve("skills.json");
-		boolean overwriteSkills = false;
-		String reasonSkills = "";
-		if (Files.exists(skillsConfigPath)) {
-			try {
-				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
-					reasonSkills = skillsConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + skillsConfig.getConfigVersion() + " < " + SkillsConfig.CURRENT_VERSION + ")";
-					overwriteSkills = true;
-				}
-				if (overwriteSkills) {
-					backupOldConfig(skillsConfigPath);
-					skillsConfig = new SkillsConfig();
-					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
-				}
-			} catch (Exception e) {
-				reasonSkills = "Parsing error: " + e.toString();
-				backupOldConfig(skillsConfigPath);
-				skillsConfig = new SkillsConfig();
-				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
-				overwriteSkills = true;
-			}
-		} else {
-			reasonSkills = "File not found";
-			try {
-				LOADER.saveDefaultFromTemplate(skillsConfigPath, "skills.json");
-				skillsConfig = LOADER.loadConfig(skillsConfigPath, SkillsConfig.class);
-				if (skillsConfig.getConfigVersion() < SkillsConfig.CURRENT_VERSION) {
-					skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
-					overwriteSkills = true;
-				}
-			} catch (Exception e) {
-				reasonSkills = "Template loading failed: " + e.toString();
-				skillsConfig = new SkillsConfig();
-				skillsConfig.setConfigVersion(SkillsConfig.CURRENT_VERSION);
-				overwriteSkills = true;
-			}
-		}
-		if (overwriteSkills) {
-			LogUtil.warn(Env.COMMON, "Regenerating skills.json. Reason: " + reasonSkills);
-			LOADER.saveConfig(skillsConfigPath, skillsConfig);
-		}
-
-		// Entities
-		Path entitiesConfigPath = CONFIG_DIR.resolve("entities.json");
-		boolean overwriteEntities = false;
-		String reasonEntities = "";
-		if (Files.exists(entitiesConfigPath)) {
-			try {
-				entitiesConfig = LOADER.loadConfig(entitiesConfigPath, EntitiesConfig.class);
-				if (entitiesConfig.getConfigVersion() < EntitiesConfig.CURRENT_VERSION) {
-					reasonEntities = entitiesConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + entitiesConfig.getConfigVersion() + " < " + EntitiesConfig.CURRENT_VERSION + ")";
-					overwriteEntities = true;
-				}
-				if (overwriteEntities) {
-					backupOldConfig(entitiesConfigPath);
-					entitiesConfig = createDefaultEntitiesConfig();
-					entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
-				}
-			} catch (Exception e) {
-				reasonEntities = "Parsing error: " + e.toString();
-				backupOldConfig(entitiesConfigPath);
-				entitiesConfig = createDefaultEntitiesConfig();
-				entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
-				overwriteEntities = true;
-			}
-		} else {
-			reasonEntities = "File not found";
-			entitiesConfig = createDefaultEntitiesConfig();
-			entitiesConfig.setConfigVersion(EntitiesConfig.CURRENT_VERSION);
-			overwriteEntities = true;
-		}
-		if (overwriteEntities) {
-			LogUtil.warn(Env.COMMON, "Regenerating entities.json. Reason: " + reasonEntities);
-			LOADER.saveConfig(entitiesConfigPath, entitiesConfig);
-		}
+	private static void loadGeneralConfigs() {
+		userConfig = loadAndValidate(CONFIG_DIR.resolve("general-user.json"), GeneralUserConfig.class, GeneralUserConfig::new, GeneralUserConfig::getConfigVersion, GeneralUserConfig::setConfigVersion, GeneralUserConfig.CURRENT_VERSION, null);
+		serverConfig = loadAndValidate(CONFIG_DIR.resolve("general-server.json"), GeneralServerConfig.class, GeneralServerConfig::new, GeneralServerConfig::getConfigVersion, GeneralServerConfig::setConfigVersion, GeneralServerConfig.CURRENT_VERSION, "general-server.json");
+		combatConfig = loadAndValidate(CONFIG_DIR.resolve("combat.json"), CombatConfig.class, CombatConfig::new, CombatConfig::getConfigVersion, CombatConfig::setConfigVersion, CombatConfig.CURRENT_VERSION, null);
+		skillsConfig = loadAndValidate(CONFIG_DIR.resolve("skills.json"), SkillsConfig.class, SkillsConfig::new, SkillsConfig::getConfigVersion, SkillsConfig::setConfigVersion, SkillsConfig.CURRENT_VERSION, "skills.json");
+		entitiesConfig = loadAndValidate(CONFIG_DIR.resolve("entities.json"), EntitiesConfig.class, ConfigManager::createDefaultEntitiesConfig, EntitiesConfig::getConfigVersion, EntitiesConfig::setConfigVersion, EntitiesConfig.CURRENT_VERSION, null);
 	}
 
 	private static void createOrLoadRace(String raceName, boolean isDefault) throws IOException {
 		Path racePath = RACES_DIR.resolve(raceName);
 		Files.createDirectories(racePath);
-
-		Path characterPath = racePath.resolve("character.json");
-		Path statsPath = racePath.resolve("stats.json");
 		Path formsPath = racePath.resolve("forms");
 		Files.createDirectories(formsPath);
 
-		// Character Config
-		RaceCharacterConfig characterConfig;
-		boolean overwriteCharacter = false;
-		String reasonCharacter = "";
-		if (Files.exists(characterPath)) {
-			try {
-				characterConfig = LOADER.loadConfig(characterPath, RaceCharacterConfig.class);
-				if (characterConfig.getConfigVersion() < RaceCharacterConfig.CURRENT_VERSION) {
-					reasonCharacter = characterConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + characterConfig.getConfigVersion() + " < " + RaceCharacterConfig.CURRENT_VERSION + ")";
-					overwriteCharacter = true;
-				}
-				if (overwriteCharacter) {
-					backupOldConfig(characterPath);
-					characterConfig = createDefaultCharacterConfig(raceName, isDefault);
-					characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
-				}
-			} catch (Exception e) {
-				reasonCharacter = "Parsing error: " + e.toString();
-				backupOldConfig(characterPath);
-				characterConfig = createDefaultCharacterConfig(raceName, isDefault);
-				characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
-				overwriteCharacter = true;
-			}
-		} else {
-			reasonCharacter = "File not found";
-			characterConfig = createDefaultCharacterConfig(raceName, isDefault);
-			characterConfig.setConfigVersion(RaceCharacterConfig.CURRENT_VERSION);
-			overwriteCharacter = true;
-		}
-		if (overwriteCharacter) {
-			LogUtil.warn(Env.COMMON, "Regenerating character.json for race '" + raceName + "'. Reason: " + reasonCharacter);
-			LOADER.saveConfig(characterPath, characterConfig);
-		}
+		RaceCharacterConfig characterConfig = loadAndValidate(racePath.resolve("character.json"), RaceCharacterConfig.class, () -> createDefaultCharacterConfig(raceName, isDefault), RaceCharacterConfig::getConfigVersion, RaceCharacterConfig::setConfigVersion, RaceCharacterConfig.CURRENT_VERSION, null);
+		RaceStatsConfig statsConfig = loadAndValidate(racePath.resolve("stats.json"), RaceStatsConfig.class, ConfigManager::createDefaultStatsConfig, RaceStatsConfig::getConfigVersion, RaceStatsConfig::setConfigVersion, RaceStatsConfig.CURRENT_VERSION, null);
 
-		// Stats Config
-		RaceStatsConfig statsConfig;
-		boolean overwriteStats = false;
-		String reasonStats = "";
-		if (Files.exists(statsPath)) {
-			try {
-				statsConfig = LOADER.loadConfig(statsPath, RaceStatsConfig.class);
-				if (statsConfig.getConfigVersion() < RaceStatsConfig.CURRENT_VERSION) {
-					reasonStats = statsConfig.getConfigVersion() == 0 ? "Missing config version" : "Outdated version (" + statsConfig.getConfigVersion() + " < " + RaceStatsConfig.CURRENT_VERSION + ")";
-					overwriteStats = true;
-				}
-				if (overwriteStats) {
-					backupOldConfig(statsPath);
-					statsConfig = createDefaultStatsConfig();
-					statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
-				}
-			} catch (Exception e) {
-				reasonStats = "Parsing error: " + e.toString();
-				backupOldConfig(statsPath);
-				statsConfig = createDefaultStatsConfig();
-				statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
-				overwriteStats = true;
-			}
-		} else {
-			reasonStats = "File not found";
-			statsConfig = createDefaultStatsConfig();
-			statsConfig.setConfigVersion(RaceStatsConfig.CURRENT_VERSION);
-			overwriteStats = true;
-		}
-		if (overwriteStats) {
-			LogUtil.warn(Env.COMMON, "Regenerating stats.json for race '" + raceName + "'. Reason: " + reasonStats);
-			LOADER.saveConfig(statsPath, statsConfig);
-		}
-
-		// Forms Config
 		Map<String, FormConfig> raceForms = new HashMap<>();
 		if (isDefault) FORMS_FACTORY.createDefaultFormsForRace(raceName, formsPath, raceForms);
 		Map<String, FormConfig> userDiskForms = LOADER.loadRaceForms(raceName, formsPath);
 
-		if (!isDefault) raceForms.putAll(userDiskForms);
-		else {
+		if (!isDefault) {
+			raceForms.putAll(userDiskForms);
+		} else {
 			for (Map.Entry<String, FormConfig> defaultEntry : raceForms.entrySet()) {
 				String groupKey = defaultEntry.getKey().toLowerCase();
 				FormConfig defaultFormConfig = defaultEntry.getValue();
@@ -383,32 +184,21 @@ public class ConfigManager {
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					boolean isValid = true;
-					String invalidReason = "";
-
 					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						isValid = false;
-						invalidReason = userConfig.getConfigVersion() == 0 ? "Missing config version or corrupt file" : "Outdated version (" + userConfig.getConfigVersion() + " < " + FormConfig.CURRENT_VERSION + ")";
-					}
-
-					if (isValid) raceForms.put(groupKey, userConfig);
-					else {
-						LogUtil.warn(Env.COMMON, "Regenerating form '{}' for race '{}'. Reason: {}", defaultEntry.getKey(), raceName, invalidReason);
+						LogUtil.warn(Env.COMMON, "Regenerating form '{}' for race '{}'. Reason: Outdated version", defaultEntry.getKey(), raceName);
 						backupOldConfig(formFilePath);
 						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-						LOADER.saveConfig(formFilePath, defaultFormConfig);
+						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+						raceForms.put(groupKey, defaultFormConfig);
+					} else {
+						raceForms.put(groupKey, userConfig);
 					}
 				} else {
 					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-					LogUtil.info(Env.COMMON, "Creating missing form file: {}", defaultEntry.getKey());
-					LOADER.saveConfig(formFilePath, defaultFormConfig);
+					try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
 				}
 			}
-			for (Map.Entry<String, FormConfig> userEntry : userDiskForms.entrySet()) {
-				if (!raceForms.containsKey(userEntry.getKey())) {
-					raceForms.put(userEntry.getKey(), userEntry.getValue());
-				}
-			}
+			userDiskForms.forEach(raceForms::putIfAbsent);
 		}
 
 		RACE_FORMS.put(raceName.toLowerCase(), raceForms);
@@ -431,35 +221,23 @@ public class ConfigManager {
 
 				if (userDiskForms.containsKey(groupKey)) {
 					FormConfig userConfig = userDiskForms.get(groupKey);
-					boolean isValid = true;
-					String invalidReason = "";
-
 					if (userConfig.getConfigVersion() < FormConfig.CURRENT_VERSION) {
-						isValid = false;
-						invalidReason = userConfig.getConfigVersion() == 0 ? "Missing config version or corrupt file" : "Outdated version";
-					}
-
-					if (isValid) {
-						finalStackForms.put(groupKey, userConfig);
-					} else {
-						LogUtil.warn(Env.COMMON, "Regenerating stack form '{}'. Reason: {}", defaultEntry.getKey(), invalidReason);
+						LogUtil.warn(Env.COMMON, "Regenerating stack form '{}'. Reason: Outdated version", defaultEntry.getKey());
 						backupOldConfig(formFilePath);
 						defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-						LOADER.saveConfig(formFilePath, defaultFormConfig);
+						try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
+					} else {
+						finalStackForms.put(groupKey, userConfig);
 					}
 				} else {
 					defaultFormConfig.setConfigVersion(FormConfig.CURRENT_VERSION);
-					LogUtil.info(Env.COMMON, "Creating missing stack form file: {}", defaultEntry.getKey());
-					LOADER.saveConfig(formFilePath, defaultFormConfig);
+					try { LOADER.saveConfig(formFilePath, defaultFormConfig); } catch (Exception ignored) {}
 				}
 			}
-
-			for (Map.Entry<String, FormConfig> userEntry : userDiskForms.entrySet()) {
-				if (!finalStackForms.containsKey(userEntry.getKey())) {
-					finalStackForms.put(userEntry.getKey(), userEntry.getValue());
-				}
-			}
-		} else finalStackForms.putAll(userDiskForms);
+			userDiskForms.forEach(finalStackForms::putIfAbsent);
+		} else {
+			finalStackForms.putAll(userDiskForms);
+		}
 
 		STACK_FORMS = finalStackForms;
 	}
@@ -471,7 +249,6 @@ public class ConfigManager {
 		hardMode.setHpMultiplier(3.0);
 		hardMode.setDamageMultiplier(2.0);
 
-		// OPEN WORLD / DEFAULT
 		addDefaultEntityStats(statsMap, MainEntities.DINO_KID, 30.0, 4.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR1, 100.0, 8.0, 0.0);
 		addDefaultEntityStats(statsMap, MainEntities.DINOSAUR2, 150.0, 12.0, 0.0);
@@ -568,7 +345,6 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
-
 		config.setFormSkillTpCosts("superform", new Integer[]{8000, 16000, 25000, 40000});
 		config.setFormSkillTpCosts("godform", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
@@ -593,7 +369,6 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
-
 		config.setFormSkillTpCosts("superform", new Integer[]{5000, 8000, 12000, 16000, 20000, 25000, 30000, 40000});
 		config.setFormSkillTpCosts("godform", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
@@ -616,7 +391,6 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFF00");
-
 		config.setFormSkillTpCosts("superform", new Integer[]{9000, 18000, 30000, 45000});
 		config.setFormSkillTpCosts("godform", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
@@ -639,7 +413,6 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#FF001D");
 		config.setDefaultEye2Color("#FF001D");
 		config.setDefaultAuraColor("#5F00FF");
-
 		config.setFormSkillTpCosts("superform", new Integer[]{7000, 12000, 20000, 32000, 45000});
 		config.setFormSkillTpCosts("godform", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
@@ -661,7 +434,6 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#2E2424");
 		config.setDefaultEye2Color("#F06F6E");
 		config.setDefaultAuraColor("#1AA700");
-
 		config.setFormSkillTpCosts("superform", new Integer[]{10000, 22000, 34000, 48000});
 		config.setFormSkillTpCosts("godform", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
@@ -684,7 +456,6 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#B40000");
 		config.setDefaultEye2Color("#B40000");
 		config.setDefaultAuraColor("#FF6DFF");
-
 		config.setFormSkillTpCosts("superform", new Integer[]{9000, 18000, 30000, 44000});
 		config.setFormSkillTpCosts("godform", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
@@ -706,7 +477,6 @@ public class ConfigManager {
 		config.setDefaultEye1Color("#0E1011");
 		config.setDefaultEye2Color("#0E1011");
 		config.setDefaultAuraColor("#7FFFFF");
-
 		config.setFormSkillTpCosts("superform", new Integer[]{});
 		config.setFormSkillTpCosts("godform", new Integer[]{});
 		config.setFormSkillTpCosts("legendaryforms", new Integer[]{});
@@ -714,32 +484,16 @@ public class ConfigManager {
 
 	private static RaceStatsConfig createDefaultStatsConfig() {
 		RaceStatsConfig config = new RaceStatsConfig();
-		setupDefaultStats(config);
+		setupInitialStats(config.getClassStats("warrior"), 10, 5, 10, 10, 5, 5, 5.0, 0.06, 5.0, 0.05, 10.0, 0.12);
+		setupScalingStats(config.getClassStats("warrior"), 1.0, 0.75, 0.5, 0.75, 1.5, 0.5, 2.5);
+		setupInitialStats(config.getClassStats("spiritualist"), 5, 10, 5, 5, 10, 10, 3.0, 0.03, 15.0, 0.15, 5.0, 0.06);
+		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 0.25, 0.25, 1.0, 1.0, 3.0);
+		setupInitialStats(config.getClassStats("martialartist"), 5, 10, 10, 10, 5, 5, 4.0, 0.045, 8.0, 0.08, 8.0, 0.09);
+		setupScalingStats(config.getClassStats("martialartist"), 0.75, 1.0, 0.75, 1.0, 1.75, 0.75, 2.75);
 		return config;
 	}
 
-	private static void setupDefaultStats(RaceStatsConfig config) {
-		setupInitialStats(config.getClassStats("warrior"), 10, 5, 10, 10, 5, 5,
-				5.0, 0.06,
-				5.0, 0.05,
-				10.0, 0.12);
-		setupScalingStats(config.getClassStats("warrior"), 1.0, 0.75, 0.5, 0.75, 1.5, 0.5, 2.5);
-
-		setupInitialStats(config.getClassStats("spiritualist"), 5, 10, 5, 5, 10, 10,
-				3.0, 0.03,
-				15.0, 0.15,
-				5.0, 0.06);
-		setupScalingStats(config.getClassStats("spiritualist"), 0.5, 0.5, 0.25, 0.25, 1.0, 1.0, 3.0);
-
-		setupInitialStats(config.getClassStats("martialartist"), 5, 10, 10, 10, 5, 5,
-				4.0, 0.045,
-				8.0, 0.08,
-				8.0, 0.09);
-		setupScalingStats(config.getClassStats("martialartist"), 0.75, 1.0, 0.75, 1.0, 1.75, 0.75, 2.75);
-	}
-
-	private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene,
-	                                      double baseHp5, double hp5VitScaling, double baseEp5, double ep5EneScaling, double baseSp5, double sp5VitScaling) {
+	private static void setupInitialStats(RaceStatsConfig.ClassStats classStats, int str, int skp, int res, int vit, int pwr, int ene, double baseHp5, double hp5VitScaling, double baseEp5, double ep5EneScaling, double baseSp5, double sp5VitScaling) {
 		RaceStatsConfig.BaseStats base = classStats.getBaseStats();
 		base.setStrength(str);
 		base.setStrikePower(skp);
@@ -747,7 +501,6 @@ public class ConfigManager {
 		base.setVitality(vit);
 		base.setKiPower(pwr);
 		base.setEnergy(ene);
-
 		classStats.setBaseHp5(baseHp5);
 		classStats.setHp5VitScaling(hp5VitScaling);
 		classStats.setBaseEp5(baseEp5);
@@ -768,14 +521,12 @@ public class ConfigManager {
 	}
 
 	public static RaceStatsConfig getRaceStats(String raceName) {
-		if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(raceName.toLowerCase()))
-			return SERVER_SYNCED_STATS.get(raceName.toLowerCase());
+		if (SERVER_SYNCED_STATS != null && SERVER_SYNCED_STATS.containsKey(raceName.toLowerCase())) return SERVER_SYNCED_STATS.get(raceName.toLowerCase());
 		return RACE_STATS.getOrDefault(raceName.toLowerCase(), RACE_STATS.get("human"));
 	}
 
 	public static RaceCharacterConfig getRaceCharacter(String raceName) {
-		if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase()))
-			return SERVER_SYNCED_CHARACTER.get(raceName.toLowerCase());
+		if (SERVER_SYNCED_CHARACTER != null && SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase())) return SERVER_SYNCED_CHARACTER.get(raceName.toLowerCase());
 		return RACE_CHARACTER.getOrDefault(raceName.toLowerCase(), RACE_CHARACTER.get("human"));
 	}
 
@@ -787,52 +538,197 @@ public class ConfigManager {
 		races.sort((r1, r2) -> {
 			int index1 = -1;
 			int index2 = -1;
-
 			for (int i = 0; i < DEFAULT_RACES.length; i++) {
 				if (DEFAULT_RACES[i].equalsIgnoreCase(r1)) index1 = i;
 				if (DEFAULT_RACES[i].equalsIgnoreCase(r2)) index2 = i;
 			}
-
 			if (index1 != -1 && index2 != -1) return Integer.compare(index1, index2);
 			if (index1 != -1) return -1;
 			if (index2 != -1) return 1;
-
 			return r1.compareToIgnoreCase(r2);
 		});
 
 		return races;
 	}
 
-	public static List<String> getDefaultRaces() {
-		return Arrays.asList(DEFAULT_RACES);
-	}
-
+	public static List<String> getDefaultRaces() { return Arrays.asList(DEFAULT_RACES); }
 	public static boolean isRaceLoaded(String raceName) {
 		if (SERVER_SYNCED_CHARACTER != null) return SERVER_SYNCED_CHARACTER.containsKey(raceName.toLowerCase());
 		return LOADED_RACES.stream().anyMatch(r -> r.equalsIgnoreCase(raceName));
 	}
-
-	public static GeneralUserConfig getUserConfig() {
-		return userConfig != null ? userConfig : new GeneralUserConfig();
-	}
-
+	public static GeneralUserConfig getUserConfig() { return userConfig != null ? userConfig : new GeneralUserConfig(); }
 	public static GeneralServerConfig getServerConfig() {
 		if (SERVER_SYNCED_GENERAL_SERVER != null) return SERVER_SYNCED_GENERAL_SERVER;
 		return serverConfig != null ? serverConfig : new GeneralServerConfig();
 	}
-
 	public static CombatConfig getCombatConfig() {
 		if (SERVER_SYNCED_COMBAT != null) return SERVER_SYNCED_COMBAT;
 		return combatConfig != null ? combatConfig : new CombatConfig();
 	}
-
 	public static void saveGeneralUserConfig() {
+		try { LOADER.saveConfig(CONFIG_DIR.resolve("general-user.json"), userConfig); }
+		catch (IOException e) { LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage()); }
+	}
+
+	public static boolean updateConfigValue(String configFileName, String optionalSubtype, String key, String value) {
 		try {
-			Path path = CONFIG_DIR.resolve("general-user.json");
-			LOADER.saveConfig(path, userConfig);
-		} catch (IOException e) {
-			LogUtil.error(Env.COMMON, "Error saving user configuration: {}", e.getMessage());
+			Path configPath = CONFIG_DIR.resolve(configFileName + ".json");
+			if (!Files.exists(configPath)) return false;
+
+			String content = Files.readString(configPath);
+			JsonObject rootObj = JsonParser.parseString(content).getAsJsonObject();
+			JsonObject targetObj = rootObj;
+
+			if (optionalSubtype != null && !optionalSubtype.isEmpty()) {
+				if (rootObj.has(optionalSubtype) && rootObj.get(optionalSubtype).isJsonObject()) {
+					targetObj = rootObj.getAsJsonObject(optionalSubtype);
+				} else return false;
+			}
+
+			if (!targetObj.has(key)) return false;
+
+			JsonElement parsedValue;
+			if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+				parsedValue = JsonParser.parseString(value.toLowerCase(Locale.ROOT));
+			} else {
+				try { Double.parseDouble(value); parsedValue = JsonParser.parseString(value); }
+				catch (NumberFormatException e) { parsedValue = GSON.toJsonTree(value); }
+			}
+
+			targetObj.add(key, parsedValue);
+			Files.writeString(configPath, GSON.toJson(rootObj));
+			return true;
+		} catch (Exception e) {
+			LogUtil.error(Env.COMMON, "Error updating config value: " + e.getMessage());
+			return false;
 		}
+	}
+
+	public static List<String> getAvailableConfigFiles() {
+		if (!CACHED_CONFIG_FILES.isEmpty()) return CACHED_CONFIG_FILES;
+		try (Stream<Path> stream = Files.walk(CONFIG_DIR)) {
+			stream.filter(Files::isRegularFile)
+					.filter(p -> p.toString().endsWith(".json"))
+					.forEach(p -> {
+						String relativePath = CONFIG_DIR.relativize(p).toString().replace("\\", "/");
+						CACHED_CONFIG_FILES.add(relativePath.substring(0, relativePath.length() - 5));
+					});
+		} catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Error scanning config files: " + e.getMessage());
+		}
+		return CACHED_CONFIG_FILES;
+	}
+
+	public static List<String> getKeysOrSubtypes(String configFileName, String optionalSubtype) {
+		List<String> list = new ArrayList<>();
+		try {
+			Path configPath = CONFIG_DIR.resolve(configFileName + ".json");
+			if (!Files.exists(configPath)) return list;
+			String content = Files.readString(configPath);
+			JsonObject rootObj = JsonParser.parseString(content).getAsJsonObject();
+			JsonObject targetObj = rootObj;
+
+			if (optionalSubtype != null && !optionalSubtype.isEmpty()) {
+				if (rootObj.has(optionalSubtype) && rootObj.get(optionalSubtype).isJsonObject()) targetObj = rootObj.getAsJsonObject(optionalSubtype);
+				else return list;
+			}
+
+			for (Map.Entry<String, JsonElement> entry : targetObj.entrySet()) list.add(entry.getKey());
+
+		} catch (Exception ignored) {}
+		return list;
+	}
+
+	public static List<String> getValueSuggestions(String configFileName, String optionalSubtype, String key) {
+		java.util.Set<String> list = new java.util.LinkedHashSet<>();
+		try {
+			Path configPath = CONFIG_DIR.resolve(configFileName + ".json");
+			if (!Files.exists(configPath)) return new ArrayList<>();
+			String content = Files.readString(configPath);
+			JsonObject rootObj = JsonParser.parseString(content).getAsJsonObject();
+			JsonObject targetObj = rootObj;
+
+			if (optionalSubtype != null && !optionalSubtype.isEmpty()) {
+				if (rootObj.has(optionalSubtype) && rootObj.get(optionalSubtype).isJsonObject()) targetObj = rootObj.getAsJsonObject(optionalSubtype);
+				else return new ArrayList<>();
+			}
+
+			if (targetObj.has(key)) {
+				JsonElement element = targetObj.get(key);
+				if (element.isJsonPrimitive()) {
+					if (element.getAsJsonPrimitive().isBoolean()) {
+						list.add("true");
+						list.add("false");
+					} else if (element.getAsJsonPrimitive().isNumber()) {
+						String currentNum = element.getAsString();
+						list.add(currentNum);
+						if (currentNum.contains(".")) list.addAll(Arrays.asList("0.0", "0.5", "1.0", "1.5", "2.0", "5.0", "10.0"));
+						else list.addAll(Arrays.asList("0", "1", "2", "5", "10", "20", "50", "100"));
+					} else if (element.getAsJsonPrimitive().isString()) list.add(element.getAsString());
+				}
+			}
+		} catch (Exception ignored) {}
+		return new ArrayList<>(list);
+	}
+
+	public static void reloadSpecificConfig(String configFilePath) throws IOException {
+		Path path = CONFIG_DIR.resolve(configFilePath + ".json");
+		if (configFilePath.equals("general-server")) {
+			serverConfig = LOADER.loadConfig(path, GeneralServerConfig.class);
+		} else if (configFilePath.equals("combat")) {
+			combatConfig = LOADER.loadConfig(path, CombatConfig.class);
+		} else if (configFilePath.equals("skills")) {
+			skillsConfig = LOADER.loadConfig(path, SkillsConfig.class);
+		} else if (configFilePath.equals("entities")) {
+			entitiesConfig = LOADER.loadConfig(path, EntitiesConfig.class);
+		} else if (configFilePath.startsWith("races/")) {
+			String[] parts = configFilePath.split("/");
+			String raceName = parts[1];
+			if (parts[2].equals("stats")) {
+				RACE_STATS.put(raceName.toLowerCase(), LOADER.loadConfig(path, RaceStatsConfig.class));
+			} else if (parts[2].equals("character")) {
+				RACE_CHARACTER.put(raceName.toLowerCase(), LOADER.loadConfig(path, RaceCharacterConfig.class));
+			} else if (parts[2].equals("forms")) {
+				RACE_FORMS.computeIfAbsent(raceName.toLowerCase(), k -> new HashMap<>())
+						.put(parts[3].toLowerCase(), LOADER.loadConfig(path, FormConfig.class));
+			}
+		} else if (configFilePath.startsWith("forms/")) {
+			STACK_FORMS.put(configFilePath.split("/")[1].toLowerCase(), LOADER.loadConfig(path, FormConfig.class));
+		}
+	}
+
+	public static String getSpecificConfigJson(String configFilePath) {
+		try { return Files.readString(CONFIG_DIR.resolve(configFilePath + ".json")); }
+		catch (IOException e) {
+			LogUtil.error(Env.COMMON, "Could not read config for sync: " + configFilePath);
+			return "{}";
+		}
+	}
+
+	public static void applySpecificSyncedConfig(String configFilePath, String json) {
+		try {
+			if (configFilePath.equals("general-server")) SERVER_SYNCED_GENERAL_SERVER = GSON.fromJson(json, GeneralServerConfig.class);
+			else if (configFilePath.equals("combat")) SERVER_SYNCED_COMBAT = GSON.fromJson(json, CombatConfig.class);
+			else if (configFilePath.equals("skills")) SERVER_SYNCED_SKILLS = GSON.fromJson(json, SkillsConfig.class);
+			else if (configFilePath.startsWith("races/")) {
+				String[] parts = configFilePath.split("/");
+				String raceName = parts[1];
+				if (parts[2].equals("stats")) {
+					if (SERVER_SYNCED_STATS == null) SERVER_SYNCED_STATS = new HashMap<>(RACE_STATS);
+					SERVER_SYNCED_STATS.put(raceName.toLowerCase(), GSON.fromJson(json, RaceStatsConfig.class));
+				} else if (parts[2].equals("character")) {
+					if (SERVER_SYNCED_CHARACTER == null) SERVER_SYNCED_CHARACTER = new HashMap<>(RACE_CHARACTER);
+					SERVER_SYNCED_CHARACTER.put(raceName.toLowerCase(), GSON.fromJson(json, RaceCharacterConfig.class));
+				} else if (parts[2].equals("forms")) {
+					if (SERVER_SYNCED_FORMS == null) SERVER_SYNCED_FORMS = new HashMap<>();
+					SERVER_SYNCED_FORMS.computeIfAbsent(raceName.toLowerCase(), k -> new HashMap<>())
+							.put(parts[3].toLowerCase(), GSON.fromJson(json, FormConfig.class));
+				}
+			} else if (configFilePath.startsWith("forms/")) {
+				if (SERVER_SYNCED_STACK_FORMS == null) SERVER_SYNCED_STACK_FORMS = new HashMap<>(STACK_FORMS);
+				SERVER_SYNCED_STACK_FORMS.put(configFilePath.split("/")[1].toLowerCase(), GSON.fromJson(json, FormConfig.class));
+			}
+		} catch (Exception e) { LogUtil.error(Env.CLIENT, "Error applying synced config: " + e.getMessage()); }
 	}
 
 	public static void applySyncedServerConfig(GeneralServerConfig syncedServerConfig, CombatConfig syncedCombatConfig, SkillsConfig syncedSkillsConfig, Map<String, Map<String, FormConfig>> syncedForms, Map<String, RaceStatsConfig> syncedStats, Map<String, RaceCharacterConfig> syncedCharacters, Map<String, FormConfig> syncedStackForms) {
@@ -855,66 +751,27 @@ public class ConfigManager {
 		SERVER_SYNCED_STACK_FORMS = null;
 	}
 
-	public static Map<String, RaceStatsConfig> getAllRaceStats() {
-		if (SERVER_SYNCED_STATS != null) return SERVER_SYNCED_STATS;
-		return new HashMap<>(RACE_STATS);
-	}
-
-	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() {
-		if (SERVER_SYNCED_CHARACTER != null) return SERVER_SYNCED_CHARACTER;
-		return new HashMap<>(RACE_CHARACTER);
-	}
-
+	public static Map<String, RaceStatsConfig> getAllRaceStats() { return SERVER_SYNCED_STATS != null ? SERVER_SYNCED_STATS : new HashMap<>(RACE_STATS); }
+	public static Map<String, RaceCharacterConfig> getAllRaceCharacters() { return SERVER_SYNCED_CHARACTER != null ? SERVER_SYNCED_CHARACTER : new HashMap<>(RACE_CHARACTER); }
+	public static Map<String, Map<String, FormConfig>> getAllForms() { return SERVER_SYNCED_FORMS != null ? SERVER_SYNCED_FORMS : RACE_FORMS; }
+	public static Map<String, FormConfig> getAllFormsForRace(String raceName) { return getAllForms().getOrDefault(raceName.toLowerCase(), new HashMap<>()); }
 	public static FormConfig getFormGroup(String raceName, String groupName) {
 		Map<String, FormConfig> raceForms = getAllFormsForRace(raceName);
-		if (raceForms != null) return raceForms.get(groupName.toLowerCase());
-		return null;
+		return raceForms != null ? raceForms.get(groupName.toLowerCase()) : null;
 	}
-
 	public static FormConfig.FormData getForm(String raceName, String groupName, String formName) {
 		FormConfig group = getFormGroup(raceName, groupName);
-		if (group != null) return group.getForm(formName);
-		return null;
+		return group != null ? group.getForm(formName) : null;
 	}
-
+	public static Map<String, FormConfig> getAllStackForms() { return SERVER_SYNCED_STACK_FORMS != null ? SERVER_SYNCED_STACK_FORMS : STACK_FORMS; }
 	public static FormConfig getStackFormGroup(String groupName) {
 		Map<String, FormConfig> stackForms = getAllStackForms();
-		if (stackForms != null) {
-			return stackForms.get(groupName.toLowerCase());
-		}
-		return null;
+		return stackForms != null ? stackForms.get(groupName.toLowerCase()) : null;
 	}
-
 	public static FormConfig.FormData getStackForm(String groupName, String formName) {
 		FormConfig group = getStackFormGroup(groupName);
-		if (group != null) return group.getForm(formName);
-		return null;
+		return group != null ? group.getForm(formName) : null;
 	}
-
-	public static Map<String, Map<String, FormConfig>> getAllForms() {
-		if (SERVER_SYNCED_FORMS != null) return SERVER_SYNCED_FORMS;
-		return RACE_FORMS;
-	}
-
-	public static Map<String, FormConfig> getAllFormsForRace(String raceName) {
-		Map<String, Map<String, FormConfig>> forms = getAllForms();
-		return forms.getOrDefault(raceName.toLowerCase(), new HashMap<>());
-	}
-
-	public static Map<String, FormConfig> getAllStackForms() {
-		if (SERVER_SYNCED_STACK_FORMS != null) return SERVER_SYNCED_STACK_FORMS;
-		return STACK_FORMS;
-	}
-
-	public static SkillsConfig getSkillsConfig() {
-		if (SERVER_SYNCED_SKILLS != null) return SERVER_SYNCED_SKILLS;
-		return skillsConfig != null ? skillsConfig : new SkillsConfig();
-	}
-
-	public static EntitiesConfig.EntityStats getEntityStats(String registryName) {
-		if (entitiesConfig != null && entitiesConfig.getDefaultEntityStats() != null) {
-			return entitiesConfig.getDefaultEntityStats().get(registryName);
-		}
-		return null;
-	}
+	public static SkillsConfig getSkillsConfig() { return SERVER_SYNCED_SKILLS != null ? SERVER_SYNCED_SKILLS : (skillsConfig != null ? skillsConfig : new SkillsConfig()); }
+	public static EntitiesConfig.EntityStats getEntityStats(String registryName) { return entitiesConfig != null && entitiesConfig.getDefaultEntityStats() != null ? entitiesConfig.getDefaultEntityStats().get(registryName) : null; }
 }

@@ -22,7 +22,7 @@ public class CombatConfig {
 
 	private Boolean respectAttackCooldown = true;
 	private Double staminaConsumptionRatio = 0.5;
-	private Integer baselineFormDrain = 15;
+	private Integer baselineFormDrain = 200;
 	private Boolean killPlayersOnCombatLogout = true;
 
 	private Double baseDamageReductionCap = 0.75;

@@ -1,91 +1,37 @@
 package com.dragonminez.common.network.S2C;
 
-import com.dragonminez.common.config.*;
+import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.CompressionUtil;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.lang.reflect.Type;
-import java.util.Map;
 import java.util.function.Supplier;
 
 public class SyncServerConfigS2C {
+	private final String configPath;
+	private final byte[] payload;
 
-	private static final Gson GSON = new GsonBuilder().create();
-	private final byte[] generalServerBytes;
-	private final byte[] combatBytes;
-	private final byte[] skillsBytes;
-	private final byte[] formsBytes;
-	private final byte[] raceStatsBytes;
-	private final byte[] raceCharacterBytes;
-	private final byte[] stackFormsBytes;
-
-	public SyncServerConfigS2C(GeneralServerConfig serverConfig, CombatConfig combatConfig, SkillsConfig skillsConfig, Map<String, Map<String, FormConfig>> formsConfigs, Map<String, RaceStatsConfig> statsConfigs, Map<String, RaceCharacterConfig> characterConfigs, Map<String, FormConfig> stackFormsConfigs) {
-		this.generalServerBytes = CompressionUtil.compress(GSON.toJson(serverConfig));
-		this.combatBytes = CompressionUtil.compress(GSON.toJson(combatConfig));
-		this.skillsBytes = CompressionUtil.compress(GSON.toJson(skillsConfig));
-		this.formsBytes = CompressionUtil.compress(GSON.toJson(formsConfigs));
-		this.raceStatsBytes = CompressionUtil.compress(GSON.toJson(statsConfigs));
-		this.raceCharacterBytes = CompressionUtil.compress(GSON.toJson(characterConfigs));
-		this.stackFormsBytes = CompressionUtil.compress(GSON.toJson(stackFormsConfigs));
+	public SyncServerConfigS2C(String configPath, String jsonPayload) {
+		this.configPath = configPath;
+		this.payload = CompressionUtil.compress(jsonPayload);
 	}
 
 	public SyncServerConfigS2C(FriendlyByteBuf buf) {
-		this.generalServerBytes = buf.readByteArray();
-		this.combatBytes = buf.readByteArray();
-		this.skillsBytes = buf.readByteArray();
-		this.formsBytes = buf.readByteArray();
-		this.raceStatsBytes = buf.readByteArray();
-		this.raceCharacterBytes = buf.readByteArray();
-		this.stackFormsBytes = buf.readByteArray();
+		this.configPath = buf.readUtf();
+		this.payload = buf.readByteArray();
 	}
 
 	public void encode(FriendlyByteBuf buf) {
-		buf.writeByteArray(generalServerBytes);
-		buf.writeByteArray(combatBytes);
-		buf.writeByteArray(skillsBytes);
-		buf.writeByteArray(formsBytes);
-		buf.writeByteArray(raceStatsBytes);
-		buf.writeByteArray(raceCharacterBytes);
-		buf.writeByteArray(stackFormsBytes);
+		buf.writeUtf(configPath);
+		buf.writeByteArray(payload);
 	}
 
 	public void handle(Supplier<NetworkEvent.Context> ctx) {
 		ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-			String generalServerJson = CompressionUtil.decompress(generalServerBytes);
-			String combatJson = CompressionUtil.decompress(combatBytes);
-			String skillsJson = CompressionUtil.decompress(skillsBytes);
-			String formsJson = CompressionUtil.decompress(formsBytes);
-			String raceStatsJson = CompressionUtil.decompress(raceStatsBytes);
-			String raceCharacterJson = CompressionUtil.decompress(raceCharacterBytes);
-			String stackFormsJson = CompressionUtil.decompress(stackFormsBytes);
-
-			GeneralServerConfig serverConfig = GSON.fromJson(generalServerJson, GeneralServerConfig.class);
-			CombatConfig combatConfig = GSON.fromJson(combatJson, CombatConfig.class);
-			SkillsConfig skillsConfig = GSON.fromJson(skillsJson, SkillsConfig.class);
-
-			Type formsType = new TypeToken<Map<String, Map<String, FormConfig>>>() {
-			}.getType();
-			Map<String, Map<String, FormConfig>> formsConfigs = GSON.fromJson(formsJson, formsType);
-
-			Type statsType = new TypeToken<Map<String, RaceStatsConfig>>() {
-			}.getType();
-			Map<String, RaceStatsConfig> statsConfigs = GSON.fromJson(raceStatsJson, statsType);
-
-			Type characterType = new TypeToken<Map<String, RaceCharacterConfig>>() {
-			}.getType();
-			Map<String, RaceCharacterConfig> characterConfigs = GSON.fromJson(raceCharacterJson, characterType);
-
-			Type stackFormsType = new TypeToken<Map<String, FormConfig>>() {
-			}.getType();
-			Map<String, FormConfig> stackFormsConfigs = GSON.fromJson(stackFormsJson, stackFormsType);
-
-			ConfigManager.applySyncedServerConfig(serverConfig, combatConfig, skillsConfig, formsConfigs, statsConfigs, characterConfigs, stackFormsConfigs);
+			String json = CompressionUtil.decompress(payload);
+			ConfigManager.applySpecificSyncedConfig(configPath, json);
 		}));
 		ctx.get().setPacketHandled(true);
 	}
