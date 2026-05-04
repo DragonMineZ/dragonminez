@@ -1,12 +1,14 @@
 package com.dragonminez.common.quest;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public abstract class QuestObjective {
     private final ObjectiveType type;
+    private final int required;
     private int progress;
-    private int required;
+    @Setter
     private boolean completed;
 
     public QuestObjective(ObjectiveType type, int required) {
@@ -26,11 +28,7 @@ public abstract class QuestObjective {
         checkCompletion();
     }
 
-	public void setCompleted(boolean completed) {
-        this.completed = completed;
-    }
-
-    private void checkCompletion() {
+	private void checkCompletion() {
         if (progress >= required) {
             completed = true;
         }

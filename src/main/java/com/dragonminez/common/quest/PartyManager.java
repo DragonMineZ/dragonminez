@@ -127,7 +127,7 @@ public final class PartyManager {
         }
 
         inviteeQuestData.clearPendingPartyInvite();
-        prepareForPartyTransfer(invitee);
+        leaveParty(invitee);
         joinLeaderParty(leader, invitee, true);
         return true;
     }
@@ -187,7 +187,7 @@ public final class PartyManager {
     }
 
     public static void forceJoinParty(ServerPlayer leader, ServerPlayer member) {
-        prepareForPartyTransfer(member);
+        leaveParty(member);
         joinLeaderParty(leader, member, true);
     }
 
@@ -213,18 +213,6 @@ public final class PartyManager {
         }
     }
 
-    private static void prepareForPartyTransfer(ServerPlayer player) {
-        if (!isInParty(player)) {
-            return;
-        }
-
-        if (isPartyLeader(player)) {
-            disbandParty(player, true, true);
-        } else {
-            removeFollowerFromParty(player, true, true);
-        }
-    }
-
     private static void joinLeaderParty(ServerPlayer leader, ServerPlayer member, boolean storeBackup) {
         UUID partyId = getOrCreateParty(leader);
         PlayerQuestData memberQuestData = getQuestData(member);
@@ -235,8 +223,7 @@ public final class PartyManager {
 
         syncQuestProgress(leader, member);
 
-        Set<UUID> memberIds = new LinkedHashSet<>();
-        memberIds.addAll(getQuestData(leader).getPartyMemberIds());
+		Set<UUID> memberIds = new LinkedHashSet<>(getQuestData(leader).getPartyMemberIds());
         memberIds.add(member.getUUID());
 
         updatePartyMembers(partyId, leader.getUUID(), memberIds, resolveOnlinePlayers(leader, memberIds));
