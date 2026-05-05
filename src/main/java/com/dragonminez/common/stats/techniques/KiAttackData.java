@@ -38,6 +38,13 @@ public class KiAttackData extends TechniqueData {
 	private float size;
 	private int armorPenetration;
 
+	private int damageLevel = 0;
+	private int castTimeLevel = 0;
+	private int cooldownLevel = 0;
+	private int speedLevel = 0;
+	private int sizeLevel = 0;
+	private int armorPenLevel = 0;
+
 	public KiAttackData() { super(); }
 
 	@Override
@@ -56,6 +63,25 @@ public class KiAttackData extends TechniqueData {
 			case SHIELD -> 1.6f;
 			case BARRAGE -> 1.4f;
 			case AREA -> 1.8f;
+		};
+	}
+
+	public String getAnimationPrefix() {
+		if (this.animation != null && !this.animation.isEmpty()) return this.animation;
+
+		if (PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
+			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
+			if (predefined != null && predefined.getAnimation() != null && !predefined.getAnimation().isEmpty()) return predefined.getAnimation();
+		}
+
+		return switch (kiType != null ? kiType : KiType.SMALL_BALL) {
+			case BARRAGE -> "ki.barrage";
+			case GIANT_BALL -> "ki.large_ball";
+			case WAVE -> "ki.kameha";
+			case DISK -> "ki.kienzan";
+			case EXPLOSION -> "ki.explosion";
+			case BEAM, LASER -> "ki.makkako";
+			default -> "ki.kameha";
 		};
 	}
 
@@ -86,25 +112,48 @@ public class KiAttackData extends TechniqueData {
 				(armorPenRatio * armorPenWeight);
 	}
 
+	public float getActualDamageMultiplier() { return damageMultiplier * (1.0f + (damageLevel * 0.1f)); }
+	public float getActualSpeed() { return speed * (1.0f + (speedLevel * 0.05f)); }
+	public float getActualSize() { return size * (1.0f + (sizeLevel * 0.05f)); }
+	public int getActualArmorPenetration() { return Math.min(100, armorPenetration + (armorPenLevel * 2)); }
+	public int getActualCastTime() { return (int) (castTime * (1.0f - (castTimeLevel * 0.05f))); }
+	public int getActualCooldown() { return (int) (cooldown * (1.0f - (cooldownLevel * 0.05f))); }
+
+	@Override
+	public double getCalculatedCost(com.dragonminez.common.stats.StatsData statsData) {
+		double damageDone = statsData.getKiDamage() * getActualDamageMultiplier();
+		double complexityFactor = (getActualSize() * 5.0) + (getActualSpeed() * 5.0) + (getActualArmorPenetration() * 0.2);
+
+		float typeMult = getTypeMultiplier(this.kiType != null ? this.kiType : KiType.SMALL_BALL);
+		float utilMult = getUtilityMultiplier(this.utility != null ? this.utility : Utility.DAMAGE);
+
+		return Math.max(5.0, (damageDone * 0.5 + complexityFactor) * typeMult * utilMult);
+	}
+
 	public void calculateDerivedValues() {
 		float typeMult = getTypeMultiplier(kiType != null ? kiType : KiType.SMALL_BALL);
 		float utilMult = getUtilityMultiplier(utility != null ? utility : Utility.DAMAGE);
-		float complexity = getWeightedComplexity();
 
-		double kiCost = (10.0 + complexity * 40.0) * typeMult * utilMult;
-		this.baseCost = Math.max(5, kiCost);
+		float flatDamage = getActualDamageMultiplier() * 10.0f;
+		float flatSize = getActualSize() * 4.0f;
+		float flatSpeed = getActualSpeed() * 3.0f;
+		float flatPen = (getActualArmorPenetration() / 100.0f) * 2.0f;
 
-		float tpBase = (80.0f + complexity * 200.0f) * typeMult * utilMult;
+		float complexity = flatDamage + flatSize + flatSpeed + flatPen;
+
+		float tpBase = (80.0f + complexity * 15.0f) * typeMult * utilMult;
 		this.tpCost = Math.max(10, Math.round(tpBase));
 
-		if (this.kiType == KiType.SMALL_BALL) this.castTime = 0;
-		else {
-			float castBase = (8.0f + complexity * 12.0f) * (float) Math.sqrt(typeMult) * utilMult;
-			this.castTime = Math.max(5, Math.min(200, Math.round(castBase)));
+		if (!PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
+			if (this.kiType == KiType.SMALL_BALL) {
+				this.castTime = 0;
+			} else {
+				float castBase = (8.0f + complexity * 1.5f) * (float) Math.sqrt(typeMult) * utilMult;
+				this.castTime = Math.max(5, Math.min(200, Math.round(castBase)));
+			}
+			float cdBase = (20.0f + complexity * 3.0f) * typeMult * utilMult;
+			this.cooldown = Math.max(10, Math.min(600, Math.round(cdBase)));
 		}
-
-		float cdBase = (20.0f + complexity * 30.0f) * typeMult * utilMult;
-		this.cooldown = Math.max(10, Math.min(600, Math.round(cdBase)));
 	}
 
 	public String generateExportCode() {
@@ -167,8 +216,16 @@ public class KiAttackData extends TechniqueData {
 		tag.putFloat("Speed", speed);
 		tag.putFloat("Size", size);
 		tag.putInt("ArmorPenetration", armorPenetration);
+		tag.putInt("ArmorPenLevel", armorPenLevel);
+		tag.putInt("DamageLevel", damageLevel);
+		tag.putInt("CastTimeLevel", castTimeLevel);
+		tag.putInt("CooldownLevel", cooldownLevel);
+		tag.putInt("SpeedLevel", speedLevel);
+		tag.putInt("SizeLevel", sizeLevel);
 		return tag;
 	}
+
+
 
 	@Override
 	public void load(CompoundTag tag) {
@@ -191,6 +248,11 @@ public class KiAttackData extends TechniqueData {
 		this.animation = tag.getString("Animation");
 		try { this.utility = Utility.valueOf(tag.getString("Utility")); } catch (Exception e) { this.utility = Utility.DAMAGE; }
 
+		if ((this.animation == null || this.animation.isEmpty()) && PredefinedTechniques.isPredefinedTechniqueId(this.id)) {
+			KiAttackData predefined = PredefinedTechniques.REGISTRY.get(this.id);
+			if (predefined != null) this.animation = predefined.getAnimation();
+		}
+
 		this.colorInterior = tag.getInt("ColorInterior");
 		this.colorExterior = tag.getInt("ColorExterior");
 		this.colorOutline = tag.getInt("ColorOutline");
@@ -198,6 +260,12 @@ public class KiAttackData extends TechniqueData {
 		this.speed = tag.getFloat("Speed");
 		this.size = tag.getFloat("Size");
 		this.armorPenetration = tag.getInt("ArmorPenetration");
+		this.armorPenLevel = tag.getInt("ArmorPenLevel");
+		this.damageLevel = tag.getInt("DamageLevel");
+		this.castTimeLevel = tag.getInt("CastTimeLevel");
+		this.cooldownLevel = tag.getInt("CooldownLevel");
+		this.speedLevel = tag.getInt("SpeedLevel");
+		this.sizeLevel = tag.getInt("SizeLevel");
 	}
 
 	public static float[] previewDerivedValues(KiType type, Utility util, float damage, float size, float speed, int armorPen) {

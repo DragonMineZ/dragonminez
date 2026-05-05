@@ -161,7 +161,7 @@ public class SPBlueHurricaneEntity extends AbstractKiProjectile implements GeoEn
                             this.getY() + (this.getBbHeight() / 2.0) + offsetY,
                             this.getZ() + offsetZ,
                             rgb[0], rgb[1], rgb[2]
-                    );
+                        );
                 }
             }
 

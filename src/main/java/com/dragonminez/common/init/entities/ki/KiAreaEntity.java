@@ -14,6 +14,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -58,12 +59,15 @@ public class KiAreaEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
+        
     }
 
     public void fireHability(int durationTicks) {
         this.setFiring(true);
         int finalDuration = durationTicks > 0 ? durationTicks : DEFAULT_DURATION;
         this.setMaxLife(this.tickCount + finalDuration);
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     @Override

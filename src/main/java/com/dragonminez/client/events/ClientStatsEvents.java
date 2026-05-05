@@ -4,7 +4,6 @@ import com.dragonminez.Reference;
 import com.dragonminez.client.flight.FlightSoundInstance;
 import com.dragonminez.client.gui.TrainingScreen;
 import com.dragonminez.client.gui.hud.ScouterHUD;
-import com.dragonminez.client.animation.IPlayerAnimatable;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.client.util.KeyBinds;
 import com.dragonminez.common.config.ConfigManager;
@@ -20,6 +19,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.stats.skills.Skill;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
+import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import com.dragonminez.common.util.BetaWhitelist;
 import com.dragonminez.common.util.lists.SaiyanForms;
 import com.dragonminez.server.events.players.StatsEvents;
@@ -27,8 +27,6 @@ import com.dragonminez.server.util.GravityLogic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -38,6 +36,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -204,6 +203,19 @@ public class ClientStatsEvents {
 			boolean isRightClickDown = mc.options.keyUse.isDown() && !isStunned;
 			boolean isBlockKeyDown = KeyBinds.BLOCK_KEY.isDown() && !isStunned;
 
+			if (TechniqueDispatcher.isExecutingKiAttack(localPlayer, data)) {
+				isKiChargeKeyPressed = false;
+				isActionKeyPressed = false;
+				isBlockKeyDown = false;
+
+				if (TechniqueDispatcher.isFiringKiAttack(localPlayer)) {
+					localPlayer.setYRot(localPlayer.yRotO);
+					localPlayer.setXRot(localPlayer.xRotO);
+					localPlayer.yHeadRot = localPlayer.yHeadRotO;
+					localPlayer.yBodyRot = localPlayer.yBodyRotO;
+				}
+			}
+
 			if (isBlockKeyDown != data.getStatus().isBlocking()) {
 				data.getStatus().setBlocking(isBlockKeyDown);
 				NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.BLOCK, isBlockKeyDown));
@@ -211,21 +223,21 @@ public class ClientStatsEvents {
 
 
 			if (isDescendKeyPressed && isRightClickDown && !wasRightClickDown && !hasSelectedKiTechnique) {
-				String kiHex;
+				float[] kiRgb;
 				if (character.hasActiveStackForm()
 						&& character.getActiveStackFormData() != null
 						&& character.getActiveStackFormData().getAuraColor() != null
 						&& !character.getActiveStackFormData().getAuraColor().isEmpty()) {
-					kiHex = character.getActiveStackFormData().getAuraColor();
+					kiRgb = character.getActiveStackFormData().getRgbAuraColor();
 				} else if (character.hasActiveForm()
 						&& character.getActiveFormData() != null
 						&& character.getActiveFormData().getAuraColor() != null
 						&& !character.getActiveFormData().getAuraColor().isEmpty()) {
-					kiHex = character.getActiveFormData().getAuraColor();
+					kiRgb = character.getActiveFormData().getRgbAuraColor();
 				} else {
-					kiHex = character.getAuraColor();
+					kiRgb = character.getRgbAuraColor();
 				}
-				int colorMain = ColorUtils.hexToInt(kiHex);
+				int colorMain = ColorUtils.rgbToInt(kiRgb[0], kiRgb[1], kiRgb[2]);
 				int colorBorder = ColorUtils.darkenColor(colorMain, 0.85f);
 				NetworkHandler.sendToServer(new KiBlastC2S(true, colorMain, colorBorder));
 				kiBlastTimer = 10;
@@ -332,6 +344,7 @@ public class ClientStatsEvents {
 		StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
 			if (!data.getStatus().isHasCreatedCharacter()) return;
 			boolean isStunned = data.getStatus().isStunned();
+			if (TechniqueDispatcher.isExecutingKiAttack(player, data)) return;
 
 			boolean isDashKeyDown = KeyBinds.DASH_KEY.isDown();
 			if (isDashKeyDown && !wasDashKeyDown && !isStunned) {
@@ -411,6 +424,22 @@ public class ClientStatsEvents {
 				}
 			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onMovementInput(MovementInputUpdateEvent event) {
+		StatsProvider.get(StatsCapability.INSTANCE, event.getEntity()).ifPresent(data -> {
+			if (TechniqueDispatcher.isExecutingKiAttack(event.getEntity(), data)) {
+				event.getInput().forwardImpulse = 0;
+				event.getInput().leftImpulse = 0;
+				event.getInput().jumping = false;
+				event.getInput().shiftKeyDown = false;
+				event.getInput().up = false;
+				event.getInput().down = false;
+				event.getInput().left = false;
+				event.getInput().right = false;
+			}
+		});
 	}
 
 	@SubscribeEvent

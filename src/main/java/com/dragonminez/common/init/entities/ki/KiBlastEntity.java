@@ -21,6 +21,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -78,6 +79,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0f, -0.5F, 0.5F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
@@ -101,6 +103,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0f, 5.2F, 0.2F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupKiLargeBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
@@ -124,6 +127,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0f, -0.5F, 0.5F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupInvertedKiBlastPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
@@ -147,6 +151,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0f, -0.5F, 0.5F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupKiSoulsPlayer(LivingEntity owner, float damage, float speed, int color) {
@@ -166,6 +171,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0F, 5.5F, 0.0F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupKiGenkiPlayer(LivingEntity owner, float damage, float speed) {
@@ -185,6 +191,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0F, 5.5F, 0.0F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupKiNovaPlayer(LivingEntity owner, float damage, float speed) {
@@ -204,6 +211,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0F, 5.5F, 0.0F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupKiDeathBallPlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder) {
@@ -228,6 +236,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.setCastOffsets(0.0F, 0.5F, 0.5F);
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupSokidanPlayer(LivingEntity owner, float damage, float speed, int color, float size) {
@@ -250,6 +259,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             this.level().addFreshEntity(this);
         }
+        
     }
 
     public void setupKiVolleyPlayer(LivingEntity owner, float damage, float speed, int color, int castTime) {
@@ -467,6 +477,7 @@ public class KiBlastEntity extends AbstractKiProjectile {
         this.playInitialSound(MainSounds.KI_EXPLOSION_CHARGE.get());
         updatePositionRelativeToOwner(owner);
         if (!this.level().isClientSide) { this.level().addFreshEntity(this); }
+        
     }
 
     public void setupKiVolley(LivingEntity owner, float damage, float speed, int color, int castTime) {
@@ -535,6 +546,8 @@ public class KiBlastEntity extends AbstractKiProjectile {
 
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), MainSounds.KIBLAST_ATTACK.get(), SoundSource.PLAYERS, 0.5F, 1.0F + (this.random.nextFloat() * 0.2F));
         }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     private void finalizeSetupAndShoot(LivingEntity owner, float speed) {

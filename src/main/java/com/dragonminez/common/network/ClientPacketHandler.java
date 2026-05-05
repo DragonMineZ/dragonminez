@@ -94,16 +94,19 @@ public class ClientPacketHandler {
 	}
 
 	public static void handleTriggerAnimationPacket(UUID playerUUID, TriggerAnimationS2C.AnimationType animationType,
-			int variant, int entityId) {
+			int variant, int entityId, String stringPayload) {
 		var clientLevel = Minecraft.getInstance().level;
 		if (clientLevel == null) return;
 
 		Player player = clientLevel.getPlayerByUUID(playerUUID);
+		if (animationType == TriggerAnimationS2C.AnimationType.KI_ANIMATION) System.out.println("Triggering ki animation: " + stringPayload + " for player " + playerUUID);
 		if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
 			switch (animationType) {
 				case EVASION -> animatable.dragonminez$triggerEvasion();
 				case DASH -> animatable.dragonminez$triggerDash(variant);
 				case KI_BLAST_SHOT -> animatable.dragonminez$setShootingKi(variant == 0);
+				case KI_ANIMATION -> animatable.dragonminez$playKiAnimation(stringPayload);
+				case KI_ANIMATION_STOP -> animatable.dragonminez$stopKiAnimation();
 			}
 		}
 	}

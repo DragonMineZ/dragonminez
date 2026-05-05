@@ -3,12 +3,17 @@ package com.dragonminez.common.init.entities.ki;
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.combat.logic.player.TargetHelper;
 import com.dragonminez.common.init.MainDamageTypes;
+import com.dragonminez.common.network.NetworkHandler;
+import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
@@ -58,6 +63,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         this.setSize(size);
         this.setKiSpeed(speed);
         this.setColors(colorMain, colorBorder, colorOutline);
+        
     }
 
     public void setup(LivingEntity owner, float damage, float size, float speed, int colorMain, int colorBorder) {
@@ -221,7 +227,10 @@ public abstract class AbstractKiProjectile extends Projectile {
     public void setKiRenderType(int type) { this.entityData.set(KI_BALL_RENDER_TYPE, type); }
     public int getKiRenderType() { return this.entityData.get(KI_BALL_RENDER_TYPE); }
     public String getTechniqueId() { return this.entityData.get(TECHNIQUE_ID); }
-    public void setTechniqueId(String id) { this.entityData.set(TECHNIQUE_ID, id); }
+    public void setTechniqueId(String id) {
+        this.entityData.set(TECHNIQUE_ID, id);
+        if (!id.isEmpty() && !this.level().isClientSide) if (!this.isFiring()) this.triggerAnimationPacket("_cast");
+    }
     public int getArmorPenetration() { return this.entityData.get(ARMOR_PENETRATION); }
     public void setArmorPenetration(int pen) { this.entityData.set(ARMOR_PENETRATION, pen); }
     public boolean isHeal() { return this.entityData.get(IS_HEAL); }
@@ -278,5 +287,20 @@ public abstract class AbstractKiProjectile extends Projectile {
     @Override
     public EntityDimensions getDimensions(Pose pPose) {
         return super.getDimensions(pPose).scale(this.getSize());
+    }
+
+    public void triggerAnimationPacket(String suffix) {
+        if (!this.level().isClientSide && this.getOwner() instanceof ServerPlayer sp) {
+            String techId = this.getTechniqueId();
+            if (techId != null && !techId.isEmpty()) {
+                StatsProvider.get(StatsCapability.INSTANCE, sp).ifPresent(data -> {
+                    TechniqueData tech = data.getTechniques().getUnlockedTechniques().get(techId);
+                    if (tech instanceof KiAttackData kiData) {
+                        String fullAnim = kiData.getAnimationPrefix() + suffix;
+                        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(sp.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, -1, fullAnim), sp);
+                    }
+                });
+            }
+        }
     }
 }

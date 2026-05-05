@@ -651,7 +651,7 @@ public class SkillsMenuScreen extends BaseMenuScreen {
 
 		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.cooldown").append(": ").append(txt(tech.getCooldown() + "t")), panelX + 15, yOffset, 0xFFFFFF); yOffset += 16;
 
-		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost()))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
+		TextUtil.drawStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.energy_cost").append(": ").append(txt(String.format(Locale.US, "%.1f", tech.getCalculatedCost(statsData)))), panelX + 15, yOffset, 0xFFAAAA); yOffset += 16;
 
 		if (isCustom) {
 			TextUtil.drawCenteredStringWithBorder(graphics, this.font, tr("gui.dragonminez.technique.req_xp", xpReq), panelX + 70, yOffset, 0xFFAAAAAA);

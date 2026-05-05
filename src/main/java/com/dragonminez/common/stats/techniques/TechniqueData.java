@@ -28,11 +28,7 @@ public abstract class TechniqueData {
 	public abstract CompoundTag save();
 	public abstract void load(CompoundTag tag);
 	public abstract TechniqueType getType();
-
-	public double getCalculatedCost() {
-		double reduction = Math.min(0.5, this.experience * 0.001);
-		return baseCost * (1.0 - reduction);
-	}
+	public abstract double getCalculatedCost(com.dragonminez.common.stats.StatsData statsData);
 
 	public void addExperience(int amount) { this.experience += amount; }
 }

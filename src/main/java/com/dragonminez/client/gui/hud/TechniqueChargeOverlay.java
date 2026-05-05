@@ -39,8 +39,12 @@ public class TechniqueChargeOverlay {
 			if (Math.abs(lerped - targetChargePercent) <= 0.5f) lerped = targetChargePercent;
 
 			currentChargePercent = Math.max(0.0f, Math.min(200.0f, lerped));
-			float fillRatio = Mth.clamp(currentChargePercent / 200.0f, 0.0f, 1.0f);
-			int fillPixels = Math.round(148 * fillRatio);
+
+			float normalFillRatio = Mth.clamp(currentChargePercent / 100.0f, 0.0f, 1.0f);
+			int normalPixels = Math.round(148 * normalFillRatio);
+
+			float overchargeRatio = Mth.clamp((currentChargePercent - 100.0f) / 100.0f, 0.0f, 1.0f);
+			int overchargePixels = Math.round(148 * overchargeRatio);
 
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
@@ -53,18 +57,23 @@ public class TechniqueChargeOverlay {
 			guiGraphics.pose().scale(1.5f, 1.5f, 1.0f);
 			guiGraphics.blit(CHARGE_HUD_TEXTURE, 0, 0, 0, 0, 148, 14, 256, 256);
 
-			if (fillPixels > 0) {
-				int kiColor = kiAttack.getColorExterior();
-				float r = ((kiColor >> 16) & 0xFF) / 255.0f;
-				float g = ((kiColor >> 8) & 0xFF) / 255.0f;
-				float b = (kiColor & 0xFF) / 255.0f;
+			int kiColor = kiAttack.getColorExterior();
+			float r = ((kiColor >> 16) & 0xFF) / 255.0f;
+			float g = ((kiColor >> 8) & 0xFF) / 255.0f;
+			float b = (kiColor & 0xFF) / 255.0f;
+
+			if (normalPixels > 0) {
 				RenderSystem.setShaderColor(r, g, b, 1.0f);
-				guiGraphics.blit(CHARGE_HUD_TEXTURE, 0, 0, 0, 14, fillPixels, 14, 256, 256);
-				RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+				guiGraphics.blit(CHARGE_HUD_TEXTURE, 0, 0, 0, 14, normalPixels, 14, 256, 256);
 			}
 
+			if (overchargePixels > 0) {
+				RenderSystem.setShaderColor(r * 0.5f, g * 0.5f, b * 0.5f, 1.0f);
+				guiGraphics.blit(CHARGE_HUD_TEXTURE, 0, 0, 0, 14, overchargePixels, 14, 256, 256);
+			}
+
+			RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 			guiGraphics.pose().popPose();
 		});
 	};
 }
-

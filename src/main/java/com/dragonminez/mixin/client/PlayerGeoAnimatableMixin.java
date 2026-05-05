@@ -55,6 +55,9 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique private boolean dragonminez$unarmedAttackToggle = false;
 	@Unique private boolean dragonminez$unarmedSwingLatch = false;
 
+	@Unique private String dragonminez$currentKiAnim = null;
+	@Unique private String dragonminez$lastKiAnim = null;
+
 	@Unique
 	private boolean dragonminez$isActuallyMoving(AbstractClientPlayer player) {
 		int currentTick = player.tickCount;
@@ -104,6 +107,18 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 	@Unique
 	private <T extends GeoAnimatable> PlayState predicate(AnimationState<T> state) {
 		AbstractClientPlayer player = (AbstractClientPlayer) (Object) this;
+
+		if (dragonminez$currentKiAnim != null) {
+			if (!dragonminez$currentKiAnim.equals(dragonminez$lastKiAnim)) {
+				state.getController().setAnimation(RawAnimation.begin().thenPlayAndHold(dragonminez$currentKiAnim));
+				state.getController().forceAnimationReset();
+				dragonminez$lastKiAnim = dragonminez$currentKiAnim;
+			}
+			return PlayState.CONTINUE;
+		} else {
+			dragonminez$lastKiAnim = null;
+		}
+
 		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;
 
@@ -181,10 +196,8 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
 		if (data == null) return PlayState.STOP;
 
-//		String race = data.getCharacter().getRaceName().toLowerCase();
-//		if (race.equals("bioandroid") && data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE)) {
-//			return PlayState.STOP;
-//		}
+		String race = data.getCharacter().getRaceName().toLowerCase();
+		if (race.equals("bioandroid") && data.getCooldowns().hasCooldown(Cooldowns.DRAIN_ACTIVE)) return PlayState.STOP;
 
 		state.getController().setAnimation(TAIL);
 		return PlayState.CONTINUE;
@@ -463,6 +476,17 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 		String resolved = CombatAnimationResolver.resolveAttack(animationName, isOffhand);
 		this.dragonminez$currentMeleeAnim = resolved.isEmpty() ? "fallback" : resolved;
 		this.dragonminez$currentMeleeSpeed = Math.max(0.15F, speedMultiplier);
+	}
+
+	@Override
+	public void dragonminez$playKiAnimation(String animationName) {
+		this.dragonminez$currentKiAnim = animationName;
+	}
+
+	@Override
+	public void dragonminez$stopKiAnimation() {
+		this.dragonminez$currentKiAnim = null;
+		this.dragonminez$lastKiAnim = null;
 	}
 
 	@Override

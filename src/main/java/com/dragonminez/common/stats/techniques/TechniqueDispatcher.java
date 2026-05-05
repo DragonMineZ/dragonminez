@@ -4,6 +4,7 @@ import com.dragonminez.common.init.entities.ki.*;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -17,8 +18,8 @@ public class TechniqueDispatcher {
 		boolean isInitialSpawn = chargeMultiplier < 0.5f;
 		float clampedCharge = Mth.clamp(chargeMultiplier, 0.5f, 2.0f);
 
-		double cost = data.getCalculatedCost() * clampedCharge;
-		if (isInitialSpawn) if (statsData.getResources().getCurrentEnergy() < (data.getCalculatedCost() * 0.5)) return false;
+		double cost = data.getCalculatedCost(statsData) * clampedCharge;
+		if (isInitialSpawn) if (statsData.getResources().getCurrentEnergy() < (data.getCalculatedCost(statsData) * 0.5)) return false;
 		else {
 			if (statsData.getResources().getCurrentEnergy() < cost) return false;
 			statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - cost));
@@ -65,7 +66,7 @@ public class TechniqueDispatcher {
 			case SMALL_BALL:
 				if (!isInitialSpawn) return true;
 
-				double instantCost = data.getCalculatedCost();
+				double instantCost = data.getCalculatedCost(statsData);
 				if (statsData.getResources().getCurrentEnergy() < instantCost) return false;
 
 				statsData.getResources().setCurrentEnergy((int) (statsData.getResources().getCurrentEnergy() - instantCost));
@@ -257,17 +258,8 @@ public class TechniqueDispatcher {
 	}
 
     private static AbstractKiProjectile getChargingKiEntity(LivingEntity owner, Level level) {
-        List<AbstractKiProjectile> nearby = level.getEntitiesOfClass(
-                AbstractKiProjectile.class,
-                owner.getBoundingBox().inflate(30.0D)
-        );
-        for (AbstractKiProjectile ki : nearby) {
-            if (ki.getOwner() != null && ki.getOwner().getUUID().equals(owner.getUUID())) {
-                if (!ki.isFiring()) {
-                    return ki;
-                }
-            }
-        }
+        List<AbstractKiProjectile> nearby = level.getEntitiesOfClass(AbstractKiProjectile.class, owner.getBoundingBox().inflate(30.0D));
+        for (AbstractKiProjectile ki : nearby) if (ki.getOwner() != null && ki.getOwner().getUUID().equals(owner.getUUID())) if (!ki.isFiring()) return ki;
         return null;
     }
 
@@ -282,5 +274,20 @@ public class TechniqueDispatcher {
 			default -> 90;
 		};
 		return Math.max(20, (int) (base * chargeMultiplier));
+	}
+
+	public static boolean isExecutingKiAttack(Player player, StatsData data) {
+		if (data != null && (data.getTechniques().isTechniqueCharging() || data.getTechniques().isTechniqueChargeActive())) return true;
+
+		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
+		for (AbstractKiProjectile ki : projectiles) if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) return true;
+
+		return false;
+	}
+
+	public static boolean isFiringKiAttack(Player player) {
+		List<AbstractKiProjectile> projectiles = player.level().getEntitiesOfClass(AbstractKiProjectile.class, player.getBoundingBox().inflate(32.0D));
+		for (AbstractKiProjectile ki : projectiles) if (ki.getOwner() != null && ki.getOwner().getUUID().equals(player.getUUID())) if (ki.isFiring()) return true;
+		return false;
 	}
 }

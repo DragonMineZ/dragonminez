@@ -22,6 +22,8 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.List;
+
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID)
 public class StatsCapability {
 	public static final Capability<StatsData> INSTANCE = CapabilityManager.get(new CapabilityToken<>() {
@@ -73,17 +75,11 @@ public class StatsCapability {
 	@SubscribeEvent
 	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
 		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-			NetworkHandler.sendToPlayer(
-					new SyncServerConfigS2C(
-							ConfigManager.getServerConfig(),
-							ConfigManager.getCombatConfig(),
-							ConfigManager.getSkillsConfig(),
-							ConfigManager.getAllForms(),
-							ConfigManager.getAllRaceStats(),
-							ConfigManager.getAllRaceCharacters(),
-							ConfigManager.getAllStackForms()
-					), serverPlayer
-			);
+			List<String> availableConfigs = ConfigManager.getAvailableConfigFiles();
+			for (String file : availableConfigs) {
+				String jsonPayload = ConfigManager.getSpecificConfigJson(file);
+				NetworkHandler.sendToPlayer(new SyncServerConfigS2C(file, jsonPayload), serverPlayer);
+			}
 			NetworkHandler.sendToPlayer(
 					new SyncQuestRegistryS2C(
 							QuestRegistry.getAllSagas(),

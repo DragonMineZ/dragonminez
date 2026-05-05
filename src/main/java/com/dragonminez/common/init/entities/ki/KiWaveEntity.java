@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -123,6 +124,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(0);
         this.setCastOffsets(0.4F, 0.6F, 0.0F);
         updatePositionRelativeToOwner(owner, false);
+        
     }
 
     public void setupKiWavePlayer(LivingEntity owner, float damage, float speed, int color, int colorBorder, float size) {
@@ -163,6 +165,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(0);
         this.setCastOffsets(0.4F, -0.6F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
+        
     }
 
     public void setupKiHamePlayer(LivingEntity owner, float damage, float speed, float size) {
@@ -203,6 +206,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(0);
         this.setCastOffsets(0.4F, 0.2F, 0.0F);
         updatePositionRelativeToOwner(owner, true);
+        
     }
 
     public void setupKiGalickGunPlayer(LivingEntity owner, float damage, float speed, float size) {
@@ -243,6 +247,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
         this.setCastWave(40);
         this.setCastOffsets(0.0F, -0.3F, 0.4F);
         updatePositionRelativeToOwner(owner, false);
+        
     }
 
     public void setupFinalFlashPlayer(LivingEntity owner, float damage, float speed, float size) {
@@ -320,6 +325,8 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (this.getOwner() instanceof LivingEntity livingOwner) {
             updatePositionRelativeToOwner(livingOwner, false);
         }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     private void updatePositionRelativeToOwner(LivingEntity owner, boolean isCasting) {

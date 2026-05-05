@@ -10,18 +10,16 @@ import com.dragonminez.common.init.particles.KiTrailParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
@@ -83,6 +81,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
         this.setMaxLife(99999);
         this.setCastExplosion(40);
         this.updatePositionToOwner(owner);
+        
     }
 
     public void setupExplosionPlayer(LivingEntity owner, float damage, float size, int colorMain, int colorBorder) {
@@ -99,6 +98,8 @@ public class KiExplosionEntity extends AbstractKiProjectile {
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                     MainSounds.KI_EXPLOSION_IMPACT.get(), SoundSource.HOSTILE, 0.5F, 1.2F);
         }
+
+        if (this.getOwner() instanceof Player) this.triggerAnimationPacket("_fire");
     }
 
     @Override
