@@ -24,7 +24,6 @@ docs/superpowers/
 !.idea/codeStyles/
 !.idea/codeStyles/*.xml
 
-
 # gradle
 build
 .gradle

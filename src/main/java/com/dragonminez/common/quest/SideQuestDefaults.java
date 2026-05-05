@@ -28,7 +28,6 @@ import java.util.Set;
 final class SideQuestDefaults {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-	private static final String PARTY_SCALING_KEY = "party_scaling";
 	private static final Set<String> GOOD_PATH_NPCS = Set.of(
 			"goku", "roshi", "karin", "guru", "dende", "popo", "kingkai",
 			"bulma", "krillin", "yamcha", "tien", "chiaotzu", "gohan", "trunks",
@@ -82,7 +81,7 @@ final class SideQuestDefaults {
 		q.addProperty("type", "SIDEQUEST");
 		q.addProperty("category", category);
 		q.addProperty("parallel_objectives", parallelObjectives);
-		q.addProperty(PARTY_SCALING_KEY, true);
+		q.addProperty("party_scaling", true);
 		q.addProperty("secret", false);
 		q.addProperty("claim_mode", "TREE_OR_NPC");
 		if (questGiver != null) q.addProperty("quest_giver", questGiver);
