@@ -620,7 +620,6 @@ public class TickHandler {
 			float nextCharge = Math.min(200.0f, currentCharge + getChargeRatePerTick(kiAttack, currentCharge));
 			float maxAllowedCharge = getMaxAllowedChargePercent(kiAttack, data);
 			techniques.setTechniqueChargePercent(Math.min(nextCharge, maxAllowedCharge));
-			System.out.println("Charge: " + techniques.getTechniqueChargePercent() + " Max: " + maxAllowedCharge + " Next: " + nextCharge);
 		} else {
 			resolveKiAttackOnRelease(player, data, techniques);
 		}

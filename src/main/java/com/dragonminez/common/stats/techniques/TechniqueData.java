@@ -1,5 +1,6 @@
 package com.dragonminez.common.stats.techniques;
 
+import com.dragonminez.common.stats.StatsData;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -28,7 +29,7 @@ public abstract class TechniqueData {
 	public abstract CompoundTag save();
 	public abstract void load(CompoundTag tag);
 	public abstract TechniqueType getType();
-	public abstract double getCalculatedCost(com.dragonminez.common.stats.StatsData statsData);
+	public abstract double getCalculatedCost(StatsData statsData);
 
 	public void addExperience(int amount) { this.experience += amount; }
 }
