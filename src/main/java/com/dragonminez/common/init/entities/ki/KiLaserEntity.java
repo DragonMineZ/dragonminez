@@ -7,6 +7,7 @@ import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiLightningParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -468,7 +469,6 @@ public class KiLaserEntity extends AbstractKiProjectile{
     }
 
     private void explodeAndDie(Vec3 pos) {
-        boolean shouldDestroyBlocks = true;
         float radius = this.getSize();
         AABB area = new AABB(pos, pos).inflate(radius);
         List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, area);
@@ -485,7 +485,7 @@ public class KiLaserEntity extends AbstractKiProjectile{
 
         this.level().addParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
         this.level().playSound(null, pos.x, pos.y, pos.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 4.0F, 0.7F);
-        Level.ExplosionInteraction interaction = shouldDestroyBlocks ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE;
+        Level.ExplosionInteraction interaction = this.getKiExplosionInteraction(BlockPos.containing(pos));
         this.level().explode(this, this.damageSources().explosion(this, this.getOwner()), null, pos.x, pos.y, pos.z, radius, false, interaction, false);
         this.discard();
     }

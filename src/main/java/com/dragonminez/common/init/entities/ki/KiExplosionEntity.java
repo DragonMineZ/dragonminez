@@ -2,7 +2,6 @@ package com.dragonminez.common.init.entities.ki;
 
 import com.dragonminez.client.util.ColorUtils;
 import com.dragonminez.common.init.MainEntities;
-import com.dragonminez.common.init.MainGameRules;
 import com.dragonminez.common.init.MainParticles;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.init.particles.KiExplosionSplashParticle;
@@ -276,10 +275,6 @@ public class KiExplosionEntity extends AbstractKiProjectile {
 
         BlockPos center = this.blockPosition();
 
-        if (!MainGameRules.canKiGrief(this.level(), center, this.getOwner())) {
-            return;
-        }
-
         int r = (int) Math.ceil(radius);
 
         for (int x = -r; x <= r; x++) {
@@ -291,7 +286,7 @@ public class KiExplosionEntity extends AbstractKiProjectile {
                         BlockState state = this.level().getBlockState(pos);
 
                         if (!state.isAir() && state.getDestroySpeed(this.level(), pos) >= 0) {
-                            this.level().setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                            this.setKiBlockToAir(pos, 3);
                         }
                     }
                 }

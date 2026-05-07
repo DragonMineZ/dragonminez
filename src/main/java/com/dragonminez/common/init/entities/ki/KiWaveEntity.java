@@ -21,7 +21,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -543,10 +542,6 @@ public class KiWaveEntity extends AbstractKiProjectile {
     }
 
     private boolean destroyBlocksAtTip(Vec3 tipPos) {
-        if (!MainGameRules.canKiGrief(this.level(), BlockPos.containing(tipPos), this.getOwner())) {
-            return false;
-        }
-
         boolean hitSomething = false;
         float eatRadius = this.getSize() * 1.5F;
         int bRad = Math.round(eatRadius);
@@ -558,8 +553,7 @@ public class KiWaveEntity extends AbstractKiProjectile {
                 for (int z = -bRad; z <= bRad; z++) {
                     if (x * x + y * y + z * z <= eatRadius * eatRadius) {
                         BlockPos targetPos = center.offset(x, y, z);
-                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000) {
-                            level.destroyBlock(targetPos, false);
+                        if (!level.getBlockState(targetPos).isAir() && level.getBlockState(targetPos).getExplosionResistance(level, targetPos, null) < 1000 && this.destroyKiBlock(targetPos, false)) {
                             hitSomething = true;
                             if (level instanceof ServerLevel serverLevel) {
                                 if (this.random.nextFloat() < 0.25F) {
@@ -697,16 +691,14 @@ public class KiWaveEntity extends AbstractKiProjectile {
         if (!this.level().isClientSide) {
             BlockPos center = BlockPos.containing(pos);
 
-            if (MainGameRules.canKiGrief(this.level(), center, this.getOwner())) {
-                int blockRadius = Math.round(explosionRadius);
-                for (int x = -blockRadius; x <= blockRadius; x++) {
-                    for (int y = -blockRadius; y <= blockRadius; y++) {
-                        for (int z = -blockRadius; z <= blockRadius; z++) {
-                            if (x * x + y * y + z * z <= explosionRadius * explosionRadius) {
-                                BlockPos targetPos = center.offset(x, y, z);
-                                if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
-                                    this.level().setBlock(targetPos, Blocks.AIR.defaultBlockState(), 2);
-                                }
+            int blockRadius = Math.round(explosionRadius);
+            for (int x = -blockRadius; x <= blockRadius; x++) {
+                for (int y = -blockRadius; y <= blockRadius; y++) {
+                    for (int z = -blockRadius; z <= blockRadius; z++) {
+                        if (x * x + y * y + z * z <= explosionRadius * explosionRadius) {
+                            BlockPos targetPos = center.offset(x, y, z);
+                            if (this.level().getBlockState(targetPos).getExplosionResistance(this.level(), targetPos, null) < 1000) {
+                                this.setKiBlockToAir(targetPos, 2);
                             }
                         }
                     }
