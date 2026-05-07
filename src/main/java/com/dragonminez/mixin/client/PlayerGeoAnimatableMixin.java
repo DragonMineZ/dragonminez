@@ -115,9 +115,7 @@ public abstract class PlayerGeoAnimatableMixin implements GeoAnimatable, IPlayer
 				dragonminez$lastKiAnim = dragonminez$currentKiAnim;
 			}
 			return PlayState.CONTINUE;
-		} else {
-			dragonminez$lastKiAnim = null;
-		}
+		} else dragonminez$lastKiAnim = null;
 
 		IPlayerAnimatable animatable = (IPlayerAnimatable) this;
 		if (dragonminez$dashAnimTicks > 0) return PlayState.STOP;

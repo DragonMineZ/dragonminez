@@ -99,7 +99,6 @@ public class ClientPacketHandler {
 		if (clientLevel == null) return;
 
 		Player player = clientLevel.getPlayerByUUID(playerUUID);
-		if (animationType == TriggerAnimationS2C.AnimationType.KI_ANIMATION) System.out.println("Triggering ki animation: " + stringPayload + " for player " + playerUUID);
 		if (player instanceof AbstractClientPlayer clientPlayer && clientPlayer instanceof IPlayerAnimatable animatable) {
 			switch (animationType) {
 				case EVASION -> animatable.dragonminez$triggerEvasion();

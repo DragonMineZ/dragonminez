@@ -254,8 +254,13 @@ public abstract class AbstractKiProjectile extends Projectile {
     public int getKiRenderType() { return this.entityData.get(KI_BALL_RENDER_TYPE); }
     public String getTechniqueId() { return this.entityData.get(TECHNIQUE_ID); }
     public void setTechniqueId(String id) {
+        this.setTechniqueIdInternal(id, true);
+    }
+
+    private void setTechniqueIdInternal(String id, boolean triggerAnimation) {
         this.entityData.set(TECHNIQUE_ID, id);
-        if (!id.isEmpty() && !this.level().isClientSide) if (!this.isFiring()) this.triggerAnimationPacket("_cast");
+        if (!triggerAnimation || id.isEmpty() || this.level().isClientSide || this.isFiring()) return;
+        this.triggerAnimationPacket("_cast");
     }
     public int getArmorPenetration() { return this.entityData.get(ARMOR_PENETRATION); }
     public void setArmorPenetration(int pen) { this.entityData.set(ARMOR_PENETRATION, pen); }
@@ -295,7 +300,7 @@ public abstract class AbstractKiProjectile extends Projectile {
         if (pCompound.contains("Damage")) setKiDamage(pCompound.getFloat("Damage"));
         if (pCompound.contains("Size")) setSize(pCompound.getFloat("Size"));
         if (pCompound.contains("Speed")) setKiSpeed(pCompound.getFloat("Speed"));
-        if (pCompound.contains("TechniqueId")) setTechniqueId(pCompound.getString("TechniqueId"));
+        if (pCompound.contains("TechniqueId")) setTechniqueIdInternal(pCompound.getString("TechniqueId"), false);
         if (pCompound.contains("ArmorPenetration")) setArmorPenetration(pCompound.getInt("ArmorPenetration"));
         if (pCompound.contains("IsHeal")) setHeal(pCompound.getBoolean("IsHeal"));
         if (pCompound.contains("IsFiring")) setFiring(pCompound.getBoolean("IsFiring"));

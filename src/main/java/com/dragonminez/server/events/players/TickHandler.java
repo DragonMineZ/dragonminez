@@ -276,8 +276,21 @@ public class TickHandler {
 	}
 
 	@SubscribeEvent
+	public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+		if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
+		serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+		CHARGING_CACHE.remove(serverPlayer.getUUID());
+		NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
+	}
+
+	@SubscribeEvent
 	public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
 		UUID playerId = event.getEntity().getUUID();
+		if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+			serverPlayer.getPersistentData().putBoolean("dmz_was_executing_ki", false);
+			NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(serverPlayer.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), serverPlayer);
+		}
+		CHARGING_CACHE.remove(playerId);
 		playerTickCounters.remove(playerId);
 		forceKillGraceByPlayer.remove(playerId);
 		auraLightLevels.remove(playerId);
