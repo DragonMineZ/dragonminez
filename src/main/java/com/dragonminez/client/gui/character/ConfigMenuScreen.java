@@ -311,7 +311,7 @@ public class ConfigMenuScreen extends BaseMenuScreen {
 		graphics.disableScissor();
 
 		if (maxScroll > 0) {
-			int scrollBarX = panelX + 140;
+			int scrollBarX = panelX + 128;
 			int scrollBarHeight = MAX_VISIBLE_CONFIGS * CONFIG_ITEM_HEIGHT;
 			int totalItems = configOptions.size();
 
