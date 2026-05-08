@@ -303,3 +303,16 @@ Before changing behavior:
 - If changing worldgen/datagen, run `runData` and inspect generated resource diffs.
 - If editing language files, run `scripts/check_lang.sh` or equivalent JSON validation.
 - If editing code, run at least `.\gradlew.bat build` unless blocked, and state any blockers.
+
+## Release Automation
+
+Release automation is split into two GitHub Actions workflows:
+
+- `.github/workflows/release-prepare.yml` validates stable release candidates on `main`, builds the jar, writes release manifest artifacts, and optionally posts a release candidate payload to the Discord bot webhook secret `DMZ_RELEASE_BOT_WEBHOOK_URL`.
+- `.github/workflows/release-publish.yml` is triggered by Discord bot approval through `repository_dispatch` event `dragonminez_release_approved`; it rebuilds the approved `main` commit, verifies the jar checksum, publishes to Modrinth and CurseForge, updates `update.json`, and commits that file back to `main`.
+
+Important release workflow rules:
+
+- Do not publish GitHub Release jar assets from these workflows.
+- Stable `main` releases only: versions containing `alpha` or `beta` are skipped or rejected.
+- The Discord bot must not hold Modrinth or CurseForge tokens; those stay in GitHub Actions secrets.
